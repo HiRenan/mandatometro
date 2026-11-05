@@ -29,12 +29,15 @@ As APIs oficiais e os arquivos de dados abertos (Câmara, Senado e TSE) são lid
 
 ## Estrutura e stack
 
-Este é o alvo do esqueleto (issue #5); depois dele, o próprio repositório é a referência.
+Monorepo com pnpm e Turborepo. O porquê de cada escolha está no [ADR 0001](docs/adr/0001-stack.md).
 
-- `backend/`: Python 3.13, FastAPI, SQLAlchemy 2 com Alembic, psycopg 3 e pytest. Dependências com uv; lint e formatação com Ruff.
-- `frontend/`: React com TypeScript e Vite.
-- `docker-compose.yml`: serviços `db` (imagem `pgvector/pgvector:pg17`), `api` e `web`.
-- `docs/`: dicionário de dados (issue #4) e decisões do time.
+- `apps/backend/`: Python 3.13 com uv, num pacote só (`src/mandatometro`): FastAPI, SQLAlchemy 2 com Alembic, psycopg 3, pgvector, Ruff e pytest. Módulos `db` (modelos e sessão), `coleta`, `ia`, `avisos` (e-mails) e `api`. Coleta e IA entram como subcomandos de `cli.py` e gravam no banco; a API só lê o banco e recebe inscrições. O `package.json` só repassa as tarefas do Turborepo para o uv.
+- `apps/web/`: TanStack Start (React com SSR), Tailwind e shadcn/ui, gerado pelo Better-T-Stack. As variáveis do site ficam em `.env.schema` (varlock), e as marcadas `@public` entram no bundle do navegador.
+- `packages/ui/` (componentes shadcn/ui) e `packages/config/` (tsconfig base): gerados pelo Better-T-Stack.
+- `docker-compose.yml`: serviços `db` (imagem `pgvector/pgvector:pg17`), `api` e `web`. O banco atende na porta 5433 do computador, para não brigar com um PostgreSQL instalado na 5432.
+- `docs/`: decisões do time em `docs/adr/` e o dicionário de dados (issue #4).
+- **Contrato da API:** o cliente TypeScript em `apps/web/src/client/` sai do `apps/backend/openapi.json`. Mudou a API, rode `pnpm generate:client` e faça commit dos dois; o CI falha se um deles ficar desatualizado.
+- **Migrations:** numeradas em sequência (`--rev-id 0002`, `0003`...), com a mensagem sem acento, porque ela vira o nome do arquivo.
 
 Os comandos de instalação, teste e lint ficam no README, seção "Como rodar". Quem mudar um comando atualiza lá.
 
