@@ -1,0 +1,11 @@
+{
+	"name": "backend",
+	"private": true,
+	"scripts": {
+		"dev": "uv run uvicorn mandatometro.api.app:app --reload --reload-dir src --port 8000",
+		"lint": "uv run ruff check && uv run ruff format --check",
+		"test": "uv run pytest",
+		"openapi": "uv run mandatometro openapi openapi.json",
+		"migrate": "uv run alembic upgrade head"
+	}
+}
