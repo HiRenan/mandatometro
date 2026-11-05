@@ -1,0 +1,3 @@
+# Fim de linha LF em todos os arquivos de texto, inclusive no Windows:
+# scripts com CRLF quebram dentro dos containers Linux do Docker.
+* text=auto eol=lf

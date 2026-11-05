@@ -1,0 +1,39 @@
+# Segredos: só o modelo vai para o Git
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Front
+node_modules/
+.vite/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Builds
+dist/
+build/
+
+# Dados baixados e páginas coletadas (ZIPs do TSE, respostas brutas)
+data/
+
+# Configuração pessoal de agentes e editores
+.claude/settings.local.json
+CLAUDE.local.md
+.idea/
+.vscode/
+
+# Sistema
+.DS_Store
+Thumbs.db
