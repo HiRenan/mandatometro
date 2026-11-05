@@ -1,12 +1,18 @@
+# Build a partir da raiz do repositório: docker build -f apps/web/Dockerfile .
 FROM node:24-slim AS builder
-RUN npm install -g pnpm@11
+# O Corepack instala o pnpm da versão fixada no packageManager do package.json da raiz.
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
 WORKDIR /app
 
 COPY . .
-RUN --mount=type=secret,id=web_env,target=/app/apps/web/.env.local --mount=type=secret,id=server_env,target=/app/apps/server/.env.local --mount=type=cache,target=/pnpm-store pnpm install --store-dir /pnpm-store
+RUN --mount=type=cache,target=/pnpm-store pnpm install --frozen-lockfile --store-dir /pnpm-store
 
+# O API_URL é público: entra no bundle do navegador na hora do build.
+ARG API_URL=http://localhost:8000
 ENV NODE_ENV=production
-RUN --mount=type=secret,id=web_env,target=/app/apps/web/.env.local --mount=type=secret,id=server_env,target=/app/apps/server/.env.local cd apps/web && pnpm run build
+ENV API_URL=$API_URL
+RUN cd apps/web && pnpm run build
 
 FROM node:24-slim AS runner
 WORKDIR /app

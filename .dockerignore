@@ -11,6 +11,11 @@
 **/.turbo
 .turbo
 
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+
 **/.wrangler
 **/.alchemy
 **/.expo
