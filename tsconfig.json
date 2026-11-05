@@ -1,0 +1,3 @@
+{
+  "extends": "@mandatometro/config/tsconfig.base.json"
+}
