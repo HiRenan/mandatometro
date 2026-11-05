@@ -70,6 +70,7 @@ As chaves (Firecrawl, Resend, Devin e LLM) ficam só no `.env` local, criado a p
 - **Branches:** todo PR vai para a `develop`, que é a branch padrão do GitHub. A `main` só recebe merge da `develop`, quando ela estiver estável, como antes da demo e da entrega.
 - **Uma issue por PR.** Branch `tipo/NN-descricao` criado a partir da `develop` (ex.: `feat/10-conector-camara`); commits no padrão Conventional Commits, em português (ex.: `feat(camara): conector de proposições`).
 - **Descrição do PR:** o que mudou, como testar e `Closes #NN`. PR do Devin leva o label `devin`.
+- **Sem assinatura de IA:** commits e PRs levam só o conteúdo do trabalho, sem linha de autoria de ferramenta de IA, como "Generated with Claude Code" ou `Co-Authored-By` de um agente. No Claude Code, o `.claude/settings.json` já desliga essa assinatura.
 - **Testes de unidade rodam offline,** com respostas reais gravadas em `tests/fixtures/`, com CPF e título de eleitor trocados por valores fictícios. Testes que usam a rede levam o marcador `online` e ficam fora do CI.
 - **Nomes do domínio em português, sem acento:** `parlamentar`, `mandato`, `candidatura`, `proposicao`, `votacao`, `voto`, `promessa`, `ligacao`, `bem_declarado`, `fonte` e `inscrito`. Texto para o usuário em pt-BR.
 - **Ao terminar:** se mudou como rodar, atualize o README; se surgiu uma convenção ou uma pegadinha de fonte, atualize este arquivo.
