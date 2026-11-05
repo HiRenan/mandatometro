@@ -1,17 +1,22 @@
+import { QueryClient } from "@tanstack/react-query";
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
+import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 
 import Loader from "./components/loader";
 import { routeTree } from "./routeTree.gen";
 
 export const getRouter = () => {
+	// Um QueryClient por router: no SSR, cada requisição tem o seu e não vê o cache de outra.
+	const queryClient = new QueryClient();
 	const router = createTanStackRouter({
 		routeTree,
 		scrollRestoration: true,
 		defaultPreloadStaleTime: 0,
-		context: {},
+		context: { queryClient },
 		defaultPendingComponent: () => <Loader />,
-		defaultNotFoundComponent: () => <div>Not Found</div>,
+		defaultNotFoundComponent: () => <div>Página não encontrada</div>,
 	});
+	setupRouterSsrQueryIntegration({ router, queryClient });
 
 	return router;
 };

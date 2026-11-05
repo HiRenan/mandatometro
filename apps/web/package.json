@@ -7,13 +7,15 @@
 		"serve": "vite preview",
 		"dev": "vite dev",
 		"check-types": "vite build && tsc --noEmit",
-		"env:generate": "varlock codegen"
+		"env:generate": "varlock codegen",
+		"generate:client": "openapi-ts"
 	},
 	"dependencies": {
 		"@mandatometro/ui": "workspace:*",
 		"@tailwindcss/vite": "^4.3.3",
 		"@tanstack/react-query": "^5.104.2",
 		"@tanstack/react-router": "^1.170.44",
+		"@tanstack/react-router-ssr-query": "^1.167.3",
 		"@tanstack/react-start": "^1.169.1",
 		"@varlock/vite-integration": "1.5.4",
 		"lucide-react": "^1.56.0",
@@ -27,6 +29,7 @@
 		"zod": "catalog:"
 	},
 	"devDependencies": {
+		"@hey-api/openapi-ts": "^0.99.0",
 		"@mandatometro/config": "workspace:*",
 		"@tanstack/react-router-devtools": "^1.167.2",
 		"@testing-library/dom": "^10.4.2",

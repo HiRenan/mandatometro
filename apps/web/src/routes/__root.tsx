@@ -1,4 +1,5 @@
 import { Toaster } from "@mandatometro/ui/components/sonner";
+import type { QueryClient } from "@tanstack/react-query";
 import {
 	createRootRouteWithContext,
 	HeadContent,
@@ -11,7 +12,9 @@ import Header from "../components/header";
 
 import appCss from "../index.css?url";
 
-export type RouterAppContext = {};
+export interface RouterAppContext {
+	queryClient: QueryClient;
+}
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
 	head: () => ({
@@ -24,7 +27,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "My App",
+				title: "Mandatômetro",
 			},
 		],
 		links: [
@@ -40,7 +43,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 
 function RootDocument() {
 	return (
-		<html lang="en" className="dark">
+		<html lang="pt-BR" className="dark">
 			<head>
 				<HeadContent />
 			</head>

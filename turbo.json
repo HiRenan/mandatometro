@@ -5,10 +5,13 @@
 		"build": {
 			"dependsOn": ["^build"],
 			"inputs": ["$TURBO_DEFAULT$", ".env*"],
-			"outputs": ["dist/**"]
+			"outputs": [".output/**", "dist/**"]
 		},
 		"lint": {
 			"dependsOn": ["^lint"]
+		},
+		"test": {
+			"dependsOn": ["^test"]
 		},
 		"check-types": {
 			"dependsOn": ["^check-types"]
@@ -25,6 +28,7 @@
 		}
 	},
 	"globalEnv": [
+		"API_URL",
 		"CI",
 		"NODE_ENV",
 		"VERCEL",
