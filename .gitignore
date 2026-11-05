@@ -1,7 +1,9 @@
-# Segredos: só o modelo vai para o Git
+# Segredos: só o modelo vai para o Git. O .env.schema do varlock (apps/web) só tem nomes e
+# valores públicos, então também vai.
 .env
 .env.*
 !.env.example
+!.env.schema
 
 # Python
 __pycache__/
@@ -17,9 +19,16 @@ htmlcov/
 # Front
 node_modules/
 .vite/
-npm-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+.turbo/
+.output/
+.nitro/
+.tanstack/
+*.tsbuildinfo
+coverage/
+*.log
+# Gerados no build e na instalação do front
+apps/web/src/routeTree.gen.ts
+apps/web/src/env.ts
 
 # Builds
 dist/

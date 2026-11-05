@@ -45,15 +45,43 @@ Deputados e senadores não são obrigados a registrar propostas no TSE. Quando n
 
 ## Stack
 
-FastAPI · PostgreSQL com pgvector · React · Docker Compose
+FastAPI · PostgreSQL com pgvector · TanStack Start (React) · Turborepo · Docker Compose
+
+O porquê de cada escolha está no [ADR 0001](docs/adr/0001-stack.md).
 
 ## Como rodar
 
-O ambiente local chega com o [esqueleto do projeto](https://github.com/HiRenan/mandatometro/issues/5). Por enquanto:
+Precisa de [Node.js](https://nodejs.org/) 24, [pnpm](https://pnpm.io/) (ele mesmo troca para a versão do `packageManager`, no `package.json`), [uv](https://docs.astral.sh/uv/) (ele instala o Python 3.13) e [Docker](https://www.docker.com/).
 
 ```bash
 cp .env.example .env   # preencha as chaves; o .env fica fora do Git
+pnpm install
 ```
+
+**Tudo no Docker:** `docker compose up --build` sobe o banco, a API e o site. O site fica em http://localhost:3001 e a API em http://localhost:8000, com a documentação em http://localhost:8000/docs. A API aplica as migrations ao subir.
+
+**Desenvolvimento,** com recarga automática:
+
+```bash
+docker compose up -d db         # só o banco, na porta 5433
+pnpm --filter backend migrate   # aplica as migrations
+pnpm dev                        # site na porta 3001 e API na 8000
+```
+
+**Checagens,** as mesmas do CI:
+
+```bash
+pnpm lint          # Biome no TypeScript e Ruff no Python
+pnpm check-types   # tipos do site
+pnpm test          # pytest
+pnpm build         # build do site
+```
+
+`pnpm check` corrige a formatação do TypeScript. No Python, rode `uv run ruff format` e `uv run ruff check --fix` em `apps/backend`.
+
+**Mudou a API?** `pnpm generate:client` grava o `openapi.json` e gera de novo o cliente TypeScript. Faça commit dos dois.
+
+**Migration nova,** em `apps/backend`, com o próximo número: `uv run alembic revision --autogenerate --rev-id 0002 -m "cria tabela parlamentar"`.
 
 ## Time
 
