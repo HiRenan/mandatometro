@@ -13,7 +13,9 @@ function HomeComponent() {
 	return (
 		<div className="container mx-auto max-w-3xl px-4 py-2">
 			<h1 className="text-2xl font-semibold">Mandatômetro</h1>
-			<p className="text-muted-foreground">Aprenda política com dados reais.</p>
+			<p className="text-muted-foreground">
+				O diário oficial político, simplificado.
+			</p>
 			<div className="mt-6 grid gap-6">
 				<section className="rounded-lg border p-4">
 					<h2 className="mb-2 font-medium">Status da API</h2>
