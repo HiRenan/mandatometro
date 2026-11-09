@@ -37,9 +37,10 @@ Monorepo com pnpm e Turborepo. O porquê de cada escolha está no [ADR 0001](doc
 
 - `apps/backend/`: Python 3.13 com uv, num pacote só (`src/mandatometro`): FastAPI, SQLAlchemy 2 com Alembic, psycopg 3, pgvector, Ruff e pytest. Módulos `db` (modelos e sessão), `coleta`, `ia`, `avisos` (e-mails) e `api`. Coleta e IA entram como subcomandos de `cli.py` e gravam no banco; a API só lê o banco e recebe inscrições. O `package.json` só repassa as tarefas do Turborepo para o uv.
 - `apps/web/`: TanStack Start (React com SSR), Tailwind e shadcn/ui, gerado pelo Better-T-Stack. As variáveis do site ficam em `.env.schema` (varlock), e as marcadas `@public` entram no bundle do navegador.
+- `apps/web/conteudo/`: os textos das trilhas, em Markdown, com uma pasta por trilha e um arquivo por artigo. O formato e como conferir estão em [docs/conteudo-das-trilhas.md](docs/conteudo-das-trilhas.md); um teste do Vitest lê a pasta, e o CI falha se um artigo estiver mal formado.
 - `packages/ui/` (componentes shadcn/ui) e `packages/config/` (tsconfig base): gerados pelo Better-T-Stack.
 - `docker-compose.yml`: serviços `db` (imagem `pgvector/pgvector:pg17`), `api` e `web`. O banco atende na porta 5433 do computador, para não brigar com um PostgreSQL instalado na 5432.
-- `docs/`: decisões do time em `docs/adr/` e o dicionário de dados (issue #4).
+- `docs/`: decisões do time em `docs/adr/`, o formato do conteúdo das trilhas e o dicionário de dados (issue #4).
 - **Hospedagem:** a demo vai para mandatometro.com.br, provavelmente na Vercel (#23).
 - **Contrato da API:** o cliente TypeScript em `apps/web/src/client/` sai do `apps/backend/openapi.json`. Mudou a API, rode `pnpm generate:client` e faça commit dos dois; o CI falha se um deles ficar desatualizado.
 - **Migrations:** numeradas em sequência (`--rev-id 0002`, `0003`...), com a mensagem sem acento, porque ela vira o nome do arquivo.
