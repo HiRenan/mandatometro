@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Caminho } from "@/components/caminho";
@@ -17,35 +17,24 @@ import {
 } from "@/lib/progresso";
 
 export const Route = createFileRoute("/trilhas/$trilha/$artigo")({
-	loader: ({ params }) => {
-		if (!buscarArtigo(params.trilha, params.artigo)) {
-			throw notFound();
-		}
-	},
-	head: ({ params }) => {
-		const achado = buscarArtigo(params.trilha, params.artigo);
-		if (!achado) {
-			return { meta: META_NAO_ENCONTRADA };
-		}
-		return {
-			meta: metaDaPagina({
-				titulo: `${achado.artigo.titulo} · ${achado.trilha.titulo}`,
-				descricao: achado.artigo.resumo,
-				tipo: "article",
-			}),
-		};
-	},
+	loader: ({ params }) =>
+		buscarArtigo({ data: { trilha: params.trilha, artigo: params.artigo } }),
+	head: ({ loaderData: pagina }) => ({
+		meta: pagina
+			? metaDaPagina({
+					titulo: `${pagina.artigo.titulo} · ${pagina.trilha.titulo}`,
+					descricao: pagina.artigo.resumo,
+					tipo: "article",
+				})
+			: META_NAO_ENCONTRADA,
+	}),
 	component: PaginaDoArtigo,
 });
 
 function PaginaDoArtigo() {
-	const params = Route.useParams();
-	const achado = buscarArtigo(params.trilha, params.artigo);
-	if (!achado) {
-		return null;
-	}
+	const pagina = Route.useLoaderData();
 	// A chave zera o estado da folha quando a pessoa passa para outro artigo.
-	return <Folha key={idDoArtigo(achado.artigo)} {...achado} />;
+	return <Folha key={idDoArtigo(pagina.artigo)} {...pagina} />;
 }
 
 function Folha({ trilha, artigo, posicao, anterior, proximo }: ArtigoNaTrilha) {
@@ -127,7 +116,7 @@ function Folha({ trilha, artigo, posicao, anterior, proximo }: ArtigoNaTrilha) {
 						<span>{fontes}</span>
 					</p>
 					<div className="mt-6">
-						<TextoDoArtigo corpo={artigo.corpo} />
+						<TextoDoArtigo html={artigo.html} />
 					</div>
 
 					<div ref={fimDoTexto} className="mt-6 min-h-10">

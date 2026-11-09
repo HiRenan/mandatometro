@@ -88,4 +88,8 @@ Em regra, o projeto começa na Câmara dos Deputados, a não ser que...
   ```
 
   O CI roda o mesmo teste, então um artigo com problema não passa no PR.
-- **`pnpm dev`** sobe o site em http://localhost:3001, e o artigo aparece em `/trilhas/<trilha>/<artigo>`.
+- **`pnpm dev`** sobe o site em http://localhost:3001, e o artigo aparece em `/trilhas/<trilha>/<artigo>`. Um arquivo novo ou mudado aparece ao recarregar a página, sem reiniciar o `pnpm dev`.
+
+## Como o site lê os arquivos
+
+Quem lê e confere os arquivos é o servidor, em `apps/web/src/lib/conteudo/paginas.server.ts`. O navegador recebe só a página pronta, com o texto já em HTML, e não baixa o código que lê o YAML e o Markdown. O HTML solto no meio do Markdown continua desligado na conversão.

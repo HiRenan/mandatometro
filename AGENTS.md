@@ -36,7 +36,7 @@ As APIs oficiais e os arquivos de dados abertos (Câmara, Senado e TSE) são lid
 Monorepo com pnpm e Turborepo. O porquê de cada escolha está no [ADR 0001](docs/adr/0001-stack.md).
 
 - `apps/backend/`: Python 3.13 com uv, num pacote só (`src/mandatometro`): FastAPI, SQLAlchemy 2 com Alembic, psycopg 3, pgvector, Ruff e pytest. Módulos `db` (modelos e sessão), `coleta`, `ia`, `avisos` (e-mails) e `api`. Coleta e IA entram como subcomandos de `cli.py` e gravam no banco; a API só lê o banco e recebe inscrições. O `package.json` só repassa as tarefas do Turborepo para o uv.
-- `apps/web/`: TanStack Start (React com SSR), Tailwind e shadcn/ui, gerado pelo Better-T-Stack. As variáveis do site ficam em `.env.schema` (varlock), e as marcadas `@public` entram no bundle do navegador.
+- `apps/web/`: TanStack Start (React com SSR), Tailwind e shadcn/ui, gerado pelo Better-T-Stack. As variáveis do site ficam em `.env.schema` (varlock), e as marcadas `@public` entram no bundle do navegador. Código que só roda no servidor fica em arquivos `*.server.ts`, e o build falha se o navegador importar um deles; os loaders chegam a esse código por `createServerFn`, em arquivos `*.functions.ts`.
 - `apps/web/conteudo/`: os textos das trilhas, em Markdown, com uma pasta por trilha e um arquivo por artigo. O formato e como conferir estão em [docs/conteudo-das-trilhas.md](docs/conteudo-das-trilhas.md); um teste do Vitest lê a pasta, e o CI falha se um artigo estiver mal formado.
 - `packages/ui/` (componentes shadcn/ui) e `packages/config/` (tsconfig base): gerados pelo Better-T-Stack.
 - `docker-compose.yml`: serviços `db` (imagem `pgvector/pgvector:pg17`), `api` e `web`. O banco atende na porta 5433 do computador, para não brigar com um PostgreSQL instalado na 5432.

@@ -1,8 +1,8 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { Caminho } from "@/components/caminho";
 import { MarcaX } from "@/components/marca-x";
-import { buscarTrilha, type Trilha } from "@/lib/conteudo";
+import { buscarTrilha } from "@/lib/conteudo";
 import { corDaFita, plural } from "@/lib/formatar";
 import { META_NAO_ENCONTRADA, metaDaPagina } from "@/lib/meta";
 import {
@@ -13,36 +13,17 @@ import {
 } from "@/lib/progresso";
 
 export const Route = createFileRoute("/trilhas/$trilha/")({
-	loader: ({ params }) => {
-		if (!buscarTrilha(params.trilha)) {
-			throw notFound();
-		}
-	},
-	head: ({ params }) => {
-		const trilha = buscarTrilha(params.trilha);
-		if (!trilha) {
-			return { meta: META_NAO_ENCONTRADA };
-		}
-		return {
-			meta: metaDaPagina({
-				titulo: trilha.titulo,
-				descricao: trilha.descricao,
-			}),
-		};
-	},
+	loader: ({ params }) => buscarTrilha({ data: { trilha: params.trilha } }),
+	head: ({ loaderData: trilha }) => ({
+		meta: trilha
+			? metaDaPagina({ titulo: trilha.titulo, descricao: trilha.descricao })
+			: META_NAO_ENCONTRADA,
+	}),
 	component: PaginaDaTrilha,
 });
 
 function PaginaDaTrilha() {
-	const params = Route.useParams();
-	const trilha = buscarTrilha(params.trilha);
-	if (!trilha) {
-		return null;
-	}
-	return <Bloco trilha={trilha} />;
-}
-
-function Bloco({ trilha }: { trilha: Trilha }) {
+	const trilha = Route.useLoaderData();
 	const lidos = useArtigosLidos();
 	const total = trilha.artigos.length;
 	const quantosLidos = contarLidos(trilha.artigos, lidos);

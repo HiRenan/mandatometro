@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import type { Trilha } from "@/lib/conteudo";
+import type { TrilhaNaLista } from "@/lib/conteudo";
 import { corDaFita } from "@/lib/formatar";
 import { idDoArtigo } from "@/lib/progresso";
 import { MarcaX } from "./marca-x";
@@ -14,7 +14,7 @@ export function NestaTrilha({
 	lidos,
 	riscarAgora,
 }: {
-	trilha: Trilha;
+	trilha: TrilhaNaLista;
 	/** O slug do artigo aberto. */
 	atual: string;
 	lidos: ReadonlySet<string>;

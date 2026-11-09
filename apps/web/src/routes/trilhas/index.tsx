@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MarcaX } from "@/components/marca-x";
-import { type Trilha, trilhas } from "@/lib/conteudo";
+import { buscarTrilhas, type TrilhaNaLista } from "@/lib/conteudo";
 import { plural } from "@/lib/formatar";
 import { metaDaPagina } from "@/lib/meta";
 import { contarLidos, idDoArtigo, useArtigosLidos } from "@/lib/progresso";
 
 export const Route = createFileRoute("/trilhas/")({
+	loader: () => buscarTrilhas(),
 	head: () => ({
 		meta: metaDaPagina({
 			titulo: "Trilhas",
@@ -17,6 +18,7 @@ export const Route = createFileRoute("/trilhas/")({
 });
 
 function PaginaDasTrilhas() {
+	const trilhas = Route.useLoaderData();
 	const lidos = useArtigosLidos();
 
 	return (
@@ -46,7 +48,7 @@ function ItemDaTrilha({
 	trilha,
 	lidos,
 }: {
-	trilha: Trilha;
+	trilha: TrilhaNaLista;
 	lidos: ReadonlySet<string>;
 }) {
 	const total = trilha.artigos.length;
