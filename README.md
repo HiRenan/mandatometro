@@ -67,7 +67,7 @@ pnpm dev                        # site na porta 3001 e API na 8000
 ```bash
 pnpm lint          # Biome no TypeScript e Ruff no Python
 pnpm check-types   # tipos do site
-pnpm test          # pytest
+pnpm test          # pytest e Vitest
 pnpm build         # build do site
 ```
 

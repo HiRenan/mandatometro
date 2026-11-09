@@ -29,6 +29,8 @@ jobs:
         run: pnpm exec biome ci .
       - name: Tipos
         run: pnpm check-types
+      - name: Testes
+        run: pnpm --filter web test
       - name: Build
         run: pnpm build
       - name: Cliente da API em dia com o openapi.json
