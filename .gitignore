@@ -30,6 +30,14 @@ coverage/
 apps/web/src/routeTree.gen.ts
 apps/web/src/env.ts
 
+# As pastas de trabalho do Impeccable. Ficam no git os briefs, em surfaces/, o
+# critique/ignore.md, o live/config.json, o config.json e o design.json.
+**/.impeccable/review/
+**/.impeccable/critique/*
+!**/.impeccable/critique/ignore.md
+**/.impeccable/live/*
+!**/.impeccable/live/config.json
+
 # Builds
 dist/
 build/
