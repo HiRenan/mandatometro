@@ -1,82 +1,75 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "@fontsource-variable/archivo/wdth.css";
+@import "@fontsource-variable/literata/opsz.css";
+@import "@fontsource-variable/literata/opsz-italic.css";
 @source "../../../apps/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * A folhinha de parede (DESIGN.md): papel branco, tinta preta e as cinco fitas do
+ * Bonfim. A cor fica na moldura e nas fitas; o texto é sempre tinta no papel.
+ * As fitas não levam texto por cima: só o preto no amarelo tem contraste.
+ */
 :root {
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.145 0 0);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.145 0 0);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
-	--primary: oklch(0.205 0 0);
-	--primary-foreground: oklch(0.985 0 0);
-	--secondary: oklch(0.97 0 0);
-	--secondary-foreground: oklch(0.205 0 0);
-	--muted: oklch(0.97 0 0);
-	--muted-foreground: oklch(0.556 0 0);
-	--accent: oklch(0.97 0 0);
-	--accent-foreground: oklch(0.205 0 0);
-	--destructive: oklch(0.58 0.22 27);
-	--border: oklch(0.922 0 0);
-	--input: oklch(0.922 0 0);
-	--ring: oklch(0.708 0 0);
-	--chart-1: oklch(0.809 0.105 251.813);
-	--chart-2: oklch(0.623 0.214 259.815);
-	--chart-3: oklch(0.546 0.245 262.881);
-	--chart-4: oklch(0.488 0.243 264.376);
-	--chart-5: oklch(0.424 0.199 265.638);
-	--radius: 0.625rem;
-	--sidebar: oklch(0.985 0 0);
-	--sidebar-foreground: oklch(0.145 0 0);
-	--sidebar-primary: oklch(0.205 0 0);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.97 0 0);
-	--sidebar-accent-foreground: oklch(0.205 0 0);
-	--sidebar-border: oklch(0.922 0 0);
-	--sidebar-ring: oklch(0.708 0 0);
-}
+	--papel: #ffffff;
+	--tinta: #161616;
+	--tinta-suave: #4a4a4a;
+	--reticula: #ededed;
+	--fita-verde: #00a650;
+	--fita-amarela: #ffd200;
+	--fita-azul: #0067b1;
+	--fita-rosa: #e6007e;
+	--fita-vermelha: #e30613;
 
-.dark {
-	--background: oklch(0.145 0 0);
-	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.205 0 0);
-	--card-foreground: oklch(0.985 0 0);
-	--popover: oklch(0.205 0 0);
-	--popover-foreground: oklch(0.985 0 0);
-	--primary: oklch(0.87 0 0);
-	--primary-foreground: oklch(0.205 0 0);
-	--secondary: oklch(0.269 0 0);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.269 0 0);
-	--muted-foreground: oklch(0.708 0 0);
-	--accent: oklch(0.371 0 0);
-	--accent-foreground: oklch(0.985 0 0);
-	--destructive: oklch(0.704 0.191 22.216);
-	--border: oklch(1 0 0 / 10%);
-	--input: oklch(1 0 0 / 15%);
-	--ring: oklch(0.556 0 0);
-	--chart-1: oklch(0.809 0.105 251.813);
-	--chart-2: oklch(0.623 0.214 259.815);
-	--chart-3: oklch(0.546 0.245 262.881);
-	--chart-4: oklch(0.488 0.243 264.376);
-	--chart-5: oklch(0.424 0.199 265.638);
-	--sidebar: oklch(0.205 0 0);
-	--sidebar-foreground: oklch(0.985 0 0);
-	--sidebar-primary: oklch(0.488 0.243 264.376);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.269 0 0);
-	--sidebar-accent-foreground: oklch(0.985 0 0);
-	--sidebar-border: oklch(1 0 0 / 10%);
-	--sidebar-ring: oklch(0.556 0 0);
+	--background: var(--papel);
+	--foreground: var(--tinta);
+	--card: var(--papel);
+	--card-foreground: var(--tinta);
+	--popover: var(--papel);
+	--popover-foreground: var(--tinta);
+	--primary: var(--tinta);
+	--primary-foreground: var(--papel);
+	--secondary: var(--reticula);
+	--secondary-foreground: var(--tinta);
+	--muted: var(--reticula);
+	--muted-foreground: var(--tinta-suave);
+	--accent: var(--reticula);
+	--accent-foreground: var(--tinta);
+	--destructive: var(--fita-vermelha);
+	--border: var(--tinta);
+	--input: var(--tinta);
+	--ring: var(--fita-azul);
+	--chart-1: var(--fita-verde);
+	--chart-2: var(--fita-amarela);
+	--chart-3: var(--fita-azul);
+	--chart-4: var(--fita-rosa);
+	--chart-5: var(--fita-vermelha);
+	--radius: 0rem;
+	--sidebar: var(--papel);
+	--sidebar-foreground: var(--tinta);
+	--sidebar-primary: var(--tinta);
+	--sidebar-primary-foreground: var(--papel);
+	--sidebar-accent: var(--reticula);
+	--sidebar-accent-foreground: var(--tinta);
+	--sidebar-border: var(--tinta);
+	--sidebar-ring: var(--fita-azul);
 }
 
 @theme inline {
-	--font-sans: "Inter Variable", sans-serif;
+	--font-sans: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
+	--font-serif: "Literata Variable", ui-serif, Georgia, serif;
+	--color-papel: var(--papel);
+	--color-tinta: var(--tinta);
+	--color-tinta-suave: var(--tinta-suave);
+	--color-fita-verde: var(--fita-verde);
+	--color-fita-amarela: var(--fita-amarela);
+	--color-fita-azul: var(--fita-azul);
+	--color-fita-rosa: var(--fita-rosa);
+	--color-fita-vermelha: var(--fita-vermelha);
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -119,12 +112,38 @@
 
 @layer base {
 	* {
-		@apply border-border outline-ring/50;
-	}
-	body {
-		@apply font-sans bg-background text-foreground;
+		@apply border-border outline-ring;
 	}
 	html {
 		@apply font-sans;
+		scrollbar-color: var(--tinta) var(--papel);
+		-webkit-tap-highlight-color: transparent;
+	}
+	body {
+		@apply font-sans bg-background text-foreground;
+		caret-color: var(--fita-azul);
+	}
+	/* Títulos com as linhas equilibradas e parágrafos sem palavra sozinha na última linha. */
+	h1,
+	h2,
+	h3 {
+		text-wrap: balance;
+	}
+	p,
+	li {
+		text-wrap: pretty;
+	}
+	::selection {
+		background-color: var(--fita-amarela);
+		color: var(--tinta);
+	}
+	:focus-visible {
+		outline: 3px solid var(--ring);
+		outline-offset: 3px;
+	}
+	a {
+		text-decoration-line: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 0.2em;
 	}
 }
