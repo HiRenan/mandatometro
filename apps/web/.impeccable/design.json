@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-09T00:00:00-03:00",
+  "title": "Design System: Mandatômetro",
+  "extensions": {
+    "colorMeta": {
+      "tinta": { "role": "primary", "displayName": "Tinta", "canonical": "#161616", "tonalRamp": ["oklch(15% 0 0)", "oklch(20% 0 0)", "oklch(30% 0 0)", "oklch(40% 0 0)", "oklch(55% 0 0)", "oklch(70% 0 0)", "oklch(85% 0 0)", "oklch(95% 0 0)"] },
+      "fita-verde": { "role": "secondary", "displayName": "Fita verde", "canonical": "#00a650", "tonalRamp": ["oklch(15% 0.04 150)", "oklch(25% 0.08 150)", "oklch(35% 0.12 150)", "oklch(48% 0.15 150)", "oklch(63% 0.17 150)", "oklch(72% 0.14 150)", "oklch(84% 0.08 150)", "oklch(95% 0.03 150)"] },
+      "fita-amarela": { "role": "secondary", "displayName": "Fita amarela", "canonical": "#ffd200", "tonalRamp": ["oklch(15% 0.03 92)", "oklch(28% 0.06 92)", "oklch(42% 0.09 92)", "oklch(58% 0.12 92)", "oklch(72% 0.15 92)", "oklch(88% 0.18 92)", "oklch(92% 0.11 92)", "oklch(97% 0.04 92)"] },
+      "fita-azul": { "role": "secondary", "displayName": "Fita azul", "canonical": "#0067b1", "tonalRamp": ["oklch(15% 0.04 252)", "oklch(25% 0.08 252)", "oklch(38% 0.12 252)", "oklch(51% 0.14 252)", "oklch(62% 0.12 252)", "oklch(72% 0.09 252)", "oklch(85% 0.05 252)", "oklch(95% 0.02 252)"] },
+      "fita-rosa": { "role": "secondary", "displayName": "Fita rosa", "canonical": "#e6007e", "tonalRamp": ["oklch(15% 0.05 357)", "oklch(25% 0.1 357)", "oklch(38% 0.16 357)", "oklch(50% 0.21 357)", "oklch(60% 0.24 357)", "oklch(72% 0.16 357)", "oklch(85% 0.08 357)", "oklch(95% 0.03 357)"] },
+      "fita-vermelha": { "role": "secondary", "displayName": "Fita vermelha", "canonical": "#e30613", "tonalRamp": ["oklch(15% 0.05 28)", "oklch(25% 0.1 28)", "oklch(37% 0.15 28)", "oklch(48% 0.2 28)", "oklch(58% 0.23 28)", "oklch(70% 0.16 28)", "oklch(84% 0.08 28)", "oklch(95% 0.03 28)"] },
+      "papel": { "role": "neutral", "displayName": "Papel", "canonical": "#ffffff", "tonalRamp": ["oklch(15% 0 0)", "oklch(25% 0 0)", "oklch(40% 0 0)", "oklch(55% 0 0)", "oklch(70% 0 0)", "oklch(85% 0 0)", "oklch(95% 0 0)", "oklch(100% 0 0)"] },
+      "tinta-suave": { "role": "neutral", "displayName": "Tinta suave", "canonical": "#4a4a4a", "tonalRamp": ["oklch(15% 0 0)", "oklch(25% 0 0)", "oklch(35% 0 0)", "oklch(40% 0 0)", "oklch(55% 0 0)", "oklch(70% 0 0)", "oklch(85% 0 0)", "oklch(95% 0 0)"] },
+      "reticula": { "role": "neutral", "displayName": "Retícula", "canonical": "#ededed", "tonalRamp": ["oklch(15% 0 0)", "oklch(25% 0 0)", "oklch(40% 0 0)", "oklch(55% 0 0)", "oklch(70% 0 0)", "oklch(85% 0 0)", "oklch(94.9% 0 0)", "oklch(98% 0 0)"] }
+    },
+    "typographyMeta": {
+      "numeral": { "displayName": "Numeral", "purpose": "O número da folha: 22.5rem no artigo a partir de 1440 px, 7.5rem a 10rem ao lado do título, 5.5rem a 8rem na lista, 4rem em Nesta trilha, 1.75rem na folha em miniatura." },
+      "headline": { "displayName": "Título condensado", "purpose": "O título da página (artigo, trilha, Trilhas, 404), de 2.5rem a 4.75rem." },
+      "title": { "displayName": "Subtítulo condensado", "purpose": "Título de cada folha, Nesta trilha, Fontes oficiais, intertítulos do texto e anterior/próximo, de 1.5rem a 2.75rem." },
+      "wordmark": { "displayName": "Nome em texto", "purpose": "Mandatômetro no cartão preto, 2rem a 2.75rem. É texto; o logo ainda não existe." },
+      "lead": { "displayName": "Resumo", "purpose": "Resumo do artigo e descrição da trilha, 1.25rem a 1.5625rem, 40 a 44 caracteres de largura." },
+      "body": { "displayName": "Texto corrido", "purpose": "Texto do artigo a no máximo 64ch: 1.0625rem/1.6 no celular, 1.1875rem/1.65 a partir de 1024 px." },
+      "label": { "displayName": "Rótulo", "purpose": "Linha de leitura e fontes, caminho, estados em palavras. Sem caixa alta." },
+      "label-sm": { "displayName": "Rótulo pequeno", "purpose": "Linha de estado das folhas e linha da fonte." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "riscar", "value": "200ms cubic-bezier(0.16, 1, 0.3, 1) both, segundo traço com 200ms de atraso", "purpose": "O X desenhado sobre a folha lida quando o fim do texto aparece na tela (400 ms ao todo). Com prefers-reduced-motion: reduce, o X aparece sem animação. É o único movimento das páginas." }
+    ],
+    "breakpoints": [
+      { "name": "md", "value": "48rem" },
+      { "name": "lg", "value": "64rem" },
+      { "name": "xl", "value": "80rem" },
+      { "name": "folha", "value": "90rem" }
+    ],
+    "focus": [
+      { "name": "foco", "value": "outline: 3px solid var(--fita-azul); outline-offset: 3px", "purpose": "Foco visível em todo o site." },
+      { "name": "foco-na-moldura", "value": "outline-color: var(--fita-amarela)", "purpose": "Foco dentro do cartão preto do cabeçalho." },
+      { "name": "selecao", "value": "background: var(--fita-amarela); color: var(--tinta)", "purpose": "Texto selecionado." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Moldura e tira de fitas",
+      "kind": "nav",
+      "refersTo": "moldura",
+      "description": "O cartão preto da folhinha com o nome em texto, o lema e a navegação, e a tira das fitas do Bonfim logo abaixo.",
+      "html": "<header class=\"ds-moldura\"><div class=\"ds-moldura-linha\"><div class=\"ds-moldura-marca\"><a href=\"#\" class=\"ds-moldura-nome\">Mandatômetro</a><p class=\"ds-moldura-lema\">o diário oficial político, simplificado</p></div><nav><a href=\"#\" class=\"ds-moldura-link\">Início</a><a href=\"#\" class=\"ds-moldura-link\" aria-current=\"page\">Trilhas</a></nav></div><div class=\"ds-tira-de-fitas\" aria-hidden=\"true\"></div></header>",
+      "css": ".ds-moldura { background: #161616; color: #ffffff; font-family: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif; } .ds-moldura-linha { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 32px; min-height: 96px; padding: 12px 64px; } .ds-moldura-marca { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 20px; } .ds-moldura-nome { color: inherit; text-decoration: none; font-size: 2.75rem; line-height: 1; font-weight: 900; font-stretch: 68%; letter-spacing: -0.01em; } .ds-moldura-lema { margin: 0; font-size: 1.0625rem; font-weight: 500; } .ds-moldura nav { display: flex; gap: 36px; } .ds-moldura-link { color: inherit; text-decoration: none; font-size: 1.1875rem; font-weight: 700; padding-bottom: 4px; border-bottom: 4px solid transparent; } .ds-moldura-link:hover { border-bottom-color: #ffd200; } .ds-moldura-link[aria-current=page] { border-bottom-color: #ffffff; } .ds-moldura a:focus-visible { outline: 3px solid #ffd200; outline-offset: 3px; } .ds-tira-de-fitas { height: 18px; background: repeating-linear-gradient(90deg, #00a650 0 48px, #ffd200 48px 96px, #0067b1 96px 144px, #e6007e 144px 192px, #e30613 192px 240px, #ffffff 240px 252px); }"
+    },
+    {
+      "name": "Botão Continuar",
+      "kind": "button",
+      "refersTo": "botao-continuar",
+      "description": "A única ação em bloco: leva ao primeiro artigo não lido.",
+      "html": "<a href=\"#\" class=\"ds-botao-continuar\">Continuar de onde parou: Onde o projeto começa<svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></a>",
+      "css": ".ds-botao-continuar { display: inline-flex; align-items: center; gap: 12px; background: #161616; color: #ffffff; padding: 12px 20px; border-radius: 0; font-family: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif; font-size: 1.125rem; font-weight: 700; text-decoration: none; } .ds-botao-continuar:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.2em; } .ds-botao-continuar:focus-visible { outline: 3px solid #0067b1; outline-offset: 3px; }"
+    },
+    {
+      "name": "Link",
+      "kind": "custom",
+      "refersTo": "texto-do-artigo",
+      "description": "Link de texto: sublinhado de 2 px em tinta, foco azul.",
+      "html": "<p class=\"ds-paragrafo\">Veja o <a href=\"#\" class=\"ds-link\">art. 61 da Constituição</a>, que diz quem pode propor uma lei.</p>",
+      "css": ".ds-paragrafo { font-family: 'Literata Variable', ui-serif, Georgia, serif; font-size: 1.1875rem; line-height: 1.65; color: #161616; max-width: 64ch; } .ds-link { color: #161616; text-decoration-line: underline; text-decoration-thickness: 2px; text-underline-offset: 0.2em; } .ds-link:focus-visible { outline: 3px solid #0067b1; outline-offset: 3px; }"
+    },
+    {
+      "name": "Folha da lista",
+      "kind": "card",
+      "refersTo": "folha-da-lista",
+      "description": "Uma folha do bloco, sem card: fita pendurada, número de cartaz, título condensado, resumo em serifa e estado em palavras. Lida leva o X; onde parou leva o canto dobrado.",
+      "html": "<ol class=\"ds-lista\"><li class=\"ds-folha\"><span class=\"ds-fita\" style=\"background:#00a650\" aria-hidden=\"true\"></span><div class=\"ds-folha-grade\"><span class=\"ds-numeral\" aria-hidden=\"true\"><span class=\"ds-numeral-caixa\">1<svg class=\"ds-marca-x\" viewBox=\"0 0 60 60\" aria-hidden=\"true\"><path d=\"M8 10 C22 24 36 38 52 52\"/><path d=\"M50 8 C36 24 22 38 9 51\"/></svg></span></span><div><h2 class=\"ds-folha-titulo\"><a href=\"#\">Quem pode propor uma lei</a></h2><p class=\"ds-folha-resumo\">Deputados, senadores, o presidente da República e até você podem apresentar um projeto de lei.</p><p class=\"ds-folha-estado\"><strong>Lido ·</strong> 2 min · 2 fontes oficiais</p></div></div></li><li class=\"ds-folha ds-canto-dobrado\"><span class=\"ds-fita\" style=\"background:#ffd200\" aria-hidden=\"true\"></span><div class=\"ds-folha-grade\"><span class=\"ds-numeral\" aria-hidden=\"true\"><span class=\"ds-numeral-caixa\">2</span></span><div><h2 class=\"ds-folha-titulo\"><a href=\"#\">Onde o projeto começa</a></h2><p class=\"ds-folha-resumo\">Um projeto de lei precisa ser aprovado nas duas Casas do Congresso.</p><p class=\"ds-folha-estado\"><strong>Continue daqui ·</strong> 1 min · 3 fontes oficiais</p></div></div></li></ol>",
+      "css": ".ds-lista { list-style: none; margin: 0; padding: 0; border-top: 2px solid #161616; color: #161616; } .ds-folha { position: relative; border-bottom: 2px dashed #161616; } .ds-fita { position: absolute; top: -2px; left: 0; width: 12px; height: 112px; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 1.125rem), 0 100%); } .ds-folha-grade { display: grid; grid-template-columns: 7rem minmax(0, 1fr); column-gap: 24px; padding: 24px 40px 24px 26px; } .ds-numeral { justify-self: center; font-family: 'Archivo Variable', ui-sans-serif, sans-serif; font-size: 8rem; font-weight: 900; font-stretch: 62%; line-height: 0.78; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; } .ds-numeral-caixa { position: relative; display: inline-block; } .ds-marca-x { position: absolute; top: 50%; left: 50%; width: 1.1em; height: 1.1em; translate: -50% -50%; fill: none; stroke: #161616; stroke-width: 6; stroke-linecap: round; } .ds-folha-titulo { margin: 0; font-family: 'Archivo Variable', ui-sans-serif, sans-serif; font-size: 2.25rem; font-weight: 800; font-stretch: 75%; line-height: 1.05; text-wrap: balance; } .ds-folha-titulo a { color: inherit; text-decoration: none; } .ds-folha-titulo a:hover { text-decoration: underline; text-decoration-thickness: 2px; } .ds-folha-titulo a:focus-visible { outline: 3px solid #0067b1; outline-offset: 3px; } .ds-folha-resumo { margin: 8px 0 0; max-width: 52ch; font-family: 'Literata Variable', ui-serif, Georgia, serif; font-size: 1.125rem; line-height: 1.375; } .ds-folha-estado { margin: 12px 0 0; font-family: 'Archivo Variable', ui-sans-serif, sans-serif; font-size: 0.9375rem; font-weight: 600; } .ds-folha-estado strong { font-weight: 800; } .ds-canto-dobrado::before, .ds-canto-dobrado::after { content: ''; position: absolute; top: -2px; right: 0; width: 30px; height: 32px; } .ds-canto-dobrado::before { background: #ffffff; } .ds-canto-dobrado::after { background: #161616; -webkit-mask: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 32'%3E%3Cpath d='M1 3V31H29Z' fill='none' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E\") center / 100% 100% no-repeat; mask: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 32'%3E%3Cpath d='M1 3V31H29Z' fill='none' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E\") center / 100% 100% no-repeat; }"
+    },
+    {
+      "name": "Folha em miniatura",
+      "kind": "chip",
+      "refersTo": "folha-miniatura",
+      "description": "Na lista das trilhas: quadrados de 44 px com o número, o X nos lidos e o estado em palavras ao lado.",
+      "html": "<div class=\"ds-miniaturas\"><ol aria-hidden=\"true\"><li><span>1</span><svg class=\"ds-mini-x\" viewBox=\"0 0 60 60\"><path d=\"M8 10 C22 24 36 38 52 52\"/><path d=\"M50 8 C36 24 22 38 9 51\"/></svg></li><li><span>2</span></li><li><span>3</span></li></ol><p>Você leu 1 de 3.</p></div>",
+      "css": ".ds-miniaturas { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; color: #161616; font-family: 'Archivo Variable', ui-sans-serif, sans-serif; } .ds-miniaturas ol { display: flex; gap: 6px; list-style: none; margin: 0; padding: 0; } .ds-miniaturas li { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border: 2px solid #161616; border-radius: 0; } .ds-miniaturas li span { padding-top: 4px; font-size: 1.75rem; font-weight: 900; font-stretch: 62%; line-height: 0.78; font-variant-numeric: tabular-nums; } .ds-mini-x { position: absolute; inset: 0; width: 100%; height: 100%; padding: 2px; box-sizing: border-box; fill: none; stroke: #161616; stroke-width: 6; stroke-linecap: round; } .ds-miniaturas p { margin: 0; font-size: 1.125rem; font-weight: 700; }"
+    },
+    {
+      "name": "Você leu este artigo",
+      "kind": "custom",
+      "refersTo": "texto-do-artigo",
+      "description": "O momento da leitura: o X é desenhado em 400 ms e surge a frase. Com o movimento reduzido, aparece pronto.",
+      "html": "<p class=\"ds-lido\" role=\"status\"><svg class=\"ds-lido-x\" viewBox=\"0 0 60 60\" aria-hidden=\"true\"><path pathLength=\"1\" d=\"M8 10 C22 24 36 38 52 52\"/><path pathLength=\"1\" d=\"M50 8 C36 24 22 38 9 51\"/></svg>Você leu este artigo.</p>",
+      "css": ".ds-lido { display: flex; align-items: center; gap: 12px; margin: 0; color: #161616; font-family: 'Archivo Variable', ui-sans-serif, sans-serif; font-size: 1.25rem; font-weight: 700; } .ds-lido-x { width: 40px; height: 40px; flex-shrink: 0; fill: none; stroke: #161616; stroke-width: 6; stroke-linecap: round; } .ds-lido-x path { animation: ds-riscar 200ms cubic-bezier(0.16, 1, 0.3, 1) both; } .ds-lido-x path + path { animation-delay: 200ms; } @keyframes ds-riscar { from { stroke-dasharray: 1; stroke-dashoffset: 1; } to { stroke-dasharray: 1; stroke-dashoffset: 0; } } @media (prefers-reduced-motion: reduce) { .ds-lido-x path { animation: none; } }"
+    },
+    {
+      "name": "Fontes oficiais",
+      "kind": "custom",
+      "refersTo": "texto-do-artigo",
+      "description": "A lista numerada das fontes no fim do artigo, com o domínio e a data da consulta.",
+      "html": "<section class=\"ds-fontes\"><h2>Fontes oficiais</h2><ol><li><span aria-hidden=\"true\">1</span><p><a href=\"#\">Constituição Federal, art. 64</a><span class=\"ds-fontes-origem\">normas.leg.br, consultada em 9 de novembro de 2026</span></p></li></ol></section>",
+      "css": ".ds-fontes { border-top: 2px solid #161616; padding-top: 16px; color: #161616; font-family: 'Archivo Variable', ui-sans-serif, sans-serif; } .ds-fontes h2 { margin: 0; font-size: 2rem; font-weight: 800; font-stretch: 75%; line-height: 1.05; } .ds-fontes ol { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 16px; } .ds-fontes li { display: grid; grid-template-columns: 1.75rem 1fr; column-gap: 8px; } .ds-fontes li > span { font-size: 1.125rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.375; } .ds-fontes p { margin: 0; font-size: 1.0625rem; line-height: 1.375; } .ds-fontes a { color: #161616; font-weight: 700; text-decoration-line: underline; text-decoration-thickness: 2px; text-underline-offset: 0.2em; } .ds-fontes a:focus-visible { outline: 3px solid #0067b1; outline-offset: 3px; } .ds-fontes-origem { display: block; margin-top: 4px; font-size: 0.9375rem; color: #4a4a4a; }"
+    },
+    {
+      "name": "Caminho",
+      "kind": "nav",
+      "refersTo": "folha-da-lista",
+      "description": "Onde a pessoa está: Trilhas / a trilha, com a página atual sem link.",
+      "html": "<nav class=\"ds-caminho\" aria-label=\"Caminho\"><ol><li><a href=\"#\">Trilhas</a></li><li aria-hidden=\"true\">/</li><li><span aria-current=\"page\">Processo legislativo</span></li></ol></nav>",
+      "css": ".ds-caminho { padding-top: 18px; color: #161616; font-family: 'Archivo Variable', ui-sans-serif, sans-serif; font-size: 1rem; font-weight: 600; } .ds-caminho ol { display: flex; flex-wrap: wrap; column-gap: 8px; list-style: none; margin: 0; padding: 0; } .ds-caminho a { color: #161616; text-decoration-line: underline; text-decoration-thickness: 2px; text-underline-offset: 0.2em; } .ds-caminho a:focus-visible { outline: 3px solid #0067b1; outline-offset: 3px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "A folhinha de parede",
+    "overview": "A trilha é uma folhinha de arrancar, dessas de padaria. Cada artigo é uma folha do bloco: o número grande diz onde a pessoa está, a folha lida leva um X riscado à mão e a folha onde ela parou tem o canto dobrado. O site é papel branco e tinta preta. A cor fica na moldura: o cartão preto do cabeçalho, com o nome e o lema, e logo abaixo, no lugar do picote, a tira das fitas do Bonfim, que o Renan escolheu para ter \"mais de cor voltado para Brasil\".\n\nA página é de leitura, com folga. Os números e os títulos usam um grotesco condensado bem preto (Archivo), como os algarismos das folhinhas, e o texto corrido usa uma serifa de leitura (Literata). Tudo é chapado: sem sombra, sem degradê suave, sem canto arredondado, sem card em volta dos itens. O estado aparece como marca no papel e em palavras (\"Lido\", \"Você está aqui\", \"Continue daqui\", \"Você leu 1 de 3\"), nunca como barra de progresso ou pontuação.\n\nO que ficaria errado, nas palavras do Renan: \"Site do governo, Coisa de criança, Jornal partidário\". Ou seja: burocracia e letra pequena, cor demais e tom infantil, manchete gritando e cor de partido. O logo ainda não existe; até ele chegar, o nome em texto faz o papel da marca.",
+    "keyCharacteristics": [
+      "Papel branco, tinta preta, e a cor só na moldura e nas fitas.",
+      "O número da folha em tamanho de cartaz, num condensado de peso 900.",
+      "Texto corrido em serifa, a cerca de 64 caracteres por linha.",
+      "Estado como marca no papel: X no lido, canto dobrado onde a pessoa está ou parou.",
+      "Linhas de 2 px em tinta: cheias entre as partes, tracejadas (o picote) entre as folhas.",
+      "Um único movimento: o X desenhado em 400 ms quando a pessoa chega ao fim do texto."
+    ],
+    "rules": [
+      { "name": "A Regra da Cor na Moldura", "body": "A cor fica na moldura e nas fitas. O texto é sempre tinta no papel (ou papel no cartão preto), e nenhum texto fica em cima de uma cor de fita.", "section": "colors" },
+      { "name": "A Regra da Fita pela Ordem", "body": "Cada artigo ganha a sua fita pela posição na trilha: 1 verde, 2 amarela, 3 azul, 4 rosa, 5 vermelha, e depois recomeça (`corDaFita`). Ninguém escolhe fita por assunto, partido ou humor.", "section": "colors" },
+      { "name": "A Regra do Domingo em Aberto", "body": "O vermelho de domingo das edições ainda não foi decidido (issue #39). Até lá, a vermelha é só a quinta fita, não marca dia nenhum.", "section": "colors" },
+      { "name": "A Regra das Duas Letras", "body": "Condensado para número, título e rótulo; serifa para o que se lê de verdade. Nenhuma terceira família.", "section": "typography" },
+      { "name": "A Regra do Número de Cartaz", "body": "O número da folha é o maior elemento da página e diz onde a pessoa está. Nada disputa esse tamanho.", "section": "typography" },
+      { "name": "A Regra da Tinta Chapada", "body": "Sem sombra e sem degradê suave. A tira de fitas é feita com faixas de borda dura (48 px cada, com 12 px de papel a cada cinco), e é esse o único uso permitido de gradiente: listras de cor chapada.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do manter o texto em tinta sobre papel (ou papel sobre o cartão preto), em qualquer tamanho.",
+      "Do dar a cada artigo a fita da sua posição, pela ordem verde, amarela, azul, rosa, vermelha.",
+      "Do escrever o estado em palavras e marcar no papel: X no lido, canto dobrado onde a pessoa está ou parou.",
+      "Do separar as folhas com picote (linha tracejada de 2 px) e fechar as seções com linha cheia de 2 px.",
+      "Do usar o foco de 3 px na azul, afastado 3 px, e a amarela dentro do cartão preto.",
+      "Do respeitar o movimento reduzido: o X aparece sem animação."
+    ],
+    "donts": [
+      "Don't fazer \"site do governo\": burocracia e letra pequena.",
+      "Don't fazer \"coisa de criança\": cor demais e tom infantil.",
+      "Don't fazer \"jornal partidário\": manchete gritando e cor de partido. As fitas são as cinco juntas, pela ordem; nenhuma delas representa um lado.",
+      "Don't pôr texto em cima de uma cor de fita.",
+      "Don't usar card arredondado em volta dos itens nem barra de progresso; o progresso é o X e as palavras.",
+      "Don't usar sombra, canto arredondado ou degradê suave.",
+      "Don't inventar um logo; até o time fazer o dele, o nome em texto é a marca.",
+      "Don't usar a vermelha como cor de domingo antes da decisão da issue #39.",
+      "Don't animar nada além do X."
+    ]
+  }
+}

@@ -41,6 +41,7 @@ Monorepo com pnpm e Turborepo. O porquê de cada escolha está no [ADR 0001](doc
 - `packages/ui/` (componentes shadcn/ui) e `packages/config/` (tsconfig base): gerados pelo Better-T-Stack.
 - `docker-compose.yml`: serviços `db` (imagem `pgvector/pgvector:pg17`), `api` e `web`. O banco atende na porta 5433 do computador, para não brigar com um PostgreSQL instalado na 5432.
 - `docs/`: decisões do time em `docs/adr/`, o formato do conteúdo das trilhas e o dicionário de dados (issue #4).
+- `PRODUCT.md` e `DESIGN.md`, na raiz: o produto (público, voz e princípios) e o visual do site (cores, fontes e componentes), escritos com o Impeccable.
 - **Hospedagem:** a demo vai para mandatometro.com.br, provavelmente na Vercel (#23).
 - **Contrato da API:** o cliente TypeScript em `apps/web/src/client/` sai do `apps/backend/openapi.json`. Mudou a API, rode `pnpm generate:client` e faça commit dos dois; o CI falha se um deles ficar desatualizado.
 - **Migrations:** numeradas em sequência (`--rev-id 0002`, `0003`...), com a mensagem sem acento, porque ela vira o nome do arquivo.
