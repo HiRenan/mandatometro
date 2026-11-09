@@ -1,12 +1,22 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 
 const links = [
-	{ to: "/", label: "Início", exato: true },
-	{ to: "/trilhas", label: "Trilhas", exato: false },
+	{ to: "/", label: "Início" },
+	{ to: "/trilhas", label: "Trilhas" },
 ] as const;
+
+function estaNaSecao(caminho: string, secao: string): boolean {
+	return secao === "/"
+		? caminho === "/"
+		: caminho === secao || caminho.startsWith(`${secao}/`);
+}
 
 /** O cartão preto da folhinha, com o nome e o lema, e a tira de fitas embaixo. */
 export default function Header() {
+	const caminho = useRouterState({
+		select: (estado) => estado.location.pathname,
+	});
+
 	return (
 		<header className="moldura bg-tinta text-papel">
 			<a
@@ -29,12 +39,14 @@ export default function Header() {
 				</div>
 				<nav aria-label="Principal">
 					<ul className="flex gap-7 md:gap-9">
-						{links.map(({ to, label, exato }) => (
+						{links.map(({ to, label }) => (
 							<li key={to}>
+								{/* O traço marca a seção inteira, mas o link só diz que é a
+								    página atual (aria-current) na página dele: por isso o exact. */}
 								<Link
 									to={to}
-									activeOptions={{ exact: exato }}
-									className="hover:border-fita-amarela data-[status=active]:border-papel border-b-4 border-transparent pb-1 text-[1.0625rem] font-bold no-underline md:text-[1.1875rem]"
+									activeOptions={{ exact: true }}
+									className={`hover:border-fita-amarela border-b-4 pb-1 text-[1.0625rem] font-bold no-underline md:text-[1.1875rem] ${estaNaSecao(caminho, to) ? "border-papel" : "border-transparent"}`}
 								>
 									{label}
 								</Link>

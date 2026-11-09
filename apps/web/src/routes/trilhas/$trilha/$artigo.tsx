@@ -182,6 +182,7 @@ function Folha({ trilha, artigo, posicao, anterior, proximo }: ArtigoNaTrilha) {
 							<Link
 								to="/trilhas/$trilha"
 								params={{ trilha: trilha.slug }}
+								activeOptions={{ exact: true }}
 								className="group border-tinta grid content-start gap-1 border-t-2 pt-3 no-underline md:col-start-2 md:text-right"
 							>
 								<span className="flex items-center gap-2 text-base font-semibold md:justify-end">

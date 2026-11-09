@@ -16,10 +16,15 @@ export function NaoEncontrado() {
 				</p>
 				<ul className="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-[1.1875rem] font-bold">
 					<li>
-						<Link to="/trilhas">Ver as trilhas</Link>
+						{/* Exato: num endereço como /trilhas/x, o link não é a página atual. */}
+						<Link to="/trilhas" activeOptions={{ exact: true }}>
+							Ver as trilhas
+						</Link>
 					</li>
 					<li>
-						<Link to="/">Ir para o início</Link>
+						<Link to="/" activeOptions={{ exact: true }}>
+							Ir para o início
+						</Link>
 					</li>
 				</ul>
 			</div>
