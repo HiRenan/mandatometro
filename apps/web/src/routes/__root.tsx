@@ -5,8 +5,10 @@ import {
 	HeadContent,
 	Outlet,
 	Scripts,
+	useRouter,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { useEffect } from "react";
 
 import Header from "../components/header";
 
@@ -65,10 +67,39 @@ function RootDocument() {
 						<Outlet />
 					</main>
 				</div>
+				<FocoNaPaginaNova />
 				<Toaster richColors />
 				<TanStackRouterDevtools position="bottom-left" />
 				<Scripts />
 			</body>
 		</html>
 	);
+}
+
+/**
+ * Depois de cada navegação dentro do site, o foco vai para o título da página
+ * nova, ou para o main se ela não tiver h1: quem usa o teclado continua dali, e o
+ * leitor de tela anuncia a página. A primeira carga não mexe no foco.
+ */
+function FocoNaPaginaNova() {
+	const router = useRouter();
+
+	useEffect(
+		() =>
+			router.subscribe("onRendered", ({ pathChanged }) => {
+				if (!pathChanged) {
+					return;
+				}
+				const titulo = document.querySelector<HTMLElement>("#conteudo h1");
+				if (titulo) {
+					titulo.tabIndex = -1;
+				}
+				(titulo ?? document.getElementById("conteudo"))?.focus({
+					preventScroll: true,
+				});
+			}),
+		[router],
+	);
+
+	return null;
 }

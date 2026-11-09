@@ -25,6 +25,12 @@
 		outline-color: var(--fita-amarela);
 	}
 
+	/* Depois de uma navegação, o foco vai para o título da página nova (__root.tsx).
+	   O título não é um controle, então fica sem o anel. */
+	#conteudo h1:focus {
+		outline: none;
+	}
+
 	/*
 	 * A fita de cada artigo: pendurada da borda de cima da folha, como a fitinha do
 	 * Bonfim, com a ponta cortada em V sobre o papel. O V tem 1,5 vez a largura da
