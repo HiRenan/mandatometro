@@ -115,6 +115,29 @@
 		text-wrap: balance;
 	}
 
+	/*
+	 * As ações em texto, como "Desmarcar" e "Recomeçar a trilha": sublinhadas como
+	 * os links, porque o "Continuar" é a única ação em bloco. O ::before leva a área
+	 * de toque a 44 px de altura sem mudar o espaço que o texto ocupa, e o anel de
+	 * foco continua justo no texto.
+	 */
+	.acao-de-texto {
+		position: relative;
+		cursor: pointer;
+		font-size: 1.0625rem;
+		font-weight: 600;
+		line-height: 1.375;
+		text-decoration-line: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 0.2em;
+	}
+
+	.acao-de-texto::before {
+		content: "";
+		position: absolute;
+		inset: -0.625rem -0.25rem;
+	}
+
 	/* O X da folha lida. O traço desenha em 400 ms quando a pessoa chega ao fim do texto. */
 	.marca-x {
 		fill: none;

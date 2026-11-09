@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Aviso, useAviso } from "@/components/aviso";
 import { Caminho } from "@/components/caminho";
 import { Fontes } from "@/components/fontes";
 import { MarcaX } from "@/components/marca-x";
@@ -10,6 +11,7 @@ import { type ArtigoNaTrilha, buscarArtigo } from "@/lib/conteudo";
 import { corDaFita, plural } from "@/lib/formatar";
 import { META_NAO_ENCONTRADA, metaDaPagina } from "@/lib/meta";
 import {
+	desmarcarLido,
 	idDoArtigo,
 	lerLidos,
 	marcarLido,
@@ -42,7 +44,11 @@ function Folha({ trilha, artigo, posicao, anterior, proximo }: ArtigoNaTrilha) {
 	const lidos = useArtigosLidos();
 	const lido = lidos.has(id);
 	const [leuAgora, setLeuAgora] = useState(false);
+	const [desmarcou, setDesmarcou] = useState(false);
+	const { aviso, avisar } = useAviso();
 	const fimDoTexto = useRef<HTMLDivElement>(null);
+	// Depois do "Desmarcar", o fim do texto na tela não marca de novo nesta visita.
+	const podeMarcar = useRef(true);
 
 	// O artigo conta como lido quando o fim do texto aparece na tela.
 	useEffect(() => {
@@ -55,17 +61,35 @@ function Folha({ trilha, artigo, posicao, anterior, proximo }: ArtigoNaTrilha) {
 		}
 		const observador = new IntersectionObserver(
 			([entrada]) => {
-				if (entrada?.isIntersecting) {
-					observador.disconnect();
-					setLeuAgora(true);
-					marcarLido(id);
+				if (!entrada?.isIntersecting) {
+					return;
 				}
+				observador.disconnect();
+				if (!podeMarcar.current || lerLidos().has(id)) {
+					return;
+				}
+				setLeuAgora(true);
+				marcarLido(id);
+				avisar("Você leu este artigo.");
 			},
 			{ rootMargin: "0px 0px -10% 0px" },
 		);
 		observador.observe(alvo);
 		return () => observador.disconnect();
-	}, [id]);
+	}, [id, avisar]);
+
+	function desmarcar() {
+		podeMarcar.current = false;
+		desmarcarLido(id);
+		setLeuAgora(false);
+		setDesmarcou(true);
+		avisar("Você desmarcou o artigo.");
+	}
+
+	function desfazer() {
+		marcarLido(id);
+		avisar("Você leu este artigo.");
+	}
 
 	const total = trilha.artigos.length;
 	const fontes = `${plural(artigo.fontes.length, "fonte oficial", "fontes oficiais")}, no fim do artigo`;
@@ -119,19 +143,32 @@ function Folha({ trilha, artigo, posicao, anterior, proximo }: ArtigoNaTrilha) {
 						<TextoDoArtigo html={artigo.html} />
 					</div>
 
-					<div ref={fimDoTexto} className="mt-6 min-h-10">
-						<p
-							role="status"
-							className="flex items-center gap-3 text-xl font-bold"
-						>
-							{lido && (
-								<>
-									<MarcaX animar={leuAgora} className="size-10 shrink-0" />
-									Você leu este artigo.
-								</>
-							)}
-						</p>
+					{/* A altura do aviso fica reservada: quando o X aparece, as fontes
+					    não descem. O botão é o mesmo nos dois estados, e o foco fica
+					    nele quando "Desmarcar" vira "Desfazer". */}
+					<div ref={fimDoTexto} className="mt-6 min-h-[4.5rem]">
+						{(lido || desmarcou) && (
+							<div className="grid grid-cols-[2.5rem_minmax(0,1fr)] grid-rows-[minmax(2.5rem,auto)_auto] items-center gap-x-3 gap-y-1">
+								{lido && (
+									<MarcaX
+										animar={leuAgora}
+										className="col-start-1 row-start-1 size-10"
+									/>
+								)}
+								<p className="col-start-2 row-start-1 text-xl font-bold">
+									{lido ? "Você leu este artigo." : "Você desmarcou o artigo."}
+								</p>
+								<button
+									type="button"
+									onClick={lido ? desmarcar : desfazer}
+									className="acao-de-texto col-start-2 row-start-2 justify-self-start"
+								>
+									{lido ? "Desmarcar" : "Desfazer"}
+								</button>
+							</div>
+						)}
 					</div>
+					<Aviso texto={aviso} />
 
 					<div className="mt-6">
 						<Fontes fontes={artigo.fontes} />

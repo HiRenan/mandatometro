@@ -7,7 +7,8 @@ const VAZIO: ReadonlySet<string> = new Set();
 
 type ArtigoComId = { trilha: string; slug: string };
 
-// Quando o navegador bloqueia o localStorage, o lido vale até sair da página.
+// Quando o navegador não deixa gravar no localStorage, o que a página gravou
+// vale até a pessoa sair dela.
 let emMemoria: string | null = null;
 let ultimo: { bruto: string | null; lidos: ReadonlySet<string> } = {
 	bruto: null,
@@ -20,10 +21,13 @@ export function idDoArtigo(artigo: ArtigoComId): string {
 }
 
 function lerBruto(): string | null {
-	try {
-		return window.localStorage.getItem(CHAVE) ?? emMemoria;
-	} catch {
+	if (emMemoria !== null) {
 		return emMemoria;
+	}
+	try {
+		return window.localStorage.getItem(CHAVE);
+	} catch {
+		return null;
 	}
 }
 
@@ -51,12 +55,8 @@ export function lerLidos(): ReadonlySet<string> {
 	return ultimo.lidos;
 }
 
-export function marcarLido(id: string): void {
-	const lidos = lerLidos();
-	if (lidos.has(id)) {
-		return;
-	}
-	const bruto = JSON.stringify([...lidos, id]);
+function gravar(ids: readonly string[]): void {
+	const bruto = JSON.stringify(ids);
 	try {
 		window.localStorage.setItem(CHAVE, bruto);
 		emMemoria = null;
@@ -65,6 +65,40 @@ export function marcarLido(id: string): void {
 	}
 	for (const avisar of ouvintes) {
 		avisar();
+	}
+}
+
+export function marcarLido(id: string): void {
+	const lidos = lerLidos();
+	if (!lidos.has(id)) {
+		gravar([...lidos, id]);
+	}
+}
+
+export function desmarcarLido(id: string): void {
+	const lidos = lerLidos();
+	if (lidos.has(id)) {
+		gravar([...lidos].filter((lido) => lido !== id));
+	}
+}
+
+/** Apaga as marcas de lido de uma trilha e devolve as que apagou, para desfazer. */
+export function recomecarTrilha(trilha: string): string[] {
+	const lidos = [...lerLidos()];
+	const daTrilha = (id: string) => id.startsWith(`${trilha}/`);
+	const apagadas = lidos.filter(daTrilha);
+	if (apagadas.length > 0) {
+		gravar(lidos.filter((id) => !daTrilha(id)));
+	}
+	return apagadas;
+}
+
+/** Põe de volta as marcas apagadas, sem perder o que foi lido depois. */
+export function restaurarLidos(ids: readonly string[]): void {
+	const lidos = lerLidos();
+	const faltam = ids.filter((id) => !lidos.has(id));
+	if (faltam.length > 0) {
+		gravar([...lidos, ...faltam]);
 	}
 }
 

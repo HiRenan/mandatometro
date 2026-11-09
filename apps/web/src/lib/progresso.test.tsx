@@ -96,6 +96,89 @@ describe("artigos lidos", () => {
 	});
 });
 
+describe("desmarcar e recomeçar", () => {
+	it("desmarca só o artigo pedido", () => {
+		progresso.marcarLido("processo-legislativo/quem-pode-propor-uma-lei");
+		progresso.marcarLido("processo-legislativo/onde-o-projeto-comeca");
+
+		progresso.desmarcarLido("processo-legislativo/quem-pode-propor-uma-lei");
+
+		expect(JSON.parse(localStorage.getItem(CHAVE) ?? "")).toEqual([
+			"processo-legislativo/onde-o-projeto-comeca",
+		]);
+		expect(progresso.lerLidos()).toEqual(
+			new Set(["processo-legislativo/onde-o-projeto-comeca"]),
+		);
+	});
+
+	it("recomeça só a trilha pedida e devolve as marcas que apagou", () => {
+		progresso.marcarLido("processo-legislativo/quem-pode-propor-uma-lei");
+		progresso.marcarLido("eleicoes/como-se-vota");
+		progresso.marcarLido("processo-legislativo/onde-o-projeto-comeca");
+		progresso.marcarLido("processo-legislativo-avancado/um-artigo");
+
+		const apagadas = progresso.recomecarTrilha("processo-legislativo");
+
+		expect(apagadas).toEqual([
+			"processo-legislativo/quem-pode-propor-uma-lei",
+			"processo-legislativo/onde-o-projeto-comeca",
+		]);
+		expect(progresso.lerLidos()).toEqual(
+			new Set([
+				"eleicoes/como-se-vota",
+				"processo-legislativo-avancado/um-artigo",
+			]),
+		);
+	});
+
+	it("desfaz o recomeço sem perder o que foi lido depois", () => {
+		progresso.marcarLido("processo-legislativo/quem-pode-propor-uma-lei");
+		const apagadas = progresso.recomecarTrilha("processo-legislativo");
+		progresso.marcarLido("processo-legislativo/onde-o-projeto-comeca");
+
+		progresso.restaurarLidos(apagadas);
+
+		expect(progresso.lerLidos()).toEqual(
+			new Set([
+				"processo-legislativo/onde-o-projeto-comeca",
+				"processo-legislativo/quem-pode-propor-uma-lei",
+			]),
+		);
+	});
+
+	it("desmarca e recomeça com o armazenamento bloqueado", () => {
+		const bloqueado = () => {
+			throw new DOMException("bloqueado", "SecurityError");
+		};
+		vi.spyOn(Storage.prototype, "getItem").mockImplementation(bloqueado);
+		vi.spyOn(Storage.prototype, "setItem").mockImplementation(bloqueado);
+		progresso.marcarLido("processo-legislativo/quem-pode-propor-uma-lei");
+		progresso.marcarLido("processo-legislativo/onde-o-projeto-comeca");
+
+		progresso.desmarcarLido("processo-legislativo/quem-pode-propor-uma-lei");
+		expect(progresso.lerLidos()).toEqual(
+			new Set(["processo-legislativo/onde-o-projeto-comeca"]),
+		);
+
+		progresso.recomecarTrilha("processo-legislativo");
+		expect(progresso.lerLidos().size).toBe(0);
+	});
+
+	it("vale o que a página gravou por último, mesmo quando só a gravação falha", () => {
+		localStorage.setItem(
+			CHAVE,
+			JSON.stringify(["processo-legislativo/quem-pode-propor-uma-lei"]),
+		);
+		vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+			throw new DOMException("cheio", "QuotaExceededError");
+		});
+
+		progresso.desmarcarLido("processo-legislativo/quem-pode-propor-uma-lei");
+
+		expect(progresso.lerLidos().size).toBe(0);
+	});
+});
+
 describe("useArtigosLidos", () => {
 	it("no servidor, mostra a trilha como nova", () => {
 		localStorage.setItem(CHAVE, JSON.stringify(["a/b"]));
@@ -128,6 +211,20 @@ describe("useArtigosLidos", () => {
 		act(() => progresso.marcarLido("a/b"));
 
 		expect(result.current).toEqual(new Set(["a/b"]));
+	});
+
+	it("atualiza quando um artigo é desmarcado ou a trilha recomeça", () => {
+		progresso.marcarLido("a/b");
+		progresso.marcarLido("a/c");
+		const { result } = renderHook(() => progresso.useArtigosLidos());
+
+		act(() => progresso.desmarcarLido("a/b"));
+		expect(result.current).toEqual(new Set(["a/c"]));
+
+		act(() => {
+			progresso.recomecarTrilha("a");
+		});
+		expect(result.current.size).toBe(0);
 	});
 
 	it("atualiza quando outra aba marca um artigo", () => {

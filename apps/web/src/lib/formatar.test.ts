@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { corDaFita, dominio, formatarData, plural } from "./formatar";
+import {
+	corDaFita,
+	dominio,
+	formatarData,
+	fraseDoProgresso,
+	plural,
+} from "./formatar";
 
 describe("formatarData", () => {
 	it("escreve a data por extenso, sem depender do fuso", () => {
@@ -38,5 +44,13 @@ describe("corDaFita", () => {
 		expect(corDaFita(2)).toBe("var(--fita-amarela)");
 		expect(corDaFita(5)).toBe("var(--fita-vermelha)");
 		expect(corDaFita(6)).toBe("var(--fita-verde)");
+	});
+});
+
+describe("fraseDoProgresso", () => {
+	it("diz quantos artigos a pessoa leu, e nada antes do primeiro", () => {
+		expect(fraseDoProgresso(0, 3)).toBe("");
+		expect(fraseDoProgresso(1, 3)).toBe("Você leu 1 de 3.");
+		expect(fraseDoProgresso(3, 3)).toBe("Você terminou a trilha.");
 	});
 });

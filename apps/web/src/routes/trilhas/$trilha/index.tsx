@@ -1,14 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { Aviso, useAviso } from "@/components/aviso";
 import { Caminho } from "@/components/caminho";
 import { MarcaX } from "@/components/marca-x";
 import { buscarTrilha } from "@/lib/conteudo";
-import { corDaFita, plural } from "@/lib/formatar";
+import { corDaFita, fraseDoProgresso, plural } from "@/lib/formatar";
 import { META_NAO_ENCONTRADA, metaDaPagina } from "@/lib/meta";
 import {
 	contarLidos,
 	idDoArtigo,
+	lerLidos,
 	primeiroNaoLido,
+	recomecarTrilha,
+	restaurarLidos,
 	useArtigosLidos,
 } from "@/lib/progresso";
 
@@ -25,6 +30,10 @@ export const Route = createFileRoute("/trilhas/$trilha/")({
 function PaginaDaTrilha() {
 	const trilha = Route.useLoaderData();
 	const lidos = useArtigosLidos();
+	// As marcas que o "Recomeçar a trilha" apagou, para o "Desfazer". Valem até a
+	// pessoa sair da página.
+	const [apagadas, setApagadas] = useState<string[] | null>(null);
+	const { aviso, avisar } = useAviso();
 	const total = trilha.artigos.length;
 	const quantosLidos = contarLidos(trilha.artigos, lidos);
 	const ondeParou = primeiroNaoLido(trilha.artigos, lidos);
@@ -32,6 +41,28 @@ function PaginaDaTrilha() {
 		(soma, artigo) => soma + artigo.minutos,
 		0,
 	);
+	const progresso =
+		quantosLidos === 0 && apagadas
+			? "Você recomeçou a trilha."
+			: fraseDoProgresso(quantosLidos, total);
+
+	function recomecar() {
+		setApagadas(recomecarTrilha(trilha.slug));
+		avisar("Você recomeçou a trilha.");
+	}
+
+	function desfazer() {
+		restaurarLidos(apagadas ?? []);
+		setApagadas(null);
+		avisar(fraseDoProgresso(contarLidos(trilha.artigos, lerLidos()), total));
+	}
+
+	// O mesmo botão faz as duas coisas, e o foco fica nele quando uma vira a outra.
+	const acao = apagadas
+		? { texto: "Desfazer", fazer: desfazer }
+		: quantosLidos > 0
+			? { texto: "Recomeçar a trilha", fazer: recomecar }
+			: undefined;
 
 	return (
 		<div className="mx-auto max-w-[1440px] px-5 pb-20 md:px-16">
@@ -49,14 +80,12 @@ function PaginaDaTrilha() {
 					<span>Fonte oficial em cada explicação</span>
 				</p>
 
-				<div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
-					{quantosLidos > 0 && (
-						<p className="text-xl font-bold">
-							{ondeParou
-								? `Você leu ${quantosLidos} de ${total}.`
-								: "Você terminou a trilha."}
-						</p>
-					)}
+				{/* A linha do progresso tem a altura reservada desde o HTML do servidor:
+				    quando o progresso aparece, depois da hidratação, o botão fica no lugar.
+				    A linha das ações guarda a altura do botão, e a lista também não sobe
+				    quando a trilha terminada fica só com o "Recomeçar a trilha". */}
+				<p className="mt-6 min-h-7 text-xl font-bold">{progresso}</p>
+				<div className="mt-3 flex min-h-13 flex-wrap items-center gap-x-6 gap-y-4">
 					{ondeParou && (
 						<Link
 							to="/trilhas/$trilha/$artigo"
@@ -73,7 +102,17 @@ function PaginaDaTrilha() {
 							/>
 						</Link>
 					)}
+					{acao && (
+						<button
+							type="button"
+							onClick={acao.fazer}
+							className="acao-de-texto"
+						>
+							{acao.texto}
+						</button>
+					)}
 				</div>
+				<Aviso texto={aviso} />
 
 				<ol className="border-tinta mt-12 border-t-2">
 					{trilha.artigos.map((artigo, indice) => {

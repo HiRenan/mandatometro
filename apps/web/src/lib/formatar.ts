@@ -30,6 +30,16 @@ export function plural(
 	return `${quantidade} ${quantidade === 1 ? singular : maisDeUm}`;
 }
 
+/** O progresso na trilha em palavras, igual na lista das trilhas e na trilha. */
+export function fraseDoProgresso(lidos: number, total: number): string {
+	if (lidos === 0) {
+		return "";
+	}
+	return lidos === total
+		? "Você terminou a trilha."
+		: `Você leu ${lidos} de ${total}.`;
+}
+
 /** O site da fonte, como a pessoa reconhece: camara.leg.br, senado.leg.br. */
 export function dominio(url: string): string {
 	return new URL(url).hostname.replace(/^www\d*\./, "");
