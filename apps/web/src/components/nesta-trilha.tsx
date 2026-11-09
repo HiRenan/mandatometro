@@ -40,7 +40,7 @@ export function NestaTrilha({
 						>
 							<span
 								aria-hidden="true"
-								className="fita absolute inset-y-0 left-0 w-3"
+								className="fita absolute -top-0.5 left-0 h-14 w-3"
 								style={{ background: corDaFita(indice + 1) }}
 							/>
 							<Link
@@ -51,15 +51,17 @@ export function NestaTrilha({
 							>
 								<span
 									aria-hidden="true"
-									className="numeral relative text-[4rem]"
+									className="numeral justify-self-center text-[4rem]"
 								>
-									{indice + 1}
-									{lido && (
-										<MarcaX
-											animar={riscarAgora === artigo.slug}
-											className="absolute -top-1.5 -left-1 size-16"
-										/>
-									)}
+									<span className="relative inline-block">
+										{indice + 1}
+										{lido && (
+											<MarcaX
+												animar={riscarAgora === artigo.slug}
+												className="sobre-o-numero"
+											/>
+										)}
+									</span>
 								</span>
 								<span>
 									<span className="titulo block text-[1.0625rem] leading-tight font-bold">

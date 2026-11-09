@@ -103,26 +103,6 @@ function Folha({ trilha, artigo, posicao, anterior, proximo }: ArtigoNaTrilha) {
 						</span>
 						<span className="mt-3.5 text-[2.125rem]">{deTantos}</span>
 					</p>
-					<dl className="border-tinta mt-6 border-t-2 pt-3 text-base leading-normal">
-						<dt className="text-[0.8125rem] font-extrabold tracking-[0.04em] uppercase">
-							Trilha
-						</dt>
-						<dd className="mb-2.5">
-							<Link to="/trilhas/$trilha" params={{ trilha: trilha.slug }}>
-								{trilha.titulo}
-							</Link>
-						</dd>
-						<dt className="text-[0.8125rem] font-extrabold tracking-[0.04em] uppercase">
-							Leitura
-						</dt>
-						<dd className="mb-2.5">
-							{plural(artigo.minutos, "minuto", "minutos")}
-						</dd>
-						<dt className="text-[0.8125rem] font-extrabold tracking-[0.04em] uppercase">
-							Fontes
-						</dt>
-						<dd>{fontes}</dd>
-					</dl>
 				</div>
 
 				<article>
@@ -142,11 +122,11 @@ function Folha({ trilha, artigo, posicao, anterior, proximo }: ArtigoNaTrilha) {
 					<p className="folha:mt-[1.375rem] folha:text-[1.5625rem] folha:leading-[1.4] mt-5 max-w-[40ch] font-serif text-xl leading-snug font-medium lg:text-[1.375rem]">
 						{artigo.resumo}
 					</p>
-					<p className="border-tinta folha:hidden mt-5 flex flex-wrap gap-x-7 gap-y-1 border-y-2 py-3 text-[1.0625rem] font-semibold">
+					<p className="border-tinta folha:mt-6 mt-5 flex flex-wrap gap-x-7 gap-y-1 border-y-2 py-3 text-[1.0625rem] font-semibold">
 						<span>Leitura de {artigo.minutos} min</span>
 						<span>{fontes}</span>
 					</p>
-					<div className="border-tinta folha:mt-7 folha:border-t-2 folha:pt-6 mt-6">
+					<div className="mt-6">
 						<TextoDoArtigo corpo={artigo.corpo} />
 					</div>
 

@@ -25,20 +25,61 @@
 		outline-color: var(--fita-amarela);
 	}
 
-	/* A fita de cada artigo, com a ponta cortada em V, como a fitinha do Bonfim. */
+	/*
+	 * A fita de cada artigo: pendurada da borda de cima da folha, como a fitinha do
+	 * Bonfim, com a ponta cortada em V sobre o papel. O V tem 1,5 vez a largura da
+	 * fita, para ler como ponta de fita, e não como seta.
+	 */
 	.fita {
-		clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 10px), 0 100%);
+		clip-path: polygon(
+			0 0,
+			100% 0,
+			100% 100%,
+			50% calc(100% - 1.125rem),
+			0 100%
+		);
 	}
 
-	/* O canto dobrado marca a folha onde a pessoa está. */
+	/*
+	 * O canto dobrado marca a folha onde a pessoa está: a ponta da folha dobrada
+	 * para dentro. O ::before corta o canto até o papel (e esconde o picote de
+	 * cima), e o ::after desenha a aba em tinta, sem sombra.
+	 */
+	.canto-dobrado::before,
 	.canto-dobrado::after {
 		content: "";
 		position: absolute;
-		top: 0;
+		top: -2px;
 		right: 0;
-		border-style: solid;
-		border-width: 0 30px 30px 0;
-		border-color: transparent var(--fita-amarela) transparent transparent;
+		width: 30px;
+		height: 32px;
+	}
+
+	.canto-dobrado::before {
+		background: var(--papel);
+	}
+
+	.canto-dobrado::after {
+		background: var(--tinta);
+		-webkit-mask:
+			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 32'%3E%3Cpath d='M1 3V31H29Z' fill='none' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E")
+			center / 100% 100% no-repeat;
+		mask:
+			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 32'%3E%3Cpath d='M1 3V31H29Z' fill='none' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E")
+			center / 100% 100% no-repeat;
+	}
+
+	/*
+	 * O X da folha lida, centrado no número e um pouco maior que ele, como quem
+	 * risca o dia na folhinha: os traços passam do algarismo dos dois lados.
+	 */
+	.sobre-o-numero {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 1.1em;
+		height: 1.1em;
+		translate: -50% -50%;
 	}
 
 	/* O número da folha, como o dia na folhinha. */

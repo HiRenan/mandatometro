@@ -107,7 +107,7 @@ function Bloco({ trilha }: { trilha: Trilha }) {
 							>
 								<span
 									aria-hidden="true"
-									className="fita absolute inset-y-0 left-0 w-3"
+									className="fita absolute -top-0.5 left-0 h-24 w-3 md:h-28"
 									style={{ background: corDaFita(indice + 1) }}
 								/>
 								{/* No celular, o número fica ao lado do título e o resumo usa a
@@ -115,14 +115,15 @@ function Bloco({ trilha }: { trilha: Trilha }) {
 								<div className="grid grid-cols-[4.5rem_minmax(0,1fr)] content-start gap-x-4 py-6 pr-5 pl-[1.625rem] md:grid-cols-[7rem_minmax(0,1fr)] md:gap-x-6 md:pr-10">
 									<span
 										aria-hidden="true"
-										className="numeral relative text-[5.5rem] md:row-span-3 md:text-[8rem]"
+										className="numeral justify-self-center text-[5.5rem] md:row-span-3 md:text-[8rem]"
 									>
-										{indice + 1}
-										{lido && (
-											<MarcaX className="absolute -top-2 -left-1.5 size-[5.5rem] md:size-[8rem]" />
-										)}
+										<span className="relative inline-block">
+											{indice + 1}
+											{lido && <MarcaX className="sobre-o-numero" />}
+										</span>
 									</span>
-									<h2 className="subtitulo-condensado text-[1.75rem] md:text-[2.25rem]">
+									{/* O respiro à direita do título, no celular, deixa o canto dobrado livre. */}
+									<h2 className="subtitulo-condensado pr-3 text-[1.75rem] md:pr-0 md:text-[2.25rem]">
 										<Link
 											to="/trilhas/$trilha/$artigo"
 											params={{ trilha: trilha.slug, artigo: artigo.slug }}
