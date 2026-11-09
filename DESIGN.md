@@ -100,6 +100,9 @@ components:
     textColor: "{colors.tinta}"
     rounded: "{rounded.none}"
     size: "44px"
+  acao-de-texto:
+    textColor: "{colors.tinta}"
+    typography: "{typography.label}"
   texto-do-artigo:
     textColor: "{colors.tinta}"
     typography: "{typography.body}"
@@ -180,6 +183,7 @@ A página tem no máximo 1440 px, com margens de 20 px no celular e 64 px a part
 - **Trilha e lista das trilhas:** uma coluna de até 56rem, com as folhas empilhadas. Na trilha, o número fica numa coluna própria (7rem) a partir do md; no celular, vai para o lado do título e o resumo usa a largura toda.
 - **Ritmo:** cerca de 24 px dentro de cada folha, 40 a 48 px entre os blocos da página e 80 px no fim. O conteúdo da folha fica recuado 26 px para dar lugar à fita.
 - **Linha de meta:** o tempo de leitura e o aviso das fontes ficam numa faixa entre duas linhas de 2 px, logo abaixo do resumo, em todas as larguras.
+- **O progresso chega depois:** o navegador só sabe o que a pessoa leu quando a página termina de carregar. Por isso, a linha do progresso na trilha (acima do "Continuar"), a da lista das trilhas no celular e o aviso de lido no fim do artigo têm a altura reservada desde o HTML do servidor, e nada muda de lugar quando o progresso aparece.
 
 ## Elevation & Depth
 
@@ -209,11 +213,17 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 ### Botão "Continuar"
 - **Forma:** bloco reto de tinta, texto em papel, 12 por 20 px de respiro, 1.125rem em negrito, com a seta à direita.
 - **Hover:** o texto ganha sublinhado; a cor não muda.
-- É a única ação em bloco das páginas. Os outros links são texto sublinhado.
+- É a única ação em bloco das páginas. Os outros links e as ações em texto são sublinhados.
 
 ### Links
 - Sublinhado de 2 px, afastado 0,2 em do texto, em tinta. Títulos que são links ficam sem sublinhado e ganham sublinhado no hover.
 - **Foco:** contorno de 3 px na azul, afastado 3 px.
+
+### Ações em texto
+- **Quais:** "Desmarcar", embaixo de "Você leu este artigo."; "Recomeçar a trilha", ao lado do "Continuar" (embaixo dele no celular), quando a pessoa já leu algum artigo da trilha; e "Desfazer".
+- **Forma:** um botão com cara de link (`.acao-de-texto`): Archivo 600 a 1.0625rem, sublinhado de 2 px afastado 0,2 em, em tinta. Um `::before` leva a área de toque a 44 px de altura sem mudar o espaço que o texto ocupa, e o anel de foco fica justo no texto, como nos links.
+- **Depois da ação:** a frase de estado diz o que aconteceu ("Você desmarcou o artigo.", "Você recomeçou a trilha."), e o mesmo botão vira "Desfazer", com o foco nele. O "Desfazer" vale até a pessoa sair da página. Não há caixa de confirmação.
+- **Leitor de tela:** o que aconteceu é anunciado por uma região `role="status"` escondida, que já vem vazia no HTML do servidor e se apaga depois de 7 s (`useAviso`). A frase na tela não é região viva, e por isso não é anunciada a cada visita.
 
 ### Folha (item da lista)
 - **Caráter:** uma folha do bloco, sem card em volta.
@@ -221,11 +231,11 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 - **Estados:** lida leva o X sobre o número e a palavra "Lido"; onde a pessoa parou leva o canto dobrado e "Continue daqui"; no artigo aberto, "Nesta trilha" mostra o canto dobrado e "Você está aqui".
 
 ### Folha em miniatura (lista das trilhas)
-- Quadrados de 44 px com borda de 2 px em tinta e o número em condensado; os lidos levam o X por cima. Ao lado, o estado em palavras: "Você leu 1 de 3." ou "Você terminou a trilha."
+- Quadrados de 44 px com borda de 2 px em tinta e o número em condensado; os lidos levam o X por cima. Ao lado (no celular, na linha de baixo), o estado em palavras: "Você leu 1 de 3." ou "Você terminou a trilha."
 
 ### O X da folha lida (assinatura)
 - Traço de 6 (no viewBox de 60) em tinta, ponta redonda.
-- **Movimento:** quando o fim do texto aparece na tela, cada traço é desenhado em 200 ms, o segundo depois do primeiro (400 ms ao todo), com `cubic-bezier(0.16, 1, 0.3, 1)`. Ao mesmo tempo surge "Você leu este artigo.". Com o movimento reduzido, o X aparece pronto. É o único movimento das páginas.
+- **Movimento:** quando o fim do texto aparece na tela, cada traço é desenhado em 200 ms, o segundo depois do primeiro (400 ms ao todo), com `cubic-bezier(0.16, 1, 0.3, 1)`. Ao mesmo tempo surge "Você leu este artigo.", com o "Desmarcar" embaixo. Com o movimento reduzido, o X aparece pronto. É o único movimento das páginas: o "Desmarcar" apaga o X sem animação, e o "Desfazer" o devolve já pronto.
 
 ### Fontes oficiais
 - Lista numerada abaixo de uma linha cheia: o número em negrito numa coluna de 1.75rem, o título da fonte como link em negrito e, embaixo, o domínio e a data da consulta em tinta suave.
@@ -245,6 +255,7 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 - **Do** separar as folhas com picote (linha tracejada de 2 px) e fechar as seções com linha cheia de 2 px.
 - **Do** usar o foco de 3 px na azul, afastado 3 px, e a amarela dentro do cartão preto.
 - **Do** respeitar o movimento reduzido: o X aparece sem animação.
+- **Do** oferecer "Desfazer" logo depois de apagar uma marca, em vez de pedir confirmação antes.
 
 ### Don't:
 - **Don't** fazer "site do governo": burocracia e letra pequena.
