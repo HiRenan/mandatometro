@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MarcaX } from "@/components/marca-x";
 import { buscarTrilhas, type TrilhaNaLista } from "@/lib/conteudo";
-import { plural } from "@/lib/formatar";
+import { fraseDoProgresso, plural } from "@/lib/formatar";
 import { metaDaPagina } from "@/lib/meta";
 import { contarLidos, idDoArtigo, useArtigosLidos } from "@/lib/progresso";
 
@@ -75,8 +75,11 @@ function ItemDaTrilha({
 			<p className="mt-3 text-[0.9375rem] font-semibold">
 				{plural(total, "artigo", "artigos")} · {minutos} min de leitura
 			</p>
-			<div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
-				<ol aria-hidden="true" className="flex gap-1.5">
+			{/* No celular, a frase do progresso tem a linha dela, reservada desde o HTML
+			    do servidor; a partir do sm, fica ao lado das folhas. Assim, nada muda de
+			    lugar quando o progresso aparece, depois da hidratação. */}
+			<div className="mt-4 grid items-center gap-x-5 gap-y-2 sm:grid-cols-[auto_minmax(0,1fr)]">
+				<ol aria-hidden="true" className="flex flex-wrap gap-1.5">
 					{trilha.artigos.map((artigo, indice) => (
 						<li
 							key={artigo.slug}
@@ -89,13 +92,9 @@ function ItemDaTrilha({
 						</li>
 					))}
 				</ol>
-				{quantosLidos > 0 && (
-					<p className="text-lg font-bold">
-						{quantosLidos === total
-							? "Você terminou a trilha."
-							: `Você leu ${quantosLidos} de ${total}.`}
-					</p>
-				)}
+				<p className="min-h-7 text-lg font-bold">
+					{fraseDoProgresso(quantosLidos, total)}
+				</p>
 			</div>
 		</li>
 	);
