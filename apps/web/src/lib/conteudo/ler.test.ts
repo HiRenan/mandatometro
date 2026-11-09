@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lerTrilhas } from "./ler";
+import { ErroDeConteudo, lerTrilhas } from "./ler";
 
 const pasta = "/conteudo/trilhas/processo-legislativo";
 const BOM = "\uFEFF";
@@ -162,6 +162,14 @@ describe("lerTrilhas", () => {
 			expect(
 				ler(artigoMd({ url: "http://www.planalto.gov.br/constituicao" })),
 			).toThrow(/primeiro\.md.*"fontes\.0\.url"/);
+		});
+
+		it("uma vez só quando a fonte não usa https nem é um site oficial", () => {
+			expect(ler(artigoMd({ url: "http://exemplo.com/fonte" }))).toThrow(
+				new ErroDeConteudo([
+					'conteudo/trilhas/processo-legislativo/primeiro.md: campo "fontes.0.url": precisa ser um link https de um site oficial (gov.br, leg.br ou jus.br)',
+				]),
+			);
 		});
 
 		it("quando a data da consulta não é AAAA-MM-DD", () => {

@@ -132,7 +132,12 @@ function validar<T>(
 	if (resultado.success) {
 		return { ok: true, valor: resultado.data };
 	}
-	return { ok: false, problemas: resultado.error.issues.map(descrever) };
+	// O zod confere o protocolo e o domínio da URL em separado, e um link que
+	// erra os dois daria a mesma linha duas vezes.
+	return {
+		ok: false,
+		problemas: [...new Set(resultado.error.issues.map(descrever))],
+	};
 }
 
 function contarMinutos(corpo: string): number {
