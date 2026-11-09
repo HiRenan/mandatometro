@@ -1,6 +1,6 @@
 ---
 titulo: Quem pode propor uma lei
-resumo: Deputados, senadores, o presidente da República, alguns tribunais e até você podem apresentar um projeto de lei. Veja quem pode e como.
+resumo: Deputados, senadores, o presidente da República e alguns tribunais podem apresentar um projeto de lei. Você também pode, desde que o projeto tenha a assinatura de pelo menos 1% dos eleitores do país.
 ordem: 1
 fontes:
   - titulo: Constituição Federal, art. 61
@@ -34,8 +34,8 @@ Para certos assuntos, só o presidente da República pode apresentar o projeto. 
 
 Os cidadãos podem apresentar um projeto de lei à Câmara dos Deputados, desde que ele tenha a assinatura de pelo menos 1% do eleitorado do país. Essas assinaturas precisam vir de pelo menos cinco estados, e em cada um deles precisam assinar no mínimo 0,3% dos eleitores (art. 61, § 2º). Esse caminho se chama iniciativa popular.
 
-Depois de apresentado, o projeto de iniciativa popular segue o mesmo caminho dos outros. Na Câmara, ele sempre vai a voto no Plenário, a reunião de todos os deputados.
+Depois de apresentado, o projeto de iniciativa popular segue o mesmo caminho dos outros, com uma diferença: na Câmara, ele não pode ser aprovado só pelas comissões, os grupos de deputados que estudam cada tema. Ele precisa também do voto do Plenário, a reunião de todos os deputados.
 
 ## O que vem depois
 
-Apresentado o projeto, começa a tramitação: o caminho que ele percorre até virar lei ou ser arquivado. Esse caminho passa pelas duas Casas do Congresso, e quem apresentou o projeto define por qual delas ele começa.
+Apresentado o projeto, começa a tramitação: o caminho que ele percorre até virar lei ou ser arquivado. Esse caminho passa pelas duas Casas do Congresso, e por qual delas ele começa depende, em regra, de quem apresentou o projeto.

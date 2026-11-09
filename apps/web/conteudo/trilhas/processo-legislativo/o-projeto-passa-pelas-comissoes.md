@@ -1,6 +1,6 @@
 ---
 titulo: O projeto passa pelas comissões
-resumo: Antes de ser aprovado, o projeto é estudado por grupos menores de parlamentares, as comissões, cada uma dedicada a um tema.
+resumo: Na Câmara e no Senado, o projeto costuma ser estudado primeiro por grupos menores de parlamentares, as comissões, cada uma dedicada a um tema.
 ordem: 3
 fontes:
   - titulo: Constituição Federal, art. 58
@@ -28,7 +28,7 @@ No fim dessa fila, a Comissão de Constituição e Justiça e de Cidadania da C�
 
 A Constituição permite que as comissões votem projetos sem passar pelo Plenário, quando o regimento de cada Casa prevê (art. 58, § 2º). Na Câmara, isso se chama tramitação conclusiva, e a maioria dos projetos segue esse caminho: se todas as comissões aprovam, o projeto vai direto para o Senado, ou para a sanção, se já tiver passado pelo Senado. No Senado, o nome é decisão terminativa.
 
-Mesmo assim, o Plenário pode ser chamado a votar. Pela Constituição, basta um recurso assinado por um décimo dos membros da Casa, o que no Senado significa nove senadores. Na Câmara, alguns projetos sempre vão ao Plenário, como os de iniciativa popular e os que tramitam em regime de urgência.
+Mesmo assim, o Plenário pode ser chamado a votar. Pela Constituição, basta um recurso assinado por um décimo dos membros da Casa, o que no Senado significa nove senadores. Na Câmara, alguns projetos não podem ser aprovados só pelas comissões e precisam também do voto do Plenário, como os de iniciativa popular e os que tramitam em regime de urgência.
 
 ## As comissões também ouvem
 

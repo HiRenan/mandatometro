@@ -38,7 +38,7 @@ O cabeçalho fica entre duas linhas com `---`, e o texto vem depois:
 ```markdown
 ---
 titulo: Onde o projeto começa
-resumo: Um projeto de lei precisa ser aprovado nas duas Casas do Congresso. Quem propõe o projeto define por qual delas ele começa.
+resumo: Um projeto de lei precisa ser aprovado nas duas Casas do Congresso. Em regra, quem propõe o projeto define por qual delas ele começa.
 ordem: 2
 fontes:
   - titulo: Constituição Federal, art. 64
@@ -53,7 +53,7 @@ O Congresso Nacional tem duas Casas: a Câmara dos Deputados e o Senado Federal.
 
 ## Quando o começo é na Câmara
 
-O projeto começa na Câmara dos Deputados, a não ser que...
+Em regra, o projeto começa na Câmara dos Deputados, a não ser que...
 ```
 
 - `titulo`: o título do artigo.
