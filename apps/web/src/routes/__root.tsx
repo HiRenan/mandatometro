@@ -17,7 +17,7 @@ export interface RouterAppContext {
 }
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
-	head: () => ({
+	head: ({ matches }) => ({
 		meta: [
 			{
 				charSet: "utf-8",
@@ -27,8 +27,16 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "Mandatômetro",
+				// Só a raiz casa com um endereço que não existe; as páginas trocam este título pelo delas.
+				title:
+					matches.length > 1
+						? "Mandatômetro"
+						: "Página não encontrada · Mandatômetro",
 			},
+			// A cor da barra do navegador no celular segue o cartão preto do cabeçalho.
+			{ name: "theme-color", content: "#161616" },
+			{ property: "og:site_name", content: "Mandatômetro" },
+			{ property: "og:locale", content: "pt_BR" },
 		],
 		links: [
 			{
@@ -48,9 +56,11 @@ function RootDocument() {
 				<HeadContent />
 			</head>
 			<body>
-				<div className="grid h-svh grid-rows-[auto_1fr]">
+				<div className="grid min-h-svh grid-rows-[auto_1fr]">
 					<Header />
-					<Outlet />
+					<main id="conteudo" tabIndex={-1} className="focus:outline-none">
+						<Outlet />
+					</main>
 				</div>
 				<Toaster richColors />
 				<TanStackRouterDevtools position="bottom-left" />

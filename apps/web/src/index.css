@@ -1,1 +1,165 @@
 @import "@mandatometro/ui/globals.css";
+
+@theme {
+	/* A partir desta largura, a folha do artigo cabe em três colunas, como no esboço. */
+	--breakpoint-folha: 90rem;
+}
+
+/* As peças da folhinha de parede. As cores e as fontes vêm do globals.css. */
+@layer components {
+	/* A tira de fitas do Bonfim, logo abaixo do cartão preto, no lugar do picote. */
+	.tira-de-fitas {
+		background: repeating-linear-gradient(
+			90deg,
+			var(--fita-verde) 0 48px,
+			var(--fita-amarela) 48px 96px,
+			var(--fita-azul) 96px 144px,
+			var(--fita-rosa) 144px 192px,
+			var(--fita-vermelha) 192px 240px,
+			var(--papel) 240px 252px
+		);
+	}
+
+	/* No cartão preto, o foco aparece em amarelo. */
+	.moldura :focus-visible {
+		outline-color: var(--fita-amarela);
+	}
+
+	/* A fita de cada artigo, com a ponta cortada em V, como a fitinha do Bonfim. */
+	.fita {
+		clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 10px), 0 100%);
+	}
+
+	/* O canto dobrado marca a folha onde a pessoa está. */
+	.canto-dobrado::after {
+		content: "";
+		position: absolute;
+		top: 0;
+		right: 0;
+		border-style: solid;
+		border-width: 0 30px 30px 0;
+		border-color: transparent var(--fita-amarela) transparent transparent;
+	}
+
+	/* O número da folha, como o dia na folhinha. */
+	.numeral {
+		font-family: var(--font-sans);
+		font-stretch: 62%;
+		font-weight: 900;
+		line-height: 0.78;
+		letter-spacing: -0.03em;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.titulo-condensado {
+		font-family: var(--font-sans);
+		font-stretch: 72%;
+		font-weight: 850;
+		line-height: 0.96;
+		letter-spacing: -0.02em;
+		text-wrap: balance;
+	}
+
+	.subtitulo-condensado {
+		font-family: var(--font-sans);
+		font-stretch: 75%;
+		font-weight: 800;
+		line-height: 1.05;
+		text-wrap: balance;
+	}
+
+	/* O X da folha lida. O traço desenha em 400 ms quando a pessoa chega ao fim do texto. */
+	.marca-x {
+		fill: none;
+		stroke: var(--tinta);
+		stroke-width: 6;
+		stroke-linecap: round;
+	}
+
+	.marca-x[data-animar] path {
+		animation: riscar 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+	}
+
+	.marca-x[data-animar] path + path {
+		animation-delay: 200ms;
+	}
+
+	/* O texto corrido do artigo: serifa de leitura, tinta no papel, sem enfeite. */
+	.texto {
+		max-width: 64ch;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.6;
+	}
+
+	.texto > * + * {
+		margin-top: 1em;
+	}
+
+	.texto h2 {
+		margin-top: 1.75em;
+		font-family: var(--font-sans);
+		font-stretch: 75%;
+		font-weight: 800;
+		font-size: 1.625rem;
+		line-height: 1.05;
+		text-wrap: balance;
+	}
+
+	.texto h2 + * {
+		margin-top: 0.5em;
+	}
+
+	.texto ul,
+	.texto ol {
+		padding-left: 1.25em;
+	}
+
+	.texto ul {
+		list-style: square;
+	}
+
+	.texto ol {
+		list-style: decimal;
+	}
+
+	.texto li + li {
+		margin-top: 0.35em;
+	}
+
+	.texto a {
+		text-decoration-line: underline;
+	}
+
+	.texto strong {
+		font-weight: 700;
+	}
+
+	@media (width >= 64rem) {
+		.texto {
+			font-size: 1.1875rem;
+			line-height: 1.65;
+		}
+
+		.texto h2 {
+			font-size: 2rem;
+		}
+	}
+}
+
+@keyframes riscar {
+	from {
+		stroke-dasharray: 1;
+		stroke-dashoffset: 1;
+	}
+	to {
+		stroke-dasharray: 1;
+		stroke-dashoffset: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.marca-x[data-animar] path {
+		animation: none;
+	}
+}
