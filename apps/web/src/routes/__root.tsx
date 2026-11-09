@@ -27,11 +27,14 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				// Só a raiz casa com um endereço que não existe; as páginas trocam este título pelo delas.
-				title:
-					matches.length > 1
-						? "Mandatômetro"
-						: "Página não encontrada · Mandatômetro",
+				// Um endereço que não existe, mesmo fundo como /trilhas/x/y/z, deixa uma
+				// das rotas marcada como não encontrada. As páginas que existem trocam
+				// este título pelo delas.
+				title: matches.some(
+					(match) => match.status === "notFound" || match._notFound,
+				)
+					? "Página não encontrada · Mandatômetro"
+					: "Mandatômetro",
 			},
 			// A cor da barra do navegador no celular segue o cartão preto do cabeçalho.
 			{ name: "theme-color", content: "#161616" },
