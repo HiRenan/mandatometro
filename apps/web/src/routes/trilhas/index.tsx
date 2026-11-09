@@ -2,17 +2,19 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { MarcaX } from "@/components/marca-x";
 import { buscarTrilhas, type TrilhaNaLista } from "@/lib/conteudo";
 import { fraseDoProgresso, plural } from "@/lib/formatar";
-import { metaDaPagina } from "@/lib/meta";
+import { metaDaPagina, metaSemPagina } from "@/lib/meta";
 import { contarLidos, idDoArtigo, useArtigosLidos } from "@/lib/progresso";
 
 export const Route = createFileRoute("/trilhas/")({
 	loader: () => buscarTrilhas(),
-	head: () => ({
-		meta: metaDaPagina({
-			titulo: "Trilhas",
-			descricao:
-				"Artigos curtos que explicam, passo a passo, como funciona a política brasileira, com a fonte oficial de cada explicação.",
-		}),
+	head: ({ loaderData: trilhas, match }) => ({
+		meta: trilhas
+			? metaDaPagina({
+					titulo: "Trilhas",
+					descricao:
+						"Artigos curtos que explicam, passo a passo, como funciona a política brasileira, com a fonte oficial de cada explicação.",
+				})
+			: metaSemPagina(match),
 	}),
 	component: PaginaDasTrilhas,
 });

@@ -9,7 +9,7 @@ import { NestaTrilha } from "@/components/nesta-trilha";
 import { TextoDoArtigo } from "@/components/texto-do-artigo";
 import { type ArtigoNaTrilha, buscarArtigo } from "@/lib/conteudo";
 import { corDaFita, plural } from "@/lib/formatar";
-import { META_NAO_ENCONTRADA, metaDaPagina } from "@/lib/meta";
+import { metaDaPagina, metaSemPagina } from "@/lib/meta";
 import {
 	desmarcarLido,
 	idDoArtigo,
@@ -21,14 +21,14 @@ import {
 export const Route = createFileRoute("/trilhas/$trilha/$artigo")({
 	loader: ({ params }) =>
 		buscarArtigo({ data: { trilha: params.trilha, artigo: params.artigo } }),
-	head: ({ loaderData: pagina }) => ({
+	head: ({ loaderData: pagina, match }) => ({
 		meta: pagina
 			? metaDaPagina({
 					titulo: `${pagina.artigo.titulo} · ${pagina.trilha.titulo}`,
 					descricao: pagina.artigo.resumo,
 					tipo: "article",
 				})
-			: META_NAO_ENCONTRADA,
+			: metaSemPagina(match),
 	}),
 	component: PaginaDoArtigo,
 });

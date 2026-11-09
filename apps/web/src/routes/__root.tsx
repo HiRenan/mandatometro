@@ -3,16 +3,16 @@ import type { QueryClient } from "@tanstack/react-query";
 import {
 	createRootRouteWithContext,
 	HeadContent,
-	Outlet,
 	Scripts,
 	useRouter,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { useEffect } from "react";
+import { type ReactNode, useEffect } from "react";
 
 import Header from "../components/header";
-
 import appCss from "../index.css?url";
+import { focarNoTitulo } from "../lib/foco";
+import { TITULO_DE_ERRO, TITULO_NAO_ENCONTRADA } from "../lib/meta";
 
 export interface RouterAppContext {
 	queryClient: QueryClient;
@@ -30,13 +30,15 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 			},
 			{
 				// Um endereço que não existe, mesmo fundo como /trilhas/x/y/z, deixa uma
-				// das rotas marcada como não encontrada. As páginas que existem trocam
-				// este título pelo delas.
-				title: matches.some(
-					(match) => match.status === "notFound" || match._notFound,
-				)
-					? "Página não encontrada · Mandatômetro"
-					: "Mandatômetro",
+				// das rotas marcada como não encontrada, e uma página que não chegou deixa
+				// a rota com erro. As páginas que existem trocam este título pelo delas.
+				title: matches.some((match) => match.status === "error")
+					? TITULO_DE_ERRO
+					: matches.some(
+								(match) => match.status === "notFound" || match._notFound,
+							)
+						? TITULO_NAO_ENCONTRADA
+						: "Mandatômetro",
 			},
 			// A cor da barra do navegador no celular segue o cartão preto do cabeçalho.
 			{ name: "theme-color", content: "#161616" },
@@ -51,10 +53,13 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 		],
 	}),
 
-	component: RootDocument,
+	// O documento e a moldura ficam fora das páginas: quando uma página dá erro, a
+	// página de erro (router.tsx) aparece dentro do main, com o cabeçalho e o
+	// lang="pt-BR".
+	shellComponent: Documento,
 });
 
-function RootDocument() {
+function Documento({ children }: { children: ReactNode }) {
 	return (
 		<html lang="pt-BR">
 			<head>
@@ -64,7 +69,7 @@ function RootDocument() {
 				<div className="grid min-h-svh grid-rows-[auto_1fr]">
 					<Header />
 					<main id="conteudo" tabIndex={-1} className="focus:outline-none">
-						<Outlet />
+						{children}
 					</main>
 				</div>
 				<FocoNaPaginaNova />
@@ -78,8 +83,7 @@ function RootDocument() {
 
 /**
  * Depois de cada navegação dentro do site, o foco vai para o título da página
- * nova, ou para o main se ela não tiver h1: quem usa o teclado continua dali, e o
- * leitor de tela anuncia a página. A primeira carga não mexe no foco.
+ * nova, inclusive a de erro. A primeira carga não mexe no foco.
  */
 function FocoNaPaginaNova() {
 	const router = useRouter();
@@ -87,16 +91,9 @@ function FocoNaPaginaNova() {
 	useEffect(
 		() =>
 			router.subscribe("onRendered", ({ pathChanged }) => {
-				if (!pathChanged) {
-					return;
+				if (pathChanged) {
+					focarNoTitulo();
 				}
-				const titulo = document.querySelector<HTMLElement>("#conteudo h1");
-				if (titulo) {
-					titulo.tabIndex = -1;
-				}
-				(titulo ?? document.getElementById("conteudo"))?.focus({
-					preventScroll: true,
-				});
 			}),
 		[router],
 	);

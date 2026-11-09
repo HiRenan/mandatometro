@@ -6,7 +6,7 @@ import { Caminho } from "@/components/caminho";
 import { MarcaX } from "@/components/marca-x";
 import { buscarTrilha } from "@/lib/conteudo";
 import { corDaFita, fraseDoProgresso, plural } from "@/lib/formatar";
-import { META_NAO_ENCONTRADA, metaDaPagina } from "@/lib/meta";
+import { metaDaPagina, metaSemPagina } from "@/lib/meta";
 import {
 	contarLidos,
 	idDoArtigo,
@@ -19,10 +19,10 @@ import {
 
 export const Route = createFileRoute("/trilhas/$trilha/")({
 	loader: ({ params }) => buscarTrilha({ data: { trilha: params.trilha } }),
-	head: ({ loaderData: trilha }) => ({
+	head: ({ loaderData: trilha, match }) => ({
 		meta: trilha
 			? metaDaPagina({ titulo: trilha.titulo, descricao: trilha.descricao })
-			: META_NAO_ENCONTRADA,
+			: metaSemPagina(match),
 	}),
 	component: PaginaDaTrilha,
 });

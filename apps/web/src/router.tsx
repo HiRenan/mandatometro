@@ -4,6 +4,7 @@ import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query
 
 import Loader from "./components/loader";
 import { NaoEncontrado } from "./components/nao-encontrado";
+import { PaginaDeErro } from "./components/pagina-de-erro";
 import { routeTree } from "./routeTree.gen";
 
 export const getRouter = () => {
@@ -16,6 +17,9 @@ export const getRouter = () => {
 		context: { queryClient },
 		defaultPendingComponent: () => <Loader />,
 		defaultNotFoundComponent: NaoEncontrado,
+		// Quando uma página não chega (a rede caiu ou o servidor falhou), a página de
+		// erro aparece no lugar dela, dentro do site.
+		defaultErrorComponent: PaginaDeErro,
 	});
 	setupRouterSsrQueryIntegration({ router, queryClient });
 
