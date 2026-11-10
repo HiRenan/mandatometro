@@ -291,6 +291,76 @@
 	}
 
 	/*
+	 * O caminho na página inicial: as paradas ligadas pela linha cheia de 2 px,
+	 * cada uma com o quadradinho de tinta. Abaixo do lg, a linha fica em pé, como
+	 * no infográfico da trilha. A partir do lg, deitada: uma coluna por parada,
+	 * com o quadradinho no alto e a linha até o quadradinho da próxima, por cima
+	 * do vão entre as colunas. Só desenho: o sentido está nas palavras.
+	 */
+	.parada {
+		position: relative;
+		padding-left: 2rem;
+	}
+
+	.parada:not(:last-child) {
+		padding-bottom: 1.75rem;
+	}
+
+	.parada::before {
+		content: "";
+		position: absolute;
+		top: 0.3rem;
+		left: 0;
+		width: 0.875rem;
+		height: 0.875rem;
+		background: var(--tinta);
+	}
+
+	.parada:not(:last-child)::after {
+		content: "";
+		position: absolute;
+		top: 0.3rem;
+		bottom: -0.3rem;
+		left: 0.375rem;
+		width: 2px;
+		background: var(--tinta);
+	}
+
+	@media (width >= 64rem) {
+		.caminho-em-linha {
+			--vao-do-caminho: 2rem;
+			display: grid;
+			grid-auto-columns: minmax(0, 1fr);
+			grid-auto-flow: column;
+			column-gap: var(--vao-do-caminho);
+		}
+
+		.parada,
+		.parada:not(:last-child) {
+			padding: 1.875rem 0 0;
+		}
+
+		.parada::before {
+			top: 0;
+		}
+
+		.parada:not(:last-child)::after {
+			top: 0.375rem;
+			right: calc(-1 * var(--vao-do-caminho));
+			bottom: auto;
+			left: 0;
+			width: auto;
+			height: 2px;
+		}
+	}
+
+	@media (width >= 80rem) {
+		.caminho-em-linha {
+			--vao-do-caminho: 2.5rem;
+		}
+	}
+
+	/*
 	 * Nas cores forçadas (o alto contraste do Windows), o navegador troca os
 	 * fundos pela cor do papel, e a linha cheia e os quadradinhos cheios, que são
 	 * fundo, sumiam. Eles passam a ter a cor do texto, e a capa do último desvio,
@@ -300,7 +370,9 @@
 	@media (forced-colors: active) {
 		.passo::before,
 		.passo:not(:last-child)::after,
-		.passo:last-child .passo-corpo:has(.desvio)::after {
+		.passo:last-child .passo-corpo:has(.desvio)::after,
+		.parada::before,
+		.parada:not(:last-child)::after {
 			background: CanvasText;
 		}
 
