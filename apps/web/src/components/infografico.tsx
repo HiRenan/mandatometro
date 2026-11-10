@@ -1,3 +1,4 @@
+// biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
 import { Link } from "@tanstack/react-router";
 import { Fragment } from "react";
 import type {
@@ -47,7 +48,7 @@ export function Infografico({
 				A linha cheia é o caminho completo; a tracejada, o que pode mudar o
 				caminho.
 			</p>
-			<ol className="mt-6">
+			<ol role="list" className="mt-6">
 				{infografico.passos.map((passo) => {
 					const artigos = passo.artigos.flatMap((slug) => {
 						const indice = trilha.artigos.findIndex(
@@ -69,7 +70,7 @@ export function Infografico({
 									{passo.texto}
 								</p>
 								{passo.desvios.length > 0 && (
-									<ul className="mt-3 grid gap-3">
+									<ul role="list" className="mt-3 grid gap-3">
 										{passo.desvios.map((desvio) => (
 											<li
 												key={desvio}
@@ -83,7 +84,7 @@ export function Infografico({
 								)}
 							</div>
 							{artigos.length > 0 && (
-								<ul className="mt-3.5 grid gap-2">
+								<ul role="list" className="mt-3.5 grid gap-2">
 									{artigos.map(({ artigo, posicao }) => (
 										<li key={artigo.slug} className="flex items-start gap-2.5">
 											<span
@@ -94,22 +95,32 @@ export function Infografico({
 											<Link
 												to="/trilhas/$trilha/$artigo"
 												params={{ trilha: trilha.slug, artigo: artigo.slug }}
-												className="text-[0.9375rem] leading-snug font-semibold"
+												className="link-do-caminho text-[0.9375rem] leading-snug font-semibold"
 											>
-												{`Artigo ${posicao}: ${artigo.titulo}`}
+												<span className="block">{`Artigo ${posicao}: ${artigo.titulo}`}</span>
 											</Link>
 										</li>
 									))}
 								</ul>
 							)}
 							<div className="mt-3.5 text-[0.9375rem] leading-snug">
-								<p className="font-semibold">
-									{passo.fontes.length === 1 ? "Fonte: " : "Fontes: "}
+								{/* As fontes quebram linha umas embaixo das outras: a entrelinha
+								    maior e o espaço em volta do "·" deixam o anel de foco de um
+								    link (3 px, afastado 3 px) fora do texto vizinho. */}
+								<p className="leading-[1.75] font-semibold">
+									<span className="mr-1">
+										{passo.fontes.length === 1 ? "Fonte:" : "Fontes:"}
+									</span>{" "}
 									{passo.fontes.map((fonte, indice) => (
 										<Fragment key={fonte.url}>
-											{indice > 0 && " · "}
-											<a href={fonte.url} className="font-bold">
-												{fonte.titulo}
+											{indice > 0 && (
+												<>
+													{" "}
+													<span className="mx-1">·</span>{" "}
+												</>
+											)}
+											<a href={fonte.url} className="link-do-caminho font-bold">
+												<span>{fonte.titulo}</span>
 											</a>
 										</Fragment>
 									))}

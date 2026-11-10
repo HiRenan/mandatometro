@@ -84,6 +84,8 @@ describe("folhas da trilha", () => {
 		const links = within(lista).getAllByRole("link");
 
 		expect(lista.tagName).toBe("OL");
+		// Sem marcador, a lista perde o papel no Safari.
+		expect(lista.getAttribute("role")).toBe("list");
 		expect(links.map((link) => link.getAttribute("href"))).toEqual([
 			"/trilhas/processo-legislativo/quem-pode-propor-uma-lei",
 			"/trilhas/processo-legislativo/onde-o-projeto-comeca",

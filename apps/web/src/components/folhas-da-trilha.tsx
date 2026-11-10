@@ -1,3 +1,4 @@
+// biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
 import { Link } from "@tanstack/react-router";
 import type { TrilhaNaLista } from "@/lib/conteudo";
 import { corDaFita } from "@/lib/formatar";
@@ -27,7 +28,7 @@ export function FolhasDaTrilha({
 	"aria-label"?: string;
 }) {
 	return (
-		<ol aria-label={rotulo} className={className}>
+		<ol role="list" aria-label={rotulo} className={className}>
 			{trilha.artigos.map((artigo, indice) => {
 				const aqui = artigo.slug === atual;
 				const lido = lidos.has(idDoArtigo(artigo));

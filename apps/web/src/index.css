@@ -252,6 +252,63 @@
 		background: var(--papel);
 	}
 
+	/*
+	 * Os links do caminho, dos artigos e das fontes, têm a área de toque das
+	 * ações em texto: 45,4 px de altura em cada linha e 4 px a mais dos lados.
+	 * O padding faz a área, e a margem negativa devolve o espaço: o texto fica
+	 * no mesmo lugar. O clone dá a área a cada linha de um link que quebra. Os
+	 * links ficam em linhas vizinhas, e o texto de cada um (o span) fica por
+	 * cima de todas as áreas: um toque no texto de um link nunca vai para o
+	 * vizinho, e no vão entre dois vale o que vem depois. O anel de foco
+	 * contorna o texto, e não a área.
+	 */
+	.link-do-caminho {
+		position: relative;
+		/* O link do artigo é um bloco, com a linha de 20,6 px: 12,4 px em cima e embaixo. */
+		margin: -0.775rem -0.25rem;
+		padding: 0.775rem 0.25rem;
+		-webkit-box-decoration-break: clone;
+		box-decoration-break: clone;
+	}
+
+	/* O link da fonte é texto corrido, e a caixa dele tem a altura da letra, 16 px. */
+	p > .link-do-caminho {
+		padding-block: 0.92rem;
+	}
+
+	.link-do-caminho > span {
+		position: relative;
+		z-index: 1;
+	}
+
+	.link-do-caminho:focus-visible {
+		outline: none;
+	}
+
+	.link-do-caminho:focus-visible > span {
+		outline: 3px solid var(--ring);
+		outline-offset: 3px;
+	}
+
+	/*
+	 * Nas cores forçadas (o alto contraste do Windows), o navegador troca os
+	 * fundos pela cor do papel, e a linha cheia e os quadradinhos cheios, que são
+	 * fundo, sumiam. Eles passam a ter a cor do texto, e a capa do último desvio,
+	 * a cor do papel. O traço tracejado e o quadradinho vazado são borda e já
+	 * aparecem.
+	 */
+	@media (forced-colors: active) {
+		.passo::before,
+		.passo:not(:last-child)::after,
+		.passo:last-child .passo-corpo:has(.desvio)::after {
+			background: CanvasText;
+		}
+
+		.passo:last-child .desvio:last-child::after {
+			background: Canvas;
+		}
+	}
+
 	/* O texto corrido do artigo: serifa de leitura, tinta no papel, sem enfeite. */
 	.texto {
 		max-width: 64ch;

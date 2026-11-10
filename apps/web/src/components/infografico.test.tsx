@@ -191,6 +191,17 @@ describe("infográfico", () => {
 		).toBe("/trilhas/processo-legislativo/onde-o-projeto-comeca");
 	});
 
+	it("diz que as listas sem marcador são listas, porque o Safari tira o papel delas", async () => {
+		const secao = await mostrar();
+		const listas = [...secao.querySelectorAll("ol, ul")];
+
+		// O caminho, os desvios de "A outra Casa" e os artigos dos dois passos.
+		expect(listas).toHaveLength(4);
+		for (const lista of listas) {
+			expect(lista.getAttribute("role")).toBe("list");
+		}
+	});
+
 	it("deixa as cores e os desenhos fora do leitor de tela", async () => {
 		const secao = await mostrar();
 		const comCor = [...secao.querySelectorAll<HTMLElement>("[style]")];
