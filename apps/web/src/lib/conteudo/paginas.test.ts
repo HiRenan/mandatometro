@@ -64,6 +64,19 @@ describe("conteúdo das trilhas", () => {
 		]);
 	});
 
+	it("define o plenário com o glossário do Congresso Nacional", () => {
+		const plenario = acharTrilha(
+			trilhas,
+			"processo-legislativo",
+		)?.infografico?.passos.find((passo) => passo.titulo === "Plenário");
+
+		expect(plenario?.fontes).toContainEqual({
+			titulo: "Congresso Nacional, Glossário legislativo, Plenário",
+			url: "https://www.congressonacional.leg.br/legislacao-e-publicacoes/glossario-legislativo/-/legislativo/termo/plenario",
+			consultadoEm: "2026-11-10",
+		});
+	});
+
 	it("não acha trilha nem artigo que não existe", () => {
 		const artigo = trilhas[0].artigos[0].slug;
 

@@ -39,6 +39,9 @@ passos:
       - titulo: Câmara dos Deputados, Entenda o processo legislativo
         url: https://www.camara.leg.br/entenda-o-processo-legislativo/
         consultadoEm: 2026-11-10
+      - titulo: Congresso Nacional, Glossário legislativo, Plenário
+        url: https://www.congressonacional.leg.br/legislacao-e-publicacoes/glossario-legislativo/-/legislativo/termo/plenario
+        consultadoEm: 2026-11-10
   - titulo: A outra Casa
     texto: A outra Casa revê o projeto em um só turno de discussão e votação. Se ela aprova o texto como chegou, o projeto segue para o presidente da República (art. 65).
     desvios:
