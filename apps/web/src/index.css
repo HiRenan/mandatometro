@@ -47,6 +47,14 @@
 	}
 
 	/*
+	 * A fita curta, ao lado do link de um artigo no caminho: com 24 px de altura,
+	 * o V de 18 px viraria ponta de seta. O V raso, de 8 px, lê como marcador.
+	 */
+	.fita-curta {
+		clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 0.5rem), 0 100%);
+	}
+
+	/*
 	 * O canto dobrado marca a folha onde a pessoa está: a ponta da folha dobrada
 	 * para dentro. O ::before corta o canto até o papel (e esconde o picote de
 	 * cima), e o ::after desenha a aba em tinta, sem sombra.
@@ -153,6 +161,152 @@
 
 	.marca-x[data-animar] path + path {
 		animation-delay: 200ms;
+	}
+
+	/*
+	 * O caminho do infográfico. Cada passo tem um quadradinho cheio de tinta na
+	 * altura do título, e uma linha cheia de 2 px liga um passo ao seguinte. Os
+	 * desvios saem da linha por um traço tracejado até um quadradinho vazado: a
+	 * linha cheia é o caminho completo; a tracejada, o que pode mudar o caminho.
+	 * No último passo, a linha desce só até o último desvio, e só quando há
+	 * desvio. É só desenho: o sentido está nas palavras de cada passo.
+	 */
+	.passo {
+		position: relative;
+		padding-left: 2rem;
+	}
+
+	.passo:not(:last-child) {
+		padding-bottom: 2.25rem;
+	}
+
+	.passo::before {
+		content: "";
+		position: absolute;
+		top: 0.3rem;
+		left: 0;
+		width: 0.875rem;
+		height: 0.875rem;
+		background: var(--tinta);
+	}
+
+	.passo:not(:last-child)::after {
+		content: "";
+		position: absolute;
+		top: 0.3rem;
+		bottom: -0.3rem;
+		left: 0.375rem;
+		width: 2px;
+		background: var(--tinta);
+	}
+
+	/* No último passo, a linha fica no corpo (título, texto e desvios). */
+	.passo:last-child .passo-corpo {
+		position: relative;
+	}
+
+	.passo:last-child .passo-corpo:has(.desvio)::after {
+		content: "";
+		position: absolute;
+		top: 0.3rem;
+		bottom: 0;
+		left: -1.625rem;
+		width: 2px;
+		background: var(--tinta);
+	}
+
+	/* E para no traço do último desvio: o papel cobre a linha dali para baixo. */
+	.passo:last-child .desvio:last-child::after {
+		content: "";
+		position: absolute;
+		z-index: 1;
+		top: calc(0.75em + 1px);
+		bottom: 0;
+		left: -1.625rem;
+		width: 2px;
+		background: var(--papel);
+	}
+
+	/* O desvio: o traço tracejado sai da linha e chega ao quadradinho vazado. */
+	.desvio {
+		position: relative;
+		padding-left: 1.5rem;
+	}
+
+	.desvio::before {
+		content: "";
+		position: absolute;
+		top: calc(0.75em - 1px);
+		left: -1.5rem;
+		width: 1.5rem;
+		border-top: 2px dashed var(--tinta);
+	}
+
+	.no-do-desvio {
+		position: absolute;
+		top: calc(0.75em - 0.4375rem);
+		left: 0;
+		width: 0.875rem;
+		height: 0.875rem;
+		border: 2px solid var(--tinta);
+		background: var(--papel);
+	}
+
+	/*
+	 * Os links do caminho, dos artigos e das fontes, têm a área de toque das
+	 * ações em texto: 45,4 px de altura em cada linha e 4 px a mais dos lados.
+	 * O padding faz a área, e a margem negativa devolve o espaço: o texto fica
+	 * no mesmo lugar. O clone dá a área a cada linha de um link que quebra. Os
+	 * links ficam em linhas vizinhas, e o texto de cada um (o span) fica por
+	 * cima de todas as áreas: um toque no texto de um link nunca vai para o
+	 * vizinho, e no vão entre dois vale o que vem depois. O anel de foco
+	 * contorna o texto, e não a área.
+	 */
+	.link-do-caminho {
+		position: relative;
+		/* O link do artigo é um bloco, com a linha de 20,6 px: 12,4 px em cima e embaixo. */
+		margin: -0.775rem -0.25rem;
+		padding: 0.775rem 0.25rem;
+		-webkit-box-decoration-break: clone;
+		box-decoration-break: clone;
+	}
+
+	/* O link da fonte é texto corrido, e a caixa dele tem a altura da letra, 16 px. */
+	p > .link-do-caminho {
+		padding-block: 0.92rem;
+	}
+
+	.link-do-caminho > span {
+		position: relative;
+		z-index: 1;
+	}
+
+	.link-do-caminho:focus-visible {
+		outline: none;
+	}
+
+	.link-do-caminho:focus-visible > span {
+		outline: 3px solid var(--ring);
+		outline-offset: 3px;
+	}
+
+	/*
+	 * Nas cores forçadas (o alto contraste do Windows), o navegador troca os
+	 * fundos pela cor do papel, e a linha cheia e os quadradinhos cheios, que são
+	 * fundo, sumiam. Eles passam a ter a cor do texto, e a capa do último desvio,
+	 * a cor do papel. O traço tracejado e o quadradinho vazado são borda e já
+	 * aparecem.
+	 */
+	@media (forced-colors: active) {
+		.passo::before,
+		.passo:not(:last-child)::after,
+		.passo:last-child .passo-corpo:has(.desvio)::after {
+			background: CanvasText;
+		}
+
+		.passo:last-child .desvio:last-child::after {
+			background: Canvas;
+		}
 	}
 
 	/* O texto corrido do artigo: serifa de leitura, tinta no papel, sem enfeite. */

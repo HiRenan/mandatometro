@@ -7,7 +7,7 @@ related_targets: ["src/routes/trilhas/index.tsx","src/routes/trilhas/$trilha/ind
 
 # Trilhas e artigos
 
-**Modo:** Read. **Alvos:** `/trilhas`, `/trilhas/<trilha>` e `/trilhas/<trilha>/<artigo>`, mais o cabeçalho do site e a página de não encontrado. **Tarefa:** a #36, as páginas das trilhas e dos artigos, com o progresso salvo no navegador, pedida pelo Renan em 09/11/2026.
+**Modo:** Read. **Alvos:** `/trilhas`, `/trilhas/<trilha>` e `/trilhas/<trilha>/<artigo>`, mais o cabeçalho do site e a página de não encontrado. **Tarefas:** a #36, as páginas das trilhas e dos artigos, com o progresso salvo no navegador, pedida pelo Renan em 09/11/2026; e a #38, o infográfico do caminho de um projeto de lei e o lado direito da trilha e da lista das trilhas em tela larga, decididos com o Renan em 10/11/2026.
 
 ## Job and audience
 
@@ -40,21 +40,41 @@ related_targets: ["src/routes/trilhas/index.tsx","src/routes/trilhas/$trilha/ind
   - a página de não encontrado, com status 404;
   - o tema do site (`globals.css` e o `<html>`).
 - **Fora, sem marcador nem esboço:**
-  - o quiz (#37) e o infográfico (#38);
+  - o quiz (#37), que vai entrar na coluna da esquerda da trilha, depois da 3ª folha e no fim;
   - a página inicial (#35), a inscrição (#21) e as edições (#39);
   - o login (#30) e a API.
+
+## A #38: o caminho e o lado direito
+
+- **O pedido:** a issue #38 pede um infográfico com o caminho de um projeto de lei (apresentação, comissões, plenário, a outra Casa, sanção ou veto), com a fonte, dentro da trilha. O Renan juntou a isso o vazio da tela larga: "ficou muito espaço no lado direito em aberto, como se não tivesse nada".
+- **As respostas do Renan (shape, 10/11/2026):**
+  - onde o infográfico entra: "Ao lado das folhas (Recomendado)";
+  - quanto detalhe: "5 passos e os desvios (Recomendado)";
+  - o lado direito de /trilhas: "As folhas de cada trilha (Recomendado)".
+- **A trilha, a partir de 1024 px:** duas colunas. À esquerda, o título, o resumo, o progresso, o "Continuar" e as folhas, como antes; à direita, na altura do título, "O caminho de um projeto de lei", numa coluna de 21rem (24rem a partir de 1280 px e 28rem a partir de 1440 px). Abaixo de 1024 px, o caminho vem depois das folhas, que é também a ordem do HTML. Uma trilha sem `infografico.md` fica com uma coluna só.
+- **O caminho:** os passos em pé, sem número, para não confundir com o número das folhas. Uma linha cheia de 2 px liga os quadradinhos de tinta de cada passo; os desvios começam com "Se" e saem da linha por um traço tracejado até um quadradinho vazado: a linha cheia é o caminho completo; a tracejada, o que pode mudar o caminho. No último passo, a linha desce só até o último desvio. Cada passo tem o texto em serifa, os artigos da trilha que o explicam (com a fita curta da folha, de V raso) e as fontes, com a data da consulta embaixo delas. Tudo é texto numa lista ordenada, e as listas têm `role="list"`; a linha e os quadradinhos são desenho, fora do leitor de tela. Os links dos artigos e das fontes têm 45,4 px de área de toque em cada linha, e o anel de foco contorna o texto, com papel entre ele e a linha vizinha (as fontes têm entrelinha de 1.75). Nas cores forçadas do Windows, a linha e os quadradinhos cheios ficam na cor do texto. Sem movimento.
+- **A lista das trilhas, a partir de 1024 px:** cada trilha ganha, à direita, as folhas dela (a fita, o número, o título, o X no lido e o "Lido · 2 min"), com as fitas penduradas da linha que abre a trilha. As folhas em miniatura ficam só abaixo de 1024 px, e a frase do progresso continua à esquerda.
+- **Não mudam:** o artigo e o celular da lista das trilhas.
+- **A correção da revisão do Argos (10/11/2026),** nas respostas do Renan:
+  - a legenda e o desvio das comissões: "Texto do Argos (Recomendado)". A legenda chama a linha cheia de caminho completo, e o desvio das comissões diz que a maioria dos projetos da Câmara não vai ao plenário;
+  - os ajustes pequenos (alto contraste, listas no Safari, área de toque e foco dos links, e a leitura que recusa repetição): "Sim, junto (Recomendado)";
+  - o tamanho do caminho e a saída no fim do caminho no celular: "Deixar para depois (Recomendado)";
+  - o salto de 1024 a 1280 px: "Aceitar e registrar (Recomendado)".
+- **Limitação aceita no plano:** numa tela larga, o caminho fica mais alto que as três folhas (2.252 px contra 1.076 px a 1440 px, depois da correção da revisão). A coluna da esquerda cresce com o quiz e com novos artigos.
 
 ## States and copy
 
 - **Progresso:**
   - antes da hidratação, a página não sabe o progresso e mostra a trilha como nova;
-  - depois, "Você leu 1 de 3", "Continuar de onde parou" e "Você terminou a trilha".
+  - depois, "Você leu 1 de 3", "Continuar de onde parou" e "Você terminou a trilha";
+  - de 1024 a 1280 px, quando o "Recomeçar a trilha" aparece, ele não cabe ao lado do botão e quebra a linha, e a lista das folhas desce até 40 px (68 px a 1024 px com dois artigos lidos). O Renan aceitou esse salto em 10/11/2026.
 - **No artigo:** o "Você leu este artigo" aparece ao chegar ao fim do texto. A navegação traz o anterior e o próximo, e no último, a volta à trilha.
 
 ## Unresolved decisions
 
 - **A domingueira das edições (#39):** a cor e o lugar dos domingos ficam para a issue das edições.
 - **O logo:** vem depois. Até lá, o nome em texto faz o papel da marca.
+- **O tamanho do caminho e a saída no celular:** o caminho tem mais palavras que um artigo e não se vê inteiro de uma olhada, e no celular ele termina sem uma ação para seguir na trilha. Os dois ficam para depois do piloto, por decisão do Renan (10/11/2026).
 
 ## Direction contract
 
@@ -85,6 +105,7 @@ FIRST VIEWPORT:
   - no centro, o título condensado, o resumo, a linha com o tempo e o aviso das fontes, e o texto, a cerca de 64 caracteres;
   - à direita, "Nesta trilha": as folhas em ordem, cada uma com a sua fita, o lido riscado e "Você está aqui" de canto dobrado.
 - **No celular:** o número encolhe para o lado do título, e "Nesta trilha" desce para depois das fontes.
+- **Na trilha, no computador:** à esquerda, o título, o resumo, a linha de meta, o progresso, o "Continuar" e as folhas; à direita, na altura do título, "O caminho de um projeto de lei", com os cinco passos ligados pela linha.
 
 FORM: a folhinha de arrancar das padarias, a 5ª da lista ordenada, com a paleta das fitas do Bonfim. seed:0b322b8c4550df91
 
