@@ -1,5 +1,5 @@
 import { compiler } from "markdown-to-jsx/html";
-import { type Artigo, lerTrilhas, type Trilha } from "./ler";
+import { type Artigo, type Infografico, lerTrilhas, type Trilha } from "./ler";
 
 // Só o servidor e os testes leem os arquivos. O navegador recebe a página
 // pronta, pelas funções de paginas.functions.ts, sem o zod, o js-yaml e o
@@ -17,9 +17,13 @@ export const trilhas: Trilha[] = lerTrilhas(arquivos);
 /** O artigo nas listas e nos links: tudo, menos o texto. */
 export type ArtigoNaLista = Omit<Artigo, "corpo">;
 
-export type TrilhaNaLista = Omit<Trilha, "artigos"> & {
+/** A trilha nas listas e no artigo: sem o texto dos artigos e sem o infográfico. */
+export type TrilhaNaLista = Omit<Trilha, "artigos" | "infografico"> & {
 	artigos: ArtigoNaLista[];
 };
+
+/** A trilha na página dela, com o infográfico, quando ela tem um. */
+export type TrilhaNaPagina = TrilhaNaLista & { infografico?: Infografico };
 
 export type ArtigoNaTrilha = {
 	trilha: TrilhaNaLista;
@@ -55,8 +59,14 @@ function naLista({
 	return { trilha, slug, titulo, resumo, ordem, fontes, minutos };
 }
 
-function trilhaNaLista(trilha: Trilha): TrilhaNaLista {
-	return { ...trilha, artigos: trilha.artigos.map(naLista) };
+function trilhaNaLista({
+	slug,
+	titulo,
+	descricao,
+	ordem,
+	artigos,
+}: Trilha): TrilhaNaLista {
+	return { slug, titulo, descricao, ordem, artigos: artigos.map(naLista) };
 }
 
 export function listarTrilhas(todas: Trilha[]): TrilhaNaLista[] {
@@ -66,9 +76,13 @@ export function listarTrilhas(todas: Trilha[]): TrilhaNaLista[] {
 export function acharTrilha(
 	todas: Trilha[],
 	slug: string,
-): TrilhaNaLista | undefined {
+): TrilhaNaPagina | undefined {
 	const trilha = todas.find((trilha) => trilha.slug === slug);
-	return trilha && trilhaNaLista(trilha);
+	if (!trilha) {
+		return undefined;
+	}
+	const { infografico } = trilha;
+	return { ...trilhaNaLista(trilha), ...(infografico && { infografico }) };
 }
 
 export function acharArtigo(

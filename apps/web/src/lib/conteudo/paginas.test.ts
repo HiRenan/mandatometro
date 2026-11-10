@@ -30,6 +30,40 @@ describe("conteúdo das trilhas", () => {
 		}
 	});
 
+	it("tem o infográfico do processo legislativo, da apresentação à sanção ou ao veto", () => {
+		const passos = acharTrilha(trilhas, "processo-legislativo")?.infografico
+			?.passos;
+
+		expect(passos?.map((passo) => passo.titulo)).toEqual([
+			"Apresentação",
+			"Comissões",
+			"Plenário",
+			"A outra Casa",
+			"Sanção ou veto",
+		]);
+	});
+
+	it("cita em cada passo do infográfico o artigo da Constituição que ele explica", () => {
+		const passos =
+			acharTrilha(trilhas, "processo-legislativo")?.infografico?.passos ?? [];
+		const constituicao = passos.map((passo) =>
+			passo.fontes
+				.map((fonte) =>
+					/constituicao:1988-10-05;1988!(art\d+)$/.exec(fonte.url),
+				)
+				.filter((achado) => achado !== null)
+				.map((achado) => achado[1]),
+		);
+
+		expect(constituicao).toEqual([
+			["art61"],
+			["art58"],
+			["art47"],
+			["art65"],
+			["art66"],
+		]);
+	});
+
 	it("não acha trilha nem artigo que não existe", () => {
 		const artigo = trilhas[0].artigos[0].slug;
 
@@ -59,6 +93,20 @@ describe("o que vai para o navegador", () => {
 				expect(outro).not.toHaveProperty("corpo");
 			}
 		}
+	});
+
+	it("leva o infográfico só na página da trilha", () => {
+		const trilha = trilhas[0];
+		const artigo = acharArtigo(trilhas, trilha.slug, trilha.artigos[0].slug);
+
+		expect(acharTrilha(trilhas, trilha.slug)?.infografico).toEqual(
+			trilha.infografico,
+		);
+		expect(trilha.infografico).toBeDefined();
+		for (const naLista of listarTrilhas(trilhas)) {
+			expect(naLista).not.toHaveProperty("infografico");
+		}
+		expect(artigo?.trilha).not.toHaveProperty("infografico");
 	});
 });
 
