@@ -6,7 +6,7 @@ import type {
 	Infografico as Dados,
 	Fonte,
 } from "@/lib/conteudo";
-import { corDaFita, formatarData } from "@/lib/formatar";
+import { corDaFita, formatarData, semQuebrarCitacao } from "@/lib/formatar";
 
 /** A data da consulta das fontes de um passo, uma vez só quando é a mesma. */
 function quandoForamConsultadas(fontes: Fonte[]): string {
@@ -67,7 +67,7 @@ export function Infografico({
 									{passo.titulo}
 								</h3>
 								<p className="mt-1.5 font-serif text-[1.0625rem] leading-[1.55]">
-									{passo.texto}
+									{semQuebrarCitacao(passo.texto)}
 								</p>
 								{passo.desvios.length > 0 && (
 									<ul role="list" className="mt-3 grid gap-3">
@@ -77,7 +77,7 @@ export function Infografico({
 												className="desvio font-serif text-base leading-normal"
 											>
 												<span aria-hidden="true" className="no-do-desvio" />
-												{desvio}
+												{semQuebrarCitacao(desvio)}
 											</li>
 										))}
 									</ul>

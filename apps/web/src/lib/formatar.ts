@@ -40,6 +40,14 @@ export function fraseDoProgresso(lidos: number, total: number): string {
 		: `Você leu ${lidos} de ${total}.`;
 }
 
+/**
+ * "art. 58" e "§ 2º" ficam numa linha só: o espaço depois de "art." e de "§"
+ * vira o espaço que não quebra, e o número não fica sozinho na linha de baixo.
+ */
+export function semQuebrarCitacao(texto: string): string {
+	return texto.replace(/(\barts?\.|§) (?=\d)/g, "$1\u00a0");
+}
+
 /** O site da fonte, como a pessoa reconhece: camara.leg.br, senado.leg.br. */
 export function dominio(url: string): string {
 	return new URL(url).hostname.replace(/^www\d*\./, "");

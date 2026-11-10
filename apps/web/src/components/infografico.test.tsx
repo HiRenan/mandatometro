@@ -191,6 +191,28 @@ describe("infográfico", () => {
 		).toBe("/trilhas/processo-legislativo/onde-o-projeto-comeca");
 	});
 
+	it("não deixa o número do artigo ou do parágrafo sozinho na outra linha", async () => {
+		const secao = await mostrar({
+			...infografico,
+			passos: infografico.passos.map((dados, indice) =>
+				indice === 1
+					? {
+							...dados,
+							texto: "A outra Casa revê o projeto (art. 65).",
+							desvios: [
+								"Se o presidente vetar, o Congresso decide (art. 66, § 4º).",
+							],
+						}
+					: dados,
+			),
+		});
+		const outraCasa = passo(secao, "A outra Casa");
+
+		// O espaço depois de "art." e de "§" não quebra a linha.
+		expect(outraCasa.textContent).toContain("(art.\u00a065)");
+		expect(outraCasa.textContent).toContain("(art.\u00a066, §\u00a04º)");
+	});
+
 	it("diz que as listas sem marcador são listas, porque o Safari tira o papel delas", async () => {
 		const secao = await mostrar();
 		const listas = [...secao.querySelectorAll("ol, ul")];
