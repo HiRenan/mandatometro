@@ -79,7 +79,7 @@ Em regra, o projeto começa na Câmara dos Deputados, a não ser que...
 
 O caminho da trilha num desenho: os passos ligados por uma linha cheia, e o que pode mudar o caminho num traço tracejado. Ele aparece na página da trilha, ao lado das folhas a partir de 1024 px de largura e depois delas numa tela menor. É opcional: uma trilha sem `infografico.md` fica com uma coluna só.
 
-Como o `trilha.md`, é só o cabeçalho, sem texto. Um infográfico de um passo só ficaria assim (o da trilha do processo legislativo tem cinco):
+Como o `trilha.md`, é só o cabeçalho, sem texto: um texto embaixo dele é erro, porque não apareceria na página. Um infográfico de um passo só ficaria assim (o da trilha do processo legislativo tem cinco):
 
 ```markdown
 ---
@@ -113,6 +113,12 @@ passos:
 
   ```text
   conteudo/trilhas/processo-legislativo/infografico.md: campo "passos.3.artigos": o artigo "onde-o-projeto-começa" não existe nesta trilha
+  ```
+
+- **Nada se repete,** porque sairia duas vezes na página: dois passos com o mesmo título são erro, e, no mesmo passo, um artigo, um desvio ou uma fonte que aparece duas vezes também. A mesma fonte é o mesmo link, mesmo com outro título. O erro aponta a segunda vez:
+
+  ```text
+  conteudo/trilhas/processo-legislativo/infografico.md: campo "passos.1.fontes.2.url": a fonte "https://www.camara.leg.br/entenda-o-processo-legislativo/" já está neste passo
   ```
 
 ## Pegadinhas do YAML

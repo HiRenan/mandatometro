@@ -373,6 +373,73 @@ describe("o infográfico da trilha", () => {
 			).toThrow(/infografico\.md.*"passos\.1\.desvio"/);
 		});
 
+		it("quando um passo repete um artigo", () => {
+			expect(() =>
+				ler(
+					infograficoMd.replace(
+						"      - primeiro\n",
+						"      - primeiro\n      - primeiro\n",
+					),
+				),
+			).toThrow(
+				new ErroDeConteudo([
+					'conteudo/trilhas/processo-legislativo/infografico.md: campo "passos.0.artigos.1": o artigo "primeiro" já está neste passo',
+				]),
+			);
+		});
+
+		it("quando um passo repete um desvio", () => {
+			const desvio =
+				"      - Se o regimento permitir, a comissão decide sozinha.\n";
+			expect(() =>
+				ler(infograficoMd.replace(desvio, `${desvio}${desvio}`)),
+			).toThrow(
+				new ErroDeConteudo([
+					'conteudo/trilhas/processo-legislativo/infografico.md: campo "passos.1.desvios.1": o desvio "Se o regimento permitir, a comissão decide sozinha." já está neste passo',
+				]),
+			);
+		});
+
+		it("quando um passo repete o link de uma fonte, mesmo com outro título", () => {
+			const fonte = `      - titulo: Constituição Federal, art. 58
+        url: https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art58
+        consultadoEm: 2026-11-10
+`;
+			const outraVez = fonte.replace("art. 58\n", "artigo 58\n");
+			expect(() =>
+				ler(infograficoMd.replace(fonte, `${fonte}${outraVez}`)),
+			).toThrow(
+				new ErroDeConteudo([
+					'conteudo/trilhas/processo-legislativo/infografico.md: campo "passos.1.fontes.1.url": a fonte "https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art58" já está neste passo',
+				]),
+			);
+		});
+
+		it("quando dois passos têm o mesmo título", () => {
+			expect(() =>
+				ler(
+					infograficoMd.replace(
+						"- titulo: Comissões",
+						"- titulo: Apresentação",
+					),
+				),
+			).toThrow(
+				new ErroDeConteudo([
+					'conteudo/trilhas/processo-legislativo/infografico.md: campo "passos.1.titulo": o passo "Apresentação" já está no infográfico',
+				]),
+			);
+		});
+
+		it("quando há texto embaixo do cabeçalho", () => {
+			expect(() =>
+				ler(`${infograficoMd}\nUm texto que não aparece na página.\n`),
+			).toThrow(
+				new ErroDeConteudo([
+					"conteudo/trilhas/processo-legislativo/infografico.md: o infográfico é só o cabeçalho, e o texto embaixo dele não aparece na página",
+				]),
+			);
+		});
+
 		it("quando a pasta só tem o infográfico, sem o trilha.md", () => {
 			expect(() =>
 				lerTrilhas({ [`${pasta}/infografico.md`]: infograficoMd }),
