@@ -47,6 +47,14 @@
 	}
 
 	/*
+	 * A fita curta, ao lado do link de um artigo no caminho: com 24 px de altura,
+	 * o V de 18 px viraria ponta de seta. O V raso, de 8 px, lê como marcador.
+	 */
+	.fita-curta {
+		clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 0.5rem), 0 100%);
+	}
+
+	/*
 	 * O canto dobrado marca a folha onde a pessoa está: a ponta da folha dobrada
 	 * para dentro. O ::before corta o canto até o papel (e esconde o picote de
 	 * cima), e o ::after desenha a aba em tinta, sem sombra.
@@ -156,11 +164,12 @@
 	}
 
 	/*
-	 * O caminho do infográfico. Cada passo tem um quadradinho de tinta na altura
-	 * do título, e uma linha cheia de 2 px liga um passo ao seguinte. Os desvios
-	 * saem da linha por um traço tracejado; no último passo, a linha só desce
-	 * quando há desvio, para o traço não ficar solto. É só desenho: o sentido
-	 * está nas palavras de cada passo.
+	 * O caminho do infográfico. Cada passo tem um quadradinho cheio de tinta na
+	 * altura do título, e uma linha cheia de 2 px liga um passo ao seguinte. Os
+	 * desvios saem da linha por um traço tracejado até um quadradinho vazado: o
+	 * cheio é o que sempre acontece; o vazado, o que pode acontecer. No último
+	 * passo, a linha desce só até o último desvio, e só quando há desvio. É só
+	 * desenho: o sentido está nas palavras de cada passo.
 	 */
 	.passo {
 		position: relative;
@@ -181,7 +190,7 @@
 		background: var(--tinta);
 	}
 
-	.passo::after {
+	.passo:not(:last-child)::after {
 		content: "";
 		position: absolute;
 		top: 0.3rem;
@@ -191,18 +200,37 @@
 		background: var(--tinta);
 	}
 
-	.passo:last-child::after {
+	/* No último passo, a linha fica no corpo (título, texto e desvios). */
+	.passo:last-child .passo-corpo {
+		position: relative;
+	}
+
+	.passo:last-child .passo-corpo:has(.desvio)::after {
+		content: "";
+		position: absolute;
+		top: 0.3rem;
 		bottom: 0;
+		left: -1.625rem;
+		width: 2px;
+		background: var(--tinta);
 	}
 
-	.passo:last-child:not(:has(.desvio))::after {
-		content: none;
+	/* E para no traço do último desvio: o papel cobre a linha dali para baixo. */
+	.passo:last-child .desvio:last-child::after {
+		content: "";
+		position: absolute;
+		z-index: 1;
+		top: calc(0.75em + 1px);
+		bottom: 0;
+		left: -1.625rem;
+		width: 2px;
+		background: var(--papel);
 	}
 
-	/* O desvio sai da linha cheia por um traço tracejado até o texto. */
+	/* O desvio: o traço tracejado sai da linha e chega ao quadradinho vazado. */
 	.desvio {
 		position: relative;
-		padding-left: 1.25rem;
+		padding-left: 1.5rem;
 	}
 
 	.desvio::before {
@@ -210,8 +238,18 @@
 		position: absolute;
 		top: calc(0.75em - 1px);
 		left: -1.5rem;
-		width: 2.375rem;
+		width: 1.5rem;
 		border-top: 2px dashed var(--tinta);
+	}
+
+	.no-do-desvio {
+		position: absolute;
+		top: calc(0.75em - 0.4375rem);
+		left: 0;
+		width: 0.875rem;
+		height: 0.875rem;
+		border: 2px solid var(--tinta);
+		background: var(--papel);
 	}
 
 	/* O texto corrido do artigo: serifa de leitura, tinta no papel, sem enfeite. */

@@ -131,7 +131,7 @@ describe("infográfico", () => {
 		).toBeTruthy();
 	});
 
-	it("dá as fontes de cada passo numa linha, com o link de cada uma", async () => {
+	it("dá as fontes de cada passo, com o link de cada uma e a data da consulta", async () => {
 		const secao = await mostrar();
 		const outraCasa = passo(secao, "A outra Casa");
 		const apresentacao = passo(secao, "Apresentação");
@@ -144,22 +144,20 @@ describe("infográfico", () => {
 			"https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art65",
 		);
 		expect(outraCasa.textContent).toContain(
-			"Fontes: Constituição Federal, art. 65; Câmara dos Deputados, Entenda o processo legislativo.",
+			"Fontes: Constituição Federal, art. 65 · Câmara dos Deputados, Entenda o processo legislativo",
+		);
+		expect(outraCasa.textContent).toContain(
+			"consultadas entre 1º de novembro de 2026 e 10 de novembro de 2026",
 		);
 		expect(apresentacao.textContent).toContain(
-			"Fonte: Constituição Federal, art. 61.",
+			"Fonte: Constituição Federal, art. 61",
+		);
+		expect(apresentacao.textContent).toContain(
+			"consultada em 10 de novembro de 2026",
 		);
 	});
 
-	it("diz no fim quando as fontes foram consultadas", async () => {
-		const secao = await mostrar();
-
-		expect(secao.lastElementChild?.textContent).toBe(
-			"Fontes consultadas entre 1º de novembro de 2026 e 10 de novembro de 2026.",
-		);
-	});
-
-	it("dá a data uma vez só quando todas as fontes são do mesmo dia", async () => {
+	it("dá a data uma vez só quando as fontes do passo são do mesmo dia", async () => {
 		const secao = await mostrar({
 			...infografico,
 			passos: infografico.passos.map((dados) => ({
@@ -171,8 +169,8 @@ describe("infográfico", () => {
 			})),
 		});
 
-		expect(secao.lastElementChild?.textContent).toBe(
-			"Fontes consultadas em 10 de novembro de 2026.",
+		expect(passo(secao, "A outra Casa").textContent).toContain(
+			"consultadas em 10 de novembro de 2026",
 		);
 	});
 
@@ -194,9 +192,12 @@ describe("infográfico", () => {
 	it("deixa as cores e os desenhos fora do leitor de tela", async () => {
 		const secao = await mostrar();
 		const comCor = [...secao.querySelectorAll<HTMLElement>("[style]")];
+		const desenhos = [...secao.querySelectorAll<HTMLElement>("span:empty")];
 
 		expect(comCor.length).toBeGreaterThan(0);
-		for (const elemento of comCor) {
+		// As fitas dos dois artigos e o quadradinho vazado de cada desvio.
+		expect(desenhos).toHaveLength(4);
+		for (const elemento of [...comCor, ...desenhos]) {
 			expect(elemento.getAttribute("aria-hidden")).toBe("true");
 		}
 	});
