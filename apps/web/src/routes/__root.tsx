@@ -11,6 +11,7 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { type ReactNode, useEffect } from "react";
 
 import Header from "../components/header";
+import { Rodape } from "../components/rodape";
 import appCss from "../index.css?url";
 import { focarNoTitulo } from "../lib/foco";
 import { TITULO_DE_ERRO, TITULO_NAO_ENCONTRADA } from "../lib/meta";
@@ -71,8 +72,8 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 	}),
 
 	// O documento e a moldura ficam fora das páginas: quando uma página dá erro, a
-	// página de erro (router.tsx) aparece dentro do main, com o cabeçalho e o
-	// lang="pt-BR".
+	// página de erro (router.tsx) aparece dentro do main, com o cabeçalho, o
+	// rodapé e o lang="pt-BR".
 	shellComponent: Documento,
 });
 
@@ -83,11 +84,13 @@ function Documento({ children }: { children: ReactNode }) {
 				<HeadContent />
 			</head>
 			<body>
-				<div className="grid min-h-svh grid-rows-[auto_1fr]">
+				{/* O main estica: numa página curta, o rodapé fica no fim da tela. */}
+				<div className="grid min-h-svh grid-rows-[auto_1fr_auto]">
 					<Header />
 					<main id="conteudo" tabIndex={-1} className="focus:outline-none">
 						{children}
 					</main>
+					<Rodape />
 				</div>
 				<FocoNaPaginaNova />
 				<Toaster richColors />
