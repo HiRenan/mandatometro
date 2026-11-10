@@ -127,7 +127,9 @@ describe("infográfico", () => {
 			),
 		).toBeTruthy();
 		expect(
-			within(secao).getByText(/A linha cheia é o caminho de sempre/),
+			within(secao).getByText(
+				"A linha cheia é o caminho completo; a tracejada, o que pode mudar o caminho.",
+			),
 		).toBeTruthy();
 	});
 

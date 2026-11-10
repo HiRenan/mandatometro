@@ -17,7 +17,7 @@ passos:
   - titulo: Comissões
     texto: O projeto vai para as comissões, grupos de parlamentares que cuidam de um tema (art. 58). Na Câmara, em cada comissão, um relator analisa o projeto e as sugestões de mudança e escreve um parecer, que a comissão vota.
     desvios:
-      - Se o regimento da Casa permitir, a comissão decide sem o plenário, e o projeto aprovado segue direto para a outra Casa ou para a sanção. Na Câmara, isso se chama tramitação conclusiva; no Senado, decisão terminativa. Um recurso de um décimo dos membros da Casa leva o projeto ao plenário (art. 58, § 2º, I).
+      - Se o regimento da Casa permitir, a comissão decide sem o plenário, como acontece com a maioria dos projetos na Câmara, e o projeto aprovado segue direto para a outra Casa ou para a sanção. Na Câmara, isso se chama tramitação conclusiva; no Senado, decisão terminativa. Um recurso de um décimo dos membros da Casa leva o projeto ao plenário (art. 58, § 2º, I).
     artigos:
       - o-projeto-passa-pelas-comissoes
     fontes:

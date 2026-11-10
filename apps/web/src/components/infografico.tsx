@@ -44,7 +44,7 @@ export function Infografico({
 				{infografico.resumo}
 			</p>
 			<p className="mt-2 text-[0.9375rem] leading-snug font-semibold">
-				A linha cheia é o caminho de sempre; a tracejada, o que pode mudar o
+				A linha cheia é o caminho completo; a tracejada, o que pode mudar o
 				caminho.
 			</p>
 			<ol className="mt-6">

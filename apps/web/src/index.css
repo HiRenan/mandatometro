@@ -166,10 +166,10 @@
 	/*
 	 * O caminho do infográfico. Cada passo tem um quadradinho cheio de tinta na
 	 * altura do título, e uma linha cheia de 2 px liga um passo ao seguinte. Os
-	 * desvios saem da linha por um traço tracejado até um quadradinho vazado: o
-	 * cheio é o que sempre acontece; o vazado, o que pode acontecer. No último
-	 * passo, a linha desce só até o último desvio, e só quando há desvio. É só
-	 * desenho: o sentido está nas palavras de cada passo.
+	 * desvios saem da linha por um traço tracejado até um quadradinho vazado: a
+	 * linha cheia é o caminho completo; a tracejada, o que pode mudar o caminho.
+	 * No último passo, a linha desce só até o último desvio, e só quando há
+	 * desvio. É só desenho: o sentido está nas palavras de cada passo.
 	 */
 	.passo {
 		position: relative;

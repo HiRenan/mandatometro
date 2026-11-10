@@ -146,7 +146,7 @@ O que ficaria errado, nas palavras do Renan: "Site do governo, Coisa de criança
 - O número da folha em tamanho de cartaz, num condensado de peso 900.
 - Texto corrido em serifa, a cerca de 64 caracteres por linha.
 - Estado como marca no papel: X no lido, canto dobrado onde a pessoa está ou parou.
-- Linhas de 2 px em tinta: cheias entre as partes, tracejadas (o picote) entre as folhas. No infográfico da trilha, a cheia é o que sempre acontece, e a tracejada, o que pode acontecer.
+- Linhas de 2 px em tinta: cheias entre as partes, tracejadas (o picote) entre as folhas. No infográfico da trilha, a cheia é o caminho completo, e a tracejada, o que pode mudar o caminho.
 - Um único movimento: o X desenhado em 400 ms quando a pessoa chega ao fim do texto.
 
 ## Colors
@@ -259,7 +259,7 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 
 ### Infográfico
 - **Onde:** na página da trilha, quando a trilha tem um `infografico.md`. A partir de 1024 px, na coluna da direita, começando na altura do título; abaixo disso, depois das folhas.
-- **Forma:** o título ("O caminho de um projeto de lei") em Title a 1.625rem, sobre uma linha cheia de 2 px; o resumo em Literata a 1.0625rem; e a legenda em Archivo 600 a 0.9375rem: "A linha cheia é o caminho de sempre; a tracejada, o que pode mudar o caminho." Os passos vêm numa lista ordenada, em pé e sem número, para não confundir com o número das folhas, com 36 px entre um e outro.
+- **Forma:** o título ("O caminho de um projeto de lei") em Title a 1.625rem, sobre uma linha cheia de 2 px; o resumo em Literata a 1.0625rem; e a legenda em Archivo 600 a 0.9375rem: "A linha cheia é o caminho completo; a tracejada, o que pode mudar o caminho." Os passos vêm numa lista ordenada, em pé e sem número, para não confundir com o número das folhas, com 36 px entre um e outro.
 - **O passo:** o quadradinho cheio de 14 px na altura do título e a linha cheia de 2 px até o passo seguinte. Embaixo do título (Title pequeno, a 1.375rem), o texto em Literata a 1.0625rem, os desvios, os artigos da trilha que explicam o passo e as fontes.
 - **O desvio:** começa com "Se" e sai da linha por um traço tracejado de 2 px até o quadradinho vazado, com o texto em Literata a 1rem. No último passo, a linha desce só até o último desvio, e só quando há desvio.
 - **Os artigos:** "Artigo 3: O projeto passa pelas comissões", em Archivo 600 a 0.9375rem, como link, com a fita curta da folha ao lado, na cor da posição do artigo.
@@ -293,7 +293,7 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 - **Do** dar a cada artigo a fita da sua posição, pela ordem verde, amarela, azul, rosa, vermelha.
 - **Do** escrever o estado em palavras e marcar no papel: X no lido, canto dobrado onde a pessoa está ou parou.
 - **Do** separar as folhas com picote (linha tracejada de 2 px) e fechar as seções com linha cheia de 2 px.
-- **Do** desenhar o que sempre acontece com linha cheia e o que pode acontecer com linha tracejada, e dizer os dois em palavras.
+- **Do** desenhar o caminho completo com linha cheia e o que pode mudar o caminho com linha tracejada, e dizer os dois em palavras.
 - **Do** usar o foco de 3 px na azul, afastado 3 px, e a amarela dentro do cartão preto.
 - **Do** respeitar o movimento reduzido: o X aparece sem animação.
 - **Do** oferecer "Desfazer" logo depois de apagar uma marca, em vez de pedir confirmação antes.
