@@ -51,16 +51,52 @@ const trilhaSchema = z.strictObject({
 	ordem,
 });
 
+const fontes = z
+	.array(fonteSchema, exigido("precisa ser uma lista de fontes"))
+	.min(1, "precisa de pelo menos uma fonte oficial");
+
 const artigoSchema = z.strictObject({
 	titulo: texto,
 	resumo: texto,
 	ordem,
-	fontes: z
-		.array(fonteSchema, exigido("precisa ser uma lista de fontes"))
-		.min(1, "precisa de pelo menos uma fonte oficial"),
+	fontes,
+});
+
+// O infográfico da trilha: o caminho em passos, cada um com as fontes dele.
+const passoSchema = z.strictObject({
+	titulo: texto,
+	texto,
+	// O que pode mudar o caminho neste passo, uma frase por desvio.
+	desvios: z
+		.array(texto, exigido("precisa ser uma lista de frases"))
+		.default([]),
+	// Os artigos da trilha que explicam o passo, pelo nome do arquivo, sem o .md.
+	artigos: z
+		.array(
+			z
+				.string(
+					exigido("precisa ser o nome do arquivo de um artigo, sem o .md"),
+				)
+				.trim(),
+			exigido("precisa ser uma lista de artigos da trilha"),
+		)
+		.default([]),
+	fontes,
+});
+
+const infograficoSchema = z.strictObject({
+	titulo: texto,
+	resumo: texto,
+	passos: z
+		.array(passoSchema, exigido("precisa ser uma lista de passos"))
+		.min(1, "precisa de pelo menos um passo"),
 });
 
 export type Fonte = z.output<typeof fonteSchema>;
+
+export type Passo = z.output<typeof passoSchema>;
+
+export type Infografico = z.output<typeof infograficoSchema>;
 
 export type Artigo = {
 	trilha: string;
@@ -79,6 +115,8 @@ export type Trilha = {
 	descricao: string;
 	ordem: number;
 	artigos: Artigo[];
+	/** O caminho da trilha num infográfico, quando ela tem um infografico.md. */
+	infografico?: Infografico;
 };
 
 export class ErroDeConteudo extends Error {
@@ -170,8 +208,12 @@ function repetidos<T extends { ordem: number }>(
  */
 export function lerTrilhas(arquivos: Record<string, string>): Trilha[] {
 	const problemas: string[] = [];
-	const trilhas = new Map<string, Omit<Trilha, "artigos">>();
+	const trilhas = new Map<string, Omit<Trilha, "artigos" | "infografico">>();
 	const artigos = new Map<string, Artigo[]>();
+	const infograficos = new Map<string, Infografico>();
+	// Os nomes dos arquivos de artigo de cada pasta, mesmo os que têm problema,
+	// para conferir os artigos que o infográfico aponta.
+	const nomesDosArtigos = new Map<string, Set<string>>();
 
 	for (const [caminho, bruto] of Object.entries(arquivos)) {
 		const partes = /([^/]+)\/([^/]+)\.md$/.exec(caminho);
@@ -207,6 +249,21 @@ export function lerTrilhas(arquivos: Record<string, string>): Trilha[] {
 			continue;
 		}
 
+		// Como o trilha.md, o infográfico é só o cabeçalho.
+		if (arquivo === "infografico") {
+			const infografico = validar(infograficoSchema, lido.dados);
+			if (infografico.ok) {
+				infograficos.set(pasta, infografico.valor);
+			} else {
+				infografico.problemas.forEach(avisar);
+			}
+			continue;
+		}
+
+		nomesDosArtigos.set(
+			pasta,
+			(nomesDosArtigos.get(pasta) ?? new Set<string>()).add(arquivo),
+		);
 		const artigo = validar(artigoSchema, lido.dados);
 		if (!artigo.ok) {
 			artigo.problemas.forEach(avisar);
@@ -230,7 +287,11 @@ export function lerTrilhas(arquivos: Record<string, string>): Trilha[] {
 		}
 	}
 
-	const pastas = new Set([...trilhas.keys(), ...artigos.keys()]);
+	const pastas = new Set([
+		...trilhas.keys(),
+		...artigos.keys(),
+		...infograficos.keys(),
+	]);
 	for (const pasta of pastas) {
 		const local = `conteudo/trilhas/${pasta}`;
 		if (
@@ -255,6 +316,16 @@ export function lerTrilhas(arquivos: Record<string, string>): Trilha[] {
 		)) {
 			problemas.push(`${local}: ${repetido}`);
 		}
+		const nomes = nomesDosArtigos.get(pasta) ?? new Set<string>();
+		infograficos.get(pasta)?.passos.forEach((passo, indice) => {
+			for (const artigo of passo.artigos) {
+				if (!nomes.has(artigo)) {
+					problemas.push(
+						`${local}/infografico.md: campo "passos.${indice}.artigos": o artigo "${artigo}" não existe nesta trilha`,
+					);
+				}
+			}
+		});
 	}
 	for (const repetido of repetidos(
 		[...trilhas.values()],
@@ -269,8 +340,12 @@ export function lerTrilhas(arquivos: Record<string, string>): Trilha[] {
 
 	const porOrdem = (a: { ordem: number }, b: { ordem: number }) =>
 		a.ordem - b.ordem;
-	return [...trilhas.values()].sort(porOrdem).map((trilha) => ({
-		...trilha,
-		artigos: (artigos.get(trilha.slug) ?? []).sort(porOrdem),
-	}));
+	return [...trilhas.values()].sort(porOrdem).map((trilha) => {
+		const infografico = infograficos.get(trilha.slug);
+		return {
+			...trilha,
+			artigos: (artigos.get(trilha.slug) ?? []).sort(porOrdem),
+			...(infografico && { infografico }),
+		};
+	});
 }

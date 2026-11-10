@@ -245,3 +245,138 @@ describe("lerTrilhas", () => {
 		});
 	});
 });
+
+const infograficoMd = `---
+titulo: O caminho de um projeto de lei
+resumo: Os passos de um projeto, do começo ao fim.
+passos:
+  - titulo: Apresentação
+    texto: Quem pode propor apresenta o projeto.
+    artigos:
+      - primeiro
+    fontes:
+      - titulo: Constituição Federal, art. 61
+        url: https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art61
+        consultadoEm: 2026-11-10
+  - titulo: Comissões
+    texto: As comissões estudam o projeto.
+    desvios:
+      - Se o regimento permitir, a comissão decide sozinha.
+    fontes:
+      - titulo: Constituição Federal, art. 58
+        url: https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art58
+        consultadoEm: 2026-11-10
+---
+`;
+
+describe("o infográfico da trilha", () => {
+	function ler(infografico: string) {
+		return lerTrilhas({
+			[`${pasta}/trilha.md`]: trilhaMd,
+			[`${pasta}/primeiro.md`]: artigoMd(),
+			[`${pasta}/infografico.md`]: infografico,
+		});
+	}
+
+	it("lê o infografico.md, com os passos na ordem do arquivo", () => {
+		const [trilha] = ler(infograficoMd);
+
+		expect(trilha.infografico).toEqual({
+			titulo: "O caminho de um projeto de lei",
+			resumo: "Os passos de um projeto, do começo ao fim.",
+			passos: [
+				{
+					titulo: "Apresentação",
+					texto: "Quem pode propor apresenta o projeto.",
+					desvios: [],
+					artigos: ["primeiro"],
+					fontes: [
+						{
+							titulo: "Constituição Federal, art. 61",
+							url: "https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art61",
+							consultadoEm: "2026-11-10",
+						},
+					],
+				},
+				{
+					titulo: "Comissões",
+					texto: "As comissões estudam o projeto.",
+					desvios: ["Se o regimento permitir, a comissão decide sozinha."],
+					artigos: [],
+					fontes: [
+						{
+							titulo: "Constituição Federal, art. 58",
+							url: "https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art58",
+							consultadoEm: "2026-11-10",
+						},
+					],
+				},
+			],
+		});
+	});
+
+	it("não vira um artigo da trilha", () => {
+		const [trilha] = ler(infograficoMd);
+
+		expect(trilha.artigos.map((artigo) => artigo.slug)).toEqual(["primeiro"]);
+	});
+
+	it("é opcional: a trilha sem o arquivo fica sem infográfico", () => {
+		const [trilha] = lerTrilhas({
+			[`${pasta}/trilha.md`]: trilhaMd,
+			[`${pasta}/primeiro.md`]: artigoMd(),
+		});
+
+		expect(trilha.infografico).toBeUndefined();
+	});
+
+	describe("avisa o erro com o nome do arquivo", () => {
+		it("quando um passo não tem fonte", () => {
+			const semFonte = infograficoMd.replace(
+				/ {4}fontes:\n {6}- titulo: Constituição Federal, art\. 61\n.*\n.*\n/,
+				"",
+			);
+			expect(() => ler(semFonte)).toThrow(
+				/infografico\.md.*"passos\.0\.fontes"/,
+			);
+		});
+
+		it("quando a fonte de um passo não é um site oficial", () => {
+			expect(() =>
+				ler(
+					infograficoMd.replace(
+						"https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art58",
+						"https://exemplo.com/constituicao",
+					),
+				),
+			).toThrow(/infografico\.md.*"passos\.1\.fontes\.0\.url".*gov\.br/);
+		});
+
+		it("quando um passo aponta um artigo que não existe na trilha", () => {
+			expect(() =>
+				ler(infograficoMd.replace("- primeiro", "- nao-existe")),
+			).toThrow(
+				new ErroDeConteudo([
+					'conteudo/trilhas/processo-legislativo/infografico.md: campo "passos.0.artigos": o artigo "nao-existe" não existe nesta trilha',
+				]),
+			);
+		});
+
+		it("quando o infográfico não tem passos", () => {
+			const semPassos = infograficoMd.replace(/passos:[\s\S]*?(?=---)/, "");
+			expect(() => ler(semPassos)).toThrow(/infografico\.md.*"passos"/);
+		});
+
+		it("quando um campo tem outro nome", () => {
+			expect(() =>
+				ler(infograficoMd.replace("    desvios:", "    desvio:")),
+			).toThrow(/infografico\.md.*"passos\.1\.desvio"/);
+		});
+
+		it("quando a pasta só tem o infográfico, sem o trilha.md", () => {
+			expect(() =>
+				lerTrilhas({ [`${pasta}/infografico.md`]: infograficoMd }),
+			).toThrow(/processo-legislativo: falta o trilha\.md/);
+		});
+	});
+});
