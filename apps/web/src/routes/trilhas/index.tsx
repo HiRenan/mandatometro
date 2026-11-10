@@ -64,7 +64,7 @@ function ItemDaTrilha({
 	);
 
 	return (
-		<li className="border-tinta folha:grid-cols-[minmax(0,1fr)_24rem] folha:gap-x-12 border-b-2 border-dashed py-7 lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-x-10 lg:py-0 xl:grid-cols-[minmax(0,1fr)_21rem]">
+		<li className="border-tinta folha:grid-cols-[minmax(0,1fr)_28rem] folha:gap-x-12 border-b-2 border-dashed py-7 lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-x-10 lg:py-0 xl:grid-cols-[minmax(0,1fr)_24rem]">
 			<div className="lg:py-7">
 				<h2 className="subtitulo-condensado text-[2rem] md:text-[2.75rem]">
 					<Link

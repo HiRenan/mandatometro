@@ -1,12 +1,29 @@
 import { Link } from "@tanstack/react-router";
-import type { ArtigoNaLista, Infografico as Dados } from "@/lib/conteudo";
-import { corDaFita, dominio, formatarData } from "@/lib/formatar";
+import { Fragment } from "react";
+import type {
+	ArtigoNaLista,
+	Infografico as Dados,
+	Fonte,
+} from "@/lib/conteudo";
+import { corDaFita, formatarData } from "@/lib/formatar";
+
+/** A data da consulta das fontes, dita uma vez no fim do caminho. */
+function quandoForamConsultadas(fontes: Fonte[]): string {
+	const datas = fontes.map((fonte) => fonte.consultadoEm).sort();
+	const primeira = datas[0];
+	const ultima = datas[datas.length - 1];
+	return primeira === ultima
+		? `Fontes consultadas em ${formatarData(primeira)}.`
+		: `Fontes consultadas entre ${formatarData(primeira)} e ${formatarData(ultima)}.`;
+}
 
 /**
  * O caminho da trilha num infográfico: os passos em pé, ligados por uma linha
  * cheia, com os desvios em linha tracejada. É texto de verdade, numa lista
  * ordenada; a linha, os quadradinhos e as fitas são desenho e ficam fora do
- * leitor de tela, e o sentido está nas palavras.
+ * leitor de tela, e o sentido está nas palavras. As fontes de cada passo ficam
+ * numa linha só, embaixo dele, para o caminho caber num olhar; a data da
+ * consulta vem uma vez, no fim.
  */
 export function Infografico({
 	infografico,
@@ -82,25 +99,27 @@ export function Infografico({
 									))}
 								</ul>
 							)}
-							<ul
-								aria-label={`Fontes do passo ${passo.titulo}`}
-								className="mt-3.5 grid gap-2"
-							>
-								{passo.fontes.map((fonte) => (
-									<li key={fonte.url} className="text-[0.9375rem] leading-snug">
-										<a href={fonte.url} className="font-bold">
+							<p className="text-tinta-suave mt-3 text-sm leading-snug">
+								{passo.fontes.length === 1 ? "Fonte: " : "Fontes: "}
+								{passo.fontes.map((fonte, indice) => (
+									<Fragment key={fonte.url}>
+										{indice > 0 && "; "}
+										<a href={fonte.url} className="text-tinta font-semibold">
 											{fonte.titulo}
 										</a>
-										<span className="text-tinta-suave mt-0.5 block text-sm">
-											{`${dominio(fonte.url)}, consultada em ${formatarData(fonte.consultadoEm)}`}
-										</span>
-									</li>
+									</Fragment>
 								))}
-							</ul>
+								.
+							</p>
 						</li>
 					);
 				})}
 			</ol>
+			<p className="text-tinta-suave mt-6 text-sm leading-snug">
+				{quandoForamConsultadas(
+					infografico.passos.flatMap((passo) => passo.fontes),
+				)}
+			</p>
 		</section>
 	);
 }

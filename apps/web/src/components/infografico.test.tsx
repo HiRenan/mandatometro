@@ -65,12 +65,12 @@ const infografico: DadosDoInfografico = {
 };
 
 /** Mostra o infográfico num site de mentira, com a rota dos artigos para os links. */
-async function mostrar() {
+async function mostrar(dados: DadosDoInfografico = infografico) {
 	const raiz = createRootRoute({ component: () => <Outlet /> });
 	const pagina = createRoute({
 		getParentRoute: () => raiz,
 		path: "/",
-		component: () => <Infografico infografico={infografico} trilha={trilha} />,
+		component: () => <Infografico infografico={dados} trilha={trilha} />,
 	});
 	const artigo = createRoute({
 		getParentRoute: () => raiz,
@@ -131,31 +131,49 @@ describe("infográfico", () => {
 		).toBeTruthy();
 	});
 
-	it("dá as fontes de cada passo, com o link, o site e a data da consulta", async () => {
+	it("dá as fontes de cada passo numa linha, com o link de cada uma", async () => {
 		const secao = await mostrar();
 		const outraCasa = passo(secao, "A outra Casa");
-		const fontes = within(outraCasa).getByRole("list", {
-			name: "Fontes do passo A outra Casa",
-		});
+		const apresentacao = passo(secao, "Apresentação");
 
 		expect(
-			within(fontes)
+			within(outraCasa)
 				.getByRole("link", { name: "Constituição Federal, art. 65" })
 				.getAttribute("href"),
 		).toBe(
 			"https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art65",
 		);
-		expect(fontes.textContent).toContain(
-			"normas.leg.br, consultada em 1º de novembro de 2026",
+		expect(outraCasa.textContent).toContain(
+			"Fontes: Constituição Federal, art. 65; Câmara dos Deputados, Entenda o processo legislativo.",
 		);
-		expect(fontes.textContent).toContain(
-			"camara.leg.br, consultada em 10 de novembro de 2026",
+		expect(apresentacao.textContent).toContain(
+			"Fonte: Constituição Federal, art. 61.",
 		);
-		expect(
-			within(passo(secao, "Apresentação")).getByRole("link", {
-				name: "Constituição Federal, art. 61",
-			}),
-		).toBeTruthy();
+	});
+
+	it("diz no fim quando as fontes foram consultadas", async () => {
+		const secao = await mostrar();
+
+		expect(secao.lastElementChild?.textContent).toBe(
+			"Fontes consultadas entre 1º de novembro de 2026 e 10 de novembro de 2026.",
+		);
+	});
+
+	it("dá a data uma vez só quando todas as fontes são do mesmo dia", async () => {
+		const secao = await mostrar({
+			...infografico,
+			passos: infografico.passos.map((dados) => ({
+				...dados,
+				fontes: dados.fontes.map((fonte) => ({
+					...fonte,
+					consultadoEm: "2026-11-10",
+				})),
+			})),
+		});
+
+		expect(secao.lastElementChild?.textContent).toBe(
+			"Fontes consultadas em 10 de novembro de 2026.",
+		);
 	});
 
 	it("leva ao artigo da trilha que explica o passo, com o número da folha", async () => {

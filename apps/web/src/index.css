@@ -158,8 +158,9 @@
 	/*
 	 * O caminho do infográfico. Cada passo tem um quadradinho de tinta na altura
 	 * do título, e uma linha cheia de 2 px liga um passo ao seguinte. Os desvios
-	 * saem da linha por um traço tracejado. É só desenho: o sentido está nas
-	 * palavras de cada passo.
+	 * saem da linha por um traço tracejado; no último passo, a linha só desce
+	 * quando há desvio, para o traço não ficar solto. É só desenho: o sentido
+	 * está nas palavras de cada passo.
 	 */
 	.passo {
 		position: relative;
@@ -180,7 +181,7 @@
 		background: var(--tinta);
 	}
 
-	.passo:not(:last-child)::after {
+	.passo::after {
 		content: "";
 		position: absolute;
 		top: 0.3rem;
@@ -188,6 +189,14 @@
 		left: 0.375rem;
 		width: 2px;
 		background: var(--tinta);
+	}
+
+	.passo:last-child::after {
+		bottom: 0;
+	}
+
+	.passo:last-child:not(:has(.desvio))::after {
+		content: none;
 	}
 
 	/* O desvio sai da linha cheia por um traço tracejado até o texto. */

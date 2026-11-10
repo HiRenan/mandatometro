@@ -72,7 +72,7 @@ function PaginaDaTrilha() {
 			    altura do título. Abaixo disso, ele vem depois das folhas, que é também
 			    a ordem do HTML. */}
 			<div
-				className={`mt-8 ${trilha.infografico ? "folha:grid-cols-[minmax(0,1fr)_24rem] folha:gap-x-12 lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-x-10 xl:grid-cols-[minmax(0,1fr)_21rem]" : ""}`}
+				className={`mt-8 ${trilha.infografico ? "folha:grid-cols-[minmax(0,1fr)_28rem] folha:gap-x-12 lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-x-10 xl:grid-cols-[minmax(0,1fr)_24rem]" : ""}`}
 			>
 				<div className="max-w-[56rem]">
 					<h1 className="titulo-condensado text-[3rem] md:text-[4.75rem]">

@@ -87,7 +87,7 @@ titulo: O caminho de um projeto de lei
 resumo: Os passos de um projeto de lei ordinária no Congresso, da apresentação à sanção ou ao veto.
 passos:
   - titulo: A outra Casa
-    texto: Aprovado na primeira Casa, o projeto vai para a outra, que o revê em um só turno de discussão e votação. Se ela aprova o texto como chegou, o projeto segue para o presidente da República (art. 65).
+    texto: A outra Casa revê o projeto em um só turno de discussão e votação. Se ela aprova o texto como chegou, o projeto segue para o presidente da República (art. 65).
     desvios:
       - Se a outra Casa muda o texto, o projeto volta para a Casa onde começou, que analisa só as mudanças e pode ficar com elas ou recuperar o texto original.
       - Se a outra Casa rejeita o projeto, ele é arquivado.
