@@ -1,4 +1,5 @@
 import { Toaster } from "@mandatometro/ui/components/sonner";
+import { fontes } from "@mandatometro/ui/lib/fontes";
 import type { QueryClient } from "@tanstack/react-query";
 import {
 	createRootRouteWithContext,
@@ -50,6 +51,22 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 				rel: "stylesheet",
 				href: appCss,
 			},
+			// As fontes são pedidas junto com o CSS: chegam antes de o texto aparecer, e
+			// o texto não pula quando elas trocam a fonte reserva. A página inicial (a
+			// rota "/") ainda não usa a serifa (#35), então só pede o Archivo. O tipo de
+			// matches aqui só conhece a raiz, daí o "as string".
+			...[
+				fontes.archivo,
+				...((matches.at(-1)?.routeId as string | undefined) === "/"
+					? []
+					: [fontes.literata]),
+			].map((href) => ({
+				rel: "preload",
+				href,
+				as: "font",
+				type: "font/woff2",
+				crossOrigin: "anonymous" as const,
+			})),
 		],
 	}),
 
