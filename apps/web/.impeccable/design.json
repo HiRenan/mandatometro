@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-10T14:56:00-03:00",
+  "generatedAt": "2026-11-10T19:59:45-03:00",
   "title": "Design System: Mandatômetro",
   "extensions": {
     "colorMeta": {
@@ -16,14 +16,14 @@
     },
     "typographyMeta": {
       "numeral": { "displayName": "Numeral", "purpose": "O número da folha: 22.5rem no artigo a partir de 1440 px, 7.5rem a 10rem ao lado do título, 5.5rem a 8rem na lista, 4rem em Nesta trilha e nas folhas da lista das trilhas (a partir de 1024 px), 1.75rem na folha em miniatura (abaixo de 1024 px)." },
-      "headline": { "displayName": "Título condensado", "purpose": "O título da página (artigo, trilha, Trilhas, 404), de 2.5rem a 4.75rem." },
-      "title": { "displayName": "Subtítulo condensado", "purpose": "Título de cada folha, Nesta trilha, Fontes oficiais, O caminho de um projeto de lei, intertítulos do texto e anterior/próximo, de 1.5rem a 2.75rem." },
+      "headline": { "displayName": "Título condensado", "purpose": "O título da página (artigo, trilha, Trilhas, 404 e erro), de 2.5rem a 4.75rem; na página inicial, 2.75rem no celular e 4.75rem a partir do md." },
+      "title": { "displayName": "Subtítulo condensado", "purpose": "Título de cada folha, Nesta trilha, Fontes oficiais, O caminho de um projeto de lei (2rem a 2.75rem na página inicial), intertítulos do texto e anterior/próximo, de 1.5rem a 2.75rem." },
       "title-md": { "displayName": "Subtítulo condensado médio", "purpose": "Nesta trilha e O caminho de um projeto de lei, a 1.625rem em todas as larguras; Fontes oficiais abaixo de 1280 px e os intertítulos do texto abaixo de 1024 px." },
-      "title-sm": { "displayName": "Subtítulo condensado pequeno", "purpose": "O título de cada passo do infográfico, a 1.375rem, numa coluna estreita." },
-      "wordmark": { "displayName": "Nome em texto", "purpose": "Mandatômetro no cartão preto, 2rem a 2.75rem. É texto; o logo ainda não existe." },
-      "lead": { "displayName": "Resumo", "purpose": "Resumo do artigo e descrição da trilha, 1.25rem a 1.5625rem, 40 a 44 caracteres de largura." },
+      "title-sm": { "displayName": "Subtítulo condensado pequeno", "purpose": "O título de cada passo do infográfico e de cada parada do caminho da página inicial, a 1.375rem, numa coluna estreita." },
+      "wordmark": { "displayName": "Nome em texto", "purpose": "Mandatômetro no cartão preto do cabeçalho e do rodapé, 2rem a 2.75rem. É texto; o logo ainda não existe." },
+      "lead": { "displayName": "Resumo", "purpose": "Resumo do artigo, descrição da trilha e abertura da página inicial, 1.25rem a 1.5625rem (1.375rem na coluna da direita da página inicial, a partir de 1280 px), 40 a 44 caracteres de largura." },
       "body": { "displayName": "Texto corrido", "purpose": "Texto do artigo a no máximo 64ch: 1.0625rem/1.6 no celular, 1.1875rem/1.65 a partir de 1024 px. No infográfico: 1.0625rem/1.55 no passo e 1rem/1.5 no desvio." },
-      "label": { "displayName": "Rótulo", "purpose": "Linha de leitura e fontes, caminho, estados em palavras. Sem caixa alta." },
+      "label": { "displayName": "Rótulo", "purpose": "Linha de leitura e fontes, caminho, estados em palavras (também a linha acima do botão na página inicial: 3 artigos · 6 min de leitura). Sem caixa alta." },
       "label-sm": { "displayName": "Rótulo pequeno", "purpose": "Linha de estado das folhas, linha da fonte e, no infográfico, a legenda, os links dos artigos e as fontes de cada passo." }
     },
     "shadows": [],
@@ -47,7 +47,7 @@
       "name": "Moldura e tira de fitas",
       "kind": "nav",
       "refersTo": "moldura",
-      "description": "O cartão preto da folhinha com o nome em texto, o lema e a navegação, com o traço de papel na seção atual (Trilhas também na trilha e no artigo), e a tira das fitas do Bonfim logo abaixo.",
+      "description": "O cartão preto da folhinha com o nome em texto, o lema e a navegação, com o traço de papel na seção atual (Trilhas também na trilha e no artigo), e a tira das fitas do Bonfim logo abaixo. O rodapé é o mesmo cartão, com a tira em cima.",
       "html": "<header class=\"ds-moldura\"><div class=\"ds-moldura-linha\"><div class=\"ds-moldura-marca\"><a href=\"#\" class=\"ds-moldura-nome\">Mandatômetro</a><p class=\"ds-moldura-lema\">o diário oficial político, simplificado</p></div><nav><a href=\"#\" class=\"ds-moldura-link\">Início</a><a href=\"#\" class=\"ds-moldura-link ds-moldura-secao\" aria-current=\"page\">Trilhas</a></nav></div><div class=\"ds-tira-de-fitas\" aria-hidden=\"true\"></div></header>",
       "css": ".ds-moldura { background: #161616; color: #ffffff; font-family: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif; } .ds-moldura-linha { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 32px; min-height: 96px; padding: 12px 64px; } .ds-moldura-marca { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 20px; } .ds-moldura-nome { color: inherit; text-decoration: none; font-size: 2.75rem; line-height: 1; font-weight: 900; font-stretch: 68%; letter-spacing: -0.01em; } .ds-moldura-lema { margin: 0; font-size: 1.0625rem; font-weight: 500; } .ds-moldura nav { display: flex; gap: 36px; } .ds-moldura-link { color: inherit; text-decoration: none; font-size: 1.1875rem; font-weight: 700; padding-bottom: 4px; border-bottom: 4px solid transparent; } .ds-moldura-link:hover { border-bottom-color: #ffd200; } .ds-moldura-secao { border-bottom-color: #ffffff; } .ds-moldura a:focus-visible { outline: 3px solid #ffd200; outline-offset: 3px; } .ds-tira-de-fitas { height: 18px; background: repeating-linear-gradient(90deg, #00a650 0 48px, #ffd200 48px 96px, #0067b1 96px 144px, #e6007e 144px 192px, #e30613 192px 240px, #ffffff 240px 252px); }"
     },
@@ -55,9 +55,9 @@
       "name": "Botão Continuar",
       "kind": "button",
       "refersTo": "botao-continuar",
-      "description": "A única ação em bloco: leva ao primeiro artigo não lido.",
+      "description": "A única ação em bloco, na trilha e na página inicial (Começar a trilha, Continuar a trilha, Ver a trilha): leva ao primeiro artigo não lido. Os 12 por 20 px são 10 por 18 px de respiro e uma borda transparente de 2 px, que aparece nas cores forçadas do Windows.",
       "html": "<a href=\"#\" class=\"ds-botao-continuar\">Continuar de onde parou: Onde o projeto começa<svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></a>",
-      "css": ".ds-botao-continuar { display: inline-flex; align-items: center; gap: 12px; background: #161616; color: #ffffff; padding: 12px 20px; border-radius: 0; font-family: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif; font-size: 1.125rem; font-weight: 700; text-decoration: none; } .ds-botao-continuar:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.2em; } .ds-botao-continuar:focus-visible { outline: 3px solid #0067b1; outline-offset: 3px; }"
+      "css": ".ds-botao-continuar { display: inline-flex; align-items: center; gap: 12px; background: #161616; color: #ffffff; padding: 10px 18px; border: 2px solid transparent; border-radius: 0; font-family: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif; font-size: 1.125rem; font-weight: 700; text-decoration: none; } .ds-botao-continuar:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.2em; } .ds-botao-continuar:focus-visible { outline: 3px solid #0067b1; outline-offset: 3px; }"
     },
     {
       "name": "Link",
@@ -71,7 +71,7 @@
       "name": "Ação em texto",
       "kind": "button",
       "refersTo": "acao-de-texto",
-      "description": "Desmarcar, Recomeçar a trilha, Desfazer e Tentar de novo: botões com cara de link, com 45,4 px de área de toque. Depois da ação, a frase de estado diz o que aconteceu e o mesmo botão vira Desfazer, com o foco nele.",
+      "description": "Desmarcar, Recomeçar a trilha, Desfazer e Tentar de novo: botões com cara de link, com 45,4 px de área de toque. A mesma forma serve aos links Ver o caminho na trilha (em negrito) e O código é aberto, no GitHub, do rodapé. Depois da ação, a frase de estado diz o que aconteceu e o mesmo botão vira Desfazer, com o foco nele.",
       "html": "<div class=\"ds-progresso\"><p>Você recomeçou a trilha.</p><button type=\"button\" class=\"ds-acao-de-texto\">Desfazer</button></div>",
       "css": ".ds-progresso { display: grid; justify-items: start; gap: 12px; color: #161616; font-family: 'Archivo Variable', ui-sans-serif, sans-serif; } .ds-progresso p { margin: 0; min-height: 28px; font-size: 1.25rem; font-weight: 700; } .ds-acao-de-texto { position: relative; padding: 0; border: 0; background: none; color: #161616; cursor: pointer; font-family: 'Archivo Variable', ui-sans-serif, sans-serif; font-size: 1.0625rem; font-weight: 600; line-height: 1.375; text-decoration-line: underline; text-decoration-thickness: 2px; text-underline-offset: 0.2em; } .ds-acao-de-texto::before { content: \"\"; position: absolute; inset: -0.6875rem -0.25rem; } .ds-acao-de-texto:focus-visible { outline: 3px solid #0067b1; outline-offset: 3px; }"
     },
@@ -130,17 +130,33 @@
       "description": "Quando uma página não chega (a rede caiu ou o servidor falhou): dentro do site, embaixo da moldura, o erro dito em palavras, com Tentar de novo, que refaz a página sem recarregar, e Ver as trilhas.",
       "html": "<div class=\"ds-erro\"><h1 class=\"ds-erro-titulo\">A página não carregou</h1><p class=\"ds-erro-frase\">Pode ser a sua internet ou uma falha no site. Os artigos que você já leu continuam marcados.</p><ul class=\"ds-erro-acoes\"><li><button type=\"button\" class=\"ds-erro-tentar\">Tentar de novo</button></li><li><a href=\"#\" class=\"ds-erro-link\">Ver as trilhas</a></li></ul></div>",
       "css": ".ds-erro { padding: 40px 64px 80px; color: #161616; } .ds-erro-titulo { margin: 0; font-family: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif; font-size: 3.5rem; font-stretch: 72%; font-weight: 850; line-height: 0.96; letter-spacing: -0.02em; text-wrap: balance; } .ds-erro-frase { margin: 20px 0 0; max-width: 40ch; font-family: 'Literata Variable', ui-serif, Georgia, serif; font-size: 1.25rem; line-height: 1.375; } .ds-erro-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px; margin: 32px 0 0; padding: 0; list-style: none; font-family: 'Archivo Variable', ui-sans-serif, sans-serif; font-size: 1.1875rem; font-weight: 700; } .ds-erro-tentar { position: relative; padding: 0; border: 0; background: none; color: #161616; cursor: pointer; font: inherit; line-height: 1.375; text-decoration-line: underline; text-decoration-thickness: 2px; text-underline-offset: 0.2em; } .ds-erro-tentar::before { content: \"\"; position: absolute; inset: -0.6875rem -0.25rem; } .ds-erro-link { color: #161616; text-decoration-line: underline; text-decoration-thickness: 2px; text-underline-offset: 0.2em; } .ds-erro-tentar:focus-visible, .ds-erro-link:focus-visible { outline: 3px solid #0067b1; outline-offset: 3px; }"
+    },
+    {
+      "name": "Rodapé",
+      "kind": "nav",
+      "refersTo": "rodape",
+      "description": "A moldura de baixo, em todas as páginas (inclusive a 404 e a de erro), no fim da tela quando a página é curta: o cartão preto com a tira de fitas em cima, o nome e três linhas. A partir do lg, duas colunas de 7fr e 5fr. O link do GitHub é uma ação em texto, com o foco amarelo do cartão. Nas cores forçadas, o cartão e a tira somem.",
+      "html": "<footer class=\"ds-rodape\"><div class=\"ds-tira-de-fitas\" aria-hidden=\"true\"></div><div class=\"ds-rodape-grade\"><p class=\"ds-rodape-nome\">Mandatômetro</p><div class=\"ds-rodape-linhas\"><p>O Mandatômetro é um projeto do Hack Brasil 2026, na trilha Acesso à educação.</p><p>Cada explicação traz a fonte oficial: a lei, o regimento ou a página da Câmara e do Senado.</p><p><a href=\"#\" class=\"ds-rodape-link\">O código é aberto, no GitHub</a>.</p></div></div></footer>",
+      "css": ".ds-rodape { background: #161616; color: #ffffff; font-family: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif; } .ds-tira-de-fitas { height: 18px; background: repeating-linear-gradient(90deg, #00a650 0 48px, #ffd200 48px 96px, #0067b1 96px 144px, #e6007e 144px 192px, #e30613 192px 240px, #ffffff 240px 252px); } .ds-rodape-grade { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 24px 64px; padding: 40px 64px 48px; } .ds-rodape-nome { margin: 0; font-size: 2.75rem; line-height: 1; font-weight: 900; font-stretch: 68%; letter-spacing: -0.01em; } .ds-rodape-linhas { display: grid; gap: 12px; max-width: 38rem; font-size: 1.0625rem; line-height: 1.375; } .ds-rodape-linhas p { margin: 0; } .ds-rodape-link { position: relative; color: inherit; font-weight: 600; text-decoration-line: underline; text-decoration-thickness: 2px; text-underline-offset: 0.2em; } .ds-rodape-link::before { content: \"\"; position: absolute; inset: -0.6875rem -0.25rem; } .ds-rodape-link:focus-visible { outline: 3px solid #ffd200; outline-offset: 3px; }"
+    },
+    {
+      "name": "Caminho em linha",
+      "kind": "custom",
+      "refersTo": "caminho-em-linha",
+      "description": "O caminho de um projeto de lei na página inicial: 5 paradas ligadas pela linha cheia de 2 px, com o quadradinho de 14 px em cada uma. Em pé abaixo de 1024 px; a partir dele, deitado, em 5 colunas, com a linha por cima do vão (32 px, 40 px a partir de 1280 px). Cada parada traz os artigos que a explicam, com a fita curta; a parada sem artigo leva ao passo dela na trilha. Sem estado e sem movimento. Nas cores forçadas, a linha e os quadradinhos ficam na cor do texto.",
+      "html": "<section class=\"ds-caminho-linha\" aria-labelledby=\"ds-caminho-linha-titulo\"><h2 id=\"ds-caminho-linha-titulo\">O caminho de um projeto de lei</h2><ol class=\"ds-paradas\" role=\"list\"><li class=\"ds-parada\"><h3>Apresentação</h3><ul class=\"ds-parada-artigos\" role=\"list\"><li><span class=\"ds-parada-fita\" style=\"background:#00a650\" aria-hidden=\"true\"></span><a href=\"#\"><span>Artigo 1: Quem pode propor uma lei</span></a></li></ul></li><li class=\"ds-parada\"><h3>Comissões</h3><ul class=\"ds-parada-artigos\" role=\"list\"><li><span class=\"ds-parada-fita\" style=\"background:#0067b1\" aria-hidden=\"true\"></span><a href=\"#\"><span>Artigo 3: O projeto passa pelas comissões</span></a></li></ul></li><li class=\"ds-parada\"><h3>Plenário</h3><p class=\"ds-parada-passo\"><a href=\"#\"><span>Ler este passo na trilha</span></a></p></li><li class=\"ds-parada\"><h3>A outra Casa</h3><ul class=\"ds-parada-artigos\" role=\"list\"><li><span class=\"ds-parada-fita\" style=\"background:#ffd200\" aria-hidden=\"true\"></span><a href=\"#\"><span>Artigo 2: Onde o projeto começa</span></a></li></ul></li><li class=\"ds-parada\"><h3>Sanção ou veto</h3><p class=\"ds-parada-passo\"><a href=\"#\"><span>Ler este passo na trilha</span></a></p></li></ol><p class=\"ds-caminho-linha-nota\">A linha mostra o caminho completo. Os desvios, como a comissão que decide sem o plenário, estão na trilha, com as fontes oficiais.</p><p><a href=\"#\" class=\"ds-caminho-linha-acao\">Ver o caminho na trilha</a></p></section>",
+      "css": ".ds-caminho-linha { color: #161616; font-family: 'Archivo Variable', ui-sans-serif, sans-serif; } .ds-caminho-linha h2 { margin: 0; font-size: 2.75rem; font-weight: 800; font-stretch: 75%; line-height: 1.05; text-wrap: balance; } .ds-paradas { --vao-do-caminho: 2rem; display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; column-gap: var(--vao-do-caminho); list-style: none; margin: 40px 0 0; padding: 0; } .ds-parada { position: relative; padding-top: 1.875rem; } .ds-parada::before { content: \"\"; position: absolute; top: 0; left: 0; width: 0.875rem; height: 0.875rem; background: #161616; } .ds-parada:not(:last-child)::after { content: \"\"; position: absolute; top: 0.375rem; left: 0; right: calc(-1 * var(--vao-do-caminho)); height: 2px; background: #161616; } .ds-parada h3 { margin: 0; font-size: 1.375rem; font-weight: 800; font-stretch: 75%; line-height: 1.05; text-wrap: balance; } .ds-parada-artigos { display: grid; gap: 8px; list-style: none; margin: 12px 0 0; padding: 0; } .ds-parada-artigos li { display: flex; align-items: flex-start; gap: 10px; } .ds-parada-fita { flex-shrink: 0; width: 12px; height: 24px; margin-top: 1px; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 0.5rem), 0 100%); } .ds-parada-passo { margin: 12px 0 0; } .ds-parada a { position: relative; margin: -0.775rem -0.25rem; padding: 0.775rem 0.25rem; color: #161616; font-size: 0.9375rem; font-weight: 600; line-height: 1.375; text-decoration-line: underline; text-decoration-thickness: 2px; text-underline-offset: 0.2em; -webkit-box-decoration-break: clone; box-decoration-break: clone; } .ds-parada a > span { position: relative; z-index: 1; } .ds-parada-artigos a > span { display: block; } .ds-parada a:focus-visible { outline: none; } .ds-parada a:focus-visible > span { outline: 3px solid #0067b1; outline-offset: 3px; } .ds-caminho-linha-nota { margin: 40px 0 0; max-width: 64ch; font-size: 1.0625rem; line-height: 1.375; } .ds-caminho-linha-acao { position: relative; color: #161616; font-size: 1.0625rem; font-weight: 700; line-height: 1.375; text-decoration-line: underline; text-decoration-thickness: 2px; text-underline-offset: 0.2em; } .ds-caminho-linha-acao::before { content: \"\"; position: absolute; inset: -0.6875rem -0.25rem; } .ds-caminho-linha-acao:focus-visible { outline: 3px solid #0067b1; outline-offset: 3px; } @media (forced-colors: active) { .ds-parada::before, .ds-parada:not(:last-child)::after { background: CanvasText; } }"
     }
   ],
   "narrative": {
     "northStar": "A folhinha de parede",
-    "overview": "A trilha é uma folhinha de arrancar, dessas de padaria. Cada artigo é uma folha do bloco: o número grande diz onde a pessoa está, a folha lida leva um X riscado à mão e a folha onde ela parou tem o canto dobrado. O site é papel branco e tinta preta. A cor fica na moldura: o cartão preto do cabeçalho, com o nome e o lema, e logo abaixo, no lugar do picote, a tira das fitas do Bonfim, que o Renan escolheu para ter \"mais de cor voltado para Brasil\".\n\nA página é de leitura, com folga. Os números e os títulos usam um grotesco condensado bem preto (Archivo), como os algarismos das folhinhas, e o texto corrido usa uma serifa de leitura (Literata). Tudo é chapado: sem sombra, sem degradê suave, sem canto arredondado, sem card em volta dos itens. O estado aparece como marca no papel e em palavras (\"Lido\", \"Você está aqui\", \"Continue daqui\", \"Você leu 1 de 3\"), nunca como barra de progresso ou pontuação.\n\nO que ficaria errado, nas palavras do Renan: \"Site do governo, Coisa de criança, Jornal partidário\". Ou seja: burocracia e letra pequena, cor demais e tom infantil, manchete gritando e cor de partido. O logo ainda não existe; até ele chegar, o nome em texto faz o papel da marca.",
+    "overview": "A trilha é uma folhinha de arrancar, dessas de padaria. Cada artigo é uma folha do bloco: o número grande diz onde a pessoa está, a folha lida leva um X riscado à mão e a folha onde ela parou tem o canto dobrado. O site é papel branco e tinta preta. A cor fica na moldura: o cartão preto do cabeçalho, com o nome e o lema, e logo abaixo, no lugar do picote, a tira das fitas do Bonfim, que o Renan escolheu para ter \"mais de cor voltado para Brasil\". Embaixo, o rodapé fecha a folhinha com o mesmo cartão preto, e a tira vai em cima dele.\n\nA página é de leitura, com folga. Os números e os títulos usam um grotesco condensado bem preto (Archivo), como os algarismos das folhinhas, e o texto corrido usa uma serifa de leitura (Literata). Tudo é chapado: sem sombra, sem degradê suave, sem canto arredondado, sem card em volta dos itens. O estado aparece como marca no papel e em palavras (\"Lido\", \"Você está aqui\", \"Continue daqui\", \"Você leu 1 de 3\"), nunca como barra de progresso ou pontuação.\n\nO que ficaria errado, nas palavras do Renan: \"Site do governo, Coisa de criança, Jornal partidário\". Ou seja: burocracia e letra pequena, cor demais e tom infantil, manchete gritando e cor de partido. O logo ainda não existe; até ele chegar, o nome em texto faz o papel da marca, e o M do nome, o do ícone da aba.",
     "keyCharacteristics": [
       "Papel branco, tinta preta, e a cor só na moldura e nas fitas.",
       "O número da folha em tamanho de cartaz, num condensado de peso 900.",
       "Texto corrido em serifa, a cerca de 64 caracteres por linha.",
       "Estado como marca no papel: X no lido, canto dobrado onde a pessoa está ou parou.",
-      "Linhas de 2 px em tinta: cheias entre as partes, tracejadas (o picote) entre as folhas. No infográfico da trilha, a cheia é o caminho completo, e a tracejada, o que pode mudar o caminho.",
+      "Linhas de 2 px em tinta: cheias entre as partes, tracejadas (o picote) entre as folhas. No infográfico da trilha, a cheia é o caminho completo, e a tracejada, o que pode mudar o caminho; no caminho da página inicial, só a cheia.",
       "Um único movimento: o X desenhado em 400 ms quando a pessoa chega ao fim do texto."
     ],
     "rules": [
@@ -158,7 +174,8 @@
       "Do separar as folhas com picote (linha tracejada de 2 px) e fechar as seções com linha cheia de 2 px.",
       "Do desenhar o caminho completo com linha cheia e o que pode mudar o caminho com linha tracejada, e dizer os dois em palavras.",
       "Do usar o foco de 3 px na azul, afastado 3 px, e a amarela dentro do cartão preto.",
-      "Do respeitar o movimento reduzido: o X aparece sem animação."
+      "Do respeitar o movimento reduzido: o X aparece sem animação.",
+      "Do oferecer \"Desfazer\" logo depois de apagar uma marca, em vez de pedir confirmação antes."
     ],
     "donts": [
       "Don't fazer \"site do governo\": burocracia e letra pequena.",
@@ -167,7 +184,7 @@
       "Don't pôr texto em cima de uma cor de fita.",
       "Don't usar card arredondado em volta dos itens nem barra de progresso; o progresso é o X e as palavras.",
       "Don't usar sombra, canto arredondado ou degradê suave.",
-      "Don't inventar um logo; até o time fazer o dele, o nome em texto é a marca.",
+      "Don't inventar um logo; até o time fazer o dele, o nome em texto é a marca, e o M do nome é o ícone.",
       "Don't usar a vermelha como cor de domingo antes da decisão da issue #39.",
       "Don't animar nada além do X."
     ]

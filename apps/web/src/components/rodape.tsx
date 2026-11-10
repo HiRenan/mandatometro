@@ -9,7 +9,8 @@ export function Rodape() {
 	return (
 		<footer className="moldura bg-tinta text-papel">
 			<div aria-hidden="true" className="tira-de-fitas h-[18px]" />
-			{/* A partir do lg, o texto fica na coluna da direita da página inicial. */}
+			{/* A partir do lg, duas colunas. A partir do xl, a do texto é a mesma da
+			    coluna da direita da página inicial. */}
 			<div className="mx-auto grid max-w-[1440px] gap-x-16 gap-y-6 px-5 pt-10 pb-12 md:px-16 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
 				<p className="text-[2rem] leading-none font-black tracking-[-0.01em] [font-stretch:68%] md:text-[2.75rem]">
 					Mandatômetro
