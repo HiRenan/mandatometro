@@ -12,9 +12,14 @@ import { type ReactNode, useEffect } from "react";
 
 import Header from "../components/header";
 import { Rodape } from "../components/rodape";
+import { ENV } from "../env";
 import appCss from "../index.css?url";
 import { focarNoTitulo } from "../lib/foco";
-import { TITULO_DE_ERRO, TITULO_NAO_ENCONTRADA } from "../lib/meta";
+import {
+	metaDaImagem,
+	TITULO_DE_ERRO,
+	TITULO_NAO_ENCONTRADA,
+} from "../lib/meta";
 
 export interface RouterAppContext {
 	queryClient: QueryClient;
@@ -46,22 +51,20 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 			{ name: "theme-color", content: "#161616" },
 			{ property: "og:site_name", content: "Mandatômetro" },
 			{ property: "og:locale", content: "pt_BR" },
+			...metaDaImagem(ENV.APP_BASE_URL),
 		],
 		links: [
 			{
 				rel: "stylesheet",
 				href: appCss,
 			},
+			// O ícone da aba e o da tela de início do celular (imagens/gerar.mjs).
+			{ rel: "icon", href: "/favicon.ico", sizes: "16x16 32x32 48x48" },
+			{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
 			// As fontes são pedidas junto com o CSS: chegam antes de o texto aparecer, e
-			// o texto não pula quando elas trocam a fonte reserva. A página inicial (a
-			// rota "/") ainda não usa a serifa (#35), então só pede o Archivo. O tipo de
-			// matches aqui só conhece a raiz, daí o "as string".
-			...[
-				fontes.archivo,
-				...((matches.at(-1)?.routeId as string | undefined) === "/"
-					? []
-					: [fontes.literata]),
-			].map((href) => ({
+			// o texto não pula quando elas trocam a fonte reserva. Todas as páginas usam
+			// as duas.
+			...[fontes.archivo, fontes.literata].map((href) => ({
 				rel: "preload",
 				href,
 				as: "font",

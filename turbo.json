@@ -29,6 +29,7 @@
 	},
 	"globalEnv": [
 		"API_URL",
+		"APP_BASE_URL",
 		"CI",
 		"NODE_ENV",
 		"VERCEL",

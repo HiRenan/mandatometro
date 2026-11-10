@@ -52,8 +52,10 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
         API_URL: ${API_URL:-http://localhost:8000}
+        APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3001}
     environment:
       API_URL: ${API_URL:-http://localhost:8000}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3001}
     ports:
       - "3001:3001"
     depends_on:
