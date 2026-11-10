@@ -30,7 +30,7 @@ export function PaginaInicial({ pagina }: { pagina: Dados }) {
 	return (
 		<div className="mx-auto max-w-[1440px] px-5 pt-10 pb-20 md:px-16 lg:pt-14">
 			<div className="xl:grid xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] xl:gap-x-16">
-				<h1 className="titulo-condensado folha:text-[5.5rem] text-[2.75rem] md:text-[4.5rem] xl:text-[5rem]">
+				<h1 className="titulo-condensado text-[2.75rem] md:text-[4.75rem]">
 					Entenda a política brasileira, um passo de cada vez.
 				</h1>
 				<div className="mt-6 xl:mt-2">

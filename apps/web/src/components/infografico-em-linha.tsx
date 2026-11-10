@@ -38,7 +38,7 @@ export function InfograficoEmLinha({
 			<ol role="list" className="caminho-em-linha mt-8 lg:mt-10">
 				{caminho.passos.map((passo) => (
 					<li key={passo.titulo} className="parada">
-						<h3 className="subtitulo-condensado text-[1.375rem] lg:text-[1.5rem]">
+						<h3 className="subtitulo-condensado text-[1.375rem]">
 							{passo.titulo}
 						</h3>
 						<ArtigosDoPasso
