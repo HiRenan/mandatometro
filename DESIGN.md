@@ -33,6 +33,12 @@ typography:
     fontWeight: 800
     lineHeight: 1.05
     fontVariation: "'wdth' 75"
+  title-md:
+    fontFamily: "Archivo Variable, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.625rem"
+    fontWeight: 800
+    lineHeight: 1.05
+    fontVariation: "'wdth' 75"
   title-sm:
     fontFamily: "Archivo Variable, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1.375rem"
@@ -184,7 +190,7 @@ As duas são servidas pelo próprio site, pelo `@fontsource-variable`. Os arquiv
 ### Hierarchy
 - **Numeral** (900, largura 62%, altura de linha 0.78, algarismos tabulares): o número da folha. No artigo, a partir de 1440 px, fica sozinho na coluna da esquerda a 22.5rem (15rem a partir de dois dígitos); abaixo disso, vai para o lado do título a 7.5rem (10rem no md). Na lista da trilha, 5.5rem a 8rem; em "Nesta trilha" e nas folhas da lista das trilhas (a partir de 1024 px), 4rem; nas folhas em miniatura (abaixo de 1024 px), 1.75rem; na página 404, 7rem a 13rem.
 - **Headline** (850, largura 72%, altura 0.96): o título da página (artigo, trilha, Trilhas, 404 e erro), de 2.5rem no celular a 4.75rem, com no máximo 12 caracteres de largura no artigo.
-- **Title** (800, largura 75%, altura 1.05): o título de cada folha na lista, "Nesta trilha", "Fontes oficiais", "O caminho de um projeto de lei", os intertítulos do texto e os nomes do anterior e do próximo, de 1.5rem a 2.75rem. A exceção com nome é o **Title pequeno** (`title-sm`), a 1.375rem: o título de cada passo do infográfico, que fica numa coluna estreita, abaixo do título do infográfico.
+- **Title** (800, largura 75%, altura 1.05): o título de cada folha na lista, "Nesta trilha", "Fontes oficiais", "O caminho de um projeto de lei", os intertítulos do texto e os nomes do anterior e do próximo, de 1.5rem a 2.75rem. Dois tamanhos têm nome na escala: o **Title médio** (`title-md`), a 1.625rem, em "Nesta trilha" e "O caminho de um projeto de lei", e também em "Fontes oficiais" abaixo de 1280 px e nos intertítulos do texto abaixo de 1024 px; e o **Title pequeno** (`title-sm`), a 1.375rem, no título de cada passo do infográfico, que fica numa coluna estreita, abaixo do título do infográfico.
 - **Wordmark** (900, largura 68%): o nome Mandatômetro no cartão preto, 2rem no celular e 2.75rem no md. É texto, não logo.
 - **Lead** (Literata 500, altura 1.4): o resumo do artigo e a descrição da trilha, de 1.25rem a 1.5625rem, com no máximo 40 a 44 caracteres de largura.
 - **Body** (Literata 400): o texto do artigo, a no máximo 64 caracteres; 1.0625rem com altura 1.6 no celular e 1.1875rem com altura 1.65 a partir de 1024 px. No infográfico, em todas as larguras, o resumo e o texto de cada passo ficam em 1.0625rem (altura 1.375 no resumo e 1.55 no passo), e os desvios em 1rem, com altura 1.5.
@@ -204,7 +210,7 @@ A página tem no máximo 1440 px, com margens de 20 px no celular e 64 px a part
 - **Lista das trilhas:** a abertura (o título, a frase e o aviso do navegador) fica em até 56rem, e a lista usa a moldura inteira. A partir de 1024 px, cada trilha tem duas colunas, com as mesmas larguras da trilha: à esquerda, o título, a descrição e o progresso em palavras; à direita, as folhas dela, com as fitas penduradas da linha que abre a trilha. Abaixo de 1024 px, cada trilha mostra as folhas em miniatura.
 - **Ritmo:** cerca de 24 px dentro de cada folha, 40 a 48 px entre os blocos da página e 80 px no fim. O conteúdo da folha fica recuado 26 px para dar lugar à fita.
 - **Linha de meta:** o tempo de leitura e o aviso das fontes ficam numa faixa entre duas linhas de 2 px, logo abaixo do resumo, em todas as larguras.
-- **O progresso chega depois:** o navegador só sabe o que a pessoa leu quando a página termina de carregar. Por isso, a linha do progresso na trilha (acima do "Continuar"), a da lista das trilhas no celular e o aviso de lido no fim do artigo têm a altura reservada desde o HTML do servidor. Quando o progresso aparece, essas linhas e o botão "Continuar" não mudam de lugar. A 360 px, numa trilha pela metade, a lista abaixo do botão pode descer: o rótulo "Continuar de onde parou" traz o título do artigo e ocupa mais linhas, e o "Recomeçar a trilha" entra embaixo do botão. O Renan aceitou esse salto.
+- **O progresso chega depois:** o navegador só sabe o que a pessoa leu quando a página termina de carregar. Por isso, a linha do progresso na trilha (acima do "Continuar"), a da lista das trilhas no celular e o aviso de lido no fim do artigo têm a altura reservada desde o HTML do servidor. Quando o progresso aparece, essas linhas e o botão "Continuar" não mudam de lugar. A 360 px, numa trilha pela metade, a lista abaixo do botão pode descer: o rótulo "Continuar de onde parou" traz o título do artigo e ocupa mais linhas, e o "Recomeçar a trilha" entra embaixo do botão. O Renan aceitou esse salto. De 1024 a 1280 px, a lista também pode descer quando o "Recomeçar a trilha" aparece: o caminho ocupa a direita, e o "Recomeçar" não cabe ao lado do botão e quebra para a linha de baixo. A lista desce até 40 px, e 68 px a 1024 px com dois artigos lidos, quando o rótulo do botão também ganha uma linha. O Renan aceitou também esse salto, em 10/11/2026.
 
 ## Elevation & Depth
 
@@ -252,19 +258,21 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 - **Caráter:** uma folha do bloco, sem card em volta.
 - **Forma:** a fita na esquerda, o número, o título condensado, o resumo em serifa e a linha de estado ("Lido · 2 min · 2 fontes oficiais"). Separada da próxima por picote.
 - **Estados:** lida leva o X sobre o número e a palavra "Lido"; onde a pessoa parou leva o canto dobrado e "Continue daqui"; no artigo aberto, "Nesta trilha" mostra o canto dobrado e "Você está aqui".
-- **As folhas pequenas:** "Nesta trilha", no artigo, e as folhas de cada trilha na lista das trilhas, a partir de 1024 px, são a mesma lista: a fita de 56 px, o número a 4rem, o título em Archivo 700 a 1.0625rem e o estado ("Lido · 2 min") a 0.875rem. Na lista das trilhas não há "Você está aqui".
+- **As folhas pequenas:** "Nesta trilha", no artigo, e as folhas de cada trilha na lista das trilhas, a partir de 1024 px, são a mesma lista: a fita de 56 px, o número a 4rem, o título em Archivo 700 a 1.0625rem e o estado ("Lido · 2 min") a 0.875rem. Na lista das trilhas não há "Você está aqui". A lista tem `role="list"`, como as do infográfico.
 
 ### Folha em miniatura (lista das trilhas)
 - Só abaixo de 1024 px: quadrados de 44 px com borda de 2 px em tinta e o número em condensado; os lidos levam o X por cima. Ao lado (no celular, na linha de baixo), o estado em palavras: "Você leu 1 de 3." ou "Você terminou a trilha." A partir de 1024 px, os quadrados dão lugar às folhas da trilha, à direita, e a frase do estado continua à esquerda.
 
 ### Infográfico
 - **Onde:** na página da trilha, quando a trilha tem um `infografico.md`. A partir de 1024 px, na coluna da direita, começando na altura do título; abaixo disso, depois das folhas.
-- **Forma:** o título ("O caminho de um projeto de lei") em Title a 1.625rem, sobre uma linha cheia de 2 px; o resumo em Literata a 1.0625rem; e a legenda em Archivo 600 a 0.9375rem: "A linha cheia é o caminho completo; a tracejada, o que pode mudar o caminho." Os passos vêm numa lista ordenada, em pé e sem número, para não confundir com o número das folhas, com 36 px entre um e outro.
-- **O passo:** o quadradinho cheio de 14 px na altura do título e a linha cheia de 2 px até o passo seguinte. Embaixo do título (Title pequeno, a 1.375rem), o texto em Literata a 1.0625rem, os desvios, os artigos da trilha que explicam o passo e as fontes.
+- **Forma:** o título ("O caminho de um projeto de lei") em Title médio (1.625rem), sobre uma linha cheia de 2 px; o resumo em Literata a 1.0625rem; e a legenda em Archivo 600 a 0.9375rem: "A linha cheia é o caminho completo; a tracejada, o que pode mudar o caminho." Os passos vêm numa lista ordenada, em pé e sem número, para não confundir com o número das folhas, com 36 px entre um e outro.
+- **O passo:** o quadradinho cheio de 14 px na altura do título e a linha cheia de 2 px até o passo seguinte. Embaixo do título (Title pequeno, a 1.375rem), o texto em Literata a 1.0625rem, os desvios, os artigos da trilha que explicam o passo e as fontes. No texto e nos desvios, o "art." e o "§" não se separam do número na quebra de linha.
 - **O desvio:** começa com "Se" e sai da linha por um traço tracejado de 2 px até o quadradinho vazado, com o texto em Literata a 1rem. No último passo, a linha desce só até o último desvio, e só quando há desvio.
 - **Os artigos:** "Artigo 3: O projeto passa pelas comissões", em Archivo 600 a 0.9375rem, como link, com a fita curta da folha ao lado, na cor da posição do artigo.
-- **As fontes:** uma linha por passo, "Fonte:" ou "Fontes:", com o título de cada fonte como link em negrito, separados por " · ". Embaixo, a data da consulta em tinta suave: "consultadas em 10 de novembro de 2026", ou "consultadas entre … e …" quando as datas são diferentes.
-- **Leitor de tela:** tudo é texto de verdade, com um `h3` em cada passo. A linha, os quadradinhos e as fitas são desenho e ficam fora do leitor de tela; o sentido está nas palavras.
+- **As fontes:** uma linha por passo, "Fonte:" ou "Fontes:", com o título de cada fonte como link em negrito, separados por " · ". A linha tem altura 1.75, e o "·" e o "Fontes:" ganham 4 px a mais de papel em volta. Embaixo, a data da consulta em tinta suave: "consultadas em 10 de novembro de 2026", ou "consultadas entre … e …" quando as datas são diferentes.
+- **Toque e foco:** os links dos artigos e das fontes têm a área de toque das ações em texto, com 45,4 px de altura em cada linha e 4 px a mais dos lados, sem mudar o espaço que o texto ocupa: o padding faz a área, a margem negativa devolve o espaço, e o `box-decoration-break: clone` dá a área a cada linha de um link que quebra. O texto de cada link fica por cima das áreas vizinhas, e no vão entre dois links vale o que vem depois. O anel de foco (3 px na azul, afastado 3 px) contorna o texto, e não a área, e a entrelinha das fontes deixa papel entre o anel e a linha vizinha.
+- **Alto contraste:** nas cores forçadas do Windows, a linha cheia e os quadradinhos cheios, que são fundo, ficam na cor do texto (`CanvasText`), e a capa do último desvio, na cor do papel (`Canvas`). O traço tracejado e o quadradinho vazado são borda e já aparecem.
+- **Leitor de tela:** tudo é texto de verdade, com um `h3` em cada passo. A linha, os quadradinhos e as fitas são desenho e ficam fora do leitor de tela; o sentido está nas palavras. As listas têm `role="list"`: sem marcador, o Safari tira delas o papel de lista, e o VoiceOver deixa de dizer quantos itens elas têm.
 - **Movimento:** nenhum.
 
 ### O X da folha lida (assinatura)
