@@ -106,16 +106,17 @@ function Documento({ children }: { children: ReactNode }) {
 
 /**
  * Depois de cada navegação dentro do site, o foco vai para o título da página
- * nova, inclusive a de erro. A primeira carga não mexe no foco.
+ * nova, inclusive a de erro, ou para o trecho do endereço (#caminho). A primeira
+ * carga não mexe no foco.
  */
 function FocoNaPaginaNova() {
 	const router = useRouter();
 
 	useEffect(
 		() =>
-			router.subscribe("onRendered", ({ pathChanged }) => {
+			router.subscribe("onRendered", ({ pathChanged, toLocation }) => {
 				if (pathChanged) {
-					focarNoTitulo();
+					focarNoTitulo(toLocation.hash);
 				}
 			}),
 		[router],

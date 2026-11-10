@@ -87,7 +87,7 @@ export function Infografico({
 		<section aria-labelledby="caminho" className={className}>
 			<h2
 				id="caminho"
-				className="subtitulo-condensado border-tinta border-b-2 pb-2.5 text-[1.625rem]"
+				className="subtitulo-condensado border-tinta scroll-mt-8 border-b-2 pb-2.5 text-[1.625rem]"
 			>
 				{infografico.titulo}
 			</h2>

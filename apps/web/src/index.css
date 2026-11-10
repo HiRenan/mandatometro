@@ -25,9 +25,10 @@
 		outline-color: var(--fita-amarela);
 	}
 
-	/* Depois de uma navegação, o foco vai para o título da página nova (__root.tsx).
-	   O título não é um controle, então fica sem o anel. */
-	#conteudo h1:focus {
+	/* Depois de uma navegação, o foco vai para o título da página nova, ou para o
+	   trecho do endereço, como o #caminho (__root.tsx e lib/foco.ts). Nenhum dos
+	   dois é um controle, então ficam sem o anel. */
+	#conteudo [tabindex="-1"]:focus {
 		outline: none;
 	}
 
