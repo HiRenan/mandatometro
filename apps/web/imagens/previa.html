@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-BR">
+	<head>
+		<meta charset="utf-8" />
+		<title>Prévia do link do Mandatômetro</title>
+		<!--
+			A prévia do link no WhatsApp e nas redes (og:image), com 1200 x 630 px:
+			o cartão preto do cabeçalho, com o nome e o lema, a tira de fitas do
+			Bonfim e, no papel, a frase da página inicial em tinta. As cores e as
+			letras são as do site (globals.css e header.tsx). As redes cortam as
+			bordas em alguns formatos, por isso o texto fica longe delas.
+
+			O gerar.mjs abre esta página com 1200 x 630 px, com a fonte do site no
+			lugar do marcador FONTES, e tira a foto.
+		-->
+		<style>
+			/* FONTES */
+
+			html,
+			body {
+				margin: 0;
+			}
+
+			body {
+				display: grid;
+				grid-template-rows: 168px 24px minmax(0, 1fr);
+				width: 1200px;
+				height: 630px;
+				overflow: hidden;
+				background: #ffffff;
+				color: #161616;
+				font-family: "Archivo Variable", sans-serif;
+			}
+
+			.cartao {
+				display: flex;
+				align-items: baseline;
+				align-self: stretch;
+				gap: 0 32px;
+				padding: 62px 80px 0;
+				background: #161616;
+				color: #ffffff;
+			}
+
+			.nome {
+				margin: 0;
+				font-size: 88px;
+				font-stretch: 68%;
+				font-weight: 900;
+				letter-spacing: -0.01em;
+				line-height: 1;
+			}
+
+			.lema {
+				margin: 0;
+				font-size: 32px;
+				font-weight: 500;
+			}
+
+			/* A tira de fitas do cabeçalho, na mesma proporção: 18 px de altura
+			   no site, 24 px aqui. */
+			.tira {
+				background: repeating-linear-gradient(
+					90deg,
+					#00a650 0 64px,
+					#ffd200 64px 128px,
+					#0067b1 128px 192px,
+					#e6007e 192px 256px,
+					#e30613 256px 320px,
+					#ffffff 320px 336px
+				);
+			}
+
+			.papel {
+				display: grid;
+				align-items: center;
+				padding: 0 80px 8px;
+			}
+
+			/* A frase no título condensado das páginas (.titulo-condensado), em
+			   duas linhas de lado a lado. */
+			.frase {
+				margin: 0;
+				font-size: 92px;
+				font-stretch: 72%;
+				font-weight: 850;
+				letter-spacing: -0.02em;
+				line-height: 0.96;
+				text-wrap: balance;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="cartao">
+			<p class="nome">Mandatômetro</p>
+			<p class="lema">o diário oficial político, simplificado</p>
+		</div>
+		<div class="tira"></div>
+		<div class="papel">
+			<p class="frase">Entenda a política brasileira, um passo de cada vez.</p>
+		</div>
+	</body>
+</html>

@@ -9,6 +9,7 @@
 		"test": "vitest run",
 		"check-types": "vite build && tsc --noEmit",
 		"env:generate": "varlock codegen",
+		"imagens": "node imagens/gerar.mjs",
 		"generate:client": "openapi-ts"
 	},
 	"dependencies": {
