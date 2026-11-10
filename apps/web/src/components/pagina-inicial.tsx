@@ -1,12 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import type { PaginaInicial as Dados } from "@/lib/conteudo";
-import { fraseDoProgresso } from "@/lib/formatar";
+import { fraseDoProgresso, tamanhoDaTrilha } from "@/lib/formatar";
 import { contarLidos, primeiroNaoLido, useArtigosLidos } from "@/lib/progresso";
+import { BOTAO_CONTINUAR } from "./botao-continuar";
 import { InfograficoEmLinha } from "./infografico-em-linha";
-
-const BOTAO =
-	"bg-tinta text-papel inline-flex items-center gap-3 px-5 py-3 text-lg font-bold no-underline hover:underline";
 
 /**
  * A página inicial: o que é o Mandatômetro e para quem ele é, o botão que
@@ -43,18 +41,21 @@ export function PaginaInicial({ pagina }: { pagina: Dados }) {
 						É para quem vota e quer entender o que acontece depois do voto. Cada
 						explicação traz a fonte oficial, e você não precisa criar conta.
 					</p>
-					{/* A linha do progresso tem a altura reservada desde o HTML do
-					    servidor: quando o progresso aparece, depois da hidratação, o
-					    botão fica no lugar, e só o texto e o destino dele mudam. */}
+					{/* A linha acima do botão diz o tamanho da trilha e, depois que a
+					    pessoa lê um artigo, o progresso. Ela tem a altura reservada desde
+					    o HTML do servidor: quando o progresso aparece, depois da
+					    hidratação, o botão fica no lugar, e só os textos e o destino dele
+					    mudam. */}
 					<p className="mt-5 min-h-7 text-xl font-bold">
-						{fraseDoProgresso(quantosLidos, trilha.artigos.length)}
+						{fraseDoProgresso(quantosLidos, trilha.artigos.length) ||
+							tamanhoDaTrilha(trilha.artigos)}
 					</p>
 					<p className="mt-2">
 						{ondeParou ? (
 							<Link
 								to="/trilhas/$trilha/$artigo"
 								params={{ trilha: trilha.slug, artigo: ondeParou.slug }}
-								className={BOTAO}
+								className={BOTAO_CONTINUAR}
 							>
 								{quantosLidos > 0 ? "Continuar a trilha" : "Começar a trilha"}
 								{seta}
@@ -63,7 +64,7 @@ export function PaginaInicial({ pagina }: { pagina: Dados }) {
 							<Link
 								to="/trilhas/$trilha"
 								params={{ trilha: trilha.slug }}
-								className={BOTAO}
+								className={BOTAO_CONTINUAR}
 							>
 								Ver a trilha
 								{seta}

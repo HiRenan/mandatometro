@@ -6,7 +6,12 @@ import type {
 	Infografico as Dados,
 	Fonte,
 } from "@/lib/conteudo";
-import { corDaFita, formatarData, semQuebrarCitacao } from "@/lib/formatar";
+import {
+	corDaFita,
+	formatarData,
+	idDoPasso,
+	semQuebrarCitacao,
+} from "@/lib/formatar";
 
 /** A data da consulta das fontes de um passo, uma vez só quando é a mesma. */
 function quandoForamConsultadas(fontes: Fonte[]): string {
@@ -104,7 +109,10 @@ export function Infografico({
 						{/* O título, o texto e os desvios: no último passo, a linha
 							    desce até o último desvio. */}
 						<div className="passo-corpo">
-							<h3 className="subtitulo-condensado text-[1.375rem]">
+							<h3
+								id={idDoPasso(passo.titulo)}
+								className="subtitulo-condensado scroll-mt-8 text-[1.375rem]"
+							>
 								{passo.titulo}
 							</h3>
 							<p className="mt-1.5 font-serif text-[1.0625rem] leading-[1.55]">

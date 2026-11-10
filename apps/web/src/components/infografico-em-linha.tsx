@@ -1,11 +1,14 @@
 // biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
 import { Link } from "@tanstack/react-router";
 import type { ArtigoNaLista, CaminhoNaInicial } from "@/lib/conteudo";
+import { idDoPasso } from "@/lib/formatar";
 import { ArtigosDoPasso } from "./infografico";
 
 /**
  * O caminho de um projeto de lei na página inicial: as paradas ligadas pela
- * linha cheia, cada uma com os artigos que a explicam. Abaixo do lg, a linha
+ * linha cheia, cada uma com os artigos que a explicam. A parada sem artigo leva
+ * ao passo dela no infográfico da trilha, com o texto e as fontes: nenhuma
+ * parada fica sem destino. Abaixo do lg, a linha
  * fica em pé, como no infográfico da trilha; a partir do lg, deitada, de lado
  * a lado (index.css). Só o caminho completo: o texto de cada passo, os desvios
  * e as fontes ficam na trilha, e a frase embaixo da linha avisa e leva até lá.
@@ -41,11 +44,27 @@ export function InfograficoEmLinha({
 						<h3 className="subtitulo-condensado text-[1.375rem]">
 							{passo.titulo}
 						</h3>
-						<ArtigosDoPasso
-							slugs={passo.artigos}
-							trilha={trilha}
-							className="mt-3"
-						/>
+						{passo.artigos.length > 0 ? (
+							<ArtigosDoPasso
+								slugs={passo.artigos}
+								trilha={trilha}
+								className="mt-3"
+							/>
+						) : (
+							<p className="mt-3">
+								<Link
+									to="/trilhas/$trilha"
+									params={{ trilha: trilha.slug }}
+									hash={idDoPasso(passo.titulo)}
+									className="link-do-caminho text-[0.9375rem] leading-snug font-semibold"
+								>
+									<span>
+										Ler este passo na trilha
+										<span className="sr-only">: {passo.titulo}</span>
+									</span>
+								</Link>
+							</p>
+						)}
 					</li>
 				))}
 			</ol>

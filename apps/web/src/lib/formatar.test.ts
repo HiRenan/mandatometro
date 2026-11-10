@@ -4,7 +4,9 @@ import {
 	dominio,
 	formatarData,
 	fraseDoProgresso,
+	idDoPasso,
 	plural,
+	tamanhoDaTrilha,
 } from "./formatar";
 
 describe("formatarData", () => {
@@ -52,5 +54,24 @@ describe("fraseDoProgresso", () => {
 		expect(fraseDoProgresso(0, 3)).toBe("");
 		expect(fraseDoProgresso(1, 3)).toBe("Você leu 1 de 3.");
 		expect(fraseDoProgresso(3, 3)).toBe("Você terminou a trilha.");
+	});
+});
+
+describe("tamanhoDaTrilha", () => {
+	it("diz quantos artigos a trilha tem e quantos minutos de leitura somam", () => {
+		const artigos = [{ minutos: 2 }, { minutos: 2 }, { minutos: 2 }];
+		expect(tamanhoDaTrilha(artigos)).toBe("3 artigos · 6 min de leitura");
+		expect(tamanhoDaTrilha([{ minutos: 3 }])).toBe(
+			"1 artigo · 3 min de leitura",
+		);
+	});
+});
+
+describe("idDoPasso", () => {
+	it("faz o endereço do passo pelo título, sem acento nem espaço", () => {
+		expect(idDoPasso("Apresentação")).toBe("passo-apresentacao");
+		expect(idDoPasso("Plenário")).toBe("passo-plenario");
+		expect(idDoPasso("A outra Casa")).toBe("passo-a-outra-casa");
+		expect(idDoPasso("Sanção ou veto")).toBe("passo-sancao-ou-veto");
 	});
 });

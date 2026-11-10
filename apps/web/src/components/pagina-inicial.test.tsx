@@ -147,11 +147,19 @@ describe("página inicial", () => {
 		expect(tela.textContent).not.toContain("Você leu");
 	});
 
+	it("sem progresso, diz o tamanho da trilha logo acima do botão", async () => {
+		await mostrar();
+
+		const linha = screen.getByText("3 artigos · 6 min de leitura");
+		expect(linha.nextElementSibling?.textContent).toBe("Começar a trilha");
+	});
+
 	it("continua do primeiro artigo não lido, com o progresso em palavras", async () => {
 		lerAntes("quem-pode-propor-uma-lei");
 		await mostrar();
 
 		expect(screen.getByText("Você leu 1 de 3.")).toBeTruthy();
+		expect(screen.queryByText("3 artigos · 6 min de leitura")).toBeNull();
 		expect(
 			screen
 				.getByRole("link", { name: "Continuar a trilha" })
@@ -226,11 +234,22 @@ describe("página inicial", () => {
 				"/trilhas/processo-legislativo/o-projeto-passa-pelas-comissoes",
 			],
 		]);
-		expect(links("Plenário")).toEqual([]);
+		expect(links("Plenário")).toEqual([
+			[
+				"Ler este passo na trilha: Plenário",
+				"/trilhas/processo-legislativo#passo-plenario",
+			],
+		]);
 		expect(links("A outra Casa")).toEqual([
 			[
 				"Artigo 2: Onde o projeto começa",
 				"/trilhas/processo-legislativo/onde-o-projeto-comeca",
+			],
+		]);
+		expect(links("Sanção ou veto")).toEqual([
+			[
+				"Ler este passo na trilha: Sanção ou veto",
+				"/trilhas/processo-legislativo#passo-sancao-ou-veto",
 			],
 		]);
 		for (const lista of caminho.querySelectorAll("li ul")) {
