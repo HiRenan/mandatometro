@@ -107,6 +107,9 @@ components:
     textColor: "{colors.tinta}"
     typography: "{typography.body}"
     width: "64ch"
+  pagina-de-erro:
+    textColor: "{colors.tinta}"
+    typography: "{typography.headline}"
 ---
 
 # Design System: Mandatômetro
@@ -157,13 +160,13 @@ Duas tintas sobre papel e cinco fitas do Bonfim que só aparecem como faixa de c
 **Display Font:** Archivo Variable, eixo de largura (com ui-sans-serif, system-ui)
 **Body Font:** Literata Variable, eixo de tamanho óptico, com itálico (com ui-serif, Georgia)
 
-As duas são servidas pelo próprio site, pelo `@fontsource-variable`.
+As duas são servidas pelo próprio site, pelo `@fontsource-variable`. Os arquivos latinos das duas (a Literata sem o itálico) são pré-carregados no `<head>`, para o texto não pular quando elas chegam; a página inicial, que ainda não usa a serifa, só pré-carrega o Archivo.
 
 **Character:** o Archivo, apertado no eixo de largura e no peso máximo, faz o algarismo e o título de folhinha; a Literata, calma e de leitura longa, faz o professor paciente falar. O condensado nunca vai para o texto corrido, e a serifa nunca vai para o número.
 
 ### Hierarchy
 - **Numeral** (900, largura 62%, altura de linha 0.78, algarismos tabulares): o número da folha. No artigo, a partir de 1440 px, fica sozinho na coluna da esquerda a 22.5rem (15rem a partir de dois dígitos); abaixo disso, vai para o lado do título a 7.5rem (10rem no md). Na lista da trilha, 5.5rem a 8rem; em "Nesta trilha", 4rem; na lista das trilhas, 1.75rem; na página 404, 7rem a 13rem.
-- **Headline** (850, largura 72%, altura 0.96): o título da página (artigo, trilha, Trilhas, 404), de 2.5rem no celular a 4.75rem, com no máximo 12 caracteres de largura no artigo.
+- **Headline** (850, largura 72%, altura 0.96): o título da página (artigo, trilha, Trilhas, 404 e erro), de 2.5rem no celular a 4.75rem, com no máximo 12 caracteres de largura no artigo.
 - **Title** (800, largura 75%, altura 1.05): o título de cada folha na lista, "Nesta trilha", "Fontes oficiais", os intertítulos do texto e os nomes do anterior e do próximo, de 1.5rem a 2.75rem.
 - **Wordmark** (900, largura 68%): o nome Mandatômetro no cartão preto, 2rem no celular e 2.75rem no md. É texto, não logo.
 - **Lead** (Literata 500, altura 1.4): o resumo do artigo e a descrição da trilha, de 1.25rem a 1.5625rem, com no máximo 40 a 44 caracteres de largura.
@@ -183,7 +186,7 @@ A página tem no máximo 1440 px, com margens de 20 px no celular e 64 px a part
 - **Trilha e lista das trilhas:** uma coluna de até 56rem, com as folhas empilhadas. Na trilha, o número fica numa coluna própria (7rem) a partir do md; no celular, vai para o lado do título e o resumo usa a largura toda.
 - **Ritmo:** cerca de 24 px dentro de cada folha, 40 a 48 px entre os blocos da página e 80 px no fim. O conteúdo da folha fica recuado 26 px para dar lugar à fita.
 - **Linha de meta:** o tempo de leitura e o aviso das fontes ficam numa faixa entre duas linhas de 2 px, logo abaixo do resumo, em todas as larguras.
-- **O progresso chega depois:** o navegador só sabe o que a pessoa leu quando a página termina de carregar. Por isso, a linha do progresso na trilha (acima do "Continuar"), a da lista das trilhas no celular e o aviso de lido no fim do artigo têm a altura reservada desde o HTML do servidor, e nada muda de lugar quando o progresso aparece.
+- **O progresso chega depois:** o navegador só sabe o que a pessoa leu quando a página termina de carregar. Por isso, a linha do progresso na trilha (acima do "Continuar"), a da lista das trilhas no celular e o aviso de lido no fim do artigo têm a altura reservada desde o HTML do servidor. Quando o progresso aparece, essas linhas e o botão "Continuar" não mudam de lugar. A 360 px, numa trilha pela metade, a lista abaixo do botão pode descer: o rótulo "Continuar de onde parou" traz o título do artigo e ocupa mais linhas, e o "Recomeçar a trilha" entra embaixo do botão. O Renan aceitou esse salto.
 
 ## Elevation & Depth
 
@@ -206,7 +209,7 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 ### Moldura (cabeçalho)
 - **Caráter:** o cartão preto da folhinha.
 - **Forma:** faixa de tinta na largura toda, com pelo menos 96 px de altura no md; o nome e o lema à esquerda, Início e Trilhas à direita.
-- **Navegação:** links em papel, sem sublinhado, com uma barra de 4 px embaixo: amarela no hover e papel na página atual.
+- **Navegação:** links em papel, sem sublinhado, com uma barra de 4 px embaixo: amarela no hover e papel na seção atual. "Trilhas" fica marcado na lista das trilhas, em cada trilha e em cada artigo; o `aria-current="page"` só vai no link da própria página.
 - **Foco:** o anel de foco fica amarelo dentro do cartão. O "Pular para o conteúdo" aparece no foco, em tinta sobre papel.
 - **Tira de fitas:** logo abaixo, 18 px de altura, as cinco fitas em sequência.
 
@@ -220,8 +223,8 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 - **Foco:** contorno de 3 px na azul, afastado 3 px.
 
 ### Ações em texto
-- **Quais:** "Desmarcar", embaixo de "Você leu este artigo."; "Recomeçar a trilha", ao lado do "Continuar" (embaixo dele no celular), quando a pessoa já leu algum artigo da trilha; e "Desfazer".
-- **Forma:** um botão com cara de link (`.acao-de-texto`): Archivo 600 a 1.0625rem, sublinhado de 2 px afastado 0,2 em, em tinta. Um `::before` leva a área de toque a 44 px de altura sem mudar o espaço que o texto ocupa, e o anel de foco fica justo no texto, como nos links.
+- **Quais:** "Desmarcar", embaixo de "Você leu este artigo."; "Recomeçar a trilha", ao lado do "Continuar" (embaixo dele no celular), quando a pessoa já leu algum artigo da trilha; "Desfazer"; e "Tentar de novo", na página de erro.
+- **Forma:** um botão com cara de link (`.acao-de-texto`): Archivo 600 a 1.0625rem, sublinhado de 2 px afastado 0,2 em, em tinta. Um `::before` com `inset: -0.6875rem -0.25rem` soma 11 px em cima e embaixo da linha de 23,4 px: a área de toque fica com 45,4 px de altura, sem mudar o espaço que o texto ocupa, e o anel de foco fica justo no texto, como nos links.
 - **Depois da ação:** a frase de estado diz o que aconteceu ("Você desmarcou o artigo.", "Você recomeçou a trilha."), e o mesmo botão vira "Desfazer", com o foco nele. O "Desfazer" vale até a pessoa sair da página. Não há caixa de confirmação.
 - **Leitor de tela:** o que aconteceu é anunciado por uma região `role="status"` escondida, que já vem vazia no HTML do servidor e se apaga depois de 7 s (`useAviso`). A frase na tela não é região viva, e por isso não é anunciada a cada visita.
 
@@ -245,6 +248,12 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 
 ### Caminho
 - "Trilhas / Processo legislativo", em Archivo 600, com os links sublinhados e a página atual sem link.
+
+### Página de erro
+- **Quando:** a página pedida não chega, porque a rede caiu numa navegação, o pedido dos dados foi bloqueado ou o servidor deu erro (500). Vale para todas as rotas (`defaultErrorComponent`) e aparece dentro do site, embaixo da moldura, com o `lang="pt-BR"`.
+- **Forma:** a irmã da página 404, sem o número. O título "A página não carregou" em Headline, uma frase em Literata ("Pode ser a sua internet ou uma falha no site. Os artigos que você já leu continuam marcados.") e, na mesma linha, "Tentar de novo" (uma ação em texto, no tamanho e no peso do link ao lado) e "Ver as trilhas". Sem ícone de alerta e sem cor: o erro é dito em palavras, em tinta no papel.
+- **Tentar de novo:** pede a página de novo, sem recarregar (`router.invalidate()`). Enquanto o pedido não volta, aparece o aviso de carregando das navegações. Se der certo, a página pedida abre com o foco no título. Se falhar de novo, aparece "Ainda não deu. Confira a internet ou espere um pouco e tente de novo.", o foco fica no botão e a frase é anunciada pela região `role="status"` (`useAviso`).
+- **Título da aba:** "Erro ao carregar a página · Mandatômetro". A tela não mostra a mensagem técnica nem a pilha do erro.
 
 ## Do's and Don'ts
 
