@@ -3,20 +3,20 @@ import { FolhasDaTrilha } from "./folhas-da-trilha";
 
 /**
  * As folhas da trilha ao lado do artigo, com o título "Nesta trilha": a lida
- * leva o X, e a aberta, o canto dobrado.
+ * leva o visto, e a aberta, o canto dobrado.
  */
 export function NestaTrilha({
 	trilha,
 	atual,
 	lidos,
-	riscarAgora,
+	marcarAgora,
 }: {
 	trilha: TrilhaNaLista;
 	/** O slug do artigo aberto. */
 	atual: string;
 	lidos: ReadonlySet<string>;
-	/** O artigo que a pessoa acabou de ler: o X dele é desenhado. */
-	riscarAgora?: string;
+	/** O artigo que a pessoa acabou de ler: o visto dele é desenhado. */
+	marcarAgora?: string;
 }) {
 	return (
 		<nav aria-labelledby="nesta-trilha">
@@ -30,7 +30,7 @@ export function NestaTrilha({
 				trilha={trilha}
 				atual={atual}
 				lidos={lidos}
-				riscarAgora={riscarAgora}
+				marcarAgora={marcarAgora}
 			/>
 		</nav>
 	);

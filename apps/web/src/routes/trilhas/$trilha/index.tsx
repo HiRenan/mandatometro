@@ -5,7 +5,7 @@ import { Aviso, useAviso } from "@/components/aviso";
 import { BOTAO_CONTINUAR } from "@/components/botao-continuar";
 import { Caminho } from "@/components/caminho";
 import { Infografico } from "@/components/infografico";
-import { MarcaX } from "@/components/marca-x";
+import { MarcaDeLido } from "@/components/marca-de-lido";
 import { buscarTrilha } from "@/lib/conteudo";
 import { corDaFita, fraseDoProgresso, plural } from "@/lib/formatar";
 import { metaDaPagina, metaSemPagina } from "@/lib/meta";
@@ -147,7 +147,7 @@ function PaginaDaTrilha() {
 										>
 											<span className="relative inline-block">
 												{indice + 1}
-												{lido && <MarcaX className="sobre-o-numero" />}
+												{lido && <MarcaDeLido className="visto-no-numero" />}
 											</span>
 										</span>
 										{/* O respiro à direita do título, no celular, deixa o canto dobrado livre. */}

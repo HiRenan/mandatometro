@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Aviso, useAviso } from "@/components/aviso";
 import { Caminho } from "@/components/caminho";
 import { Fontes } from "@/components/fontes";
-import { MarcaX } from "@/components/marca-x";
+import { MarcaDeLido } from "@/components/marca-de-lido";
 import { NestaTrilha } from "@/components/nesta-trilha";
 import { TextoDoArtigo } from "@/components/texto-do-artigo";
 import { type ArtigoNaTrilha, buscarArtigo } from "@/lib/conteudo";
@@ -143,14 +143,14 @@ function Folha({ trilha, artigo, posicao, anterior, proximo }: ArtigoNaTrilha) {
 						<TextoDoArtigo html={artigo.html} />
 					</div>
 
-					{/* A altura do aviso fica reservada: quando o X aparece, as fontes
+					{/* A altura do aviso fica reservada: quando o visto aparece, as fontes
 					    não descem. O botão é o mesmo nos dois estados, e o foco fica
 					    nele quando "Desmarcar" vira "Desfazer". */}
 					<div ref={fimDoTexto} className="mt-6 min-h-[4.5rem]">
 						{(lido || desmarcou) && (
 							<div className="grid grid-cols-[2.5rem_minmax(0,1fr)] grid-rows-[minmax(2.5rem,auto)_auto] items-center gap-x-3 gap-y-1">
 								{lido && (
-									<MarcaX
+									<MarcaDeLido
 										animar={leuAgora}
 										className="col-start-1 row-start-1 size-10"
 									/>
@@ -240,7 +240,7 @@ function Folha({ trilha, artigo, posicao, anterior, proximo }: ArtigoNaTrilha) {
 						trilha={trilha}
 						atual={artigo.slug}
 						lidos={lidos}
-						riscarAgora={leuAgora ? artigo.slug : undefined}
+						marcarAgora={leuAgora ? artigo.slug : undefined}
 					/>
 				</div>
 			</div>
