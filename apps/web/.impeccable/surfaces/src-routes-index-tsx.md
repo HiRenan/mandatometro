@@ -48,6 +48,18 @@ related_targets: ["src/routes/__root.tsx","src/components/rodape.tsx"]
 - **Fora, sem marcador nem esboço:** a última edição e o campo de inscrição (#21 e #39), o quiz (#37), o logo, o sitemap, o deploy e o domínio (#23 e #32), e a página de erro (#45).
 - **Não muda:** as páginas das trilhas, a não ser pelo rodapé e por três detalhes que não aparecem na leitura: o título de cada passo do infográfico tem um id (`passo-plenario`) e 32 px de respiro na rolagem, para a página inicial levar até ele; o botão "Continuar" tem uma borda que só aparece nas cores forçadas; e, depois de uma navegação para um endereço com trecho (`#caminho`), o foco vai para o trecho.
 
+## A #48: a letra grande no celular
+
+- **O pedido:** com a letra do navegador a 200%, numa tela de 360 px, nenhuma página rola de lado, e o cabeçalho, o título e o nome do rodapé cabem inteiros. Com a letra a 100%, nada muda, pixel a pixel.
+- **As respostas do Renan (harden, 11/11/2026):**
+  - as margens do celular: "Ficam em 20 px (Recomendado)";
+  - o respiro do cabeçalho: "Espaço de hoje (Recomendado)";
+  - os títulos e o nome: "Teto (Recomendado)";
+  - os dois achados do anel de foco da revisão do PR #47 (10 e 11/11/2026): "Junto na #48 (Recomendado)".
+- **Nesta página:** o h1 cresce com a letra até "brasileira," encostar nas margens. A 360 px com a letra a 200%, ele fica com 84 px (o dobro seria 88 px). A abertura e o resto do texto dobram.
+- **No rodapé:** o nome tem o teto do nome do cabeçalho (57 px, e não 64 px, a 360 px com a letra a 200%), e a grade de dentro tem uma coluna que não alarga abaixo do lg.
+- **O foco:** o "Ver o caminho na trilha" e o link do GitHub ficam com o anel de antes. Um link novo com a mesma classe e sem o `span` fica com o anel no próprio link. Nas cores forçadas, o anel dos links do caminho sai na cor de destaque do sistema.
+
 ## States and copy
 
 - **Antes da hidratação:** a página não sabe o progresso. Mostra "3 artigos · 6 min de leitura" acima de "Começar a trilha". A linha tem a altura reservada desde o HTML do servidor.
