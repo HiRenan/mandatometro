@@ -367,9 +367,11 @@
 	 * Nas cores forçadas do Windows, o navegador troca as cores do site pelas do
 	 * sistema: o anel do elemento focado, o link, fica com a cor de destaque
 	 * (Highlight), mas o span, que não é o elemento focado, ficaria com a cor do
-	 * texto. Aqui, o anel do span usa a mesma cor de destaque.
+	 * texto. Aqui, o anel do span usa a mesma cor de destaque, nas ações em texto e
+	 * nos links do caminho.
 	 */
 	@media (forced-colors: active) {
+		.link-do-caminho:focus-visible > span,
 		a.acao-de-texto:focus-visible > span {
 			outline-color: Highlight;
 		}
