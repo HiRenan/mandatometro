@@ -135,7 +135,7 @@ describe("página inicial", () => {
 
 		expect(
 			screen.getByText(
-				"O Mandatômetro explica como funciona a política no Brasil, em artigos curtos e em linguagem simples. A primeira trilha mostra como uma ideia vira lei.",
+				"O Mandatômetro explica como funciona a política no Brasil, em artigos curtos e em linguagem simples. A trilha do processo legislativo mostra como uma ideia vira lei.",
 			),
 		).toBeTruthy();
 		expect(screen.getAllByText(PARA_QUEM).length).toBeGreaterThan(0);
