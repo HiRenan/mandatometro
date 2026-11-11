@@ -1,0 +1,549 @@
+@import "@mandatometro/ui/globals.css";
+
+@theme {
+	/* A partir desta largura, a folha do artigo cabe em três colunas, como no esboço. */
+	--breakpoint-folha: 90rem;
+	/*
+	 * A margem das páginas abaixo do md. Ela fica em px: com a letra do navegador
+	 * maior, a margem não cresce, e o texto ganha a largura (o Renan, na #48:
+	 * "Ficam em 20 px").
+	 */
+	--spacing-margem-celular: 20px;
+}
+
+/*
+ * A letra grande: a tela tem menos de 18 rem. A 360 px, isso acontece com a letra do
+ * navegador acima de 125%, e com a letra a 100%, só abaixo de 288 px. Aí o número da
+ * folha passa para cima do título, porque ao lado dele o título não cabe. O mais largo
+ * lado a lado, o cabeçalho do artigo das comissões, pede 15,3 rem da largura da
+ * página, mais os 40 px das margens: com 18 rem, o número ao lado do título nunca
+ * passa das margens, e com a letra a 100% o desenho não muda a partir de 320 px.
+ */
+@custom-variant letra-grande (@media (width < 18rem));
+
+/* As peças da folhinha de parede. As cores e as fontes vêm do globals.css. */
+@layer components {
+	/* A tira de fitas do Bonfim, logo abaixo do cartão preto, no lugar do picote. */
+	.tira-de-fitas {
+		background: repeating-linear-gradient(
+			90deg,
+			var(--fita-verde) 0 48px,
+			var(--fita-amarela) 48px 96px,
+			var(--fita-azul) 96px 144px,
+			var(--fita-rosa) 144px 192px,
+			var(--fita-vermelha) 192px 240px,
+			var(--papel) 240px 252px
+		);
+	}
+
+	/* No cartão preto, o foco aparece em amarelo. */
+	.moldura :focus-visible {
+		outline-color: var(--fita-amarela);
+	}
+
+	/* Depois de uma navegação, o foco vai para o título da página nova, ou para o
+	   trecho do endereço, como o #caminho (__root.tsx e lib/foco.ts). Nenhum dos
+	   dois é um controle, então ficam sem o anel. */
+	#conteudo [tabindex="-1"]:focus {
+		outline: none;
+	}
+
+	/*
+	 * A fita de cada artigo: pendurada da borda de cima da folha, como a fitinha do
+	 * Bonfim, com a ponta cortada em V sobre o papel. O V tem 1,5 vez a largura da
+	 * fita, para ler como ponta de fita, e não como seta.
+	 */
+	.fita {
+		clip-path: polygon(
+			0 0,
+			100% 0,
+			100% 100%,
+			50% calc(100% - 1.125rem),
+			0 100%
+		);
+	}
+
+	/*
+	 * A fita curta, ao lado do link de um artigo no caminho: com 24 px de altura,
+	 * o V de 18 px viraria ponta de seta. O V raso, de 8 px, lê como marcador.
+	 */
+	.fita-curta {
+		clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 0.5rem), 0 100%);
+	}
+
+	/*
+	 * O canto dobrado marca a folha onde a pessoa está: a ponta da folha dobrada
+	 * para dentro. O ::before corta o canto até o papel (e esconde o picote de
+	 * cima), e o ::after desenha a aba em tinta, sem sombra.
+	 */
+	.canto-dobrado::before,
+	.canto-dobrado::after {
+		content: "";
+		position: absolute;
+		top: -2px;
+		right: 0;
+		width: 30px;
+		height: 32px;
+	}
+
+	.canto-dobrado::before {
+		background: var(--papel);
+	}
+
+	.canto-dobrado::after {
+		background: var(--tinta);
+		-webkit-mask:
+			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 32'%3E%3Cpath d='M1 3V31H29Z' fill='none' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E")
+			center / 100% 100% no-repeat;
+		mask:
+			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 32'%3E%3Cpath d='M1 3V31H29Z' fill='none' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E")
+			center / 100% 100% no-repeat;
+	}
+
+	/*
+	 * O X da folha lida, centrado no número e um pouco maior que ele, como quem
+	 * risca o dia na folhinha: os traços passam do algarismo dos dois lados.
+	 */
+	.sobre-o-numero {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 1.1em;
+		height: 1.1em;
+		translate: -50% -50%;
+	}
+
+	/* O número da folha, como o dia na folhinha. */
+	.numeral {
+		font-family: var(--font-sans);
+		font-stretch: 62%;
+		font-weight: 900;
+		line-height: 0.78;
+		letter-spacing: -0.03em;
+		font-variant-numeric: tabular-nums;
+	}
+
+	/*
+	 * O título da página. A quebra é a reserva do teto (o letra-com-teto): uma
+	 * palavra que não caiba nem no teto quebra, sem hífen, e a página não rola de lado.
+	 */
+	.titulo-condensado {
+		font-family: var(--font-sans);
+		font-stretch: 72%;
+		font-weight: 850;
+		line-height: 0.96;
+		letter-spacing: -0.02em;
+		text-wrap: balance;
+		overflow-wrap: break-word;
+	}
+
+	/*
+	 * O teto da letra grande, nos títulos das páginas e no nome (o Renan, na #48:
+	 * "Teto"). A letra cresce com a do navegador até a palavra mais comprida encostar
+	 * nas margens do celular, e para aí. O --letra é o tamanho de sempre, e o
+	 * --palavra, a largura dessa palavra, em em, medida no navegador. Não é vw puro:
+	 * até a tela acabar, a letra segue a configuração. Com a letra a 100%, o teto não
+	 * age a partir de 320 px, e a partir do md o text-* de cada título manda.
+	 */
+	.letra-com-teto {
+		font-size: min(
+			var(--letra),
+			calc((100vw - 2 * var(--spacing-margem-celular)) / var(--palavra))
+		);
+	}
+
+	.subtitulo-condensado {
+		font-family: var(--font-sans);
+		font-stretch: 75%;
+		font-weight: 800;
+		line-height: 1.05;
+		text-wrap: balance;
+	}
+
+	/*
+	 * As ações em texto, como "Desmarcar" e "Recomeçar a trilha": sublinhadas como
+	 * os links, porque o "Continuar" é a única ação em bloco. Nos botões, a caixa
+	 * tem a altura da linha, 23,4 px, e o ::before soma 11 px em cima e embaixo
+	 * dela: a área de toque fica com 45,4 px de altura, sem mudar o espaço que o
+	 * texto ocupa, e o anel de foco continua justo no texto.
+	 */
+	.acao-de-texto {
+		position: relative;
+		cursor: pointer;
+		font-size: 1.0625rem;
+		font-weight: 600;
+		line-height: 1.375;
+		text-decoration-line: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 0.2em;
+	}
+
+	.acao-de-texto::before {
+		content: "";
+		position: absolute;
+		inset: -0.6875rem -0.25rem;
+	}
+
+	/* O X da folha lida. O traço desenha em 400 ms quando a pessoa chega ao fim do texto. */
+	.marca-x {
+		fill: none;
+		stroke: var(--tinta);
+		stroke-width: 6;
+		stroke-linecap: round;
+	}
+
+	.marca-x[data-animar] path {
+		animation: riscar 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+	}
+
+	.marca-x[data-animar] path + path {
+		animation-delay: 200ms;
+	}
+
+	/*
+	 * O caminho do infográfico. Cada passo tem um quadradinho cheio de tinta na
+	 * altura do título, e uma linha cheia de 2 px liga um passo ao seguinte. Os
+	 * desvios saem da linha por um traço tracejado até um quadradinho vazado: a
+	 * linha cheia é o caminho completo; a tracejada, o que pode mudar o caminho.
+	 * No último passo, a linha desce só até o último desvio, e só quando há
+	 * desvio. É só desenho: o sentido está nas palavras de cada passo.
+	 */
+	.passo {
+		position: relative;
+		padding-left: 2rem;
+	}
+
+	.passo:not(:last-child) {
+		padding-bottom: 2.25rem;
+	}
+
+	.passo::before {
+		content: "";
+		position: absolute;
+		top: 0.3rem;
+		left: 0;
+		width: 0.875rem;
+		height: 0.875rem;
+		background: var(--tinta);
+	}
+
+	.passo:not(:last-child)::after {
+		content: "";
+		position: absolute;
+		top: 0.3rem;
+		bottom: -0.3rem;
+		left: 0.375rem;
+		width: 2px;
+		background: var(--tinta);
+	}
+
+	/* No último passo, a linha fica no corpo (título, texto e desvios). */
+	.passo:last-child .passo-corpo {
+		position: relative;
+	}
+
+	.passo:last-child .passo-corpo:has(.desvio)::after {
+		content: "";
+		position: absolute;
+		top: 0.3rem;
+		bottom: 0;
+		left: -1.625rem;
+		width: 2px;
+		background: var(--tinta);
+	}
+
+	/* E para no traço do último desvio: o papel cobre a linha dali para baixo. */
+	.passo:last-child .desvio:last-child::after {
+		content: "";
+		position: absolute;
+		z-index: 1;
+		top: calc(0.75em + 1px);
+		bottom: 0;
+		left: -1.625rem;
+		width: 2px;
+		background: var(--papel);
+	}
+
+	/* O desvio: o traço tracejado sai da linha e chega ao quadradinho vazado. */
+	.desvio {
+		position: relative;
+		padding-left: 1.5rem;
+	}
+
+	.desvio::before {
+		content: "";
+		position: absolute;
+		top: calc(0.75em - 1px);
+		left: -1.5rem;
+		width: 1.5rem;
+		border-top: 2px dashed var(--tinta);
+	}
+
+	.no-do-desvio {
+		position: absolute;
+		top: calc(0.75em - 0.4375rem);
+		left: 0;
+		width: 0.875rem;
+		height: 0.875rem;
+		border: 2px solid var(--tinta);
+		background: var(--papel);
+	}
+
+	/*
+	 * Os links do caminho, dos artigos e das fontes, têm a área de toque das
+	 * ações em texto: 45,4 px de altura em cada linha e 4 px a mais dos lados.
+	 * O padding faz a área, e a margem negativa devolve o espaço: o texto fica
+	 * no mesmo lugar. O clone dá a área a cada linha de um link que quebra. Os
+	 * links ficam em linhas vizinhas, e o texto de cada um (o span) fica por
+	 * cima de todas as áreas: um toque no texto de um link nunca vai para o
+	 * vizinho, e no vão entre dois vale o que vem depois. O anel de foco
+	 * contorna o texto, e não a área.
+	 */
+	.link-do-caminho {
+		position: relative;
+		/* O link do artigo é um bloco, com a linha de 20,6 px: 12,4 px em cima e embaixo. */
+		margin: -0.775rem -0.25rem;
+		padding: 0.775rem 0.25rem;
+		-webkit-box-decoration-break: clone;
+		box-decoration-break: clone;
+	}
+
+	/* O link da fonte é texto corrido, e a caixa dele tem a altura da letra, 16 px. */
+	p > .link-do-caminho {
+		padding-block: 0.92rem;
+	}
+
+	.link-do-caminho > span {
+		position: relative;
+		z-index: 1;
+	}
+
+	.link-do-caminho:focus-visible {
+		outline: none;
+	}
+
+	.link-do-caminho:focus-visible > span {
+		outline: 3px solid var(--ring);
+		outline-offset: 3px;
+	}
+
+	/*
+	 * As duas ações em texto que são links ("Ver o caminho na trilha" e "O código
+	 * é aberto, no GitHub") ficam em linha, como texto, e a caixa de um link em
+	 * linha tem a altura da letra, 19 px, e não a da linha: com o ::before, a área
+	 * ficava com 41,5 px. No link, o padding faz a área, como nos links das
+	 * fontes: 13 px em cima e embaixo da letra, em cada linha quando o link
+	 * quebra, e a área fica com 45 px de altura; e 4 px no começo e no fim, que a
+	 * margem negativa devolve. Os 13 px são inteiros de propósito: com 13,2 px,
+	 * para chegar aos 45,4 px dos botões, o texto ficava no mesmo lugar, mas a
+	 * 1440 e a 1920 px o navegador pintava as letras com outro arredondamento.
+	 * Sem o box-decoration-break: clone, que mudava a quebra da linha com a letra
+	 * grande, o texto fica no mesmo lugar. O anel de foco contorna o texto (o
+	 * span), e não a área, na cor do anel do lugar: azul no papel e amarelo no
+	 * cartão preto. Um link sem o span fica com o anel no próprio link. Num
+	 * navegador sem o :has(), a regra que tira o anel do link cai, e o link com o
+	 * span fica com dois anéis: o foco continua visível.
+	 */
+	a.acao-de-texto {
+		margin-inline: -0.25rem;
+		padding: 0.8125rem 0.25rem;
+	}
+
+	a.acao-de-texto::before {
+		content: none;
+	}
+
+	a.acao-de-texto:has(> span):focus-visible {
+		outline-style: none;
+	}
+
+	a.acao-de-texto:focus-visible > span {
+		outline: 3px solid;
+		outline-color: inherit;
+		outline-offset: 3px;
+	}
+
+	/*
+	 * Nas cores forçadas do Windows, o navegador troca as cores do site pelas do
+	 * sistema: o anel do elemento focado, o link, fica com a cor de destaque
+	 * (Highlight), mas o span, que não é o elemento focado, ficaria com a cor do
+	 * texto. Aqui, o anel do span usa a mesma cor de destaque, nas ações em texto e
+	 * nos links do caminho.
+	 */
+	@media (forced-colors: active) {
+		.link-do-caminho:focus-visible > span,
+		a.acao-de-texto:focus-visible > span {
+			outline-color: Highlight;
+		}
+	}
+
+	/*
+	 * O caminho na página inicial: as paradas ligadas pela linha cheia de 2 px,
+	 * cada uma com o quadradinho de tinta. Abaixo do lg, a linha fica em pé, como
+	 * no infográfico da trilha. A partir do lg, deitada: uma coluna por parada,
+	 * com o quadradinho no alto e a linha até o quadradinho da próxima, por cima
+	 * do vão entre as colunas. Só desenho: o sentido está nas palavras.
+	 */
+	.parada {
+		position: relative;
+		padding-left: 2rem;
+	}
+
+	.parada:not(:last-child) {
+		padding-bottom: 1.75rem;
+	}
+
+	.parada::before {
+		content: "";
+		position: absolute;
+		top: 0.3rem;
+		left: 0;
+		width: 0.875rem;
+		height: 0.875rem;
+		background: var(--tinta);
+	}
+
+	.parada:not(:last-child)::after {
+		content: "";
+		position: absolute;
+		top: 0.3rem;
+		bottom: -0.3rem;
+		left: 0.375rem;
+		width: 2px;
+		background: var(--tinta);
+	}
+
+	@media (width >= 64rem) {
+		.caminho-em-linha {
+			--vao-do-caminho: 2rem;
+			display: grid;
+			grid-auto-columns: minmax(0, 1fr);
+			grid-auto-flow: column;
+			column-gap: var(--vao-do-caminho);
+		}
+
+		.parada,
+		.parada:not(:last-child) {
+			padding: 1.875rem 0 0;
+		}
+
+		.parada::before {
+			top: 0;
+		}
+
+		.parada:not(:last-child)::after {
+			top: 0.375rem;
+			right: calc(-1 * var(--vao-do-caminho));
+			bottom: auto;
+			left: 0;
+			width: auto;
+			height: 2px;
+		}
+	}
+
+	@media (width >= 80rem) {
+		.caminho-em-linha {
+			--vao-do-caminho: 2.5rem;
+		}
+	}
+
+	/*
+	 * Nas cores forçadas (o alto contraste do Windows), o navegador troca os
+	 * fundos pela cor do papel, e a linha cheia e os quadradinhos cheios, que são
+	 * fundo, sumiam. Eles passam a ter a cor do texto, e a capa do último desvio,
+	 * a cor do papel. O traço tracejado e o quadradinho vazado são borda e já
+	 * aparecem.
+	 */
+	@media (forced-colors: active) {
+		.passo::before,
+		.passo:not(:last-child)::after,
+		.passo:last-child .passo-corpo:has(.desvio)::after,
+		.parada::before,
+		.parada:not(:last-child)::after {
+			background: CanvasText;
+		}
+
+		.passo:last-child .desvio:last-child::after {
+			background: Canvas;
+		}
+	}
+
+	/* O texto corrido do artigo: serifa de leitura, tinta no papel, sem enfeite. */
+	.texto {
+		max-width: 64ch;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.6;
+	}
+
+	.texto > * + * {
+		margin-top: 1em;
+	}
+
+	.texto h2 {
+		margin-top: 1.75em;
+		font-family: var(--font-sans);
+		font-stretch: 75%;
+		font-weight: 800;
+		font-size: 1.625rem;
+		line-height: 1.05;
+		text-wrap: balance;
+	}
+
+	.texto h2 + * {
+		margin-top: 0.5em;
+	}
+
+	.texto ul,
+	.texto ol {
+		padding-left: 1.25em;
+	}
+
+	.texto ul {
+		list-style: square;
+	}
+
+	.texto ol {
+		list-style: decimal;
+	}
+
+	.texto li + li {
+		margin-top: 0.35em;
+	}
+
+	.texto a {
+		text-decoration-line: underline;
+	}
+
+	.texto strong {
+		font-weight: 700;
+	}
+
+	@media (width >= 64rem) {
+		.texto {
+			font-size: 1.1875rem;
+			line-height: 1.65;
+		}
+
+		.texto h2 {
+			font-size: 2rem;
+		}
+	}
+}
+
+@keyframes riscar {
+	from {
+		stroke-dasharray: 1;
+		stroke-dashoffset: 1;
+	}
+	to {
+		stroke-dasharray: 1;
+		stroke-dashoffset: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.marca-x[data-animar] path {
+		animation: none;
+	}
+}

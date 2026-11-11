@@ -1,0 +1,44 @@
+{
+	"$schema": "https://turbo.build/schema.json",
+	"ui": "tui",
+	"tasks": {
+		"build": {
+			"dependsOn": ["^build"],
+			"inputs": ["$TURBO_DEFAULT$", ".env*"],
+			"outputs": [".output/**", "dist/**"]
+		},
+		"lint": {
+			"dependsOn": ["^lint"]
+		},
+		"test": {
+			"dependsOn": ["^test"]
+		},
+		"check-types": {
+			"dependsOn": ["^check-types"]
+		},
+		"dev": {
+			"cache": false,
+			"persistent": true
+		},
+		"start": {
+			"dependsOn": ["build"],
+			"cache": false,
+			"persistent": true,
+			"passThroughEnv": ["*"]
+		}
+	},
+	"globalEnv": [
+		"API_URL",
+		"APP_BASE_URL",
+		"CI",
+		"NITRO_PRESET",
+		"NODE_ENV",
+		"VERCEL",
+		"VERCEL_BRANCH_URL",
+		"VERCEL_ENV",
+		"VERCEL_PROJECT_PRODUCTION_URL",
+		"VERCEL_URL",
+		"_VARLOCK_ENV_KEY"
+	],
+	"globalDependencies": [".env*", "apps/*/.env*", "packages/*/.env*"]
+}

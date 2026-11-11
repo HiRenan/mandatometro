@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+	<head>
+		<meta charset="utf-8" />
+		<title>Ícone do Mandatômetro</title>
+		<!--
+			O ícone da aba e da tela de início do celular: o M do nome, na Archivo
+			bem preta e condensada do cabeçalho (peso 900, largura 68%), branco no
+			cartão preto, com as cinco fitas do Bonfim embaixo. É a letra do nome,
+			não um logo, e troca quando o logo vier.
+
+			O gerar.mjs abre esta página do tamanho de cada ícone (16, 32, 48 e
+			180 px), com a fonte do site no lugar do marcador FONTES, e tira a foto.
+			As medidas são em vw, para o desenho ser o mesmo em todos os tamanhos:
+			a 16 px, a tira tem 3 px, e o M, 10 px de altura.
+		-->
+		<style>
+			/* FONTES */
+
+			html,
+			body {
+				margin: 0;
+				height: 100%;
+			}
+
+			body {
+				display: grid;
+				grid-template-rows: minmax(0, 1fr) 18.75vw;
+				overflow: hidden;
+				background: #161616;
+			}
+
+			/* O M fica no meio do cartão pela altura da maiúscula, e não pela
+			   altura da linha: o text-box corta a linha na maiúscula e na base. */
+			.letra {
+				display: grid;
+				place-items: center;
+				color: #ffffff;
+				font-family: "Archivo Variable", sans-serif;
+				font-size: 88vw;
+				font-stretch: 68%;
+				font-weight: 900;
+				line-height: 1;
+				text-box: trim-both cap alphabetic;
+			}
+
+			.fitas {
+				display: flex;
+			}
+
+			.fitas span {
+				flex: 1;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="letra">M</div>
+		<div class="fitas">
+			<span style="background: #00a650"></span>
+			<span style="background: #ffd200"></span>
+			<span style="background: #0067b1"></span>
+			<span style="background: #e6007e"></span>
+			<span style="background: #e30613"></span>
+		</div>
+	</body>
+</html>

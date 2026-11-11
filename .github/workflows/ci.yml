@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Sem versão: o pnpm sai do packageManager do package.json da raiz.
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Biome
+        run: pnpm exec biome ci .
+      - name: Tipos
+        run: pnpm check-types
+      - name: Testes
+        run: pnpm --filter web test
+      - name: Build
+        run: pnpm build
+      - name: Cliente da API em dia com o openapi.json
+        run: |
+          pnpm --filter web generate:client
+          if [ -n "$(git status --porcelain -- apps/web/src/client)" ]; then
+            git status --short -- apps/web/src/client
+            echo "::error::O cliente da API está desatualizado. Rode pnpm generate:client e faça commit."
+            exit 1
+          fi
+
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - uses: actions/checkout@v7
+      # O setup-uv não publica tag major: a versão vai fixa. O uv é o mesmo do Dockerfile da API.
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.7"
+          enable-cache: true
+          cache-dependency-glob: apps/backend/uv.lock
+      - run: uv sync --locked
+      - name: Ruff
+        run: |
+          uv run ruff check
+          uv run ruff format --check
+      - name: pytest
+        run: uv run pytest
+      - name: openapi.json em dia com a API
+        run: |
+          uv run mandatometro openapi openapi.json
+          git diff --exit-code -- openapi.json || {
+            echo "::error::O openapi.json está desatualizado. Rode pnpm generate:client e faça commit."
+            exit 1
+          }

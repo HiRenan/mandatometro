@@ -1,0 +1,55 @@
+[project]
+name = "mandatometro"
+version = "0.1.0"
+description = "Backend do Mandatômetro: coleta, IA, e-mails e API."
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.20.1",
+    "fastapi>=0.162.0",
+    "pgvector>=0.5.1",
+    "psycopg[binary]>=3.3.8",
+    "pydantic-settings>=2.16.2",
+    "sqlalchemy>=2.1.8",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[project.scripts]
+mandatometro = "mandatometro.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.9.4,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.16.0",
+    "pytest>=9.2.0",
+    "ruff>=0.17.4",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+# A URL do banco vem do DATABASE_URL, lido em migrations/env.py. O alembic.ini só tem o logging.
+[tool.alembic]
+script_location = "%(here)s/migrations"
+prepend_sys_path = ["."]
+
+# Cada migration nova sai já arrumada pelo Ruff, para passar no CI.
+[[tool.alembic.post_write_hooks]]
+name = "ruff_check"
+type = "module"
+module = "ruff"
+options = "check --fix --quiet REVISION_SCRIPT_FILENAME"
+
+[[tool.alembic.post_write_hooks]]
+name = "ruff_format"
+type = "module"
+module = "ruff"
+options = "format --quiet REVISION_SCRIPT_FILENAME"
