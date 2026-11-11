@@ -6,6 +6,11 @@ import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 import { conferirConteudo } from "./src/lib/conteudo/conferir";
 
+// A Vercel põe VERCEL=1 no build. A função dela não tem o CLI do varlock nem o
+// .env.schema: lá, o varlock grava no build as variáveis já resolvidas. Fora
+// dela, o servidor lê o .env.schema ao subir, como no Docker.
+const naVercel = Boolean(process.env.VERCEL);
+
 export default defineConfig({
 	server: {
 		port: 3001,
@@ -14,12 +19,17 @@ export default defineConfig({
 		tsconfigPaths: true,
 	},
 	plugins: [
-		varlockVitePlugin({ ssrInjectMode: "auto-load" }),
+		varlockVitePlugin({
+			ssrInjectMode: naVercel ? "resolved-env" : "auto-load",
+		}),
 		// Um artigo mal formado para o build, com o arquivo e o problema.
 		conferirConteudo(),
 		tailwindcss(),
 		tanstackStart(),
-		nitro({ preset: "node-server" }),
+		// Sem preset fixo: na Vercel, o Nitro monta a saída no formato dela
+		// (.vercel/output); fora dela, a do node-server (.output/server), que o
+		// Dockerfile também fixa pelo NITRO_PRESET.
+		nitro(),
 		viteReact(),
 	],
 });
