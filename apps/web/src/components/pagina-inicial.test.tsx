@@ -319,6 +319,17 @@ describe("página inicial", () => {
 		);
 	});
 
+	it("com a letra grande, o título tem teto e as margens ficam em 20 px", async () => {
+		await mostrar();
+		const titulo = screen.getByRole("heading", { level: 1 });
+
+		// O título cresce até "brasileira," encostar nas margens (index.css).
+		expect(titulo.classList.contains("letra-com-teto")).toBe(true);
+		expect(
+			titulo.closest("div.mx-auto")?.classList.contains("px-margem-celular"),
+		).toBe(true);
+	});
+
 	it("sem o caminho, fica com a abertura e o botão", async () => {
 		await mostrar({ trilha: pagina.trilha });
 

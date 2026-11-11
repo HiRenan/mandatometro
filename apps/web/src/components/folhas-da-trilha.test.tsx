@@ -116,6 +116,21 @@ describe("folhas da trilha", () => {
 		expect(pagina.textContent).not.toContain("Você está aqui");
 	});
 
+	it("com a letra grande, o título desce para baixo do número", async () => {
+		const pagina = await mostrar(
+			<FolhasDaTrilha trilha={trilha} lidos={lidos} />,
+		);
+		const link = within(pagina).getAllByRole("link")[0];
+		const [numero, texto] = link.children;
+
+		// O número fica na coluna dele, e o texto ocupa a linha de baixo inteira,
+		// longe do X da folha lida (index.css, a variante letra-grande).
+		expect(numero.classList.contains("numeral")).toBe(true);
+		expect(numero.classList.contains("letra-grande:mb-4")).toBe(true);
+		expect(texto.classList.contains("letra-grande:col-span-full")).toBe(true);
+		expect(texto.textContent).toContain("Quem pode propor uma lei");
+	});
+
 	it("deixa a fita e o número fora do leitor de tela", async () => {
 		const pagina = await mostrar(
 			<FolhasDaTrilha trilha={trilha} lidos={lidos} />,
