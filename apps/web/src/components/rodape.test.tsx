@@ -12,7 +12,7 @@ describe("rodapé", () => {
 		const rodape = screen.getByRole("contentinfo");
 
 		expect(rodape.textContent).toContain(
-			"O Mandatômetro é um projeto do Hack Brasil 2026, na trilha Acesso à educação.",
+			"O Mandatômetro foi feito para o Hack Brasil 2026, na trilha Acesso à educação.",
 		);
 		expect(rodape.textContent).toContain(
 			"Cada explicação traz a fonte oficial: a lei, o regimento ou a página da Câmara e do Senado.",

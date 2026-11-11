@@ -1,9 +1,9 @@
 /**
  * O rodapé, a moldura de baixo da folhinha: o cartão preto com a tira de fitas
- * em cima, como o cabeçalho tem a dele embaixo. Diz de quem é o projeto, de
- * onde vêm as explicações e onde está o código. Mora no documento (__root.tsx),
- * e por isso aparece em todas as páginas, inclusive na de não encontrado e na
- * de erro.
+ * em cima, como o cabeçalho tem a dele embaixo. Diz que o projeto foi feito
+ * para o Hack Brasil, de onde vêm as explicações e onde está o código. Mora no
+ * documento (__root.tsx), e por isso aparece em todas as páginas, inclusive na
+ * de não encontrado e na de erro.
  */
 export function Rodape() {
 	return (
@@ -19,7 +19,7 @@ export function Rodape() {
 				    soma em cima dele: um toque na linha de cima não vai para o link. */}
 				<div className="grid max-w-[38rem] gap-3 text-[1.0625rem] leading-snug">
 					<p>
-						O Mandatômetro é um projeto do Hack Brasil 2026, na trilha Acesso à
+						O Mandatômetro foi feito para o Hack Brasil 2026, na trilha Acesso à
 						educação.
 					</p>
 					<p>
