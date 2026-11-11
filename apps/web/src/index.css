@@ -130,7 +130,13 @@
 		height: 0.42em;
 	}
 
-	/* Na miniatura, o visto passa da borda do quadrado, mas não chega ao vizinho. */
+	/*
+	 * Na miniatura, o visto passa da borda do quadrado, mas não chega ao vizinho.
+	 * Quando os quadrados quebram em duas linhas, como nas trilhas de 8 artigos no
+	 * celular, a linha de baixo fica a 0,75rem da de cima (o gap-y-3 da lista, em
+	 * routes/trilhas/index.tsx): com 0,375rem, o visto de baixo entrava no quadrado
+	 * de cima (o Renan, na #77: "Linhas mais afastadas").
+	 */
 	.visto-na-miniatura {
 		position: absolute;
 		top: -0.75rem;

@@ -87,7 +87,13 @@ function ItemDaTrilha({
 				    à direita. Assim, nada muda de lugar quando o progresso aparece,
 				    depois da hidratação. */}
 				<div className="mt-4 grid items-center gap-x-5 gap-y-2 sm:grid-cols-[auto_minmax(0,1fr)] lg:block">
-					<ol aria-hidden="true" className="flex flex-wrap gap-1.5 lg:hidden">
+					{/* As linhas dos quadrados ficam mais afastadas que as colunas,
+					    porque o visto passa da borda de cima (index.css, o
+					    .visto-na-miniatura). */}
+					<ol
+						aria-hidden="true"
+						className="flex flex-wrap gap-x-1.5 gap-y-3 lg:hidden"
+					>
 						{trilha.artigos.map((artigo, indice) => {
 							const lido = lidos.has(idDoArtigo(artigo));
 							return (
