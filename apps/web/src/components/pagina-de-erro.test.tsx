@@ -71,6 +71,15 @@ describe("página de erro", () => {
 		expect(document.body.textContent).not.toContain("Something went wrong");
 	});
 
+	it("com a letra grande, as margens ficam em 20 px", async () => {
+		abrir(semRede);
+
+		const pagina = (
+			await screen.findByRole("heading", { name: "A página não carregou" })
+		).closest("[data-pagina-de-erro]");
+		expect(pagina?.classList.contains("px-margem-celular")).toBe(true);
+	});
+
 	it("o Tentar de novo refaz o pedido sem recarregar e leva o foco ao título", async () => {
 		const carregar = vi
 			.fn<() => Promise<string>>()

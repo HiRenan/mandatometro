@@ -50,7 +50,7 @@ export function PaginaDeErro() {
 	return (
 		<div
 			data-pagina-de-erro
-			className="mx-auto max-w-[1440px] px-5 pt-10 pb-20 md:px-16"
+			className="px-margem-celular mx-auto max-w-[1440px] pt-10 pb-20 md:px-16"
 		>
 			<h1 className="titulo-condensado text-[2.5rem] md:text-[3.5rem] xl:text-[4.75rem]">
 				A página não carregou

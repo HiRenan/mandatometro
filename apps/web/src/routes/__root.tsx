@@ -87,8 +87,10 @@ function Documento({ children }: { children: ReactNode }) {
 				<HeadContent />
 			</head>
 			<body>
-				{/* O main estica: numa página curta, o rodapé fica no fim da tela. */}
-				<div className="grid min-h-svh grid-rows-[auto_1fr_auto]">
+				{/* O main estica: numa página curta, o rodapé fica no fim da tela. A
+				    coluna tem a largura da tela: com a letra grande, uma palavra
+				    comprida não alarga a página. */}
+				<div className="grid min-h-svh grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr_auto]">
 					<Header />
 					<main id="conteudo" tabIndex={-1} className="focus:outline-none">
 						{children}
