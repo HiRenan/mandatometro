@@ -29,6 +29,8 @@ related_targets: ["src/routes/__root.tsx","src/components/rodape.tsx"]
 - **O caminho de uma lei** (Renan: "O caminho de uma lei (Recomendado)"), a estrutura que o sorteio pôs na frente, contra a folha 1 e o cartão da folhinha.
 - **A newsletter:** "Não fala (Recomendado)". A página não promete o que ainda não existe.
 - **O rodapé:** "O projeto e o Hack Brasil (Recomendado), O código no GitHub (Recomendado), As fontes (Recomendado)", em "Cartão preto, como o cabeçalho (Recomendado)".
+- **A frase do rodapé,** na correção depois da revisão (Renan, 10/11/2026: "\"foi feito para o\" (Recomendado)"): "O Mandatômetro foi feito para o Hack Brasil 2026, na trilha Acesso à educação."
+- **O botão no celular,** na mesma correção (Renan: "Botão mais acima (Recomendado)"): abaixo de 768 px, o "para quem" vem depois do botão, para o botão caber na primeira tela; a partir do md, a ordem não muda. O leitor de tela e o Tab seguem a ordem da tela em cada largura.
 - **O ícone e a prévia:** "O M no cartão preto (Recomendado)". O M é a letra do nome, não um logo, e troca quando o logo vier.
 - **Detalhes aprovados com o plano:**
   - de 1280 px para cima, o título fica à esquerda, e o texto e o botão à direita;
@@ -66,7 +68,7 @@ OWN-WORLD: a folhinha de parede do resto do site. Papel branco e tinta preta; em
 
 STORY: a pessoa entende o que é o site e para quem, vê o caminho de um projeto de lei de ponta a ponta, acredita que cada passo tem uma folha curta com a fonte oficial e começa a trilha pelo botão ou por uma parada do caminho.
 
-FIRST VIEWPORT: a 1440 × 900, de cima para baixo: o cartão preto e a tira; a abertura em duas colunas, com o h1 condensado à esquerda e, à direita, a abertura em Literata, o para quem, a linha do tamanho da trilha ou do progresso e o botão de tinta; depois, o título do caminho sobre a linha de 2 px, de lado a lado, com os cinco quadradinhos e os títulos dos passos. No celular, uma coluna: o h1, a abertura, o para quem, o botão e o caminho em pé.
+FIRST VIEWPORT: a 1440 × 900, de cima para baixo: o cartão preto e a tira; a abertura em duas colunas, com o h1 condensado à esquerda e, à direita, a abertura em Literata, o para quem, a linha do tamanho da trilha ou do progresso e o botão de tinta; depois, o título do caminho sobre a linha de 2 px, de lado a lado, com os cinco quadradinhos e os títulos dos passos. No celular, abaixo de 768 px, uma coluna: o h1, a abertura, a linha do tamanho da trilha ou do progresso, o botão (inteiro na tela a 360 × 640), o para quem e o caminho em pé.
 
 FORM: o caminho de uma lei, a 3ª da lista ordenada de sete estruturas. seed:3e419800a0c98966
 
