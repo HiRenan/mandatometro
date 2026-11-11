@@ -340,7 +340,9 @@
 	 * Sem o box-decoration-break: clone, que mudava a quebra da linha com a letra
 	 * grande, o texto fica no mesmo lugar. O anel de foco contorna o texto (o
 	 * span), e não a área, na cor do anel do lugar: azul no papel e amarelo no
-	 * cartão preto.
+	 * cartão preto. Um link sem o span fica com o anel no próprio link. Num
+	 * navegador sem o :has(), a regra que tira o anel do link cai, e o link com o
+	 * span fica com dois anéis: o foco continua visível.
 	 */
 	a.acao-de-texto {
 		margin-inline: -0.25rem;
@@ -351,7 +353,7 @@
 		content: none;
 	}
 
-	a.acao-de-texto:focus-visible {
+	a.acao-de-texto:has(> span):focus-visible {
 		outline-style: none;
 	}
 
