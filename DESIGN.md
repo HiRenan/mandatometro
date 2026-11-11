@@ -156,7 +156,7 @@ components:
 
 **Creative North Star: "A folhinha de parede"**
 
-A trilha é uma folhinha de arrancar, dessas de padaria. Cada artigo é uma folha do bloco: o número grande diz onde a pessoa está, a folha lida leva um X riscado à mão e a folha onde ela parou tem o canto dobrado. O site é papel branco e tinta preta. A cor fica na moldura: o cartão preto do cabeçalho, com o nome e o lema, e logo abaixo, no lugar do picote, a tira das fitas do Bonfim, que o Renan escolheu para ter "mais de cor voltado para Brasil". Embaixo, o rodapé fecha a folhinha com o mesmo cartão preto, e a tira vai em cima dele.
+A trilha é uma folhinha de arrancar, dessas de padaria. Cada artigo é uma folha do bloco: o número grande diz onde a pessoa está, a folha lida leva um visto feito à mão, como o do professor no caderno, e a folha onde ela parou tem o canto dobrado. O site é papel branco e tinta preta. A cor fica na moldura: o cartão preto do cabeçalho, com o nome e o lema, e logo abaixo, no lugar do picote, a tira das fitas do Bonfim, que o Renan escolheu para ter "mais de cor voltado para Brasil". Embaixo, o rodapé fecha a folhinha com o mesmo cartão preto, e a tira vai em cima dele.
 
 A página é de leitura, com folga. Os números e os títulos usam um grotesco condensado bem preto (Archivo), como os algarismos das folhinhas, e o texto corrido usa uma serifa de leitura (Literata). Tudo é chapado: sem sombra, sem degradê suave, sem canto arredondado, sem card em volta dos itens. O estado aparece como marca no papel e em palavras ("Lido", "Você está aqui", "Continue daqui", "Você leu 1 de 3"), nunca como barra de progresso ou pontuação.
 
@@ -166,23 +166,23 @@ O que ficaria errado, nas palavras do Renan: "Site do governo, Coisa de criança
 - Papel branco, tinta preta, e a cor só na moldura e nas fitas.
 - O número da folha em tamanho de cartaz, num condensado de peso 900.
 - Texto corrido em serifa, a cerca de 64 caracteres por linha.
-- Estado como marca no papel: X no lido, canto dobrado onde a pessoa está ou parou.
+- Estado como marca no papel: o visto no lido, canto dobrado onde a pessoa está ou parou.
 - Linhas de 2 px em tinta: cheias entre as partes, tracejadas (o picote) entre as folhas. No infográfico da trilha, a cheia é o caminho completo, e a tracejada, o que pode mudar o caminho; no caminho da página inicial, só a cheia.
-- Um único movimento: o X desenhado em 400 ms quando a pessoa chega ao fim do texto.
+- Um único movimento: o visto desenhado em 400 ms quando a pessoa chega ao fim do texto.
 
 ## Colors
 
 Duas tintas sobre papel e cinco fitas do Bonfim que só aparecem como faixa de cor, nunca como fundo de texto.
 
 ### Primary
-- **Tinta** (`tinta`): todo o texto, as linhas, o X, o contorno do canto dobrado, o cartão do cabeçalho e o do rodapé, os quadradinhos dos caminhos e o botão "Continuar". É também a `--primary`, a `--border` e a `--input` do shadcn, e a `theme-color` do navegador no celular.
+- **Tinta** (`tinta`): todo o texto, as linhas, o visto, o contorno do canto dobrado, o cartão do cabeçalho e o do rodapé, os quadradinhos dos caminhos e o botão "Continuar". É também a `--primary`, a `--border` e a `--input` do shadcn, e a `theme-color` do navegador no celular.
 
 ### Secondary
 - **As fitas do Bonfim**, na ordem fixa: **Verde** (`fita-verde`), **Amarela** (`fita-amarela`), **Azul** (`fita-azul`), **Rosa** (`fita-rosa`) e **Vermelha** (`fita-vermelha`). Aparecem na tira abaixo do cartão preto do cabeçalho e acima do cartão do rodapé, no ícone da aba e na prévia do link, na fita pendurada de cada folha, na fita curta ao lado de cada artigo no infográfico da trilha e no caminho da página inicial, e no sublinhado grosso de "de 3 artigos" ao lado do número do artigo. Também ocupam `--chart-1` a `--chart-5`, na mesma ordem.
 - A **Azul** é a cor do foco (`--ring`) e do cursor de texto. A **Amarela** é a seleção de texto (com tinta por cima), o foco dentro do cartão preto (no cabeçalho e no rodapé) e o sublinhado de hover nos links do cabeçalho. A **Vermelha** é a `--destructive`.
 
 ### Neutral
-- **Papel** (`papel`): o fundo de tudo, o texto dentro do cartão preto (o do cabeçalho e o do rodapé) e o branco que separa cada grupo de cinco cores na tira.
+- **Papel** (`papel`): o fundo de tudo, o texto dentro do cartão preto (o do cabeçalho e o do rodapé), o branco que separa cada grupo de cinco cores na tira e o traço largo embaixo do visto, que o separa do algarismo e da borda.
 - **Tinta suave** (`tinta-suave`): só a linha secundária das fontes: "camara.leg.br, consultada em…", no artigo, e "consultadas em…", embaixo das fontes de cada passo do infográfico. Não serve para texto principal.
 - **Retícula** (`reticula`): reservada para as superfícies `muted`, `secondary` e `accent` do shadcn. Nenhuma página das trilhas usa.
 
@@ -245,7 +245,7 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 - **A fita curta:** ao lado do link de um artigo no infográfico, 12 por 24 px, com um V raso de 8 px: com 24 px de altura, o V de 18 px viraria ponta de seta.
 - **Os quadradinhos do infográfico:** 14 px, retos. O cheio, em tinta, marca cada passo do infográfico e cada parada do caminho da página inicial; o vazado, com contorno de 2 px em tinta e miolo de papel, marca cada desvio.
 - **O canto dobrado:** o canto de cima à direita é cortado até o papel (30 por 32 px) e a aba é um triângulo com contorno de 2 px em tinta, sem preenchimento e sem sombra.
-- **O X:** dois traços levemente curvos, de ponta redonda, em tinta, um pouco maiores que o algarismo (1,1 em) e centrados nele.
+- **O visto:** um traço só, levemente curvo, com a perna curta e a longa, de ponta redonda, em tinta, sobre um traço de papel mais largo, que o separa do algarismo e da borda. No número, mede 0,42 em e fica no canto de cima, à direita: entra 0,18 em no algarismo e sobe 0,11 em acima dele, e o número continua legível. Na miniatura, mede 26 px e fica por cima da borda, no canto de cima à direita: passa 4 px do lado e 10 px do topo do quadrado, a 2 px do quadrado vizinho.
 
 ## Components
 
@@ -284,11 +284,11 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 ### Folha (item da lista)
 - **Caráter:** uma folha do bloco, sem card em volta.
 - **Forma:** a fita na esquerda, o número, o título condensado, o resumo em serifa e a linha de estado ("Lido · 2 min · 2 fontes oficiais"). Separada da próxima por picote.
-- **Estados:** lida leva o X sobre o número e a palavra "Lido"; onde a pessoa parou leva o canto dobrado e "Continue daqui"; no artigo aberto, "Nesta trilha" mostra o canto dobrado e "Você está aqui".
+- **Estados:** lida leva o visto no canto de cima do número e a palavra "Lido"; onde a pessoa parou leva o canto dobrado e "Continue daqui"; no artigo aberto, "Nesta trilha" mostra o canto dobrado e "Você está aqui".
 - **As folhas pequenas:** "Nesta trilha", no artigo, e as folhas de cada trilha na lista das trilhas, a partir de 1024 px, são a mesma lista: a fita de 56 px, o número a 4rem, o título em Archivo 700 a 1.0625rem e o estado ("Lido · 2 min") a 0.875rem. Na lista das trilhas não há "Você está aqui". A lista tem `role="list"`, como as do infográfico.
 
 ### Folha em miniatura (lista das trilhas)
-- Só abaixo de 1024 px: quadrados de 44 px com borda de 2 px em tinta e o número em condensado; os lidos levam o X por cima. Ao lado (no celular, na linha de baixo), o estado em palavras: "Você leu 1 de 3." ou "Você terminou a trilha." A partir de 1024 px, os quadrados dão lugar às folhas da trilha, à direita, e a frase do estado continua à esquerda.
+- Só abaixo de 1024 px: quadrados de 44 px com borda de 2 px em tinta e o número em condensado; os lidos levam o visto no canto de cima, por cima da borda. Ao lado (no celular, na linha de baixo), o estado em palavras: "Você leu 1 de 3." ou "Você terminou a trilha." A partir de 1024 px, os quadrados dão lugar às folhas da trilha, à direita, e a frase do estado continua à esquerda.
 
 ### Infográfico
 - **Onde:** na página da trilha, quando a trilha tem um `infografico.md`. A partir de 1024 px, na coluna da direita, começando na altura do título; abaixo disso, depois das folhas.
@@ -313,9 +313,12 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 - **Alto contraste:** nas cores forçadas do Windows, a linha e os quadradinhos ficam na cor do texto (`CanvasText`).
 - **Movimento:** nenhum.
 
-### O X da folha lida (assinatura)
-- Traço de 6 (no viewBox de 60) em tinta, ponta redonda.
-- **Movimento:** quando o fim do texto aparece na tela, cada traço é desenhado em 200 ms, o segundo depois do primeiro (400 ms ao todo), com `cubic-bezier(0.16, 1, 0.3, 1)`. Ao mesmo tempo surge "Você leu este artigo.", com o "Desmarcar" embaixo. Com o movimento reduzido, o X aparece pronto. É o único movimento das páginas: o "Desmarcar" apaga o X sem animação, e o "Desfazer" o devolve já pronto.
+### O visto da folha lida (assinatura)
+- **Caráter:** o visto do professor no caderno, que diz "este já foi" sem cara de erro. Ele substituiu o X em 11/11/2026. O Pedro sugeriu trocar o X, e o Renan concordou: "um X grande não faz sentido". O X lia como "errado" ou "cancelado", ainda mais num site com quiz, e tapava o número. Entre o visto, uma etiqueta "Lido" e o número vazado, o Renan escolheu o visto.
+- **Forma:** um traço só, no viewBox de 60: 7 em tinta sobre 17 em papel, com ponta e junta redondas. É um componente só (`MarcaDeLido`), com uma classe para cada lugar: no número da folha (`visto-no-numero`), na miniatura (`visto-na-miniatura`) e, a 40 px, ao lado de "Você leu este artigo.".
+- **Onde:** nas folhas da trilha, em "Nesta trilha", nas folhas e nas miniaturas da lista das trilhas e no aviso de lido, no fim do artigo. A palavra "Lido" continua na linha de estado: o visto é a marca, e a palavra diz o que ela quer dizer. O visto fica fora do leitor de tela.
+- **Movimento:** quando o fim do texto aparece na tela, o visto é desenhado de uma vez, em 400 ms, com `cubic-bezier(0.5, 0, 0.15, 1)`: a perna curta sai devagar, como a caneta que encosta no papel, e a longa vai num golpe só. Ele é desenhado em dois lugares, ao lado de "Você leu este artigo." e no número da folha em "Nesta trilha"; nas outras folhas e nas outras páginas, aparece pronto. Ao mesmo tempo surge "Você leu este artigo.", com o "Desmarcar" embaixo. Com o movimento reduzido, o visto aparece pronto. É o único movimento das páginas: o "Desmarcar" apaga o visto sem animação, e o "Desfazer" o devolve já pronto.
+- **Alto contraste:** nas cores forçadas do Windows, o traço fica na cor do texto (`CanvasText`), e o de papel, na do fundo (`Canvas`). Em "Nesta trilha" e nas folhas da lista das trilhas, o número fica dentro do link e ganha a cor dos links, e o visto vai junto (`LinkText`). O `currentColor` não serve: com o `forced-color-adjust: none`, o Chromium dá a ele a tinta original, e o visto some no fundo escuro.
 
 ### Fontes oficiais
 - Lista numerada abaixo de uma linha cheia: o número em negrito numa coluna de 1.75rem, o título da fonte como link em negrito e, embaixo, o domínio e a data da consulta em tinta suave.
@@ -343,11 +346,11 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 ### Do:
 - **Do** manter o texto em tinta sobre papel (ou papel sobre o cartão preto), em qualquer tamanho.
 - **Do** dar a cada artigo a fita da sua posição, pela ordem verde, amarela, azul, rosa, vermelha.
-- **Do** escrever o estado em palavras e marcar no papel: X no lido, canto dobrado onde a pessoa está ou parou.
+- **Do** escrever o estado em palavras e marcar no papel: o visto no lido, canto dobrado onde a pessoa está ou parou.
 - **Do** separar as folhas com picote (linha tracejada de 2 px) e fechar as seções com linha cheia de 2 px.
 - **Do** desenhar o caminho completo com linha cheia e o que pode mudar o caminho com linha tracejada, e dizer os dois em palavras.
 - **Do** usar o foco de 3 px na azul, afastado 3 px, e a amarela dentro do cartão preto.
-- **Do** respeitar o movimento reduzido: o X aparece sem animação.
+- **Do** respeitar o movimento reduzido: o visto aparece sem animação.
 - **Do** oferecer "Desfazer" logo depois de apagar uma marca, em vez de pedir confirmação antes.
 
 ### Don't:
@@ -355,8 +358,9 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 - **Don't** fazer "coisa de criança": cor demais e tom infantil.
 - **Don't** fazer "jornal partidário": manchete gritando e cor de partido. As fitas são as cinco juntas, pela ordem; nenhuma delas representa um lado.
 - **Don't** pôr texto em cima de uma cor de fita.
-- **Don't** usar card arredondado em volta dos itens nem barra de progresso; o progresso é o X e as palavras.
+- **Don't** usar card arredondado em volta dos itens nem barra de progresso; o progresso é o visto e as palavras.
 - **Don't** usar sombra, canto arredondado ou degradê suave.
 - **Don't** inventar um logo; até o time fazer o dele, o nome em texto é a marca, e o M do nome é o ícone.
 - **Don't** usar a vermelha como cor de domingo antes da decisão da issue #39.
-- **Don't** animar nada além do X.
+- **Don't** animar nada além do visto.
+- **Don't** marcar o lido com um X: ele lê como "errado" ou "cancelado", ainda mais num site com quiz, e tapa o número.
