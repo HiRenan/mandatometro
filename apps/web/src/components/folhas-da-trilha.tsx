@@ -48,9 +48,12 @@ export function FolhasDaTrilha({
 							aria-current={aqui ? "page" : undefined}
 							className="grid grid-cols-[3rem_1fr] gap-x-3 py-4 pr-8 pl-[1.625rem] no-underline hover:[&_.titulo]:underline"
 						>
+							{/* Com a letra grande, o número fica no lugar, e o título desce
+							    para a linha de baixo, com a largura toda. A margem embaixo do
+							    número deixa o X da folha lida longe do título. */}
 							<span
 								aria-hidden="true"
-								className="numeral justify-self-center text-[4rem]"
+								className="numeral letra-grande:mb-4 justify-self-center text-[4rem]"
 							>
 								<span className="relative inline-block">
 									{indice + 1}
@@ -62,7 +65,7 @@ export function FolhasDaTrilha({
 									)}
 								</span>
 							</span>
-							<span>
+							<span className="letra-grande:col-span-full">
 								<span className="titulo block text-[1.0625rem] leading-tight font-bold">
 									{artigo.titulo}
 								</span>

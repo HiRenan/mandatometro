@@ -25,7 +25,7 @@ function PaginaDasTrilhas() {
 	const lidos = useArtigosLidos();
 
 	return (
-		<div className="mx-auto max-w-[1440px] px-5 pb-20 md:px-16">
+		<div className="px-margem-celular mx-auto max-w-[1440px] pb-20 md:px-16">
 			<div className="max-w-[56rem]">
 				<h1 className="titulo-condensado mt-10 text-[3rem] md:text-[4.75rem]">
 					Trilhas

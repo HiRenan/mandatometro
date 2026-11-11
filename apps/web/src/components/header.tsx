@@ -1,4 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import { NOME_DO_SITE } from "./nome-do-site";
 
 const links = [
 	{ to: "/", label: "Início" },
@@ -25,12 +26,12 @@ export default function Header() {
 			>
 				Pular para o conteúdo
 			</a>
-			<div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-x-8 gap-y-3 px-5 py-4 md:min-h-24 md:px-16 md:py-3">
-				<div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
-					<Link
-						to="/"
-						className="text-[2rem] leading-none font-black tracking-[-0.01em] [font-stretch:68%] no-underline md:text-[2.75rem]"
-					>
+			{/* No celular, o respiro fica em px, como as margens: com a letra grande, ele
+			    não cresce, e o nome e os links ganham o espaço (o Renan, na #48:
+			    "Espaço de hoje"). */}
+			<div className="px-margem-celular mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-x-8 gap-y-[12px] py-[16px] md:min-h-24 md:px-16 md:py-3">
+				<div className="flex flex-wrap items-baseline gap-x-5 gap-y-[4px]">
+					<Link to="/" className={`${NOME_DO_SITE} no-underline`}>
 						Mandatômetro
 					</Link>
 					<p className="text-[0.9375rem] font-medium md:text-[1.0625rem]">

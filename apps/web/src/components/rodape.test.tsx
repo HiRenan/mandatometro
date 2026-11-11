@@ -47,6 +47,17 @@ describe("rodapé", () => {
 		).toBe("true");
 	});
 
+	it("com a letra grande, fica com a largura da tela e as margens de 20 px", () => {
+		render(<Rodape />);
+		const grade = screen
+			.getByRole("contentinfo")
+			.querySelector(":scope > div.grid");
+
+		// Abaixo do lg, a coluna não cresce até a peça mais larga.
+		expect(grade?.classList.contains("grid-cols-[minmax(0,1fr)]")).toBe(true);
+		expect(grade?.classList.contains("px-margem-celular")).toBe(true);
+	});
+
 	it("não pede dado nenhum", () => {
 		render(<Rodape />);
 

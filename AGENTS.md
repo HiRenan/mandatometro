@@ -56,6 +56,7 @@ O produto fala de pessoas reais. Estas regras valem para a interface, as trilhas
 - **Fonte em tudo:** cada afirmação sobre um político ou uma votação leva o link oficial, a data da coleta e, quando vier de texto, o trecho literal. O que não tem fonte fica fora do banco e da newsletter.
 - **Tom neutro:** o texto descreve o que o dado mostra e deixa o julgamento para o leitor.
 - **Trilhas, quiz e newsletter:** neutros e apartidários, com os mesmos critérios para todos os partidos e parlamentares. Cada explicação de como o Congresso e as eleições funcionam leva a fonte oficial (lei, regimento ou página da Câmara, do Senado ou do TSE). O quiz pergunta sobre fatos e regras e nunca dá nota a político ou partido.
+- **Domínios das fontes das trilhas:** o validador aceita `gov.br`, `leg.br`, `jus.br`, `mp.br` e `def.br`. As referências planejadas do Ministério Público e da Defensoria Pública usam os dois últimos; mantenha esses links oficiais ao escrever os artigos.
 - **Promessas e patrimônio (depois do MVP):** a ligação entre promessa e ato tem um destes status: `ato a favor`, `ato contra` ou `nenhum ato encontrado`. Deputado e senador não são obrigados a entregar proposta ao TSE (só prefeito, governador e presidente): sem promessa, escreva "Não encontramos promessas públicas nas fontes consultadas" e liste as fontes. O patrimônio se chama "patrimônio declarado ao TSE", vem corrigido pelo IPCA, com o aviso de que o valor declarado costuma ser o de compra, e aparece só nos anos em que a pessoa concorreu, em tom descritivo.
 - **Dados pessoais:** CPF, título de eleitor e data de nascimento servem só para ligar registros entre bases e ficam no banco. A API, o front, os logs e os fixtures de teste identificam pessoas pelo id interno. O e-mail de quem se inscreve segue a mesma regra, e as respostas do quiz não identificam quem respondeu. O regulamento do hackathon (item 6.9) também proíbe a demo de expor dados pessoais reais de terceiros.
 
@@ -65,6 +66,7 @@ Endpoints, campos e exemplos de cada fonte estão nas issues dos conectores (#10
 
 - Toda chamada externa tem timeout e nova tentativa com backoff. A API da Câmara devolve 504 de vez em quando.
 - O User-Agent identifica o projeto (`mandatometro (Hack Brasil 2026)`), e a coleta respeita o robots.txt dos sites.
+- A referência do Programa Cidadania Fiscal da Receita Federal no planejamento pode redirecionar para autenticação. Em 11/11/2026, o trecho explicativo foi consultado no índice de busca da própria URL; não trate a tela de login como conteúdo da fonte e confira o acesso público antes de publicar o artigo 3.5.
 - Os CSVs do TSE vêm em latin-1, separados por `;`, um por UF dentro de cada ZIP.
 - A mesma pessoa se liga entre eleições do TSE pelo CPF. Em 2024 o CPF vem vazio e em 2012 falta em parte das linhas: nesses anos, use o título de eleitor e confira a data de nascimento.
 

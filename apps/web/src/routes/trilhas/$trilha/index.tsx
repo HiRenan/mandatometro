@@ -67,7 +67,7 @@ function PaginaDaTrilha() {
 			: undefined;
 
 	return (
-		<div className="mx-auto max-w-[1440px] px-5 pb-20 md:px-16">
+		<div className="px-margem-celular mx-auto max-w-[1440px] pb-20 md:px-16">
 			<Caminho trilha={trilha} naTrilha />
 			{/* A partir do lg, o infográfico fica numa coluna à direita das folhas, na
 			    altura do título. Abaixo disso, ele vem depois das folhas, que é também
@@ -76,7 +76,10 @@ function PaginaDaTrilha() {
 				className={`mt-8 ${trilha.infografico ? "folha:grid-cols-[minmax(0,1fr)_28rem] folha:gap-x-12 lg:grid lg:grid-cols-[minmax(0,1fr)_21rem] lg:gap-x-8 xl:grid-cols-[minmax(0,1fr)_24rem] xl:gap-x-10" : ""}`}
 			>
 				<div className="max-w-[56rem]">
-					<h1 className="titulo-condensado text-[3rem] md:text-[4.75rem]">
+					{/* Com a letra grande, o título cresce até "legislativo", a palavra
+					    mais comprida do título da trilha, encostar nas margens (o
+					    letra-com-teto do index.css). */}
+					<h1 className="titulo-condensado letra-com-teto [--letra:3rem] [--palavra:3.9] md:text-[4.75rem]">
 						{trilha.titulo}
 					</h1>
 					<p className="mt-5 max-w-[40ch] font-serif text-xl leading-snug font-medium lg:text-[1.5625rem] lg:leading-[1.4]">
@@ -139,11 +142,14 @@ function PaginaDaTrilha() {
 										style={{ background: corDaFita(indice + 1) }}
 									/>
 									{/* No celular, o número fica ao lado do título e o resumo usa a
-								    largura toda; a partir do md, o número ocupa a coluna inteira. */}
+								    largura toda; a partir do md, o número ocupa a coluna inteira.
+								    Com a letra grande, o número fica no lugar, e o título desce
+								    para a linha de baixo, com a largura toda. A margem embaixo do
+								    número deixa o X da folha lida longe do título. */}
 									<div className="grid grid-cols-[4.5rem_minmax(0,1fr)] content-start gap-x-4 py-6 pr-5 pl-[1.625rem] md:grid-cols-[7rem_minmax(0,1fr)] md:gap-x-6 md:pr-10">
 										<span
 											aria-hidden="true"
-											className="numeral justify-self-center text-[5.5rem] md:row-span-3 md:text-[8rem]"
+											className="numeral letra-grande:mb-5 justify-self-center text-[5.5rem] md:row-span-3 md:text-[8rem]"
 										>
 											<span className="relative inline-block">
 												{indice + 1}
@@ -151,7 +157,7 @@ function PaginaDaTrilha() {
 											</span>
 										</span>
 										{/* O respiro à direita do título, no celular, deixa o canto dobrado livre. */}
-										<h2 className="subtitulo-condensado pr-3 text-[1.75rem] md:pr-0 md:text-[2.25rem]">
+										<h2 className="subtitulo-condensado letra-grande:col-span-full pr-3 text-[1.75rem] md:pr-0 md:text-[2.25rem]">
 											<Link
 												to="/trilhas/$trilha/$artigo"
 												params={{ trilha: trilha.slug, artigo: artigo.slug }}

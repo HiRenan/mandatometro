@@ -63,7 +63,7 @@ Em regra, o projeto começa na Câmara dos Deputados, a não ser que...
 - `ordem`: a posição na trilha, um número inteiro a partir de 1, sem repetir dentro da trilha. Os números podem pular (10, 20, 30), o que deixa espaço para encaixar um artigo no meio depois.
 - `fontes`: pelo menos uma. Cada fonte tem:
   - `titulo`: o nome que aparece na lista de fontes, como "Constituição Federal, art. 64";
-  - `url`: um link `https` de um site oficial, com o domínio terminado em `gov.br`, `leg.br` ou `jus.br`;
+  - `url`: um link `https` de um site oficial, com o domínio terminado em `gov.br`, `leg.br`, `jus.br`, `mp.br` ou `def.br`;
   - `consultadoEm`: o dia em que a fonte foi conferida, no formato `AAAA-MM-DD`.
 - Um campo a mais, ou com o nome errado, também é erro.
 
@@ -133,7 +133,7 @@ passos:
 - **`pnpm --filter web test`** lê a pasta de conteúdo de verdade. Se algo estiver errado, o teste falha com a lista de problemas, cada um com o nome do arquivo:
 
   ```text
-  conteudo/trilhas/processo-legislativo/novo-artigo.md: campo "fontes.0.url": precisa ser um link https de um site oficial (gov.br, leg.br ou jus.br)
+  conteudo/trilhas/processo-legislativo/novo-artigo.md: campo "fontes.0.url": precisa ser um link https de um site oficial (gov.br, leg.br, jus.br, mp.br ou def.br)
   ```
 
   O CI roda o mesmo teste, então um artigo com problema não passa no PR.

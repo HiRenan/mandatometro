@@ -5,9 +5,9 @@ import { z } from "zod";
 
 const PALAVRAS_POR_MINUTO = 200;
 
-// Só entram fontes oficiais: os sites do governo federal, do Congresso e da
-// Justiça (AGENTS.md, "Regras de conteúdo").
-const SITE_OFICIAL = /(^|\.)(gov|leg|jus)\.br$/;
+// Só entram fontes oficiais: governo, Congresso, Justiça, Ministério Público
+// e Defensoria Pública (AGENTS.md, "Regras de conteúdo").
+const SITE_OFICIAL = /(^|\.)(gov|leg|jus|mp|def)\.br$/;
 
 // O nome da pasta e o do arquivo viram o endereço da página.
 const NOME_DE_ENDERECO = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -39,7 +39,7 @@ const fonteSchema = z.strictObject({
 		protocol: /^https$/,
 		hostname: SITE_OFICIAL,
 		...exigido(
-			"precisa ser um link https de um site oficial (gov.br, leg.br ou jus.br)",
+			"precisa ser um link https de um site oficial (gov.br, leg.br, jus.br, mp.br ou def.br)",
 		),
 	}),
 	consultadoEm: z.iso.date(exigido("precisa ser uma data AAAA-MM-DD")),
