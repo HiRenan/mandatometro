@@ -142,3 +142,194 @@ passos:
 ## Como o site lê os arquivos
 
 Quem lê e confere os arquivos é o servidor, em `apps/web/src/lib/conteudo/paginas.server.ts`. O navegador recebe só a página pronta, com o texto já em HTML, e não baixa o código que lê o YAML e o Markdown. O HTML solto no meio do Markdown continua desligado na conversão.
+
+# Segmentação das Trilhas de aprendizagem
+
+## Trilha 1 — Constituição Brasileira: as regras fundamentais do país
+
+**Descrição:** apresenta a Constituição Federal de 1988, sua origem, seus princípios e sua função na organização do Estado. É a base necessária para entender por que existem os três Poderes e de onde vêm os direitos e deveres das pessoas.
+
+### Artigo 1.1 — O que é a Constituição e por que ela importa?
+
+- **Escopo:** explicar o que é uma Constituição; por que ela ocupa o lugar central do sistema jurídico brasileiro; como estabelece limites ao poder do Estado e protege direitos; e a diferença básica entre Constituição e leis comuns. Introduzir as expressões *Constituição Federal* e *Carta Magna*.
+- **Referências oficiais:**
+  - [Câmara dos Deputados — Constituição Federal de 1988 (texto atualizado)](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+  - [Senado Federal — acesso à Constituição Federal](https://www25.senado.leg.br/web/atividade/legislacao/constituicao-federal).
+
+### Artigo 1.2 — Como surgiu a Constituição de 1988?
+
+- **Escopo:** contextualizar a redemocratização após o regime militar; apresentar, de forma breve, a Assembleia Nacional Constituinte; registrar a promulgação em 5 de outubro de 1988; e explicar por que o texto ficou conhecido como *Constituição Cidadã*.
+- **Referências oficiais:**
+  - [Senado Notícias — Constituições brasileiras](https://www12.senado.leg.br/noticias/constituicoes).
+  - [Governo Federal — Há 30 anos a Constituição Federal garante cidadania aos brasileiros](https://www.gov.br/pt-br/constituicao-30-anos/textos/ha-30-anos-constituicao-federal-garante-cidadania-aos-brasileiros).
+
+### Artigo 1.3 — Quais são os princípios fundamentais do Brasil?
+
+- **Escopo:** apresentar a República Federativa, o Estado Democrático de Direito e a ideia de que o poder emana do povo; explicar, em linguagem cotidiana, soberania, cidadania, dignidade da pessoa humana, valores sociais do trabalho e da livre iniciativa e pluralismo político; introduzir os objetivos fundamentais da República, como a redução das desigualdades.
+- **Referências oficiais:**
+  - [Câmara dos Deputados — Constituição Federal, arts. 1º a 4º](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+  - [Governo Federal — Direitos fundamentais e humanos na Constituição de 1988](https://www.gov.br/pt-br/constituicao-30-anos/textos/direitos-fundamentais-e-humanos-marcam-texto-constitucional-de-1988).
+
+### Artigo 1.4 — Como a Constituição é organizada?
+
+- **Escopo:** mostrar como localizar informações no texto constitucional: preâmbulo, títulos, capítulos, artigos, parágrafos e incisos; apresentar os grandes temas (direitos fundamentais, organização do Estado, Poderes, tributação e ordem social); e explicar a finalidade geral do Ato das Disposições Constitucionais Transitórias (ADCT). Usar exemplos de consulta, sem exigir leitura integral da norma.
+- **Referências oficiais:**
+  - [Câmara dos Deputados — Constituição Federal e ADCT](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+  - [Senado Federal — texto constitucional e ADCT](https://www25.senado.leg.br/web/atividade/legislacao/constituicao-federal).
+
+### Artigo 1.5 — Como o Brasil se organiza em União, estados, Distrito Federal e municípios?
+
+- **Escopo:** explicar o federalismo e a autonomia dos entes federativos; diferenciar União, estados, Distrito Federal e municípios; introduzir a divisão de competências e responsabilidades, com exemplos simples de serviços públicos; e desfazer a ideia de que todo problema público é atribuição exclusiva do governo federal.
+- **Referências oficiais:**
+  - [Câmara dos Deputados — Constituição Federal, arts. 18 a 30 (organização político-administrativa e competências)](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+
+### Artigo 1.6 — A Constituição pode mudar? Como funcionam as emendas?
+
+- **Escopo:** diferenciar mudança constitucional de criação de uma lei ordinária; explicar quem pode propor uma PEC e sua aprovação em dois turnos em cada Casa do Congresso, por três quintos dos votos; apresentar as cláusulas pétreas e o motivo de existirem limites para alterações constitucionais.
+- **Referências oficiais:**
+  - [Câmara dos Deputados — Constituição Federal, art. 60](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+  - [Câmara dos Deputados — Entenda o processo legislativo (PEC)](https://www.camara.leg.br/entenda-o-processo-legislativo/).
+  - [Governo Federal — Critérios rígidos permitem alterações na Constituição](https://www.gov.br/pt-br/constituicao-30-anos/textos/criterios-rigidos-permitem-alteracoes-na-constituicao-federal).
+
+---
+
+## Trilha 2 — Os Três Poderes: quem decide, executa e julga
+
+**Descrição:** explica o papel do Executivo, do Legislativo e do Judiciário, como eles se distribuem no Brasil e por que precisam atuar com independência e equilíbrio. Ao final, o leitor deve saber distinguir as funções de cada Poder e reconhecer mecanismos básicos de fiscalização.
+
+### Artigo 2.1 — Por que o Brasil tem três Poderes?
+
+- **Escopo:** apresentar a separação entre Executivo, Legislativo e Judiciário; explicar independência e harmonia entre eles; e mostrar por que a divisão de funções ajuda a evitar a concentração de poder. Introduzir o conceito de *freios e contrapesos*, sem ainda detalhar os mecanismos.
+- **Referências oficiais:**
+  - [Câmara dos Deputados — Constituição Federal, art. 2º](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+  - [Câmara dos Deputados — Consultoria Legislativa: a função legiferante dos três Poderes](https://www2.camara.leg.br/atividade-legislativa/estudos-e-notas-tecnicas/fiquePorDentro/temas/temas-anteriores-desativados-com-texto-da-consultoria/tres_poderes/documento-de-referencia-da-consultoria-legislativa).
+
+### Artigo 2.2 — Onde atuam os Poderes: União, estados e municípios?
+
+- **Escopo:** relacionar a separação dos Poderes aos níveis de governo: Presidência, governos estaduais e prefeituras no Executivo; Congresso, assembleias legislativas e câmaras municipais no Legislativo; e Justiça federal e estadual, além das Justiças especializadas, no Judiciário. Esclarecer que não existe um Poder Judiciário municipal próprio.
+- **Referências oficiais:**
+  - [Câmara dos Deputados — Constituição Federal, arts. 18, 27 a 29, 44, 76, 92 e 125](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+  - [CNJ — Panorama e estrutura do Poder Judiciário brasileiro](https://www.cnj.jus.br/poder-judiciario/panorama-e-estrutura-do-poder-judiciario-brasileiro/).
+
+### Artigo 2.3 — Poder Executivo: quem governa e administra?
+
+- **Escopo:** explicar a função de administrar e implementar políticas públicas; distinguir presidente, governadores e prefeitos; apresentar o papel de ministros e secretários; e dar exemplos de execução de serviços, gestão de recursos e atribuições do presidente, como sanção e veto de projetos de lei.
+- **Referências oficiais:**
+  - [Câmara dos Deputados — Constituição Federal, arts. 76 a 91](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+
+### Artigo 2.4 — Poder Legislativo: quem faz leis e fiscaliza governos?
+
+- **Escopo:** explicar as duas funções centrais do Legislativo — legislar e fiscalizar; apresentar Câmara dos Deputados e Senado Federal, além dos Legislativos estaduais e municipais; diferenciar deputados federais, senadores, deputados estaduais/distritais e vereadores; e introduzir o acompanhamento do orçamento e dos gastos públicos.
+- **Referências oficiais:**
+  - [Congresso Nacional — Atribuições](https://www.congressonacional.leg.br/institucional/atribuicoes).
+  - [Senado Federal — Atribuições: legislar e fiscalizar](https://www12.senado.leg.br/institucional/documentos/sobre-o-senado/atividade/atribuicoes).
+  - [Câmara dos Deputados — Constituição Federal, arts. 44 a 75](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+
+### Artigo 2.5 — Como um projeto se transforma em lei?
+
+- **Escopo:** acompanhar, por meio de um exemplo simples, a apresentação de um projeto, a análise em comissões, as votações nas Casas legislativas e, quando cabível, a sanção ou o veto do chefe do Executivo; explicar que há diferentes tipos de proposição e procedimentos e que nem toda norma segue exatamente o mesmo caminho.
+- **Referências oficiais:**
+  - [Câmara dos Deputados — Entenda o processo legislativo](https://www.camara.leg.br/entenda-o-processo-legislativo/).
+  - [Câmara dos Deputados — Constituição Federal, arts. 59 a 69](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+
+### Artigo 2.6 — Poder Judiciário: quem resolve conflitos e protege a Constituição?
+
+- **Escopo:** explicar a função de julgar conflitos e garantir a aplicação do Direito; apresentar, sem excesso de siglas, juízes, tribunais, instâncias e recursos; diferenciar STF, STJ, Justiças federal e estadual e Justiças especializadas; e esclarecer que o Judiciário não é responsável por criar políticas públicas como função principal.
+- **Referências oficiais:**
+  - [CNJ — Panorama e estrutura do Poder Judiciário brasileiro](https://www.cnj.jus.br/poder-judiciario/panorama-e-estrutura-do-poder-judiciario-brasileiro/).
+  - [Câmara dos Deputados — Constituição Federal, arts. 92 a 126](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+
+### Artigo 2.7 — Como os três Poderes se fiscalizam e se limitam?
+
+- **Escopo:** aprofundar os freios e contrapesos com exemplos: fiscalização legislativa e CPIs; sanção, veto e apreciação de vetos; controle de constitucionalidade pelo Judiciário; e fiscalização das contas públicas. Ressaltar que independência não significa ausência de controle, nem autorização para um Poder assumir livremente a função de outro.
+- **Referências oficiais:**
+  - [Câmara dos Deputados — Constituição Federal, arts. 49, 58, 66, 70 a 71 e 102](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+  - [Senado Federal — Atribuições e mecanismos de fiscalização](https://www12.senado.leg.br/institucional/documentos/sobre-o-senado/atividade/atribuicoes).
+  - [TCU — Conheça o Tribunal de Contas da União](https://portal.tcu.gov.br/conheca-o-tcu).
+
+### Artigo 2.8 — Ministério Público, Defensoria e TCU: são outros Poderes?
+
+- **Escopo:** diferenciar os três Poderes de instituições relevantes para a Justiça e o controle público; explicar, em nível introdutório, a autonomia e a missão do Ministério Público, a assistência jurídica da Defensoria Pública e o auxílio técnico do TCU ao controle externo exercido pelo Congresso. Situar o CNJ como órgão do Judiciário, e não como um quarto Poder.
+- **Referências oficiais:**
+  - [Câmara dos Deputados — Constituição Federal, arts. 70 a 75, 92, 103-B, 127 a 130-A e 134](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+  - [MPF — A Procuradoria-Geral da República pertence a qual Poder?](https://www.mpf.mp.br/o-mpf/unidades/procuradoria-geral-da-republica-pgr/noticias/me-explica-mpf-a-procuradoria-geral-da-republica-pertence-a-qual-poder).
+  - [DPU — Papel constitucional da Defensoria Pública](https://direitoshumanos.dpu.def.br/dpu-completa-29-anos-de-implantacao/).
+  - [TCU — Conheça o TCU](https://portal.tcu.gov.br/conheca-o-tcu).
+
+---
+
+## Trilha 3 — Direitos e deveres: como exercer a cidadania
+
+**Descrição:** conecta a Constituição e o funcionamento do Estado à vida cotidiana. Apresenta direitos individuais, sociais e políticos, deveres previstos em lei e maneiras práticas de participar das decisões públicas, solicitar informações e buscar a proteção de direitos.
+
+### Artigo 3.1 — O que significa ser cidadão no Brasil?
+
+- **Escopo:** explicar cidadania como exercício de direitos e responsabilidades na vida coletiva; diferenciar, de forma básica, nacionalidade, direitos fundamentais e direitos políticos; esclarecer que muitos direitos fundamentais protegem também pessoas estrangeiras, enquanto o exercício de direitos políticos depende das regras constitucionais.
+- **Referências oficiais:**
+  - [Câmara dos Deputados — Constituição Federal, arts. 1º, 5º, 12 e 14](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+  - [Governo Federal — Há 30 anos a Constituição Federal garante cidadania](https://www.gov.br/pt-br/constituicao-30-anos/textos/ha-30-anos-constituicao-federal-garante-cidadania-aos-brasileiros).
+
+### Artigo 3.2 — Quais são os principais direitos individuais e garantias fundamentais?
+
+- **Escopo:** apresentar igualdade perante a lei, vida, liberdade, segurança, propriedade, liberdade de expressão e religião, privacidade e devido processo legal; explicar, com situações comuns, a diferença entre ter um direito e contar com garantias para protegê-lo. Evitar transmitir a ideia de que todos os direitos são absolutos.
+- **Referências oficiais:**
+  - [Câmara dos Deputados — Constituição Federal, art. 5º](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+  - [Governo Federal — Direitos fundamentais e humanos na Constituição de 1988](https://www.gov.br/pt-br/constituicao-30-anos/textos/direitos-fundamentais-e-humanos-marcam-texto-constitucional-de-1988).
+
+### Artigo 3.3 — Quais são os direitos sociais e o que o Estado deve oferecer?
+
+- **Escopo:** explicar os direitos sociais previstos na Constituição, como educação, saúde, alimentação, trabalho, moradia, transporte, lazer, segurança, previdência e assistência; mostrar que sua concretização envolve políticas públicas e responsabilidades de diferentes esferas de governo; oferecer exemplos simples de onde esses direitos aparecem no cotidiano.
+- **Referências oficiais:**
+  - [Câmara dos Deputados — Constituição Federal, arts. 6º, 7º, 196, 203 e 205](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+  - [Governo Federal — Há 30 anos a Constituição Federal garante cidadania](https://www.gov.br/pt-br/constituicao-30-anos/textos/ha-30-anos-constituicao-federal-garante-cidadania-aos-brasileiros).
+
+### Artigo 3.4 — Como participar da política: voto, candidatura e decisões coletivas
+
+- **Escopo:** explicar o direito de votar e de concorrer a cargos eletivos, observados os requisitos legais; diferenciar eleições, plebiscito, referendo e iniciativa popular; apresentar as idades e situações de voto obrigatório ou facultativo; e mostrar que a participação política não se resume às eleições.
+- **Referências oficiais:**
+  - [Câmara dos Deputados — Constituição Federal, arts. 14 a 16](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+  - [TSE — Perguntas frequentes sobre obrigatoriedade do voto](https://www.tse.jus.br/servicos-eleitorais/servicos/ouvidoria-tse).
+  - [Governo Federal — Direito ao voto e participação popular](https://www.gov.br/pt-br/constituicao-30-anos/textos/direito-ao-voto-e-participacao-popular-tambem-estao-previstas-na-constituicao).
+
+### Artigo 3.5 — Quais são os deveres básicos de quem vive em sociedade?
+
+- **Escopo:** explicar o dever de cumprir as leis e respeitar os direitos das outras pessoas; distinguir obrigações legais de atitudes desejáveis para a convivência; apresentar a responsabilidade de cumprir obrigações tributárias quando previstas em lei, bem como a função dos tributos no financiamento dos serviços públicos. Evitar afirmar que a Constituição contém uma lista única e exaustiva de “deveres do cidadão”.
+- **Referências oficiais:**
+  - [Câmara dos Deputados — Constituição Federal, arts. 5º, II, e 145](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+  - [Receita Federal — Programa Cidadania Fiscal](https://www.gov.br/receitafederal/pt-br/acesso-a-informacao/acoes-e-programas/cidadania-fiscal/f_programa-cidadania-fiscal).
+
+### Artigo 3.6 — Quais deveres existem em situações específicas?
+
+- **Escopo:** apresentar as obrigações eleitorais aplicáveis a cada pessoa (alistamento e voto, conforme idade e demais condições legais), o alistamento militar obrigatório nos casos previstos, os deveres relacionados à educação e à proteção de crianças e adolescentes, e a responsabilidade compartilhada de defender o meio ambiente. Deixar claro que essas obrigações não se aplicam da mesma forma a todas as pessoas.
+- **Referências oficiais:**
+  - [Câmara dos Deputados — Constituição Federal, arts. 14, 143, 205, 225 e 227](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+  - [TSE — Obrigatoriedade e facultatividade do voto](https://www.tse.jus.br/servicos-eleitorais/servicos/ouvidoria-tse).
+  - [Ministério da Defesa — Serviço Militar](https://www.gov.br/defesa/pt-br/assuntos/servico-militar).
+  - [Governo Federal — Proteção do meio ambiente na Constituição](https://www.gov.br/pt-br/constituicao-30-anos/textos/preservacao-do-meio-ambiente-preocupacao-prevista-na-constituicao).
+
+### Artigo 3.7 — O que fazer quando um direito não é respeitado?
+
+- **Escopo:** apresentar caminhos iniciais para buscar a proteção de direitos: reclamação e requerimento ao órgão responsável, assistência jurídica, Defensoria Pública, Ministério Público e acesso ao Judiciário; introduzir, sem tecnicismos, direito de petição, acesso à Justiça e garantia de assistência jurídica gratuita a quem comprovar insuficiência de recursos. Explicar que o canal adequado depende da situação.
+- **Referências oficiais:**
+  - [Câmara dos Deputados — Constituição Federal, art. 5º, XXXIV, XXXV e LXXIV; arts. 127 e 134](https://www2.camara.leg.br/atividade-legislativa/legislacao/constituicao1988).
+  - [DPU — Papel constitucional da Defensoria Pública](https://direitoshumanos.dpu.def.br/dpu-completa-29-anos-de-implantacao/).
+  - [MPF — Sobre o Ministério Público](https://mandaareal.mpf.mp.br/sobre-o-mp).
+
+### Artigo 3.8 — Como fiscalizar o governo e participar além do voto?
+
+- **Escopo:** demonstrar a participação em audiências e consultas públicas, conselhos e ouvidorias; explicar o controle social dos gastos e serviços públicos; mostrar como solicitar informações pela Lei de Acesso à Informação (LAI) e enviar manifestações aos órgãos públicos. Distinguir pedidos de informação de reclamações, sugestões e denúncias; apresentar o **Informa.BR** para pedidos federais de informação e o **Fala.BR** para manifestações de ouvidoria, conforme os canais oficiais vigentes.
+- **Referências oficiais:**
+  - [CGU — Capacitações para o exercício do controle social](https://www.gov.br/cgu/pt-br/governo-aberto/capacitacoes-da-cgu-para-o-exercicio-do-controle-social).
+  - [Governo Federal — Registrar pedido de acesso à informação no Informa.BR](https://www.gov.br/pt-br/servicos/acessar-informacoes-de-orgaos-publicos).
+  - [CGU — Plataforma Fala.BR](https://www.gov.br/ouvidorias/pt-br/falabr).
+  - [Casa Civil — Participação social](https://www.gov.br/casacivil/pt-br/acesso-a-informacao/participacao-social).
+
+---
+
+## Observações para a produção dos artigos
+
+1. **Linguagem:** escrever para iniciantes, traduzindo os termos jurídicos na primeira menção e ilustrando os temas com exemplos do cotidiano.
+2. **Neutralidade:** explicar instituições, regras e procedimentos sem defender partidos, candidatos ou posições político-partidárias.
+3. **Precisão:** distinguir direitos de deveres juridicamente exigíveis, práticas recomendadas de cidadania e responsabilidades do Estado. Evitar afirmar que todo direito ou dever se aplica a todas as pessoas de forma idêntica.
+4. **Atualização:** conferir a redação vigente da Constituição, a legislação eleitoral e os canais digitais antes de publicar cada artigo. Algumas páginas institucionais são materiais didáticos históricos; em caso de diferença, prevalece o texto normativo vigente.
+5. **Progressão:** não repetir artigos completos em diferentes trilhas; quando necessário, fazer remissões entre os conteúdos (por exemplo: artigo 2.1 → artigo 1.3; artigo 3.4 → artigos 2.3 e 2.4).
