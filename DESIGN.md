@@ -133,6 +133,21 @@ components:
   pagina-de-erro:
     textColor: "{colors.tinta}"
     typography: "{typography.headline}"
+  rodape:
+    backgroundColor: "{colors.tinta}"
+    textColor: "{colors.papel}"
+    typography: "{typography.wordmark}"
+  pagina-inicial:
+    textColor: "{colors.tinta}"
+    typography: "{typography.headline}"
+    width: "{spacing.largura-maxima}"
+  caminho-em-linha:
+    textColor: "{colors.tinta}"
+    typography: "{typography.title-sm}"
+  no-da-parada:
+    backgroundColor: "{colors.tinta}"
+    rounded: "{rounded.none}"
+    size: "14px"
 ---
 
 # Design System: Mandatômetro
@@ -141,18 +156,18 @@ components:
 
 **Creative North Star: "A folhinha de parede"**
 
-A trilha é uma folhinha de arrancar, dessas de padaria. Cada artigo é uma folha do bloco: o número grande diz onde a pessoa está, a folha lida leva um X riscado à mão e a folha onde ela parou tem o canto dobrado. O site é papel branco e tinta preta. A cor fica na moldura: o cartão preto do cabeçalho, com o nome e o lema, e logo abaixo, no lugar do picote, a tira das fitas do Bonfim, que o Renan escolheu para ter "mais de cor voltado para Brasil".
+A trilha é uma folhinha de arrancar, dessas de padaria. Cada artigo é uma folha do bloco: o número grande diz onde a pessoa está, a folha lida leva um X riscado à mão e a folha onde ela parou tem o canto dobrado. O site é papel branco e tinta preta. A cor fica na moldura: o cartão preto do cabeçalho, com o nome e o lema, e logo abaixo, no lugar do picote, a tira das fitas do Bonfim, que o Renan escolheu para ter "mais de cor voltado para Brasil". Embaixo, o rodapé fecha a folhinha com o mesmo cartão preto, e a tira vai em cima dele.
 
 A página é de leitura, com folga. Os números e os títulos usam um grotesco condensado bem preto (Archivo), como os algarismos das folhinhas, e o texto corrido usa uma serifa de leitura (Literata). Tudo é chapado: sem sombra, sem degradê suave, sem canto arredondado, sem card em volta dos itens. O estado aparece como marca no papel e em palavras ("Lido", "Você está aqui", "Continue daqui", "Você leu 1 de 3"), nunca como barra de progresso ou pontuação.
 
-O que ficaria errado, nas palavras do Renan: "Site do governo, Coisa de criança, Jornal partidário". Ou seja: burocracia e letra pequena, cor demais e tom infantil, manchete gritando e cor de partido. O logo ainda não existe; até ele chegar, o nome em texto faz o papel da marca.
+O que ficaria errado, nas palavras do Renan: "Site do governo, Coisa de criança, Jornal partidário". Ou seja: burocracia e letra pequena, cor demais e tom infantil, manchete gritando e cor de partido. O logo ainda não existe; até ele chegar, o nome em texto faz o papel da marca, e o M do nome, o do ícone da aba.
 
 **Key Characteristics:**
 - Papel branco, tinta preta, e a cor só na moldura e nas fitas.
 - O número da folha em tamanho de cartaz, num condensado de peso 900.
 - Texto corrido em serifa, a cerca de 64 caracteres por linha.
 - Estado como marca no papel: X no lido, canto dobrado onde a pessoa está ou parou.
-- Linhas de 2 px em tinta: cheias entre as partes, tracejadas (o picote) entre as folhas. No infográfico da trilha, a cheia é o caminho completo, e a tracejada, o que pode mudar o caminho.
+- Linhas de 2 px em tinta: cheias entre as partes, tracejadas (o picote) entre as folhas. No infográfico da trilha, a cheia é o caminho completo, e a tracejada, o que pode mudar o caminho; no caminho da página inicial, só a cheia.
 - Um único movimento: o X desenhado em 400 ms quando a pessoa chega ao fim do texto.
 
 ## Colors
@@ -160,14 +175,14 @@ O que ficaria errado, nas palavras do Renan: "Site do governo, Coisa de criança
 Duas tintas sobre papel e cinco fitas do Bonfim que só aparecem como faixa de cor, nunca como fundo de texto.
 
 ### Primary
-- **Tinta** (`tinta`): todo o texto, as linhas, o X, o contorno do canto dobrado, o cartão do cabeçalho e o botão "Continuar". É também a `--primary`, a `--border` e a `--input` do shadcn, e a `theme-color` do navegador no celular.
+- **Tinta** (`tinta`): todo o texto, as linhas, o X, o contorno do canto dobrado, o cartão do cabeçalho e o do rodapé, os quadradinhos dos caminhos e o botão "Continuar". É também a `--primary`, a `--border` e a `--input` do shadcn, e a `theme-color` do navegador no celular.
 
 ### Secondary
-- **As fitas do Bonfim**, na ordem fixa: **Verde** (`fita-verde`), **Amarela** (`fita-amarela`), **Azul** (`fita-azul`), **Rosa** (`fita-rosa`) e **Vermelha** (`fita-vermelha`). Aparecem na tira abaixo do cartão preto, na fita pendurada de cada folha, na fita curta ao lado de cada artigo no infográfico da trilha e no sublinhado grosso de "de 3 artigos" ao lado do número do artigo. Também ocupam `--chart-1` a `--chart-5`, na mesma ordem.
-- A **Azul** é a cor do foco (`--ring`) e do cursor de texto. A **Amarela** é a seleção de texto (com tinta por cima), o foco dentro do cartão preto e o sublinhado de hover nos links do cabeçalho. A **Vermelha** é a `--destructive`.
+- **As fitas do Bonfim**, na ordem fixa: **Verde** (`fita-verde`), **Amarela** (`fita-amarela`), **Azul** (`fita-azul`), **Rosa** (`fita-rosa`) e **Vermelha** (`fita-vermelha`). Aparecem na tira abaixo do cartão preto do cabeçalho e acima do cartão do rodapé, no ícone da aba e na prévia do link, na fita pendurada de cada folha, na fita curta ao lado de cada artigo no infográfico da trilha e no caminho da página inicial, e no sublinhado grosso de "de 3 artigos" ao lado do número do artigo. Também ocupam `--chart-1` a `--chart-5`, na mesma ordem.
+- A **Azul** é a cor do foco (`--ring`) e do cursor de texto. A **Amarela** é a seleção de texto (com tinta por cima), o foco dentro do cartão preto (no cabeçalho e no rodapé) e o sublinhado de hover nos links do cabeçalho. A **Vermelha** é a `--destructive`.
 
 ### Neutral
-- **Papel** (`papel`): o fundo de tudo, o texto dentro do cartão preto e o branco que separa cada grupo de cinco cores na tira.
+- **Papel** (`papel`): o fundo de tudo, o texto dentro do cartão preto (o do cabeçalho e o do rodapé) e o branco que separa cada grupo de cinco cores na tira.
 - **Tinta suave** (`tinta-suave`): só a linha secundária das fontes: "camara.leg.br, consultada em…", no artigo, e "consultadas em…", embaixo das fontes de cada passo do infográfico. Não serve para texto principal.
 - **Retícula** (`reticula`): reservada para as superfícies `muted`, `secondary` e `accent` do shadcn. Nenhuma página das trilhas usa.
 
@@ -183,18 +198,18 @@ Duas tintas sobre papel e cinco fitas do Bonfim que só aparecem como faixa de c
 **Display Font:** Archivo Variable, eixo de largura (com ui-sans-serif, system-ui)
 **Body Font:** Literata Variable, eixo de tamanho óptico, com itálico (com ui-serif, Georgia)
 
-As duas são servidas pelo próprio site, pelo `@fontsource-variable`. Os arquivos latinos das duas (a Literata sem o itálico) são pré-carregados no `<head>`, para o texto não pular quando elas chegam; a página inicial, que ainda não usa a serifa, só pré-carrega o Archivo.
+As duas são servidas pelo próprio site, pelo `@fontsource-variable`. Os arquivos latinos das duas (a Literata sem o itálico) são pré-carregados no `<head>` de todas as páginas, para o texto não pular quando elas chegam.
 
 **Character:** o Archivo, apertado no eixo de largura e no peso máximo, faz o algarismo e o título de folhinha; a Literata, calma e de leitura longa, faz o professor paciente falar. O condensado nunca vai para o texto corrido, e a serifa nunca vai para o número.
 
 ### Hierarchy
 - **Numeral** (900, largura 62%, altura de linha 0.78, algarismos tabulares): o número da folha. No artigo, a partir de 1440 px, fica sozinho na coluna da esquerda a 22.5rem (15rem a partir de dois dígitos); abaixo disso, vai para o lado do título a 7.5rem (10rem no md). Na lista da trilha, 5.5rem a 8rem; em "Nesta trilha" e nas folhas da lista das trilhas (a partir de 1024 px), 4rem; nas folhas em miniatura (abaixo de 1024 px), 1.75rem; na página 404, 7rem a 13rem.
-- **Headline** (850, largura 72%, altura 0.96): o título da página (artigo, trilha, Trilhas, 404 e erro), de 2.5rem no celular a 4.75rem, com no máximo 12 caracteres de largura no artigo.
-- **Title** (800, largura 75%, altura 1.05): o título de cada folha na lista, "Nesta trilha", "Fontes oficiais", "O caminho de um projeto de lei", os intertítulos do texto e os nomes do anterior e do próximo, de 1.5rem a 2.75rem. Dois tamanhos têm nome na escala: o **Title médio** (`title-md`), a 1.625rem, em "Nesta trilha" e "O caminho de um projeto de lei", e também em "Fontes oficiais" abaixo de 1280 px e nos intertítulos do texto abaixo de 1024 px; e o **Title pequeno** (`title-sm`), a 1.375rem, no título de cada passo do infográfico, que fica numa coluna estreita, abaixo do título do infográfico.
-- **Wordmark** (900, largura 68%): o nome Mandatômetro no cartão preto, 2rem no celular e 2.75rem no md. É texto, não logo.
-- **Lead** (Literata 500, altura 1.4): o resumo do artigo e a descrição da trilha, de 1.25rem a 1.5625rem, com no máximo 40 a 44 caracteres de largura.
+- **Headline** (850, largura 72%, altura 0.96): o título da página (artigo, trilha, Trilhas, 404 e erro), de 2.5rem no celular a 4.75rem, com no máximo 12 caracteres de largura no artigo. Na página inicial, 2.75rem no celular e 4.75rem a partir do md.
+- **Title** (800, largura 75%, altura 1.05): o título de cada folha na lista, "Nesta trilha", "Fontes oficiais", "O caminho de um projeto de lei", os intertítulos do texto e os nomes do anterior e do próximo, de 1.5rem a 2.75rem. Dois tamanhos têm nome na escala: o **Title médio** (`title-md`), a 1.625rem, em "Nesta trilha" e "O caminho de um projeto de lei", e também em "Fontes oficiais" abaixo de 1280 px e nos intertítulos do texto abaixo de 1024 px; e o **Title pequeno** (`title-sm`), a 1.375rem, no título de cada passo do infográfico, que fica numa coluna estreita, abaixo do título do infográfico, e no título de cada parada do caminho da página inicial. Na página inicial, "O caminho de um projeto de lei" vai de 2rem no celular a 2.75rem no md.
+- **Wordmark** (900, largura 68%): o nome Mandatômetro no cartão preto do cabeçalho e no do rodapé, 2rem no celular e 2.75rem no md. É texto, não logo.
+- **Lead** (Literata 500, altura 1.4): o resumo do artigo, a descrição da trilha e a abertura da página inicial, de 1.25rem a 1.5625rem, com no máximo 40 a 44 caracteres de largura. Na página inicial, a abertura volta a 1.375rem a partir de 1280 px, quando fica na coluna da direita; o resumo do caminho, em Literata 400, vai de 1.125rem a 1.25rem.
 - **Body** (Literata 400): o texto do artigo, a no máximo 64 caracteres; 1.0625rem com altura 1.6 no celular e 1.1875rem com altura 1.65 a partir de 1024 px. No infográfico, em todas as larguras, o resumo e o texto de cada passo ficam em 1.0625rem (altura 1.375 no resumo e 1.55 no passo), e os desvios em 1rem, com altura 1.5.
-- **Label** (Archivo 600 a 800): a linha de leitura e fontes, o caminho, os estados ("Lido", "Você está aqui") e, no infográfico, a legenda, os links dos artigos e as fontes de cada passo, de 0.875rem a 1.25rem. Sem caixa alta e sem espaçamento largo.
+- **Label** (Archivo 600 a 800): a linha de leitura e fontes, o caminho, os estados ("Lido", "Você está aqui", "Você leu 1 de 3.", "3 artigos · 6 min de leitura") e, no infográfico e no caminho da página inicial, a legenda, os links dos artigos e as fontes de cada passo, de 0.875rem a 1.25rem. Sem caixa alta e sem espaçamento largo. As notas curtas da página inicial e do rodapé (o "para quem", a frase dos desvios e as três linhas do rodapé) ficam em Archivo 400 a 1.0625rem.
 
 ### Named Rules
 **A Regra das Duas Letras.** Condensado para número, título e rótulo; serifa para o que se lê de verdade. Nenhuma terceira família.
@@ -207,14 +222,16 @@ A página tem no máximo 1440 px, com margens de 20 px no celular e 64 px a part
 
 - **Artigo:** a partir de 1440 px (o breakpoint `folha`), três colunas: o número (até 248 px), o texto (até 700 px) e "Nesta trilha" (15rem ou mais), com 48 px entre elas. De 1024 a 1440 px, duas colunas: o número sobe para o lado do título e "Nesta trilha" fica à direita, fixa ao rolar. Abaixo de 1024 px, uma coluna, e "Nesta trilha" desce para depois das fontes.
 - **Trilha:** abaixo de 1024 px, uma coluna de até 56rem, com as folhas empilhadas e, depois delas, o infográfico. A partir de 1024 px, duas colunas: à esquerda, a mesma coluna de até 56rem (o título, o resumo, a linha de meta, o progresso, o "Continuar" e as folhas); à direita, o infográfico, que começa na altura do título. A coluna da direita tem 21rem a 1024 px, 24rem a partir de 1280 px e 28rem a partir de 1440 px, com 32, 40 e 48 px entre as duas. A ordem do HTML é a mesma em todas as larguras: primeiro as folhas, depois o infográfico. Uma trilha sem `infografico.md` fica com uma coluna só. O número da folha fica numa coluna própria (7rem) a partir do md; no celular, vai para o lado do título e o resumo usa a largura toda.
+- **Página inicial:** no máximo 1440 px, com 40 px em cima (56 px a partir do lg) e 80 px no fim. Abaixo de 1280 px, uma coluna. A partir do xl, duas colunas de 7fr e 5fr, com 64 px entre elas: o h1 à esquerda; à direita, a abertura, o "para quem", a linha do tamanho da trilha ou do progresso e o botão "Continuar". Abaixo do md (768 px), o "para quem" vem depois do botão, para o botão caber na primeira tela do celular: a 360 × 640 px, com o cabeçalho de 146 px, ele aparece inteiro sem rolar. O HTML tem o "para quem" duas vezes, e o CSS mostra um de cada vez: o leitor de tela e o Tab seguem a ordem da tela em cada largura, o que o `order` do CSS não faria. O Renan escolheu essa ordem em 10/11/2026. O caminho vem 64 px abaixo (80 px a partir do lg), com o título e o resumo nas mesmas duas colunas a partir do xl, alinhados pela base.
 - **Lista das trilhas:** a abertura (o título, a frase e o aviso do navegador) fica em até 56rem, e a lista usa a moldura inteira. A partir de 1024 px, cada trilha tem duas colunas, com as mesmas larguras da trilha: à esquerda, o título, a descrição e o progresso em palavras; à direita, as folhas dela, com as fitas penduradas da linha que abre a trilha. Abaixo de 1024 px, cada trilha mostra as folhas em miniatura.
+- **Rodapé:** o documento é uma grade de três linhas (cabeçalho, conteúdo e rodapé), e o conteúdo estica: numa página curta, como a 404 e a de erro, o rodapé fica no fim da tela.
 - **Ritmo:** cerca de 24 px dentro de cada folha, 40 a 48 px entre os blocos da página e 80 px no fim. O conteúdo da folha fica recuado 26 px para dar lugar à fita.
 - **Linha de meta:** o tempo de leitura e o aviso das fontes ficam numa faixa entre duas linhas de 2 px, logo abaixo do resumo, em todas as larguras.
-- **O progresso chega depois:** o navegador só sabe o que a pessoa leu quando a página termina de carregar. Por isso, a linha do progresso na trilha (acima do "Continuar"), a da lista das trilhas no celular e o aviso de lido no fim do artigo têm a altura reservada desde o HTML do servidor. Quando o progresso aparece, essas linhas e o botão "Continuar" não mudam de lugar. A 360 px, numa trilha pela metade, a lista abaixo do botão pode descer: o rótulo "Continuar de onde parou" traz o título do artigo e ocupa mais linhas, e o "Recomeçar a trilha" entra embaixo do botão. O Renan aceitou esse salto. De 1024 a 1280 px, a lista também pode descer quando o "Recomeçar a trilha" aparece: o caminho ocupa a direita, e o "Recomeçar" não cabe ao lado do botão e quebra para a linha de baixo. A lista desce até 40 px, e 68 px a 1024 px com dois artigos lidos, quando o rótulo do botão também ganha uma linha. O Renan aceitou também esse salto, em 10/11/2026.
+- **O progresso chega depois:** o navegador só sabe o que a pessoa leu quando a página termina de carregar. Por isso, a linha do progresso na trilha (acima do "Continuar"), a da lista das trilhas no celular e o aviso de lido no fim do artigo têm a altura reservada desde o HTML do servidor. Quando o progresso aparece, essas linhas e o botão "Continuar" não mudam de lugar. A 360 px, numa trilha pela metade, a lista abaixo do botão pode descer: o rótulo "Continuar de onde parou" traz o título do artigo e ocupa mais linhas, e o "Recomeçar a trilha" entra embaixo do botão. O Renan aceitou esse salto. De 1024 a 1280 px, a lista também pode descer quando o "Recomeçar a trilha" aparece: o caminho ocupa a direita, e o "Recomeçar" não cabe ao lado do botão e quebra para a linha de baixo. A lista desce até 40 px, e 68 px a 1024 px com dois artigos lidos, quando o rótulo do botão também ganha uma linha. O Renan aceitou também esse salto, em 10/11/2026. Na página inicial, a linha acima do botão ("3 artigos · 6 min de leitura", que dá lugar a "Você leu 1 de 3." ou "Você terminou a trilha.") tem a altura reservada (28 px), e só os textos e o destino do botão mudam: o salto medido é 0 nos 3 estados de leitura, de 320 a 1920 px, também no "para quem", que no celular vem depois do botão.
 
 ## Elevation & Depth
 
-O sistema é chapado. Não há sombra em nenhum elemento, nem degradê suave: a profundidade vem só da tinta. O papel é um plano; o que parece dobra (o canto dobrado) é desenhado com um contorno de 2 px, não com sombra.
+O sistema é chapado. Não há sombra em nenhum elemento, nem degradê suave: a profundidade vem só da tinta. O papel é um plano; o que parece dobra (o canto dobrado) é desenhado com um contorno de 2 px, não com sombra. Na prévia do link, a tira tem 24 px de altura e faixas de 64 px, com 16 px de papel: a mesma tira, na escala da imagem de 1200 px.
 
 ### Named Rules
 **A Regra da Tinta Chapada.** Sem sombra e sem degradê suave. A tira de fitas é feita com faixas de borda dura (48 px cada, com 12 px de papel a cada cinco), e é esse o único uso permitido de gradiente: listras de cor chapada.
@@ -223,10 +240,10 @@ O sistema é chapado. Não há sombra em nenhum elemento, nem degradê suave: a 
 
 Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 
-- **Linhas:** 2 px em tinta. Cheias para fechar seções (o topo das listas, a faixa de meta, "Fontes oficiais", o anterior e o próximo); tracejadas, como picote, entre uma folha e outra. No infográfico, a linha cheia liga os passos, e um traço tracejado leva a cada desvio.
+- **Linhas:** 2 px em tinta. Cheias para fechar seções (o topo das listas, a faixa de meta, "Fontes oficiais", o anterior e o próximo); tracejadas, como picote, entre uma folha e outra. No infográfico, a linha cheia liga os passos, e um traço tracejado leva a cada desvio. No caminho da página inicial, a linha cheia liga as paradas: em pé abaixo de 1024 px, deitada a partir dele.
 - **A fita:** 12 px de largura, pendurada da borda de cima da folha, com a ponta cortada em V de 18 px (1,5 vez a largura), para ler como ponta de fita e não como seta.
 - **A fita curta:** ao lado do link de um artigo no infográfico, 12 por 24 px, com um V raso de 8 px: com 24 px de altura, o V de 18 px viraria ponta de seta.
-- **Os quadradinhos do infográfico:** 14 px, retos. O cheio, em tinta, marca cada passo; o vazado, com contorno de 2 px em tinta e miolo de papel, marca cada desvio.
+- **Os quadradinhos do infográfico:** 14 px, retos. O cheio, em tinta, marca cada passo do infográfico e cada parada do caminho da página inicial; o vazado, com contorno de 2 px em tinta e miolo de papel, marca cada desvio.
 - **O canto dobrado:** o canto de cima à direita é cortado até o papel (30 por 32 px) e a aba é um triângulo com contorno de 2 px em tinta, sem preenchimento e sem sombra.
 - **O X:** dois traços levemente curvos, de ponta redonda, em tinta, um pouco maiores que o algarismo (1,1 em) e centrados nele.
 
@@ -239,18 +256,28 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 - **Foco:** o anel de foco fica amarelo dentro do cartão. O "Pular para o conteúdo" aparece no foco, em tinta sobre papel.
 - **Tira de fitas:** logo abaixo, 18 px de altura, as cinco fitas em sequência.
 
+### Rodapé
+- **Caráter:** a moldura de baixo da folhinha: o mesmo cartão preto do cabeçalho, com a tira de fitas de 18 px em cima. É o `<footer>` do documento (contentinfo), em todas as páginas, inclusive na 404 e na de erro.
+- **Forma:** 40 px em cima e 48 px embaixo, com as margens da página. O nome em Wordmark (2rem, 2.75rem no md), sem link, e três linhas em papel, em Archivo 400 a 1.0625rem, com até 38rem de largura e 12 px entre elas: "O Mandatômetro foi feito para o Hack Brasil 2026, na trilha Acesso à educação.", "Cada explicação traz a fonte oficial: a lei, o regimento ou a página da Câmara e do Senado." e "O código é aberto, no GitHub.". A partir do lg, duas colunas de 7fr e 5fr, com 64 px entre elas: o nome à esquerda, as linhas à direita. A partir de 1280 px, essa coluna é a mesma do texto da página inicial.
+- **O link do GitHub:** uma ação em texto em linha (45 px de área de toque), com o foco amarelo do cartão. O vão de 12 px entre as linhas é maior que os 11 px que a área passa da linha do link.
+- **Alto contraste:** nas cores forçadas do Windows, o cartão e a tira somem, como no cabeçalho, e o texto fica na cor do sistema.
+
 ### Botão "Continuar"
-- **Forma:** bloco reto de tinta, texto em papel, 12 por 20 px de respiro, 1.125rem em negrito, com a seta à direita.
+- **Forma:** bloco reto de tinta, texto em papel, 12 por 20 px de respiro, 1.125rem em negrito, com a seta à direita. Os 12 por 20 px são 10 por 18 px de respiro mais uma borda transparente de 2 px, que não aparece no papel.
 - **Hover:** o texto ganha sublinhado; a cor não muda.
+- **Alto contraste:** nas cores forçadas do Windows, o fundo some e a borda aparece na cor do texto: o botão continua com cara de botão, e não vira texto solto.
+- **Onde:** na trilha ("Continuar de onde parou: …") e na página inicial ("Começar a trilha", "Continuar a trilha" ou "Ver a trilha"), com a mesma classe nas duas (`BOTAO_CONTINUAR`).
 - É a única ação em bloco das páginas. Os outros links e as ações em texto são sublinhados.
 
 ### Links
 - Sublinhado de 2 px, afastado 0,2 em do texto, em tinta. Títulos que são links ficam sem sublinhado e ganham sublinhado no hover.
 - **Foco:** contorno de 3 px na azul, afastado 3 px.
+- **Depois de uma navegação:** o foco vai para o h1 da página nova ou, quando o endereço aponta para um trecho do conteúdo (`#caminho`, `#passo-plenario`), para esse trecho, já na tela. O título e o trecho não são controles e ficam sem o anel. Os títulos que são destino de um trecho (o do infográfico e o de cada passo) têm 32 px de respiro na rolagem.
 
 ### Ações em texto
-- **Quais:** "Desmarcar", embaixo de "Você leu este artigo."; "Recomeçar a trilha", ao lado do "Continuar" (embaixo dele no celular), quando a pessoa já leu algum artigo da trilha; "Desfazer"; e "Tentar de novo", na página de erro.
-- **Forma:** um botão com cara de link (`.acao-de-texto`): Archivo 600 a 1.0625rem, sublinhado de 2 px afastado 0,2 em, em tinta. Um `::before` com `inset: -0.6875rem -0.25rem` soma 11 px em cima e embaixo da linha de 23,4 px: a área de toque fica com 45,4 px de altura, sem mudar o espaço que o texto ocupa, e o anel de foco fica justo no texto, como nos links.
+- **Quais:** "Desmarcar", embaixo de "Você leu este artigo."; "Recomeçar a trilha", ao lado do "Continuar" (embaixo dele no celular), quando a pessoa já leu algum artigo da trilha; "Desfazer"; e "Tentar de novo", na página de erro. A mesma forma serve a dois links: "Ver o caminho na trilha", na página inicial (em negrito), e "O código é aberto, no GitHub", no rodapé.
+- **Forma:** um botão com cara de link (`.acao-de-texto`): Archivo 600 a 1.0625rem, sublinhado de 2 px afastado 0,2 em, em tinta. No botão, a caixa tem a altura da linha, 23,4 px, e um `::before` com `inset: -0.6875rem -0.25rem` soma 11 px em cima e embaixo dela: a área de toque fica com 45,4 px de altura, sem mudar o espaço que o texto ocupa, e o anel de foco fica justo no texto, como nos links.
+- **Nos dois links:** o link fica em linha e quebra como texto, e a caixa de um link em linha tem a altura da letra, 19 px: com o `::before`, a área ficaria com 41,5 px. Por isso, no link, o padding faz a área, como nos links do infográfico: 13 px (`0.8125rem`) em cima e embaixo da letra, em cada linha quando o link quebra, e 4 px dos lados, que a margem negativa devolve. A área fica com 45 px de altura, e o texto, as quebras de linha e a largura da página, mesmo com a letra a 200%, ficam como estavam. Os 13 px são inteiros de propósito: com 13,2 px, que dariam os 45,4 px dos botões, o navegador pintava as letras com outro arredondamento a 1440 e a 1920 px. E sem o `box-decoration-break: clone`, que mudava a quebra da linha com a letra a 200%. O anel de foco contorna só o texto, que fica num `span`: azul no papel, amarelo no cartão preto e, nas cores forçadas do Windows, a cor de destaque do sistema (`Highlight`).
 - **Depois da ação:** a frase de estado diz o que aconteceu ("Você desmarcou o artigo.", "Você recomeçou a trilha."), e o mesmo botão vira "Desfazer", com o foco nele. O "Desfazer" vale até a pessoa sair da página. Não há caixa de confirmação.
 - **Leitor de tela:** o que aconteceu é anunciado por uma região `role="status"` escondida, que já vem vazia no HTML do servidor e se apaga depois de 7 s (`useAviso`). A frase na tela não é região viva, e por isso não é anunciada a cada visita.
 
@@ -272,7 +299,18 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 - **As fontes:** uma linha por passo, "Fonte:" ou "Fontes:", com o título de cada fonte como link em negrito, separados por " · ". A linha tem altura 1.75, e o "·" e o "Fontes:" ganham 4 px a mais de papel em volta. Embaixo, a data da consulta em tinta suave: "consultadas em 10 de novembro de 2026", ou "consultadas entre … e …" quando as datas são diferentes.
 - **Toque e foco:** os links dos artigos e das fontes têm a área de toque das ações em texto, com 45,4 px de altura em cada linha e 4 px a mais dos lados, sem mudar o espaço que o texto ocupa: o padding faz a área, a margem negativa devolve o espaço, e o `box-decoration-break: clone` dá a área a cada linha de um link que quebra. O texto de cada link fica por cima das áreas vizinhas, e no vão entre dois links vale o que vem depois. O anel de foco (3 px na azul, afastado 3 px) contorna o texto, e não a área, e a entrelinha das fontes deixa papel entre o anel e a linha vizinha.
 - **Alto contraste:** nas cores forçadas do Windows, a linha cheia e os quadradinhos cheios, que são fundo, ficam na cor do texto (`CanvasText`), e a capa do último desvio, na cor do papel (`Canvas`). O traço tracejado e o quadradinho vazado são borda e já aparecem.
+- **Endereço de cada passo:** o `h3` de cada passo tem o id `passo-` e o título sem acento ("Sanção ou veto" vira `passo-sancao-ou-veto`), e o título do infográfico tem o id `caminho`. Na tela, nada muda.
 - **Leitor de tela:** tudo é texto de verdade, com um `h3` em cada passo. A linha, os quadradinhos e as fitas são desenho e ficam fora do leitor de tela; o sentido está nas palavras. As listas têm `role="list"`: sem marcador, o Safari tira delas o papel de lista, e o VoiceOver deixa de dizer quantos itens elas têm.
+- **Movimento:** nenhum.
+
+### Caminho em linha (página inicial)
+- **Caráter:** o infográfico da trilha reduzido ao caminho completo: as cinco paradas, sem o texto, os desvios e as fontes de cada passo, que ficam na trilha.
+- **Forma:** o título "O caminho de um projeto de lei" e o resumo em Literata; depois, uma lista ordenada de 5 paradas, cada uma com o título em Title pequeno (1.375rem). Abaixo de 1024 px, a linha fica em pé, como no infográfico da trilha, com 28 px entre as paradas. A partir de 1024 px, fica deitada: 5 colunas, com 32 px entre elas (40 px a partir de 1280 px); o quadradinho de 14 px no alto de cada coluna, o título 30 px abaixo do topo, e a linha de 2 px do quadradinho até o seguinte, por cima do vão.
+- **Os artigos:** cada parada traz os artigos que a explicam, como no infográfico: a fita curta da cor do artigo e "Artigo 1: Quem pode propor uma lei", com a mesma área de toque e o mesmo foco.
+- **A parada sem artigo:** traz "Ler este passo na trilha", sem fita, alinhado ao título, com o título do passo num sufixo só para o leitor de tela. O link leva ao passo no infográfico da trilha (`/trilhas/processo-legislativo#passo-plenario`): nenhuma parada fica sem destino.
+- **Embaixo:** a frase "A linha mostra o caminho completo. Os desvios, como a comissão que decide sem o plenário, estão na trilha, com as fontes oficiais.", em Archivo a 1.0625rem, numa caixa de até 64ch (623 px). Isso dá cerca de 77 caracteres por linha, e não 64: o `ch` é a largura do 0, que no Archivo é mais largo que a letra média. Depois, o link "Ver o caminho na trilha" (uma ação em texto em linha, em negrito, com 45 px de área de toque), para o `#caminho` da trilha.
+- **Estado:** nenhum. O progresso fica só na abertura da página.
+- **Alto contraste:** nas cores forçadas do Windows, a linha e os quadradinhos ficam na cor do texto (`CanvasText`).
 - **Movimento:** nenhum.
 
 ### O X da folha lida (assinatura)
@@ -294,6 +332,12 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 - **Tentar de novo:** pede a página de novo, sem recarregar (`router.invalidate()`). Enquanto o pedido não volta, aparece o aviso de carregando das navegações. Se der certo, a página pedida abre com o foco no título. Se falhar de novo, aparece "Ainda não deu. Confira a internet ou espere um pouco e tente de novo.", o foco fica no botão e a frase é anunciada pela região `role="status"` (`useAviso`).
 - **Título da aba:** "Erro ao carregar a página · Mandatômetro". A tela não mostra a mensagem técnica nem a pilha do erro.
 
+### Ícone da aba e prévia do link
+- **O ícone:** o M do nome em Archivo 900, largura 68%, em papel no quadrado de tinta, com as cinco fitas embaixo, em faixas iguais. O `favicon.ico` tem 16, 32 e 48 px, e o `apple-touch-icon.png`, 180 px. É a letra do nome, não um logo, e troca quando o logo existir.
+- **A prévia do link** (`previa.png`, 1200 × 630 px, a mesma em todas as páginas): o cartão de tinta com o nome (88 px) e o lema (32 px), a tira de 24 px e, no papel, a frase do h1 da página inicial em Headline, a 92 px, em tinta. Os 88 e 92 px ficam fora da escala do site de propósito: a imagem tem 1200 px e é vista pequena.
+- **Os textos:** a aba da página inicial diz "Mandatômetro · o diário oficial político, simplificado"; as outras páginas, "Título · Mandatômetro". O título da prévia é "Mandatômetro: entenda a política brasileira, um passo de cada vez".
+- **Como gerar:** `pnpm --filter web imagens` abre o Edge ou o Chrome sem janela e fotografa `imagens/icone.html` e `imagens/previa.html`, com as fontes do site. Cada PNG leva a origem num bloco tEXt `impeccable:prompt`.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -313,6 +357,6 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 - **Don't** pôr texto em cima de uma cor de fita.
 - **Don't** usar card arredondado em volta dos itens nem barra de progresso; o progresso é o X e as palavras.
 - **Don't** usar sombra, canto arredondado ou degradê suave.
-- **Don't** inventar um logo; até o time fazer o dele, o nome em texto é a marca.
+- **Don't** inventar um logo; até o time fazer o dele, o nome em texto é a marca, e o M do nome é o ícone.
 - **Don't** usar a vermelha como cor de domingo antes da decisão da issue #39.
 - **Don't** animar nada além do X.

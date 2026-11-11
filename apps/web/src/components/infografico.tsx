@@ -6,7 +6,12 @@ import type {
 	Infografico as Dados,
 	Fonte,
 } from "@/lib/conteudo";
-import { corDaFita, formatarData, semQuebrarCitacao } from "@/lib/formatar";
+import {
+	corDaFita,
+	formatarData,
+	idDoPasso,
+	semQuebrarCitacao,
+} from "@/lib/formatar";
 
 /** A data da consulta das fontes de um passo, uma vez só quando é a mesma. */
 function quandoForamConsultadas(fontes: Fonte[]): string {
@@ -15,6 +20,56 @@ function quandoForamConsultadas(fontes: Fonte[]): string {
 	return datas.length === 1
 		? `${palavra} em ${formatarData(datas[0])}`
 		: `${palavra} entre ${formatarData(datas[0])} e ${formatarData(datas[datas.length - 1])}`;
+}
+
+type TrilhaDoCaminho = {
+	slug: string;
+	artigos: Pick<ArtigoNaLista, "slug" | "titulo">[];
+};
+
+/**
+ * Os artigos da trilha que explicam um passo do caminho, pelo nome do arquivo:
+ * cada um com a fita curta da cor dele e "Artigo N: título", com o número da
+ * folha na trilha. O infográfico da trilha e o caminho da página inicial usam.
+ */
+export function ArtigosDoPasso({
+	slugs,
+	trilha,
+	className = "",
+}: {
+	slugs: string[];
+	trilha: TrilhaDoCaminho;
+	className?: string;
+}) {
+	const artigos = slugs.flatMap((slug) => {
+		const indice = trilha.artigos.findIndex((artigo) => artigo.slug === slug);
+		return indice === -1
+			? []
+			: [{ artigo: trilha.artigos[indice], posicao: indice + 1 }];
+	});
+	if (artigos.length === 0) {
+		return null;
+	}
+	return (
+		<ul role="list" className={`grid gap-2 ${className}`}>
+			{artigos.map(({ artigo, posicao }) => (
+				<li key={artigo.slug} className="flex items-start gap-2.5">
+					<span
+						aria-hidden="true"
+						className="fita-curta mt-px h-6 w-3 shrink-0"
+						style={{ background: corDaFita(posicao) }}
+					/>
+					<Link
+						to="/trilhas/$trilha/$artigo"
+						params={{ trilha: trilha.slug, artigo: artigo.slug }}
+						className="link-do-caminho text-[0.9375rem] leading-snug font-semibold"
+					>
+						<span className="block">{`Artigo ${posicao}: ${artigo.titulo}`}</span>
+					</Link>
+				</li>
+			))}
+		</ul>
+	);
 }
 
 /**
@@ -30,14 +85,14 @@ export function Infografico({
 	className = "",
 }: {
 	infografico: Dados;
-	trilha: { slug: string; artigos: Pick<ArtigoNaLista, "slug" | "titulo">[] };
+	trilha: TrilhaDoCaminho;
 	className?: string;
 }) {
 	return (
 		<section aria-labelledby="caminho" className={className}>
 			<h2
 				id="caminho"
-				className="subtitulo-condensado border-tinta border-b-2 pb-2.5 text-[1.625rem]"
+				className="subtitulo-condensado border-tinta scroll-mt-8 border-b-2 pb-2.5 text-[1.625rem]"
 			>
 				{infografico.titulo}
 			</h2>
@@ -49,89 +104,67 @@ export function Infografico({
 				caminho.
 			</p>
 			<ol role="list" className="mt-6">
-				{infografico.passos.map((passo) => {
-					const artigos = passo.artigos.flatMap((slug) => {
-						const indice = trilha.artigos.findIndex(
-							(artigo) => artigo.slug === slug,
-						);
-						return indice === -1
-							? []
-							: [{ artigo: trilha.artigos[indice], posicao: indice + 1 }];
-					});
-					return (
-						<li key={passo.titulo} className="passo">
-							{/* O título, o texto e os desvios: no último passo, a linha
+				{infografico.passos.map((passo) => (
+					<li key={passo.titulo} className="passo">
+						{/* O título, o texto e os desvios: no último passo, a linha
 							    desce até o último desvio. */}
-							<div className="passo-corpo">
-								<h3 className="subtitulo-condensado text-[1.375rem]">
-									{passo.titulo}
-								</h3>
-								<p className="mt-1.5 font-serif text-[1.0625rem] leading-[1.55]">
-									{semQuebrarCitacao(passo.texto)}
-								</p>
-								{passo.desvios.length > 0 && (
-									<ul role="list" className="mt-3 grid gap-3">
-										{passo.desvios.map((desvio) => (
-											<li
-												key={desvio}
-												className="desvio font-serif text-base leading-normal"
-											>
-												<span aria-hidden="true" className="no-do-desvio" />
-												{semQuebrarCitacao(desvio)}
-											</li>
-										))}
-									</ul>
-								)}
-							</div>
-							{artigos.length > 0 && (
-								<ul role="list" className="mt-3.5 grid gap-2">
-									{artigos.map(({ artigo, posicao }) => (
-										<li key={artigo.slug} className="flex items-start gap-2.5">
-											<span
-												aria-hidden="true"
-												className="fita-curta mt-px h-6 w-3 shrink-0"
-												style={{ background: corDaFita(posicao) }}
-											/>
-											<Link
-												to="/trilhas/$trilha/$artigo"
-												params={{ trilha: trilha.slug, artigo: artigo.slug }}
-												className="link-do-caminho text-[0.9375rem] leading-snug font-semibold"
-											>
-												<span className="block">{`Artigo ${posicao}: ${artigo.titulo}`}</span>
-											</Link>
+						<div className="passo-corpo">
+							<h3
+								id={idDoPasso(passo.titulo)}
+								className="subtitulo-condensado scroll-mt-8 text-[1.375rem]"
+							>
+								{passo.titulo}
+							</h3>
+							<p className="mt-1.5 font-serif text-[1.0625rem] leading-[1.55]">
+								{semQuebrarCitacao(passo.texto)}
+							</p>
+							{passo.desvios.length > 0 && (
+								<ul role="list" className="mt-3 grid gap-3">
+									{passo.desvios.map((desvio) => (
+										<li
+											key={desvio}
+											className="desvio font-serif text-base leading-normal"
+										>
+											<span aria-hidden="true" className="no-do-desvio" />
+											{semQuebrarCitacao(desvio)}
 										</li>
 									))}
 								</ul>
 							)}
-							<div className="mt-3.5 text-[0.9375rem] leading-snug">
-								{/* As fontes quebram linha umas embaixo das outras: a entrelinha
+						</div>
+						<ArtigosDoPasso
+							slugs={passo.artigos}
+							trilha={trilha}
+							className="mt-3.5"
+						/>
+						<div className="mt-3.5 text-[0.9375rem] leading-snug">
+							{/* As fontes quebram linha umas embaixo das outras: a entrelinha
 								    maior e o espaço em volta do "·" deixam o anel de foco de um
 								    link (3 px, afastado 3 px) fora do texto vizinho. */}
-								<p className="leading-[1.75] font-semibold">
-									<span className="mr-1">
-										{passo.fontes.length === 1 ? "Fonte:" : "Fontes:"}
-									</span>{" "}
-									{passo.fontes.map((fonte, indice) => (
-										<Fragment key={fonte.url}>
-											{indice > 0 && (
-												<>
-													{" "}
-													<span className="mx-1">·</span>{" "}
-												</>
-											)}
-											<a href={fonte.url} className="link-do-caminho font-bold">
-												<span>{fonte.titulo}</span>
-											</a>
-										</Fragment>
-									))}
-								</p>
-								<p className="text-tinta-suave mt-0.5">
-									{quandoForamConsultadas(passo.fontes)}
-								</p>
-							</div>
-						</li>
-					);
-				})}
+							<p className="leading-[1.75] font-semibold">
+								<span className="mr-1">
+									{passo.fontes.length === 1 ? "Fonte:" : "Fontes:"}
+								</span>{" "}
+								{passo.fontes.map((fonte, indice) => (
+									<Fragment key={fonte.url}>
+										{indice > 0 && (
+											<>
+												{" "}
+												<span className="mx-1">·</span>{" "}
+											</>
+										)}
+										<a href={fonte.url} className="link-do-caminho font-bold">
+											<span>{fonte.titulo}</span>
+										</a>
+									</Fragment>
+								))}
+							</p>
+							<p className="text-tinta-suave mt-0.5">
+								{quandoForamConsultadas(passo.fontes)}
+							</p>
+						</div>
+					</li>
+				))}
 			</ol>
 		</section>
 	);

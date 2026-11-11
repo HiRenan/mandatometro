@@ -3,6 +3,7 @@ import {
 	acharArtigo,
 	acharTrilha,
 	corpoEmHtml,
+	inicio,
 	listarTrilhas,
 	trilhas,
 } from "./paginas.server";
@@ -120,6 +121,52 @@ describe("o que vai para o navegador", () => {
 			expect(naLista).not.toHaveProperty("infografico");
 		}
 		expect(artigo?.trilha).not.toHaveProperty("infografico");
+		expect(inicio(trilhas)?.trilha).not.toHaveProperty("infografico");
+	});
+});
+
+describe("a página inicial", () => {
+	it("começa pela trilha do processo legislativo, como diz a abertura", () => {
+		// A abertura diz: "A primeira trilha mostra como uma ideia vira lei."
+		expect(inicio(trilhas)?.trilha.slug).toBe("processo-legislativo");
+	});
+
+	it("leva a primeira trilha como nas listas, sem o texto dos artigos", () => {
+		const pagina = inicio(trilhas);
+
+		expect(pagina?.trilha).toEqual(listarTrilhas(trilhas)[0]);
+		for (const artigo of pagina?.trilha.artigos ?? []) {
+			expect(artigo).not.toHaveProperty("corpo");
+		}
+	});
+
+	it("leva o caminho resumido: de cada passo, só o título e os artigos", () => {
+		const infografico = trilhas[0].infografico;
+		const caminho = inicio(trilhas)?.caminho;
+
+		expect(caminho).toEqual({
+			titulo: infografico?.titulo,
+			resumo: infografico?.resumo,
+			passos: infografico?.passos.map(({ titulo, artigos }) => ({
+				titulo,
+				artigos,
+			})),
+		});
+		for (const passo of caminho?.passos ?? []) {
+			expect(Object.keys(passo).sort()).toEqual(["artigos", "titulo"]);
+		}
+	});
+
+	it("fica sem o caminho quando a trilha não tem infográfico", () => {
+		const { infografico: _, ...semInfografico } = trilhas[0];
+
+		expect(inicio([semInfografico])).toEqual({
+			trilha: listarTrilhas([semInfografico])[0],
+		});
+	});
+
+	it("não existe sem trilha", () => {
+		expect(inicio([])).toBeUndefined();
 	});
 });
 

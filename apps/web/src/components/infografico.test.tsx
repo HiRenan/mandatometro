@@ -112,6 +112,16 @@ describe("infográfico", () => {
 		).toBeTruthy();
 	});
 
+	it("dá um endereço a cada passo, para a página inicial levar até ele", async () => {
+		const secao = await mostrar();
+
+		expect(
+			within(secao)
+				.getAllByRole("heading", { level: 3 })
+				.map((titulo) => titulo.id),
+		).toEqual(["passo-apresentacao", "passo-a-outra-casa"]);
+	});
+
 	it("escreve os desvios em palavras, dentro do passo deles", async () => {
 		const secao = await mostrar();
 		const outraCasa = passo(secao, "A outra Casa");

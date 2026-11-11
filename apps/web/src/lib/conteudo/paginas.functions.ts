@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import {
 	acharArtigo,
 	acharTrilha,
+	inicio,
 	listarTrilhas,
 	trilhas,
 } from "./paginas.server";
@@ -19,6 +20,16 @@ function texto(valor: unknown): string {
 export const buscarTrilhas = createServerFn({ method: "GET" }).handler(() =>
 	listarTrilhas(trilhas),
 );
+
+export const buscarInicio = createServerFn({ method: "GET" }).handler(() => {
+	const pagina = inicio(trilhas);
+	// O conteúdo sempre tem a trilha do processo legislativo, e o teste
+	// (paginas.test.ts) confere. Sem trilha, a página de erro aparece.
+	if (!pagina) {
+		throw new Error("O conteúdo não tem nenhuma trilha.");
+	}
+	return pagina;
+});
 
 export const buscarTrilha = createServerFn({ method: "GET" })
 	.validator((dados: { trilha: string }) => ({ trilha: texto(dados?.trilha) }))

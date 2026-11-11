@@ -30,6 +30,30 @@ export function plural(
 	return `${quantidade} ${quantidade === 1 ? singular : maisDeUm}`;
 }
 
+/**
+ * O tamanho da trilha, com os números da faixa da página dela: "3 artigos · 6
+ * min de leitura". A página inicial mostra acima do botão, antes de a pessoa ler.
+ */
+export function tamanhoDaTrilha(artigos: { minutos: number }[]): string {
+	const minutos = artigos.reduce((soma, artigo) => soma + artigo.minutos, 0);
+	return `${plural(artigos.length, "artigo", "artigos")} · ${minutos} min de leitura`;
+}
+
+/**
+ * O endereço de um passo do caminho, pelo título, sem acento nem espaço:
+ * "Sanção ou veto" vira "passo-sancao-ou-veto". O infográfico da trilha dá esse
+ * id ao título do passo, e a página inicial leva até ele.
+ */
+export function idDoPasso(titulo: string): string {
+	const palavras = titulo
+		.normalize("NFD")
+		.replace(/[̀-ͯ]/g, "")
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-|-$/g, "");
+	return `passo-${palavras}`;
+}
+
 /** O progresso na trilha em palavras, igual na lista das trilhas e na trilha. */
 export function fraseDoProgresso(lidos: number, total: number): string {
 	if (lidos === 0) {

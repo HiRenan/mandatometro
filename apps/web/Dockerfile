@@ -8,10 +8,12 @@ WORKDIR /app
 COPY . .
 RUN --mount=type=cache,target=/pnpm-store pnpm install --frozen-lockfile --store-dir /pnpm-store
 
-# O API_URL é público: entra no bundle do navegador na hora do build.
+# O API_URL e o APP_BASE_URL são públicos: entram no bundle do navegador na hora do build.
 ARG API_URL=http://localhost:8000
+ARG APP_BASE_URL=http://localhost:3001
 ENV NODE_ENV=production
 ENV API_URL=$API_URL
+ENV APP_BASE_URL=$APP_BASE_URL
 RUN cd apps/web && pnpm run build
 
 FROM node:24-slim AS runner

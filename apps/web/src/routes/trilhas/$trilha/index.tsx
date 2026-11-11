@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { Aviso, useAviso } from "@/components/aviso";
+import { BOTAO_CONTINUAR } from "@/components/botao-continuar";
 import { Caminho } from "@/components/caminho";
 import { Infografico } from "@/components/infografico";
 import { MarcaX } from "@/components/marca-x";
@@ -97,7 +98,7 @@ function PaginaDaTrilha() {
 							<Link
 								to="/trilhas/$trilha/$artigo"
 								params={{ trilha: trilha.slug, artigo: ondeParou.slug }}
-								className="bg-tinta text-papel inline-flex items-center gap-3 px-5 py-3 text-lg font-bold no-underline hover:underline"
+								className={BOTAO_CONTINUAR}
 							>
 								{quantosLidos > 0
 									? `Continuar de onde parou: ${ondeParou.titulo}`

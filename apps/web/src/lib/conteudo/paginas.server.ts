@@ -1,5 +1,11 @@
 import { compiler } from "markdown-to-jsx/html";
-import { type Artigo, type Infografico, lerTrilhas, type Trilha } from "./ler";
+import {
+	type Artigo,
+	type Infografico,
+	lerTrilhas,
+	type Passo,
+	type Trilha,
+} from "./ler";
 
 // Só o servidor e os testes leem os arquivos. O navegador recebe a página
 // pronta, pelas funções de paginas.functions.ts, sem o zod, o js-yaml e o
@@ -24,6 +30,20 @@ export type TrilhaNaLista = Omit<Trilha, "artigos" | "infografico"> & {
 
 /** A trilha na página dela, com o infográfico, quando ela tem um. */
 export type TrilhaNaPagina = TrilhaNaLista & { infografico?: Infografico };
+
+/**
+ * O caminho na página inicial: o título, o resumo e, de cada passo, o título e
+ * os artigos que o explicam. O texto, os desvios e as fontes ficam na trilha.
+ */
+export type CaminhoNaInicial = Pick<Infografico, "titulo" | "resumo"> & {
+	passos: Pick<Passo, "titulo" | "artigos">[];
+};
+
+/** A página inicial: a primeira trilha, como nas listas, e o caminho dela. */
+export type PaginaInicial = {
+	trilha: TrilhaNaLista;
+	caminho?: CaminhoNaInicial;
+};
 
 export type ArtigoNaTrilha = {
 	trilha: TrilhaNaLista;
@@ -71,6 +91,27 @@ function trilhaNaLista({
 
 export function listarTrilhas(todas: Trilha[]): TrilhaNaLista[] {
 	return todas.map(trilhaNaLista);
+}
+
+export function inicio(todas: Trilha[]): PaginaInicial | undefined {
+	const [primeira] = todas;
+	if (!primeira) {
+		return undefined;
+	}
+	const { infografico } = primeira;
+	return {
+		trilha: trilhaNaLista(primeira),
+		...(infografico && {
+			caminho: {
+				titulo: infografico.titulo,
+				resumo: infografico.resumo,
+				passos: infografico.passos.map(({ titulo, artigos }) => ({
+					titulo,
+					artigos,
+				})),
+			},
+		}),
+	};
 }
 
 export function acharTrilha(

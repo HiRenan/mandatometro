@@ -3,12 +3,15 @@
 export type { Fonte, Infografico, Passo } from "./ler";
 export {
 	buscarArtigo,
+	buscarInicio,
 	buscarTrilha,
 	buscarTrilhas,
 } from "./paginas.functions";
 export type {
 	ArtigoNaLista,
 	ArtigoNaTrilha,
+	CaminhoNaInicial,
+	PaginaInicial,
 	TrilhaNaLista,
 	TrilhaNaPagina,
 } from "./paginas.server";
