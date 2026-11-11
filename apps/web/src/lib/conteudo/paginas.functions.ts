@@ -24,9 +24,9 @@ export const buscarTrilhas = createServerFn({ method: "GET" }).handler(() =>
 export const buscarInicio = createServerFn({ method: "GET" }).handler(() => {
 	const pagina = inicio(trilhas);
 	// O conteúdo sempre tem a trilha do processo legislativo, e o teste
-	// (paginas.test.ts) confere. Sem trilha, a página de erro aparece.
+	// (paginas.test.ts) confere. Sem ela, a página de erro aparece.
 	if (!pagina) {
-		throw new Error("O conteúdo não tem nenhuma trilha.");
+		throw new Error("O conteúdo não tem a trilha da página inicial.");
 	}
 	return pagina;
 });
