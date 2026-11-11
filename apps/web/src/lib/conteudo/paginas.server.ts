@@ -1,4 +1,5 @@
 import { compiler } from "markdown-to-jsx/html";
+import { trilhaDaInicial } from "./inicial";
 import {
 	type Artigo,
 	type Infografico,
@@ -96,12 +97,8 @@ export function listarTrilhas(todas: Trilha[]): TrilhaNaLista[] {
 	return todas.map(trilhaNaLista);
 }
 
-// A trilha da página inicial, pelo nome da pasta: a abertura e o caminho da
-// página falam dela. A ordem de /trilhas não muda a página inicial.
-const TRILHA_DA_INICIAL = "processo-legislativo";
-
 export function inicio(todas: Trilha[]): PaginaInicial | undefined {
-	const trilha = todas.find((trilha) => trilha.slug === TRILHA_DA_INICIAL);
+	const trilha = trilhaDaInicial(todas);
 	if (!trilha) {
 		return undefined;
 	}

@@ -15,6 +15,19 @@ ordem: 1
 ---
 `;
 
+const ARTIGO = `---
+titulo: Um artigo
+resumo: Um artigo do teste.
+ordem: 1
+fontes:
+  - titulo: Constituição Federal, art. 61
+    url: https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm#art61
+    consultadoEm: 2026-11-11
+---
+
+Um texto curto.
+`;
+
 const ARTIGO_SEM_TITULO = `---
 resumo: Um artigo sem o título.
 ordem: 1
@@ -102,6 +115,20 @@ describe("conferirConteudo", () => {
 
 		expect(() => plugin.buildStart()).toThrow(
 			'conteudo/trilhas/uma-trilha/sem-titulo.md: campo "titulo": falta este campo',
+		);
+	});
+
+	it("para o build quando falta a pasta da trilha da página inicial", () => {
+		const plugin = conferirConteudo();
+		plugin.configResolved({
+			root: pastaCom({
+				"conteudo/trilhas/processo-legislativo-x/trilha.md": TRILHA,
+				"conteudo/trilhas/processo-legislativo-x/um-artigo.md": ARTIGO,
+			}),
+		});
+
+		expect(() => plugin.buildStart()).toThrow(
+			"conteudo/trilhas/processo-legislativo: falta a trilha da página inicial",
 		);
 	});
 });

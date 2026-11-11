@@ -1,12 +1,14 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { Plugin } from "vite";
-import { lerTrilhas } from "./ler";
+import { TRILHA_DA_INICIAL, trilhaDaInicial } from "./inicial";
+import { ErroDeConteudo, lerTrilhas } from "./ler";
 
 // O servidor lê o conteúdo das trilhas ao subir (paginas.server.ts). O build
 // confere os mesmos arquivos antes, com a mesma leitura: um artigo mal formado
-// para o `pnpm build`, o deploy da Vercel e a imagem do Docker, com o arquivo e
-// o problema, e o site no ar continua na versão anterior.
+// ou a falta da trilha da página inicial para o `pnpm build`, o deploy da
+// Vercel e a imagem do Docker, com o arquivo e o problema, e o site no ar
+// continua na versão anterior.
 
 /**
  * Lê do disco os arquivos que o `import.meta.glob` de paginas.server.ts junta
@@ -46,8 +48,9 @@ export function lerArquivosDasTrilhas(raiz: string): Record<string, string> {
 
 /**
  * O plugin do Vite que confere o conteúdo no começo do build e para o build com
- * o ErroDeConteudo de lerTrilhas, que lista cada arquivo e o problema. No
- * `pnpm dev` ele não roda: lá, a página e o teste avisam.
+ * o ErroDeConteudo, que lista cada arquivo e o problema: os de lerTrilhas e a
+ * falta da pasta da trilha da página inicial. No `pnpm dev` ele não roda: lá, a
+ * página e o teste avisam.
  */
 export function conferirConteudo() {
 	let raiz = process.cwd();
@@ -58,7 +61,12 @@ export function conferirConteudo() {
 			raiz = config.root;
 		},
 		buildStart() {
-			lerTrilhas(lerArquivosDasTrilhas(raiz));
+			const trilhas = lerTrilhas(lerArquivosDasTrilhas(raiz));
+			if (!trilhaDaInicial(trilhas)) {
+				throw new ErroDeConteudo([
+					`conteudo/trilhas/${TRILHA_DA_INICIAL}: falta a trilha da página inicial, e sem ela a página inicial não abre`,
+				]);
+			}
 		},
 	} satisfies Plugin;
 }
