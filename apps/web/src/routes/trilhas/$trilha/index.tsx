@@ -145,7 +145,7 @@ function PaginaDaTrilha() {
 								    largura toda; a partir do md, o número ocupa a coluna inteira.
 								    Com a letra grande, o número fica no lugar, e o título desce
 								    para a linha de baixo, com a largura toda. A margem embaixo do
-								    número deixa o X da folha lida longe do título. */}
+								    número o separa do título. */}
 									<div className="grid grid-cols-[4.5rem_minmax(0,1fr)] content-start gap-x-4 py-6 pr-5 pl-[1.625rem] md:grid-cols-[7rem_minmax(0,1fr)] md:gap-x-6 md:pr-10">
 										<span
 											aria-hidden="true"

@@ -81,6 +81,7 @@ related_targets: ["src/routes/trilhas/index.tsx","src/routes/trilhas/$trilha/ind
 - **O que mudou:**
   - o visto fica no canto de cima, à direita, do número da folha, e o número continua legível;
   - na miniatura, ele fica por cima da borda do quadrado;
+  - quando os quadradinhos quebram de linha, como nas trilhas de 8 artigos no celular, as linhas ficam a 12 px uma da outra, e não mais a 6 px, para o visto de um quadradinho de baixo não chegar ao de cima. O Renan escolheu "Linhas mais afastadas (Recomendado)";
   - ao lado de "Você leu este artigo.", ele fica no lugar do X;
   - a palavra "Lido" continua na linha de estado.
 - **O traço:** um só, como o do professor no caderno, em tinta sobre um traço de papel mais largo, que o separa do algarismo e da borda. O desenho de 400 ms continua o único movimento das páginas: a perna curta sai devagar e a longa vai num golpe só.

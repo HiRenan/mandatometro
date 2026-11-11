@@ -143,7 +143,7 @@ describe("folhas da trilha", () => {
 		const [numero, texto] = link.children;
 
 		// O número fica na coluna dele, e o texto ocupa a linha de baixo inteira,
-		// longe do X da folha lida (index.css, a variante letra-grande).
+		// longe do visto da folha lida (index.css, a variante letra-grande).
 		expect(numero.classList.contains("numeral")).toBe(true);
 		expect(numero.classList.contains("letra-grande:mb-4")).toBe(true);
 		expect(texto.classList.contains("letra-grande:col-span-full")).toBe(true);

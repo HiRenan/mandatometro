@@ -50,7 +50,7 @@ export function FolhasDaTrilha({
 						>
 							{/* Com a letra grande, o número fica no lugar, e o título desce
 							    para a linha de baixo, com a largura toda. A margem embaixo do
-							    número deixa o X da folha lida longe do título. */}
+							    número o separa do título. */}
 							<span
 								aria-hidden="true"
 								className="numeral letra-grande:mb-4 justify-self-center text-[4rem]"
