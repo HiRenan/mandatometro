@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { metaDaImagem, metaDaInicial, metaDaPagina } from "./meta";
+import {
+	cabecalhosDaPagina,
+	metaDaImagem,
+	metaDaInicial,
+	metaDaPagina,
+} from "./meta";
 
 const DESCRICAO_DA_INICIAL =
 	"Entenda a política brasileira, um passo de cada vez, em artigos curtos e em linguagem simples, com a fonte oficial em cada explicação.";
@@ -54,5 +59,21 @@ describe("metaDaImagem", () => {
 			},
 			{ name: "twitter:card", content: "summary_large_image" },
 		]);
+	});
+});
+
+describe("cabecalhosDaPagina", () => {
+	it("pede aos buscadores para não indexar a página fora da produção da Vercel", () => {
+		for (const ambiente of ["preview", "development"]) {
+			expect(cabecalhosDaPagina(ambiente)).toEqual({
+				"X-Robots-Tag": "noindex",
+			});
+		}
+	});
+
+	it("não pede nada na produção nem fora da Vercel, no Docker e no pnpm dev", () => {
+		for (const ambiente of ["production", undefined]) {
+			expect(cabecalhosDaPagina(ambiente)).toBeUndefined();
+		}
 	});
 });

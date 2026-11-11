@@ -16,6 +16,7 @@ import { ENV } from "../env";
 import appCss from "../index.css?url";
 import { focarNoTitulo } from "../lib/foco";
 import {
+	cabecalhosDaPagina,
 	metaDaImagem,
 	TITULO_DE_ERRO,
 	TITULO_NAO_ENCONTRADA,
@@ -73,6 +74,10 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 			})),
 		],
 	}),
+
+	// A rota raiz vale para toda página, inclusive a que não existe: fora da
+	// produção da Vercel, todas pedem aos buscadores para não indexar.
+	headers: () => cabecalhosDaPagina(ENV.VERCEL_ENV),
 
 	// O documento e a moldura ficam fora das páginas: quando uma página dá erro, a
 	// página de erro (router.tsx) aparece dentro do main, com o cabeçalho, o

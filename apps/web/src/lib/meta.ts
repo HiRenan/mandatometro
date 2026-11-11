@@ -62,6 +62,17 @@ export function metaDaImagem(enderecoDoSite: string) {
 	];
 }
 
+/**
+ * Os cabeçalhos de toda página. Na Vercel, fora da produção (nas prévias e na
+ * develop), a página pede aos buscadores para não indexá-la; na produção e fora
+ * da Vercel, nada muda. O ambiente é o VERCEL_ENV.
+ */
+export function cabecalhosDaPagina(ambienteDaVercel?: string) {
+	return ambienteDaVercel && ambienteDaVercel !== "production"
+		? { "X-Robots-Tag": "noindex" }
+		: undefined;
+}
+
 export const TITULO_NAO_ENCONTRADA = "Página não encontrada · Mandatômetro";
 export const TITULO_DE_ERRO = "Erro ao carregar a página · Mandatômetro";
 
