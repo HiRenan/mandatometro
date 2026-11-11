@@ -131,6 +131,18 @@ describe("lerTrilhas", () => {
 		expect(trilha.titulo).toBe("Processo legislativo");
 	});
 
+	it.each([
+		"https://www.mpf.mp.br/o-mpf",
+		"https://direitoshumanos.dpu.def.br/dpu-completa-29-anos-de-implantacao/",
+	])("aceita a fonte oficial %s", (url) => {
+		const [trilha] = lerTrilhas({
+			[`${pasta}/trilha.md`]: trilhaMd,
+			[`${pasta}/primeiro.md`]: artigoMd({ url }),
+		});
+
+		expect(trilha.artigos[0].fontes[0].url).toBe(url);
+	});
+
 	describe("avisa o erro com o nome do arquivo", () => {
 		function ler(artigo: string) {
 			return () =>
@@ -152,8 +164,14 @@ describe("lerTrilhas", () => {
 			).toThrow(/primeiro\.md.*consultado_em/);
 		});
 
-		it("quando a fonte não é um site oficial", () => {
-			expect(ler(artigoMd({ url: "https://exemplo.com/lei" }))).toThrow(
+		it.each([
+			"https://exemplo.com/lei",
+			"https://falsomp.br/lei",
+			"https://www.mpf.mp.br.exemplo.com/lei",
+			"https://falsodef.br/lei",
+			"https://dpu.def.br.exemplo.com/lei",
+		])("quando a fonte não é um site oficial: %s", (url) => {
+			expect(ler(artigoMd({ url }))).toThrow(
 				/primeiro\.md.*"fontes\.0\.url".*gov\.br/,
 			);
 		});
@@ -167,7 +185,7 @@ describe("lerTrilhas", () => {
 		it("uma vez só quando a fonte não usa https nem é um site oficial", () => {
 			expect(ler(artigoMd({ url: "http://exemplo.com/fonte" }))).toThrow(
 				new ErroDeConteudo([
-					'conteudo/trilhas/processo-legislativo/primeiro.md: campo "fontes.0.url": precisa ser um link https de um site oficial (gov.br, leg.br ou jus.br)',
+					'conteudo/trilhas/processo-legislativo/primeiro.md: campo "fontes.0.url": precisa ser um link https de um site oficial (gov.br, leg.br, jus.br, mp.br ou def.br)',
 				]),
 			);
 		});
