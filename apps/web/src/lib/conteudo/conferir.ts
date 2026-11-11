@@ -1,8 +1,8 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { Plugin } from "vite";
-import { TRILHA_DA_INICIAL, trilhaDaInicial } from "./inicial";
-import { ErroDeConteudo, lerTrilhas } from "./ler";
+import { TRILHA_DA_INICIAL, trilhaDaInicial } from "./inicial.ts";
+import { ErroDeConteudo, lerTrilhas } from "./ler.ts";
 
 // O servidor lê o conteúdo das trilhas ao subir (paginas.server.ts). O build
 // confere os mesmos arquivos antes, com a mesma leitura: um artigo mal formado
