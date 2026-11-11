@@ -10,7 +10,8 @@ import { InfograficoEmLinha } from "./infografico-em-linha";
  * A página inicial: o que é o Mandatômetro e para quem ele é, o botão que
  * começa ou continua a trilha, e o caminho de um projeto de lei, com os
  * artigos que explicam cada parada. A partir do xl, o título fica à esquerda,
- * e o texto e o botão à direita.
+ * e o texto e o botão à direita. Abaixo do md, o "para quem" vem depois do
+ * botão (`ParaQuem`).
  */
 export function PaginaInicial({ pagina }: { pagina: Dados }) {
 	const { trilha, caminho } = pagina;
@@ -37,10 +38,7 @@ export function PaginaInicial({ pagina }: { pagina: Dados }) {
 						artigos curtos e em linguagem simples. A primeira trilha mostra como
 						uma ideia vira lei.
 					</p>
-					<p className="mt-4 max-w-[52ch] text-[1.0625rem]">
-						É para quem vota e quer entender o que acontece depois do voto. Cada
-						explicação traz a fonte oficial, e você não precisa criar conta.
-					</p>
+					<ParaQuem className="mt-4 hidden md:block" />
 					{/* A linha acima do botão diz o tamanho da trilha e, depois que a
 					    pessoa lê um artigo, o progresso. Ela tem a altura reservada desde
 					    o HTML do servidor: quando o progresso aparece, depois da
@@ -71,6 +69,7 @@ export function PaginaInicial({ pagina }: { pagina: Dados }) {
 							</Link>
 						)}
 					</p>
+					<ParaQuem className="mt-5 md:hidden" />
 				</div>
 			</div>
 			{caminho && (
@@ -81,5 +80,21 @@ export function PaginaInicial({ pagina }: { pagina: Dados }) {
 				/>
 			)}
 		</div>
+	);
+}
+
+/**
+ * Para quem é o site. Abaixo do md, ele vem depois do botão, para o botão caber
+ * na primeira tela do celular; a partir do md, antes da linha do progresso. São
+ * duas cópias, e o CSS mostra uma de cada vez: a ordem do HTML, que o leitor de
+ * tela e o Tab seguem, é a da tela em cada largura. O `order` do CSS mudaria só
+ * a tela.
+ */
+function ParaQuem({ className }: { className: string }) {
+	return (
+		<p className={`max-w-[52ch] text-[1.0625rem] ${className}`}>
+			É para quem vota e quer entender o que acontece depois do voto. Cada
+			explicação traz a fonte oficial, e você não precisa criar conta.
+		</p>
 	);
 }

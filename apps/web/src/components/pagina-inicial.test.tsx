@@ -14,6 +14,15 @@ import type { ArtigoNaLista, PaginaInicial as Dados } from "@/lib/conteudo";
 import { PaginaInicial } from "./pagina-inicial";
 
 const LIDOS = "mandatometro:artigos-lidos";
+const PARA_QUEM =
+	"É para quem vota e quer entender o que acontece depois do voto. Cada explicação traz a fonte oficial, e você não precisa criar conta.";
+
+/** Se `depois` vem depois de `antes` no HTML. */
+function vemDepois(antes: Node, depois: Node) {
+	return Boolean(
+		antes.compareDocumentPosition(depois) & Node.DOCUMENT_POSITION_FOLLOWING,
+	);
+}
 
 beforeEach(() => localStorage.clear());
 afterEach(cleanup);
@@ -129,11 +138,24 @@ describe("página inicial", () => {
 				"O Mandatômetro explica como funciona a política no Brasil, em artigos curtos e em linguagem simples. A primeira trilha mostra como uma ideia vira lei.",
 			),
 		).toBeTruthy();
-		expect(
-			screen.getByText(
-				"É para quem vota e quer entender o que acontece depois do voto. Cada explicação traz a fonte oficial, e você não precisa criar conta.",
-			),
-		).toBeTruthy();
+		expect(screen.getAllByText(PARA_QUEM).length).toBeGreaterThan(0);
+	});
+
+	it("no celular, o botão vem antes do “para quem”; a partir do md, depois dele", async () => {
+		await mostrar();
+		const linha = screen.getByText("3 artigos · 6 min de leitura");
+		const botao = screen.getByRole("link", { name: "Começar a trilha" });
+		const copias = screen.getAllByText(PARA_QUEM);
+
+		// O mesmo parágrafo em dois lugares, e o CSS mostra um de cada vez: a
+		// ordem do HTML, que o leitor de tela e o Tab seguem, é a da tela.
+		expect(copias).toHaveLength(2);
+		const [noComputador, noCelular] = copias;
+		expect(vemDepois(noComputador, linha)).toBe(true);
+		expect(noComputador.classList.contains("hidden")).toBe(true);
+		expect(noComputador.classList.contains("md:block")).toBe(true);
+		expect(vemDepois(botao, noCelular)).toBe(true);
+		expect(noCelular.classList.contains("md:hidden")).toBe(true);
 	});
 
 	it("começa a trilha pelo primeiro artigo, sem progresso", async () => {
