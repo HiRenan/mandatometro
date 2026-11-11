@@ -33,6 +33,8 @@ ordem: 1
 - `descricao`: uma ou duas frases. Aparece na lista de trilhas, no topo da trilha e na prévia do link.
 - `ordem`: a posição na lista de trilhas, um número inteiro a partir de 1, sem repetir.
 
+**A página inicial mostra a trilha `processo-legislativo`,** qualquer que seja o `ordem` dela, com o caminho do `infografico.md` dela. Renomear essa pasta ou apagar esse infográfico faz o teste falhar.
+
 ## O artigo
 
 O cabeçalho fica entre duas linhas com `---`, e o texto vem depois:

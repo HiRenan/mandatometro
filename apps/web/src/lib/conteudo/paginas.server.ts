@@ -39,7 +39,10 @@ export type CaminhoNaInicial = Pick<Infografico, "titulo" | "resumo"> & {
 	passos: Pick<Passo, "titulo" | "artigos">[];
 };
 
-/** A página inicial: a primeira trilha, como nas listas, e o caminho dela. */
+/**
+ * A página inicial: a trilha do processo legislativo, como nas listas, e o
+ * caminho dela.
+ */
 export type PaginaInicial = {
 	trilha: TrilhaNaLista;
 	caminho?: CaminhoNaInicial;
@@ -93,14 +96,18 @@ export function listarTrilhas(todas: Trilha[]): TrilhaNaLista[] {
 	return todas.map(trilhaNaLista);
 }
 
+// A trilha da página inicial, pelo nome da pasta: a abertura e o caminho da
+// página falam dela. A ordem de /trilhas não muda a página inicial.
+const TRILHA_DA_INICIAL = "processo-legislativo";
+
 export function inicio(todas: Trilha[]): PaginaInicial | undefined {
-	const [primeira] = todas;
-	if (!primeira) {
+	const trilha = todas.find((trilha) => trilha.slug === TRILHA_DA_INICIAL);
+	if (!trilha) {
 		return undefined;
 	}
-	const { infografico } = primeira;
+	const { infografico } = trilha;
 	return {
-		trilha: trilhaNaLista(primeira),
+		trilha: trilhaNaLista(trilha),
 		...(infografico && {
 			caminho: {
 				titulo: infografico.titulo,
