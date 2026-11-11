@@ -37,8 +37,8 @@ export function PaginaInicial({ pagina }: { pagina: Dados }) {
 				<div className="mt-6 xl:mt-2">
 					<p className="max-w-[40ch] font-serif text-xl leading-snug font-medium lg:text-[1.5625rem] lg:leading-[1.4] xl:text-[1.375rem]">
 						O Mandatômetro explica como funciona a política no Brasil, em
-						artigos curtos e em linguagem simples. A primeira trilha mostra como
-						uma ideia vira lei.
+						artigos curtos e em linguagem simples. A trilha do processo
+						legislativo mostra como uma ideia vira lei.
 					</p>
 					<ParaQuem className="mt-4 hidden md:block" />
 					{/* A linha acima do botão diz o tamanho da trilha e, depois que a

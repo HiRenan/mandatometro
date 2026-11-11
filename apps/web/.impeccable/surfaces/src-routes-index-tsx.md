@@ -19,7 +19,7 @@ related_targets: ["src/routes/__root.tsx","src/components/rodape.tsx"]
 
 - **O texto** (Renan: "Um passo de cada vez (Recomendado)"):
   - o h1, um só: "Entenda a política brasileira, um passo de cada vez.";
-  - a abertura, em Literata: "O Mandatômetro explica como funciona a política no Brasil, em artigos curtos e em linguagem simples. A primeira trilha mostra como uma ideia vira lei.";
+  - a abertura, em Literata: "O Mandatômetro explica como funciona a política no Brasil, em artigos curtos e em linguagem simples. A trilha do processo legislativo mostra como uma ideia vira lei." (na #75, Renan: "Diz o nome (Recomendado)");
   - para quem, na letra da nota de `/trilhas`: "É para quem vota e quer entender o que acontece depois do voto. Cada explicação traz a fonte oficial, e você não precisa criar conta."
 - **A prova:** o próprio caminho de um projeto de lei, com as cinco paradas e os artigos que explicam cada uma. As paradas sem artigo (Plenário e Sanção ou veto) levam ao passo delas no infográfico da trilha, com o texto e as fontes ("Ler este passo na trilha"). Nada de número inventado, depoimento ou logo de parceiro.
 - **O botão,** o bloco de tinta com a seta, o mesmo "Continuar" da trilha: "Começar a trilha" leva ao 1º artigo, "Continuar a trilha" ao primeiro não lido e "Ver a trilha" à página da trilha. Acima dele, uma linha diz o tamanho da trilha ("3 artigos · 6 min de leitura") ou o progresso.
@@ -59,6 +59,14 @@ related_targets: ["src/routes/__root.tsx","src/components/rodape.tsx"]
 - **Nesta página:** o h1 cresce com a letra até "brasileira," encostar nas margens. A 360 px com a letra a 200%, ele fica com 84 px (o dobro seria 88 px). A abertura e o resto do texto dobram.
 - **No rodapé:** o nome tem o teto do nome do cabeçalho (57 px, e não 64 px, a 360 px com a letra a 200%), e a grade de dentro tem uma coluna que não alarga abaixo do lg.
 - **O foco:** o "Ver o caminho na trilha" e o link do GitHub ficam com o anel de antes. Um link novo com a mesma classe e sem o `span` fica com o anel no próprio link. Nas cores forçadas, o anel dos links do caminho sai na cor de destaque do sistema.
+
+## A #75: a página inicial volta à trilha do processo legislativo
+
+- **O pedido:** o PR #74 trouxe três trilhas e pôs a do processo legislativo em 4º lugar em `/trilhas`. A página inicial, que pegava a primeira trilha da lista, passou a mostrar "A Constituição", sem o caminho. Ela volta a ser a do PR #47, e `/trilhas` fica na ordem do conteúdo.
+- **As respostas do Renan (11/11/2026):**
+  - a frase da abertura: "Diz o nome (Recomendado)". "A primeira trilha mostra como uma ideia vira lei." passou a "A trilha do processo legislativo mostra como uma ideia vira lei.", que não fala de ordem;
+  - como a página sabe a trilha: "Pelo nome da pasta (Recomendado)". Ela procura a trilha `processo-legislativo` em qualquer posição da lista, e um teste falha se a pasta mudar de nome ou se a trilha perder o infográfico.
+- **Nesta página, só a frase muda.** Ela ocupa uma linha a mais nas telas de até uns 430 px e perto de 1280 px, e o que vem embaixo desce uma linha. A 360 × 640, o botão desce 27,5 px, para 558 a 610 px, e continua inteiro na tela. Nas outras larguras medidas (de 480 a 1279 px e de 1300 a 1920 px), nada sai do lugar.
 
 ## States and copy
 
