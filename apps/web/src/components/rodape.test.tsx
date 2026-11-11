@@ -29,6 +29,12 @@ describe("rodapé", () => {
 			"https://github.com/HiRenan/mandatometro",
 		);
 		expect(codigo.classList.contains("acao-de-texto")).toBe(true);
+		// O padding do link faz a área de toque, e o anel de foco contorna só o
+		// texto, que fica num span (index.css).
+		expect(codigo.firstElementChild?.tagName).toBe("SPAN");
+		expect(codigo.firstElementChild?.textContent).toBe(
+			"O código é aberto, no GitHub",
+		);
 	});
 
 	it("é o cartão preto, com o foco amarelo e a tira de fitas fora do leitor de tela", () => {

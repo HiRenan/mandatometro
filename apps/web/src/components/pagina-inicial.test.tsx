@@ -288,11 +288,16 @@ describe("página inicial", () => {
 		expect(caminho.textContent).toContain(
 			"A linha mostra o caminho completo. Os desvios, como a comissão que decide sem o plenário, estão na trilha, com as fontes oficiais.",
 		);
-		expect(
-			within(caminho)
-				.getByRole("link", { name: "Ver o caminho na trilha" })
-				.getAttribute("href"),
-		).toBe("/trilhas/processo-legislativo#caminho");
+		const link = within(caminho).getByRole("link", {
+			name: "Ver o caminho na trilha",
+		});
+		expect(link.getAttribute("href")).toBe(
+			"/trilhas/processo-legislativo#caminho",
+		);
+		// Uma ação em texto em linha: o padding do link faz a área de toque, e o
+		// anel de foco contorna só o texto, que fica num span (index.css).
+		expect(link.classList.contains("acao-de-texto")).toBe(true);
+		expect(link.firstElementChild?.tagName).toBe("SPAN");
 	});
 
 	it("deixa os desenhos fora do leitor de tela", async () => {

@@ -79,7 +79,7 @@ export function InfograficoEmLinha({
 					hash="caminho"
 					className="acao-de-texto font-bold"
 				>
-					Ver o caminho na trilha
+					<span>Ver o caminho na trilha</span>
 				</Link>
 			</p>
 		</section>

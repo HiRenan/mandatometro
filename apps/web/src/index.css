@@ -126,10 +126,10 @@
 
 	/*
 	 * As ações em texto, como "Desmarcar" e "Recomeçar a trilha": sublinhadas como
-	 * os links, porque o "Continuar" é a única ação em bloco. O ::before soma 11 px
-	 * em cima e embaixo da linha de 23,4 px: a área de toque fica com 45,4 px de
-	 * altura, sem mudar o espaço que o texto ocupa, e o anel de foco continua justo
-	 * no texto.
+	 * os links, porque o "Continuar" é a única ação em bloco. Nos botões, a caixa
+	 * tem a altura da linha, 23,4 px, e o ::before soma 11 px em cima e embaixo
+	 * dela: a área de toque fica com 45,4 px de altura, sem mudar o espaço que o
+	 * texto ocupa, e o anel de foco continua justo no texto.
 	 */
 	.acao-de-texto {
 		position: relative;
@@ -288,6 +288,40 @@
 
 	.link-do-caminho:focus-visible > span {
 		outline: 3px solid var(--ring);
+		outline-offset: 3px;
+	}
+
+	/*
+	 * As duas ações em texto que são links ("Ver o caminho na trilha" e "O código
+	 * é aberto, no GitHub") ficam em linha, como texto, e a caixa de um link em
+	 * linha tem a altura da letra, 19 px, e não a da linha: com o ::before, a área
+	 * ficava com 41,5 px. No link, o padding faz a área, como nos links das
+	 * fontes: 13 px em cima e embaixo da letra, em cada linha quando o link
+	 * quebra, e a área fica com 45 px de altura; e 4 px no começo e no fim, que a
+	 * margem negativa devolve. Os 13 px são inteiros de propósito: com 13,2 px,
+	 * para chegar aos 45,4 px dos botões, o texto ficava no mesmo lugar, mas a
+	 * 1440 e a 1920 px o navegador pintava as letras com outro arredondamento.
+	 * Sem o box-decoration-break: clone, que mudava a quebra da linha com a letra
+	 * grande, o texto fica no mesmo lugar. O anel de foco contorna o texto (o
+	 * span), e não a área, na cor do anel do lugar: azul no papel e amarelo no
+	 * cartão preto.
+	 */
+	a.acao-de-texto {
+		margin-inline: -0.25rem;
+		padding: 0.8125rem 0.25rem;
+	}
+
+	a.acao-de-texto::before {
+		content: none;
+	}
+
+	a.acao-de-texto:focus-visible {
+		outline-style: none;
+	}
+
+	a.acao-de-texto:focus-visible > span {
+		outline: 3px solid;
+		outline-color: inherit;
 		outline-offset: 3px;
 	}
 
