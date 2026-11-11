@@ -13,6 +13,8 @@ import {
 // markdown-to-jsx.
 
 // O Vite junta os arquivos no build; um arquivo novo entra sem mexer no código.
+// O conferir.ts lê os mesmos arquivos no começo do build: mudou este padrão,
+// mude lá e no teste dele também.
 const arquivos = import.meta.glob<string>("/conteudo/trilhas/*/*.md", {
 	query: "?raw",
 	import: "default",
