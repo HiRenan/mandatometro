@@ -140,15 +140,18 @@ function PaginaDaTrilha() {
 								>
 									<span
 										aria-hidden="true"
-										className="fita absolute -top-0.5 left-0 h-24 w-3 md:h-28"
+										className="fita absolute -top-0.5 left-0 h-24 md:h-28"
 										style={{ background: corDaFita(indice + 1) }}
 									/>
 									{/* No celular, o número fica ao lado do título e o resumo usa a
 								    largura toda; a partir do md, o número ocupa a coluna inteira.
 								    Com a letra grande, o número fica no lugar, e o título desce
 								    para a linha de baixo, com a largura toda. A margem embaixo do
-								    número o separa do título. */}
-									<div className="grid grid-cols-[4.5rem_minmax(0,1fr)] content-start gap-x-4 py-6 pr-5 pl-[1.625rem] md:grid-cols-[7rem_minmax(0,1fr)] md:gap-x-6 md:pr-10">
+								    número o separa do título. A moldura da folha, o recuo da fita
+								    e o respiro da direita, fica com os px da letra normal, como a
+								    margem da página, e só o texto cresce (o Renan, na #87: "Folha
+								    em px"). A largura da fita vem do .fita, no index.css. */}
+									<div className="letra-grande:pr-[20px] letra-grande:pl-[26px] grid grid-cols-[4.5rem_minmax(0,1fr)] content-start gap-x-4 py-6 pr-5 pl-[1.625rem] md:grid-cols-[7rem_minmax(0,1fr)] md:gap-x-6 md:pr-10">
 										<span
 											aria-hidden="true"
 											className="numeral letra-grande:mb-5 justify-self-center text-[5.5rem] md:row-span-3 md:text-[8rem]"
@@ -162,8 +165,9 @@ function PaginaDaTrilha() {
 										    livre. Com a letra grande, o título cresce até "fundamentais?",
 										    a palavra mais comprida dos títulos dos artigos, encostar nas
 										    bordas da folha (o letra-com-teto do index.css): o --recuo é o
-										    pl-[1.625rem] e o pr-5 da folha, mais o pr-3 do título. */}
-										<h2 className="subtitulo-condensado letra-com-teto letra-grande:col-span-full pr-3 [--letra:1.75rem] [--palavra:5.96] [--recuo:3.625rem] md:pr-0 md:text-[2.25rem]">
+										    recuo e o respiro da folha, mais o respiro do título. Com a
+										    letra grande, eles ficam em px: 26 + 20 + 12 = 58 px. */}
+										<h2 className="subtitulo-condensado letra-com-teto letra-grande:col-span-full letra-grande:pr-[12px] letra-grande:[--recuo:58px] pr-3 [--letra:1.75rem] [--palavra:5.96] [--recuo:3.625rem] md:pr-0 md:text-[2.25rem]">
 											<Link
 												to="/trilhas/$trilha/$artigo"
 												params={{ trilha: trilha.slug, artigo: artigo.slug }}

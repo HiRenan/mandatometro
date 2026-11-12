@@ -39,14 +39,18 @@ export function FolhasDaTrilha({
 					>
 						<span
 							aria-hidden="true"
-							className="fita absolute -top-0.5 left-0 h-14 w-3"
+							className="fita absolute -top-0.5 left-0 h-14"
 							style={{ background: corDaFita(indice + 1) }}
 						/>
+						{/* Com a letra grande, a moldura da folha, o recuo da fita e o
+						    respiro da direita, fica com os px da letra normal, e só o texto
+						    cresce (o Renan, na #87: "Folha em px"). A largura da fita vem
+						    do .fita, no index.css. */}
 						<Link
 							to="/trilhas/$trilha/$artigo"
 							params={{ trilha: trilha.slug, artigo: artigo.slug }}
 							aria-current={aqui ? "page" : undefined}
-							className="grid grid-cols-[3rem_minmax(0,1fr)] gap-x-3 py-4 pr-8 pl-[1.625rem] no-underline hover:[&_.titulo]:underline"
+							className="letra-grande:pr-[32px] letra-grande:pl-[26px] grid grid-cols-[3rem_minmax(0,1fr)] gap-x-3 py-4 pr-8 pl-[1.625rem] no-underline hover:[&_.titulo]:underline"
 						>
 							{/* Com a letra grande, o número fica no lugar, e o título desce
 							    para a linha de baixo, com a largura toda. A margem embaixo do
