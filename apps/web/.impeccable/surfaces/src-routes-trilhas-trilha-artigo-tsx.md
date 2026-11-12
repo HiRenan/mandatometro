@@ -84,7 +84,7 @@ related_targets: ["src/routes/trilhas/index.tsx","src/routes/trilhas/$trilha/ind
   - quando os quadradinhos quebram de linha, como nas trilhas de 8 artigos no celular, as linhas ficam a 12 px uma da outra, e não mais a 6 px, para o visto de um quadradinho de baixo não chegar ao de cima. O Renan escolheu "Linhas mais afastadas (Recomendado)";
   - ao lado de "Você leu este artigo.", ele fica no lugar do X;
   - a palavra "Lido" continua na linha de estado.
-- **O traço:** um só, como o do professor no caderno, em tinta sobre um traço de papel mais largo, que o separa do algarismo e da borda. O desenho de 400 ms continua o único movimento das páginas: a perna curta sai devagar e a longa vai num golpe só.
+- **O traço:** um só, como o do professor no caderno, em tinta sobre um traço de papel mais largo, que o separa do algarismo e da borda. O desenho de 400 ms continua o único movimento dentro das páginas (a troca de uma página para outra tem o dela, a folha arrancada): a perna curta sai devagar e a longa vai num golpe só.
 - **Não mudam:** o canto dobrado, as palavras de estado, o "Desmarcar" e o "Desfazer".
 
 ## A #76: a letra grande nas trilhas do PR #74
@@ -101,6 +101,13 @@ related_targets: ["src/routes/trilhas/index.tsx","src/routes/trilhas/$trilha/ind
 - **As fontes:** o domínio quebra antes de um ponto, e a lista não alarga mais a página. Os pontos só viram lugar de quebra com a tela abaixo de 20rem; dali para cima, o endereço vai inteiro, e com a letra a 100% nada muda.
 - **O botão "Continuar":** com a tela abaixo de 20rem, a seta vem logo depois da última palavra, e o respiro dos lados fica em 18 px. Com a letra a 100%, o botão não muda.
 - **O que fica:** a 360 px, com a letra até 150%, nenhuma palavra se parte. A 200%, cerca de 2 por página se partem sem hífen, onde a caixa é estreita: nos títulos de "Nesta trilha", nos resumos, nas fontes e no texto de 3 artigos.
+
+## A #87: a coluna estreita das folhas com a letra grande
+
+- **O pedido:** com a letra a 200%, a 360 px, a fita e os recuos da folha cresciam com a letra e ocupavam 116 dos 320 px. O título da folha ficava com 34 px, menor que o resumo (36 px), e as palavras se partiam em pedaços nos resumos ("responsabili / dades") e nos títulos de "Nesta trilha" ("Constituiçã / o?"). Na entrega da #76, o Renan respondeu: "Abrir tarefa nova (Recomendado)".
+- **A resposta do Renan (harden, 12/11/2026):** como a folha ganha largura com a letra grande: "Folha em px (Recomendado)". As outras opções eram "Em px, até a margem", que levava o texto até a borda da folha e mudava a letra a 100% de 320 a 351 px, e "A fita cresce", que deixava em px só o vão depois da fita e o respiro da direita.
+- **O que mudou:** com a letra grande, a fita (12 px, com o V de 18 px), o recuo do texto (26 px) e o respiro da direita (20 px na trilha, mais os 12 px do título; 32 px em "Nesta trilha") ficam com os px da letra normal, e só o texto e o número crescem. A 360 px, com a letra a 200%, o título da folha vai de 34 para 44 px, e a coluna do resumo, de 228 para 274 px. Nas 4 trilhas (com o primeiro artigo lido) e nos 25 artigos, as palavras partidas nas folhas caem de 72 para 6 a 200%, e de 6 para 0 a 175%. As 6 que sobram estão nos resumos: "responsabilidades" e "compartilhadas.", mais largas que a linha. O "·" de "Continue daqui ·" volta para dentro da linha de estado.
+- **Não mudam:** a letra a 100%, em nenhuma largura (os valores em px são os mesmos de antes); o canto dobrado, de 30 por 32 px; o número e o visto, que crescem com a letra; o comprimento da fita, que cresce junto do número; e os vãos de cima e de baixo, em rem.
 
 ## States and copy
 
@@ -133,7 +140,7 @@ OWN-WORLD:
 
 STORY:
 - **O caminho:** a pessoa vê onde está, quanto tempo leva e que tudo tem fonte. Lê até o fim, segue para a próxima folha ou volta outro dia de onde parou.
-- **O momento:** quando o fim do texto aparece na tela, o visto é desenhado de uma vez, num traço de 400 ms, no canto do número da folha em "Nesta trilha" e ao lado de "Você leu este artigo", que surge junto. Com o movimento reduzido, o visto aparece sem animação. É o único movimento das páginas.
+- **O momento:** quando o fim do texto aparece na tela, o visto é desenhado de uma vez, num traço de 400 ms, no canto do número da folha em "Nesta trilha" e ao lado de "Você leu este artigo", que surge junto. Com o movimento reduzido, o visto aparece sem animação. É o único movimento dentro das páginas (a troca de uma página para outra tem o dela, a folha arrancada).
 
 FIRST VIEWPORT:
 - **No computador, de cima para baixo:**
