@@ -62,6 +62,18 @@ related_targets: ["src/routes/trilhas/index.tsx","src/routes/trilhas/$trilha/ind
   - o salto de 1024 a 1280 px: "Aceitar e registrar (Recomendado)".
 - **Limitação aceita no plano:** numa tela larga, o caminho fica mais alto que as três folhas (2.252 px contra 1.076 px a 1440 px, depois da correção da revisão). A coluna da esquerda cresce com o quiz e com novos artigos.
 
+## A #48: a letra grande no celular
+
+- **O pedido:** com a letra do navegador a 200%, numa tela de 360 px, nenhuma página rola de lado, e o cabeçalho e os títulos cabem inteiros. Com a letra a 100%, nada muda, pixel a pixel.
+- **As respostas do Renan (harden, 11/11/2026):**
+  - as margens do celular: "Ficam em 20 px (Recomendado)";
+  - o respiro do cabeçalho: "Espaço de hoje (Recomendado)";
+  - os títulos e o nome: "Teto (Recomendado)".
+- **O cabeçalho:** com a letra a 200%, a 360 px, o nome, o lema (em duas linhas) e os links ficam um embaixo do outro, com o respiro em px, e o nome cresce até encostar nas margens. Os links Início e Trilhas têm a área de toque de antes: 44,6 × 27 e 54,8 × 27 px com a letra a 100%, e 89,2 × 49 e 109,6 × 49 px a 200%.
+- **Os títulos:** o da trilha cresce até "legislativo" encostar nas margens (82 px a 200%, e não 96 px); os dos artigos, até "comissões" (79 px, e não 80 px); e o da 404, até "encontrada" (74 px, e não 80 px). O de Trilhas já cabe e dobra.
+- **O número:** com a tela abaixo de 18rem (a 360 px, com a letra acima de 125%), o número sai do lado do título. No artigo, fica em cima do título. Nas folhas da trilha e em "Nesta trilha", ele fica na coluna dele, e o título desce para a linha de baixo, longe do X da folha lida.
+- **O que fica:** com a letra grande, "comissões", no título da folha 3, e "parlamentares,", no resumo dela, passam um pouco do respiro de dentro da folha, sem chegar à margem da página.
+
 ## States and copy
 
 - **Progresso:**
@@ -104,7 +116,7 @@ FIRST VIEWPORT:
   - à esquerda, o número do artigo gigante, com "de 3 artigos" sublinhado na cor da fita e o miúdo (trilha, leitura, fontes);
   - no centro, o título condensado, o resumo, a linha com o tempo e o aviso das fontes, e o texto, a cerca de 64 caracteres;
   - à direita, "Nesta trilha": as folhas em ordem, cada uma com a sua fita, o lido riscado e "Você está aqui" de canto dobrado.
-- **No celular:** o número encolhe para o lado do título, e "Nesta trilha" desce para depois das fontes.
+- **No celular:** o número encolhe para o lado do título, e "Nesta trilha" desce para depois das fontes. Com a letra grande, o número fica em cima do título.
 - **Na trilha, no computador:** à esquerda, o título, o resumo, a linha de meta, o progresso, o "Continuar" e as folhas; à direita, na altura do título, "O caminho de um projeto de lei", com os cinco passos ligados pela linha.
 
 FORM: a folhinha de arrancar das padarias, a 5ª da lista ordenada, com a paleta das fitas do Bonfim. seed:0b322b8c4550df91

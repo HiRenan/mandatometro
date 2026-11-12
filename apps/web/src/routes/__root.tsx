@@ -16,6 +16,7 @@ import { ENV } from "../env";
 import appCss from "../index.css?url";
 import { focarNoTitulo } from "../lib/foco";
 import {
+	cabecalhosDaPagina,
 	metaDaImagem,
 	TITULO_DE_ERRO,
 	TITULO_NAO_ENCONTRADA,
@@ -74,6 +75,10 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 		],
 	}),
 
+	// A rota raiz vale para toda página, inclusive a que não existe: fora da
+	// produção da Vercel, todas pedem aos buscadores para não indexar.
+	headers: () => cabecalhosDaPagina(ENV.VERCEL_ENV),
+
 	// O documento e a moldura ficam fora das páginas: quando uma página dá erro, a
 	// página de erro (router.tsx) aparece dentro do main, com o cabeçalho, o
 	// rodapé e o lang="pt-BR".
@@ -87,8 +92,10 @@ function Documento({ children }: { children: ReactNode }) {
 				<HeadContent />
 			</head>
 			<body>
-				{/* O main estica: numa página curta, o rodapé fica no fim da tela. */}
-				<div className="grid min-h-svh grid-rows-[auto_1fr_auto]">
+				{/* O main estica: numa página curta, o rodapé fica no fim da tela. A
+				    coluna tem a largura da tela: com a letra grande, uma palavra
+				    comprida não alarga a página. */}
+				<div className="grid min-h-svh grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr_auto]">
 					<Header />
 					<main id="conteudo" tabIndex={-1} className="focus:outline-none">
 						{children}

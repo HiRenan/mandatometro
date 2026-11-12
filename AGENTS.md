@@ -43,7 +43,7 @@ Monorepo com pnpm e Turborepo. O porquê de cada escolha está no [ADR 0001](doc
 - `docker-compose.yml`: serviços `db` (imagem `pgvector/pgvector:pg17`), `api` e `web`. O banco atende na porta 5433 do computador, para não brigar com um PostgreSQL instalado na 5432.
 - `docs/`: decisões do time em `docs/adr/`, o formato do conteúdo das trilhas e o dicionário de dados (issue #4).
 - `PRODUCT.md` e `DESIGN.md`, na raiz: o produto (público, voz e princípios) e o visual do site (cores, fontes e componentes), escritos com o Impeccable.
-- **Hospedagem:** a demo vai para mandatometro.com.br, provavelmente na Vercel (#23).
+- **Hospedagem:** o site vai para a Vercel, que monta a pasta `apps/web` com o `apps/web/vercel.json`: a `main` publica em mandatometro.com.br, a `develop` no endereço do time, e cada PR ganha uma prévia. A configuração fica no repositório, sem variável no painel. O build da Vercel grava as variáveis do site na função, em texto puro (`ssrInjectMode: "resolved-env"`, no `vite.config.ts`), porque a função não tem o CLI do varlock nem o `.env.schema`: por isso o `buildCommand` fixa o `NODE_ENV=production`, e uma variável sensível no site pede antes o `@encryptInjectedEnv` do varlock.
 - **Contrato da API:** o cliente TypeScript em `apps/web/src/client/` sai do `apps/backend/openapi.json`. Mudou a API, rode `pnpm generate:client` e faça commit dos dois; o CI falha se um deles ficar desatualizado.
 - **Migrations:** numeradas em sequência (`--rev-id 0002`, `0003`...), com a mensagem sem acento, porque ela vira o nome do arquivo.
 
@@ -80,7 +80,7 @@ As chaves (Firecrawl, Resend, Devin e LLM) ficam só no `.env` local, criado a p
 
 ## Como trabalhar
 
-- **Branches:** todo PR vai para a `develop`, que é a branch padrão do GitHub. A `main` só recebe merge da `develop`, quando ela estiver estável, como antes da demo e da entrega.
+- **Branches:** todo PR vai para a `develop`, que é a branch padrão do GitHub. A `main` só recebe merge da `develop`, quando ela estiver estável, como antes da demo e da entrega: cada merge nela publica o site no domínio.
 - **Uma issue por PR.** Branch `tipo/NN-descricao` criado a partir da `develop` (ex.: `feat/10-conector-camara`); commits no padrão Conventional Commits, em português (ex.: `feat(camara): conector de proposições`).
 - **Descrição do PR:** o que mudou, como testar e `Closes #NN`. PR do Devin leva o label `devin`.
 - **Sem assinatura de IA:** commits e PRs levam só o conteúdo do trabalho, sem linha de autoria de ferramenta de IA, como "Generated with Claude Code" ou `Co-Authored-By` de um agente. No Claude Code, o `.claude/settings.json` já desliga essa assinatura.

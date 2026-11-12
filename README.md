@@ -68,12 +68,19 @@ pnpm dev                        # site na porta 3001 e API na 8000
 pnpm lint          # Biome no TypeScript e Ruff no Python
 pnpm check-types   # tipos do site
 pnpm test          # pytest e Vitest
-pnpm build         # build do site
+pnpm build         # build do site, que confere o conteúdo das trilhas
 ```
 
 `pnpm check` corrige a formatação do TypeScript. No Python, rode `uv run ruff format` e `uv run ruff check --fix` em `apps/backend`.
 
-**No ar,** defina o `APP_BASE_URL` com o endereço do site, como `https://mandatometro.com.br`, antes do build: a prévia do link no WhatsApp e nas redes (`og:image`) leva o endereço completo da imagem, com ele na frente. Sem ele, vale o `http://localhost:3001`.
+**No ar,** o site fica na Vercel, que monta a pasta `apps/web` a cada push, com a configuração de `apps/web/vercel.json`:
+
+- a `main` vai para https://mandatometro.com.br; a `develop`, para o endereço do time; e cada PR ganha uma prévia;
+- o build roda no Node 24, pelo `engines` de `apps/web/package.json`;
+- o painel da Vercel não pede variáveis: o endereço do site (`APP_BASE_URL`) sai do ambiente da Vercel, com o domínio na `main` e o endereço da branch nas prévias, e as páginas fora da `main` pedem aos buscadores para não indexar (`X-Robots-Tag: noindex`);
+- um artigo mal formado ou a falta da pasta da trilha da página inicial derruba o deploy, com o arquivo e o problema no log, e o site no ar continua na versão anterior.
+
+Fora da Vercel, como no Docker, defina o `APP_BASE_URL` com o endereço do site antes do build: a prévia do link no WhatsApp e nas redes (`og:image`) leva o endereço completo da imagem, com ele na frente. Sem ele, vale o `http://localhost:3001`.
 
 **Mudou o ícone ou a prévia do link?** Eles saem de `apps/web/imagens/icone.html` e `previa.html`. Rode `pnpm --filter web imagens`: o Edge ou o Chrome abre sem janela e grava o `favicon.ico`, o `apple-touch-icon.png` e o `previa.png` em `apps/web/public/` (`NAVEGADOR=<caminho>` escolhe outro navegador). Faça commit do HTML e das imagens.
 

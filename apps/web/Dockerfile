@@ -14,6 +14,9 @@ ARG APP_BASE_URL=http://localhost:3001
 ENV NODE_ENV=production
 ENV API_URL=$API_URL
 ENV APP_BASE_URL=$APP_BASE_URL
+# A saída é a do node-server (.output/server/index.mjs), que o CMD roda, em
+# qualquer máquina que monte a imagem.
+ENV NITRO_PRESET=node-server
 RUN cd apps/web && pnpm run build
 
 FROM node:24-slim AS runner

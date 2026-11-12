@@ -27,16 +27,18 @@ export function PaginaInicial({ pagina }: { pagina: Dados }) {
 	);
 
 	return (
-		<div className="mx-auto max-w-[1440px] px-5 pt-10 pb-20 md:px-16 lg:pt-14">
+		<div className="px-margem-celular mx-auto max-w-[1440px] pt-10 pb-20 md:px-16 lg:pt-14">
 			<div className="xl:grid xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] xl:gap-x-16">
-				<h1 className="titulo-condensado text-[2.75rem] md:text-[4.75rem]">
+				{/* Com a letra grande, o título cresce até "brasileira," encostar nas
+				    margens (o letra-com-teto do index.css). */}
+				<h1 className="titulo-condensado letra-com-teto [--letra:2.75rem] [--palavra:3.8] md:text-[4.75rem]">
 					Entenda a política brasileira, um passo de cada vez.
 				</h1>
 				<div className="mt-6 xl:mt-2">
 					<p className="max-w-[40ch] font-serif text-xl leading-snug font-medium lg:text-[1.5625rem] lg:leading-[1.4] xl:text-[1.375rem]">
 						O Mandatômetro explica como funciona a política no Brasil, em
-						artigos curtos e em linguagem simples. A primeira trilha mostra como
-						uma ideia vira lei.
+						artigos curtos e em linguagem simples. A trilha do processo
+						legislativo mostra como uma ideia vira lei.
 					</p>
 					<ParaQuem className="mt-4 hidden md:block" />
 					{/* A linha acima do botão diz o tamanho da trilha e, depois que a
