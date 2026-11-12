@@ -5,6 +5,7 @@ import {
 	formatarData,
 	fraseDoProgresso,
 	idDoPasso,
+	pedacosDoDominio,
 	plural,
 	tamanhoDaTrilha,
 } from "./formatar";
@@ -37,6 +38,22 @@ describe("dominio", () => {
 				"https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art61",
 			),
 		).toBe("normas.leg.br");
+	});
+});
+
+describe("pedacosDoDominio", () => {
+	it("parte o site da fonte antes de cada ponto, para a linha quebrar ali", () => {
+		expect(
+			pedacosDoDominio("https://direitoshumanos.dpu.def.br/defensoria/"),
+		).toEqual(["direitoshumanos", ".dpu", ".def", ".br"]);
+		expect(
+			pedacosDoDominio("https://www.congressonacional.leg.br/materias"),
+		).toEqual(["congressonacional", ".leg", ".br"]);
+	});
+
+	it("junta os pedaços no mesmo texto do dominio", () => {
+		const url = "https://www12.senado.leg.br/noticias/glossario-legislativo";
+		expect(pedacosDoDominio(url).join("")).toBe(dominio(url));
 	});
 });
 

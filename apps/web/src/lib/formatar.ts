@@ -77,6 +77,16 @@ export function dominio(url: string): string {
 	return new URL(url).hostname.replace(/^www\d*\./, "");
 }
 
+/**
+ * O site da fonte em pedaços, cada um começando no ponto: "direitoshumanos",
+ * ".dpu", ".def", ".br". Com a letra grande, abaixo de 20rem, a lista de fontes
+ * põe uma quebra possível antes de cada ponto, e o endereço que não cabe na linha
+ * quebra ali (o Renan, na #76: "Nos pontos").
+ */
+export function pedacosDoDominio(url: string): string[] {
+	return dominio(url).split(/(?=\.)/);
+}
+
 const FITAS = ["verde", "amarela", "azul", "rosa", "vermelha"] as const;
 
 /** Cada artigo tem a sua fita do Bonfim, pela posição na trilha. */

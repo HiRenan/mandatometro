@@ -87,6 +87,21 @@ related_targets: ["src/routes/trilhas/index.tsx","src/routes/trilhas/$trilha/ind
 - **O traço:** um só, como o do professor no caderno, em tinta sobre um traço de papel mais largo, que o separa do algarismo e da borda. O desenho de 400 ms continua o único movimento das páginas: a perna curta sai devagar e a longa vai num golpe só.
 - **Não mudam:** o canto dobrado, as palavras de estado, o "Desmarcar" e o "Desfazer".
 
+## A #76: a letra grande nas trilhas do PR #74
+
+- **O pedido:** as trilhas do PR #74, do Pedro (3 trilhas e 22 artigos), trouxeram palavras mais largas que as da #48. Com a letra do navegador grande, a 360 px, 36 de 456 medidas rolavam de lado: "fundamentais?", "Constituição" e "constitucionalidade" não cabiam nos títulos, um endereço de fonte ("direitoshumanos.dpu.def.br") alargava a lista, e o botão "Continuar de onde parou" passava da tela com um título comprido.
+- **As respostas do Renan (harden, 11/11/2026):**
+  - a palavra que não cabe num título: "Teto menor (Recomendado)";
+  - a palavra longa no texto e no resumo: "Sem hífen (Recomendado)";
+  - o endereço da fonte: "Nos pontos (Recomendado)";
+  - a letra a 100%, de 320 a 351 px: "Sim, número em cima (Recomendado)";
+  - o botão "Continuar de onde parou" com a letra grande: "Seta no fim, respiro fixo (Recomendado)".
+- **Os títulos:** a 360 px, com a letra a 200%, o da trilha cresce até "Constituição" encostar nas margens (66 px, e não 82 px), e o do artigo, até "fundamentais?" (56 px, e não 79 px). O título da folha, o de cada trilha em `/trilhas` e os intertítulos do texto ganharam o mesmo teto: 34, 63 e 40 px. Um teste avisa quem escreve uma palavra mais larga que o teto.
+- **O número:** sai do lado do título com a tela abaixo de 22rem (a 360 px, com a letra acima de 16 px). Com a letra a 100%, o desenho muda só de 320 a 351 px, onde "fundamentais?" já se partia ou passava da caixa.
+- **As fontes:** o domínio quebra antes de um ponto, e a lista não alarga mais a página. Os pontos só viram lugar de quebra com a tela abaixo de 20rem; dali para cima, o endereço vai inteiro, e com a letra a 100% nada muda.
+- **O botão "Continuar":** com a tela abaixo de 20rem, a seta vem logo depois da última palavra, e o respiro dos lados fica em 18 px. Com a letra a 100%, o botão não muda.
+- **O que fica:** a 360 px, com a letra até 150%, nenhuma palavra se parte. A 200%, cerca de 2 por página se partem sem hífen, onde a caixa é estreita: nos títulos de "Nesta trilha", nos resumos, nas fontes e no texto de 3 artigos.
+
 ## States and copy
 
 - **Progresso:**

@@ -66,7 +66,10 @@ function ItemDaTrilha({
 	return (
 		<li className="border-tinta folha:grid-cols-[minmax(0,1fr)_28rem] folha:gap-x-12 border-b-2 border-dashed py-7 lg:grid lg:grid-cols-[minmax(0,1fr)_21rem] lg:gap-x-8 lg:py-0 xl:grid-cols-[minmax(0,1fr)_24rem] xl:gap-x-10">
 			<div className="lg:py-7">
-				<h2 className="subtitulo-condensado text-[2rem] md:text-[2.75rem]">
+				{/* Com a letra grande, o título cresce até "Constituição", a palavra mais
+				    comprida dos títulos das trilhas, encostar nas margens (o
+				    letra-com-teto do index.css). */}
+				<h2 className="subtitulo-condensado letra-com-teto [--letra:2rem] [--palavra:5.09] md:text-[2.75rem]">
 					<Link
 						to="/trilhas/$trilha"
 						params={{ trilha: trilha.slug }}

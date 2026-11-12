@@ -130,6 +130,31 @@ passos:
 - **As fontes ficam recuadas com dois espaços,** com um `-` na frente de cada uma e os três campos alinhados.
 - **No infográfico, cada nível recua mais dois espaços:** os passos debaixo de `passos:`, e os desvios, os artigos e as fontes debaixo do passo deles, como no exemplo.
 
+## Palavras compridas nos títulos
+
+Muita gente aumenta a letra do navegador no celular, até 200%. Com a letra grande, cada título diminui só o bastante para a palavra mais larga dele caber na tela inteira, sem se partir no meio. Esse limite foi medido com os títulos de hoje:
+
+| Onde | A palavra mais larga hoje |
+|---|---|
+| O título da trilha (o `titulo:` do `trilha.md`) | "Constituição" |
+| O título do artigo (o `titulo:` do artigo) | "fundamentais?" |
+| O intertítulo (cada `##` do texto) | "constitucionalidade" |
+
+Uma palavra mais larga que a da tabela não cabe nem no título menor e se parte no meio com a letra grande. A pontuação colada conta: "fundamentais?" é mais larga que "fundamentais". O que conta é a largura, e não o número de letras: "Participação" tem as mesmas 12 letras de "Constituição" e, mesmo assim, passa do limite do título da trilha, por pouco.
+
+O `pnpm --filter web test` mede cada palavra dos títulos e falha com o arquivo, a palavra e o limite:
+
+```text
+conteudo/trilhas/direitos-e-deveres/novo-artigo.md: "inconstitucionalidade" precisa de 8,65 em no intertítulo (##), e o teto é 7,92 em
+```
+
+Quando o teste falhar, há duas saídas:
+
+- **Trocar a palavra** por uma mais curta, ou escrever o título de outro jeito.
+- **Medir o teto de novo**, se a palavra precisa ficar. Quem cuida do site sobe o `--palavra` do título no código, e o título fica um pouco menor com a letra grande, em todas as trilhas.
+
+Essa medida fica só no teste: ela não derruba o build nem o deploy.
+
 ## Como conferir
 
 - **`pnpm --filter web test`** lê a pasta de conteúdo de verdade. Se algo estiver errado, o teste falha com a lista de problemas, cada um com o nome do arquivo:

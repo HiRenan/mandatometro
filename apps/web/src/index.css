@@ -12,14 +12,28 @@
 }
 
 /*
- * A letra grande: a tela tem menos de 18 rem. A 360 px, isso acontece com a letra do
- * navegador acima de 125%, e com a letra a 100%, só abaixo de 288 px. Aí o número da
+ * A letra grande: a tela tem menos de 22 rem. A 360 px, isso acontece com a letra do
+ * navegador acima de 16 px, e com a letra a 100%, abaixo de 352 px. Aí o número da
  * folha passa para cima do título, porque ao lado dele o título não cabe. O mais largo
- * lado a lado, o cabeçalho do artigo das comissões, pede 15,3 rem da largura da
- * página, mais os 40 px das margens: com 18 rem, o número ao lado do título nunca
- * passa das margens, e com a letra a 100% o desenho não muda a partir de 320 px.
+ * lado a lado, a folha da trilha com "fundamentais?" (das trilhas do PR #74), pede
+ * 19,5 rem da largura da página, mais os 40 px das margens: com 22 rem, o número ao
+ * lado do título nunca passa das margens. Com a letra a 100%, o desenho muda só de 320
+ * a 351 px, onde "fundamentais?" já não cabia ao lado do número (o Renan, na #76:
+ * "Sim, número em cima").
  */
-@custom-variant letra-grande (@media (width < 18rem));
+@custom-variant letra-grande (@media (width < 22rem));
+
+/*
+ * A reserva da letra grande (o Renan, na #76: "Sem hífen"): a palavra que não cabe
+ * sozinha na linha se parte na beirada, sem hífen, e a página não rola de lado. Ela só
+ * age nessa palavra, e com a letra a 100% nenhuma chega a isso a partir de 320 px. Nos
+ * títulos, o teto vem antes (o letra-com-teto).
+ */
+@layer base {
+	body {
+		overflow-wrap: break-word;
+	}
+}
 
 /* As peças da folhinha de parede. As cores e as fontes vêm do globals.css. */
 @layer components {
@@ -181,8 +195,8 @@
 	}
 
 	/*
-	 * O título da página. A quebra é a reserva do teto (o letra-com-teto): uma
-	 * palavra que não caiba nem no teto quebra, sem hífen, e a página não rola de lado.
+	 * O título da página. Uma palavra que não caiba nem no teto (o letra-com-teto)
+	 * se parte sem hífen, pela reserva do body, e a página não rola de lado.
 	 */
 	.titulo-condensado {
 		font-family: var(--font-sans);
@@ -191,21 +205,28 @@
 		line-height: 0.96;
 		letter-spacing: -0.02em;
 		text-wrap: balance;
-		overflow-wrap: break-word;
 	}
 
 	/*
 	 * O teto da letra grande, nos títulos das páginas e no nome (o Renan, na #48:
-	 * "Teto"). A letra cresce com a do navegador até a palavra mais comprida encostar
-	 * nas margens do celular, e para aí. O --letra é o tamanho de sempre, e o
-	 * --palavra, a largura dessa palavra, em em, medida no navegador. Não é vw puro:
-	 * até a tela acabar, a letra segue a configuração. Com a letra a 100%, o teto não
-	 * age a partir de 320 px, e a partir do md o text-* de cada título manda.
+	 * "Teto"), e no título da folha da trilha, no de /trilhas e no intertítulo (na
+	 * #76, com as trilhas do PR #74: "Teto menor"). A letra cresce com a do navegador
+	 * até a palavra mais comprida encostar nas margens do celular, e para aí. O --letra
+	 * é o tamanho de sempre; o --palavra, a largura dessa palavra, em em, medida no
+	 * navegador, com uma folga de 0,5%; e o --recuo, quando há, o espaço da caixa do
+	 * título até as margens. Não é vw puro: até a tela acabar, a letra segue a
+	 * configuração. Com a letra a 100%, o teto não age a partir de 320 px, e a partir do
+	 * md o text-* de cada título manda. O titulos.test.ts mede as palavras dos títulos
+	 * do conteúdo contra cada --palavra.
 	 */
-	.letra-com-teto {
+	.letra-com-teto,
+	.texto h2 {
 		font-size: min(
 			var(--letra),
-			calc((100vw - 2 * var(--spacing-margem-celular)) / var(--palavra))
+			calc(
+				(100vw - 2 * var(--spacing-margem-celular) - var(--recuo, 0px)) /
+				var(--palavra)
+			)
 		);
 	}
 
@@ -530,12 +551,18 @@
 		margin-top: 1em;
 	}
 
+	/*
+	 * O intertítulo, com o teto da letra grande (o letra-com-teto): a palavra mais
+	 * larga dos intertítulos de hoje é "constitucionalidade", com 7,87 em. A margem de
+	 * cima é em em e diminui junto com a letra.
+	 */
 	.texto h2 {
+		--letra: 1.625rem;
+		--palavra: 7.92;
 		margin-top: 1.75em;
 		font-family: var(--font-sans);
 		font-stretch: 75%;
 		font-weight: 800;
-		font-size: 1.625rem;
 		line-height: 1.05;
 		text-wrap: balance;
 	}
