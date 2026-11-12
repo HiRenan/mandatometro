@@ -62,10 +62,14 @@ O produto fala de pessoas reais. Estas regras valem para a interface, as trilhas
 
 ## Fontes de dados
 
-Endpoints, campos e exemplos de cada fonte estão nas issues dos conectores (#10 e #11; o TSE, depois do MVP, em #12 e #13) e, depois da #4, no dicionário de dados em `docs/`. Regras que valem para todas:
+Endpoints, campos, chaves de ligação e exemplos reais de cada fonte estão em [docs/dicionario-de-dados.md](docs/dicionario-de-dados.md), com as respostas gravadas em `apps/backend/tests/fixtures/`. O TSE entra depois do MVP (#12 e #13). Regras que valem para todas:
 
 - Toda chamada externa tem timeout e nova tentativa com backoff. A API da Câmara devolve 504 de vez em quando.
 - O User-Agent identifica o projeto (`mandatometro (Hack Brasil 2026)`), e a coleta respeita o robots.txt dos sites.
+- As respostas da Câmara e do Senado são UTF-8, e a Câmara não declara o charset no `content-type`: decodifique explicitamente como UTF-8, ou os acentos embaralham no Windows.
+- **No Senado, data vai com hífen:** `dataInicio=2026-11-03`. No formato `20261103`, a API devolve HTTP 400.
+- **No Senado, `/processo?id={id}` ignora o filtro** e responde HTTP 200 com uma lista arbitrária de matérias, em vez de erro. Use sempre o id no caminho, `/processo/{id}`. A forma com query string vem com o `ementa` do primeiro nível preenchido, o que faz um conector errado parecer funcionar; em `/processo/{id}`, esse `ementa` vem `null` e a ementa de verdade está em `conteudo.ementa`.
+- **Os totais do Senado não são confiáveis:** em `/votacao`, `totalVotosSim`, `totalVotosNao` e `totalVotosAbstencao` vieram `null` nas quatro votações testadas em 11/11/2026, com os 81 votos presentes. Conte a lista `votos`.
 - A referência do Programa Cidadania Fiscal da Receita Federal no planejamento pode redirecionar para autenticação. Em 11/11/2026, o trecho explicativo foi consultado no índice de busca da própria URL; não trate a tela de login como conteúdo da fonte e confira o acesso público antes de publicar o artigo 3.5.
 - Os CSVs do TSE vêm em latin-1, separados por `;`, um por UF dentro de cada ZIP.
 - A mesma pessoa se liga entre eleições do TSE pelo CPF. Em 2024 o CPF vem vazio e em 2012 falta em parte das linhas: nesses anos, use o título de eleitor e confira a data de nascimento.

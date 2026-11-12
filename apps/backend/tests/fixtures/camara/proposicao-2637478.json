@@ -1,0 +1,46 @@
+{
+  "dados": {
+    "id": 2637478,
+    "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2637478",
+    "siglaTipo": "PL",
+    "codTipo": 139,
+    "numero": 3507,
+    "ano": 2026,
+    "ementa": "Reconhece o artesanato tradicional do Estado do Maranhão como manifestação da cultura nacional.",
+    "dataApresentacao": "2026-07-07T09:17",
+    "uriOrgaoNumerador": "https://dadosabertos.camara.leg.br/api/v2/orgaos/4",
+    "statusProposicao": {
+      "dataHora": "2026-11-10T00:00",
+      "sequencia": 37,
+      "siglaOrgao": "MESA",
+      "uriOrgao": "https://dadosabertos.camara.leg.br/api/v2/orgaos/4",
+      "uriUltimoRelator": "https://dadosabertos.camara.leg.br/api/v2/deputados/178884",
+      "regime": "Urgência (Art. 155, RICD)",
+      "descricaoTramitacao": "Expedição de Documento",
+      "codTipoTramitacao": "190",
+      "descricaoSituacao": "Aguardando Apreciação pelo Senado Federal",
+      "codSituacao": 926,
+      "despacho": "Remessa ao Senado Federal por meio do Of. nº 250/2026/SGM-P.",
+      "url": "https://www.camara.leg.br/proposicoesWeb/prop_mostrarintegra?codteor=3190624",
+      "ambito": "Regimental",
+      "apreciacao": "Proposição Sujeita à Apreciação Conclusiva pelas Comissões - Art. 24 II"
+    },
+    "uriAutores": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2637478/autores",
+    "descricaoTipo": "Projeto de Lei",
+    "ementaDetalhada": "",
+    "keywords": "Reconhecimento, artesanato, Maranhão, manifestação cultural, Conhecimento tradicional, valorização, Economia criativa.",
+    "uriPropPrincipal": null,
+    "uriPropAnterior": null,
+    "uriPropPosterior": null,
+    "urlInteiroTeor": "https://www.camara.leg.br/proposicoesWeb/prop_mostrarintegra?codteor=3157723",
+    "urnFinal": null,
+    "texto": null,
+    "justificativa": null
+  },
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2637478"
+    }
+  ]
+}
