@@ -54,6 +54,21 @@ export function fraseDoAndamento(respondidas: number, total: number): string {
 		: `Você respondeu ${respondidas} de ${total}.`;
 }
 
+/** O andamento logo depois do "Recomeçar o quiz", que também vai no aviso. */
+export const FRASE_DO_RECOMECO = "Você recomeçou o quiz.";
+
+/**
+ * Todas as frases que a linha do andamento pode mostrar. A tela guarda a altura
+ * da mais alta desde o HTML do servidor, que não sabe o que a pessoa respondeu.
+ */
+export function frasesDoAndamento(total: number): string[] {
+	const respondidas = Array.from({ length: total }, (_, indice) => indice + 1);
+	return [
+		...respondidas.map((numero) => fraseDoAndamento(numero, total)),
+		FRASE_DO_RECOMECO,
+	];
+}
+
 /** O que o leitor de tela ouve quando a pessoa responde. */
 export function avisoDaResposta(
 	numero: number,

@@ -7,7 +7,9 @@ import {
 	acertou,
 	avisoDaResposta,
 	contarRespondidas,
+	FRASE_DO_RECOMECO,
 	fraseDoAndamento,
+	frasesDoAndamento,
 	opcaoRespondida,
 	type Respostas,
 } from "@/lib/quiz";
@@ -61,14 +63,14 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 	const respondidas = contarRespondidas(perguntas, respostas);
 	const andamento =
 		respondidas === 0 && recomecou
-			? "Você recomeçou o quiz."
+			? FRASE_DO_RECOMECO
 			: fraseDoAndamento(respondidas, total);
 
 	function recomecar() {
 		recomecarQuiz(quiz);
 		setRecomecou(true);
 		setRodada((anteriores) => anteriores + 1);
-		avisar("Você recomeçou o quiz.");
+		avisar(FRASE_DO_RECOMECO);
 	}
 
 	function desfazer() {
@@ -90,8 +92,22 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 	return (
 		<>
 			{/* As duas linhas têm a altura reservada desde o HTML do servidor: quando
-			    o andamento aparece, depois da hidratação, as perguntas não descem. */}
-			<p className="mt-6 min-h-7 text-xl font-bold">{andamento}</p>
+			    o andamento aparece, depois da hidratação, as perguntas não descem.
+			    Na do andamento, todas as frases ficam no mesmo lugar da grade,
+			    invisíveis, e a linha tem a altura da mais alta: no celular com a
+			    letra grande, a frase quebra em duas linhas. */}
+			<p className="mt-6 grid text-xl font-bold">
+				{frasesDoAndamento(total).map((frase) => (
+					<span
+						key={frase}
+						aria-hidden="true"
+						className="invisible col-start-1 row-start-1"
+					>
+						{frase}
+					</span>
+				))}
+				<span className="col-start-1 row-start-1">{andamento}</span>
+			</p>
 			<div className="mt-3 flex min-h-13 flex-wrap items-center gap-x-6 gap-y-4">
 				{acao && (
 					<button type="button" onClick={acao.fazer} className="acao-de-texto">

@@ -3,8 +3,10 @@ import {
 	acertou,
 	avisoDaResposta,
 	contarRespondidas,
+	FRASE_DO_RECOMECO,
 	fraseDaChamada,
 	fraseDoAndamento,
+	frasesDoAndamento,
 	opcaoRespondida,
 } from "./quiz";
 
@@ -84,6 +86,19 @@ describe("as frases do quiz", () => {
 			expect(fraseDoAndamento(respondidas, total)).toBe(frase);
 		},
 	);
+
+	it("lista todas as frases que a linha do andamento pode mostrar, para ela guardar a altura da mais alta", () => {
+		expect(frasesDoAndamento(3)).toEqual([
+			"Você respondeu 1 de 3.",
+			"Você respondeu 2 de 3.",
+			"Você terminou o quiz.",
+			"Você recomeçou o quiz.",
+		]);
+		expect(frasesDoAndamento(1)).toEqual([
+			"Você terminou o quiz.",
+			FRASE_DO_RECOMECO,
+		]);
+	});
 
 	it("diz ao leitor de tela quando a pessoa acertou", () => {
 		expect(avisoDaResposta(1, ondeComeca, 0)).toBe("Pergunta 1: você acertou.");

@@ -21,6 +21,7 @@ import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ArtigoNaLista, Fonte, QuizNaPagina } from "@/lib/conteudo";
+import { frasesDoAndamento } from "@/lib/quiz";
 import { ChamadaDoQuiz } from "./chamada-do-quiz";
 import { Quiz } from "./quiz";
 
@@ -172,9 +173,14 @@ function escolherEResponder(numero: number, opcao: string): HTMLElement {
 	return botao;
 }
 
-/** O texto na tela, fora do aviso para o leitor de tela, que repete o andamento. */
+/**
+ * O texto na tela, fora do aviso para o leitor de tela, que repete o andamento,
+ * e fora das frases escondidas que guardam a altura da linha do andamento.
+ */
 function naTela(texto: string): HTMLElement {
-	return screen.getByText(texto, { ignore: "[role=status], script, style" });
+	return screen.getByText(texto, {
+		ignore: "[role=status], [aria-hidden=true], script, style",
+	});
 }
 
 function marcada(opcao: string): boolean {
@@ -251,6 +257,29 @@ describe("o quiz", () => {
 		expect(raiz.textContent).not.toMatch(/Você (acertou|errou)/);
 	});
 
+	it("guarda no HTML do servidor a altura da frase mais alta do andamento, escondida do leitor de tela", async () => {
+		const raiz = await htmlDoServidor();
+		const reservas = [...raiz.querySelectorAll("[aria-hidden=true]")].filter(
+			(elemento) => elemento.textContent?.startsWith("Você "),
+		);
+		const linha = reservas[0]?.parentElement;
+
+		// No celular com a letra grande, a frase quebra em duas linhas. Com todas
+		// as frases no mesmo lugar da grade, invisíveis, a linha já tem a altura
+		// da mais alta, e as perguntas não descem quando o andamento aparece.
+		expect(reservas.map((reserva) => reserva.textContent)).toEqual(
+			frasesDoAndamento(2),
+		);
+		expect(
+			reservas.every(
+				(reserva) =>
+					reserva.parentElement === linha &&
+					reserva.classList.contains("invisible"),
+			),
+		).toBe(true);
+		expect(linha?.textContent).toBe(frasesDoAndamento(2).join(""));
+	});
+
 	it("hidrata sem erro, com a resposta guardada marcada e o andamento", async () => {
 		guardarResposta(INICIATIVA, "Pode, pela iniciativa popular.");
 		const router = criarRouter();
@@ -270,7 +299,7 @@ describe("o quiz", () => {
 		expect(erros).not.toHaveBeenCalled();
 		expect(consoleErro).not.toHaveBeenCalled();
 		expect(marcada("Pode, pela iniciativa popular.")).toBe(true);
-		expect(raiz.textContent).toContain("Você respondeu 1 de 2.");
+		expect(naTela("Você respondeu 1 de 2.")).toBeTruthy();
 		expect(
 			within(raiz).getAllByRole("button", { name: "Responder" }),
 		).toHaveLength(2);
