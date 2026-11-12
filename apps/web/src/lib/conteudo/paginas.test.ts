@@ -89,6 +89,29 @@ describe("conteúdo das trilhas", () => {
 		});
 	});
 
+	it("tem o quiz do processo legislativo depois do artigo 3, com duas perguntas de cada artigo", () => {
+		const trilha = trilhaDe("processo-legislativo");
+		const quiz = acharQuiz(trilhas, "processo-legislativo");
+
+		expect(trilha.quiz?.depoisDe).toBe("o-projeto-passa-pelas-comissoes");
+		expect(quiz?.anterior.slug).toBe(trilha.artigos[2]?.slug);
+		expect(quiz?.perguntas.map((pergunta) => pergunta.artigo.posicao)).toEqual([
+			1, 1, 2, 2, 3, 3,
+		]);
+	});
+
+	it("chama para o quiz do processo legislativo só no artigo 3 e na página da trilha", () => {
+		const trilha = trilhaDe("processo-legislativo");
+		const chamada = { perguntas: 6, artigos: [1, 2, 3] };
+
+		expect(acharTrilha(trilhas, trilha.slug)?.quiz).toEqual(chamada);
+		expect(
+			trilha.artigos.map(
+				(artigo) => acharArtigo(trilhas, trilha.slug, artigo.slug)?.quiz,
+			),
+		).toEqual([undefined, undefined, chamada]);
+	});
+
 	it("não acha trilha nem artigo que não existe", () => {
 		const artigo = trilhas[0].artigos[0].slug;
 
