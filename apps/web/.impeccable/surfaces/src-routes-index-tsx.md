@@ -68,6 +68,12 @@ related_targets: ["src/routes/__root.tsx","src/components/rodape.tsx"]
   - como a página sabe a trilha: "Pelo nome da pasta (Recomendado)". Ela procura a trilha `processo-legislativo` em qualquer posição da lista, e um teste falha se a pasta mudar de nome ou se a trilha perder o infográfico.
 - **Nesta página, só a frase muda.** Ela ocupa uma linha a mais nas telas de até uns 430 px e perto de 1280 px, e o que vem embaixo desce uma linha. A 360 × 640, o botão desce 27,5 px, para 558 a 610 px, e continua inteiro na tela. Nas outras larguras medidas (de 480 a 1279 px e de 1300 a 1920 px), nada sai do lugar.
 
+## A #76: o botão com a letra grande
+
+- **O pedido:** com a letra a 200%, a 360 px, o "Continuar de onde parou" da trilha passava da tela quando trazia um título com "fundamentais?", das trilhas do PR #74. O botão desta página é o mesmo (`BOTAO_CONTINUAR`).
+- **A resposta do Renan (harden, 11/11/2026):** "Seta no fim, respiro fixo (Recomendado)".
+- **Nesta página:** com a tela abaixo de 20rem (a 360 px, com a letra acima de 18 px), a seta vem logo depois da última palavra, o respiro dos lados fica em 18 px, e as linhas ficam equilibradas: a 200%, "Começar / a trilha →", com a mesma altura de antes. Entre a palavra e a seta vai um espaço, e não uma margem: quando a seta desce sozinha, ela começa alinhada com o texto. Com a letra a 100%, o botão não muda, de 320 a 1920 px.
+
 ## States and copy
 
 - **Antes da hidratação:** a página não sabe o progresso. Mostra "3 artigos · 6 min de leitura" acima de "Começar a trilha". A linha tem a altura reservada desde o HTML do servidor.
