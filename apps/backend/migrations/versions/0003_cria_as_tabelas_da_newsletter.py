@@ -1,5 +1,9 @@
 """cria as tabelas da newsletter
 
+O jornal legislativo: a edição da semana, que a IA rascunha e o time revisa (#22), os itens dela,
+cada um com a sua fonte, e quem assina (#21), que recebe as edições pelo envio (#39). O modelo
+está em src/mandatometro/db/modelos.py, e o diagrama, no README.
+
 Revision ID: 0003
 Revises: 0002
 Create Date: 2026-11-12 20:55:56.105629
