@@ -40,7 +40,8 @@ export function Fontes({ fontes }: { fontes: Fonte[] }) {
 								<span className="max-[20rem]:hidden">{dominio(fonte.url)}</span>
 								<span className="hidden max-[20rem]:inline">
 									{pedacosDoDominio(fonte.url).map((pedaco, posicao) => (
-										<Fragment key={pedaco}>
+										// biome-ignore lint/suspicious/noArrayIndexKey: os pedaços ficam fixos, na ordem do endereço, e só a posição não se repete (um pedaço pode, como em ".leg.leg.br").
+										<Fragment key={posicao}>
 											{posicao > 0 && <wbr />}
 											{pedaco}
 										</Fragment>
