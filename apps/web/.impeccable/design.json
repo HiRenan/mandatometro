@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-12T01:45:18-03:00",
+  "generatedAt": "2026-11-12T04:36:22-03:00",
   "title": "Design System: Mandatômetro",
   "extensions": {
     "colorMeta": {
@@ -28,7 +28,9 @@
     },
     "shadows": [],
     "motion": [
-      { "name": "tracar", "value": "400ms cubic-bezier(0.5, 0, 0.15, 1) both", "purpose": "O visto desenhado de uma vez sobre a folha lida quando o fim do texto aparece na tela: a perna curta sai devagar, como a caneta que encosta no papel, e a longa vai num golpe só. Com prefers-reduced-motion: reduce, o visto aparece sem animação. É o único movimento das páginas." }
+      { "name": "tracar", "value": "400ms cubic-bezier(0.5, 0, 0.15, 1) both", "purpose": "O visto desenhado de uma vez sobre a folha lida quando o fim do texto aparece na tela: a perna curta sai devagar, como a caneta que encosta no papel, e a longa vai num golpe só. Com prefers-reduced-motion: reduce, o visto aparece sem animação. É o único movimento dentro das páginas: a troca de uma página para outra tem o dela, a folha arrancada." },
+      { "name": "arrancar-a-folha", "value": "420ms ao avançar; 460ms ao voltar, de trás para a frente", "purpose": "A troca de página, como na folhinha de parede. Ao avançar, a página da tela se solta do picote, embaixo da tira de fitas: o lado esquerdo desce primeiro (2,5° nos primeiros 105 ms), com a folha ainda presa pelo canto de cima à direita; depois ela cai como um peso, girando até 7°, e sai da tela por baixo. A página nova já está embaixo, parada, e a folha se mexe logo no clique. Ao voltar, a folha sobe, gira de volta e se assenta no bloco, por cima da página de antes. O cartão preto do cabeçalho, quando aparece na tela, fica parado por cima da folha que sai, e só o traço da seção troca, num esmaecer de 200 ms. Não anima na primeira carga, num link para um trecho da mesma página e no \"Tentar de novo\" da página de erro. Pelas View Transitions do navegador, que o TanStack Router pede em cada navegação (o defaultViewTransition do router.tsx)." },
+      { "name": "esmaecer-a-folha", "value": "160ms", "purpose": "A troca de página com prefers-reduced-motion: reduce. A folha não se mexe: a página de antes some num esmaecer de 160 ms, nos dois sentidos, e o cartão vai direto para o lugar." }
     ],
     "breakpoints": [
       { "name": "md", "value": "48rem" },
@@ -166,7 +168,7 @@
       "Texto corrido em serifa, a cerca de 64 caracteres por linha.",
       "Estado como marca no papel: o visto no lido, canto dobrado onde a pessoa está ou parou.",
       "Linhas de 2 px em tinta: cheias entre as partes, tracejadas (o picote) entre as folhas. No infográfico da trilha, a cheia é o caminho completo, e a tracejada, o que pode mudar o caminho; no caminho da página inicial, só a cheia.",
-      "Um único movimento: o visto desenhado em 400 ms quando a pessoa chega ao fim do texto."
+      "Dois movimentos: a folha arrancada quando a pessoa troca de página, e o visto desenhado em 400 ms quando ela chega ao fim do texto."
     ],
     "rules": [
       { "name": "A Regra da Cor na Moldura", "body": "A cor fica na moldura e nas fitas. O texto é sempre tinta no papel (ou papel no cartão preto), e nenhum texto fica em cima de uma cor de fita.", "section": "colors" },
@@ -183,7 +185,7 @@
       "Do separar as folhas com picote (linha tracejada de 2 px) e fechar as seções com linha cheia de 2 px.",
       "Do desenhar o caminho completo com linha cheia e o que pode mudar o caminho com linha tracejada, e dizer os dois em palavras.",
       "Do usar o foco de 3 px na azul, afastado 3 px, e a amarela dentro do cartão preto.",
-      "Do respeitar o movimento reduzido: o visto aparece sem animação.",
+      "Do respeitar o movimento reduzido: o visto aparece sem animação, e a troca de página vira um esmaecer de 160 ms, sem a folha se mexer.",
       "Do deixar a letra crescer com a configuração do navegador: a margem do celular fica em px, o título e o nome crescem até encostar nas margens, e nenhuma página rola de lado.",
       "Do manter inteiras as palavras dos títulos com a letra grande: o título diminui até a palavra mais larga caber (o teto), e o teste dos títulos avisa quem escreve quando uma palavra nova passa dele.",
       "Do oferecer \"Desfazer\" logo depois de apagar uma marca, em vez de pedir confirmação antes."
@@ -197,7 +199,7 @@
       "Don't usar sombra, canto arredondado ou degradê suave.",
       "Don't inventar um logo; até o time fazer o dele, o nome em texto é a marca, e o M do nome é o ícone.",
       "Don't usar a vermelha como cor de domingo antes da decisão da issue #39.",
-      "Don't animar nada além do visto.",
+      "Don't animar nada além do visto e da troca de página: nada de entrada de seção, rolagem animada ou hover que se mexe.",
       "Don't marcar o lido com um X: ele lê como \"errado\" ou \"cancelado\", ainda mais num site com quiz, e tapa o número.",
       "Don't prender um tamanho de letra só à largura da tela (vw puro): a letra para de crescer com a configuração do navegador.",
       "Don't pôr hífen automático (hyphens): a palavra só se parte, sem hífen, quando não cabe sozinha na linha.",
