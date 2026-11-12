@@ -42,10 +42,10 @@ export function FolhasDaTrilha({
 							className="fita absolute -top-0.5 left-0 h-14"
 							style={{ background: corDaFita(indice + 1) }}
 						/>
-						{/* Com a letra grande, a moldura da folha, o recuo da fita e o
-						    respiro da direita, fica com os px da letra normal, e só o texto
-						    cresce (o Renan, na #87: "Folha em px"). A largura da fita vem
-						    do .fita, no index.css. */}
+						{/* Com a letra grande, o recuo da fita e o respiro da direita
+						    ficam com os px da letra normal, e só o texto cresce (o Renan,
+						    na #87: "Folha em px"). A largura da fita vem do .fita, no
+						    index.css. */}
 						<Link
 							to="/trilhas/$trilha/$artigo"
 							params={{ trilha: trilha.slug, artigo: artigo.slug }}

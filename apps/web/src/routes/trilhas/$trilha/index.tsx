@@ -147,10 +147,10 @@ function PaginaDaTrilha() {
 								    largura toda; a partir do md, o número ocupa a coluna inteira.
 								    Com a letra grande, o número fica no lugar, e o título desce
 								    para a linha de baixo, com a largura toda. A margem embaixo do
-								    número o separa do título. A moldura da folha, o recuo da fita
-								    e o respiro da direita, fica com os px da letra normal, como a
-								    margem da página, e só o texto cresce (o Renan, na #87: "Folha
-								    em px"). A largura da fita vem do .fita, no index.css. */}
+								    número o separa do título. O recuo da fita e o respiro da
+								    direita ficam com os px da letra normal, como a margem da
+								    página, e só o texto cresce (o Renan, na #87: "Folha em px").
+								    A largura da fita vem do .fita, no index.css. */}
 									<div className="letra-grande:pr-[20px] letra-grande:pl-[26px] grid grid-cols-[4.5rem_minmax(0,1fr)] content-start gap-x-4 py-6 pr-5 pl-[1.625rem] md:grid-cols-[7rem_minmax(0,1fr)] md:gap-x-6 md:pr-10">
 										<span
 											aria-hidden="true"
