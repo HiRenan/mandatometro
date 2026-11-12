@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	type EstiloDeTitulo,
 	LARGURAS_DAS_LETRAS,
+	PARES_MAIS_LARGOS,
 } from "./larguras-das-letras";
 import { trilhas } from "./paginas.server";
 
@@ -28,13 +29,19 @@ const css = codigo("index.css");
  */
 const FOLGA = 1.005;
 
-/** A largura de uma palavra, em em, pela soma das letras. */
+/**
+ * A largura de uma palavra, em em, pela soma das letras, mais o que cada par de letras
+ * vizinhas passa da soma das duas no navegador (o kerning que afasta, como em "4–").
+ */
 function largura(palavra: string, estilo: EstiloDeTitulo): number {
 	const letras: Record<string, number> = LARGURAS_DAS_LETRAS[estilo];
+	const pares: Record<string, number> = PARES_MAIS_LARGOS[estilo];
 	const maisLarga = Math.max(...Object.values(letras));
 	let soma = 0;
+	let anterior = "";
 	for (const letra of palavra.normalize("NFC")) {
-		soma += letras[letra] ?? maisLarga;
+		soma += (letras[letra] ?? maisLarga) + (pares[anterior + letra] ?? 0);
+		anterior = letra;
 	}
 	return soma;
 }
@@ -140,6 +147,13 @@ describe("a régua das letras", () => {
 			5.93,
 			2,
 		);
+	});
+
+	it("conta o par que o navegador alarga", () => {
+		// Medidas no Edge, como as letras da tabela: o algarismo junto de um traço fica
+		// 0,04 em mais largo que a soma das duas letras.
+		expect(largura("4–", "titulo-condensado")).toBeCloseTo(0.843, 3);
+		expect(largura("1-", "subtitulo-condensado")).toBeCloseTo(0.7641, 3);
 	});
 
 	it("mede igual a letra com o acento junto ou separado", () => {

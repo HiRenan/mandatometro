@@ -66,15 +66,25 @@
 	 * A fita de cada artigo: pendurada da borda de cima da folha, como a fitinha do
 	 * Bonfim, com a ponta cortada em V sobre o papel. O V tem 1,5 vez a largura da
 	 * fita, para ler como ponta de fita, e não como seta.
+	 *
+	 * Com a letra grande, a fita fica com os 12 px da letra normal, como o recuo e o
+	 * respiro da folha, e só o texto cresce (o Renan, na #87: "Folha em px"). O
+	 * comprimento continua crescendo com a letra, junto do número.
 	 */
 	.fita {
+		--largura-da-fita: 0.75rem;
+		width: var(--largura-da-fita);
 		clip-path: polygon(
 			0 0,
 			100% 0,
 			100% 100%,
-			50% calc(100% - 1.125rem),
+			50% calc(100% - 1.5 * var(--largura-da-fita)),
 			0 100%
 		);
+
+		@variant letra-grande {
+			--largura-da-fita: 12px;
+		}
 	}
 
 	/*
