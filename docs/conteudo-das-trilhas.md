@@ -174,6 +174,8 @@ perguntas:
   ```
 
 - **Nada se repete:** duas perguntas com o mesmo enunciado são erro, e, na mesma pergunta, uma opção ou uma fonte que aparece duas vezes também. O erro aponta a segunda vez.
+- **Onde aparece:** o quiz tem a página dele, em `/trilhas/<trilha>/quiz`, e a chamada "Quiz da trilha" fica no fim do artigo do `depoisDe` e na página da trilha.
+- **Mudar o texto de uma pergunta ou de uma opção apaga a resposta de quem já tinha respondido,** porque o navegador guarda a resposta pelo enunciado e pelo texto da opção escolhida. Corrigir uma vírgula também conta.
 
 ## Pegadinhas do YAML
 
@@ -218,7 +220,7 @@ Essa medida fica só no teste: ela não derruba o build nem o deploy.
 
   O CI roda o mesmo teste, então um artigo com problema não passa no PR.
 - **`pnpm build`** confere a pasta antes de montar o site e para com a mesma lista. Por isso um artigo com problema também derruba o deploy na Vercel e a imagem do Docker, e o site no ar continua na versão anterior.
-- **`pnpm dev`** sobe o site em http://localhost:3001, e o artigo aparece em `/trilhas/<trilha>/<artigo>`. O infográfico aparece em `/trilhas/<trilha>`. Um arquivo novo ou mudado aparece ao recarregar a página, sem reiniciar o `pnpm dev`.
+- **`pnpm dev`** sobe o site em http://localhost:3001, e o artigo aparece em `/trilhas/<trilha>/<artigo>`. O infográfico aparece em `/trilhas/<trilha>`, e o quiz, em `/trilhas/<trilha>/quiz`. Um arquivo novo ou mudado aparece ao recarregar a página, sem reiniciar o `pnpm dev`.
 
 ## Como o site lê os arquivos
 

@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Aviso, useAviso } from "@/components/aviso";
 import { Caminho } from "@/components/caminho";
+import { ChamadaDoQuiz } from "@/components/chamada-do-quiz";
 import { Fontes } from "@/components/fontes";
 import { MarcaDeLido } from "@/components/marca-de-lido";
 import { NestaTrilha } from "@/components/nesta-trilha";
@@ -39,7 +40,14 @@ function PaginaDoArtigo() {
 	return <Folha key={idDoArtigo(pagina.artigo)} {...pagina} />;
 }
 
-function Folha({ trilha, artigo, posicao, anterior, proximo }: ArtigoNaTrilha) {
+function Folha({
+	trilha,
+	artigo,
+	posicao,
+	anterior,
+	proximo,
+	quiz,
+}: ArtigoNaTrilha) {
 	const id = idDoArtigo(artigo);
 	const lidos = useArtigosLidos();
 	const lido = lidos.has(id);
@@ -178,6 +186,11 @@ function Folha({ trilha, artigo, posicao, anterior, proximo }: ArtigoNaTrilha) {
 					<div className="mt-6">
 						<Fontes fontes={artigo.fontes} />
 					</div>
+
+					{/* Só no artigo depois do qual o quiz da trilha aparece. */}
+					{quiz && (
+						<ChamadaDoQuiz trilha={trilha.slug} quiz={quiz} className="mt-12" />
+					)}
 
 					<nav
 						aria-label="Outros artigos da trilha"

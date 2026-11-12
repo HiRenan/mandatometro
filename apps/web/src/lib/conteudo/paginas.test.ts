@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { Trilha } from "./ler";
+import type { Artigo, Fonte, Trilha } from "./ler";
 import {
 	acharArtigo,
+	acharQuiz,
 	acharTrilha,
 	corpoEmHtml,
 	inicio,
@@ -193,6 +194,151 @@ describe("a página inicial", () => {
 				trilhas.filter((trilha) => trilha.slug !== "processo-legislativo"),
 			),
 		).toBeUndefined();
+	});
+});
+
+// Uma trilha de exemplo, com o quiz depois do segundo de três artigos, e outra
+// sem quiz. O quiz de verdade tem o teste dele, mais abaixo.
+const constituicao: Fonte = {
+	titulo: "Constituição Federal, art. 61",
+	url: "https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art61",
+	consultadoEm: "2026-11-12",
+};
+
+function artigoDeExemplo(trilha: string, slug: string, ordem: number): Artigo {
+	return {
+		trilha,
+		slug,
+		titulo: `Artigo ${slug}`,
+		resumo: "Um resumo.",
+		ordem,
+		fontes: [constituicao],
+		corpo: "Um texto curto.",
+		minutos: 1,
+	};
+}
+
+const comQuiz: Trilha = {
+	slug: "com-quiz",
+	titulo: "Com quiz",
+	descricao: "Uma trilha com quiz.",
+	ordem: 1,
+	artigos: ["primeiro", "segundo", "terceiro"].map((slug, indice) =>
+		artigoDeExemplo("com-quiz", slug, indice + 1),
+	),
+	quiz: {
+		depoisDe: "segundo",
+		perguntas: [
+			{
+				artigo: "segundo",
+				enunciado: "Por onde começa um projeto de lei de um deputado?",
+				opcoes: [
+					{ texto: "Pelo Senado Federal.", certa: false },
+					{ texto: "Pela Câmara dos Deputados.", certa: true },
+				],
+				explicacao: "Em regra, o projeto começa na Câmara dos Deputados.",
+				fontes: [constituicao],
+			},
+			{
+				artigo: "primeiro",
+				enunciado: "Quem pode propor uma lei?",
+				opcoes: [
+					{ texto: "Os cidadãos, entre outros.", certa: true },
+					{ texto: "Só os deputados.", certa: false },
+					{ texto: "Só o presidente da República.", certa: false },
+				],
+				explicacao: "A Constituição lista quem pode propor (art. 61).",
+				fontes: [constituicao],
+			},
+			{
+				artigo: "segundo",
+				enunciado: "Para onde vai o projeto depois da Câmara?",
+				opcoes: [
+					{ texto: "Para o Senado Federal.", certa: true },
+					{ texto: "Para o arquivo.", certa: false },
+				],
+				explicacao: "A outra Casa revê o projeto.",
+				fontes: [constituicao],
+			},
+		],
+	},
+};
+
+const semQuiz: Trilha = {
+	slug: "sem-quiz",
+	titulo: "Sem quiz",
+	descricao: "Uma trilha sem quiz.",
+	ordem: 2,
+	artigos: [artigoDeExemplo("sem-quiz", "unico", 1)],
+};
+
+const exemplos = [comQuiz, semQuiz];
+
+describe("o quiz da trilha", () => {
+	it("leva à página do quiz as perguntas, com a certa pela posição e o artigo de cada uma", () => {
+		const quiz = acharQuiz(exemplos, "com-quiz");
+
+		expect(quiz?.trilha).toEqual(listarTrilhas([comQuiz])[0]);
+		expect(quiz?.perguntas[0]).toEqual({
+			artigo: { slug: "segundo", titulo: "Artigo segundo", posicao: 2 },
+			enunciado: "Por onde começa um projeto de lei de um deputado?",
+			opcoes: ["Pelo Senado Federal.", "Pela Câmara dos Deputados."],
+			certa: 1,
+			explicacao: "Em regra, o projeto começa na Câmara dos Deputados.",
+			fontes: [constituicao],
+		});
+		expect(quiz?.perguntas.map((pergunta) => pergunta.certa)).toEqual([
+			1, 0, 0,
+		]);
+	});
+
+	it("põe no rodapé do quiz o artigo do depoisDe e o seguinte da trilha", () => {
+		const quiz = acharQuiz(exemplos, "com-quiz");
+
+		expect(quiz?.anterior.slug).toBe("segundo");
+		expect(quiz?.proximo?.slug).toBe("terceiro");
+	});
+
+	it("fica sem o próximo quando o quiz vem depois do último artigo", () => {
+		const noFim: Trilha = {
+			...comQuiz,
+			quiz: comQuiz.quiz && { ...comQuiz.quiz, depoisDe: "terceiro" },
+		};
+
+		expect(acharQuiz([noFim], "com-quiz")).not.toHaveProperty("proximo");
+	});
+
+	it("não acha o quiz de uma trilha sem quiz ou que não existe", () => {
+		expect(acharQuiz(exemplos, "sem-quiz")).toBeUndefined();
+		expect(acharQuiz(exemplos, "nao-existe")).toBeUndefined();
+		expect(acharQuiz(exemplos, "constructor")).toBeUndefined();
+	});
+
+	it("chama para o quiz na página da trilha e no artigo do depoisDe, com as perguntas e os artigos delas", () => {
+		const chamada = { perguntas: 3, artigos: [1, 2] };
+
+		expect(acharTrilha(exemplos, "com-quiz")?.quiz).toEqual(chamada);
+		expect(acharArtigo(exemplos, "com-quiz", "segundo")?.quiz).toEqual(chamada);
+		expect(acharArtigo(exemplos, "com-quiz", "primeiro")).not.toHaveProperty(
+			"quiz",
+		);
+		expect(acharArtigo(exemplos, "com-quiz", "terceiro")).not.toHaveProperty(
+			"quiz",
+		);
+	});
+
+	it("não leva nada do quiz às trilhas sem quiz, às listas e à página inicial", () => {
+		expect(acharTrilha(exemplos, "sem-quiz")).not.toHaveProperty("quiz");
+		expect(acharArtigo(exemplos, "sem-quiz", "unico")).not.toHaveProperty(
+			"quiz",
+		);
+		for (const naLista of listarTrilhas(exemplos)) {
+			expect(naLista).not.toHaveProperty("quiz");
+		}
+		expect(
+			acharArtigo(exemplos, "com-quiz", "segundo")?.trilha,
+		).not.toHaveProperty("quiz");
+		expect(inicio(trilhas)?.trilha).not.toHaveProperty("quiz");
 	});
 });
 
