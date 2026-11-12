@@ -9,13 +9,14 @@ apps/web/conteudo/trilhas/
   processo-legislativo/            uma pasta por trilha
     trilha.md                      título, descrição e ordem da trilha
     infografico.md                 o caminho da trilha num infográfico (opcional)
+    quiz.md                        as perguntas do quiz da trilha (opcional)
     quem-pode-propor-uma-lei.md    um arquivo por artigo
     onde-o-projeto-comeca.md
 ```
 
 - **O nome da pasta e o do arquivo viram o endereço da página:** `processo-legislativo/onde-o-projeto-comeca.md` aparece em `/trilhas/processo-legislativo/onde-o-projeto-comeca`. Os nomes só podem ter letras minúsculas sem acento, números e hífens.
 - **Renomear um arquivo muda o endereço** e apaga a marca de lido desse artigo para quem já tinha lido, porque o navegador guarda o progresso pelo par `trilha/artigo`.
-- **`trilha.md` e `infografico.md` são nomes reservados:** um artigo não pode ter esses nomes.
+- **`trilha.md`, `infografico.md` e `quiz.md` são nomes reservados:** um artigo não pode ter esses nomes.
 
 ## A trilha: `trilha.md`
 
@@ -123,12 +124,64 @@ passos:
   conteudo/trilhas/processo-legislativo/infografico.md: campo "passos.1.fontes.2.url": a fonte "https://www.camara.leg.br/entenda-o-processo-legislativo/" já está neste passo
   ```
 
+## O quiz: `quiz.md`
+
+Perguntas de múltipla escolha sobre os artigos que a pessoa já leu. Ao responder, ela vê se acertou, a resposta certa, a explicação e a fonte oficial, sem pontos nem nota. É opcional: uma trilha sem `quiz.md` fica sem quiz.
+
+Como o `trilha.md`, é só o cabeçalho, sem texto: um texto embaixo dele é erro, porque não apareceria na página. Um quiz de uma pergunta só ficaria assim:
+
+```markdown
+---
+depoisDe: o-projeto-passa-pelas-comissoes
+perguntas:
+  - artigo: onde-o-projeto-comeca
+    enunciado: Uma senadora apresenta um projeto de lei. Por qual Casa do Congresso ele começa?
+    opcoes:
+      - texto: Pelo Senado Federal, que vira a Casa iniciadora.
+        certa: true
+      - texto: Pela Câmara dos Deputados, porque todo projeto de lei começa lá.
+      - texto: Pelas duas Casas ao mesmo tempo, numa sessão conjunta.
+      - texto: Pela Casa que a senadora escolher.
+    explicacao: "Em regra, o projeto de lei começa na Câmara dos Deputados. A exceção são os projetos de um senador ou de uma comissão do Senado: esses começam no Senado, que vira a Casa iniciadora."
+    fontes:
+      - titulo: Câmara dos Deputados, Entenda o processo legislativo
+        url: https://www.camara.leg.br/entenda-o-processo-legislativo/
+        consultadoEm: 2026-11-12
+---
+```
+
+- `depoisDe`: o artigo depois do qual o quiz aparece, pelo nome do arquivo, sem o `.md`.
+- `perguntas`: pelo menos uma, na ordem do quiz. Cada pergunta tem:
+  - `artigo`: o artigo de onde sai a resposta, pelo nome do arquivo. Ele vem até o `depoisDe`, porque a pessoa já o leu;
+  - `enunciado`: a pergunta, sem repetir no quiz;
+  - `opcoes`: de 2 a 5, cada uma com o `texto`, sem repetir na pergunta. Só a certa leva `certa: true`, e só uma;
+  - `explicacao`: por que a certa é a certa, em poucas frases;
+  - `fontes`: pelo menos uma, no mesmo formato das fontes do artigo.
+- **A resposta certa está no artigo e na fonte.** Confira a resposta no texto do artigo e abra a fonte oficial antes de escrever a pergunta: o `consultadoEm` é o dia dessa conferência. Quando a explicação cita um artigo de lei, como "(art. 65)", essa lei entra nas fontes da pergunta.
+- **As opções aparecem na ordem do arquivo,** sem sorteio. Varie a posição da certa de uma pergunta para outra.
+- **Valem as regras de conteúdo do `AGENTS.md`:** o quiz pergunta sobre fatos e regras, em tom neutro, e nunca dá nota a político ou partido.
+- **Um artigo que não existe na pasta, ou que vem depois do `depoisDe`, é erro,** com a posição da pergunta, que conta a partir do 0:
+
+  ```text
+  conteudo/trilhas/processo-legislativo/quiz.md: campo "perguntas.3.artigo": o artigo "onde-o-projeto-começa" não existe nesta trilha
+  conteudo/trilhas/processo-legislativo/quiz.md: campo "perguntas.4.artigo": o artigo "o-veto" vem depois de "o-projeto-passa-pelas-comissoes", e o quiz aparece antes de a pessoa ler esse artigo
+  ```
+
+- **Cada pergunta tem uma certa só,** e nenhuma certa também é erro:
+
+  ```text
+  conteudo/trilhas/processo-legislativo/quiz.md: campo "perguntas.1.opcoes": precisa de exatamente uma opção com "certa: true", e tem 2
+  ```
+
+- **Nada se repete:** duas perguntas com o mesmo enunciado são erro, e, na mesma pergunta, uma opção ou uma fonte que aparece duas vezes também. O erro aponta a segunda vez.
+
 ## Pegadinhas do YAML
 
 - **Um valor com `: ` (dois-pontos seguido de espaço) vai entre aspas:** `titulo: "Lei 14.133: o que muda"`. Sem as aspas, o cabeçalho deixa de ser YAML válido, e o teste aponta o arquivo.
 - **Um ` #` (espaço e cerquilha) começa um comentário:** em `titulo: O projeto #1 da trilha`, o título vira só "O projeto", sem aviso nenhum. Um valor com ` #` também vai entre aspas.
 - **As fontes ficam recuadas com dois espaços,** com um `-` na frente de cada uma e os três campos alinhados.
 - **No infográfico, cada nível recua mais dois espaços:** os passos debaixo de `passos:`, e os desvios, os artigos e as fontes debaixo do passo deles, como no exemplo.
+- **No quiz também:** as perguntas debaixo de `perguntas:`, e as opções e as fontes debaixo da pergunta delas. O `certa: true` fica alinhado com o `texto` da opção, sem o `-`. Uma explicação com `: ` vai entre aspas, como no exemplo.
 
 ## Palavras compridas nos títulos
 
