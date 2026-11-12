@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FolhasDaTrilha } from "@/components/folhas-da-trilha";
-import { MarcaX } from "@/components/marca-x";
+import { MarcaDeLido } from "@/components/marca-de-lido";
 import { buscarTrilhas, type TrilhaNaLista } from "@/lib/conteudo";
 import { fraseDoProgresso, plural } from "@/lib/formatar";
 import { metaDaPagina, metaSemPagina } from "@/lib/meta";
@@ -87,20 +87,27 @@ function ItemDaTrilha({
 				    à direita. Assim, nada muda de lugar quando o progresso aparece,
 				    depois da hidratação. */}
 				<div className="mt-4 grid items-center gap-x-5 gap-y-2 sm:grid-cols-[auto_minmax(0,1fr)] lg:block">
-					<ol aria-hidden="true" className="flex flex-wrap gap-1.5 lg:hidden">
-						{trilha.artigos.map((artigo, indice) => (
-							<li
-								key={artigo.slug}
-								className="border-tinta relative grid size-11 place-items-center border-2"
-							>
-								<span className="numeral pt-1 text-[1.75rem]">
-									{indice + 1}
-								</span>
-								{lidos.has(idDoArtigo(artigo)) && (
-									<MarcaX className="absolute inset-0 size-full p-0.5" />
-								)}
-							</li>
-						))}
+					{/* As linhas dos quadrados ficam mais afastadas que as colunas,
+					    porque o visto passa da borda de cima (index.css, o
+					    .visto-na-miniatura). */}
+					<ol
+						aria-hidden="true"
+						className="flex flex-wrap gap-x-1.5 gap-y-3 lg:hidden"
+					>
+						{trilha.artigos.map((artigo, indice) => {
+							const lido = lidos.has(idDoArtigo(artigo));
+							return (
+								<li
+									key={artigo.slug}
+									className="border-tinta relative grid size-11 place-items-center border-2"
+								>
+									<span className="numeral pt-1 text-[1.75rem]">
+										{indice + 1}
+									</span>
+									{lido && <MarcaDeLido className="visto-na-miniatura" />}
+								</li>
+							);
+						})}
 					</ol>
 					<p className="min-h-7 text-lg font-bold">
 						{fraseDoProgresso(quantosLidos, total)}

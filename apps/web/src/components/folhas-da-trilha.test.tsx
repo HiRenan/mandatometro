@@ -95,16 +95,35 @@ describe("folhas da trilha", () => {
 		expect(links[1].textContent).toContain("4 min");
 	});
 
-	it("risca a folha lida com o X e escreve o “Lido”", async () => {
+	it("marca a folha lida com o visto e escreve o “Lido”", async () => {
 		const pagina = await mostrar(
 			<FolhasDaTrilha trilha={trilha} lidos={lidos} />,
 		);
 		const [lida, naoLida] = within(pagina).getAllByRole("link");
+		const visto = lida.querySelector("svg.marca-de-lido");
 
-		expect(lida.querySelector("svg.marca-x")).not.toBeNull();
+		expect(visto).not.toBeNull();
+		expect(visto?.getAttribute("aria-hidden")).toBe("true");
 		expect(lida.textContent).toContain("Lido · 3 min");
-		expect(naoLida.querySelector("svg.marca-x")).toBeNull();
+		expect(naoLida.querySelector("svg.marca-de-lido")).toBeNull();
 		expect(naoLida.textContent).not.toContain("Lido");
+	});
+
+	it("desenha o visto só no artigo que a pessoa acabou de ler", async () => {
+		const pagina = await mostrar(
+			<FolhasDaTrilha
+				trilha={trilha}
+				lidos={
+					new Set([...lidos, "processo-legislativo/onde-o-projeto-comeca"])
+				}
+				marcarAgora="onde-o-projeto-comeca"
+			/>,
+		);
+		const vistos = pagina.querySelectorAll("svg.marca-de-lido");
+
+		expect(vistos).toHaveLength(2);
+		expect(vistos[0].hasAttribute("data-animar")).toBe(false);
+		expect(vistos[1].hasAttribute("data-animar")).toBe(true);
 	});
 
 	it("sem uma folha aberta, nenhuma diz “Você está aqui”", async () => {
@@ -124,7 +143,7 @@ describe("folhas da trilha", () => {
 		const [numero, texto] = link.children;
 
 		// O número fica na coluna dele, e o texto ocupa a linha de baixo inteira,
-		// longe do X da folha lida (index.css, a variante letra-grande).
+		// longe do visto da folha lida (index.css, a variante letra-grande).
 		expect(numero.classList.contains("numeral")).toBe(true);
 		expect(numero.classList.contains("letra-grande:mb-4")).toBe(true);
 		expect(texto.classList.contains("letra-grande:col-span-full")).toBe(true);

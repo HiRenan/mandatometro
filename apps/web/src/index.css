@@ -101,16 +101,73 @@
 	}
 
 	/*
-	 * O X da folha lida, centrado no número e um pouco maior que ele, como quem
-	 * risca o dia na folhinha: os traços passam do algarismo dos dois lados.
+	 * O visto da folha lida: um traço de tinta sobre um de papel, mais largo, que
+	 * o separa do que fica atrás. No número, fica no canto de cima, à direita,
+	 * e só encosta no algarismo: o número continua legível.
 	 */
-	.sobre-o-numero {
+	.marca-de-lido {
+		fill: none;
+		overflow: visible;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	.marca-de-lido-papel {
+		stroke: var(--papel);
+		stroke-width: 17;
+	}
+
+	.marca-de-lido-traco {
+		stroke: var(--tinta);
+		stroke-width: 7;
+	}
+
+	.visto-no-numero {
 		position: absolute;
-		top: 50%;
-		left: 50%;
-		width: 1.1em;
-		height: 1.1em;
-		translate: -50% -50%;
+		top: -0.11em;
+		left: calc(100% - 0.18em);
+		width: 0.42em;
+		height: 0.42em;
+	}
+
+	/*
+	 * Na miniatura, o visto passa da borda do quadrado, mas não chega ao vizinho.
+	 * Quando os quadrados quebram em duas linhas, como nas trilhas de 8 artigos no
+	 * celular, a linha de baixo fica a 0,75rem da de cima (o gap-y-3 da lista, em
+	 * routes/trilhas/index.tsx): com 0,375rem, o visto de baixo entrava no quadrado
+	 * de cima (o Renan, na #77: "Linhas mais afastadas").
+	 */
+	.visto-na-miniatura {
+		position: absolute;
+		top: -0.75rem;
+		right: -0.375rem;
+		width: 1.625rem;
+		height: 1.625rem;
+	}
+
+	/*
+	 * Nas cores forçadas do Windows, o traço fica na cor do texto, e o de papel,
+	 * na do fundo: o visto continua separado do algarismo e da borda. Nas folhas
+	 * em que o número fica dentro de um link, o número ganha a cor dos links, e o
+	 * visto vai junto. O currentColor não serve: com o forced-color-adjust: none,
+	 * o Chromium dá a ele a tinta original, que some no fundo escuro.
+	 */
+	@media (forced-colors: active) {
+		.marca-de-lido {
+			forced-color-adjust: none;
+		}
+
+		.marca-de-lido-papel {
+			stroke: Canvas;
+		}
+
+		.marca-de-lido-traco {
+			stroke: CanvasText;
+		}
+
+		a .marca-de-lido-traco {
+			stroke: LinkText;
+		}
 	}
 
 	/* O número da folha, como o dia na folhinha. */
@@ -184,20 +241,13 @@
 		inset: -0.6875rem -0.25rem;
 	}
 
-	/* O X da folha lida. O traço desenha em 400 ms quando a pessoa chega ao fim do texto. */
-	.marca-x {
-		fill: none;
-		stroke: var(--tinta);
-		stroke-width: 6;
-		stroke-linecap: round;
-	}
-
-	.marca-x[data-animar] path {
-		animation: riscar 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
-	}
-
-	.marca-x[data-animar] path + path {
-		animation-delay: 200ms;
+	/*
+	 * O visto é desenhado de uma vez, em 400 ms, quando a pessoa chega ao fim do
+	 * texto: a perna curta sai devagar, como a caneta que encosta no papel, e a
+	 * longa vai num golpe só.
+	 */
+	.marca-de-lido[data-animar] path {
+		animation: tracar 400ms cubic-bezier(0.5, 0, 0.15, 1) both;
 	}
 
 	/*
@@ -531,7 +581,7 @@
 	}
 }
 
-@keyframes riscar {
+@keyframes tracar {
 	from {
 		stroke-dasharray: 1;
 		stroke-dashoffset: 1;
@@ -543,7 +593,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.marca-x[data-animar] path {
+	.marca-de-lido[data-animar] path {
 		animation: none;
 	}
 }

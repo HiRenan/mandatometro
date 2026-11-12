@@ -3,18 +3,18 @@ import { Link } from "@tanstack/react-router";
 import type { TrilhaNaLista } from "@/lib/conteudo";
 import { corDaFita } from "@/lib/formatar";
 import { idDoArtigo } from "@/lib/progresso";
-import { MarcaX } from "./marca-x";
+import { MarcaDeLido } from "./marca-de-lido";
 
 /**
  * As folhas da trilha em ordem, cada uma com a sua fita e o link para o artigo:
- * a lida leva o X, e a aberta, o canto dobrado. As fitas penduram da linha de
- * cima da lista.
+ * a lida leva o visto, e a aberta, o canto dobrado. As fitas penduram da linha
+ * de cima da lista.
  */
 export function FolhasDaTrilha({
 	trilha,
 	lidos,
 	atual,
-	riscarAgora,
+	marcarAgora,
 	className,
 	"aria-label": rotulo,
 }: {
@@ -22,8 +22,8 @@ export function FolhasDaTrilha({
 	lidos: ReadonlySet<string>;
 	/** O slug do artigo aberto, quando a lista fica dentro de um artigo. */
 	atual?: string;
-	/** O artigo que a pessoa acabou de ler: o X dele é desenhado. */
-	riscarAgora?: string;
+	/** O artigo que a pessoa acabou de ler: o visto dele é desenhado. */
+	marcarAgora?: string;
 	className?: string;
 	"aria-label"?: string;
 }) {
@@ -50,7 +50,7 @@ export function FolhasDaTrilha({
 						>
 							{/* Com a letra grande, o número fica no lugar, e o título desce
 							    para a linha de baixo, com a largura toda. A margem embaixo do
-							    número deixa o X da folha lida longe do título. */}
+							    número o separa do título. */}
 							<span
 								aria-hidden="true"
 								className="numeral letra-grande:mb-4 justify-self-center text-[4rem]"
@@ -58,9 +58,9 @@ export function FolhasDaTrilha({
 								<span className="relative inline-block">
 									{indice + 1}
 									{lido && (
-										<MarcaX
-											animar={riscarAgora === artigo.slug}
-											className="sobre-o-numero"
+										<MarcaDeLido
+											animar={marcarAgora === artigo.slug}
+											className="visto-no-numero"
 										/>
 									)}
 								</span>

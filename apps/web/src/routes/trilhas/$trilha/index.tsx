@@ -5,7 +5,7 @@ import { Aviso, useAviso } from "@/components/aviso";
 import { BOTAO_CONTINUAR } from "@/components/botao-continuar";
 import { Caminho } from "@/components/caminho";
 import { Infografico } from "@/components/infografico";
-import { MarcaX } from "@/components/marca-x";
+import { MarcaDeLido } from "@/components/marca-de-lido";
 import { buscarTrilha } from "@/lib/conteudo";
 import { corDaFita, fraseDoProgresso, plural } from "@/lib/formatar";
 import { metaDaPagina, metaSemPagina } from "@/lib/meta";
@@ -145,7 +145,7 @@ function PaginaDaTrilha() {
 								    largura toda; a partir do md, o número ocupa a coluna inteira.
 								    Com a letra grande, o número fica no lugar, e o título desce
 								    para a linha de baixo, com a largura toda. A margem embaixo do
-								    número deixa o X da folha lida longe do título. */}
+								    número o separa do título. */}
 									<div className="grid grid-cols-[4.5rem_minmax(0,1fr)] content-start gap-x-4 py-6 pr-5 pl-[1.625rem] md:grid-cols-[7rem_minmax(0,1fr)] md:gap-x-6 md:pr-10">
 										<span
 											aria-hidden="true"
@@ -153,7 +153,7 @@ function PaginaDaTrilha() {
 										>
 											<span className="relative inline-block">
 												{indice + 1}
-												{lido && <MarcaX className="sobre-o-numero" />}
+												{lido && <MarcaDeLido className="visto-no-numero" />}
 											</span>
 										</span>
 										{/* O respiro à direita do título, no celular, deixa o canto dobrado livre. */}
