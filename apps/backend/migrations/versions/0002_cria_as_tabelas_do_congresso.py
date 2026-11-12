@@ -1,5 +1,9 @@
 """cria as tabelas do congresso
 
+O que a coleta da Câmara (#10) e do Senado (#11) grava: a fonte de cada dado, o parlamentar, o
+mandato, a proposição, a votação, a ligação entre votação e proposição e o voto. O modelo está em
+src/mandatometro/db/modelos.py, e o diagrama, no README.
+
 Revision ID: 0002
 Revises: 0001
 Create Date: 2026-11-12 20:47:52.347604
