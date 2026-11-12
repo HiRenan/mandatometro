@@ -597,3 +597,113 @@
 		animation: none;
 	}
 }
+
+/*
+ * A troca de página, como na folhinha de parede (lib/troca-de-pagina.ts): quem
+ * avança arranca a folha da tela, e a página nova já está embaixo. A folha se
+ * solta do picote pelo lado esquerdo, ainda presa pelo canto de cima à direita,
+ * e depois cai, cada vez mais rápido. Quem volta na trilha faz o caminho
+ * contrário: a folha sobe, gira de volta e se assenta no bloco, por cima.
+ *
+ * O navegador fotografa a tela antes e depois da troca e anima as duas fotos
+ * (View Transitions). O cartão preto do cabeçalho, quando aparece na tela, vai
+ * numa foto à parte, por cima, e não sai do lugar: só a folha é arrancada. Com
+ * a página rolada, ele vem com a página nova, embaixo da folha.
+ */
+html:active-view-transition-type(moldura-na-tela) header.moldura {
+	view-transition-name: moldura;
+}
+
+/*
+ * As duas fotos da página ficam uma sobre a outra, sem a mistura de luz do
+ * esmaecer padrão, que apagaria a tinta da folha arrancada sobre o papel da
+ * página nova. O contorno da folha é o picote em cima, tracejado como entre as
+ * folhas da lista, e a linha cheia dos lados e embaixo. Ele fica 2 px para fora
+ * da tela e só aparece quando a folha se mexe: parada, a foto cobre a página
+ * pixel a pixel.
+ */
+html:active-view-transition-type(folha)::view-transition-old(root),
+html:active-view-transition-type(folha)::view-transition-new(root) {
+	inset-block-start: -2px;
+	inset-inline-start: -2px;
+	border: 2px solid var(--tinta);
+	border-top-style: dashed;
+	mix-blend-mode: normal;
+	transform-origin: 100% 0;
+	animation: none;
+}
+
+html:active-view-transition-type(avancar)::view-transition-old(root) {
+	z-index: 1;
+	animation: arrancar-a-folha 420ms linear both;
+}
+
+/* Voltar é o arranque de trás para a frente, com a chegada mais lenta. */
+html:active-view-transition-type(voltar)::view-transition-new(root) {
+	z-index: 1;
+	animation: arrancar-a-folha 460ms linear reverse both;
+}
+
+/*
+ * Com a página um pouco rolada, o cartão desce até o lugar dele. A troca do
+ * traço do link da seção é um esmaecer curto.
+ */
+html:active-view-transition-type(folha)::view-transition-group(moldura) {
+	animation-duration: 420ms;
+	animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html:active-view-transition-type(folha)::view-transition-old(moldura),
+html:active-view-transition-type(folha)::view-transition-new(moldura) {
+	animation-duration: 200ms;
+}
+
+@keyframes arrancar-a-folha {
+	/* O rasgo: o lado esquerdo se solta do picote e desce um pouco, logo no clique. */
+	from {
+		transform: none;
+		animation-timing-function: cubic-bezier(0.2, 0, 0.4, 1);
+	}
+	25% {
+		transform: translateY(0.5%) rotate(-2.5deg);
+		animation-timing-function: cubic-bezier(0.2, 0, 0.55, 0.2);
+	}
+	/* A queda, como a de um peso: a folha gira mais um pouco e sai da tela por baixo. */
+	to {
+		transform: translateY(105%) rotate(-7deg);
+	}
+}
+
+/*
+ * Com o movimento reduzido, a folha não se mexe: a página de antes some num
+ * esmaecer curto, nos dois sentidos, e a nova já está embaixo.
+ */
+@media (prefers-reduced-motion: reduce) {
+	html:active-view-transition-type(folha)::view-transition-old(root) {
+		z-index: 1;
+		animation: esmaecer-a-folha 160ms linear both;
+	}
+
+	html:active-view-transition-type(folha)::view-transition-new(root) {
+		z-index: auto;
+		animation: none;
+	}
+
+	/* O cartão não desce: vai direto para o lugar, e a troca acaba junto com o esmaecer. */
+	html:active-view-transition-type(folha)::view-transition-group(root),
+	html:active-view-transition-type(folha)::view-transition-group(moldura),
+	html:active-view-transition-type(folha)::view-transition-old(moldura),
+	html:active-view-transition-type(folha)::view-transition-new(moldura) {
+		animation-duration: 160ms;
+	}
+
+	html:active-view-transition-type(folha)::view-transition-group(moldura) {
+		animation-name: none;
+	}
+}
+
+@keyframes esmaecer-a-folha {
+	to {
+		opacity: 0;
+	}
+}

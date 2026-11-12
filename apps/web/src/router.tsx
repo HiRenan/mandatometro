@@ -5,6 +5,11 @@ import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query
 import Loader from "./components/loader";
 import { NaoEncontrado } from "./components/nao-encontrado";
 import { PaginaDeErro } from "./components/pagina-de-erro";
+import {
+	molduraNaTela,
+	tiposDaTroca,
+	trilhaDoArtigoAberto,
+} from "./lib/troca-de-pagina";
 import { routeTree } from "./routeTree.gen";
 
 export const getRouter = () => {
@@ -20,6 +25,17 @@ export const getRouter = () => {
 		// Quando uma página não chega (a rede caiu ou o servidor falhou), a página de
 		// erro aparece no lugar dela, dentro do site.
 		defaultErrorComponent: PaginaDeErro,
+		// Na troca de página, a folha da tela é arrancada, como na folhinha de
+		// parede, e voltar na trilha devolve a folha ao bloco (lib/troca-de-pagina.ts
+		// e index.css). A primeira carga e o "Tentar de novo" da página de erro não
+		// animam.
+		defaultViewTransition: {
+			types: (troca): string[] | false =>
+				tiposDaTroca(troca, {
+					trilhaAberta: trilhaDoArtigoAberto(router.state.matches),
+					molduraNaTela: molduraNaTela(),
+				}),
+		},
 	});
 	setupRouterSsrQueryIntegration({ router, queryClient });
 
