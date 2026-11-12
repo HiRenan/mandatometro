@@ -168,7 +168,7 @@ O que ficaria errado, nas palavras do Renan: "Site do governo, Coisa de criança
 - Texto corrido em serifa, a cerca de 64 caracteres por linha.
 - Estado como marca no papel: o visto no lido, canto dobrado onde a pessoa está ou parou.
 - Linhas de 2 px em tinta: cheias entre as partes, tracejadas (o picote) entre as folhas. No infográfico da trilha, a cheia é o caminho completo, e a tracejada, o que pode mudar o caminho; no caminho da página inicial, só a cheia.
-- Um único movimento: o visto desenhado em 400 ms quando a pessoa chega ao fim do texto.
+- Dois movimentos: a folha arrancada quando a pessoa troca de página, e o visto desenhado em 400 ms quando ela chega ao fim do texto.
 
 ## Colors
 
@@ -323,8 +323,20 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 - **Caráter:** o visto do professor no caderno, que diz "este já foi" sem cara de erro. Ele substituiu o X em 11/11/2026. O Pedro sugeriu trocar o X, e o Renan concordou: "um X grande não faz sentido". O X lia como "errado" ou "cancelado", ainda mais num site com quiz, e tapava o número. Entre o visto, uma etiqueta "Lido" e o número vazado, o Renan escolheu o visto.
 - **Forma:** um traço só, no viewBox de 60: 7 em tinta sobre 17 em papel, com ponta e junta redondas. É um componente só (`MarcaDeLido`), com uma classe para cada lugar: no número da folha (`visto-no-numero`), na miniatura (`visto-na-miniatura`) e, a 40 px, ao lado de "Você leu este artigo.".
 - **Onde:** nas folhas da trilha, em "Nesta trilha", nas folhas e nas miniaturas da lista das trilhas e no aviso de lido, no fim do artigo. A palavra "Lido" continua na linha de estado: o visto é a marca, e a palavra diz o que ela quer dizer. O visto fica fora do leitor de tela.
-- **Movimento:** quando o fim do texto aparece na tela, o visto é desenhado de uma vez, em 400 ms, com `cubic-bezier(0.5, 0, 0.15, 1)`: a perna curta sai devagar, como a caneta que encosta no papel, e a longa vai num golpe só. Ele é desenhado em dois lugares, ao lado de "Você leu este artigo." e no número da folha em "Nesta trilha"; nas outras folhas e nas outras páginas, aparece pronto. Ao mesmo tempo surge "Você leu este artigo.", com o "Desmarcar" embaixo. Com o movimento reduzido, o visto aparece pronto. É o único movimento das páginas: o "Desmarcar" apaga o visto sem animação, e o "Desfazer" o devolve já pronto.
+- **Movimento:** quando o fim do texto aparece na tela, o visto é desenhado de uma vez, em 400 ms, com `cubic-bezier(0.5, 0, 0.15, 1)`: a perna curta sai devagar, como a caneta que encosta no papel, e a longa vai num golpe só. Ele é desenhado em dois lugares, ao lado de "Você leu este artigo." e no número da folha em "Nesta trilha"; nas outras folhas e nas outras páginas, aparece pronto. Ao mesmo tempo surge "Você leu este artigo.", com o "Desmarcar" embaixo. Com o movimento reduzido, o visto aparece pronto. É o único movimento dentro das páginas (a troca de uma página para outra tem o dela, a folha arrancada): o "Desmarcar" apaga o visto sem animação, e o "Desfazer" o devolve já pronto.
 - **Alto contraste:** nas cores forçadas do Windows, o traço fica na cor do texto (`CanvasText`), e o de papel, na do fundo (`Canvas`). Em "Nesta trilha" e nas folhas da lista das trilhas, o número fica dentro do link e ganha a cor dos links, e o visto vai junto (`LinkText`). O `currentColor` não serve: com o `forced-color-adjust: none`, o Chromium dá a ele a tinta original, e o visto some no fundo escuro.
+
+### A troca de página (a folha arrancada)
+- **Caráter:** o gesto da folhinha de parede, arrancar a folha do dia. O Renan pediu uma animação na troca de página e escolheu, em 11/11/2026, "Arrancar a folha (Recomendado)", entre ela, o número que vira a página e um esmaecer.
+- **Avançar:** a página da tela se solta do picote, embaixo da tira de fitas. O lado esquerdo desce primeiro (2,5° nos primeiros 105 ms), com a folha ainda presa pelo canto de cima à direita; depois ela cai como um peso, girando até 7°, e sai da tela por baixo. A página nova já está embaixo, parada. São 420 ms, e a folha se mexe logo no clique.
+- **Voltar:** o mesmo movimento de trás para a frente, em 460 ms: a folha sobe, gira de volta e se assenta no bloco, por cima da página de antes.
+- **O sentido** vem do lugar da página no bloco, e não da ordem da visita (`lib/troca-de-pagina.ts`): a página inicial em cima, depois Trilhas, cada trilha e os artigos dela, na ordem da trilha. Ir mais para dentro, ou para um artigo mais adiante, é avançar; o contrário é voltar, também pelo botão voltar do navegador. Entre dois artigos sem a ordem da trilha à mão, avança.
+- **A folha:** a foto da tela, com um contorno que só aparece quando ela se mexe: o picote em cima (2 px tracejado, como entre as folhas da lista) e a linha cheia de 2 px dos lados e embaixo. Parada, a foto cobre a página pixel a pixel. Sem sombra (A Regra da Tinta Chapada).
+- **A moldura:** o cartão preto do cabeçalho, quando aparece na tela, fica parado por cima da folha que sai, e só o traço da seção troca, num esmaecer de 200 ms. Com a página um pouco rolada, o cartão desce até o lugar dele; rolada abaixo dele, ele vem com a página nova, embaixo da folha. O rodapé vai com a folha.
+- **Quando não anima:** na primeira carga, num link para um trecho da mesma página e no "Tentar de novo" da página de erro. Num navegador sem as View Transitions, a página troca como antes; num que não tem os tipos de transição, vira o esmaecer padrão do navegador.
+- **Movimento reduzido:** a folha não se mexe. A página de antes some num esmaecer de 160 ms, nos dois sentidos, e o cartão vai direto para o lugar.
+- **Foco e leitor de tela:** nada muda. O foco vai para o título da página nova, ou para o trecho do endereço, como antes; a animação é só da tela.
+- **Como:** pelas View Transitions do navegador, que o TanStack Router pede em cada navegação (o `defaultViewTransition` do `router.tsx`), com os tipos `folha`, `avancar` ou `voltar` e `moldura-na-tela`; o CSS fica no `index.css`. Durante a troca, a página não recebe cliques. Se a pessoa navega de novo no meio, a troca nova assume.
 
 ### Fontes oficiais
 - Lista numerada abaixo de uma linha cheia: o número em negrito numa coluna de 1.75rem, o título da fonte como link em negrito e, embaixo, o domínio e a data da consulta em tinta suave.
@@ -356,7 +368,7 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 - **Do** separar as folhas com picote (linha tracejada de 2 px) e fechar as seções com linha cheia de 2 px.
 - **Do** desenhar o caminho completo com linha cheia e o que pode mudar o caminho com linha tracejada, e dizer os dois em palavras.
 - **Do** usar o foco de 3 px na azul, afastado 3 px, e a amarela dentro do cartão preto.
-- **Do** respeitar o movimento reduzido: o visto aparece sem animação.
+- **Do** respeitar o movimento reduzido: o visto aparece sem animação, e a troca de página vira um esmaecer de 160 ms, sem a folha se mexer.
 - **Do** deixar a letra crescer com a configuração do navegador: a margem do celular fica em px, o título e o nome crescem até encostar nas margens, e nenhuma página rola de lado.
 - **Do** oferecer "Desfazer" logo depois de apagar uma marca, em vez de pedir confirmação antes.
 
@@ -369,6 +381,6 @@ Tudo é reto: raio zero (`--radius: 0`). As formas vêm do papel:
 - **Don't** usar sombra, canto arredondado ou degradê suave.
 - **Don't** inventar um logo; até o time fazer o dele, o nome em texto é a marca, e o M do nome é o ícone.
 - **Don't** usar a vermelha como cor de domingo antes da decisão da issue #39.
-- **Don't** animar nada além do visto.
+- **Don't** animar nada além do visto e da troca de página: nada de entrada de seção, rolagem animada ou hover que se mexe.
 - **Don't** marcar o lido com um X: ele lê como "errado" ou "cancelado", ainda mais num site com quiz, e tapa o número.
 - **Don't** prender um tamanho de letra só à largura da tela (`vw` puro): a letra para de crescer com a configuração do navegador.
