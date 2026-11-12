@@ -104,9 +104,11 @@ function Folha({ trilha, artigo, posicao, anterior, proximo }: ArtigoNaTrilha) {
 	);
 
 	return (
-		<div className="mx-auto max-w-[1440px] px-5 pb-20 md:px-16">
+		<div className="px-margem-celular mx-auto max-w-[1440px] pb-20 md:px-16">
 			<Caminho trilha={trilha} />
-			<div className="folha:grid-cols-[minmax(0,248px)_minmax(0,700px)_minmax(15rem,1fr)] folha:gap-x-12 mt-5 grid gap-x-10 lg:grid-cols-[minmax(0,700px)_minmax(15rem,1fr)]">
+			{/* Abaixo do lg, uma coluna da largura da tela: com a letra grande, uma
+			    palavra comprida não alarga a página. */}
+			<div className="folha:grid-cols-[minmax(0,248px)_minmax(0,700px)_minmax(15rem,1fr)] folha:gap-x-12 mt-5 grid grid-cols-[minmax(0,1fr)] gap-x-10 lg:grid-cols-[minmax(0,700px)_minmax(15rem,1fr)]">
 				<div className="folha:block hidden">
 					<p className="grid justify-items-start">
 						<span
@@ -119,7 +121,10 @@ function Folha({ trilha, artigo, posicao, anterior, proximo }: ArtigoNaTrilha) {
 				</div>
 
 				<article>
-					<header className="folha:block grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4">
+					{/* Com a letra grande, o número fica em cima do título, e o título
+					    cresce até "comissões", a palavra mais comprida dos títulos dos
+					    artigos, encostar nas margens (o letra-com-teto do index.css). */}
+					<header className="folha:block letra-grande:grid-cols-[minmax(0,1fr)] letra-grande:gap-y-3 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4">
 						<p className="folha:hidden grid justify-items-start">
 							<span className="numeral text-[7.5rem] md:text-[10rem]">
 								{posicao}
@@ -128,7 +133,7 @@ function Folha({ trilha, artigo, posicao, anterior, proximo }: ArtigoNaTrilha) {
 								{deTantos}
 							</span>
 						</p>
-						<h1 className="titulo-condensado folha:text-[4.75rem] max-w-[12ch] text-[2.5rem] md:text-[3.5rem]">
+						<h1 className="titulo-condensado letra-com-teto folha:text-[4.75rem] max-w-[12ch] [--letra:2.5rem] [--palavra:4.06] md:text-[3.5rem]">
 							{artigo.titulo}
 						</h1>
 					</header>

@@ -33,6 +33,8 @@ ordem: 1
 - `descricao`: uma ou duas frases. Aparece na lista de trilhas, no topo da trilha e na prévia do link.
 - `ordem`: a posição na lista de trilhas, um número inteiro a partir de 1, sem repetir.
 
+**A página inicial mostra a trilha `processo-legislativo`,** qualquer que seja o `ordem` dela, com o caminho do `infografico.md` dela. Renomear ou apagar essa pasta faz o teste e o `pnpm build` falharem: sem ela, a página inicial não abre, e o deploy para com o site no ar na versão anterior. Apagar esse infográfico faz o teste falhar.
+
 ## O artigo
 
 O cabeçalho fica entre duas linhas com `---`, e o texto vem depois:
@@ -137,6 +139,7 @@ passos:
   ```
 
   O CI roda o mesmo teste, então um artigo com problema não passa no PR.
+- **`pnpm build`** confere a pasta antes de montar o site e para com a mesma lista. Por isso um artigo com problema também derruba o deploy na Vercel e a imagem do Docker, e o site no ar continua na versão anterior.
 - **`pnpm dev`** sobe o site em http://localhost:3001, e o artigo aparece em `/trilhas/<trilha>/<artigo>`. O infográfico aparece em `/trilhas/<trilha>`. Um arquivo novo ou mudado aparece ao recarregar a página, sem reiniciar o `pnpm dev`.
 
 ## Como o site lê os arquivos

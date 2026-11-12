@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { Trilha } from "./ler";
 import {
 	acharArtigo,
 	acharTrilha,
@@ -7,6 +8,15 @@ import {
 	listarTrilhas,
 	trilhas,
 } from "./paginas.server";
+
+/** A trilha da pasta `slug`, como o servidor lê, ou um erro que diz qual pasta falta. */
+function trilhaDe(slug: string): Trilha {
+	const trilha = trilhas.find((trilha) => trilha.slug === slug);
+	if (!trilha) {
+		throw new Error(`falta a trilha conteudo/trilhas/${slug}`);
+	}
+	return trilha;
+}
 
 // Lê a pasta conteudo/trilhas de verdade: um arquivo mal formado derruba o teste.
 describe("conteúdo das trilhas", () => {
@@ -110,7 +120,7 @@ describe("o que vai para o navegador", () => {
 	});
 
 	it("leva o infográfico só na página da trilha", () => {
-		const trilha = trilhas[0];
+		const trilha = trilhaDe("processo-legislativo");
 		const artigo = acharArtigo(trilhas, trilha.slug, trilha.artigos[0].slug);
 
 		expect(acharTrilha(trilhas, trilha.slug)?.infografico).toEqual(
@@ -125,25 +135,34 @@ describe("o que vai para o navegador", () => {
 	});
 });
 
+// A abertura e o caminho da página inicial falam da trilha do processo
+// legislativo, qualquer que seja a posição dela em /trilhas.
 describe("a página inicial", () => {
-	it("começa pela trilha do processo legislativo, como diz a abertura", () => {
-		// A abertura diz: "A primeira trilha mostra como uma ideia vira lei."
-		expect(inicio(trilhas)?.trilha.slug).toBe("processo-legislativo");
+	it("mostra a trilha do processo legislativo, em qualquer posição da lista", () => {
+		for (const lista of [trilhas, [...trilhas].reverse()]) {
+			expect(inicio(lista)?.trilha.slug).toBe("processo-legislativo");
+		}
 	});
 
-	it("leva a primeira trilha como nas listas, sem o texto dos artigos", () => {
+	it("leva a trilha como nas listas, sem o texto dos artigos", () => {
 		const pagina = inicio(trilhas);
 
-		expect(pagina?.trilha).toEqual(listarTrilhas(trilhas)[0]);
+		expect(pagina?.trilha).toEqual(
+			listarTrilhas(trilhas).find(
+				(trilha) => trilha.slug === "processo-legislativo",
+			),
+		);
 		for (const artigo of pagina?.trilha.artigos ?? []) {
 			expect(artigo).not.toHaveProperty("corpo");
 		}
 	});
 
+	// Sem o infográfico da trilha, a página inicial perde o caminho.
 	it("leva o caminho resumido: de cada passo, só o título e os artigos", () => {
-		const infografico = trilhas[0].infografico;
+		const { infografico } = trilhaDe("processo-legislativo");
 		const caminho = inicio(trilhas)?.caminho;
 
+		expect(infografico).toBeDefined();
 		expect(caminho).toEqual({
 			titulo: infografico?.titulo,
 			resumo: infografico?.resumo,
@@ -158,15 +177,22 @@ describe("a página inicial", () => {
 	});
 
 	it("fica sem o caminho quando a trilha não tem infográfico", () => {
-		const { infografico: _, ...semInfografico } = trilhas[0];
+		const { infografico: _, ...semInfografico } = trilhaDe(
+			"processo-legislativo",
+		);
 
 		expect(inicio([semInfografico])).toEqual({
 			trilha: listarTrilhas([semInfografico])[0],
 		});
 	});
 
-	it("não existe sem trilha", () => {
+	it("não existe sem a trilha do processo legislativo", () => {
 		expect(inicio([])).toBeUndefined();
+		expect(
+			inicio(
+				trilhas.filter((trilha) => trilha.slug !== "processo-legislativo"),
+			),
+		).toBeUndefined();
 	});
 });
 

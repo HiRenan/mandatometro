@@ -3,7 +3,23 @@
 @theme {
 	/* A partir desta largura, a folha do artigo cabe em três colunas, como no esboço. */
 	--breakpoint-folha: 90rem;
+	/*
+	 * A margem das páginas abaixo do md. Ela fica em px: com a letra do navegador
+	 * maior, a margem não cresce, e o texto ganha a largura (o Renan, na #48:
+	 * "Ficam em 20 px").
+	 */
+	--spacing-margem-celular: 20px;
 }
+
+/*
+ * A letra grande: a tela tem menos de 18 rem. A 360 px, isso acontece com a letra do
+ * navegador acima de 125%, e com a letra a 100%, só abaixo de 288 px. Aí o número da
+ * folha passa para cima do título, porque ao lado dele o título não cabe. O mais largo
+ * lado a lado, o cabeçalho do artigo das comissões, pede 15,3 rem da largura da
+ * página, mais os 40 px das margens: com 18 rem, o número ao lado do título nunca
+ * passa das margens, e com a letra a 100% o desenho não muda a partir de 320 px.
+ */
+@custom-variant letra-grande (@media (width < 18rem));
 
 /* As peças da folhinha de parede. As cores e as fontes vêm do globals.css. */
 @layer components {
@@ -107,6 +123,10 @@
 		font-variant-numeric: tabular-nums;
 	}
 
+	/*
+	 * O título da página. A quebra é a reserva do teto (o letra-com-teto): uma
+	 * palavra que não caiba nem no teto quebra, sem hífen, e a página não rola de lado.
+	 */
 	.titulo-condensado {
 		font-family: var(--font-sans);
 		font-stretch: 72%;
@@ -114,6 +134,22 @@
 		line-height: 0.96;
 		letter-spacing: -0.02em;
 		text-wrap: balance;
+		overflow-wrap: break-word;
+	}
+
+	/*
+	 * O teto da letra grande, nos títulos das páginas e no nome (o Renan, na #48:
+	 * "Teto"). A letra cresce com a do navegador até a palavra mais comprida encostar
+	 * nas margens do celular, e para aí. O --letra é o tamanho de sempre, e o
+	 * --palavra, a largura dessa palavra, em em, medida no navegador. Não é vw puro:
+	 * até a tela acabar, a letra segue a configuração. Com a letra a 100%, o teto não
+	 * age a partir de 320 px, e a partir do md o text-* de cada título manda.
+	 */
+	.letra-com-teto {
+		font-size: min(
+			var(--letra),
+			calc((100vw - 2 * var(--spacing-margem-celular)) / var(--palavra))
+		);
 	}
 
 	.subtitulo-condensado {
@@ -304,7 +340,9 @@
 	 * Sem o box-decoration-break: clone, que mudava a quebra da linha com a letra
 	 * grande, o texto fica no mesmo lugar. O anel de foco contorna o texto (o
 	 * span), e não a área, na cor do anel do lugar: azul no papel e amarelo no
-	 * cartão preto.
+	 * cartão preto. Um link sem o span fica com o anel no próprio link. Num
+	 * navegador sem o :has(), a regra que tira o anel do link cai, e o link com o
+	 * span fica com dois anéis: o foco continua visível.
 	 */
 	a.acao-de-texto {
 		margin-inline: -0.25rem;
@@ -315,7 +353,7 @@
 		content: none;
 	}
 
-	a.acao-de-texto:focus-visible {
+	a.acao-de-texto:has(> span):focus-visible {
 		outline-style: none;
 	}
 
@@ -329,9 +367,11 @@
 	 * Nas cores forçadas do Windows, o navegador troca as cores do site pelas do
 	 * sistema: o anel do elemento focado, o link, fica com a cor de destaque
 	 * (Highlight), mas o span, que não é o elemento focado, ficaria com a cor do
-	 * texto. Aqui, o anel do span usa a mesma cor de destaque.
+	 * texto. Aqui, o anel do span usa a mesma cor de destaque, nas ações em texto e
+	 * nos links do caminho.
 	 */
 	@media (forced-colors: active) {
+		.link-do-caminho:focus-visible > span,
 		a.acao-de-texto:focus-visible > span {
 			outline-color: Highlight;
 		}

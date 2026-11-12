@@ -1,4 +1,5 @@
 import { compiler } from "markdown-to-jsx/html";
+import { trilhaDaInicial } from "./inicial";
 import {
 	type Artigo,
 	type Infografico,
@@ -12,6 +13,8 @@ import {
 // markdown-to-jsx.
 
 // O Vite junta os arquivos no build; um arquivo novo entra sem mexer no código.
+// O conferir.ts lê os mesmos arquivos no começo do build: mudou este padrão,
+// mude lá e no teste dele também.
 const arquivos = import.meta.glob<string>("/conteudo/trilhas/*/*.md", {
 	query: "?raw",
 	import: "default",
@@ -39,7 +42,10 @@ export type CaminhoNaInicial = Pick<Infografico, "titulo" | "resumo"> & {
 	passos: Pick<Passo, "titulo" | "artigos">[];
 };
 
-/** A página inicial: a primeira trilha, como nas listas, e o caminho dela. */
+/**
+ * A página inicial: a trilha do processo legislativo, como nas listas, e o
+ * caminho dela.
+ */
 export type PaginaInicial = {
 	trilha: TrilhaNaLista;
 	caminho?: CaminhoNaInicial;
@@ -94,13 +100,13 @@ export function listarTrilhas(todas: Trilha[]): TrilhaNaLista[] {
 }
 
 export function inicio(todas: Trilha[]): PaginaInicial | undefined {
-	const [primeira] = todas;
-	if (!primeira) {
+	const trilha = trilhaDaInicial(todas);
+	if (!trilha) {
 		return undefined;
 	}
-	const { infografico } = primeira;
+	const { infografico } = trilha;
 	return {
-		trilha: trilhaNaLista(primeira),
+		trilha: trilhaNaLista(trilha),
 		...(infografico && {
 			caminho: {
 				titulo: infografico.titulo,

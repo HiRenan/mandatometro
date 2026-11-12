@@ -135,7 +135,7 @@ describe("página inicial", () => {
 
 		expect(
 			screen.getByText(
-				"O Mandatômetro explica como funciona a política no Brasil, em artigos curtos e em linguagem simples. A primeira trilha mostra como uma ideia vira lei.",
+				"O Mandatômetro explica como funciona a política no Brasil, em artigos curtos e em linguagem simples. A trilha do processo legislativo mostra como uma ideia vira lei.",
 			),
 		).toBeTruthy();
 		expect(screen.getAllByText(PARA_QUEM).length).toBeGreaterThan(0);
@@ -317,6 +317,17 @@ describe("página inicial", () => {
 		expect(tela.textContent).not.toMatch(
 			/status da api|newsletter|inscri|quiz|em breve|em construção/i,
 		);
+	});
+
+	it("com a letra grande, o título tem teto e as margens ficam em 20 px", async () => {
+		await mostrar();
+		const titulo = screen.getByRole("heading", { level: 1 });
+
+		// O título cresce até "brasileira," encostar nas margens (index.css).
+		expect(titulo.classList.contains("letra-com-teto")).toBe(true);
+		expect(
+			titulo.closest("div.mx-auto")?.classList.contains("px-margem-celular"),
+		).toBe(true);
 	});
 
 	it("sem o caminho, fica com a abertura e o botão", async () => {
