@@ -57,9 +57,10 @@ def _voto(votacao: Votacao, parlamentar: Parlamentar, valor: str, valor_bruto: s
     )
 
 
-def _nao_grava(sessao, *objetos) -> None:
+def _nao_grava(sessao, *objetos, regra: str) -> None:
+    """O banco recusa os objetos, pela regra (constraint ou coluna) que o teste nomeia."""
     sessao.add_all(objetos)
-    with pytest.raises(IntegrityError):
+    with pytest.raises(IntegrityError, match=regra):
         sessao.flush()
     sessao.rollback()
 
@@ -73,35 +74,46 @@ def test_o_mesmo_id_vale_nas_duas_casas(sessao):
 
 
 def test_o_id_nao_se_repete_na_mesma_casa(sessao):
-    _nao_grava(sessao, _parlamentar(5672), _parlamentar(5672))
+    _nao_grava(
+        sessao, _parlamentar(5672), _parlamentar(5672), regra="uq_parlamentar_casa_id_externo"
+    )
 
 
 def test_a_casa_e_camara_ou_senado(sessao):
-    _nao_grava(sessao, _parlamentar(1, "assembleia"))
+    _nao_grava(sessao, _parlamentar(1, "assembleia"), regra="ck_parlamentar_casa")
 
 
 def test_dado_coletado_sem_fonte_nao_grava(sessao):
-    _nao_grava(sessao, Parlamentar(casa="camara", id_externo=1, nome="Parlamentar Inventado"))
+    _nao_grava(
+        sessao,
+        Parlamentar(casa="camara", id_externo=1, nome="Parlamentar Inventado"),
+        regra='"fonte_id"',
+    )
 
 
 def test_o_parlamentar_vota_uma_vez_por_votacao(sessao):
     votacao, parlamentar = _votacao(), _parlamentar()
     _nao_grava(
-        sessao, _voto(votacao, parlamentar, "sim", "Sim"), _voto(votacao, parlamentar, "nao", "Não")
+        sessao,
+        _voto(votacao, parlamentar, "sim", "Sim"),
+        _voto(votacao, parlamentar, "nao", "Não"),
+        regra="pk_voto",
     )
 
 
 def test_o_resultado_fica_no_conjunto(sessao):
     votacao = _votacao()
     votacao.resultado = "empatada"
-    _nao_grava(sessao, votacao)
+    _nao_grava(sessao, votacao, regra="ck_votacao_resultado")
 
 
 # --- O voto: o valor no conjunto e o código como a Casa publica ---
 
 
 def test_o_voto_fica_no_conjunto(sessao):
-    _nao_grava(sessao, _voto(_votacao(), _parlamentar(), "talvez", "Talvez"))
+    _nao_grava(
+        sessao, _voto(_votacao(), _parlamentar(), "talvez", "Talvez"), regra='"ck_voto_valor"'
+    )
 
 
 def test_so_o_nao_votou_fica_sem_o_codigo(sessao):
@@ -109,7 +121,7 @@ def test_so_o_nao_votou_fica_sem_o_codigo(sessao):
     sessao.add(_voto(votacao, _parlamentar(1), "nao_votou", None))
     sessao.flush()
 
-    _nao_grava(sessao, _voto(votacao, _parlamentar(2), "sim", None))
+    _nao_grava(sessao, _voto(votacao, _parlamentar(2), "sim", None), regra="ck_voto_valor_bruto")
 
 
 @pytest.mark.parametrize(
@@ -169,7 +181,7 @@ def test_a_edicao_nasce_rascunho(sessao):
 
 
 def test_o_estado_e_rascunho_ou_publicada(sessao):
-    _nao_grava(sessao, _edicao(estado="revisada"))
+    _nao_grava(sessao, _edicao(estado="revisada"), regra="ck_edicao_estado")
 
 
 def test_so_a_edicao_publicada_tem_data_de_publicacao(sessao):
@@ -177,16 +189,18 @@ def test_so_a_edicao_publicada_tem_data_de_publicacao(sessao):
     sessao.add(_edicao(estado="publicada", publicada_em=publicada_em))
     sessao.flush()
 
-    _nao_grava(sessao, _edicao(estado="publicada"))
-    _nao_grava(sessao, _edicao(publicada_em=publicada_em))
+    _nao_grava(sessao, _edicao(estado="publicada"), regra="ck_edicao_publicada_em")
+    _nao_grava(sessao, _edicao(publicada_em=publicada_em), regra="ck_edicao_publicada_em")
 
 
 def test_a_semana_da_edicao_nao_termina_antes_de_comecar(sessao):
-    _nao_grava(sessao, _edicao(inicio=date(2026, 11, 8), fim=date(2026, 11, 2)))
+    _nao_grava(
+        sessao, _edicao(inicio=date(2026, 11, 8), fim=date(2026, 11, 2)), regra="ck_edicao_periodo"
+    )
 
 
 def test_item_da_edicao_sem_fonte_nao_grava(sessao):
-    _nao_grava(sessao, _item(_edicao(), 1, fonte=None))
+    _nao_grava(sessao, _item(_edicao(), 1, fonte=None), regra='"fonte_id"')
 
 
 def test_os_itens_vem_na_ordem_e_ela_nao_se_repete(sessao):
@@ -196,7 +210,7 @@ def test_os_itens_vem_na_ordem_e_ela_nao_se_repete(sessao):
     sessao.expire(edicao)
     assert [item.ordem for item in edicao.itens] == [1, 2]
 
-    _nao_grava(sessao, _item(edicao, 1, fonte))
+    _nao_grava(sessao, _item(edicao, 1, fonte), regra="uq_item_edicao_edicao_id_ordem")
 
 
 # --- Quem assina a newsletter ---
@@ -208,11 +222,16 @@ def test_o_inscrito_guarda_so_o_minimo():
 
 
 def test_o_email_nao_se_repete(sessao):
-    _nao_grava(sessao, Inscrito(email="pessoa@example.com"), Inscrito(email="pessoa@example.com"))
+    _nao_grava(
+        sessao,
+        Inscrito(email="pessoa@example.com"),
+        Inscrito(email="pessoa@example.com"),
+        regra="uq_inscrito_email",
+    )
 
 
 def test_o_email_fica_em_minusculas(sessao):
-    _nao_grava(sessao, Inscrito(email="Pessoa@example.com"))
+    _nao_grava(sessao, Inscrito(email="Pessoa@example.com"), regra="ck_inscrito_email_minusculo")
 
 
 def test_o_codigo_de_saida_vem_do_banco_e_nao_se_repete(sessao):
@@ -222,7 +241,11 @@ def test_o_codigo_de_saida_vem_do_banco_e_nao_se_repete(sessao):
     assert isinstance(primeira.codigo_saida, UUID)
     assert primeira.codigo_saida != segunda.codigo_saida
 
-    _nao_grava(sessao, Inscrito(email="pessoa3@example.com", codigo_saida=primeira.codigo_saida))
+    _nao_grava(
+        sessao,
+        Inscrito(email="pessoa3@example.com", codigo_saida=primeira.codigo_saida),
+        regra="uq_inscrito_codigo_saida",
+    )
 
 
 def test_sair_apaga_a_linha(sessao):
