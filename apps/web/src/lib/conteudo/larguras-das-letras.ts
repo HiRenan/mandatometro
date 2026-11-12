@@ -10,7 +10,8 @@
  * - subtitulo-condensado: largura 75% e peso 800, o mesmo do intertítulo (.texto h2).
  *
  * A soma das letras de uma palavra não conta o kerning e fica igual ou um pouco acima
- * da largura medida na página. Uma letra fora da tabela conta como a mais larga dela.
+ * da largura medida na página, menos nos pares que o navegador alarga: esses ficam no
+ * PARES_MAIS_LARGOS, abaixo. Uma letra fora da tabela conta como a mais larga dela.
  * Mudou a fonte ou o estilo de um título: meça a tabela de novo, do mesmo jeito.
  */
 export const LARGURAS_DAS_LETRAS = {
