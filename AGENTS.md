@@ -67,6 +67,7 @@ Endpoints, campos e exemplos de cada fonte estão nas issues dos conectores (#10
 - Toda chamada externa tem timeout e nova tentativa com backoff. A API da Câmara devolve 504 de vez em quando.
 - O User-Agent identifica o projeto (`mandatometro (Hack Brasil 2026)`), e a coleta respeita o robots.txt dos sites.
 - A referência do Programa Cidadania Fiscal da Receita Federal no planejamento pode redirecionar para autenticação. Em 11/11/2026, o trecho explicativo foi consultado no índice de busca da própria URL; não trate a tela de login como conteúdo da fonte e confira o acesso público antes de publicar o artigo 3.5.
+- O normas.leg.br, onde os artigos das trilhas citam a Constituição, monta a página no navegador: o `curl` do link não traz o texto. Para conferir por HTTP, peça a norma inteira em `https://normas.leg.br/api/public/normas?urn=<urn>&tipo_documento=maior-detalhe`, com a URN sem o `!art61` do fim (com ele, a resposta só repete a URN). Cada dispositivo vem num `hasPart`, com a URN em `legislationIdentifier` e as versões em `workExample`; o texto em vigor é o `text` da versão com a `legislationDate` mais recente.
 - Os CSVs do TSE vêm em latin-1, separados por `;`, um por UF dentro de cada ZIP.
 - A mesma pessoa se liga entre eleições do TSE pelo CPF. Em 2024 o CPF vem vazio e em 2012 falta em parte das linhas: nesses anos, use o título de eleitor e confira a data de nascimento.
 
