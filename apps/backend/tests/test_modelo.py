@@ -3,13 +3,18 @@
 Os dados são inventados: nenhum CPF, nome ou e-mail de verdade.
 """
 
-from datetime import date
+from datetime import UTC, date, datetime
+from uuid import UUID
 
 import pytest
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 
 from mandatometro.db.modelos import (
+    Edicao,
     Fonte,
+    Inscrito,
+    ItemEdicao,
     Parlamentar,
     Votacao,
     Voto,
@@ -140,3 +145,90 @@ def test_normalizar_voto(bruto, esperado):
 )
 def test_normalizar_resultado(bruto, esperado):
     assert normalizar_resultado(bruto) == esperado
+
+
+# --- A edição da semana e os itens ---
+
+
+def _edicao(**campos) -> Edicao:
+    semana = {"titulo": "Edição de exemplo", "inicio": date(2026, 11, 2), "fim": date(2026, 11, 8)}
+    return Edicao(**(semana | campos))
+
+
+def _item(edicao: Edicao, ordem: int, fonte: Fonte | None) -> ItemEdicao:
+    return ItemEdicao(
+        edicao=edicao, ordem=ordem, titulo=f"Item {ordem}", texto="Texto de exemplo.", fonte=fonte
+    )
+
+
+def test_a_edicao_nasce_rascunho(sessao):
+    edicao = _edicao()
+    sessao.add(edicao)
+    sessao.flush()
+    assert (edicao.estado, edicao.publicada_em) == ("rascunho", None)
+
+
+def test_o_estado_e_rascunho_ou_publicada(sessao):
+    _nao_grava(sessao, _edicao(estado="revisada"))
+
+
+def test_so_a_edicao_publicada_tem_data_de_publicacao(sessao):
+    publicada_em = datetime(2026, 11, 8, 12, tzinfo=UTC)
+    sessao.add(_edicao(estado="publicada", publicada_em=publicada_em))
+    sessao.flush()
+
+    _nao_grava(sessao, _edicao(estado="publicada"))
+    _nao_grava(sessao, _edicao(publicada_em=publicada_em))
+
+
+def test_a_semana_da_edicao_nao_termina_antes_de_comecar(sessao):
+    _nao_grava(sessao, _edicao(inicio=date(2026, 11, 8), fim=date(2026, 11, 2)))
+
+
+def test_item_da_edicao_sem_fonte_nao_grava(sessao):
+    _nao_grava(sessao, _item(_edicao(), 1, fonte=None))
+
+
+def test_os_itens_vem_na_ordem_e_ela_nao_se_repete(sessao):
+    edicao, fonte = _edicao(), _fonte()
+    sessao.add_all([_item(edicao, 2, fonte), _item(edicao, 1, fonte)])
+    sessao.flush()
+    sessao.expire(edicao)
+    assert [item.ordem for item in edicao.itens] == [1, 2]
+
+    _nao_grava(sessao, _item(edicao, 1, fonte))
+
+
+# --- Quem assina a newsletter ---
+
+
+def test_o_inscrito_guarda_so_o_minimo():
+    # A inscrição pede só o e-mail (AGENTS.md). Coluna nova aqui é dado pessoal novo: decida antes.
+    assert set(Inscrito.__table__.columns.keys()) == {"id", "email", "codigo_saida", "inscrito_em"}
+
+
+def test_o_email_nao_se_repete(sessao):
+    _nao_grava(sessao, Inscrito(email="pessoa@example.com"), Inscrito(email="pessoa@example.com"))
+
+
+def test_o_email_fica_em_minusculas(sessao):
+    _nao_grava(sessao, Inscrito(email="Pessoa@example.com"))
+
+
+def test_o_codigo_de_saida_vem_do_banco_e_nao_se_repete(sessao):
+    primeira, segunda = Inscrito(email="pessoa1@example.com"), Inscrito(email="pessoa2@example.com")
+    sessao.add_all([primeira, segunda])
+    sessao.flush()
+    assert isinstance(primeira.codigo_saida, UUID)
+    assert primeira.codigo_saida != segunda.codigo_saida
+
+    _nao_grava(sessao, Inscrito(email="pessoa3@example.com", codigo_saida=primeira.codigo_saida))
+
+
+def test_sair_apaga_a_linha(sessao):
+    inscrito = Inscrito(email="pessoa@example.com")
+    sessao.add(inscrito)
+    sessao.flush()
+
+    sessao.execute(delete(Inscrito).where(Inscrito.codigo_saida == inscrito.codigo_saida))
+    assert sessao.scalars(select(Inscrito)).all() == []

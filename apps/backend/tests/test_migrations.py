@@ -10,6 +10,9 @@ TABELAS_DO_MVP = {
     "votacao",
     "votacao_proposicao",
     "voto",
+    "edicao",
+    "item_edicao",
+    "inscrito",
 }
 
 

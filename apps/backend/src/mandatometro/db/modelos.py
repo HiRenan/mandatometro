@@ -2,8 +2,10 @@
 
 - A coleta da Câmara (#10) e do Senado (#11) grava parlamentar, mandato, proposição, votação e
   voto. Os campos de cada API estão em docs/dicionario-de-dados.md.
-- Fonte em tudo (AGENTS.md): cada dado coletado aponta para uma fonte, com o endereço e a data da
-  coleta. Sem fonte, o banco não grava.
+- A newsletter: a edição da semana, com os itens, que a IA rascunha e o time revisa (#22), e
+  quem assina, que se inscreve pela #21 e recebe as edições pelo envio da #39.
+- Fonte em tudo (AGENTS.md): cada dado coletado e cada item da edição aponta para uma fonte, com
+  o endereço e a data da coleta. Sem fonte, o banco não grava.
 - Cada Casa tem os seus números: a chave de parlamentar, proposição e votação é a Casa com o id da
   Casa (casa, id_externo).
 - Os valores fixos são texto com CHECK, sem enum do PostgreSQL: um valor novo entra trocando o
@@ -12,6 +14,7 @@
 """
 
 from datetime import date, datetime
+from uuid import UUID
 
 from sqlalchemy import (
     CheckConstraint,
@@ -22,6 +25,7 @@ from sqlalchemy import (
     Table,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -268,3 +272,86 @@ class Voto(Base):
     votacao: Mapped[Votacao] = relationship(back_populates="votos")
     parlamentar: Mapped[Parlamentar] = relationship()
     fonte: Mapped[Fonte] = relationship()
+
+
+# --- A newsletter: a edição da semana e quem assina ---
+
+ESTADOS_DA_EDICAO = ("rascunho", "publicada")
+
+
+class Edicao(Base):
+    """Uma edição do jornal legislativo: o que o Congresso votou numa semana.
+
+    - inicio e fim: as datas das votações que a edição cobre.
+    - estado: nasce rascunho, quando a IA escreve (#22), e vira publicada quando o time revisa.
+      Só a edição publicada tem publicada_em, e só ela vai para o site e para o envio (#39).
+    """
+
+    __tablename__ = "edicao"
+    __table_args__ = (
+        CheckConstraint(_um_de("estado", ESTADOS_DA_EDICAO), name="estado"),
+        CheckConstraint("(estado = 'publicada') = (publicada_em is not null)", name="publicada_em"),
+        CheckConstraint("inicio <= fim", name="periodo"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    titulo: Mapped[str]
+    inicio: Mapped[date]
+    fim: Mapped[date]
+    estado: Mapped[str] = mapped_column(server_default="rascunho")
+    publicada_em: Mapped[datetime | None]
+
+    itens: Mapped[list["ItemEdicao"]] = relationship(
+        back_populates="edicao",
+        order_by="ItemEdicao.ordem",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+
+class ItemEdicao(Base):
+    """Uma notícia da edição, na ordem em que aparece, com a fonte obrigatória.
+
+    A fonte é a da afirmação: a newsletter mostra a url_publica dela, quando houver, e a data da
+    coleta. Sem fonte, o item não grava (AGENTS.md: o que não tem fonte fica fora da newsletter).
+    """
+
+    __tablename__ = "item_edicao"
+    __table_args__ = (UniqueConstraint("edicao_id", "ordem"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    edicao_id: Mapped[int] = mapped_column(ForeignKey("edicao.id", ondelete="CASCADE"))
+    ordem: Mapped[int]
+    titulo: Mapped[str]
+    texto: Mapped[str]
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
+    edicao: Mapped[Edicao] = relationship(back_populates="itens")
+    fonte: Mapped[Fonte] = relationship()
+
+
+class Inscrito(Base):
+    """Quem assina a newsletter: só o e-mail, a data da inscrição e o código do link de sair.
+
+    - email: único e em minúsculas. A inscrição (#21) converte antes de gravar; o banco recusa
+      maiúscula, para "Pessoa@" e "pessoa@" não virarem duas inscrições.
+    - codigo_saida: um uuid que o próprio banco sorteia na inscrição (gen_random_uuid), sem
+      relação com o e-mail. Vai no link de sair de cada envio (#39).
+
+    Sair apaga a linha inteira: a inscrição não deixa rastro de quem saiu (DELETE pelo
+    codigo_saida, testado em tests/test_modelo.py). Tabela nova que aponte para o inscrito, como
+    um registro de envios, apaga junto (ondelete CASCADE).
+
+    O e-mail é dado pessoal (AGENTS.md): só sai do banco para o envio, e a API, os logs e os
+    fixtures citam o inscrito pelo id.
+    """
+
+    __tablename__ = "inscrito"
+    __table_args__ = (CheckConstraint("email = lower(email)", name="email_minusculo"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(unique=True)
+    codigo_saida: Mapped[UUID] = mapped_column(
+        unique=True, server_default=text("gen_random_uuid()")
+    )
+    inscrito_em: Mapped[datetime] = mapped_column(server_default=func.now())
