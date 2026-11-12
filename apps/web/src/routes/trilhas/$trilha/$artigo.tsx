@@ -122,8 +122,8 @@ function Folha({ trilha, artigo, posicao, anterior, proximo }: ArtigoNaTrilha) {
 
 				<article>
 					{/* Com a letra grande, o número fica em cima do título, e o título
-					    cresce até "comissões", a palavra mais comprida dos títulos dos
-					    artigos, encostar nas margens (o letra-com-teto do index.css). */}
+					    cresce até "fundamentais?", a palavra mais comprida dos títulos
+					    dos artigos, encostar nas margens (o letra-com-teto do index.css). */}
 					<header className="folha:block letra-grande:grid-cols-[minmax(0,1fr)] letra-grande:gap-y-3 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4">
 						<p className="folha:hidden grid justify-items-start">
 							<span className="numeral text-[7.5rem] md:text-[10rem]">
@@ -133,7 +133,7 @@ function Folha({ trilha, artigo, posicao, anterior, proximo }: ArtigoNaTrilha) {
 								{deTantos}
 							</span>
 						</p>
-						<h1 className="titulo-condensado letra-com-teto folha:text-[4.75rem] max-w-[12ch] [--letra:2.5rem] [--palavra:4.06] md:text-[3.5rem]">
+						<h1 className="titulo-condensado letra-com-teto folha:text-[4.75rem] max-w-[12ch] [--letra:2.5rem] [--palavra:5.67] md:text-[3.5rem]">
 							{artigo.titulo}
 						</h1>
 					</header>

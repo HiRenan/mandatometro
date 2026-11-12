@@ -173,7 +173,10 @@ describe("página inicial", () => {
 		await mostrar();
 
 		const linha = screen.getByText("3 artigos · 6 min de leitura");
-		expect(linha.nextElementSibling?.textContent).toBe("Começar a trilha");
+		// O trim tira o espaço antes da seta (o SETA_DO_BOTAO).
+		expect(linha.nextElementSibling?.textContent?.trim()).toBe(
+			"Começar a trilha",
+		);
 	});
 
 	it("continua do primeiro artigo não lido, com o progresso em palavras", async () => {

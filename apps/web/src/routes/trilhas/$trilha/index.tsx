@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { Aviso, useAviso } from "@/components/aviso";
-import { BOTAO_CONTINUAR } from "@/components/botao-continuar";
+import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "@/components/botao-continuar";
 import { Caminho } from "@/components/caminho";
 import { Infografico } from "@/components/infografico";
 import { MarcaDeLido } from "@/components/marca-de-lido";
@@ -76,10 +76,10 @@ function PaginaDaTrilha() {
 				className={`mt-8 ${trilha.infografico ? "folha:grid-cols-[minmax(0,1fr)_28rem] folha:gap-x-12 lg:grid lg:grid-cols-[minmax(0,1fr)_21rem] lg:gap-x-8 xl:grid-cols-[minmax(0,1fr)_24rem] xl:gap-x-10" : ""}`}
 			>
 				<div className="max-w-[56rem]">
-					{/* Com a letra grande, o título cresce até "legislativo", a palavra
-					    mais comprida do título da trilha, encostar nas margens (o
+					{/* Com a letra grande, o título cresce até "Constituição", a palavra
+					    mais comprida dos títulos das trilhas, encostar nas margens (o
 					    letra-com-teto do index.css). */}
-					<h1 className="titulo-condensado letra-com-teto [--letra:3rem] [--palavra:3.9] md:text-[4.75rem]">
+					<h1 className="titulo-condensado letra-com-teto [--letra:3rem] [--palavra:4.82] md:text-[4.75rem]">
 						{trilha.titulo}
 					</h1>
 					<p className="mt-5 max-w-[40ch] font-serif text-xl leading-snug font-medium lg:text-[1.5625rem] lg:leading-[1.4]">
@@ -106,9 +106,11 @@ function PaginaDaTrilha() {
 								{quantosLidos > 0
 									? `Continuar de onde parou: ${ondeParou.titulo}`
 									: "Começar pelo primeiro artigo"}
+								{/* O espaço antes da seta: com a letra grande, quando ela desce
+								    sozinha, começa alinhada com o texto (o SETA_DO_BOTAO). */}{" "}
 								<ArrowRight
 									aria-hidden="true"
-									className="size-5 shrink-0"
+									className={SETA_DO_BOTAO}
 									strokeWidth={2.5}
 								/>
 							</Link>
@@ -156,8 +158,12 @@ function PaginaDaTrilha() {
 												{lido && <MarcaDeLido className="visto-no-numero" />}
 											</span>
 										</span>
-										{/* O respiro à direita do título, no celular, deixa o canto dobrado livre. */}
-										<h2 className="subtitulo-condensado letra-grande:col-span-full pr-3 text-[1.75rem] md:pr-0 md:text-[2.25rem]">
+										{/* O respiro à direita do título, no celular, deixa o canto dobrado
+										    livre. Com a letra grande, o título cresce até "fundamentais?",
+										    a palavra mais comprida dos títulos dos artigos, encostar nas
+										    bordas da folha (o letra-com-teto do index.css): o --recuo é o
+										    pl-[1.625rem] e o pr-5 da folha, mais o pr-3 do título. */}
+										<h2 className="subtitulo-condensado letra-com-teto letra-grande:col-span-full pr-3 [--letra:1.75rem] [--palavra:5.96] [--recuo:3.625rem] md:pr-0 md:text-[2.25rem]">
 											<Link
 												to="/trilhas/$trilha/$artigo"
 												params={{ trilha: trilha.slug, artigo: artigo.slug }}

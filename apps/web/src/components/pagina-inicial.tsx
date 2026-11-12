@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import type { PaginaInicial as Dados } from "@/lib/conteudo";
 import { fraseDoProgresso, tamanhoDaTrilha } from "@/lib/formatar";
 import { contarLidos, primeiroNaoLido, useArtigosLidos } from "@/lib/progresso";
-import { BOTAO_CONTINUAR } from "./botao-continuar";
+import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "./botao-continuar";
 import { InfograficoEmLinha } from "./infografico-em-linha";
 
 /**
@@ -18,12 +18,17 @@ export function PaginaInicial({ pagina }: { pagina: Dados }) {
 	const lidos = useArtigosLidos();
 	const quantosLidos = contarLidos(trilha.artigos, lidos);
 	const ondeParou = primeiroNaoLido(trilha.artigos, lidos);
+	// O espaço antes da seta, e não uma margem: com a letra grande, quando ela desce
+	// sozinha para a linha de baixo, começa alinhada com o texto (o SETA_DO_BOTAO).
 	const seta = (
-		<ArrowRight
-			aria-hidden="true"
-			className="size-5 shrink-0"
-			strokeWidth={2.5}
-		/>
+		<>
+			{" "}
+			<ArrowRight
+				aria-hidden="true"
+				className={SETA_DO_BOTAO}
+				strokeWidth={2.5}
+			/>
+		</>
 	);
 
 	return (

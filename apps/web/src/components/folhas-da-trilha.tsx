@@ -46,7 +46,7 @@ export function FolhasDaTrilha({
 							to="/trilhas/$trilha/$artigo"
 							params={{ trilha: trilha.slug, artigo: artigo.slug }}
 							aria-current={aqui ? "page" : undefined}
-							className="grid grid-cols-[3rem_1fr] gap-x-3 py-4 pr-8 pl-[1.625rem] no-underline hover:[&_.titulo]:underline"
+							className="grid grid-cols-[3rem_minmax(0,1fr)] gap-x-3 py-4 pr-8 pl-[1.625rem] no-underline hover:[&_.titulo]:underline"
 						>
 							{/* Com a letra grande, o número fica no lugar, e o título desce
 							    para a linha de baixo, com a largura toda. A margem embaixo do

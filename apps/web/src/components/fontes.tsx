@@ -1,5 +1,6 @@
+import { Fragment } from "react";
 import type { Fonte } from "@/lib/conteudo";
-import { dominio, formatarData } from "@/lib/formatar";
+import { dominio, formatarData, pedacosDoDominio } from "@/lib/formatar";
 
 /** As fontes oficiais do artigo, com o link e a data da consulta. */
 export function Fontes({ fontes }: { fontes: Fonte[] }) {
@@ -13,7 +14,10 @@ export function Fontes({ fontes }: { fontes: Fonte[] }) {
 			</h2>
 			<ol className="mt-4 grid gap-4">
 				{fontes.map((fonte, indice) => (
-					<li key={fonte.url} className="grid grid-cols-[1.75rem_1fr] gap-x-2">
+					<li
+						key={fonte.url}
+						className="grid grid-cols-[1.75rem_minmax(0,1fr)] gap-x-2"
+					>
 						<span
 							aria-hidden="true"
 							className="text-lg leading-snug font-extrabold tabular-nums"
@@ -24,9 +28,25 @@ export function Fontes({ fontes }: { fontes: Fonte[] }) {
 							<a href={fonte.url} className="font-bold">
 								{fonte.titulo}
 							</a>
-							<span className="text-tinta-suave mt-1 block text-[0.9375rem]">
-								{dominio(fonte.url)}, consultada em{" "}
-								{formatarData(fonte.consultadoEm)}
+							{/* Com a letra grande, o endereço que não cabe na linha quebra
+							    antes de um ponto (o Renan, na #76: "Nos pontos"), e um
+							    pedaço maior que a linha se parte numa letra. Ele só deixa
+							    de caber abaixo de 20rem, e é só ali que vai em pedaços: o
+							    endereço partido muda o desenho das letras mesmo sem
+							    quebrar (o <wbr> desfaz o ajuste entre o "v" e o ponto de
+							    "gov.br", e cada pedaço anda uma fração de pixel). Dali
+							    para cima, ele vai inteiro, como antes da #76. */}
+							<span className="text-tinta-suave mt-1 block text-[0.9375rem] wrap-anywhere">
+								<span className="max-[20rem]:hidden">{dominio(fonte.url)}</span>
+								<span className="hidden max-[20rem]:inline">
+									{pedacosDoDominio(fonte.url).map((pedaco, posicao) => (
+										<Fragment key={pedaco}>
+											{posicao > 0 && <wbr />}
+											{pedaco}
+										</Fragment>
+									))}
+								</span>
+								, consultada em {formatarData(fonte.consultadoEm)}
 							</span>
 						</p>
 					</li>
