@@ -1,0 +1,270 @@
+"""O modelo de dados do MVP: o que a coleta grava e o que a newsletter usa.
+
+- A coleta da Câmara (#10) e do Senado (#11) grava parlamentar, mandato, proposição, votação e
+  voto. Os campos de cada API estão em docs/dicionario-de-dados.md.
+- Fonte em tudo (AGENTS.md): cada dado coletado aponta para uma fonte, com o endereço e a data da
+  coleta. Sem fonte, o banco não grava.
+- Cada Casa tem os seus números: a chave de parlamentar, proposição e votação é a Casa com o id da
+  Casa (casa, id_externo).
+- Os valores fixos são texto com CHECK, sem enum do PostgreSQL: um valor novo entra trocando o
+  CHECK numa migration.
+- O diagrama está no README, em "Modelo de dados".
+"""
+
+from datetime import date, datetime
+
+from sqlalchemy import (
+    CheckConstraint,
+    Column,
+    ForeignKey,
+    Index,
+    String,
+    Table,
+    UniqueConstraint,
+    func,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from mandatometro.db import Base
+
+CASAS = ("camara", "senado")
+
+# --- O voto e o resultado: o valor num conjunto nosso e o código como a Casa publica ---
+
+# presidente: quem presidiu a sessão e não vota. nao_votou: presente sem voto, em atividade
+# parlamentar ou de licença. outro: um código que ainda não está em _VOTOS_CONHECIDOS.
+VALORES_DE_VOTO = ("sim", "nao", "abstencao", "obstrucao", "presidente", "nao_votou", "outro")
+_VOTOS_CONHECIDOS = {
+    "Sim": "sim",
+    "Não": "nao",
+    "Abstenção": "abstencao",
+    "Obstrução": "obstrucao",  # da Câmara; ainda não apareceu nas respostas gravadas
+    "Artigo 17": "presidente",  # Câmara: art. 17 do Regimento Interno
+    "Presidente (art. 51 RISF)": "presidente",
+    "P-NRV": "nao_votou",  # "Presente – Não registrou voto"
+    "AP": "nao_votou",  # "Atividade parlamentar"
+    "LS": "nao_votou",  # "Licença saúde"
+}
+# Códigos que revelam a saúde de quem não votou: entram só como nao_votou, sem o código. O banco
+# não guarda motivo de saúde (decisão do Renan na #7, em 12/11/2026).
+_SEM_O_CODIGO = {"LS"}
+
+RESULTADOS = ("aprovada", "rejeitada", "outro")
+# Câmara: aprovacao 1 ou 0. Senado: resultadoVotacao "A" nas 7 votações vistas, todas aprovadas
+# segundo o informeLegislativo; as outras letras ainda não apareceram.
+_RESULTADOS_CONHECIDOS = {"1": "aprovada", "0": "rejeitada", "A": "aprovada"}
+
+
+def normalizar_voto(bruto: str) -> tuple[str, str | None]:
+    """O (valor, valor_bruto) a gravar para o código de voto que a Casa publicou.
+
+    Um código novo vira "outro", com o código ao lado, sem quebrar a coleta: o conector avisa no
+    log, e alguém acrescenta o código em _VOTOS_CONHECIDOS.
+    """
+    codigo = bruto.strip()
+    valor = _VOTOS_CONHECIDOS.get(codigo, "outro")
+    return valor, None if codigo in _SEM_O_CODIGO else codigo
+
+
+def normalizar_resultado(bruto: str | int | None) -> tuple[str, str | None]:
+    """O (resultado, resultado_bruto) a gravar para o resultado que a Casa publicou."""
+    if bruto is None:
+        return "outro", None
+    codigo = str(bruto).strip()
+    return _RESULTADOS_CONHECIDOS.get(codigo, "outro"), codigo
+
+
+def _um_de(coluna: str, valores: tuple[str, ...]) -> str:
+    """A condição de um CHECK: a coluna só aceita os valores da lista."""
+    return f"{coluna} in ({', '.join(repr(valor) for valor in valores)})"
+
+
+# --- A fonte ---
+
+
+class Fonte(Base):
+    """De onde veio um dado: o endereço coletado, a página que o leitor abre, a data e o trecho.
+
+    - url: o que a coleta leu (a API, ou a página e o PDF lidos pelo Firecrawl).
+    - url_publica: a página da Câmara ou do Senado que o leitor abre, quando houver. É a que a
+      newsletter mostra.
+    - trecho: o trecho literal, quando a afirmação vier de texto.
+
+    Registros da mesma resposta dividem a fonte: os votos de uma votação apontam todos para a fonte
+    da lista de votos.
+    """
+
+    __tablename__ = "fonte"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    url: Mapped[str]
+    url_publica: Mapped[str | None]
+    coletado_em: Mapped[datetime] = mapped_column(server_default=func.now())
+    trecho: Mapped[str | None]
+
+
+# --- O Congresso: o que a coleta grava ---
+
+
+class Parlamentar(Base):
+    """Um deputado ou senador, pela Casa e pelo id que a Casa dá a ele.
+
+    Os ids das duas Casas são números independentes. No Senado, o mesmo código vem como texto na
+    lista ("5672") e como número no /votacao (5672): o conector converte para inteiro, e os dois
+    acham a mesma linha. Quem foi deputado e virou senador tem uma linha em cada Casa.
+    """
+
+    __tablename__ = "parlamentar"
+    __table_args__ = (
+        UniqueConstraint("casa", "id_externo"),
+        CheckConstraint(_um_de("casa", CASAS), name="casa"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    casa: Mapped[str]
+    id_externo: Mapped[int]
+    nome: Mapped[str]
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
+    fonte: Mapped[Fonte] = relationship()
+
+
+class Mandato(Base):
+    """O cargo do parlamentar numa legislatura: a UF, a condição e se está em exercício.
+
+    - legislatura: na Câmara, o idLegislatura; no Senado, a primeira legislatura do mandato, que
+      cobre duas.
+    - condicao: como a Casa escreve ("Titular", "Suplente", "1º Suplente").
+    - em_exercicio: se estava em exercício na última coleta da lista de deputados ou de senadores.
+
+    O partido não fica aqui, porque muda dentro do mandato: vai no voto. O motivo de afastamento do
+    senador também não entra, porque traz a "Licença saúde".
+    """
+
+    __tablename__ = "mandato"
+    __table_args__ = (UniqueConstraint("parlamentar_id", "legislatura"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    parlamentar_id: Mapped[int] = mapped_column(ForeignKey("parlamentar.id", ondelete="CASCADE"))
+    legislatura: Mapped[int]
+    uf: Mapped[str] = mapped_column(String(2))
+    condicao: Mapped[str | None]
+    em_exercicio: Mapped[bool]
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
+    parlamentar: Mapped[Parlamentar] = relationship()
+    fonte: Mapped[Fonte] = relationship()
+
+
+class Proposicao(Base):
+    """Um projeto numa Casa: PL, PEC, requerimento...
+
+    A mesma matéria tem id e ementa diferentes em cada Casa (a PEC 18/2025 é 2500080 na Câmara e
+    9006525 no Senado): uma linha por Casa, ligadas por sigla, número e ano. O número é inteiro,
+    então "00018" e "18" viram 18. A ligação vale para a numeração única das duas Casas, de 2019 em
+    diante.
+
+    - id_externo: o id da Câmara; no Senado, o idProcesso (e não o codigoMateria).
+    - ementa: no Senado, a do conteudo.ementa ou a do /votacao, nunca a do processo, que não vem.
+    - url_inteiro_teor: o urlInteiroTeor da Câmara ou o documento.url do Senado.
+    """
+
+    __tablename__ = "proposicao"
+    __table_args__ = (
+        UniqueConstraint("casa", "id_externo"),
+        Index(None, "sigla", "numero", "ano"),
+        CheckConstraint(_um_de("casa", CASAS), name="casa"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    casa: Mapped[str]
+    id_externo: Mapped[int]
+    sigla: Mapped[str]
+    numero: Mapped[int]
+    ano: Mapped[int]
+    ementa: Mapped[str | None]
+    apelido: Mapped[str | None]
+    url_inteiro_teor: Mapped[str | None]
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
+    fonte: Mapped[Fonte] = relationship()
+
+
+# Quais proposições cada votação afetou. Na Câmara, a lista proposicoesAfetadas do
+# /votacoes/{id}; no Senado, o idProcesso. Nunca o prefixo do id da votação da Câmara: nas
+# urgências e nos recursos, ele é o do requerimento, e não o da matéria.
+votacao_proposicao = Table(
+    "votacao_proposicao",
+    Base.metadata,
+    Column("votacao_id", ForeignKey("votacao.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "proposicao_id",
+        ForeignKey("proposicao.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+)
+
+
+class Votacao(Base):
+    """Uma votação do plenário.
+
+    - id_externo: texto. Na Câmara, "{id}-{sequencial}" ("2637478-26"); no Senado, o
+      codigoSessaoVotacao ("7109"), que sozinho é único.
+    - resultado e resultado_bruto: saem de normalizar_resultado.
+
+    Não há colunas de total: no Senado elas vêm null, e na Câmara não existem. O total se conta
+    pelos votos. Na Câmara, o /votos só traz quem votou, e só nas votações nominais: quem não
+    aparece não vira linha, e a conta "X dos 513 votaram" sai dos votos gravados.
+    """
+
+    __tablename__ = "votacao"
+    __table_args__ = (
+        UniqueConstraint("casa", "id_externo"),
+        CheckConstraint(_um_de("casa", CASAS), name="casa"),
+        CheckConstraint(_um_de("resultado", RESULTADOS), name="resultado"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    casa: Mapped[str]
+    id_externo: Mapped[str]
+    data: Mapped[date] = mapped_column(index=True)
+    descricao: Mapped[str]
+    resultado: Mapped[str]
+    resultado_bruto: Mapped[str | None]
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
+    fonte: Mapped[Fonte] = relationship()
+    proposicoes: Mapped[list[Proposicao]] = relationship(secondary=votacao_proposicao)
+    votos: Mapped[list["Voto"]] = relationship(
+        back_populates="votacao", cascade="all, delete-orphan", passive_deletes=True
+    )
+
+
+class Voto(Base):
+    """Como um parlamentar votou numa votação.
+
+    - valor e valor_bruto: saem de normalizar_voto. O valor_bruto, o código como a Casa publicou,
+      só fica vazio no nao_votou: a "Licença saúde" (LS) entra sem o código.
+    - partido e uf: os do dia do voto. O partido muda dentro do mandato.
+    """
+
+    __tablename__ = "voto"
+    __table_args__ = (
+        CheckConstraint(_um_de("valor", VALORES_DE_VOTO), name="valor"),
+        CheckConstraint("valor_bruto is not null or valor = 'nao_votou'", name="valor_bruto"),
+    )
+
+    votacao_id: Mapped[int] = mapped_column(
+        ForeignKey("votacao.id", ondelete="CASCADE"), primary_key=True
+    )
+    parlamentar_id: Mapped[int] = mapped_column(ForeignKey("parlamentar.id"), primary_key=True)
+    valor: Mapped[str]
+    valor_bruto: Mapped[str | None]
+    partido: Mapped[str | None]
+    uf: Mapped[str | None] = mapped_column(String(2))
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
+    votacao: Mapped[Votacao] = relationship(back_populates="votos")
+    parlamentar: Mapped[Parlamentar] = relationship()
+    fonte: Mapped[Fonte] = relationship()
