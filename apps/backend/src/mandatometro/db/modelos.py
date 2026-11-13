@@ -73,17 +73,21 @@ def normalizar_voto(bruto: str) -> tuple[str, str | None]:
     """O (valor, valor_bruto) a gravar para o código de voto que a Casa publicou.
 
     Só os códigos de CODIGOS_GRAVADOS ficam gravados. Uma ausência vira nao_votou, sem o código,
-    com qualquer caixa ("ls" é LS).
-    Um código desconhecido vira "outro", também sem o código, porque pode ser outro motivo pessoal,
-    e vai para o log sozinho, sem a pessoa: quem conferir o significado o põe numa das listas, e
-    uma nova coleta da votação corrige o voto. O conector não acrescenta a pessoa a esse aviso.
+    com qualquer caixa ("ls" é LS). Um código desconhecido vira "outro", também sem o código,
+    porque pode ser outro motivo pessoal.
+
+    O aviso no log não leva o código nem a pessoa: o log junto com o banco apontaria quem recebeu
+    o código, e um código novo pode ser de saúde. Esta função não conhece a votação, então a
+    coleta (#10 e #11) registra a votação e quantos códigos desconhecidos vieram nela, sem o
+    código e sem a pessoa ("1 código desconhecido na votação 7109"). Quem for classificar o código
+    o lê na fonte pública e o põe numa das listas, e uma nova coleta da votação corrige o voto.
     """
     codigo = bruto.strip()
     if codigo in CODIGOS_GRAVADOS:
         return CODIGOS_GRAVADOS[codigo], codigo
     if codigo.upper() in CODIGOS_DE_AUSENCIA:
         return "nao_votou", None
-    logger.warning("Código de voto desconhecido: %r. Entra como outro, sem o código.", codigo)
+    logger.warning("Código de voto desconhecido. Entra como outro, sem o código.")
     return "outro", None
 
 
