@@ -1,33 +1,67 @@
 @import "@mandatometro/ui/globals.css";
+@import "./estilos/fundo.css";
+@import "./estilos/azulejos.css";
+@import "./estilos/movimento.css";
+@import "./estilos/quiz.css";
 
 @theme {
-	/* A partir desta largura, a folha do artigo cabe em três colunas, como no esboço. */
-	--breakpoint-folha: 90rem;
 	/*
 	 * A margem das páginas abaixo do md. Ela fica em px: com a letra do navegador
 	 * maior, a margem não cresce, e o texto ganha a largura (o Renan, na #48:
 	 * "Ficam em 20 px").
 	 */
 	--spacing-margem-celular: 20px;
+	/* A partir do md, a margem cresce com a tela, até 72 px. */
+	--spacing-margem-larga: clamp(2rem, 4.5vw, 4.5rem);
+
+	/* As curvas do movimento: o golpe seco, a mola que passa um pouco e volta, e a suave. */
+	--ease-golpe: cubic-bezier(0.5, 0, 0.15, 1);
+	--ease-mola: cubic-bezier(0.2, 0.8, 0.3, 1.25);
+	--ease-suave: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 /*
  * A letra grande: a tela tem menos de 22 rem. A 360 px, isso acontece com a letra do
  * navegador acima de 16 px, e com a letra a 100%, abaixo de 352 px. Aí o número da
- * folha passa para cima do título, porque ao lado dele o título não cabe. O mais largo
- * lado a lado, a folha da trilha com "fundamentais?" (das trilhas do PR #74), pede
- * 19,5 rem da largura da página, mais os 40 px das margens: com 22 rem, o número ao
- * lado do título nunca passa das margens. Com a letra a 100%, o desenho muda só de 320
- * a 351 px, onde "fundamentais?" já não cabia ao lado do número (o Renan, na #76:
- * "Sim, número em cima").
+ * folha de "Nesta trilha" passa para cima do título, porque ao lado dele o título não
+ * cabe (o Renan, na #76: "Sim, número em cima").
  */
 @custom-variant letra-grande (@media (width < 22rem));
+
+:root {
+	/* A margem da página e o respiro de dentro das folhas, em px no celular. */
+	--margem: var(--spacing-margem-celular);
+	--respiro: 16px;
+	/* A altura do cabeçalho, para o cartaz ocupar o resto da primeira tela. */
+	--topo: 4.5rem;
+	/*
+	 * As etiquetas pequenas vão em maiúsculas espaçadas. Com a letra grande, elas
+	 * voltam às minúsculas, sem o espaço entre as letras: em maiúsculas, a palavra
+	 * comprida de um título, como "constitucionalidade", não cabe na linha. Os
+	 * títulos grandes continuam em maiúsculas, com o teto (o letra-com-teto).
+	 */
+	--caixa-alta: uppercase;
+	--espacado: 1;
+}
+
+@media (width >= 48rem) {
+	:root {
+		--margem: var(--spacing-margem-larga);
+		--respiro: clamp(1.25rem, 3vw, 2.5rem);
+	}
+}
+
+@media (width < 22rem) {
+	:root {
+		--caixa-alta: none;
+		--espacado: 0;
+	}
+}
 
 /*
  * A reserva da letra grande (o Renan, na #76: "Sem hífen"): a palavra que não cabe
  * sozinha na linha se parte na beirada, sem hífen, e a página não rola de lado. Ela só
- * age nessa palavra, e com a letra a 100% nenhuma chega a isso a partir de 320 px. Nos
- * títulos, o teto vem antes (o letra-com-teto).
+ * age nessa palavra. Nos títulos, o teto vem antes (o letra-com-teto).
  */
 @layer base {
 	body {
@@ -35,356 +69,260 @@
 	}
 }
 
-/* As peças da folhinha de parede. As cores e as fontes vêm do globals.css. */
+/* As peças do cartaz de azulejos. As cores e as fontes vêm do globals.css. */
 @layer components {
-	/* A tira de fitas do Bonfim, logo abaixo do cartão preto, no lugar do picote. */
-	.tira-de-fitas {
-		background: repeating-linear-gradient(
-			90deg,
-			var(--fita-verde) 0 48px,
-			var(--fita-amarela) 48px 96px,
-			var(--fita-azul) 96px 144px,
-			var(--fita-rosa) 144px 192px,
-			var(--fita-vermelha) 192px 240px,
-			var(--papel) 240px 252px
-		);
-	}
-
-	/* No cartão preto, o foco aparece em amarelo. */
-	.moldura :focus-visible {
-		outline-color: var(--fita-amarela);
-	}
-
-	/* Depois de uma navegação, o foco vai para o título da página nova, ou para o
-	   trecho do endereço, como o #caminho (__root.tsx e lib/foco.ts). Nenhum dos
-	   dois é um controle, então ficam sem o anel. */
-	#conteudo [tabindex="-1"]:focus {
-		outline: none;
-	}
+	/* ───── A letra ───── */
 
 	/*
-	 * A fita de cada artigo: pendurada da borda de cima da folha, como a fitinha do
-	 * Bonfim, com a ponta cortada em V sobre o papel. O V tem 1,5 vez a largura da
-	 * fita, para ler como ponta de fita, e não como seta.
-	 *
-	 * Com a letra grande, a fita fica com os 12 px da letra normal, como o recuo e o
-	 * respiro da folha, e só o texto cresce (o Renan, na #87: "Folha em px"). O
-	 * comprimento continua crescendo com a letra, junto do número.
+	 * A letra do cartaz: o grotesco bem preto e estreito, em maiúsculas. O
+	 * titulo-condensado é o título da página; o titulo-de-folha, o de cada folha de
+	 * uma lista. Uma palavra que não caiba nem no teto (o letra-com-teto) se parte sem
+	 * hífen, pela reserva do body, e a página não rola de lado.
 	 */
-	.fita {
-		--largura-da-fita: 0.75rem;
-		width: var(--largura-da-fita);
-		clip-path: polygon(
-			0 0,
-			100% 0,
-			100% 100%,
-			50% calc(100% - 1.5 * var(--largura-da-fita)),
-			0 100%
-		);
-
-		@variant letra-grande {
-			--largura-da-fita: 12px;
-		}
-	}
-
-	/*
-	 * A fita curta, ao lado do link de um artigo no caminho: com 24 px de altura,
-	 * o V de 18 px viraria ponta de seta. O V raso, de 8 px, lê como marcador.
-	 */
-	.fita-curta {
-		clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 0.5rem), 0 100%);
-	}
-
-	/*
-	 * O canto dobrado marca a folha onde a pessoa está: a ponta da folha dobrada
-	 * para dentro. O ::before corta o canto até o papel (e esconde o picote de
-	 * cima), e o ::after desenha a aba em tinta, sem sombra.
-	 */
-	.canto-dobrado::before,
-	.canto-dobrado::after {
-		content: "";
-		position: absolute;
-		top: -2px;
-		right: 0;
-		width: 30px;
-		height: 32px;
-	}
-
-	.canto-dobrado::before {
-		background: var(--papel);
-	}
-
-	.canto-dobrado::after {
-		background: var(--tinta);
-		-webkit-mask:
-			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 32'%3E%3Cpath d='M1 3V31H29Z' fill='none' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E")
-			center / 100% 100% no-repeat;
-		mask:
-			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 32'%3E%3Cpath d='M1 3V31H29Z' fill='none' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E")
-			center / 100% 100% no-repeat;
-	}
-
-	/*
-	 * O visto da folha lida: um traço de tinta sobre um de papel, mais largo, que
-	 * o separa do que fica atrás. No número, fica no canto de cima, à direita,
-	 * e só encosta no algarismo: o número continua legível.
-	 */
-	.marca-de-lido {
-		fill: none;
-		overflow: visible;
-		stroke-linecap: round;
-		stroke-linejoin: round;
-	}
-
-	.marca-de-lido-papel {
-		stroke: var(--papel);
-		stroke-width: 17;
-	}
-
-	.marca-de-lido-traco {
-		stroke: var(--tinta);
-		stroke-width: 7;
-	}
-
-	.visto-no-numero {
-		position: absolute;
-		top: -0.11em;
-		left: calc(100% - 0.18em);
-		width: 0.42em;
-		height: 0.42em;
-	}
-
-	/*
-	 * Na miniatura, o visto passa da borda do quadrado, mas não chega ao vizinho.
-	 * Quando os quadrados quebram em duas linhas, como nas trilhas de 8 artigos no
-	 * celular, a linha de baixo fica a 0,75rem da de cima (o gap-y-3 da lista, em
-	 * routes/trilhas/index.tsx): com 0,375rem, o visto de baixo entrava no quadrado
-	 * de cima (o Renan, na #77: "Linhas mais afastadas").
-	 */
-	.visto-na-miniatura {
-		position: absolute;
-		top: -0.75rem;
-		right: -0.375rem;
-		width: 1.625rem;
-		height: 1.625rem;
-	}
-
-	/*
-	 * Nas cores forçadas do Windows, o traço fica na cor do texto, e o de papel,
-	 * na do fundo: o visto continua separado do algarismo e da borda. Nas folhas
-	 * em que o número fica dentro de um link, o número ganha a cor dos links, e o
-	 * visto vai junto. O currentColor não serve: com o forced-color-adjust: none,
-	 * o Chromium dá a ele a tinta original, que some no fundo escuro.
-	 */
-	@media (forced-colors: active) {
-		.marca-de-lido {
-			forced-color-adjust: none;
-		}
-
-		.marca-de-lido-papel {
-			stroke: Canvas;
-		}
-
-		.marca-de-lido-traco {
-			stroke: CanvasText;
-		}
-
-		a .marca-de-lido-traco {
-			stroke: LinkText;
-		}
-	}
-
-	/* O número da folha, como o dia na folhinha. */
-	.numeral {
+	.titulo-condensado,
+	.titulo-de-folha {
 		font-family: var(--font-sans);
 		font-stretch: 62%;
 		font-weight: 900;
-		line-height: 0.78;
-		letter-spacing: -0.03em;
-		font-variant-numeric: tabular-nums;
+		text-transform: uppercase;
+		text-wrap: balance;
 	}
 
-	/*
-	 * O título da página. Uma palavra que não caiba nem no teto (o letra-com-teto)
-	 * se parte sem hífen, pela reserva do body, e a página não rola de lado.
-	 */
 	.titulo-condensado {
+		line-height: 0.86;
+	}
+
+	.titulo-de-folha {
+		line-height: 0.92;
+	}
+
+	/* O título menor, um pouco mais largo: o intertítulo, as fontes, o nome do site. */
+	.subtitulo-condensado {
 		font-family: var(--font-sans);
-		font-stretch: 72%;
-		font-weight: 850;
-		line-height: 0.96;
-		letter-spacing: -0.02em;
+		font-stretch: 68%;
+		font-weight: 900;
+		line-height: 0.95;
+		text-transform: uppercase;
 		text-wrap: balance;
 	}
 
 	/*
-	 * O teto da letra grande, nos títulos das páginas e no nome (o Renan, na #48:
-	 * "Teto"), e no título da folha da trilha, no de /trilhas e no intertítulo (na
-	 * #76, com as trilhas do PR #74: "Teto menor"). A letra cresce com a do navegador
-	 * até a palavra mais comprida encostar nas margens do celular, e para aí. O --letra
-	 * é o tamanho de sempre; o --palavra, a largura dessa palavra, em em, medida no
-	 * navegador, com uma folga de 0,5%; e o --recuo, quando há, o espaço da caixa do
-	 * título até as margens. Não é vw puro: até a tela acabar, a letra segue a
-	 * configuração. Com a letra a 100%, o teto não age a partir de 320 px, e a partir do
-	 * md o text-* de cada título manda. O titulos.test.ts mede as palavras dos títulos
-	 * do conteúdo contra cada --palavra.
+	 * O teto da letra grande, nos títulos e no nome (o Renan, na #48: "Teto"; na #76:
+	 * "Teto menor"). A letra tem o tamanho do --letra até a palavra mais comprida
+	 * encostar nas margens, e para aí. O --palavra é a largura dessa palavra, em em,
+	 * medida no navegador, com uma folga de 0,5%; e o --recuo, quando há, o espaço da
+	 * caixa do título até as margens da página. Não é vw puro: até a tela acabar, a
+	 * letra segue a configuração do navegador. O titulos.test.ts mede as palavras dos
+	 * títulos do conteúdo contra cada --palavra.
 	 */
 	.letra-com-teto,
 	.texto h2 {
 		font-size: min(
 			var(--letra),
-			calc(
-				(100vw - 2 * var(--spacing-margem-celular) - var(--recuo, 0px)) /
-				var(--palavra)
-			)
+			calc((100vw - 2 * var(--margem) - var(--recuo, 0px)) / var(--palavra))
 		);
 	}
 
-	.subtitulo-condensado {
+	/*
+	 * O número, como o dia na folhinha: bem preto, estreito e grande. Ele leva a cor
+	 * da fita da posição (--fita), com contorno de tinta: o contorno pinta antes do
+	 * miolo, e sobra só por fora. Sem fita, é todo de tinta.
+	 */
+	.numeral {
+		position: relative;
+		display: block;
 		font-family: var(--font-sans);
-		font-stretch: 75%;
-		font-weight: 800;
-		line-height: 1.05;
-		text-wrap: balance;
+		font-stretch: 62%;
+		font-weight: 900;
+		line-height: 0.78;
+		font-variant-numeric: lining-nums;
+		color: var(--fita, var(--tinta));
+		-webkit-text-stroke: max(3px, 0.05em) var(--tinta);
+		paint-order: stroke fill;
 	}
 
 	/*
-	 * As ações em texto, como "Desmarcar" e "Recomeçar a trilha": sublinhadas como
-	 * os links, porque o "Continuar" é a única ação em bloco. Nos botões, a caixa
-	 * tem a altura da linha, 23,4 px, e o ::before soma 11 px em cima e embaixo
-	 * dela: a área de toque fica com 45,4 px de altura, sem mudar o espaço que o
-	 * texto ocupa, e o anel de foco continua justo no texto.
+	 * A fita da posição (o classeDaFita, em lib/formatar.ts): a classe põe a cor na
+	 * variável --fita, que o número, o fio do desvio e o marcador leem. As cinco vão
+	 * pela ordem, e ninguém escolhe a cor por assunto.
 	 */
-	.acao-de-texto {
+	.fita-verde {
+		--fita: var(--fita-verde);
+	}
+
+	.fita-amarela {
+		--fita: var(--fita-amarela);
+	}
+
+	.fita-azul {
+		--fita: var(--fita-azul);
+	}
+
+	.fita-rosa {
+		--fita: var(--fita-rosa);
+	}
+
+	.fita-vermelha {
+		--fita: var(--fita-vermelha);
+	}
+
+	/* A etiqueta: a letra pequena, em maiúsculas espaçadas. */
+	.rotulo {
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		font-weight: 650;
+		line-height: 1.3;
+		letter-spacing: calc(0.08em * var(--espacado));
+		text-transform: var(--caixa-alta);
+	}
+
+	/* A faixa de informações: as partes separadas por um quadradinho. */
+	.faixa {
+		display: flex;
+		flex-wrap: wrap;
+		row-gap: 0.3rem;
+		color: var(--tinta-suave);
+	}
+
+	.faixa > span:not(:last-child)::after {
+		content: "";
+		display: inline-block;
+		width: 0.3em;
+		height: 0.3em;
+		margin: 0 0.8em;
+		vertical-align: 0.2em;
+		background: currentColor;
+	}
+
+	/* O texto corrido das telas: a serifa de leitura. */
+	.prosa {
+		font-family: var(--font-serif);
+	}
+
+	/* A folha, para o que se lê com calma: mais clara que a parede, com fio de tinta. */
+	.folha {
 		position: relative;
-		cursor: pointer;
-		font-size: 1.0625rem;
-		font-weight: 600;
-		line-height: 1.375;
-		text-decoration-line: underline;
-		text-decoration-thickness: 2px;
-		text-underline-offset: 0.2em;
-	}
-
-	.acao-de-texto::before {
-		content: "";
-		position: absolute;
-		inset: -0.6875rem -0.25rem;
-	}
-
-	/*
-	 * O visto é desenhado de uma vez, em 400 ms, quando a pessoa chega ao fim do
-	 * texto: a perna curta sai devagar, como a caneta que encosta no papel, e a
-	 * longa vai num golpe só.
-	 */
-	.marca-de-lido[data-animar] path {
-		animation: tracar 400ms cubic-bezier(0.5, 0, 0.15, 1) both;
-	}
-
-	/*
-	 * O caminho do infográfico. Cada passo tem um quadradinho cheio de tinta na
-	 * altura do título, e uma linha cheia de 2 px liga um passo ao seguinte. Os
-	 * desvios saem da linha por um traço tracejado até um quadradinho vazado: a
-	 * linha cheia é o caminho completo; a tracejada, o que pode mudar o caminho.
-	 * No último passo, a linha desce só até o último desvio, e só quando há
-	 * desvio. É só desenho: o sentido está nas palavras de cada passo.
-	 */
-	.passo {
-		position: relative;
-		padding-left: 2rem;
-	}
-
-	.passo:not(:last-child) {
-		padding-bottom: 2.25rem;
-	}
-
-	.passo::before {
-		content: "";
-		position: absolute;
-		top: 0.3rem;
-		left: 0;
-		width: 0.875rem;
-		height: 0.875rem;
-		background: var(--tinta);
-	}
-
-	.passo:not(:last-child)::after {
-		content: "";
-		position: absolute;
-		top: 0.3rem;
-		bottom: -0.3rem;
-		left: 0.375rem;
-		width: 2px;
-		background: var(--tinta);
-	}
-
-	/* No último passo, a linha fica no corpo (título, texto e desvios). */
-	.passo:last-child .passo-corpo {
-		position: relative;
-	}
-
-	.passo:last-child .passo-corpo:has(.desvio)::after {
-		content: "";
-		position: absolute;
-		top: 0.3rem;
-		bottom: 0;
-		left: -1.625rem;
-		width: 2px;
-		background: var(--tinta);
-	}
-
-	/* E para no traço do último desvio: o papel cobre a linha dali para baixo. */
-	.passo:last-child .desvio:last-child::after {
-		content: "";
-		position: absolute;
-		z-index: 1;
-		top: calc(0.75em + 1px);
-		bottom: 0;
-		left: -1.625rem;
-		width: 2px;
-		background: var(--papel);
-	}
-
-	/* O desvio: o traço tracejado sai da linha e chega ao quadradinho vazado. */
-	.desvio {
-		position: relative;
-		padding-left: 1.5rem;
-	}
-
-	.desvio::before {
-		content: "";
-		position: absolute;
-		top: calc(0.75em - 1px);
-		left: -1.5rem;
-		width: 1.5rem;
-		border-top: 2px dashed var(--tinta);
-	}
-
-	.no-do-desvio {
-		position: absolute;
-		top: calc(0.75em - 0.4375rem);
-		left: 0;
-		width: 0.875rem;
-		height: 0.875rem;
 		border: 2px solid var(--tinta);
-		background: var(--papel);
+		background: var(--folha);
+	}
+
+	/* A tira das cinco fitas, em faixas iguais. */
+	.tira-de-fitas {
+		background: var(--tira);
+	}
+
+	/* ───── As ações ───── */
+
+	/*
+	 * O botão (DESIGN.md): o bloco reto de tinta, a única ação em bloco das páginas.
+	 * Quando o ponteiro passa, ele sobe um pouco, e a tira das cinco fitas aparece
+	 * embaixo. Nas cores forçadas do Windows, o navegador apaga o fundo e pinta a
+	 * borda na cor do texto, e o botão continua com cara de botão.
+	 *
+	 * Com a letra grande (a tela com menos de 20 rem: a 360 px, a letra acima de
+	 * 18 px), a seta vem logo depois da última palavra, e o respiro dos lados fica em
+	 * 18 px (o Renan, na #76: "Seta no fim, respiro fixo"). A reserva é o
+	 * overflow-wrap: anywhere: o texto é um item de flex, que o break-word não deixa
+	 * encolher, e sem ela uma palavra maior que a linha levava o botão para fora da tela.
+	 */
+	.botao {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.6rem;
+		min-height: 3.25rem;
+		padding: 0.6rem 1.5rem;
+		border: 2px solid var(--tinta);
+		border-radius: 0;
+		background: var(--tinta);
+		color: var(--papel);
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 800;
+		line-height: 1.15;
+		letter-spacing: calc(0.05em * var(--espacado));
+		text-transform: var(--caixa-alta);
+		text-decoration: none;
+		overflow-wrap: anywhere;
+		cursor: pointer;
+		transition: translate 0.2s var(--ease-mola);
+	}
+
+	.botao::after {
+		content: "";
+		position: absolute;
+		top: calc(100% + 2px);
+		right: -2px;
+		left: -2px;
+		height: 6px;
+		background: var(--tira);
+		transform: scaleY(0);
+		transform-origin: 50% 0;
+		transition: transform 0.25s var(--ease-golpe);
+	}
+
+	.botao:hover {
+		translate: 0 -3px;
+	}
+
+	.botao:hover::after {
+		transform: scaleY(1);
+	}
+
+	.botao:active {
+		translate: 0 0;
+	}
+
+	/* O botão vazado, para a ação que acompanha a principal. */
+	.botao.vazado {
+		background: transparent;
+		color: var(--tinta);
+	}
+
+	.botao:disabled {
+		opacity: 0.35;
+		cursor: default;
+		translate: none;
+	}
+
+	.botao:disabled::after {
+		display: none;
+	}
+
+	.botao .seta {
+		width: 1.25rem;
+		height: 1.25rem;
+		flex: none;
+	}
+
+	@media (width < 20rem) {
+		.botao {
+			display: inline-block;
+			padding-inline: 18px;
+			text-wrap: balance;
+		}
+
+		.botao .seta {
+			display: inline;
+			vertical-align: -0.2em;
+		}
 	}
 
 	/*
-	 * Os links do caminho, dos artigos e das fontes, têm a área de toque das
-	 * ações em texto: 45,4 px de altura em cada linha e 4 px a mais dos lados.
-	 * O padding faz a área, e a margem negativa devolve o espaço: o texto fica
-	 * no mesmo lugar. O clone dá a área a cada linha de um link que quebra. Os
-	 * links ficam em linhas vizinhas, e o texto de cada um (o span) fica por
-	 * cima de todas as áreas: um toque no texto de um link nunca vai para o
-	 * vizinho, e no vão entre dois vale o que vem depois. O anel de foco
-	 * contorna o texto, e não a área.
+	 * Os links do caminho, dos artigos e das fontes, têm a área de toque das ações em
+	 * texto: 45 px de altura em cada linha e 4 px a mais dos lados. O padding faz a
+	 * área, e a margem negativa devolve o espaço: o texto fica no mesmo lugar. O clone
+	 * dá a área a cada linha de um link que quebra. Os links ficam em linhas vizinhas,
+	 * e o texto de cada um (o span) fica por cima de todas as áreas: um toque no texto
+	 * de um link nunca vai para o vizinho, e no vão entre dois vale o que vem depois.
+	 * O anel de foco contorna o texto, e não a área.
 	 */
 	.link-do-caminho {
 		position: relative;
-		/* O link do artigo é um bloco, com a linha de 20,6 px: 12,4 px em cima e embaixo. */
-		margin: -0.775rem -0.25rem;
-		padding: 0.775rem 0.25rem;
+		/* O link do artigo é um bloco, com a linha de 18 px: 13,5 px em cima e embaixo. */
+		margin: -0.84375rem -0.25rem;
+		padding: 0.84375rem 0.25rem;
 		-webkit-box-decoration-break: clone;
 		box-decoration-break: clone;
 	}
@@ -409,25 +347,45 @@
 	}
 
 	/*
-	 * As duas ações em texto que são links ("Ver o caminho na trilha" e "O código
-	 * é aberto, no GitHub") ficam em linha, como texto, e a caixa de um link em
-	 * linha tem a altura da letra, 19 px, e não a da linha: com o ::before, a área
-	 * ficava com 41,5 px. No link, o padding faz a área, como nos links das
-	 * fontes: 13 px em cima e embaixo da letra, em cada linha quando o link
-	 * quebra, e a área fica com 45 px de altura; e 4 px no começo e no fim, que a
-	 * margem negativa devolve. Os 13 px são inteiros de propósito: com 13,2 px,
-	 * para chegar aos 45,4 px dos botões, o texto ficava no mesmo lugar, mas a
-	 * 1440 e a 1920 px o navegador pintava as letras com outro arredondamento.
-	 * Sem o box-decoration-break: clone, que mudava a quebra da linha com a letra
-	 * grande, o texto fica no mesmo lugar. O anel de foco contorna o texto (o
-	 * span), e não a área, na cor do anel do lugar: azul no papel e amarelo no
-	 * cartão preto. Um link sem o span fica com o anel no próprio link. Num
-	 * navegador sem o :has(), a regra que tira o anel do link cai, e o link com o
-	 * span fica com dois anéis: o foco continua visível.
+	 * As ações em texto, como "Desmarcar" e "Recomeçar a trilha": sublinhadas como os
+	 * links, porque o botão é a única ação em bloco. Nos botões, a caixa tem a altura
+	 * da linha, 19,25 px, e o ::before soma 13 px em cima e embaixo dela: a área de
+	 * toque fica com 45 px de altura, sem mudar o espaço que o texto ocupa, e o anel
+	 * de foco continua justo no texto.
+	 */
+	.acao-de-texto {
+		position: relative;
+		cursor: pointer;
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		font-weight: 700;
+		line-height: 1.375;
+		letter-spacing: calc(0.06em * var(--espacado));
+		text-transform: var(--caixa-alta);
+		text-decoration-line: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 0.25em;
+	}
+
+	.acao-de-texto::before {
+		content: "";
+		position: absolute;
+		inset: -0.8125rem -0.25rem;
+	}
+
+	/*
+	 * As ações em texto que são links ("O código é aberto, no GitHub") ficam em
+	 * linha, como texto, e a caixa de um link em linha tem a altura da letra, e não a
+	 * da linha. No link, o padding faz a área: 15 px em cima e embaixo da letra, em
+	 * cada linha quando o link quebra, e 4 px no começo e no fim, que a margem negativa
+	 * devolve. O anel de foco contorna o texto (o span), e não a área, na cor do anel
+	 * do lugar: azul no papel e amarelo no cabeçalho. Um link sem o span fica com o
+	 * anel no próprio link. Num navegador sem o :has(), a regra que tira o anel do
+	 * link cai, e o link com o span fica com dois anéis: o foco continua visível.
 	 */
 	a.acao-de-texto {
 		margin-inline: -0.25rem;
-		padding: 0.8125rem 0.25rem;
+		padding: 0.9375rem 0.25rem;
 	}
 
 	a.acao-de-texto::before {
@@ -448,8 +406,7 @@
 	 * Nas cores forçadas do Windows, o navegador troca as cores do site pelas do
 	 * sistema: o anel do elemento focado, o link, fica com a cor de destaque
 	 * (Highlight), mas o span, que não é o elemento focado, ficaria com a cor do
-	 * texto. Aqui, o anel do span usa a mesma cor de destaque, nas ações em texto e
-	 * nos links do caminho.
+	 * texto. Aqui, o anel do span usa a mesma cor de destaque.
 	 */
 	@media (forced-colors: active) {
 		.link-do-caminho:focus-visible > span,
@@ -458,143 +415,1642 @@
 		}
 	}
 
+	/* O artigo de um passo do caminho: o azulejinho da cor dele e "Artigo N: título". */
+	.artigos-do-passo {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.5rem;
+	}
+
+	.artigos-do-passo li {
+		display: grid;
+		grid-template-columns: 0.875rem minmax(0, 1fr);
+		gap: 0.7rem;
+		align-items: start;
+	}
+
+	.artigos-do-passo .az {
+		margin-top: 0.15rem;
+	}
+
+	.artigos-do-passo a,
+	.link-do-passo {
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		font-weight: 750;
+		line-height: 1.2;
+		letter-spacing: calc(0.03em * var(--espacado));
+		text-transform: var(--caixa-alta);
+	}
+
+	/* ───── O cabeçalho ───── */
+
 	/*
-	 * O caminho na página inicial: as paradas ligadas pela linha cheia de 2 px,
-	 * cada uma com o quadradinho de tinta. Abaixo do lg, a linha fica em pé, como
-	 * no infográfico da trilha. A partir do lg, deitada: uma coluna por parada,
-	 * com o quadradinho no alto e a linha até o quadradinho da próxima, por cima
-	 * do vão entre as colunas. Só desenho: o sentido está nas palavras.
+	 * O cabeçalho: um bloco de tinta, com a letra em papel e a tira das cinco fitas
+	 * embaixo, para se destacar da página clara. Nele, o foco aparece em amarelo.
 	 */
-	.parada {
+	.moldura {
 		position: relative;
-		padding-left: 2rem;
+		z-index: 5;
+		background: var(--tinta);
+		color: var(--papel);
 	}
 
-	.parada:not(:last-child) {
-		padding-bottom: 1.75rem;
+	.moldura :focus-visible {
+		outline-color: var(--fita-amarela);
 	}
 
-	.parada::before {
+	/* Depois de uma navegação, o foco vai para o título da página nova, ou para o
+	   trecho do endereço, como o #caminho (__root.tsx e lib/foco.ts). Nenhum dos
+	   dois é um controle, então ficam sem o anel. */
+	#conteudo [tabindex="-1"]:focus {
+		outline: none;
+	}
+
+	.topo-dentro {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		column-gap: 1rem;
+		min-height: calc(var(--topo) - 6px);
+	}
+
+	.marca {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		column-gap: 0.9rem;
+	}
+
+	.marca a {
+		display: inline-flex;
+		align-items: center;
+		min-height: 2.75rem;
+		text-decoration: none;
+	}
+
+	/*
+	 * O nome do site, no cabeçalho e no rodapé (o Wordmark do DESIGN.md).
+	 * "Mandatômetro" é uma palavra só, que não quebra: com a letra grande, o nome
+	 * cresce até encostar nas margens, e para aí (o letra-com-teto).
+	 */
+	.nome-do-site {
+		--letra: 1.625rem;
+		font-family: var(--font-sans);
+		font-stretch: 68%;
+		font-weight: 900;
+		line-height: 1;
+		letter-spacing: 0.01em;
+		text-transform: uppercase;
+	}
+
+	/* O lema, batido à máquina, como um diário oficial. */
+	.marca-lema {
+		font-family: var(--font-maquina);
+		font-size: 0.9375rem;
+		line-height: 1.2;
+		color: var(--papel-3);
+	}
+
+	.topo-links {
+		display: flex;
+		gap: 0.25rem;
+		margin-right: -0.9rem;
+	}
+
+	.topo-links a {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		min-height: 2.75rem;
+		padding: 0 0.9rem;
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		font-weight: 700;
+		line-height: 1;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		text-decoration: none;
+	}
+
+	/* O traço da seção: ele se risca quando o ponteiro passa e fica na seção aberta. */
+	.topo-links a::after {
 		content: "";
 		position: absolute;
-		top: 0.3rem;
-		left: 0;
-		width: 0.875rem;
-		height: 0.875rem;
-		background: var(--tinta);
+		right: 0.9rem;
+		bottom: 0.3rem;
+		left: 0.9rem;
+		height: 4px;
+		background: var(--papel);
+		transform: scaleX(0);
+		transform-origin: 0 50%;
+		transition: transform 0.35s var(--ease-golpe);
 	}
 
-	.parada:not(:last-child)::after {
-		content: "";
-		position: absolute;
-		top: 0.3rem;
-		bottom: -0.3rem;
-		left: 0.375rem;
-		width: 2px;
-		background: var(--tinta);
+	.topo-links a:hover::after,
+	.topo-links a[data-na-secao]::after {
+		transform: scaleX(1);
 	}
 
-	@media (width >= 64rem) {
-		.caminho-em-linha {
-			--vao-do-caminho: 2rem;
-			display: grid;
-			grid-auto-columns: minmax(0, 1fr);
-			grid-auto-flow: column;
-			column-gap: var(--vao-do-caminho);
-		}
-
-		.parada,
-		.parada:not(:last-child) {
-			padding: 1.875rem 0 0;
-		}
-
-		.parada::before {
-			top: 0;
-		}
-
-		.parada:not(:last-child)::after {
-			top: 0.375rem;
-			right: calc(-1 * var(--vao-do-caminho));
-			bottom: auto;
-			left: 0;
-			width: auto;
-			height: 2px;
-		}
-	}
-
-	@media (width >= 80rem) {
-		.caminho-em-linha {
-			--vao-do-caminho: 2.5rem;
+	/*
+	 * O lema, em letra de máquina, é largo: abaixo de 864 px ele não cabe na linha
+	 * do nome e dos links, e sai do cabeçalho (ele está no rodapé).
+	 */
+	@media (width < 54rem) {
+		.moldura .marca-lema {
+			display: none;
 		}
 	}
 
 	/*
-	 * Nas cores forçadas (o alto contraste do Windows), o navegador troca os
-	 * fundos pela cor do papel, e a linha cheia e os quadradinhos cheios, que são
-	 * fundo, sumiam. Eles passam a ter a cor do texto, e a capa do último desvio,
-	 * a cor do papel. O traço tracejado e o quadradinho vazado são borda e já
-	 * aparecem.
+	 * No celular, os links se apertam. O respiro dos links fica em px, como as
+	 * margens: com a letra grande, ele não cresce, e o nome e os links ganham o
+	 * espaço.
 	 */
-	@media (forced-colors: active) {
-		.passo::before,
-		.passo:not(:last-child)::after,
-		.passo:last-child .passo-corpo:has(.desvio)::after,
-		.parada::before,
-		.parada:not(:last-child)::after {
-			background: CanvasText;
+	@media (width < 48rem) {
+		.topo-links {
+			margin-right: -10px;
 		}
 
-		.passo:last-child .desvio:last-child::after {
-			background: Canvas;
+		.topo-links a {
+			padding: 0 10px;
+		}
+
+		.topo-links a::after {
+			right: 10px;
+			left: 10px;
 		}
 	}
 
-	/* O texto corrido do artigo: serifa de leitura, tinta no papel, sem enfeite. */
-	.texto {
-		max-width: 64ch;
+	@media (width < 30rem) {
+		.moldura .nome-do-site {
+			--letra: 1.3125rem;
+		}
+
+		.topo-links a {
+			letter-spacing: 0.05em;
+		}
+	}
+
+	/* ───── O cartaz ───── */
+
+	/*
+	 * O cartaz, a abertura das páginas: a letra gigante em tinta sobre o papel, e o
+	 * painel de azulejos coloridos ao lado. No celular, o painel é uma faixa de duas
+	 * fileiras no alto. As palavras do título tombam no lugar, uma a uma, como
+	 * azulejos, e a tira das cinco fitas se risca embaixo da frase batida à máquina.
+	 *
+	 * As peças vão em coluna, e o título fica no pé: a margem de cima dele toma a
+	 * altura que sobra. O que vem antes do título (a migalha) fica no alto.
+	 */
+	.cartaz {
+		position: relative;
+		isolation: isolate;
+		display: flex;
+		flex-direction: column;
+		gap: clamp(1.5rem, 4vh, 3rem);
+		min-height: calc(100svh - var(--topo));
+		padding: clamp(1.5rem, 4vw, 3rem) var(--margem) clamp(1.5rem, 3vw, 2.5rem);
+		overflow: clip;
+	}
+
+	.mural {
+		overflow: clip;
+		background: var(--papel);
+	}
+
+	.mural .az,
+	.faixa-de-azulejos .az {
+		cursor: crosshair;
+	}
+
+	.cartaz h1 {
+		--letra: clamp(3.25rem, 1.2rem + 6.1vw, 8rem);
+		margin-top: auto;
+	}
+
+	.cartaz h1 .caixa {
+		display: block;
+	}
+
+	.cartaz h1 em {
+		position: relative;
+		display: block;
+		width: fit-content;
+		max-width: 100%;
+		margin-top: 0.45em;
+		padding-bottom: 0.36em;
+		font-family: var(--font-maquina);
+		font-size: 0.4em;
+		font-style: normal;
+		font-weight: 400;
+		line-height: 1.12;
+		letter-spacing: -0.02em;
+		text-transform: none;
+	}
+
+	.cartaz h1 em::after {
+		content: "";
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		/* A letra da frase é pequena: no celular, a tira não fica mais fina que 3 px. */
+		height: max(3px, 0.075em);
+		background: var(--tira);
+		transform-origin: 0 50%;
+		animation: risca 0.9s 0.8s var(--ease-golpe) both;
+	}
+
+	.cartaz h1 .palavra {
+		display: inline-block;
+		transform-origin: 50% 100%;
+		animation: palavra-tomba 0.7s var(--ease-mola) both;
+		animation-delay: calc(0.08s + var(--i, 0) * 70ms);
+	}
+
+	.cartaz-pe {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1.25rem 3rem;
+		padding-top: clamp(1.25rem, 2.5vw, 2rem);
+		border-top: 2px solid var(--tinta);
+		animation: sobe 0.8s 0.45s var(--ease-suave) both;
+	}
+
+	.abertura {
+		max-width: 34rem;
+		font-family: var(--font-serif);
+		font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.25rem);
+		line-height: 1.5;
+	}
+
+	.cartaz-acao {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+		justify-items: start;
+		align-content: start;
+	}
+
+	.para-quem {
+		max-width: 30rem;
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.5;
+		color: var(--tinta-suave);
+	}
+
+	/* A linha do progresso, acima do botão: a etiqueta, com a altura reservada. */
+	.progresso {
+		min-height: 1.0625rem;
+		color: var(--tinta-suave);
+	}
+
+	/*
+	 * A linha do "Recomeçar a trilha", embaixo da descrição, com a altura reservada.
+	 * O que vem antes dela não muda com o progresso: o botão fica no mesmo lugar
+	 * quando vira "Desfazer", e nenhum outro controle aparece ali. O botão de
+	 * continuar, que muda de texto e some com a trilha terminada, vem depois.
+	 */
+	.recomeco {
+		display: flex;
+		min-height: 1.25rem;
+	}
+
+	/*
+	 * O lugar de um botão que muda de texto depois que o JavaScript carrega: o de
+	 * continuar a trilha e o de começar o quiz (components/lugar-do-botao.tsx). Cada
+	 * texto que o botão pode ter vem no HTML do servidor, numa cópia invisível, e
+	 * todos ficam empilhados na mesma célula: o lugar tem sempre a altura do texto
+	 * mais alto, com a letra e a largura que a tela tiver. Quando o botão troca de
+	 * texto, aparece ou some, nada embaixo dele muda de lugar.
+	 */
+	.lugar-do-botao {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		justify-items: start;
+		align-items: start;
+	}
+
+	.lugar-do-botao > * {
+		grid-area: 1 / 1;
+	}
+
+	/* O cartaz das páginas de dentro: mais baixo, com a letra ainda maior. */
+	.cartaz-medio {
+		gap: clamp(1rem, 2.5vh, 1.75rem);
+		min-height: min(44rem, calc(100svh - var(--topo)));
+	}
+
+	.cartaz-medio h1 {
+		--letra: clamp(3.5rem, 1.2rem + 8vw, 11rem);
+	}
+
+	.cartaz-medio .faixa {
+		animation: sobe 0.8s 0.5s var(--ease-suave) both;
+	}
+
+	.cartaz-acoes {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 1rem 1.5rem;
+	}
+
+	/*
+	 * Onde a pessoa está: Trilhas / a trilha. A migalha fica por cima do que vem
+	 * depois dela: a linha do título gigante do quiz e a do número do artigo são
+	 * mais altas que a letra e passavam por cima dos links, que perdiam metade
+	 * dos 44 px de toque.
+	 */
+	.migalhas {
+		position: relative;
+		z-index: 1;
+	}
+
+	.migalhas ol {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		column-gap: 0.6rem;
+	}
+
+	.migalhas a {
+		display: inline-flex;
+		align-items: center;
+		min-height: 2.75rem;
+	}
+
+	.migalhas [aria-current] {
+		color: var(--tinta-suave);
+	}
+
+	@media (width >= 62rem) {
+		/* O painel ocupa os 30% da direita, de cima a baixo, e o título para antes dele. */
+		.cartaz {
+			padding-right: calc(30% + var(--margem));
+		}
+
+		.cartaz h1 {
+			--recuo: 30vw;
+		}
+
+		.mural {
+			position: absolute;
+			inset: 0 0 0 auto;
+			width: 30%;
+		}
+
+		.cartaz-pe {
+			grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+		}
+
+		.cartaz-pe > .abertura {
+			grid-row: 1;
+			grid-column: 1;
+		}
+
+		.cartaz-pe > .para-quem,
+		.cartaz-pe > .recomeco {
+			grid-row: 2;
+			grid-column: 1;
+		}
+
+		.cartaz-acao {
+			grid-row: 1 / span 2;
+			grid-column: 2;
+		}
+	}
+
+	@media (width < 62rem) {
+		.cartaz,
+		.cartaz-medio {
+			min-height: 0;
+			padding-top: 0;
+		}
+
+		/* Duas fileiras: os azulejos de sobra saem (6 por fileira; 10 na tela média). */
+		.mural {
+			grid-template-columns: repeat(6, minmax(0, 1fr));
+			position: relative;
+			margin: 0 calc(var(--margem) * -1);
+		}
+
+		.mural .az:nth-child(n + 13) {
+			display: none;
+		}
+	}
+
+	@media (width >= 40rem) and (width < 62rem) {
+		.mural {
+			grid-template-columns: repeat(10, minmax(0, 1fr));
+		}
+
+		.mural .az:nth-child(n + 13) {
+			display: block;
+		}
+
+		.mural .az:nth-child(n + 21) {
+			display: none;
+		}
+	}
+
+	/* ───── O caminho, na página inicial ───── */
+
+	/*
+	 * O caminho de um projeto de lei: cinco azulejos em fila, um por passo. Os passos
+	 * já andados ficam com a cor, o fio de tinta avança até o passo da vez, e o texto
+	 * troca ao lado do número gigante, que tomba no lugar.
+	 */
+	.caminho {
+		position: relative;
+		padding: clamp(3.5rem, 8vw, 7rem) var(--margem) clamp(4rem, 9vw, 7rem);
+		border-top: 2px solid var(--tinta);
+		/* O passo novo entra pela direita (o passo-entra, no movimento.css) e, no
+		   celular, passa uns 8 px da borda da tela: o corte segura, e a página não
+		   ganha rolagem lateral enquanto ele entra. A seção vai de borda a borda, e
+		   nada de dentro da tela é cortado. */
+		overflow-x: clip;
+	}
+
+	.caminho-cabeca {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem 3rem;
+		align-items: end;
+		margin-bottom: clamp(2rem, 4vw, 3.5rem);
+	}
+
+	.caminho-cabeca h2 {
+		--letra: clamp(2.75rem, 1.4rem + 5.6vw, 6.5rem);
+		max-width: 9.5em;
+		line-height: 0.88;
+	}
+
+	.caminho-cabeca p {
+		max-width: 26rem;
+		font-family: var(--font-serif);
+		font-size: 1.125rem;
+		line-height: 1.5;
+		color: var(--tinta-suave);
+	}
+
+	.passos-abas {
+		--vao: clamp(0.4rem, 1.6vw, 1.5rem);
+		position: relative;
+		display: grid;
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+		gap: var(--vao);
+		padding-top: 8px;
+	}
+
+	.passos-abas li {
+		position: relative;
+		z-index: 1;
+	}
+
+	.passos-abas button {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		justify-items: start;
+		gap: 0.35rem;
+		width: 100%;
+		padding: 0;
+		color: var(--tinta-suave);
+		text-align: left;
+		cursor: pointer;
+		transition: color 0.2s;
+	}
+
+	.passos-abas .grande {
+		position: relative;
+		width: min(100%, 7.5rem);
+		transition:
+			translate 0.35s var(--ease-mola),
+			box-shadow 0.35s;
+	}
+
+	.passos-abas button[aria-current],
+	.passos-abas button:hover {
+		color: var(--tinta);
+	}
+
+	.aba-n {
+		margin-top: 0.8rem;
+		font-size: 2.25rem;
+		line-height: 0.8;
+		-webkit-text-stroke-width: 2px;
+	}
+
+	.aba-nome {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		font-weight: 700;
+		line-height: 1.15;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+
+	.passos {
+		margin-top: clamp(1.5rem, 3vw, 2.5rem);
+		padding-top: clamp(1.5rem, 3vw, 2.5rem);
+		border-top: 2px solid var(--tinta);
+	}
+
+	.passos-lista {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2.5rem;
+	}
+
+	.passo {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem 2.5rem;
+		align-content: start;
+	}
+
+	.passo > .numeral {
+		font-size: 7rem;
+	}
+
+	.passo-texto {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.9rem;
+		align-content: start;
+		max-width: 40rem;
+	}
+
+	.passo-texto > .rotulo {
+		color: var(--tinta-suave);
+	}
+
+	.passo h3 {
+		--letra: clamp(2.25rem, 1.6rem + 2.4vw, 3.75rem);
+		line-height: 0.9;
+	}
+
+	.passo-texto > p:not(.rotulo),
+	.desvios {
 		font-family: var(--font-serif);
 		font-size: 1.0625rem;
 		line-height: 1.6;
 	}
 
+	.desvios {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.6rem;
+	}
+
+	/* O desvio, o que pode mudar o caminho: um fio da cor do passo ao lado. */
+	.desvio {
+		padding-left: 1rem;
+		border-left: 5px solid var(--fita, var(--tinta));
+	}
+
+	.passo-fontes {
+		font-family: var(--font-serif);
+		font-size: 0.9375rem;
+		line-height: 1.75;
+		color: var(--tinta-suave);
+	}
+
+	.passo-fontes a {
+		color: var(--tinta);
+		font-weight: 700;
+	}
+
+	.passos-controles {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem 1.5rem;
+		min-height: 3.25rem;
+		margin-top: 1.5rem;
+	}
+
+	.passos-botoes {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		margin-left: auto;
+	}
+
+	/*
+	 * Com JavaScript, um passo aparece de cada vez. O navegador que sabe dizer se
+	 * tem JavaScript (o scripting, no CSS) já mostra a página assim, sem esperar o
+	 * código carregar, e nada pula. Sem JavaScript, os cinco passos ficam abertos,
+	 * um embaixo do outro, e a fila de azulejos e os botões saem. No navegador que
+	 * não sabe dizer, os cinco ficam abertos até o código carregar (o data-vivo).
+	 *
+	 * No celular, os outros passos saem da página. A partir do md, os cinco ficam
+	 * empilhados no mesmo lugar, e só o da vez aparece: a altura é a do passo mais
+	 * alto, e os botões não sobem nem descem quando o passo troca. O passo escondido
+	 * fica fora do teclado e do leitor de tela nos dois casos.
+	 */
+	@media (scripting: enabled) {
+		.palco-caminho .passo:not([data-ativo]) {
+			display: none;
+		}
+	}
+
+	.palco-caminho[data-vivo] .passo:not([data-ativo]) {
+		display: none;
+	}
+
+	@media (width >= 48rem) {
+		@media (scripting: enabled) {
+			.palco-caminho .passo {
+				grid-area: 1 / 1;
+			}
+
+			.palco-caminho .passo:not([data-ativo]) {
+				display: grid;
+				visibility: hidden;
+			}
+		}
+
+		.palco-caminho[data-vivo] .passo {
+			grid-area: 1 / 1;
+		}
+
+		.palco-caminho[data-vivo] .passo:not([data-ativo]) {
+			display: grid;
+			visibility: hidden;
+		}
+	}
+
+	@media (scripting: none) {
+		.passos-abas,
+		.passos-botoes {
+			display: none;
+		}
+
+		.passos {
+			margin-top: 0;
+		}
+	}
+
+	@media (width >= 48rem) {
+		/* Com o nome à vista, cada aba tem pelo menos a largura da palavra mais
+		   comprida dela, e as outras dividem o resto: "APRESENTAÇÃO" pedia 1 px a
+		   mais que um quinto da largura logo acima de 768 px, numa janela com a barra
+		   de rolagem, e se partia. */
+		.passos-abas {
+			grid-template-columns: repeat(5, minmax(min-content, 1fr));
+		}
+
+		/* O fio que liga os cinco azulejos, como estações de um caminho: o de papel é o
+		   caminho inteiro, e o de tinta, o que já foi andado. */
+		.passos-abas::before,
+		.passos-abas::after {
+			content: "";
+			position: absolute;
+			top: calc(8px + 3.75rem - 1px);
+			left: 0;
+			height: 2px;
+		}
+
+		.passos-abas::before {
+			right: calc((100% - 4 * var(--vao)) / 5 - 7.5rem);
+			background: var(--papel-3);
+		}
+
+		.passos-abas::after {
+			right: calc((100% - 4 * var(--vao)) / 5);
+			background: var(--tinta);
+			transform: scaleX(calc((var(--passo, 1) - 1) / 4));
+			transform-origin: 0 50%;
+			transition: transform 0.6s var(--ease-golpe);
+		}
+
+		.passo {
+			grid-template-columns: minmax(0, 0.8fr) minmax(0, 2.2fr);
+		}
+
+		.passo > .numeral {
+			font-size: clamp(7rem, 3rem + 15vw, 17rem);
+		}
+	}
+
+	@media (width < 48rem) {
+		/* No celular, o nome do passo fica só para o leitor de tela: cabe o número. */
+		.aba-nome {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+			white-space: nowrap;
+		}
+	}
+
+	@media (width >= 62rem) {
+		.caminho-cabeca {
+			grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+		}
+	}
+
+	/* ───── As listas de folhas: a trilha e a lista das trilhas ───── */
+
+	.artigos {
+		padding: clamp(1.5rem, 4vw, 3rem) var(--margem) clamp(2.5rem, 6vw, 4.5rem);
+	}
+
+	.linhas {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+	}
+
+	/*
+	 * Cada artigo é uma folha com o número gigante, na cor da posição, e o azulejo
+	 * dela, que gira quando o ponteiro passa. A folha inteira leva ao artigo: o link
+	 * é o título, e a área dele cobre a folha.
+	 */
+	.linha {
+		--col-numero: clamp(5.5rem, 13vw, 11rem);
+		--col-azulejo: clamp(4.5rem, 9vw, 7.5rem);
+		position: relative;
+		display: grid;
+		grid-template-columns: var(--col-numero) minmax(0, 1fr) var(--col-azulejo);
+		gap: 1rem var(--respiro);
+		align-items: center;
+		/* Em cima, o respiro guarda o lugar da etiqueta ("Lido", "Continue daqui"). */
+		padding: calc(1.46rem + 12px) var(--respiro) clamp(1.25rem, 3vw, 2rem);
+		border: 2px solid var(--tinta);
+		background: var(--folha);
+		transition:
+			translate 0.3s var(--ease-mola),
+			box-shadow 0.3s;
+	}
+
+	.linha:hover {
+		translate: 0 -4px;
+		box-shadow: 0 6px 0 var(--tinta);
+	}
+
+	.linha:has(a:focus-visible) {
+		outline: 3px solid var(--ring);
+		outline-offset: 3px;
+	}
+
+	.linha-texto a {
+		text-decoration: none;
+	}
+
+	.linha-texto a::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+	}
+
+	.linha-texto a:focus-visible {
+		outline: none;
+	}
+
+	.linha > .numeral {
+		font-size: clamp(5.5rem, 2.5rem + 10vw, 11.5rem);
+		text-align: center;
+		transition: translate 0.35s var(--ease-mola);
+	}
+
+	.linha-texto {
+		min-width: 0;
+	}
+
+	/* O --recuo-de-fora é o espaço que a coluna ao lado toma da página, quando há. */
+	.linha .titulo-de-folha {
+		--letra: clamp(1.875rem, 1.3rem + 2.4vw, 3.5rem);
+		--recuo: calc(
+			var(--recuo-de-fora, 0px) +
+			var(--col-numero) +
+			var(--col-azulejo) +
+			4 *
+			var(--respiro) +
+			4px
+		);
+	}
+
+	.linha-texto > p {
+		max-width: 42rem;
+		margin-top: 0.6rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.5;
+	}
+
+	.linha-texto > .rotulo {
+		margin-top: 0.7rem;
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		line-height: 1.3;
+		color: var(--tinta-suave);
+	}
+
+	/*
+	 * "Lido" e "Continue daqui": a etiqueta em tinta, que pende do fio de cima da
+	 * folha, alinhada com o texto. Ela fica fora do fluxo, no respiro que a folha
+	 * guarda em cima: quando aparece, depois que o JavaScript carrega, nada muda de
+	 * lugar. O clique nela vai para a folha, como no resto da área.
+	 */
+	.linha-texto > .estado {
+		position: absolute;
+		top: 0;
+		left: calc(2 * var(--respiro) + var(--col-numero));
+		max-width: none;
+		margin: 0;
+		padding: 0.2rem 0.6rem;
+		background: var(--tinta);
+		color: var(--papel);
+		white-space: nowrap;
+		pointer-events: none;
+	}
+
+	@media (width < 40rem) {
+		/* No celular, o número e o azulejo ficam em cima, e o texto usa a largura toda. */
+		.linha {
+			grid-template-columns: minmax(0, 1fr) auto;
+			gap: 0.75rem;
+		}
+
+		.linha > .numeral {
+			grid-row: 1;
+			grid-column: 1;
+			justify-self: start;
+			font-size: 5.5rem;
+		}
+
+		.da-linha {
+			grid-row: 1;
+			grid-column: 2;
+			align-self: start;
+			width: 3.5rem;
+		}
+
+		.linha-texto {
+			grid-column: 1 / -1;
+		}
+
+		.linha-texto > .estado {
+			left: var(--respiro);
+		}
+
+		.linha .titulo-de-folha {
+			--recuo: calc(var(--recuo-de-fora, 0px) + 2 * var(--respiro) + 4px);
+		}
+	}
+
+	/*
+	 * O visto da folha lida: um traço de tinta sobre um de papel, mais largo, que o
+	 * separa do que fica atrás. No número, o visto fica no meio, e o número perde a
+	 * cor: o miolo fica apagado, em Papel 2, e o contorno passa para a tinta suave,
+	 * que se vê na folha (7,4:1) e no papel (6,7:1). O Renan, na #89: o contorno em
+	 * Papel 3 sumia (1,5:1). O estado continua no visto e na palavra "Lido".
+	 */
+	.marca-de-lido {
+		fill: none;
+		overflow: visible;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	.marca-de-lido-papel {
+		stroke: var(--folha);
+		stroke-width: 17;
+	}
+
+	.marca-de-lido-traco {
+		stroke: var(--tinta);
+		stroke-width: 7;
+	}
+
+	.numeral:has(.marca-de-lido) {
+		color: var(--papel-2);
+		-webkit-text-stroke-color: var(--tinta-suave);
+	}
+
+	.visto-no-numero {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 0.5em;
+		height: 0.5em;
+		translate: -50% -55%;
+	}
+
+	/* Na miniatura, o visto passa da borda do quadrado, mas não chega ao vizinho. */
+	.visto-na-miniatura {
+		position: absolute;
+		top: -0.75rem;
+		right: -0.375rem;
+		width: 1.625rem;
+		height: 1.625rem;
+	}
+
+	/*
+	 * Nas cores forçadas do Windows, o traço fica na cor do texto, e o de papel, na
+	 * do fundo. Nas folhas em que o número fica dentro de um link, o número ganha a
+	 * cor dos links, e o visto vai junto. O currentColor não serve: com o
+	 * forced-color-adjust: none, o Chromium dá a ele a tinta original, que some no
+	 * fundo escuro.
+	 */
+	@media (forced-colors: active) {
+		.marca-de-lido {
+			forced-color-adjust: none;
+		}
+
+		.marca-de-lido-papel {
+			stroke: Canvas;
+		}
+
+		.marca-de-lido-traco {
+			stroke: CanvasText;
+		}
+
+		a .marca-de-lido-traco {
+			stroke: LinkText;
+		}
+	}
+
+	/* A chamada do quiz: uma folha com seis azulejos, um por pergunta. */
+	.chamada-quiz {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1.5rem 3rem;
+		align-items: center;
+		padding: clamp(1.5rem, 4vw, 3rem) var(--respiro);
+		border: 2px solid var(--tinta);
+		background: var(--folha);
+	}
+
+	.chamada-texto {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.9rem;
+		justify-items: start;
+	}
+
+	.chamada-quiz h2 {
+		--letra: clamp(2.5rem, 1.5rem + 4.5vw, 5.5rem);
+		--recuo: calc(var(--recuo-de-fora, 0px) + 2 * var(--respiro) + 4px);
+	}
+
+	.chamada-quiz p {
+		max-width: 34rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.5;
+		color: var(--tinta-suave);
+	}
+
+	.chamada-azulejos {
+		display: grid;
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+		gap: 2px;
+	}
+
+	@media (width >= 48rem) {
+		.chamada-quiz {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 15.25rem);
+		}
+
+		.chamada-quiz h2 {
+			--recuo: calc(
+				var(--recuo-de-fora, 0px) +
+				2 *
+				var(--respiro) +
+				4px +
+				18.25rem
+			);
+		}
+
+		.chamada-azulejos {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+	}
+
+	/* O caminho da trilha, ao lado dos artigos: uma sanfona, um passo aberto por vez. */
+	.ao-lado {
+		padding: 0 var(--margem) clamp(3rem, 7vw, 5rem);
+	}
+
+	.ao-lado > h2 {
+		font-size: clamp(1.875rem, 1.5rem + 1.6vw, 2.75rem);
+		line-height: 0.9;
+	}
+
+	.ao-lado > p {
+		margin: 0.75rem 0 1rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.5;
+		color: var(--tinta-suave);
+	}
+
+	.sanfona > li {
+		border-top: 2px solid var(--tinta);
+	}
+
+	.sanfona > li:last-child {
+		border-bottom: 2px solid var(--tinta);
+	}
+
+	.sanfona summary {
+		display: flex;
+		align-items: center;
+		gap: 0.9rem;
+		min-height: 4rem;
+		padding: 0.5rem 0;
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.sanfona summary::-webkit-details-marker {
+		display: none;
+	}
+
+	/* O "+" fica numa caixa quadrada pequena: girada a 45 graus, ela não passa da
+	   margem nem alarga a página. */
+	.sanfona summary::after {
+		content: "+";
+		display: grid;
+		place-items: center;
+		flex: none;
+		width: 1.25rem;
+		height: 1.25rem;
+		margin-left: auto;
+		font-family: var(--font-sans);
+		font-size: 1.75rem;
+		font-weight: 400;
+		line-height: 1;
+		transition: rotate 0.3s var(--ease-mola);
+	}
+
+	.sanfona details[open] summary::after {
+		rotate: 45deg;
+	}
+
+	.sanfona h3 {
+		min-width: 0;
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 750;
+		line-height: 1.15;
+		letter-spacing: calc(0.05em * var(--espacado));
+		text-transform: var(--caixa-alta);
+	}
+
+	.sanfona-texto {
+		--de: 0rem;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.8rem;
+		padding: 0 0 1.25rem 3.4rem;
+		animation: passo-entra 0.4s var(--ease-suave) both;
+	}
+
+	.sanfona-texto > p:first-child,
+	.sanfona-texto .desvios {
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.55;
+	}
+
+	/* Com a letra grande, o azulejo do passo sai, e o texto ganha a largura toda. */
+	@media (width < 22rem) {
+		.sanfona .grande {
+			display: none;
+		}
+
+		.sanfona-texto {
+			padding-left: 0;
+		}
+	}
+
+	/* A página da trilha: a partir de 1400 px, o caminho fica ao lado dos artigos. */
+	@media (width >= 87.5rem) {
+		.pagina-da-trilha.com-caminho {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
+		}
+
+		.pagina-da-trilha.com-caminho > .cartaz {
+			grid-column: 1 / -1;
+		}
+
+		/* A coluna do caminho (24 rem) e o vão até ela (1,5 rem) saem da largura das
+		   folhas: os títulos delas contam com isso no teto da letra. */
+		.pagina-da-trilha.com-caminho > .artigos {
+			--recuo-de-fora: 25.5rem;
+			padding-right: 1.5rem;
+		}
+
+		.pagina-da-trilha.com-caminho > .ao-lado {
+			padding: clamp(1.5rem, 4vw, 3rem) var(--margem) 4rem 1.5rem;
+		}
+	}
+
+	/* A lista das trilhas: cada trilha é uma folha, com o azulejo e os artigos dela. */
+	.trilha-da-lista {
+		position: relative;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1.5rem var(--respiro);
+		padding: clamp(1.25rem, 3vw, 2rem) var(--respiro);
+		border: 2px solid var(--tinta);
+		background: var(--folha);
+	}
+
+	.trilha-cabeca {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.75rem var(--respiro);
+		align-items: start;
+	}
+
+	.trilha-cabeca .da-linha {
+		grid-row: 1;
+		grid-column: 2;
+		width: 3.5rem;
+	}
+
+	.trilha-cabeca-texto {
+		grid-row: 1;
+		grid-column: 1;
+		min-width: 0;
+	}
+
+	.trilha-da-lista .titulo-de-folha {
+		--letra: clamp(2.25rem, 1.5rem + 3vw, 4.5rem);
+		--recuo: calc(3 * var(--respiro) + 4px + 3.5rem);
+	}
+
+	/*
+	 * O título é o único link para a trilha no celular. A área de toque dele tem
+	 * pelo menos 44 px de altura, também quando o título cabe numa linha (33 px de
+	 * letra): o que falta sobra por igual em cima e embaixo, sem mexer no desenho.
+	 * O link é um bloco do tamanho do texto: em duas linhas, as duas inteiras levam
+	 * à trilha.
+	 */
+	.trilha-cabeca-texto a {
+		position: relative;
+		display: block;
+		width: fit-content;
+		text-decoration: none;
+	}
+
+	.trilha-cabeca-texto a::before {
+		content: "";
+		position: absolute;
+		inset: 50% 0 auto;
+		height: max(100%, 2.75rem);
+		translate: 0 -50%;
+	}
+
+	.trilha-cabeca-texto a:hover {
+		text-decoration: underline;
+		text-decoration-thickness: 0.06em;
+	}
+
+	.trilha-cabeca-texto > p:not(.rotulo) {
+		max-width: 42rem;
+		margin-top: 0.6rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.5;
+	}
+
+	.trilha-cabeca-texto > .rotulo {
+		margin-top: 0.7rem;
+		color: var(--tinta-suave);
+	}
+
+	/* Os quadradinhos dos artigos e, embaixo, a frase do progresso, na linha dela. */
+	.trilha-andamento {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+		margin-top: 1.25rem;
+	}
+
+	/* As folhas em miniatura: um quadrado por artigo, com o número na cor da posição. */
+	.miniaturas {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem 0.375rem;
+	}
+
+	.miniaturas li {
+		width: 2.75rem;
+		height: 2.75rem;
+		border: 2px solid var(--tinta);
+		background: var(--papel);
+	}
+
+	/* O número ocupa o quadrado todo: o visto dele se põe pelo canto do quadrado. */
+	.miniaturas .numeral {
+		display: grid;
+		place-items: center;
+		width: 100%;
+		height: 100%;
+		padding-top: 0.25rem;
+		font-size: 1.75rem;
+		-webkit-text-stroke-width: 2px;
+	}
+
+	/*
+	 * Com a letra grande, o azulejo passa para cima do texto, como o número e o
+	 * azulejo das folhas da trilha: ao lado, ele cresce com a letra, e a coluna do
+	 * texto ficava estreita demais para palavras como "Constituição", que se
+	 * partiam. A descrição fica na letra do navegador, sem o acréscimo: a 320 px
+	 * com a letra a 200%, "funcionamento" cabe na linha.
+	 */
+	@media (width < 22rem) {
+		.trilha-cabeca {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.trilha-cabeca .da-linha {
+			grid-column: 1;
+		}
+
+		.trilha-cabeca-texto {
+			grid-row: 2;
+		}
+
+		.trilha-da-lista .titulo-de-folha {
+			--recuo: calc(2 * var(--respiro) + 4px);
+		}
+
+		.trilha-cabeca-texto > p:not(.rotulo) {
+			font-size: 1rem;
+		}
+	}
+
+	@media (width >= 40rem) {
+		.trilha-cabeca {
+			grid-template-columns: clamp(4.5rem, 9vw, 7.5rem) minmax(0, 1fr);
+		}
+
+		.trilha-cabeca .da-linha {
+			grid-column: 1;
+			width: 100%;
+		}
+
+		.trilha-cabeca-texto {
+			grid-column: 2;
+		}
+
+		.trilha-da-lista .titulo-de-folha {
+			--recuo: calc(3 * var(--respiro) + 4px + 7.5rem);
+		}
+	}
+
+	@media (width >= 64rem) {
+		.trilha-da-lista {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
+		}
+
+		.trilha-da-lista .titulo-de-folha {
+			--recuo: calc(4 * var(--respiro) + 4px + 29.5rem);
+		}
+	}
+
+	/* ───── "Nesta trilha": as folhas da trilha em lista ───── */
+
+	.nesta > h2 {
+		margin-bottom: 0.75rem;
+		color: var(--tinta-suave);
+	}
+
+	.folhas-da-trilha > li {
+		border-top: 2px solid var(--tinta);
+	}
+
+	.folhas-da-trilha > li:last-child {
+		border-bottom: 2px solid var(--tinta);
+	}
+
+	.folhas-da-trilha a {
+		display: grid;
+		grid-template-columns: 1.75rem minmax(0, 1fr);
+		gap: 0 0.9rem;
+		align-items: center;
+		min-height: 4rem;
+		padding: 0.7rem 0;
+		color: var(--tinta-suave);
+		text-decoration: none;
+	}
+
+	.folhas-da-trilha a:hover,
+	.folhas-da-trilha a[aria-current] {
+		color: var(--tinta);
+	}
+
+	.folhas-da-trilha .numeral {
+		justify-self: center;
+		font-size: 2.75rem;
+		-webkit-text-stroke-width: 2px;
+	}
+
+	.folhas-da-trilha .titulo {
+		display: block;
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 700;
+		line-height: 1.2;
+		letter-spacing: calc(0.03em * var(--espacado));
+		text-transform: var(--caixa-alta);
+	}
+
+	.folhas-da-trilha a:hover .titulo {
+		text-decoration: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 0.2em;
+	}
+
+	.folhas-da-trilha .detalhe {
+		display: block;
+		margin-top: 0.25rem;
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		font-weight: 500;
+		line-height: 1.2;
+		letter-spacing: calc(0.06em * var(--espacado));
+		text-transform: var(--caixa-alta);
+	}
+
+	/* A folha aberta: um fio grosso de tinta do lado, no lugar do canto dobrado. */
+	.folhas-da-trilha > li.aqui {
+		padding-left: 1rem;
+		box-shadow: inset 6px 0 0 var(--tinta);
+	}
+
+	/* ───── O artigo ───── */
+
+	/* A barra da leitura, no alto da tela: a tira das cinco fitas, que enche com o
+	   texto (estilos/movimento.css). Sem a animação de rolagem, ela não aparece. */
+	.leitura-barra {
+		position: fixed;
+		inset: 0 0 auto;
+		z-index: 20;
+		display: none;
+		height: 6px;
+		background: var(--tira);
+		transform: scaleX(0);
+		transform-origin: 0 50%;
+		pointer-events: none;
+	}
+
+	/* A parede de papel, com a folha de leitura por cima. */
+	.parede {
+		--margem: 8px;
+		position: relative;
+		padding: clamp(0.5rem, 2vw, 1.5rem) var(--margem) clamp(3rem, 7vw, 6rem);
+	}
+
+	.artigo-grade {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2.5rem;
+		max-width: 82rem;
+		margin-inline: auto;
+	}
+
+	/*
+	 * A folha de leitura. O --recuo-de-fora é o que a folha tira da largura da
+	 * página, sem contar as margens: o respiro dos dois lados e os fios, e a coluna
+	 * de "Nesta trilha", quando ela fica ao lado. Os títulos de dentro contam com
+	 * ele no teto da letra. O azulejo do canto (--selo) tem o tamanho em px no
+	 * celular: com a letra grande, ele não cresce, e a migalha fica com o espaço.
+	 */
+	.artigo-folha {
+		--selo: clamp(64px, 10vw, 8.5rem);
+		--respiro-da-folha: 16px;
+		--recuo-de-fora: calc(2 * var(--respiro-da-folha) + 4px);
+		min-width: 0;
+		padding: clamp(1.75rem, 4vw, 3rem) var(--respiro-da-folha) 0;
+		animation: sobe 0.7s var(--ease-suave) both;
+	}
+
+	/* O azulejo do artigo, no canto de cima da folha. */
+	.do-artigo {
+		position: absolute;
+		top: clamp(1.25rem, 4vw, 3rem);
+		right: var(--respiro-da-folha);
+		width: var(--selo);
+	}
+
+	.artigo-folha .migalhas,
+	.sobretitulo {
+		max-width: calc(100% - var(--selo) - 16px);
+	}
+
+	/* O número do artigo e "Artigo N de tantos": lado a lado quando cabem, e a
+	   etiqueta embaixo do número quando não. */
+	.sobretitulo {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: 0.5rem 1rem;
+		margin-top: 0.5rem;
+	}
+
+	.sobretitulo .numeral {
+		font-size: clamp(5rem, 3rem + 8vw, 9rem);
+	}
+
+	.sobretitulo .rotulo {
+		flex: 1 1 8rem;
+		min-width: 0;
+	}
+
+	.de-tantos {
+		color: var(--tinta-suave);
+	}
+
+	.artigo-folha h1 {
+		--letra: clamp(2.75rem, 1.6rem + 5vw, 6rem);
+		--recuo: var(--recuo-de-fora);
+		max-width: 10em;
+		margin-top: 1rem;
+		line-height: 0.88;
+	}
+
+	.artigo-folha > .faixa {
+		margin-top: 1.5rem;
+		padding: 0.7rem 0;
+		border-block: 2px solid var(--tinta);
+		color: var(--tinta);
+	}
+
+	/* As fontes oficiais: a lista numerada, com o número na letra do cartaz. */
+	.fontes {
+		max-width: 39rem;
+		padding-top: 1.25rem;
+		border-top: 6px solid var(--tinta);
+	}
+
+	.fontes > h2 {
+		font-size: 1.5rem;
+		line-height: 1;
+	}
+
+	.lista-de-fontes {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.9rem;
+	}
+
+	.lista-de-fontes > li {
+		display: grid;
+		grid-template-columns: 1.75rem minmax(0, 1fr);
+		gap: 0 0.5rem;
+	}
+
+	.lista-de-fontes .numero {
+		font-family: var(--font-sans);
+		font-size: 1.75rem;
+		font-stretch: 62%;
+		font-weight: 900;
+		line-height: 1;
+	}
+
+	.lista-de-fontes p {
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.4;
+	}
+
+	.lista-de-fontes a {
+		font-weight: 700;
+	}
+
+	.lista-de-fontes .endereco {
+		display: block;
+		margin-top: 0.15rem;
+		font-size: 0.875rem;
+		color: var(--tinta-suave);
+		overflow-wrap: anywhere;
+	}
+
+	/* O resumo, antes do texto: a serifa um pouco maior. */
+	.lide {
+		max-width: 39rem;
+		margin-top: clamp(1.5rem, 4vw, 2.5rem);
+		font-family: var(--font-serif);
+		font-size: clamp(1.25rem, 1.15rem + 0.5vw, 1.4375rem);
+		font-weight: 500;
+		line-height: 1.45;
+	}
+
+	/* O texto corrido do artigo: serifa de leitura, tinta na folha. */
+	.texto {
+		max-width: 39rem;
+		font-family: var(--font-serif);
+		font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.1875rem);
+		line-height: 1.68;
+	}
+
 	.texto > * + * {
-		margin-top: 1em;
+		margin-top: 1.1em;
 	}
 
 	/*
 	 * O intertítulo, com o teto da letra grande (o letra-com-teto): a palavra mais
-	 * larga dos intertítulos de hoje é "constitucionalidade", com 7,87 em. A margem de
+	 * larga dos intertítulos de hoje é "CONSTITUCIONALIDADE", com 9,59 em. A margem de
 	 * cima é em em e diminui junto com a letra.
 	 */
 	.texto h2 {
-		--letra: 1.625rem;
-		--palavra: 7.92;
-		margin-top: 1.75em;
+		--letra: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+		--palavra: 9.64;
+		--recuo: var(--recuo-de-fora, 0px);
+		margin-top: 1.7em;
 		font-family: var(--font-sans);
-		font-stretch: 75%;
-		font-weight: 800;
-		line-height: 1.05;
+		font-stretch: 68%;
+		font-weight: 900;
+		line-height: 0.95;
+		text-transform: uppercase;
 		text-wrap: balance;
 	}
 
 	.texto h2 + * {
-		margin-top: 0.5em;
+		margin-top: 0.6em;
 	}
 
-	.texto ul,
 	.texto ol {
 		padding-left: 1.25em;
-	}
-
-	.texto ul {
-		list-style: square;
-	}
-
-	.texto ol {
 		list-style: decimal;
 	}
 
-	.texto li + li {
+	/*
+	 * As listas do texto levam um azulejinho no lugar do marcador: um quarto de
+	 * círculo da cor da fita da posição, que dá um quarto de volta a cada item.
+	 */
+	.texto ul {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.6em;
+	}
+
+	.texto ul > li {
+		position: relative;
+		padding-left: 1.8rem;
+	}
+
+	.texto ul > li::before {
+		content: "";
+		position: absolute;
+		top: 0.4em;
+		left: 0;
+		width: 1rem;
+		height: 1rem;
+		background: radial-gradient(
+			circle at 0 0,
+			var(--marcador, var(--tinta)) 70.2%,
+			transparent 70.8%
+		);
+	}
+
+	.texto ul > li:nth-child(5n + 1)::before {
+		--marcador: var(--fita-verde);
+	}
+
+	.texto ul > li:nth-child(5n + 2)::before {
+		--marcador: var(--fita-amarela);
+	}
+
+	.texto ul > li:nth-child(5n + 3)::before {
+		--marcador: var(--fita-azul);
+	}
+
+	.texto ul > li:nth-child(5n + 4)::before {
+		--marcador: var(--fita-rosa);
+	}
+
+	.texto ul > li:nth-child(5n + 5)::before {
+		--marcador: var(--fita-vermelha);
+	}
+
+	.texto ul > li:nth-child(4n + 2)::before {
+		rotate: 90deg;
+	}
+
+	.texto ul > li:nth-child(4n + 3)::before {
+		rotate: 180deg;
+	}
+
+	.texto ul > li:nth-child(4n + 4)::before {
+		rotate: 270deg;
+	}
+
+	.texto ol > li + li {
 		margin-top: 0.35em;
 	}
 
@@ -606,141 +2062,316 @@
 		font-weight: 700;
 	}
 
-	@media (width >= 64rem) {
-		.texto {
-			font-size: 1.1875rem;
-			line-height: 1.65;
-		}
-
-		.texto h2 {
-			font-size: 2rem;
-		}
-	}
-}
-
-@keyframes tracar {
-	from {
-		stroke-dasharray: 1;
-		stroke-dashoffset: 1;
-	}
-	to {
-		stroke-dasharray: 1;
-		stroke-dashoffset: 0;
-	}
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.marca-de-lido[data-animar] path {
-		animation: none;
-	}
-}
-
-/*
- * A troca de página, como na folhinha de parede (lib/troca-de-pagina.ts): quem
- * avança arranca a folha da tela, e a página nova já está embaixo. A folha se
- * solta do picote pelo lado esquerdo, ainda presa pelo canto de cima à direita,
- * e depois cai, cada vez mais rápido. Quem volta na trilha faz o caminho
- * contrário: a folha sobe, gira de volta e se assenta no bloco, por cima.
- *
- * O navegador fotografa a tela antes e depois da troca e anima as duas fotos
- * (View Transitions). O cartão preto do cabeçalho, quando aparece na tela, vai
- * numa foto à parte, por cima, e não sai do lugar: só a folha é arrancada. Com
- * a página rolada, ele vem com a página nova, embaixo da folha.
- */
-html:active-view-transition-type(moldura-na-tela) header.moldura {
-	view-transition-name: moldura;
-}
-
-/*
- * As duas fotos da página ficam uma sobre a outra, sem a mistura de luz do
- * esmaecer padrão, que apagaria a tinta da folha arrancada sobre o papel da
- * página nova. O contorno da folha é o picote em cima, tracejado como entre as
- * folhas da lista, e a linha cheia dos lados e embaixo. Ele fica 2 px para fora
- * da tela e só aparece quando a folha se mexe: parada, a foto cobre a página
- * pixel a pixel.
- */
-html:active-view-transition-type(folha)::view-transition-old(root),
-html:active-view-transition-type(folha)::view-transition-new(root) {
-	inset-block-start: -2px;
-	inset-inline-start: -2px;
-	border: 2px solid var(--tinta);
-	border-top-style: dashed;
-	mix-blend-mode: normal;
-	transform-origin: 100% 0;
-	animation: none;
-}
-
-html:active-view-transition-type(avancar)::view-transition-old(root) {
-	z-index: 1;
-	animation: arrancar-a-folha 420ms linear both;
-}
-
-/* Voltar é o arranque de trás para a frente, com a chegada mais lenta. */
-html:active-view-transition-type(voltar)::view-transition-new(root) {
-	z-index: 1;
-	animation: arrancar-a-folha 460ms linear reverse both;
-}
-
-/*
- * Com a página um pouco rolada, o cartão desce até o lugar dele. A troca do
- * traço do link da seção é um esmaecer curto.
- */
-html:active-view-transition-type(folha)::view-transition-group(moldura) {
-	animation-duration: 420ms;
-	animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-html:active-view-transition-type(folha)::view-transition-old(moldura),
-html:active-view-transition-type(folha)::view-transition-new(moldura) {
-	animation-duration: 200ms;
-}
-
-@keyframes arrancar-a-folha {
-	/* O rasgo: o lado esquerdo se solta do picote e desce um pouco, logo no clique. */
-	from {
-		transform: none;
-		animation-timing-function: cubic-bezier(0.2, 0, 0.4, 1);
-	}
-	25% {
-		transform: translateY(0.5%) rotate(-2.5deg);
-		animation-timing-function: cubic-bezier(0.2, 0, 0.55, 0.2);
-	}
-	/* A queda, como a de um peso: a folha gira mais um pouco e sai da tela por baixo. */
-	to {
-		transform: translateY(105%) rotate(-7deg);
-	}
-}
-
-/*
- * Com o movimento reduzido, a folha não se mexe: a página de antes some num
- * esmaecer curto, nos dois sentidos, e a nova já está embaixo.
- */
-@media (prefers-reduced-motion: reduce) {
-	html:active-view-transition-type(folha)::view-transition-old(root) {
-		z-index: 1;
-		animation: esmaecer-a-folha 160ms linear both;
+	/*
+	 * O lido: um azulejo cru no fim do texto, que vira para o verde, com o visto,
+	 * quando a pessoa chega ali. A altura fica reservada: quando o aviso aparece, as
+	 * fontes não descem.
+	 */
+	.lido {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem 1rem;
+		min-height: 4.5rem;
 	}
 
-	html:active-view-transition-type(folha)::view-transition-new(root) {
-		z-index: auto;
-		animation: none;
+	.lido-azulejo {
+		position: relative;
+		display: block;
+		flex: none;
+		width: 3.5rem;
+		perspective: 20rem;
 	}
 
-	/* O cartão não desce: vai direto para o lugar, e a troca acaba junto com o esmaecer. */
-	html:active-view-transition-type(folha)::view-transition-group(root),
-	html:active-view-transition-type(folha)::view-transition-group(moldura),
-	html:active-view-transition-type(folha)::view-transition-old(moldura),
-	html:active-view-transition-type(folha)::view-transition-new(moldura) {
-		animation-duration: 160ms;
+	.lido-azulejo .az {
+		background: var(--papel-2);
+		transform: rotateY(-180deg);
 	}
 
-	html:active-view-transition-type(folha)::view-transition-group(moldura) {
-		animation-name: none;
-	}
-}
-
-@keyframes esmaecer-a-folha {
-	to {
+	.lido-azulejo .marca-de-lido {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
 		opacity: 0;
+	}
+
+	.lido[data-lido] .lido-azulejo .az {
+		background: var(--fita-verde);
+		transform: none;
+	}
+
+	.lido[data-lido] .lido-azulejo .marca-de-lido {
+		opacity: 1;
+	}
+
+	/* Só vira quando a pessoa acabou de ler: quem volta ao artigo já o vê verde. */
+	.lido[data-animar] .lido-azulejo .az {
+		transition:
+			transform 0.6s var(--ease-mola),
+			background 0s 0.2s;
+	}
+
+	.lido[data-animar] .lido-azulejo .marca-de-lido {
+		transition: opacity 0s 0.3s;
+	}
+
+	.lido[data-animar] .lido-azulejo .marca-de-lido path {
+		animation-delay: 0.35s;
+	}
+
+	/* O aviso e o "Desmarcar", ao lado do azulejo; embaixo dele quando não cabem. */
+	.lido-palavras {
+		display: grid;
+		flex: 1 1 10rem;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.35rem;
+		justify-items: start;
+		min-width: 0;
+	}
+
+	.lido-texto {
+		font-family: var(--font-sans);
+		font-size: 1.125rem;
+		font-weight: 800;
+		line-height: 1.1;
+		letter-spacing: calc(0.04em * var(--espacado));
+		text-transform: var(--caixa-alta);
+	}
+
+	/*
+	 * O anterior e o próximo: duas faixas no pé da folha, de borda a borda. Em cima,
+	 * o número na fita da posição, o que é a faixa e o azulejo do artigo, que gira
+	 * quando o ponteiro passa; embaixo, o título, com a largura toda da faixa.
+	 */
+	.outros-artigos {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		margin: 2.5rem calc(var(--respiro-da-folha) * -1) 0;
+	}
+
+	.outros-artigos a {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+		align-content: start;
+		padding: 1.5rem var(--respiro-da-folha);
+		border-top: 2px solid var(--tinta);
+		/* A faixa é papel, com o grão do fundo: no quiz, ela fica direto na página, e
+		   lisa cortava o grão. Quando o ponteiro passa, só a cor muda. */
+		background: var(--papel) var(--grao) 0 0 / 320px 320px;
+		text-decoration: none;
+		transition: background-color 0.2s;
+	}
+
+	.outros-artigos a:hover {
+		background-color: var(--papel-2);
+	}
+
+	.outros-artigos-cabeca {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		min-height: 2.75rem;
+	}
+
+	.outros-artigos .numeral {
+		font-size: 2.75rem;
+		-webkit-text-stroke-width: 2px;
+	}
+
+	.outros-artigos .rotulo {
+		min-width: 0;
+		color: var(--tinta-suave);
+	}
+
+	.outros-artigos .grande {
+		flex: none;
+		width: 2.75rem;
+		margin-left: auto;
+	}
+
+	.outros-artigos strong {
+		--letra: clamp(1.5rem, 1.2rem + 1.6vw, 2.5rem);
+		--recuo: var(--recuo-de-fora);
+		display: block;
+	}
+
+	/* Com a letra grande, o azulejo da faixa sai: cabem o número e a etiqueta. */
+	@media (width < 22rem) {
+		.outros-artigos .grande {
+			display: none;
+		}
+	}
+
+	/* O espaço entre as peças da folha. */
+	.artigo-folha > .texto,
+	.artigo-folha > .lido,
+	.artigo-folha > .fontes {
+		margin-top: 2rem;
+	}
+
+	.artigo-folha > .chamada-quiz {
+		margin-top: 2.5rem;
+	}
+
+	@media (width >= 40rem) {
+		.parede {
+			--margem: var(--spacing-margem-celular);
+		}
+
+		.artigo-folha {
+			--respiro-da-folha: clamp(1.25rem, 5vw, 4.5rem);
+		}
+	}
+
+	@media (width >= 48rem) {
+		.parede {
+			--margem: var(--spacing-margem-larga);
+		}
+
+		.outros-artigos.dois {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		}
+
+		.outros-artigos.dois a + a {
+			border-left: 2px solid var(--tinta);
+		}
+
+		/* Lado a lado, cada faixa tem metade da folha: a outra metade entra no recuo. */
+		.outros-artigos.dois strong {
+			--recuo: calc(
+				(100vw - 2 * var(--margem) + var(--recuo-de-fora)) /
+				2 +
+				var(--respiro-da-folha)
+			);
+		}
+	}
+
+	@media (width >= 75rem) {
+		.artigo-grade {
+			grid-template-columns: minmax(0, 1fr) 17rem;
+			gap: 3.5rem;
+			align-items: start;
+		}
+
+		/* A coluna de "Nesta trilha" (17 rem) e o vão até ela (3,5 rem). */
+		.artigo-folha {
+			--recuo-de-fora: calc(2 * var(--respiro-da-folha) + 4px + 20.5rem);
+		}
+
+		/* A rolagem da coluna cortaria o anel de foco dos links: o respiro de 8 px em
+		   volta (com a margem negativa, a coluna fica no lugar) dá espaço a ele. */
+		.ao-lado-do-artigo {
+			position: sticky;
+			top: 2rem;
+			max-height: calc(100svh - 4rem);
+			margin: 14rem -0.5rem 0;
+			padding: 0 0.5rem 0.5rem;
+			overflow-y: auto;
+		}
+	}
+
+	/* ───── O rodapé ───── */
+
+	/* O rodapé: papel com fio de tinta, e uma fileira de azulejos embaixo, que faz
+	   a onda quando entra na tela. */
+	.rodape {
+		position: relative;
+		border-top: 2px solid var(--tinta);
+	}
+
+	.rodape-dentro {
+		gap: 1.5rem 3rem;
+		padding-top: clamp(2.5rem, 6vw, 4.5rem);
+	}
+
+	.rodape .nome-do-site {
+		--letra: clamp(2.25rem, 1.2rem + 3.6vw, 4.5rem);
+		line-height: 0.85;
+	}
+
+	.rodape .marca-lema {
+		display: block;
+		margin-top: 0.5rem;
+		color: var(--tinta-suave);
+	}
+
+	.rodape-texto {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+		max-width: 40rem;
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.5;
+		color: var(--tinta-suave);
+	}
+
+	/*
+	 * No rodapé, o link do código é texto corrido, com a letra do parágrafo. A área
+	 * de toque dele tem 12 px em cima e embaixo da letra: passa menos da linha que o
+	 * vão de 12 px entre os parágrafos, e um toque na linha de cima não vai para o link.
+	 */
+	.rodape-texto .acao-de-texto {
+		padding-block: 0.75rem;
+		color: var(--tinta);
+		font: inherit;
+		font-weight: 700;
+		letter-spacing: 0;
+		text-transform: none;
+	}
+
+	/* A fileira vai de borda a borda. O corte segura a peça que vira: de lado, com a
+	   perspectiva, ela passa uns 5 px da borda da tela, e a página ganharia uma
+	   rolagem lateral enquanto a onda passa. */
+	.faixa-de-azulejos {
+		position: relative;
+		margin-top: clamp(2rem, 5vw, 3.5rem);
+		overflow: clip;
+	}
+
+	/* No celular, a fileira tem os oito primeiros azulejos, que já têm as cinco fitas. */
+	@media (width < 48rem) {
+		.faixa-de-azulejos {
+			grid-template-columns: repeat(8, minmax(0, 1fr));
+		}
+
+		.faixa-de-azulejos .az:nth-child(n + 9) {
+			display: none;
+		}
+	}
+
+	/* ───── A página não encontrada e a de erro ───── */
+
+	/*
+	 * O 404: cada algarismo leva uma fita, pela ordem. O número e o título ficam
+	 * juntos no pé do cartaz: a margem de cima que sobra vai para o número.
+	 */
+	.numero-404 {
+		display: flex;
+		gap: 0.02em;
+		margin-top: auto;
+		font-size: clamp(7rem, 4rem + 14vw, 17rem);
+	}
+
+	.numero-404 + h1 {
+		margin-top: 0;
+	}
+
+	.acoes-da-pagina {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 1rem 1.5rem;
+	}
+
+	/* Na página de erro, o aviso de que a nova tentativa não deu. */
+	.ainda-nao {
+		max-width: 34rem;
+		font-family: var(--font-sans);
+		font-size: 1.0625rem;
+		font-weight: 700;
+		line-height: 1.4;
 	}
 }

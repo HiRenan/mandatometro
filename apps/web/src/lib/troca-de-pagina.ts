@@ -1,17 +1,25 @@
 /**
- * A troca de página, como na folhinha de parede: quem avança arranca a folha da
- * tela, e a página nova já está embaixo; quem volta põe a folha de volta no
- * bloco. Aqui fica só o sentido de cada troca, que o router passa ao navegador
- * como tipo da View Transition (router.tsx). O movimento fica no index.css.
+ * A troca de página: a página nova aparece azulejo por azulejo, num giro de
+ * relógio em cada peça; quem volta vê o giro ao contrário. As páginas ficam em
+ * ordem, como as folhas de um bloco: a inicial em cima, depois a lista das
+ * trilhas, cada trilha e os artigos dela, com o quiz no lugar dele entre os
+ * artigos. Aqui fica só o sentido de cada troca, que o router passa ao navegador
+ * como tipo da View Transition (router.tsx). O movimento fica em
+ * estilos/movimento.css.
  */
 
 export type Sentido = "avancar" | "voltar";
 
-/** A trilha do artigo aberto, com os artigos na ordem dela. */
+/** A trilha da página aberta, com os artigos na ordem dela e o lugar do quiz. */
 export type TrilhaAberta = {
 	slug: string;
 	artigos: ReadonlyArray<{ slug: string }>;
+	/** O artigo depois do qual o quiz aparece, quando a trilha tem quiz. */
+	quizDepoisDe?: string;
 };
+
+/** O fim do endereço do quiz de uma trilha: /trilhas/{trilha}/quiz. */
+const QUIZ = "quiz";
 
 /** O que o router diz de cada troca (o `locationChangeInfo` do TanStack Router). */
 export type Troca = {
@@ -40,9 +48,11 @@ function lugarNoBloco(caminho: string): Lugar {
 
 /**
  * Ir mais para dentro do bloco, ou para um artigo mais adiante na mesma trilha,
- * é avançar; o contrário é voltar. O botão voltar do navegador segue a mesma
- * regra: o que vale é o lugar da página no bloco, e não a ordem da visita. Sem
- * a ordem da trilha, dois artigos contam como avançar.
+ * é avançar; o contrário é voltar. O quiz fica entre o artigo depois do qual
+ * aparece e o seguinte: do quiz para o "Artigo anterior" é voltar. O botão
+ * voltar do navegador segue a mesma regra: o que vale é o lugar da página no
+ * bloco, e não a ordem da visita. Sem a ordem da trilha, duas páginas dela
+ * contam como avançar.
  */
 export function sentidoDaTroca(
 	de: string,
@@ -61,8 +71,18 @@ export function sentidoDaTroca(
 		origem.trilha === trilhaAberta.slug &&
 		destino.trilha === trilhaAberta.slug
 	) {
-		const posicao = (slug: string) =>
+		const doArtigo = (slug: string) =>
 			trilhaAberta.artigos.findIndex((artigo) => artigo.slug === slug);
+		const posicao = (slug: string) => {
+			if (slug !== QUIZ) {
+				return doArtigo(slug);
+			}
+			const antes =
+				trilhaAberta.quizDepoisDe === undefined
+					? -1
+					: doArtigo(trilhaAberta.quizDepoisDe);
+			return antes < 0 ? -1 : antes + 0.5;
+		};
 		const daOrigem = posicao(origem.artigo);
 		const doDestino = posicao(destino.artigo);
 		if (daOrigem >= 0 && doDestino >= 0 && doDestino < daOrigem) {
@@ -74,8 +94,8 @@ export function sentidoDaTroca(
 
 /**
  * Os tipos da View Transition de uma troca: `folha`, o sentido e, quando o
- * cartão preto do cabeçalho está na tela, `moldura-na-tela`, para ele ficar
- * parado enquanto a folha sai. Sem página de origem (a primeira carga) ou sem
+ * cabeçalho está na tela, `moldura-na-tela`, para ele ficar parado enquanto a
+ * página troca. Sem página de origem (a primeira carga) ou sem
  * mudar de página (um link para um trecho da mesma página, como #caminho), não
  * há troca de folha, e o `false` diz ao router para não animar.
  */
@@ -104,22 +124,83 @@ export function tiposDaTroca(
 }
 
 /**
- * A trilha do artigo que está na tela, pelos dados que o router já carregou para
- * ele, para comparar a posição de dois artigos. Fora de um artigo, não há.
+ * A trilha do artigo ou do quiz que está na tela, pelos dados que o router já
+ * carregou para a página, para comparar a posição de duas páginas da trilha.
+ * Fora de um artigo e do quiz, não há.
  */
-export function trilhaDoArtigoAberto(
+export function trilhaDaPaginaAberta(
 	matches: ReadonlyArray<{ routeId: string; loaderData?: unknown }>,
 ): TrilhaAberta | undefined {
-	const doArtigo = matches.find(
-		(match) => match.routeId === "/trilhas/$trilha/$artigo",
+	const daPagina = matches.find(
+		(match) =>
+			match.routeId === "/trilhas/$trilha/$artigo" ||
+			match.routeId === "/trilhas/$trilha/quiz",
 	);
-	// O loader do artigo devolve um ArtigoNaTrilha (lib/conteudo), com a trilha.
-	return (doArtigo?.loaderData as { trilha?: TrilhaAberta } | undefined)
+	// Os dois loaders devolvem a trilha como nas listas (lib/conteudo), com os
+	// artigos na ordem e o lugar do quiz.
+	return (daPagina?.loaderData as { trilha?: TrilhaAberta } | undefined)
 		?.trilha;
 }
 
-/** Se o cartão preto do cabeçalho aparece na tela, nem que seja um pedaço. */
+/** Se o cabeçalho aparece na tela, nem que seja um pedaço. */
 export function molduraNaTela(): boolean {
 	const moldura = document.querySelector("header.moldura");
 	return moldura ? moldura.getBoundingClientRect().bottom > 0 : false;
+}
+
+/**
+ * O clique durante a troca de página. Enquanto a troca roda, o navegador mostra
+ * fotos das duas páginas, e nada da página nova responde ao ponteiro: o clique
+ * vai para o documento, e um clique logo depois de uma navegação se perdia. O
+ * `pointer-events: none` nas fotos não resolve, porque a página inteira está na
+ * foto.
+ *
+ * Aqui, o toque encerra a troca na hora, e o clique que o navegador entregou ao
+ * documento segue para o que está embaixo do ponteiro, já na página nova. O
+ * segundo clique de um clique duplo (`detail` 2) não segue: ele cairia num
+ * botão da página nova sem a pessoa ter visto o botão (lib/clique.ts).
+ *
+ * Num navegador sem o `activeViewTransition`, nada muda: o clique feito durante
+ * a troca continua se perdendo. Devolve a função que desliga.
+ */
+export function cliqueDuranteATroca(): () => void {
+	let encerrou = false;
+	const aoTocar = () => {
+		const troca = document.activeViewTransition;
+		encerrou = Boolean(troca);
+		troca?.skipTransition();
+	};
+	const aoClicar = (evento: MouseEvent) => {
+		if (!encerrou) {
+			return;
+		}
+		encerrou = false;
+		if (
+			evento.target !== document.documentElement ||
+			evento.button !== 0 ||
+			evento.detail > 1
+		) {
+			return;
+		}
+		document.elementFromPoint(evento.clientX, evento.clientY)?.dispatchEvent(
+			new MouseEvent("click", {
+				bubbles: true,
+				cancelable: true,
+				composed: true,
+				detail: evento.detail,
+				clientX: evento.clientX,
+				clientY: evento.clientY,
+				ctrlKey: evento.ctrlKey,
+				metaKey: evento.metaKey,
+				shiftKey: evento.shiftKey,
+				altKey: evento.altKey,
+			}),
+		);
+	};
+	document.addEventListener("pointerdown", aoTocar, true);
+	document.addEventListener("click", aoClicar, true);
+	return () => {
+		document.removeEventListener("pointerdown", aoTocar, true);
+		document.removeEventListener("click", aoClicar, true);
+	};
 }

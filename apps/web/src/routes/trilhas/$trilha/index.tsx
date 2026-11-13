@@ -1,15 +1,21 @@
+// biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { Aviso, useAviso } from "@/components/aviso";
+import { AzulejoGrande, Painel } from "@/components/azulejo";
 import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "@/components/botao-continuar";
 import { Caminho } from "@/components/caminho";
 import { ChamadaDoQuiz } from "@/components/chamada-do-quiz";
 import { Infografico } from "@/components/infografico";
+import { LugarDoBotao } from "@/components/lugar-do-botao";
 import { MarcaDeLido } from "@/components/marca-de-lido";
+import { Palavras } from "@/components/palavras";
+import { azulejoDaPosicao, sementeDe } from "@/lib/azulejos";
+import { classes } from "@/lib/classes";
 import { semCliqueDuplo } from "@/lib/clique";
 import { buscarTrilha } from "@/lib/conteudo";
-import { corDaFita, fraseDoProgresso, plural } from "@/lib/formatar";
+import { classeDaFita, fraseDoProgresso, plural } from "@/lib/formatar";
 import { metaDaPagina, metaSemPagina } from "@/lib/meta";
 import {
 	contarLidos,
@@ -31,6 +37,11 @@ export const Route = createFileRoute("/trilhas/$trilha/")({
 	component: PaginaDaTrilha,
 });
 
+// Os textos do botão de continuar: o da primeira visita e o de quem já leu algum
+// artigo da trilha.
+const COMECAR = "Começar pelo primeiro artigo";
+const continuarEm = (titulo: string) => `Continuar de onde parou: ${titulo}`;
+
 function PaginaDaTrilha() {
 	const trilha = Route.useLoaderData();
 	const lidos = useArtigosLidos();
@@ -45,6 +56,12 @@ function PaginaDaTrilha() {
 		(soma, artigo) => soma + artigo.minutos,
 		0,
 	);
+	// Os textos que o botão de continuar pode ter nesta trilha: o servidor manda
+	// o primeiro, e o navegador troca pelo do artigo em que a pessoa parou.
+	const textosDoBotao = [
+		COMECAR,
+		...trilha.artigos.map((artigo) => continuarEm(artigo.titulo)),
+	];
 	const progresso =
 		quantosLidos === 0 && apagadas
 			? "Você recomeçou a trilha."
@@ -70,54 +87,46 @@ function PaginaDaTrilha() {
 			: undefined;
 
 	return (
-		<div className="px-margem-celular mx-auto max-w-[1440px] pb-20 md:px-16">
-			<Caminho trilha={trilha} naTrilha />
-			{/* A partir do lg, o infográfico fica numa coluna à direita das folhas, na
-			    altura do título. Abaixo disso, ele vem depois das folhas, que é também
-			    a ordem do HTML. */}
-			<div
-				className={`mt-8 ${trilha.infografico ? "folha:grid-cols-[minmax(0,1fr)_28rem] folha:gap-x-12 lg:grid lg:grid-cols-[minmax(0,1fr)_21rem] lg:gap-x-8 xl:grid-cols-[minmax(0,1fr)_24rem] xl:gap-x-10" : ""}`}
-			>
-				<div className="max-w-[56rem]">
-					{/* Com a letra grande, o título cresce até "Constituição", a palavra
-					    mais comprida dos títulos das trilhas, encostar nas margens (o
-					    letra-com-teto do index.css). */}
-					<h1 className="titulo-condensado letra-com-teto [--letra:3rem] [--palavra:4.82] md:text-[4.75rem]">
-						{trilha.titulo}
-					</h1>
-					<p className="mt-5 max-w-[40ch] font-serif text-xl leading-snug font-medium lg:text-[1.5625rem] lg:leading-[1.4]">
-						{trilha.descricao}
-					</p>
-					<p className="border-tinta mt-5 flex flex-wrap gap-x-7 gap-y-1 border-y-2 py-3 text-[1.0625rem] font-semibold">
-						<span>{plural(total, "artigo", "artigos")}</span>
-						<span>{minutos} min de leitura</span>
-						<span>Fonte oficial em cada explicação</span>
-					</p>
-
-					{/* A linha do progresso tem a altura reservada desde o HTML do servidor:
-				    quando o progresso aparece, depois da hidratação, o botão fica no lugar.
-				    A linha das ações guarda a altura do botão, e a lista também não sobe
-				    quando a trilha terminada fica só com o "Recomeçar a trilha". */}
-					<p className="mt-6 min-h-7 text-xl font-bold">{progresso}</p>
-					<div className="mt-3 flex min-h-13 flex-wrap items-center gap-x-6 gap-y-4">
-						{ondeParou && (
-							<Link
-								to="/trilhas/$trilha/$artigo"
-								params={{ trilha: trilha.slug, artigo: ondeParou.slug }}
-								className={BOTAO_CONTINUAR}
-							>
-								{quantosLidos > 0
-									? `Continuar de onde parou: ${ondeParou.titulo}`
-									: "Começar pelo primeiro artigo"}
-								{/* O espaço antes da seta: com a letra grande, quando ela desce
-								    sozinha, começa alinhada com o texto (o SETA_DO_BOTAO). */}{" "}
-								<ArrowRight
-									aria-hidden="true"
-									className={SETA_DO_BOTAO}
-									strokeWidth={2.5}
-								/>
-							</Link>
-						)}
+		// A partir de 1400 px, o caminho da trilha fica numa coluna à direita dos
+		// artigos. Abaixo disso, ele vem depois deles, que é também a ordem do HTML.
+		<div
+			className={classes(
+				"pagina-da-trilha",
+				trilha.infografico && "com-caminho",
+			)}
+		>
+			<section className="cartaz cartaz-medio">
+				{/* Cada trilha tem o seu painel: a semente sai do endereço dela. */}
+				<Painel
+					semente={sementeDe(trilha.slug)}
+					colunas={4}
+					quantas={64}
+					className="mural"
+					sozinho
+				/>
+				<Caminho trilha={trilha} naTrilha />
+				{/* Com a letra grande, o título cresce até "CONSTITUIÇÃO", a palavra
+				    mais larga dos títulos das trilhas, encostar nas margens (o
+				    letra-com-teto do index.css). As palavras tombam no lugar uma a uma:
+				    o leitor de tela lê o título corrido, pelo aria-label. */}
+				<h1
+					aria-label={trilha.titulo}
+					className="titulo-condensado letra-com-teto [--palavra:5.66]"
+				>
+					<span aria-hidden="true" className="caixa">
+						<Palavras texto={trilha.titulo} />
+					</span>
+				</h1>
+				<div className="cartaz-pe">
+					<p className="abertura">{trilha.descricao}</p>
+					{/* O "Recomeçar a trilha" fica embaixo da descrição, com a linha
+					    reservada desde o HTML do servidor. Ali, ele não muda de lugar
+					    quando vira "Desfazer", e nada aparece no lugar dele: o botão de
+					    continuar, que muda de texto e some com a trilha terminada, fica
+					    na outra coluna e, no celular, embaixo. Num clique duplo, o segundo
+					    clique fica de fora (lib/clique.ts) e, se passasse, cairia no mesmo
+					    botão. */}
+					<p className="recomeco">
 						{acao && (
 							<button
 								type="button"
@@ -127,102 +136,118 @@ function PaginaDaTrilha() {
 								{acao.texto}
 							</button>
 						)}
-					</div>
-					<Aviso texto={aviso} />
-
-					<ol className="border-tinta mt-12 border-t-2">
-						{trilha.artigos.map((artigo, indice) => {
-							const lido = lidos.has(idDoArtigo(artigo));
-							const parouAqui =
-								quantosLidos > 0 && ondeParou?.slug === artigo.slug;
-							const estado = parouAqui ? "Continue daqui" : lido ? "Lido" : "";
-							return (
-								<li
-									key={artigo.slug}
-									className={`border-tinta relative border-b-2 border-dashed ${parouAqui ? "canto-dobrado" : ""}`}
+					</p>
+					<div className="cartaz-acao">
+						{/* A linha do progresso tem a altura reservada desde o HTML do
+						    servidor: quando o progresso aparece, depois da hidratação, o
+						    botão fica no lugar. */}
+						<p className="progresso rotulo">{progresso}</p>
+						{/* O lugar do botão guarda a altura do texto mais alto que ele pode
+						    ter: no celular, a faixa e a lista dos artigos não sobem quando
+						    o botão some, com a trilha terminada, nem descem quando o texto
+						    dele ganha uma linha. */}
+						<LugarDoBotao textos={textosDoBotao}>
+							{ondeParou && (
+								<Link
+									to="/trilhas/$trilha/$artigo"
+									params={{ trilha: trilha.slug, artigo: ondeParou.slug }}
+									className={BOTAO_CONTINUAR}
 								>
-									<span
+									{quantosLidos > 0 ? continuarEm(ondeParou.titulo) : COMECAR}
+									{/* O espaço antes da seta: com a letra grande, quando ela
+									    desce sozinha, começa alinhada com o texto (o
+									    SETA_DO_BOTAO). */}{" "}
+									<ArrowRight
 										aria-hidden="true"
-										className="fita absolute -top-0.5 left-0 h-24 md:h-28"
-										style={{ background: corDaFita(indice + 1) }}
+										className={SETA_DO_BOTAO}
+										strokeWidth={2.5}
 									/>
-									{/* No celular, o número fica ao lado do título e o resumo usa a
-								    largura toda; a partir do md, o número ocupa a coluna inteira.
-								    Com a letra grande, o número fica no lugar, e o título desce
-								    para a linha de baixo, com a largura toda. A margem embaixo do
-								    número o separa do título. O recuo da fita e o respiro da
-								    direita ficam com os px da letra normal, como a margem da
-								    página, e só o texto cresce (o Renan, na #87: "Folha em px").
-								    A largura da fita vem do .fita, no index.css. */}
-									<div className="letra-grande:pr-[20px] letra-grande:pl-[26px] grid grid-cols-[4.5rem_minmax(0,1fr)] content-start gap-x-4 py-6 pr-5 pl-[1.625rem] md:grid-cols-[7rem_minmax(0,1fr)] md:gap-x-6 md:pr-10">
-										<span
-											aria-hidden="true"
-											className="numeral letra-grande:mb-5 justify-self-center text-[5.5rem] md:row-span-3 md:text-[8rem]"
-										>
-											<span className="relative inline-block">
-												{indice + 1}
-												{lido && <MarcaDeLido className="visto-no-numero" />}
-											</span>
-										</span>
-										{/* O respiro à direita do título, no celular, deixa o canto dobrado
-										    livre. Com a letra grande, o título cresce até "fundamentais?",
-										    a palavra mais comprida dos títulos dos artigos, encostar nas
-										    bordas da folha (o letra-com-teto do index.css): o --recuo é o
-										    recuo e o respiro da folha, mais o respiro do título. Com a
-										    letra grande, eles ficam em px: 26 + 20 + 12 = 58 px. */}
-										<h2 className="subtitulo-condensado letra-com-teto letra-grande:col-span-full letra-grande:pr-[12px] letra-grande:[--recuo:58px] pr-3 [--letra:1.75rem] [--palavra:5.96] [--recuo:3.625rem] md:pr-0 md:text-[2.25rem]">
-											<Link
-												to="/trilhas/$trilha/$artigo"
-												params={{ trilha: trilha.slug, artigo: artigo.slug }}
-												className="no-underline hover:underline"
-											>
-												{artigo.titulo}
-											</Link>
-										</h2>
-										<p className="col-span-2 mt-3 max-w-[52ch] font-serif text-lg leading-snug md:col-span-1 md:mt-2">
-											{artigo.resumo}
-										</p>
-										{/* Cada parte fica inteira: a linha só quebra entre elas. */}
-										<p className="col-span-2 mt-3 text-[0.9375rem] font-semibold md:col-span-1">
-											{estado && (
-												<>
-													<strong className="font-extrabold whitespace-nowrap">
-														{estado} ·
-													</strong>{" "}
-												</>
-											)}
-											<span className="whitespace-nowrap">
-												{artigo.minutos} min ·
-											</span>{" "}
-											<span className="whitespace-nowrap">
-												{plural(
-													artigo.fontes.length,
-													"fonte oficial",
-													"fontes oficiais",
-												)}
-											</span>
-										</p>
-									</div>
-								</li>
-							);
-						})}
-					</ol>
-					{trilha.quiz && (
-						<ChamadaDoQuiz
-							trilha={trilha.slug}
-							quiz={trilha.quiz}
-							className="mt-12"
-						/>
-					)}
+								</Link>
+							)}
+						</LugarDoBotao>
+					</div>
 				</div>
-				{trilha.infografico && (
-					<Infografico
-						infografico={trilha.infografico}
-						trilha={trilha}
-						className="mt-12 lg:mt-0"
+				<p className="faixa rotulo">
+					<span>{plural(total, "artigo", "artigos")}</span>
+					<span>{minutos} min de leitura</span>
+					<span>Fonte oficial em cada explicação</span>
+				</p>
+				<Aviso texto={aviso} />
+			</section>
+
+			<section aria-label="Artigos da trilha" className="artigos">
+				<ol role="list" className="linhas">
+					{trilha.artigos.map((artigo, indice) => {
+						const posicao = indice + 1;
+						const lido = lidos.has(idDoArtigo(artigo));
+						const parouAqui =
+							quantosLidos > 0 && ondeParou?.slug === artigo.slug;
+						const estado = parouAqui ? "Continue daqui" : lido ? "Lido" : "";
+						return (
+							<li
+								key={artigo.slug}
+								className={classes("linha revelar", classeDaFita(posicao))}
+							>
+								<span aria-hidden="true" className="numeral">
+									{posicao}
+									{lido && <MarcaDeLido className="visto-no-numero" />}
+								</span>
+								<div className="linha-texto">
+									{/* Com a letra grande, o título cresce até "FUNDAMENTAIS?", a
+									    palavra mais larga dos títulos dos artigos, encostar nas
+									    bordas da folha (o letra-com-teto do index.css). A folha
+									    inteira leva ao artigo: a área do link cobre a folha. */}
+									<h2 className="titulo-de-folha letra-com-teto [--palavra:6.34]">
+										<Link
+											to="/trilhas/$trilha/$artigo"
+											params={{ trilha: trilha.slug, artigo: artigo.slug }}
+										>
+											{artigo.titulo}
+										</Link>
+									</h2>
+									<p>{artigo.resumo}</p>
+									{/* Cada parte fica inteira: a linha só quebra entre elas. */}
+									<p className="rotulo">
+										<span className="whitespace-nowrap">
+											Leitura de {artigo.minutos} min ·
+										</span>{" "}
+										<span className="whitespace-nowrap">
+											{plural(
+												artigo.fontes.length,
+												"fonte oficial",
+												"fontes oficiais",
+											)}
+										</span>
+									</p>
+									{/* A etiqueta pende do fio de cima da folha, fora do fluxo do
+									    texto: quando ela aparece, depois da hidratação, nada muda
+									    de lugar. No HTML, vem depois do título. */}
+									{estado && <p className="estado rotulo">{estado}</p>}
+								</div>
+								<AzulejoGrande
+									pecas={azulejoDaPosicao(posicao)}
+									className="da-linha"
+								/>
+							</li>
+						);
+					})}
+				</ol>
+				{trilha.quiz && (
+					<ChamadaDoQuiz
+						trilha={trilha.slug}
+						quiz={trilha.quiz}
+						className="revelar"
 					/>
 				)}
-			</div>
+			</section>
+
+			{trilha.infografico && (
+				<Infografico
+					infografico={trilha.infografico}
+					trilha={trilha}
+					className="revelar"
+				/>
+			)}
 		</div>
 	);
 }

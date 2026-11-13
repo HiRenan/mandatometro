@@ -81,7 +81,7 @@ Em regra, o projeto começa na Câmara dos Deputados, a não ser que...
 
 ## O infográfico: `infografico.md`
 
-O caminho da trilha num desenho: os passos ligados por uma linha cheia, e o que pode mudar o caminho num traço tracejado. Ele aparece na página da trilha, ao lado das folhas a partir de 1024 px de largura e depois delas numa tela menor. É opcional: uma trilha sem `infografico.md` fica com uma coluna só.
+O caminho da trilha, passo a passo: cada passo com o texto, o que pode mudar o caminho, os artigos que o explicam e as fontes. Ele aparece na página da trilha, numa lista em que um passo abre de cada vez, ao lado das folhas a partir de 1400 px de largura e depois delas numa tela menor. É opcional: uma trilha sem `infografico.md` fica com uma coluna só. O da trilha do processo legislativo aparece também na página inicial, um passo por vez, com o mesmo texto.
 
 Como o `trilha.md`, é só o cabeçalho, sem texto: um texto embaixo dele é erro, porque não apareceria na página. Um infográfico de um passo só ficaria assim (o da trilha do processo legislativo tem cinco):
 
@@ -106,7 +106,7 @@ passos:
 
 - `titulo`: o título do infográfico.
 - `resumo`: uma frase, logo abaixo do título.
-- `passos`: pelo menos um, na ordem do caminho. Os passos não têm número, para não confundir com o número das folhas. Cada passo tem:
+- `passos`: pelo menos um, na ordem do caminho. O título do passo vai sem número: a página inicial já conta os passos ("Passo 2 de 5"), e o número de cada artigo é o da folha dele. Cada passo tem:
   - `titulo`: o nome do passo, curto;
   - `texto`: o que acontece no passo, em poucas frases;
   - `desvios` (opcional): o que pode mudar o caminho nesse passo, uma frase por desvio, começando com "Se";
@@ -175,7 +175,7 @@ perguntas:
   ```
 
 - **Nada se repete:** duas perguntas com o mesmo enunciado são erro, e, na mesma pergunta, uma opção ou uma fonte que aparece duas vezes também. O erro aponta a segunda vez.
-- **Onde aparece:** o quiz tem a página dele, em `/trilhas/<trilha>/quiz`, e a chamada "Quiz da trilha" fica no fim do artigo do `depoisDe` e na página da trilha.
+- **Onde aparece:** o quiz tem a página dele, em `/trilhas/<trilha>/quiz`, e a chamada "Quiz da trilha" fica no fim do artigo do `depoisDe` e na página da trilha. A página mostra uma pergunta por vez, na ordem do arquivo; sem JavaScript, mostra todas, uma embaixo da outra.
 - **Mudar o texto de uma pergunta ou de uma opção apaga a resposta de quem já tinha respondido,** porque o navegador guarda a resposta pelo enunciado e pelo texto da opção escolhida. Corrigir uma vírgula também conta.
 
 ## Pegadinhas do YAML
@@ -188,20 +188,22 @@ perguntas:
 
 ## Palavras compridas nos títulos
 
-Muita gente aumenta a letra do navegador no celular, até 200%. Com a letra grande, cada título diminui só o bastante para a palavra mais larga dele caber na tela inteira, sem se partir no meio. Esse limite foi medido com os títulos de hoje:
+Muita gente aumenta a letra do navegador no celular, até 200%. Com a letra grande, cada título diminui só o bastante para a palavra mais larga dele caber na tela inteira, sem se partir no meio. Os títulos aparecem em maiúsculas no site, e a medida é a da palavra em maiúsculas. Esse limite foi medido com os títulos de hoje:
 
 | Onde | A palavra mais larga hoje |
 |---|---|
 | O título da trilha (o `titulo:` do `trilha.md`) | "Constituição" |
 | O título do artigo (o `titulo:` do artigo) | "fundamentais?" |
 | O intertítulo (cada `##` do texto) | "constitucionalidade" |
+| O título do infográfico (o `titulo:` do `infografico.md`) | "caminho" |
+| O título de cada passo do infográfico | "Apresentação" |
 
 Uma palavra mais larga que a da tabela não cabe nem no título menor e se parte no meio com a letra grande. A pontuação colada conta: "fundamentais?" é mais larga que "fundamentais". O que conta é a largura, e não o número de letras: "Participação" tem as mesmas 12 letras de "Constituição" e, mesmo assim, passa do limite do título da trilha, por pouco.
 
 O `pnpm --filter web test` mede cada palavra dos títulos e falha com o arquivo, a palavra e o limite:
 
 ```text
-conteudo/trilhas/direitos-e-deveres/novo-artigo.md: "inconstitucionalidade" precisa de 8,65 em no intertítulo (##), e o teto é 7,92 em
+conteudo/trilhas/direitos-e-deveres/novo-artigo.md: "inconstitucionalidade" precisa de 10,49 em no intertítulo (##), e o teto é 9,64 em
 ```
 
 Quando o teste falhar, há duas saídas:

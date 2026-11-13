@@ -87,9 +87,24 @@ export function pedacosDoDominio(url: string): string[] {
 	return dominio(url).split(/(?=\.)/);
 }
 
-const FITAS = ["verde", "amarela", "azul", "rosa", "vermelha"] as const;
+/** As cinco fitas do Bonfim, na ordem em que aparecem juntas. */
+export const FITAS = ["verde", "amarela", "azul", "rosa", "vermelha"] as const;
 
-/** Cada artigo tem a sua fita do Bonfim, pela posição na trilha. */
-export function corDaFita(posicao: number): string {
-	return `var(--fita-${FITAS[(posicao - 1) % FITAS.length]})`;
+export type Fita = (typeof FITAS)[number];
+
+/**
+ * A fita de uma posição, a partir de 1: cada artigo, cada passo e cada trilha tem
+ * a sua, pela ordem, e a sexta posição volta à primeira fita. Ninguém escolhe a
+ * cor por assunto, partido ou humor.
+ */
+export function fitaDaPosicao(posicao: number): Fita {
+	return FITAS[(posicao - 1) % FITAS.length];
+}
+
+/**
+ * A classe que dá a um elemento a fita da posição dele: ela põe a cor na variável
+ * --fita (index.css), que o número, o fio do desvio e o marcador leem.
+ */
+export function classeDaFita(posicao: number): string {
+	return `fita-${fitaDaPosicao(posicao)}`;
 }

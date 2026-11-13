@@ -98,12 +98,31 @@ describe("cabeçalho", () => {
 	it("com a letra grande, as margens e o respiro não crescem", async () => {
 		// O Renan, na #48: "Ficam em 20 px" e "Espaço de hoje".
 		const cabecalho = await mostrar();
-		const faixa = cabecalho.querySelector(":scope > div.mx-auto");
-		const nomeELema = within(cabecalho)
-			.getByRole("link", { name: "Mandatômetro" })
-			.closest("div");
+		const faixa = cabecalho.querySelector(":scope > div.topo-dentro");
 
-		temAsClasses(faixa as Element, "px-margem-celular py-[16px] gap-y-[12px]");
-		temAsClasses(nomeELema as Element, "gap-y-[4px]");
+		temAsClasses(faixa as Element, "px-margem-celular py-[8px] gap-y-[4px]");
+	});
+
+	it("é o bloco de tinta, com o foco amarelo e a tira das cinco fitas fora do leitor de tela", async () => {
+		const cabecalho = await mostrar();
+
+		// A classe moldura dá o fundo de tinta e o foco amarelo (index.css), e é por
+		// ela que o cabeçalho fica parado na troca de página.
+		expect(cabecalho.classList.contains("moldura")).toBe(true);
+		expect(
+			cabecalho.querySelector(".tira-de-fitas")?.getAttribute("aria-hidden"),
+		).toBe("true");
+	});
+
+	it("marca a seção aberta, e só a página do link é a página atual", async () => {
+		const cabecalho = await mostrar();
+		const [inicio, trilhas] = within(cabecalho)
+			.getByRole("navigation", { name: "Principal" })
+			.querySelectorAll("a");
+
+		expect(inicio.hasAttribute("data-na-secao")).toBe(true);
+		expect(inicio.getAttribute("aria-current")).toBe("page");
+		expect(trilhas.hasAttribute("data-na-secao")).toBe(false);
+		expect(trilhas.hasAttribute("aria-current")).toBe(false);
 	});
 });

@@ -4,7 +4,6 @@ import {
 	type Artigo,
 	type Infografico,
 	lerTrilhas,
-	type Passo,
 	type Pergunta,
 	type Trilha,
 } from "./ler";
@@ -33,6 +32,12 @@ export type ArtigoNaLista = Omit<Artigo, "corpo">;
  */
 export type TrilhaNaLista = Omit<Trilha, "artigos" | "infografico" | "quiz"> & {
 	artigos: ArtigoNaLista[];
+	/**
+	 * O artigo depois do qual o quiz aparece, quando a trilha tem quiz: é o lugar
+	 * dele na ordem da trilha, para a troca de página saber se a pessoa avança ou
+	 * volta (lib/troca-de-pagina.ts).
+	 */
+	quizDepoisDe?: string;
 };
 
 /**
@@ -73,12 +78,11 @@ export type QuizNaPagina = {
 };
 
 /**
- * O caminho na página inicial: o título, o resumo e, de cada passo, o título e
- * os artigos que o explicam. O texto, os desvios e as fontes ficam na trilha.
+ * O caminho na página inicial: o infográfico da trilha inteiro. O passo a passo
+ * da página mostra, de cada passo, o texto, os desvios, as fontes e os artigos
+ * que o explicam.
  */
-export type CaminhoNaInicial = Pick<Infografico, "titulo" | "resumo"> & {
-	passos: Pick<Passo, "titulo" | "artigos">[];
-};
+export type CaminhoNaInicial = Infografico;
 
 /**
  * A página inicial: a trilha do processo legislativo, como nas listas, e o
@@ -131,8 +135,16 @@ function trilhaNaLista({
 	descricao,
 	ordem,
 	artigos,
+	quiz,
 }: Trilha): TrilhaNaLista {
-	return { slug, titulo, descricao, ordem, artigos: artigos.map(naLista) };
+	return {
+		slug,
+		titulo,
+		descricao,
+		ordem,
+		artigos: artigos.map(naLista),
+		...(quiz && { quizDepoisDe: quiz.depoisDe }),
+	};
 }
 
 export function listarTrilhas(todas: Trilha[]): TrilhaNaLista[] {
@@ -147,16 +159,7 @@ export function inicio(todas: Trilha[]): PaginaInicial | undefined {
 	const { infografico } = trilha;
 	return {
 		trilha: trilhaNaLista(trilha),
-		...(infografico && {
-			caminho: {
-				titulo: infografico.titulo,
-				resumo: infografico.resumo,
-				passos: infografico.passos.map(({ titulo, artigos }) => ({
-					titulo,
-					artigos,
-				})),
-			},
-		}),
+		...(infografico && { caminho: infografico }),
 	};
 }
 

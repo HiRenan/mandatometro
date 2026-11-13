@@ -10,6 +10,7 @@ import {
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { type ReactNode, useEffect } from "react";
 
+import { CliqueNaTroca } from "../components/clique-na-troca";
 import Header from "../components/header";
 import { Rodape } from "../components/rodape";
 import { ENV } from "../env";
@@ -18,6 +19,7 @@ import { focarNoTitulo } from "../lib/foco";
 import {
 	cabecalhosDaPagina,
 	metaDaImagem,
+	preloadDaFonte,
 	TITULO_DE_ERRO,
 	TITULO_NAO_ENCONTRADA,
 } from "../lib/meta";
@@ -48,8 +50,8 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 						? TITULO_NAO_ENCONTRADA
 						: "Mandatômetro",
 			},
-			// A cor da barra do navegador no celular segue o cartão preto do cabeçalho.
-			{ name: "theme-color", content: "#161616" },
+			// A cor da barra do navegador no celular segue o bloco de tinta do cabeçalho.
+			{ name: "theme-color", content: "#14161c" },
 			{ property: "og:site_name", content: "Mandatômetro" },
 			{ property: "og:locale", content: "pt_BR" },
 			...metaDaImagem(ENV.APP_BASE_URL),
@@ -64,14 +66,13 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 			{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
 			// As fontes são pedidas junto com o CSS: chegam antes de o texto aparecer, e
 			// o texto não pula quando elas trocam a fonte reserva. Todas as páginas usam
-			// as duas.
-			...[fontes.archivo, fontes.literata].map((href) => ({
-				rel: "preload",
-				href,
-				as: "font",
-				type: "font/woff2",
-				crossOrigin: "anonymous" as const,
-			})),
+			// as duas primeiras. A de máquina é a do lema: todas as páginas a baixam,
+			// porque o lema está no rodapé, mas o preload só vale onde ela aparece na
+			// primeira tela. A partir de 864 px (54rem, no index.css), é o lema do
+			// cabeçalho; abaixo disso, só a página inicial a adianta, para a frase do
+			// título (routes/index.tsx), e as outras a pedem pelo CSS, para o rodapé.
+			...[fontes.archivo, fontes.literata].map((href) => preloadDaFonte(href)),
+			preloadDaFonte(fontes.maquina, "(min-width: 54rem)"),
 		],
 	}),
 
@@ -103,6 +104,9 @@ function Documento({ children }: { children: ReactNode }) {
 					<Rodape />
 				</div>
 				<FocoNaPaginaNova />
+				{/* O clique feito durante a troca de página chega à página nova
+				    (components/clique-na-troca.tsx). */}
+				<CliqueNaTroca />
 				<Toaster richColors />
 				<TanStackRouterDevtools position="bottom-left" />
 				<Scripts />

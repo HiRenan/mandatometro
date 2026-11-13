@@ -47,7 +47,7 @@ describe("fontes oficiais", () => {
 		const lista = renderToStaticMarkup(<ListaDeFontes fontes={fontes} />);
 
 		expect(renderToStaticMarkup(<Fontes fontes={fontes} />)).toContain(lista);
-		expect(lista).toMatch(/^<ol class="mt-4 grid gap-4">/);
+		expect(lista).toMatch(/^<ol class="lista-de-fontes mt-4">/);
 		expect(lista).not.toContain("Fontes oficiais");
 		expect(lista).not.toContain('id="fontes"');
 	});
