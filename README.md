@@ -43,6 +43,113 @@ FastAPI · PostgreSQL com pgvector · TanStack Start (React) · Turborepo · Doc
 
 O porquê de cada escolha está no [ADR 0001](docs/adr/0001-stack.md).
 
+## Modelo de dados
+
+O banco guarda o que a coleta lê da Câmara e do Senado e o que a newsletter usa. Os modelos ficam em `apps/backend/src/mandatometro/db/modelos.py`, e cada mudança vira uma migration do Alembic.
+
+- **Cada Casa tem os seus números:** parlamentar, proposição e votação se identificam pela Casa e pelo id que a Casa dá (`casa`, `id_externo`). A mesma matéria tem uma linha em cada Casa, ligadas por sigla, número e ano.
+- **Fonte em tudo:** cada dado coletado e cada item da edição aponta para uma `fonte`, com o endereço e a data da coleta. Sem fonte, o banco não grava.
+- **O partido fica no voto,** porque muda dentro do mandato. Os totais de uma votação se contam pelos votos.
+- **Ausência sem motivo:** toda ausência do Senado (atividade parlamentar, licença saúde...) entra como `nao_votou`, sem o código, para a licença saúde ficar igual às outras. O voto só guarda os códigos de voto e de presença da lista `CODIGOS_GRAVADOS`, e o banco recusa os demais. Um código novo entra como `outro`, sem o código, e vai para o log sem a pessoa.
+- **Quem assina** deixa só o e-mail, a data e o código do link de sair. Sair apaga a linha.
+
+```mermaid
+erDiagram
+    parlamentar ||--o{ mandato : "tem"
+    parlamentar ||--o{ voto : "dá"
+    votacao ||--o{ voto : "recebe"
+    votacao ||--o{ votacao_proposicao : "afeta"
+    proposicao ||--o{ votacao_proposicao : "é afetada"
+    edicao ||--o{ item_edicao : "tem"
+    fonte ||--o{ parlamentar : "comprova"
+    fonte ||--o{ mandato : "comprova"
+    fonte ||--o{ proposicao : "comprova"
+    fonte ||--o{ votacao : "comprova"
+    fonte ||--o{ voto : "comprova"
+    fonte ||--o{ item_edicao : "comprova"
+
+    fonte {
+        int id PK
+        string url "o que a coleta leu"
+        string url_publica "a página que o leitor abre"
+        timestamptz coletado_em
+        string trecho "o trecho literal, quando houver"
+    }
+    parlamentar {
+        int id PK
+        string casa UK "camara ou senado"
+        int id_externo UK "o id na Casa"
+        string nome
+        int fonte_id FK
+    }
+    mandato {
+        int id PK
+        int parlamentar_id FK, UK
+        int legislatura UK
+        string uf
+        string condicao "Titular, Suplente..."
+        bool em_exercicio "na última coleta"
+        int fonte_id FK
+    }
+    proposicao {
+        int id PK
+        string casa UK
+        int id_externo UK "no Senado, o idProcesso"
+        string sigla "sigla, número e ano ligam as Casas"
+        int numero
+        int ano
+        string ementa
+        string apelido
+        string url_inteiro_teor
+        int fonte_id FK
+    }
+    votacao {
+        int id PK
+        string casa UK
+        string id_externo UK "2637478-26 ou 7109"
+        date data
+        string descricao
+        string resultado "aprovada, rejeitada ou outro"
+        string resultado_bruto "1, 0 ou A"
+        int fonte_id FK
+    }
+    votacao_proposicao {
+        int votacao_id PK, FK
+        int proposicao_id PK, FK
+    }
+    voto {
+        int votacao_id PK, FK
+        int parlamentar_id PK, FK
+        string valor "sim, nao, abstencao, obstrucao, presidente, nao_votou ou outro"
+        string valor_bruto "o código da Casa, só os da lista"
+        string partido "o do dia do voto"
+        string uf "a do dia do voto"
+        int fonte_id FK
+    }
+    edicao {
+        int id PK
+        string titulo
+        date inicio "a semana coberta"
+        date fim
+        string estado "rascunho ou publicada"
+        timestamptz publicada_em "só na publicada"
+    }
+    item_edicao {
+        int id PK
+        int edicao_id FK, UK
+        int ordem UK
+        string titulo
+        string texto
+        int fonte_id FK
+    }
+    inscrito {
+        int id PK
+        string email UK "em minúsculas"
+        uuid codigo_saida UK "o link de sair"
+        timestamptz inscrito_em
+    }
+```
+
 ## Como rodar
 
 Precisa de [Node.js](https://nodejs.org/) 24, [pnpm](https://pnpm.io/) (ele mesmo troca para a versão do `packageManager`, no `package.json`), [uv](https://docs.astral.sh/uv/) (ele instala o Python 3.13) e [Docker](https://www.docker.com/).
@@ -73,6 +180,15 @@ pnpm build         # build do site, que confere o conteúdo das trilhas
 
 `pnpm check` corrige a formatação do TypeScript. No Python, rode `uv run ruff format` e `uv run ruff check --fix` em `apps/backend`.
 
+**Testes de banco.** Os testes do modelo e das migrations rodam num banco à parte, terminado em `_teste`, porque apagam tudo nele a cada execução. Crie esse banco uma vez, com o banco do Docker no ar, e passe o endereço no `TEST_DATABASE_URL`, na linha do comando (ele não vem do `.env`):
+
+```bash
+docker compose exec db createdb -U mandatometro mandatometro_teste
+TEST_DATABASE_URL=postgresql+psycopg://mandatometro:troque-esta-senha@localhost:5433/mandatometro_teste pnpm test
+```
+
+Sem a variável, o pytest pula os testes de banco e diz o motivo. No CI, que sobe o próprio banco, eles falham.
+
 **No ar,** o site fica na Vercel, que monta a pasta `apps/web` a cada push, com a configuração de `apps/web/vercel.json`:
 
 - a `main` vai para https://mandatometro.com.br; a `develop`, para o endereço do time; e cada PR ganha uma prévia;
@@ -86,7 +202,7 @@ Fora da Vercel, como no Docker, defina o `APP_BASE_URL` com o endereço do site 
 
 **Mudou a API?** `pnpm generate:client` grava o `openapi.json` e gera de novo o cliente TypeScript. Faça commit dos dois.
 
-**Migration nova,** em `apps/backend`, com o próximo número: `uv run alembic revision --autogenerate --rev-id 0002 -m "cria tabela parlamentar"`.
+**Migration nova,** em `apps/backend`, com o próximo número: `uv run alembic revision --autogenerate --rev-id 0004 -m "cria a tabela orientacao"`. O autogenerate não vê mudança de CHECK nem de valor padrão: um valor novo num conjunto, como o do voto, pede essa parte da migration escrita à mão, e o teste de migrations acusa o que faltar. `uv run alembic check` diz se algum modelo mudou sem migration. Mudou uma tabela? Atualize o diagrama em "Modelo de dados": um teste confere.
 
 ## Time
 

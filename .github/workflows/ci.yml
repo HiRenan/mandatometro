@@ -45,6 +45,23 @@ jobs:
   backend:
     name: Backend
     runs-on: ubuntu-latest
+    # O banco dos testes: a imagem do docker-compose.yml, com a senha de exemplo, num banco terminado
+    # em _teste. O health check usa TCP: na inicialização da imagem, o servidor provisório só atende
+    # pelo socket, e o teste conectaria antes da hora.
+    services:
+      db:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_DB: mandatometro_teste
+          POSTGRES_USER: mandatometro
+          POSTGRES_PASSWORD: troque-esta-senha
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U mandatometro -d mandatometro_teste"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     defaults:
       run:
         working-directory: apps/backend
@@ -61,8 +78,11 @@ jobs:
         run: |
           uv run ruff check
           uv run ruff format --check
+      # No CI, sem o TEST_DATABASE_URL os testes de banco falham, em vez de pular (tests/conftest.py).
       - name: pytest
         run: uv run pytest
+        env:
+          TEST_DATABASE_URL: postgresql+psycopg://mandatometro:troque-esta-senha@localhost:5432/mandatometro_teste
       - name: openapi.json em dia com a API
         run: |
           uv run mandatometro openapi openapi.json

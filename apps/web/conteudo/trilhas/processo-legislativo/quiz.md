@@ -37,7 +37,7 @@ perguntas:
       - texto: Pela Câmara dos Deputados, porque todo projeto de lei começa lá.
       - texto: Pelas duas Casas ao mesmo tempo, numa sessão conjunta.
       - texto: Pela Casa que a senadora escolher.
-    explicacao: "Em regra, o projeto de lei começa na Câmara dos Deputados. A exceção são os projetos de um senador ou de uma comissão do Senado: esses começam no Senado, que vira a Casa iniciadora. Aprovado ali, o projeto segue para a Câmara, que faz a revisão (art. 65)."
+    explicacao: "Em regra, o projeto de lei começa na Câmara dos Deputados. Uma exceção são os projetos de um senador ou de uma comissão do Senado: esses começam no Senado, que vira a Casa iniciadora. Aprovado ali, o projeto segue para a Câmara, que faz a revisão (art. 65)."
     fontes:
       - titulo: Câmara dos Deputados, Entenda o processo legislativo
         url: https://www.camara.leg.br/entenda-o-processo-legislativo/
@@ -80,7 +80,7 @@ perguntas:
     enunciado: Uma comissão aprovou um projeto no lugar do Plenário. O que pode levar esse projeto a ser votado também pelo Plenário da Casa?
     opcoes:
       - texto: Um pedido assinado por 1% dos eleitores do país.
-      - texto: Um pedido do presidente da República.
+      - texto: Um pedido do relator do projeto na comissão.
       - texto: Um recurso assinado por um décimo dos membros da Casa.
         certa: true
       - texto: "Nada: a decisão da comissão não pode ser revista."

@@ -12,6 +12,7 @@ import { MarcaDeLido } from "@/components/marca-de-lido";
 import { Palavras } from "@/components/palavras";
 import { azulejoDaPosicao, sementeDe } from "@/lib/azulejos";
 import { classes } from "@/lib/classes";
+import { semCliqueDuplo } from "@/lib/clique";
 import { buscarTrilha } from "@/lib/conteudo";
 import { classeDaFita, fraseDoProgresso, plural } from "@/lib/formatar";
 import { metaDaPagina, metaSemPagina } from "@/lib/meta";
@@ -66,6 +67,7 @@ function PaginaDaTrilha() {
 	}
 
 	// O mesmo botão faz as duas coisas, e o foco fica nele quando uma vira a outra.
+	// Num clique duplo, o segundo clique fica de fora (lib/clique.ts).
 	const acao = apagadas
 		? { texto: "Desfazer", fazer: desfazer }
 		: quantosLidos > 0
@@ -109,13 +111,14 @@ function PaginaDaTrilha() {
 					    reservada desde o HTML do servidor. Ali, ele não muda de lugar
 					    quando vira "Desfazer", e nada aparece no lugar dele: o botão de
 					    continuar, que muda de tamanho e some com a trilha terminada, fica
-					    na outra coluna e, no celular, embaixo. Assim, o segundo clique de
-					    um clique duplo cai sempre no mesmo botão. */}
+					    na outra coluna e, no celular, embaixo. Num clique duplo, o segundo
+					    clique fica de fora (lib/clique.ts) e, se passasse, cairia no mesmo
+					    botão. */}
 					<p className="recomeco">
 						{acao && (
 							<button
 								type="button"
-								onClick={acao.fazer}
+								onClick={semCliqueDuplo(acao.fazer)}
 								className="acao-de-texto"
 							>
 								{acao.texto}

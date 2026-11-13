@@ -416,6 +416,54 @@ describe("o quiz", () => {
 		expect(naTela("Você respondeu 1 de 2.")).toBeTruthy();
 	});
 
+	it("num clique duplo no Recomeçar o quiz, fica com o recomeço, e o Desfazer funciona com um clique depois", async () => {
+		await mostrar();
+		escolherEResponder(1, "Pode, pela iniciativa popular.");
+		const botao = screen.getByRole("button", { name: "Recomeçar o quiz" });
+
+		// Num clique duplo, o navegador manda dois cliques, e o segundo vem com o
+		// detail 2. Ele cairia no "Desfazer", que aparece no mesmo botão.
+		fireEvent.click(botao, { detail: 1 });
+		fireEvent.click(botao, { detail: 2 });
+
+		expect(naTela("Você recomeçou o quiz.")).toBeTruthy();
+		expect(screen.getByRole("status").textContent).toBe(
+			"Você recomeçou o quiz.",
+		);
+		expect(
+			screen
+				.getAllByRole("radio")
+				.some((radio) => (radio as HTMLInputElement).checked),
+		).toBe(false);
+
+		fireEvent.click(screen.getByRole("button", { name: "Desfazer" }), {
+			detail: 1,
+		});
+
+		expect(marcada("Pode, pela iniciativa popular.")).toBe(true);
+		expect(naTela("Você respondeu 1 de 2.")).toBeTruthy();
+	});
+
+	it("pelo teclado, recomeça e desfaz um depois do outro, com o foco no mesmo botão", async () => {
+		await mostrar();
+		escolherEResponder(1, "Pode, pela iniciativa popular.");
+		const botao = screen.getByRole("button", { name: "Recomeçar o quiz" });
+		botao.focus();
+
+		// O Enter e o espaço chegam ao botão como um clique com o detail 0.
+		fireEvent.click(botao, { detail: 0 });
+
+		expect(botao.textContent).toBe("Desfazer");
+		expect(naTela("Você recomeçou o quiz.")).toBeTruthy();
+		expect(document.activeElement).toBe(botao);
+
+		fireEvent.click(botao, { detail: 0 });
+
+		expect(botao.textContent).toBe("Recomeçar o quiz");
+		expect(marcada("Pode, pela iniciativa popular.")).toBe(true);
+		expect(document.activeElement).toBe(botao);
+	});
+
 	it("leva ao artigo de onde sai a resposta, para rever", async () => {
 		await mostrar();
 

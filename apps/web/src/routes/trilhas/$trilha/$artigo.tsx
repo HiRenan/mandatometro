@@ -10,6 +10,7 @@ import { NestaTrilha } from "@/components/nesta-trilha";
 import { TextoDoArtigo } from "@/components/texto-do-artigo";
 import { azulejoDaPosicao } from "@/lib/azulejos";
 import { classes } from "@/lib/classes";
+import { semCliqueDuplo } from "@/lib/clique";
 import { type ArtigoNaTrilha, buscarArtigo } from "@/lib/conteudo";
 import { classeDaFita, plural } from "@/lib/formatar";
 import { metaDaPagina, metaSemPagina } from "@/lib/meta";
@@ -150,7 +151,8 @@ function Folha({
 						    aparece na tela, ele vira para o verde, e o visto se desenha. A
 						    altura do aviso fica reservada, e as fontes não descem. O botão é
 						    o mesmo nos dois estados, e o foco fica nele quando "Desmarcar"
-						    vira "Desfazer". */}
+						    vira "Desfazer". Num clique duplo, o segundo clique fica de fora
+						    (lib/clique.ts). */}
 						<div
 							ref={fimDoTexto}
 							className="lido"
@@ -170,7 +172,7 @@ function Folha({
 									</p>
 									<button
 										type="button"
-										onClick={lido ? desmarcar : desfazer}
+										onClick={semCliqueDuplo(lido ? desmarcar : desfazer)}
 										className="acao-de-texto"
 									>
 										{lido ? "Desmarcar" : "Desfazer"}
