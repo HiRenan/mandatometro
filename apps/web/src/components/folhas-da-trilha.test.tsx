@@ -150,17 +150,21 @@ describe("folhas da trilha", () => {
 		expect(texto.textContent).toContain("Quem pode propor uma lei");
 	});
 
-	it("deixa a fita e o número fora do leitor de tela", async () => {
+	it("dá a cada folha a fita da posição e deixa o número fora do leitor de tela", async () => {
 		const pagina = await mostrar(
 			<FolhasDaTrilha trilha={trilha} lidos={lidos} />,
 		);
-		const primeira = within(pagina).getAllByRole("listitem")[0];
-		const fita = primeira.querySelector(".fita");
-		const numero = primeira.querySelector(".numeral");
+		const folhas = within(pagina).getAllByRole("listitem");
+		const numero = folhas[1].querySelector(".numeral");
 
-		expect(fita?.getAttribute("aria-hidden")).toBe("true");
+		// A cor do número vem da fita da posição, pela ordem (index.css).
+		expect(folhas.map((folha) => folha.className)).toEqual([
+			"fita-verde",
+			"fita-amarela",
+			"fita-azul",
+		]);
 		expect(numero?.getAttribute("aria-hidden")).toBe("true");
-		expect(numero?.textContent).toBe("1");
+		expect(numero?.textContent).toBe("2");
 	});
 });
 
@@ -183,6 +187,7 @@ describe("nesta trilha", () => {
 			"/trilhas/processo-legislativo/onde-o-projeto-comeca",
 		);
 		expect(aberta.textContent).toContain("Você está aqui");
-		expect(aberta.closest("li")?.className).toContain("canto-dobrado");
+		// A folha aberta leva o fio de tinta do lado (index.css).
+		expect(aberta.closest("li")?.classList.contains("aqui")).toBe(true);
 	});
 });

@@ -65,7 +65,10 @@ const infografico: DadosDoInfografico = {
 };
 
 /** Mostra o infográfico num site de mentira, com a rota dos artigos para os links. */
-async function mostrar(dados: DadosDoInfografico = infografico) {
+async function mostrar(
+	dados: DadosDoInfografico = infografico,
+	endereco = "/",
+) {
 	const raiz = createRootRoute({ component: () => <Outlet /> });
 	const pagina = createRoute({
 		getParentRoute: () => raiz,
@@ -79,7 +82,7 @@ async function mostrar(dados: DadosDoInfografico = infografico) {
 	});
 	const router = createRouter({
 		routeTree: raiz.addChildren([pagina, artigo]),
-		history: createMemoryHistory({ initialEntries: ["/"] }),
+		history: createMemoryHistory({ initialEntries: [endereco] }),
 	});
 	render(<RouterProvider router={router} />);
 	return screen.findByRole("region", {
@@ -136,11 +139,46 @@ describe("infográfico", () => {
 				"Se a outra Casa rejeita o projeto, ele é arquivado.",
 			),
 		).toBeTruthy();
+		// Na tela, o desvio leva um fio da cor do passo; para o leitor de tela, a
+		// lista diz o que é.
 		expect(
-			within(secao).getByText(
-				"A linha cheia é o caminho completo; a tracejada, o que pode mudar o caminho.",
-			),
-		).toBeTruthy();
+			within(
+				within(outraCasa).getByRole("list", {
+					name: "O que pode mudar o caminho",
+				}),
+			).getAllByRole("listitem"),
+		).toHaveLength(2);
+		expect(
+			within(passo(secao, "Apresentação")).queryByRole("list", {
+				name: "O que pode mudar o caminho",
+			}),
+		).toBeNull();
+	});
+
+	it("é uma sanfona do navegador, com o primeiro passo aberto", async () => {
+		const secao = await mostrar();
+		const passos = [...secao.querySelectorAll("ol.sanfona > li > details")];
+
+		// O <details> funciona sem JavaScript, e os passos com o mesmo name fecham
+		// uns aos outros. O título fica no resumo, sempre à vista.
+		expect(passos.map((dados) => dados.getAttribute("name"))).toEqual([
+			"caminho",
+			"caminho",
+		]);
+		expect(passos.map((dados) => dados.hasAttribute("open"))).toEqual([
+			true,
+			false,
+		]);
+		expect(
+			passos.map((dados) => dados.querySelector("summary h3")?.textContent),
+		).toEqual(["Apresentação", "A outra Casa"]);
+	});
+
+	it("abre o passo do endereço, quando a página inicial leva até ele", async () => {
+		const secao = await mostrar(infografico, "/#passo-a-outra-casa");
+		const outraCasa = passo(secao, "A outra Casa").querySelector("details");
+
+		expect(outraCasa?.open).toBe(true);
 	});
 
 	it("dá as fontes de cada passo, com o link de cada uma e a data da consulta", async () => {
@@ -237,11 +275,14 @@ describe("infográfico", () => {
 	it("deixa as cores e os desenhos fora do leitor de tela", async () => {
 		const secao = await mostrar();
 		const comCor = [...secao.querySelectorAll<HTMLElement>("[style]")];
-		const desenhos = [...secao.querySelectorAll<HTMLElement>("span:empty")];
+		const desenhos = [
+			...secao.querySelectorAll<HTMLElement>(".grande, span:empty"),
+		];
 
 		expect(comCor.length).toBeGreaterThan(0);
-		// As fitas dos dois artigos e o quadradinho vazado de cada desvio.
-		expect(desenhos).toHaveLength(4);
+		// O azulejo de cada passo, com as quatro peças dele, e o azulejinho de cada
+		// artigo.
+		expect(desenhos).toHaveLength(12);
 		for (const elemento of [...comCor, ...desenhos]) {
 			expect(elemento.getAttribute("aria-hidden")).toBe("true");
 		}

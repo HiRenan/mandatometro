@@ -1106,6 +1106,593 @@
 		}
 	}
 
+	/* ───── As listas de folhas: a trilha e a lista das trilhas ───── */
+
+	.artigos {
+		padding: clamp(1.5rem, 4vw, 3rem) var(--margem) clamp(2.5rem, 6vw, 4.5rem);
+	}
+
+	.linhas {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+	}
+
+	/*
+	 * Cada artigo é uma folha com o número gigante, na cor da posição, e o azulejo
+	 * dela, que gira quando o ponteiro passa. A folha inteira leva ao artigo: o link
+	 * é o título, e a área dele cobre a folha.
+	 */
+	.linha {
+		--col-numero: clamp(5.5rem, 13vw, 11rem);
+		--col-azulejo: clamp(4.5rem, 9vw, 7.5rem);
+		position: relative;
+		display: grid;
+		grid-template-columns: var(--col-numero) minmax(0, 1fr) var(--col-azulejo);
+		gap: 1rem var(--respiro);
+		align-items: center;
+		/* Em cima, o respiro guarda o lugar da etiqueta ("Lido", "Continue daqui"). */
+		padding: calc(1.46rem + 12px) var(--respiro) clamp(1.25rem, 3vw, 2rem);
+		border: 2px solid var(--tinta);
+		background: var(--folha);
+		transition:
+			translate 0.3s var(--ease-mola),
+			box-shadow 0.3s;
+	}
+
+	.linha:hover {
+		translate: 0 -4px;
+		box-shadow: 0 6px 0 var(--tinta);
+	}
+
+	.linha:has(a:focus-visible) {
+		outline: 3px solid var(--ring);
+		outline-offset: 3px;
+	}
+
+	.linha-texto a {
+		text-decoration: none;
+	}
+
+	.linha-texto a::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+	}
+
+	.linha-texto a:focus-visible {
+		outline: none;
+	}
+
+	.linha > .numeral {
+		font-size: clamp(5.5rem, 2.5rem + 10vw, 11.5rem);
+		text-align: center;
+		transition: translate 0.35s var(--ease-mola);
+	}
+
+	.linha-texto {
+		min-width: 0;
+	}
+
+	/* O --recuo-de-fora é o espaço que a coluna ao lado toma da página, quando há. */
+	.linha .titulo-de-folha {
+		--letra: clamp(1.875rem, 1.3rem + 2.4vw, 3.5rem);
+		--recuo: calc(
+			var(--recuo-de-fora, 0px) +
+			var(--col-numero) +
+			var(--col-azulejo) +
+			4 *
+			var(--respiro) +
+			4px
+		);
+	}
+
+	.linha-texto > p {
+		max-width: 42rem;
+		margin-top: 0.6rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.5;
+	}
+
+	.linha-texto > .rotulo {
+		margin-top: 0.7rem;
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		line-height: 1.3;
+		color: var(--tinta-suave);
+	}
+
+	/*
+	 * "Lido" e "Continue daqui": a etiqueta em tinta, que pende do fio de cima da
+	 * folha, alinhada com o texto. Ela fica fora do fluxo, no respiro que a folha
+	 * guarda em cima: quando aparece, depois que o JavaScript carrega, nada muda de
+	 * lugar. O clique nela vai para a folha, como no resto da área.
+	 */
+	.linha-texto > .estado {
+		position: absolute;
+		top: 0;
+		left: calc(2 * var(--respiro) + var(--col-numero));
+		max-width: none;
+		margin: 0;
+		padding: 0.2rem 0.6rem;
+		background: var(--tinta);
+		color: var(--papel);
+		white-space: nowrap;
+		pointer-events: none;
+	}
+
+	@media (width < 40rem) {
+		/* No celular, o número e o azulejo ficam em cima, e o texto usa a largura toda. */
+		.linha {
+			grid-template-columns: minmax(0, 1fr) auto;
+			gap: 0.75rem;
+		}
+
+		.linha > .numeral {
+			grid-row: 1;
+			grid-column: 1;
+			justify-self: start;
+			font-size: 5.5rem;
+		}
+
+		.da-linha {
+			grid-row: 1;
+			grid-column: 2;
+			align-self: start;
+			width: 3.5rem;
+		}
+
+		.linha-texto {
+			grid-column: 1 / -1;
+		}
+
+		.linha-texto > .estado {
+			left: var(--respiro);
+		}
+
+		.linha .titulo-de-folha {
+			--recuo: calc(var(--recuo-de-fora, 0px) + 2 * var(--respiro) + 4px);
+		}
+	}
+
+	/*
+	 * O visto da folha lida: um traço de tinta sobre um de papel, mais largo, que o
+	 * separa do que fica atrás. No número, o visto fica no meio, e o número perde a
+	 * cor: fica papel sobre papel, como o azulejo cru.
+	 */
+	.marca-de-lido {
+		fill: none;
+		overflow: visible;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	.marca-de-lido-papel {
+		stroke: var(--folha);
+		stroke-width: 17;
+	}
+
+	.marca-de-lido-traco {
+		stroke: var(--tinta);
+		stroke-width: 7;
+	}
+
+	.numeral:has(.marca-de-lido) {
+		color: var(--papel-2);
+		-webkit-text-stroke-color: var(--papel-3);
+	}
+
+	.visto-no-numero {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 0.5em;
+		height: 0.5em;
+		translate: -50% -55%;
+	}
+
+	/* Na miniatura, o visto passa da borda do quadrado, mas não chega ao vizinho. */
+	.visto-na-miniatura {
+		position: absolute;
+		top: -0.75rem;
+		right: -0.375rem;
+		width: 1.625rem;
+		height: 1.625rem;
+	}
+
+	/*
+	 * Nas cores forçadas do Windows, o traço fica na cor do texto, e o de papel, na
+	 * do fundo. Nas folhas em que o número fica dentro de um link, o número ganha a
+	 * cor dos links, e o visto vai junto. O currentColor não serve: com o
+	 * forced-color-adjust: none, o Chromium dá a ele a tinta original, que some no
+	 * fundo escuro.
+	 */
+	@media (forced-colors: active) {
+		.marca-de-lido {
+			forced-color-adjust: none;
+		}
+
+		.marca-de-lido-papel {
+			stroke: Canvas;
+		}
+
+		.marca-de-lido-traco {
+			stroke: CanvasText;
+		}
+
+		a .marca-de-lido-traco {
+			stroke: LinkText;
+		}
+	}
+
+	/* A chamada do quiz: uma folha com seis azulejos, um por pergunta. */
+	.chamada-quiz {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1.5rem 3rem;
+		align-items: center;
+		padding: clamp(1.5rem, 4vw, 3rem) var(--respiro);
+		border: 2px solid var(--tinta);
+		background: var(--folha);
+	}
+
+	.chamada-texto {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.9rem;
+		justify-items: start;
+	}
+
+	.chamada-quiz h2 {
+		--letra: clamp(2.5rem, 1.5rem + 4.5vw, 5.5rem);
+		--recuo: calc(var(--recuo-de-fora, 0px) + 2 * var(--respiro) + 4px);
+	}
+
+	.chamada-quiz p {
+		max-width: 34rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.5;
+		color: var(--tinta-suave);
+	}
+
+	.chamada-azulejos {
+		display: grid;
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+		gap: 2px;
+	}
+
+	@media (width >= 48rem) {
+		.chamada-quiz {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 15.25rem);
+		}
+
+		.chamada-quiz h2 {
+			--recuo: calc(
+				var(--recuo-de-fora, 0px) +
+				2 *
+				var(--respiro) +
+				4px +
+				18.25rem
+			);
+		}
+
+		.chamada-azulejos {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+	}
+
+	/* O caminho da trilha, ao lado dos artigos: uma sanfona, um passo aberto por vez. */
+	.ao-lado {
+		padding: 0 var(--margem) clamp(3rem, 7vw, 5rem);
+	}
+
+	.ao-lado > h2 {
+		font-size: clamp(1.875rem, 1.5rem + 1.6vw, 2.75rem);
+		line-height: 0.9;
+	}
+
+	.ao-lado > p {
+		margin: 0.75rem 0 1rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.5;
+		color: var(--tinta-suave);
+	}
+
+	.sanfona > li {
+		border-top: 2px solid var(--tinta);
+	}
+
+	.sanfona > li:last-child {
+		border-bottom: 2px solid var(--tinta);
+	}
+
+	.sanfona summary {
+		display: flex;
+		align-items: center;
+		gap: 0.9rem;
+		min-height: 4rem;
+		padding: 0.5rem 0;
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.sanfona summary::-webkit-details-marker {
+		display: none;
+	}
+
+	/* O "+" fica numa caixa quadrada pequena: girada a 45 graus, ela não passa da
+	   margem nem alarga a página. */
+	.sanfona summary::after {
+		content: "+";
+		display: grid;
+		place-items: center;
+		flex: none;
+		width: 1.25rem;
+		height: 1.25rem;
+		margin-left: auto;
+		font-family: var(--font-sans);
+		font-size: 1.75rem;
+		font-weight: 400;
+		line-height: 1;
+		transition: rotate 0.3s var(--ease-mola);
+	}
+
+	.sanfona details[open] summary::after {
+		rotate: 45deg;
+	}
+
+	.sanfona h3 {
+		min-width: 0;
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 750;
+		line-height: 1.15;
+		letter-spacing: calc(0.05em * var(--espacado));
+		text-transform: var(--caixa-alta);
+	}
+
+	.sanfona-texto {
+		--de: 0rem;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.8rem;
+		padding: 0 0 1.25rem 3.4rem;
+		animation: passo-entra 0.4s var(--ease-suave) both;
+	}
+
+	.sanfona-texto > p:first-child,
+	.sanfona-texto .desvios {
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.55;
+	}
+
+	/* Com a letra grande, o azulejo do passo sai, e o texto ganha a largura toda. */
+	@media (width < 22rem) {
+		.sanfona .grande {
+			display: none;
+		}
+
+		.sanfona-texto {
+			padding-left: 0;
+		}
+	}
+
+	/* A página da trilha: a partir de 1400 px, o caminho fica ao lado dos artigos. */
+	@media (width >= 87.5rem) {
+		.pagina-da-trilha.com-caminho {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
+		}
+
+		.pagina-da-trilha.com-caminho > .cartaz {
+			grid-column: 1 / -1;
+		}
+
+		/* A coluna do caminho (24 rem) e o vão até ela (1,5 rem) saem da largura das
+		   folhas: os títulos delas contam com isso no teto da letra. */
+		.pagina-da-trilha.com-caminho > .artigos {
+			--recuo-de-fora: 25.5rem;
+			padding-right: 1.5rem;
+		}
+
+		.pagina-da-trilha.com-caminho > .ao-lado {
+			padding: clamp(1.5rem, 4vw, 3rem) var(--margem) 4rem 1.5rem;
+		}
+	}
+
+	/* A lista das trilhas: cada trilha é uma folha, com o azulejo e os artigos dela. */
+	.trilha-da-lista {
+		position: relative;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1.5rem var(--respiro);
+		padding: clamp(1.25rem, 3vw, 2rem) var(--respiro);
+		border: 2px solid var(--tinta);
+		background: var(--folha);
+	}
+
+	.trilha-cabeca {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.75rem var(--respiro);
+		align-items: start;
+	}
+
+	.trilha-cabeca .da-linha {
+		grid-row: 1;
+		grid-column: 2;
+		width: 3.5rem;
+	}
+
+	.trilha-cabeca-texto {
+		grid-row: 1;
+		grid-column: 1;
+		min-width: 0;
+	}
+
+	.trilha-da-lista .titulo-de-folha {
+		--letra: clamp(2.25rem, 1.5rem + 3vw, 4.5rem);
+		--recuo: calc(3 * var(--respiro) + 4px + 3.5rem);
+	}
+
+	.trilha-cabeca-texto a {
+		text-decoration: none;
+	}
+
+	.trilha-cabeca-texto a:hover {
+		text-decoration: underline;
+		text-decoration-thickness: 0.06em;
+	}
+
+	.trilha-cabeca-texto > p:not(.rotulo) {
+		max-width: 42rem;
+		margin-top: 0.6rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.5;
+	}
+
+	.trilha-cabeca-texto > .rotulo {
+		margin-top: 0.7rem;
+		color: var(--tinta-suave);
+	}
+
+	/* Os quadradinhos dos artigos e, embaixo, a frase do progresso, na linha dela. */
+	.trilha-andamento {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+		margin-top: 1.25rem;
+	}
+
+	/* As folhas em miniatura: um quadrado por artigo, com o número na cor da posição. */
+	.miniaturas {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem 0.375rem;
+	}
+
+	.miniaturas li {
+		width: 2.75rem;
+		height: 2.75rem;
+		border: 2px solid var(--tinta);
+		background: var(--papel);
+	}
+
+	/* O número ocupa o quadrado todo: o visto dele se põe pelo canto do quadrado. */
+	.miniaturas .numeral {
+		display: grid;
+		place-items: center;
+		width: 100%;
+		height: 100%;
+		padding-top: 0.25rem;
+		font-size: 1.75rem;
+		-webkit-text-stroke-width: 2px;
+	}
+
+	@media (width >= 40rem) {
+		.trilha-cabeca {
+			grid-template-columns: clamp(4.5rem, 9vw, 7.5rem) minmax(0, 1fr);
+		}
+
+		.trilha-cabeca .da-linha {
+			grid-column: 1;
+			width: 100%;
+		}
+
+		.trilha-cabeca-texto {
+			grid-column: 2;
+		}
+
+		.trilha-da-lista .titulo-de-folha {
+			--recuo: calc(3 * var(--respiro) + 4px + 7.5rem);
+		}
+	}
+
+	@media (width >= 64rem) {
+		.trilha-da-lista {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
+		}
+
+		.trilha-da-lista .titulo-de-folha {
+			--recuo: calc(4 * var(--respiro) + 4px + 29.5rem);
+		}
+	}
+
+	/* ───── "Nesta trilha": as folhas da trilha em lista ───── */
+
+	.nesta > h2 {
+		margin-bottom: 0.75rem;
+		color: var(--tinta-suave);
+	}
+
+	.folhas-da-trilha > li {
+		border-top: 2px solid var(--tinta);
+	}
+
+	.folhas-da-trilha > li:last-child {
+		border-bottom: 2px solid var(--tinta);
+	}
+
+	.folhas-da-trilha a {
+		display: grid;
+		grid-template-columns: 1.75rem minmax(0, 1fr);
+		gap: 0 0.9rem;
+		align-items: center;
+		min-height: 4rem;
+		padding: 0.7rem 0;
+		color: var(--tinta-suave);
+		text-decoration: none;
+	}
+
+	.folhas-da-trilha a:hover,
+	.folhas-da-trilha a[aria-current] {
+		color: var(--tinta);
+	}
+
+	.folhas-da-trilha .numeral {
+		justify-self: center;
+		font-size: 2.75rem;
+		-webkit-text-stroke-width: 2px;
+	}
+
+	.folhas-da-trilha .titulo {
+		display: block;
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 700;
+		line-height: 1.2;
+		letter-spacing: calc(0.03em * var(--espacado));
+		text-transform: var(--caixa-alta);
+	}
+
+	.folhas-da-trilha a:hover .titulo {
+		text-decoration: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 0.2em;
+	}
+
+	.folhas-da-trilha .detalhe {
+		display: block;
+		margin-top: 0.25rem;
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		font-weight: 500;
+		line-height: 1.2;
+		letter-spacing: calc(0.06em * var(--espacado));
+		text-transform: var(--caixa-alta);
+	}
+
+	/* A folha aberta: um fio grosso de tinta do lado, no lugar do canto dobrado. */
+	.folhas-da-trilha > li.aqui {
+		padding-left: 1rem;
+		box-shadow: inset 6px 0 0 var(--tinta);
+	}
+
 	/* ───── O rodapé ───── */
 
 	/* O rodapé: papel com fio de tinta, e uma fileira de azulejos embaixo, que faz

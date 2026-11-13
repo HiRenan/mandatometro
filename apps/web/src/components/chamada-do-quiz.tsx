@@ -1,16 +1,22 @@
 import { Link } from "@tanstack/react-router";
+import { ArrowRight } from "lucide-react";
+import { azulejoGrande } from "@/lib/azulejos";
+import { classes } from "@/lib/classes";
 import type { ChamadaDoQuiz as Chamada } from "@/lib/conteudo";
 import { fraseDaChamada } from "@/lib/quiz";
+import { AzulejoGrande } from "./azulejo";
+import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "./botao-continuar";
 
 /**
  * A chamada para o quiz da trilha, no fim do artigo depois do qual ele aparece
- * e na página da trilha. Usa só peças que já existem: o título das fontes
- * oficiais e a ação em texto. O desenho do quiz fica com a #89.
+ * e na página da trilha: uma folha com o título, a frase que diz quantas
+ * perguntas ele tem e de quais artigos, o botão e um azulejo por pergunta. Os
+ * azulejos seguem a ordem das perguntas, e não dizem nada sobre acertos.
  */
 export function ChamadaDoQuiz({
 	trilha,
 	quiz,
-	className = "",
+	className,
 }: {
 	/** O slug da trilha. */
 	trilha: string;
@@ -20,26 +26,38 @@ export function ChamadaDoQuiz({
 	return (
 		<section
 			aria-labelledby="quiz-da-trilha"
-			className={`border-tinta border-t-2 pt-4 ${className}`}
+			className={classes("chamada-quiz", className)}
 		>
-			<h2
-				id="quiz-da-trilha"
-				className="subtitulo-condensado text-[1.625rem] xl:text-[2rem]"
-			>
-				Quiz da trilha
-			</h2>
-			<p className="mt-3 max-w-[52ch] font-serif text-lg leading-snug">
-				{fraseDaChamada(quiz.perguntas, quiz.artigos)}
-			</p>
-			<p className="mt-3">
+			<div className="chamada-texto">
+				<h2
+					id="quiz-da-trilha"
+					className="titulo-condensado letra-com-teto [--palavra:2.74]"
+				>
+					Quiz da trilha
+				</h2>
+				<p>{fraseDaChamada(quiz.perguntas, quiz.artigos)}</p>
 				<Link
 					to="/trilhas/$trilha/quiz"
 					params={{ trilha }}
-					className="acao-de-texto"
+					className={BOTAO_CONTINUAR}
 				>
-					<span>Responder o quiz</span>
+					Responder o quiz{" "}
+					<ArrowRight
+						aria-hidden="true"
+						className={SETA_DO_BOTAO}
+						strokeWidth={2.5}
+					/>
 				</Link>
-			</p>
+			</div>
+			<span aria-hidden="true" className="chamada-azulejos">
+				{Array.from({ length: quiz.perguntas }, (_, pergunta) => (
+					<AzulejoGrande
+						// biome-ignore lint/suspicious/noArrayIndexKey: um azulejo por pergunta, na ordem delas.
+						key={pergunta}
+						pecas={azulejoGrande(pergunta, pergunta % 6)}
+					/>
+				))}
+			</span>
 		</section>
 	);
 }

@@ -500,5 +500,10 @@ describe("a chamada do quiz", () => {
 				.getByRole("link", { name: "Responder o quiz" })
 				.getAttribute("href"),
 		).toBe("/trilhas/processo-legislativo/quiz");
+		// Um azulejo por pergunta, só desenho: fica fora do leitor de tela e não diz
+		// nada sobre acertos.
+		const azulejos = chamada.querySelector(".chamada-azulejos");
+		expect(azulejos?.getAttribute("aria-hidden")).toBe("true");
+		expect(azulejos?.children).toHaveLength(6);
 	});
 });
