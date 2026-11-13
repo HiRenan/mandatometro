@@ -1603,6 +1603,35 @@
 		-webkit-text-stroke-width: 2px;
 	}
 
+	/*
+	 * Com a letra grande, o azulejo passa para cima do texto, como o número e o
+	 * azulejo das folhas da trilha: ao lado, ele cresce com a letra, e a coluna do
+	 * texto ficava estreita demais para palavras como "Constituição", que se
+	 * partiam. A descrição fica na letra do navegador, sem o acréscimo: a 320 px
+	 * com a letra a 200%, "funcionamento" cabe na linha.
+	 */
+	@media (width < 22rem) {
+		.trilha-cabeca {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.trilha-cabeca .da-linha {
+			grid-column: 1;
+		}
+
+		.trilha-cabeca-texto {
+			grid-row: 2;
+		}
+
+		.trilha-da-lista .titulo-de-folha {
+			--recuo: calc(2 * var(--respiro) + 4px);
+		}
+
+		.trilha-cabeca-texto > p:not(.rotulo) {
+			font-size: 1rem;
+		}
+	}
+
 	@media (width >= 40rem) {
 		.trilha-cabeca {
 			grid-template-columns: clamp(4.5rem, 9vw, 7.5rem) minmax(0, 1fr);
