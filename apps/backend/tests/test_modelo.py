@@ -302,7 +302,9 @@ def test_os_itens_vem_na_ordem_e_ela_nao_se_repete(sessao):
     sessao.expire(edicao)
     assert [item.ordem for item in edicao.itens] == [1, 2]
 
-    _nao_grava(sessao, _item(edicao, 1, fonte), regra="uq_item_edicao_edicao_id_ordem")
+    # Entre aspas, só o nome exato casa: uma chave alargada, como (edicao_id, ordem, titulo),
+    # deixaria dois itens na mesma ordem, e o nome dela começa igual.
+    _nao_grava(sessao, _item(edicao, 1, fonte), regra='"uq_item_edicao_edicao_id_ordem"')
 
 
 def test_apagar_a_edicao_apaga_os_itens(sessao):
