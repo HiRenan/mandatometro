@@ -47,9 +47,9 @@ typography:
     lineHeight: 1
     letterSpacing: "0.01em"
     fontVariation: "'wdth' 68"
-  italic:
-    fontFamily: "Instrument Serif, Georgia, serif"
-    fontSize: "1.125rem"
+  typewriter:
+    fontFamily: "Courier Prime, Courier New, ui-monospace, monospace"
+    fontSize: "0.9375rem"
     fontWeight: 400
     lineHeight: 1.2
   lead:
@@ -125,6 +125,9 @@ components:
     backgroundColor: "{colors.papel}"
     textColor: "{colors.tinta}"
     typography: "{typography.headline}"
+  fundo-de-papel:
+    backgroundColor: "{colors.papel}"
+    textColor: "{colors.tinta}"
   folha:
     backgroundColor: "{colors.folha}"
     textColor: "{colors.tinta}"
@@ -187,7 +190,8 @@ O que ficaria errado, nas palavras do Renan: "Site do governo, Coisa de criança
 
 **Key Characteristics:**
 - Papel claro e tinta. A cor fica nas fitas: nos azulejos, nos números e na tira.
-- A letra do cartaz: Archivo de peso 900, estreito, em maiúsculas, com uma frase em itálico (Instrument Serif). O que se lê com calma vai em serifa (Literata).
+- O papel não é liso: tem um grão miúdo e, atrás de tudo, o mapa da trilha, em curvas de nível um tom acima do papel.
+- A letra do cartaz: Archivo de peso 900, estreito, em maiúsculas, com uma frase em letra de máquina de escrever (Courier Prime). O que se lê com calma vai em serifa (Literata).
 - Azulejos feitos de gradientes do CSS, sem imagem. São só desenho e ficam fora do leitor de tela.
 - O estado em palavras e em marca: o visto no lido, "Lido", "Continue daqui", "Você está aqui", "Você leu 1 de 3."
 - Fio de tinta de 2 px e canto reto. A única sombra é dura, de tinta, embaixo do que sobe quando o ponteiro passa.
@@ -206,8 +210,8 @@ Papel, tinta e as cinco fitas do Bonfim. O texto é sempre tinta no papel, ou pa
 - A **Amarela** é a seleção de texto (com tinta por cima) e o anel de foco dentro do cabeçalho. A **Vermelha** é a `--destructive`.
 
 ### Neutral
-- **Papel** (`papel`): a parede, o fundo de todas as páginas, e o texto dentro do bloco de tinta.
-- **Papel 2 e Papel 3** (`papel-2`, `papel-3`): os dois tons do azulejo cru, papel sobre papel. O Papel 2 é também o fundo das faixas do anterior e do próximo quando o ponteiro passa, e o Papel 3, o lema no cabeçalho e o fio dos passos que ainda não foram andados.
+- **Papel** (`papel`): a parede, o fundo de todas as páginas, e o texto dentro do bloco de tinta. No fundo, ele leva o grão e o mapa da trilha (veja "Fundo").
+- **Papel 2 e Papel 3** (`papel-2`, `papel-3`): os dois tons do azulejo cru, papel sobre papel. O Papel 2 é também o fundo das faixas do anterior e do próximo quando o ponteiro passa, e o Papel 3, o lema no cabeçalho, o fio dos passos que ainda não foram andados e as curvas do mapa do fundo.
 - **Folha** (`folha`): mais clara que a parede, para o que se lê com calma: a folha do artigo, as folhas das listas, a chamada do quiz e, no quiz, as opções e a folha da resposta.
 - **Tinta suave** (`tinta-suave`): as linhas secundárias: a faixa de informações, a frase do progresso, o "para quem", o endereço e a data das fontes, o rodapé. Não serve para o texto principal.
 - **Foco** (`foco`): o anel de foco no papel, um azul mais escuro que a fita. É a `--ring`.
@@ -228,6 +232,8 @@ Os pares de texto, pela conta da WCAG:
 
 O anel de foco tem 5,9 no papel, 6,6 na folha e 5,3 no Papel 2; o amarelo, 12,5 na tinta.
 
+O texto que fica direto no papel passa por cima do grão e das curvas do mapa. No ponto mais escuro deles (uma curva em cima de um ponto escuro do grão), a tinta tem 11,7 e a tinta suave, 4,9: o texto continua acima de 4,5.
+
 Os números levam a cor da fita com um contorno de tinta de pelo menos 3 px: quem dá a forma é o contorno, e por isso o amarelo, que quase some no papel (1,4), serve. O número da folha lida perde a cor de propósito e fica papel sobre papel (1,5): quem diz o estado é o visto, em tinta, e a palavra "Lido".
 
 No quiz, a opção que se apaga depois da resposta passa para a tinta suave na folha (7,4), no texto e no fio, em vez de ficar meio transparente: o texto continua com contraste. Só a letra da opção, que é desenho, esmaece.
@@ -245,13 +251,13 @@ No quiz, a opção que se apaga depois da resposta passa para a tinta suave na f
 
 **Display Font:** Archivo Variable, eixo de largura (com ui-sans-serif, system-ui)
 **Body Font:** Literata Variable, eixo de tamanho óptico, com itálico (com ui-serif, Georgia)
-**Accent Font:** Instrument Serif, itálico 400 (com Georgia)
+**Accent Font:** Courier Prime 400, letra de máquina de escrever (com Courier New, ui-monospace)
 
-As três são servidas pelo próprio site, pelo `@fontsource`. Os arquivos latinos da Archivo e da Literata são pré-carregados no `<head>` de todas as páginas, para o texto não pular quando elas chegam. A Instrument Serif é pré-carregada a partir de 768 px, por causa do lema no cabeçalho; no celular, só a página inicial a pede, para a frase do título.
+As três são servidas pelo próprio site, pelo `@fontsource`. Os arquivos latinos da Archivo e da Literata são pré-carregados no `<head>` de todas as páginas, para o texto não pular quando elas chegam. A Courier Prime é pré-carregada a partir de 864 px, por causa do lema no cabeçalho; abaixo disso, só a página inicial a pede, para a frase do título.
 
-A Instrument Serif entrou na #89 só para a frase em itálico. É a única dependência nova da direção: `@fontsource/instrument-serif`, licença SIL OFL 1.1, 22 kB. O Renan aprovou no plano, em 12/11/2026.
+A Courier Prime entrou na #89 só para a frase do cartaz e o lema: `@fontsource/courier-prime`, licença SIL OFL 1.1, 19 kB. É a única dependência nova da direção. Ela tomou o lugar da Instrument Serif itálica (22 kB), que o Renan achou com "muito cara de IA": em 13/11/2026, ele escolheu a letra de máquina num rascunho com cinco letras.
 
-**Character:** a Archivo, bem preta e apertada, grita como cartaz de rua; a Instrument Serif responde baixo, em itálico, numa frase só; a Literata, calma, faz o professor paciente falar.
+**Character:** a Archivo, bem preta e apertada, grita como cartaz de rua; a Courier Prime responde baixo, batida à máquina, como uma linha de diário oficial; a Literata, calma, faz o professor paciente falar.
 
 ### Hierarchy
 - **Numeral** (900, largura 62%, altura de linha 0.78): o número da folha, na cor da fita da posição, com contorno de tinta (`max(3px, 0.05em)`, pintado antes do miolo; 2 px nos números pequenos). Na folha da trilha, de 5.5rem a 11.5rem; no passo da página inicial, 7rem no celular e até 17rem; no alto do artigo, de 5rem a 9rem; no 404, de 7rem a 17rem; em "Nesta trilha" e nas faixas do anterior e do próximo, 2.75rem; nas miniaturas, 1.75rem.
@@ -260,7 +266,7 @@ A Instrument Serif entrou na #89 só para a frase em itálico. É a única depen
 - **Title** (`titulo-de-folha`: 900, largura 62%, altura 0.92, maiúsculas): o título de cada folha de uma lista. O do artigo na trilha, de 1.875rem a 3.5rem; o da trilha em Trilhas, de 2.25rem a 4.5rem; o do anterior e do próximo, de 1.5rem a 2.5rem.
 - **Subtitle** (`subtitulo-condensado`: 900, largura 68%, altura 0.95, maiúsculas): os intertítulos do texto (1.75rem a 2.5rem), "Fontes oficiais" (1.5rem) e o título do caminho na trilha (1.875rem a 2.75rem).
 - **Wordmark** (900, largura 68%, maiúsculas, 0.01em entre as letras): o nome Mandatômetro. No cabeçalho, 1.625rem (1.3125rem abaixo de 480 px); no rodapé, de 2.25rem a 4.5rem. É texto, não logo.
-- **Italic** (Instrument Serif itálico 400): a segunda linha do título da página inicial ("um passo de cada vez.", a 0.9 em do título, com a tira riscada embaixo) e o lema, a 1.125rem no cabeçalho e 1.25rem no rodapé. Só isso.
+- **Máquina** (Courier Prime 400, em minúsculas): a segunda linha do título da página inicial ("um passo de cada vez.", a 0.4 em do título, com a tira riscada embaixo) e o lema, a 0.9375rem, no cabeçalho e no rodapé. Só isso.
 - **Lead** (Literata 500, altura 1.45): o resumo do artigo, de 1.25rem a 1.4375rem. A abertura dos cartazes é Literata 400, de 1.0625rem a 1.25rem, com altura 1.5 e até 34rem de largura.
 - **Body** (Literata 400, altura 1.68): o texto do artigo, de 1.0625rem a 1.1875rem, com até 39rem de largura. Os resumos das folhas e os textos dos passos ficam em 1.0625rem, com altura 1.5 a 1.6.
 - **Label** (`rotulo`: Archivo 650, 0.8125rem, maiúsculas, 0.08em entre as letras): a faixa de informações, a frase do progresso, a migalha, "Artigo 2 de 6 artigos", a etiqueta de estado. Os nomes dos links e das ações seguem a mesma ideia, um pouco maiores: o botão (800, 1rem), a ação em texto (700, 0.875rem), os links dos artigos de um passo (750, 0.9375rem).
@@ -290,7 +296,7 @@ Com a letra do navegador grande, no celular, o título cresce com a letra até a
 - **O aviso a quem escreve:** um teste (`src/lib/conteudo/titulos.test.ts`) soma a largura de cada letra em maiúsculas (`larguras-das-letras.ts`, medida no navegador nos dois estilos) e falha quando uma palavra de um título do conteúdo passa do teto, com o arquivo, a palavra e o que fazer (`docs/conteudo-das-trilhas.md`). Os tetos saem do código, e o teste fica fora do `conferir.ts`: ele não derruba o build nem o deploy.
 
 ### Named Rules
-**A Regra das Três Letras.** O grotesco estreito para número, título e etiqueta; a serifa para o que se lê de verdade; o itálico só para a frase do cartaz e o lema. Nenhuma quarta família, e o itálico não vira estilo de texto.
+**A Regra das Três Letras.** O grotesco estreito para número, título e etiqueta; a serifa para o que se lê de verdade; a letra de máquina só para a frase do cartaz e o lema. Nenhuma quarta família, e a letra de máquina não vira estilo de texto.
 
 **A Regra das Maiúsculas com Medida.** Os títulos grandes vão em maiúsculas sempre, com o teto; a exceção é o enunciado do quiz, que é uma frase. As etiquetas pequenas vão em maiúsculas espaçadas, mas voltam às minúsculas, sem o espaço entre as letras, quando a tela tem menos de 22rem (as variáveis `--caixa-alta` e `--espacado`): em maiúsculas, uma palavra comprida não cabe na linha.
 
@@ -337,14 +343,14 @@ O sistema é chapado: sem sombra esfumada e sem degradê suave. A profundidade v
 - **O giro:** os azulejos viram em volta do próprio eixo, com perspectiva. É movimento, e não camada: parado, tudo é plano.
 
 ### Named Rules
-**A Regra da Tinta Chapada.** Sem sombra esfumada e sem degradê suave. Os gradientes do site têm borda dura: as faixas da tira e os motivos dos azulejos.
+**A Regra da Tinta Chapada.** Sem sombra esfumada e sem degradê suave. Os gradientes do site têm borda dura: as faixas da tira e os motivos dos azulejos. O fundo segue a regra: o grão é ponto e o mapa é traço, sem mancha e sem desfoque.
 
 ## Shapes
 
 Tudo é reto: raio zero (`--radius: 0`).
 
 - **O fio:** 2 px em tinta. Contorna as folhas, separa as seções e os itens das listas. "Fontes oficiais" abre com um fio de 6 px.
-- **A tira:** as cinco fitas em faixas iguais, com 6 px de altura: embaixo do cabeçalho, embaixo do botão quando o ponteiro passa, na barra de leitura do artigo e riscada embaixo da frase em itálico do título. No alto da folha da resposta do quiz, ela tem 10 px.
+- **A tira:** as cinco fitas em faixas iguais, com 6 px de altura: embaixo do cabeçalho, embaixo do botão quando o ponteiro passa, e na barra de leitura do artigo. Embaixo da frase do título, ela é mais fina e se risca: 0,075 em da frase, com pelo menos 3 px. No alto da folha da resposta do quiz, ela tem 10 px.
 - **O azulejo:** um quadrado com o fundo, um motivo por cima e uma volta, de 0 a 3 quartos. Os motivos são dez: o quarto de círculo, a meia-lua, o triângulo, o círculo, as listras, o arco, os dois quartos opostos, o liso, os quatro pontos e a metade. Entre dois azulejos de um painel, 2 px de rejunte.
 - **O azulejo grande:** quatro peças que formam um desenho. São cinco desenhos, e dois lembram o Congresso: a cúpula e os dois lados.
 - **A etiqueta de estado:** um retângulo de tinta com a letra em papel, que pende do fio de cima da folha.
@@ -352,16 +358,23 @@ Tudo é reto: raio zero (`--radius: 0`).
 
 ## Components
 
+### Fundo (o papel)
+- **Caráter:** o papel de todas as páginas não é liso. Ele tem um grão miúdo e, atrás de tudo, o mapa da trilha: curvas de nível, como num mapa de trilha, um tom acima do papel. O Renan, em 13/11/2026: o fundo liso estava "meio inanimado", "apenas uma cor"; ele pediu algo que lembrasse a natureza, "que não polua tanto", e escolheu o mapa e o grão num rascunho com três fundos ("muito boa mesmo"). A natureza entra pela palavra que o site já usa: a trilha, um passo de cada vez.
+- **O grão** (`estilos/grao.svg`): um ruído miúdo, com pontos claros e escuros na mesma medida, para o papel ganhar textura sem escurecer. É um ladrilho de 320 px, que emenda. Fica no fundo da página e no pé do quiz, que cobre a página (`var(--papel) var(--grao)`). As folhas, o mural de azulejos e as outras peças com fundo próprio são lisas.
+- **O mapa** (`estilos/mapa.svg`): curvas em fio de 1 px, com uma mestra de 1,7 px a cada quatro, no Papel 3 a 80% (60% abaixo de 768 px, onde o texto fica direto no papel). É um ladrilho de 1400 px, que emenda dos quatro lados, numa camada fixa atrás da página (`body::before`). O arquivo é a máscara, e a cor vem do Papel 3.
+- **Como gerar:** `pnpm --filter web mapa` roda o `imagens/mapa.mjs`, que desenha o relevo com um sorteio de semente fixa e grava o SVG (15 kB; 5 kB comprimido). Para mudar o mapa, mude o roteiro e gere de novo, sem editar o SVG. Um teste (`src/estilos/fundo.test.ts`) confere que as curvas emendam e que o arquivo pesa pouco.
+- **É desenho:** o grão e o mapa não dizem nada sobre o assunto, e nenhum texto depende deles. No alto contraste do sistema e na impressão, o fundo é liso.
+
 ### Moldura (cabeçalho)
 - **Caráter:** um bloco de tinta na largura toda, com a tira das cinco fitas embaixo. É o que separa o cabeçalho da página clara.
-- **Forma:** 72 px de altura, com a tira de 6 px. O nome e, a partir de 768 px, o lema em itálico (em Papel 3) à esquerda; Início e Trilhas à direita. No celular, ficam o nome e os links: o lema está no rodapé. O respiro fica em px, sem crescer com a letra.
+- **Forma:** 72 px de altura, com a tira de 6 px. O nome e, a partir de 864 px, o lema em letra de máquina (em Papel 3) à esquerda; Início e Trilhas à direita. Abaixo disso, ficam o nome e os links: o lema, que é largo na letra de máquina, não cabe na linha e está no rodapé. O respiro fica em px, sem crescer com a letra.
 - **Navegação:** links em papel, em maiúsculas espaçadas, sem sublinhado, com um traço de 4 px em papel embaixo: ele se risca da esquerda para a direita quando o ponteiro passa e fica na seção aberta. "Trilhas" fica marcado na lista das trilhas, em cada trilha e em cada artigo; o `aria-current="page"` só vai no link da própria página.
 - **Foco:** o anel de foco fica amarelo dentro do bloco. O "Pular para o conteúdo" aparece no foco, em tinta sobre papel.
 - **Na troca de página,** o cabeçalho fica parado (veja "A troca de página").
 
 ### Rodapé
 - **Caráter:** papel com um fio de tinta em cima e uma fileira de azulejos embaixo. É o `<footer>` do documento, em todas as páginas, inclusive no 404 e na de erro.
-- **Forma:** o nome em Wordmark, grande, sem link, com o lema em itálico embaixo; ao lado (embaixo, até 1024 px), três linhas em Literata, em tinta suave: "O Mandatômetro foi feito para o Hack Brasil 2026, na trilha Acesso à educação.", "Cada explicação traz a fonte oficial: a lei, o regimento ou a página da Câmara e do Senado." e "O código é aberto, no GitHub.".
+- **Forma:** o nome em Wordmark, grande, sem link, com o lema em letra de máquina embaixo; ao lado (embaixo, até 1024 px), três linhas em Literata, em tinta suave: "O Mandatômetro foi feito para o Hack Brasil 2026, na trilha Acesso à educação.", "Cada explicação traz a fonte oficial: a lei, o regimento ou a página da Câmara e do Senado." e "O código é aberto, no GitHub.".
 - **O link do GitHub:** uma ação em texto em linha, na letra do parágrafo, em tinta e negrito. A área de toque tem 12 px em cima e embaixo da letra, menos que o vão entre os parágrafos: um toque na linha de cima não vai para o link.
 - **A fileira de azulejos:** 16 azulejos (os 8 primeiros no celular, que já têm as cinco fitas). Ela faz a onda uma vez, quando entra na tela.
 
@@ -397,7 +410,7 @@ Tudo é reto: raio zero (`--radius: 0`).
 ### Cartaz
 - **Caráter:** a abertura de cada página: o título gigante em tinta e o painel de azulejos.
 - **O título:** as palavras tombam no lugar, uma a uma. Cada palavra fica numa caixa fora do leitor de tela, e o título leva o texto corrido no `aria-label`.
-- **A frase em itálico** (só na página inicial): "um passo de cada vez.", com a tira das cinco fitas, que se risca embaixo dela.
+- **A frase** (só na página inicial): "um passo de cada vez.", em letra de máquina de escrever, com a tira das cinco fitas, que se risca embaixo dela.
 - **O pé:** depois de um fio de tinta, a abertura em Literata, e ao lado (embaixo, até 992 px) a linha do progresso e o botão.
 - **A faixa de informações** (na trilha): "3 artigos", "6 min de leitura" e "Fonte oficial em cada explicação", separados por um quadradinho.
 
@@ -446,7 +459,7 @@ Tudo é reto: raio zero (`--radius: 0`).
 - **O verde e o vermelho** dizem aqui certo e errado, sempre junto com a frase, o desenho do visto ou do xis e a etiqueta de cada opção. São as mesmas fitas, e não marcam lado nenhum.
 - **O fim:** "Você terminou o quiz." na letra do cartaz, o "Recomeçar o quiz", os artigos do quiz para rever, numa lista entre fios, e os botões "Voltar para" a trilha e, vazado, "Rever as respostas", que passa pelas perguntas com a resposta de cada uma à vista. O fim fica preso ao alto do palco: o que muda com o recomeço vem depois da linha do "Recomeçar o quiz".
 - **Recomeçar:** depois do clique em "Recomeçar o quiz", a tela continua a mesma: o título do fim, ou a frase do andamento, diz "Você recomeçou o quiz.", o mosaico e os quadradinhos perdem a cor, e o mesmo botão vira "Desfazer", no mesmo lugar. O "Começar" leva à primeira pergunta, e dali em diante o recomeço não se desfaz mais.
-- **O andamento:** o pé do palco, com um quadradinho por pergunta, que vira e ganha a cor da posição quando a pergunta é respondida (o contorno marca a pergunta da vez), e a frase "Você respondeu 2 de 6.", em minúsculas. Numa tela com pelo menos 40rem de altura, ele fica preso embaixo enquanto a pessoa rola, e o que recebe o foco para acima dele.
+- **O andamento:** o pé do palco, em papel com o grão do fundo, com um quadradinho por pergunta, que vira e ganha a cor da posição quando a pergunta é respondida (o contorno marca a pergunta da vez), e a frase "Você respondeu 2 de 6.", em minúsculas. Numa tela com pelo menos 40rem de altura, ele fica preso embaixo enquanto a pessoa rola, e o que recebe o foco para acima dele.
 - **Foco e leitor de tela:** a cada troca de tela, o foco vai para o título do que apareceu: o enunciado, o resultado ou o título do fim. O resultado é anunciado pela região `role="status"` ("Pergunta 2: você errou. A resposta certa é: …"). As setas trocam de opção, e o Enter responde.
 - **Sem JavaScript:** o palco fica só com a abertura, sem o botão e sem o andamento, e as perguntas vêm todas embaixo dele, num `<noscript>`: cada uma numa folha, com os rádios e um "Ver a resposta" do navegador (`<details>`).
 - **Alto contraste:** nas cores forçadas do Windows, a opção escolhida ganha um contorno, e o estado de cada opção já vem escrito.
@@ -482,7 +495,7 @@ Tudo é reto: raio zero (`--radius: 0`).
 
 ### Ícone da aba e prévia do link
 - **O ícone:** o M do nome em Archivo 900, largura 68%, em papel no quadrado de tinta, com a tira das cinco fitas embaixo. O `favicon.ico` tem 16, 32 e 48 px, e o `apple-touch-icon.png`, 180 px. É a letra do nome, não um logo, e troca quando o logo existir.
-- **A prévia do link** (`previa.png`, 1200 × 630 px, a mesma em todas as páginas): o bloco de tinta com o nome (46 px) e o lema em itálico (32 px), a tira de 10 px, o título da página inicial no papel (112 px, com a frase em itálico e a tira riscada) e uma fileira de dez azulejos, com as cinco fitas pela ordem, duas vezes. Os tamanhos ficam fora da escala do site de propósito: a imagem tem 1200 px e é vista pequena.
+- **A prévia do link** (`previa.png`, 1200 × 630 px, a mesma em todas as páginas): o bloco de tinta com o nome (46 px) e o lema em letra de máquina (26 px), a tira de 10 px, o título da página inicial no papel liso (112 px, com a frase em letra de máquina e a tira riscada) e uma fileira de dez azulejos, com as cinco fitas pela ordem, duas vezes. Os tamanhos ficam fora da escala do site de propósito: a imagem tem 1200 px e é vista pequena.
 - **Os textos:** a aba da página inicial diz "Mandatômetro · o diário oficial político, simplificado"; as outras páginas, "Título · Mandatômetro". O título da prévia é "Mandatômetro: entenda a política brasileira, um passo de cada vez".
 - **Como gerar:** `pnpm --filter web imagens` abre o Edge ou o Chrome sem janela e fotografa `imagens/icone.html` e `imagens/previa.html`, com as fontes do site embutidas. Cada PNG leva a origem num bloco tEXt `impeccable:prompt`. Para mudar uma imagem, mude o HTML e gere de novo.
 
@@ -492,8 +505,9 @@ Tudo é CSS e a animação nativa do navegador (View Transitions, animação de 
 
 Três curvas: o **golpe** (`cubic-bezier(0.5, 0, 0.15, 1)`), seco, para o que se risca; a **mola** (`cubic-bezier(0.2, 0.8, 0.3, 1.25)`), que passa um pouco e volta, para o que vira e tomba; e a **suave** (`cubic-bezier(0.2, 0.7, 0.2, 1)`), para o que sobe.
 
-- **Na chegada:** os azulejos do painel entram virando, em onda, a partir do canto de cima (0,7 s cada, 42 ms entre um e outro); as palavras do título tombam no lugar (70 ms entre uma e outra); a tira se risca embaixo do itálico; o pé do cartaz sobe.
+- **Na chegada:** os azulejos do painel entram virando, em onda, a partir do canto de cima (0,7 s cada, 42 ms entre um e outro); as palavras do título tombam no lugar (70 ms entre uma e outra); a tira se risca embaixo da frase; o pé do cartaz sobe.
 - **Na rolagem:** as seções sobem e aparecem quando entram na tela (`.revelar`), e a barra de leitura enche. As duas usam a animação de rolagem do CSS, dentro de `@supports`: sem ela, e sem JavaScript, a peça já está no lugar. Nada fica escondido à espera de um script. A seção termina de aparecer quando o alto dela sobe 7rem na tela, e não numa fração da altura dela: só a faixa de baixo da tela mostra a peça entrando, e o texto parado mais acima nunca fica apagado.
+- **O mapa do fundo** anda mais devagar que a página: da primeira à última linha da rolagem, a camada dele sobe 30vh (`mapa-anda`, com `animation-timeline: scroll()`, dentro de `@supports`). Ele só se mexe quando a pessoa rola: parado, o fundo está parado. Sem a animação de rolagem, o mapa fica fixo atrás da página.
 - **Com o ponteiro:** o azulejo vira; a folha sobe; o azulejo da folha dá um quarto de volta; o botão sobe e mostra a tira; o traço do link do cabeçalho se risca.
 - **Na ação:** os azulejos do passo a passo viram em fila até o passo da vez, o texto do passo entra de lado (da direita ao avançar, da esquerda ao voltar) e o número tomba; o azulejo do lido vira para o verde, e o visto se desenha. No quiz, as opções tombam no lugar, uma a uma; depois da resposta, viram com o estado, a folha da resposta tomba, presa pela borda de cima, e os azulejos já acesos do mosaico fazem a onda; no fim, o mosaico inteiro faz a onda. A tela que sai sobe um pouco e some (0,4 s) antes de a seguinte entrar.
 - **Cada animação parte de um estado de saída e chega ao estado normal da peça:** onde a animação não roda, a peça aparece pronta.
@@ -508,7 +522,7 @@ Três curvas: o **golpe** (`cubic-bezier(0.5, 0, 0.15, 1)`), seco, para o que se
 - **Como:** pelas View Transitions do navegador, que o TanStack Router pede em cada navegação (o `defaultViewTransition` do `router.tsx`), com os tipos `folha`, `avancar` ou `voltar` e `moldura-na-tela`. A máscara da foto nova é uma grade de azulejos que se abre com um ângulo animado (`@property --vt`).
 
 ### Movimento reduzido
-Com `prefers-reduced-motion: reduce`, nada vira, tomba, sobe nem se risca: as peças aparecem no lugar, e os estados trocam direto. O painel não vira com o ponteiro nem sozinho. A barra de leitura sai. A página troca num esmaecer de 160 ms, nos dois sentidos, e o cabeçalho vai direto para o lugar. No quiz, as telas trocam na hora. Tudo continua funcionando: o movimento nunca carrega informação que não esteja também em palavras.
+Com `prefers-reduced-motion: reduce`, nada vira, tomba, sobe nem se risca: as peças aparecem no lugar, e os estados trocam direto. O painel não vira com o ponteiro nem sozinho. A barra de leitura sai, e o mapa do fundo fica parado. A página troca num esmaecer de 160 ms, nos dois sentidos, e o cabeçalho vai direto para o lugar. No quiz, as telas trocam na hora. Tudo continua funcionando: o movimento nunca carrega informação que não esteja também em palavras.
 
 ## Do's and Don'ts
 
@@ -524,6 +538,7 @@ Com `prefers-reduced-motion: reduce`, nada vira, tomba, sobe nem se risca: as pe
 - **Do** respeitar o movimento reduzido, e fazer cada animação chegar ao estado normal da peça: sem ela, a peça aparece pronta.
 - **Do** deixar a letra crescer com a configuração do navegador: as margens e os respiros do celular ficam em px, o título cresce até a palavra mais larga encostar nas margens (o teto), e nenhuma página rola de lado.
 - **Do** oferecer "Desfazer" logo depois de apagar uma marca, em vez de pedir confirmação antes.
+- **Do** deixar sem fundo o que fica direto no papel, para o mapa aparecer; o que precisa cobrir a página, como o pé do quiz, leva o papel com o grão (`var(--papel) var(--grao)`).
 
 ### Don't:
 - **Don't** fazer "site do governo": burocracia e letra pequena.
@@ -534,6 +549,8 @@ Com `prefers-reduced-motion: reduce`, nada vira, tomba, sobe nem se risca: as pe
 - **Don't** mostrar placar, total de acertos, nota ou ranking, nem animar uma pontuação: a animação comemora o aprender. Os azulejos do quiz seguem a ordem das perguntas.
 - **Don't** usar barra de progresso para a trilha: o progresso é o visto e as palavras. A barra do alto do artigo mostra só a rolagem do texto.
 - **Don't** usar sombra esfumada, canto arredondado ou degradê suave.
+- **Don't** pintar o fundo com mancha de cor, degradê ou sombra borrada, nem fazer ele se mexer sozinho: o fundo é o papel, com o grão e as curvas do mapa, e só anda com a rolagem.
+- **Don't** trazer de volta a itálica fina ao lado do título pesado: o Renan achou com "muito cara de IA" (13/11/2026).
 - **Don't** inventar um logo; até o time fazer o dele, o nome em texto é a marca, e o M do nome é o ícone.
 - **Don't** usar a vermelha como cor de domingo antes da decisão da issue #39.
 - **Don't** trazer uma biblioteca de animação nem imagem para os azulejos: o movimento é do navegador, e o desenho, do CSS.
