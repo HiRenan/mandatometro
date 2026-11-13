@@ -868,6 +868,11 @@
 		position: relative;
 		padding: clamp(3.5rem, 8vw, 7rem) var(--margem) clamp(4rem, 9vw, 7rem);
 		border-top: 2px solid var(--tinta);
+		/* O passo novo entra pela direita (o passo-entra, no movimento.css) e, no
+		   celular, passa uns 8 px da borda da tela: o corte segura, e a página não
+		   ganha rolagem lateral enquanto ele entra. A seção vai de borda a borda, e
+		   nada de dentro da tela é cortado. */
+		overflow-x: clip;
 	}
 
 	.caminho-cabeca {
