@@ -1,7 +1,8 @@
 /**
  * O `onClick` de um botão que vira outro no mesmo lugar, como o "Recomeçar o
- * quiz" e o "Recomeçar a trilha", que viram "Desfazer". Num clique duplo, o
- * segundo clique cairia no botão novo e desmancharia o primeiro.
+ * quiz", o "Recomeçar a trilha" e o "Desmarcar" do artigo, que viram
+ * "Desfazer". Num clique duplo, o segundo clique cairia no botão novo e
+ * desmancharia o primeiro.
  *
  * O navegador conta os cliques no `detail`: 1 num clique ou num toque, 2 no
  * segundo clique de um clique duplo, e 0 no Enter e no espaço. O botão só age
