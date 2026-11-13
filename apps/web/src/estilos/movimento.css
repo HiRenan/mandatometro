@@ -185,12 +185,17 @@
 	 * O que entra na tela com a rolagem sobe e aparece, pela animação de rolagem do
 	 * CSS. Sem ela (e sem JavaScript), a peça já está no lugar: nada fica escondido
 	 * à espera de um script.
+	 *
+	 * A peça termina de aparecer quando o alto dela sobe 7rem na tela, e não numa
+	 * fração da altura dela: numa seção mais alta que a tela, a fração deixava o
+	 * título e o começo do texto meio apagados até o meio da tela, com a página
+	 * parada. Assim, só a faixa de baixo da tela mostra a peça entrando.
 	 */
 	@supports (animation-timeline: view()) {
 		.revelar {
 			animation: sobe linear both;
 			animation-timeline: view();
-			animation-range: entry 0% entry 45%;
+			animation-range: entry 0 entry 7rem;
 		}
 
 		/* A barra da leitura acompanha o texto do artigo: a linha da leitura fica a
