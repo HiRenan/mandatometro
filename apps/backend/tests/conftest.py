@@ -41,8 +41,9 @@ def engine_de_teste() -> Iterator[Engine]:
     engine = create_engine(url)
     with engine.begin() as conexao:
         # O nome na URL não basta: um ?dbname= na query troca o banco que o psycopg abre. Confere o
-        # banco conectado, na mesma conexão que vai apagá-lo.
-        banco = conexao.execute(text("select current_database()")).scalar_one()
+        # banco conectado, na mesma conexão que vai apagá-lo. Com o schema, nenhuma função do banco
+        # se passa pela do PostgreSQL, nem com o pg_catalog no fim do search_path.
+        banco = conexao.execute(text("select pg_catalog.current_database()")).scalar_one()
         if not banco.endswith("_teste"):
             pytest.fail(
                 f"O TEST_DATABASE_URL abriu o banco {banco}, que não termina em _teste: "
