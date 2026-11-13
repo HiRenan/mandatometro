@@ -226,7 +226,8 @@ def test_normalizar_voto(bruto, esperado):
 def test_o_aviso_do_codigo_novo_nao_leva_o_codigo(caplog):
     # O código no log, junto com o banco, apontaria quem o recebeu, e um código novo pode ser de
     # saúde. O registro inteiro fica sem ele: a mensagem, os argumentos e qualquer campo extra.
-    with caplog.at_level(logging.WARNING, logger="mandatometro.db.modelos"):
+    # Em DEBUG, o teste vê todos os níveis: um registro a mais em INFO, com o código, falha.
+    with caplog.at_level(logging.DEBUG, logger="mandatometro.db.modelos"):
         normalizar_voto("LSX")
     assert [registro.getMessage() for registro in caplog.records] == [
         "Código de voto desconhecido. Entra como outro, sem o código."
