@@ -242,6 +242,26 @@
 		--c: var(--fita-vermelha);
 	}
 
+	/*
+	 * O fio da opção (--fio), que aparece quando o ponteiro passa e na escolhida,
+	 * antes da resposta: só a rosa, a amarela e a azul, nessa ordem. O verde e o
+	 * vermelho ficam para depois da resposta, na certa e na errada, e a pessoa não
+	 * lê a cor da escolhida como acerto (o Renan, na #89). Da segunda à quarta
+	 * opção, o fio é da cor da letra; a letra continua na fita da posição, e é ela
+	 * que distingue as opções.
+	 */
+	.quiz-opcao:nth-child(3n + 1) {
+		--fio: var(--fita-rosa);
+	}
+
+	.quiz-opcao:nth-child(3n + 2) {
+		--fio: var(--fita-amarela);
+	}
+
+	.quiz-opcao:nth-child(3n + 3) {
+		--fio: var(--fita-azul);
+	}
+
 	.quiz-opcao input {
 		position: absolute;
 		inset: 0;
@@ -272,12 +292,12 @@
 		}
 	}
 
-	/* O ponteiro empurra a opção para o lado e mostra a cor dela; a escolhida fica
+	/* O ponteiro empurra a opção para o lado e mostra o fio dela; a escolhida fica
 	   assim, em tinta. */
 	@media (hover: hover) {
 		.quiz-opcao:hover {
 			translate: 0.45rem 0;
-			box-shadow: -0.45rem 0 0 var(--c);
+			box-shadow: -0.45rem 0 0 var(--fio);
 		}
 	}
 
@@ -285,7 +305,7 @@
 		background: var(--tinta);
 		color: var(--papel);
 		translate: 0.45rem 0;
-		box-shadow: -0.45rem 0 0 var(--c);
+		box-shadow: -0.45rem 0 0 var(--fio);
 	}
 
 	.quiz-letra {
