@@ -1569,8 +1569,26 @@
 		--recuo: calc(3 * var(--respiro) + 4px + 3.5rem);
 	}
 
+	/*
+	 * O título é o único link para a trilha no celular. A área de toque dele tem
+	 * pelo menos 44 px de altura, também quando o título cabe numa linha (33 px de
+	 * letra): o que falta sobra por igual em cima e embaixo, sem mexer no desenho.
+	 * O link é um bloco do tamanho do texto: em duas linhas, as duas inteiras levam
+	 * à trilha.
+	 */
 	.trilha-cabeca-texto a {
+		position: relative;
+		display: block;
+		width: fit-content;
 		text-decoration: none;
+	}
+
+	.trilha-cabeca-texto a::before {
+		content: "";
+		position: absolute;
+		inset: 50% 0 auto;
+		height: max(100%, 2.75rem);
+		translate: 0 -50%;
 	}
 
 	.trilha-cabeca-texto a:hover {
