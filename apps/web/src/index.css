@@ -1287,7 +1287,9 @@
 	/*
 	 * O visto da folha lida: um traço de tinta sobre um de papel, mais largo, que o
 	 * separa do que fica atrás. No número, o visto fica no meio, e o número perde a
-	 * cor: fica papel sobre papel, como o azulejo cru.
+	 * cor: o miolo fica apagado, em Papel 2, e o contorno passa para a tinta suave,
+	 * que se vê na folha (7,4:1) e no papel (6,7:1). O Renan, na #89: o contorno em
+	 * Papel 3 sumia (1,5:1). O estado continua no visto e na palavra "Lido".
 	 */
 	.marca-de-lido {
 		fill: none;
@@ -1308,7 +1310,7 @@
 
 	.numeral:has(.marca-de-lido) {
 		color: var(--papel-2);
-		-webkit-text-stroke-color: var(--papel-3);
+		-webkit-text-stroke-color: var(--tinta-suave);
 	}
 
 	.visto-no-numero {
