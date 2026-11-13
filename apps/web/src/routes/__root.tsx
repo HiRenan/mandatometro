@@ -64,9 +64,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 			// O ícone da aba e o da tela de início do celular (imagens/gerar.mjs).
 			{ rel: "icon", href: "/favicon.ico", sizes: "16x16 32x32 48x48" },
 			{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
-			// As fontes são pedidas junto com o CSS: chegam antes de o texto aparecer, e
-			// o texto não pula quando elas trocam a fonte reserva. Todas as páginas usam
-			// as duas primeiras. A de máquina é a do lema: todas as páginas a baixam,
+			// As fontes são pedidas junto com o CSS. Numa rede boa, chegam antes de o
+			// texto aparecer, que já sai na letra certa; numa rede lenta, chegam depois,
+			// e o texto ainda pula quando elas trocam a fonte reserva (o font-display:
+			// swap do @fontsource). Todas as páginas usam as duas primeiras. A de
+			// máquina é a do lema: todas as páginas a baixam,
 			// porque o lema está no rodapé, mas o preload só vale onde ela aparece na
 			// primeira tela. A partir de 864 px (54rem, no index.css), é o lema do
 			// cabeçalho; abaixo disso, só a página inicial a adianta, para a frase do
