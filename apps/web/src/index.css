@@ -759,7 +759,17 @@
 		gap: 1rem 1.5rem;
 	}
 
-	/* Onde a pessoa está: Trilhas / a trilha. */
+	/*
+	 * Onde a pessoa está: Trilhas / a trilha. A migalha fica por cima do que vem
+	 * depois dela: a linha do título gigante do quiz e a do número do artigo são
+	 * mais altas que a letra e passavam por cima dos links, que perdiam metade
+	 * dos 44 px de toque.
+	 */
+	.migalhas {
+		position: relative;
+		z-index: 1;
+	}
+
 	.migalhas ol {
 		display: flex;
 		flex-wrap: wrap;
