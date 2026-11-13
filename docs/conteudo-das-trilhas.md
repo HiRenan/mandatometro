@@ -33,6 +33,7 @@ ordem: 1
 - `titulo`: o nome da trilha.
 - `descricao`: uma ou duas frases. Aparece na lista de trilhas, no topo da trilha e na prévia do link.
 - `ordem`: a posição na lista de trilhas, um número inteiro a partir de 1, sem repetir.
+- Um texto embaixo do cabeçalho é erro, porque não apareceria na página.
 
 **A página inicial mostra a trilha `processo-legislativo`,** qualquer que seja o `ordem` dela, com o caminho do `infografico.md` dela. Renomear ou apagar essa pasta faz o teste e o `pnpm build` falharem: sem ela, a página inicial não abre, e o deploy para com o site no ar na versão anterior. Apagar esse infográfico faz o teste falhar.
 
@@ -142,7 +143,7 @@ perguntas:
       - texto: Pela Câmara dos Deputados, porque todo projeto de lei começa lá.
       - texto: Pelas duas Casas ao mesmo tempo, numa sessão conjunta.
       - texto: Pela Casa que a senadora escolher.
-    explicacao: "Em regra, o projeto de lei começa na Câmara dos Deputados. A exceção são os projetos de um senador ou de uma comissão do Senado: esses começam no Senado, que vira a Casa iniciadora."
+    explicacao: "Em regra, o projeto de lei começa na Câmara dos Deputados. Uma exceção são os projetos de um senador ou de uma comissão do Senado: esses começam no Senado, que vira a Casa iniciadora."
     fontes:
       - titulo: Câmara dos Deputados, Entenda o processo legislativo
         url: https://www.camara.leg.br/entenda-o-processo-legislativo/

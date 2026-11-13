@@ -8,6 +8,7 @@ import { Fontes } from "@/components/fontes";
 import { MarcaDeLido } from "@/components/marca-de-lido";
 import { NestaTrilha } from "@/components/nesta-trilha";
 import { TextoDoArtigo } from "@/components/texto-do-artigo";
+import { semCliqueDuplo } from "@/lib/clique";
 import { type ArtigoNaTrilha, buscarArtigo } from "@/lib/conteudo";
 import { corDaFita, plural } from "@/lib/formatar";
 import { metaDaPagina, metaSemPagina } from "@/lib/meta";
@@ -158,7 +159,8 @@ function Folha({
 
 					{/* A altura do aviso fica reservada: quando o visto aparece, as fontes
 					    não descem. O botão é o mesmo nos dois estados, e o foco fica
-					    nele quando "Desmarcar" vira "Desfazer". */}
+					    nele quando "Desmarcar" vira "Desfazer". Num clique duplo, o
+					    segundo clique fica de fora (lib/clique.ts). */}
 					<div ref={fimDoTexto} className="mt-6 min-h-[4.5rem]">
 						{(lido || desmarcou) && (
 							<div className="grid grid-cols-[2.5rem_minmax(0,1fr)] grid-rows-[minmax(2.5rem,auto)_auto] items-center gap-x-3 gap-y-1">
@@ -173,7 +175,7 @@ function Folha({
 								</p>
 								<button
 									type="button"
-									onClick={lido ? desmarcar : desfazer}
+									onClick={semCliqueDuplo(lido ? desmarcar : desfazer)}
 									className="acao-de-texto col-start-2 row-start-2 justify-self-start"
 								>
 									{lido ? "Desmarcar" : "Desfazer"}
