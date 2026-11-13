@@ -18,6 +18,7 @@ import { focarNoTitulo } from "../lib/foco";
 import {
 	cabecalhosDaPagina,
 	metaDaImagem,
+	preloadDaFonte,
 	TITULO_DE_ERRO,
 	TITULO_NAO_ENCONTRADA,
 } from "../lib/meta";
@@ -48,8 +49,8 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 						? TITULO_NAO_ENCONTRADA
 						: "Mandatômetro",
 			},
-			// A cor da barra do navegador no celular segue o cartão preto do cabeçalho.
-			{ name: "theme-color", content: "#161616" },
+			// A cor da barra do navegador no celular segue o bloco de tinta do cabeçalho.
+			{ name: "theme-color", content: "#14161c" },
 			{ property: "og:site_name", content: "Mandatômetro" },
 			{ property: "og:locale", content: "pt_BR" },
 			...metaDaImagem(ENV.APP_BASE_URL),
@@ -64,14 +65,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 			{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
 			// As fontes são pedidas junto com o CSS: chegam antes de o texto aparecer, e
 			// o texto não pula quando elas trocam a fonte reserva. Todas as páginas usam
-			// as duas.
-			...[fontes.archivo, fontes.literata].map((href) => ({
-				rel: "preload",
-				href,
-				as: "font",
-				type: "font/woff2",
-				crossOrigin: "anonymous" as const,
-			})),
+			// as duas primeiras. A do itálico é a do lema, que só aparece no cabeçalho a
+			// partir do md: no celular, só a página inicial pede essa fonte, para a frase
+			// do título (routes/index.tsx).
+			...[fontes.archivo, fontes.literata].map((href) => preloadDaFonte(href)),
+			preloadDaFonte(fontes.italica, "(min-width: 48rem)"),
 		],
 	}),
 
