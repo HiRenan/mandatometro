@@ -143,7 +143,7 @@ perguntas:
       - texto: Pela Câmara dos Deputados, porque todo projeto de lei começa lá.
       - texto: Pelas duas Casas ao mesmo tempo, numa sessão conjunta.
       - texto: Pela Casa que a senadora escolher.
-    explicacao: "Em regra, o projeto de lei começa na Câmara dos Deputados. A exceção são os projetos de um senador ou de uma comissão do Senado: esses começam no Senado, que vira a Casa iniciadora."
+    explicacao: "Em regra, o projeto de lei começa na Câmara dos Deputados. Uma exceção são os projetos de um senador ou de uma comissão do Senado: esses começam no Senado, que vira a Casa iniciadora."
     fontes:
       - titulo: Câmara dos Deputados, Entenda o processo legislativo
         url: https://www.camara.leg.br/entenda-o-processo-legislativo/
