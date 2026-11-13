@@ -49,8 +49,9 @@ def test_as_migrations_sobem_do_zero_descem_e_batem_com_os_modelos(engine_de_tes
     alembic("upgrade", "head")
 
 
-def _checks_e_padroes(conexao: Connection, schema: str) -> dict[str, set[tuple[str, str]]]:
-    """Os CHECKs e os valores padrão das tabelas de um schema, como o PostgreSQL os escreve."""
+def _checks_padroes_e_tamanhos(conexao: Connection, schema: str) -> dict[str, set[tuple]]:
+    """Os CHECKs, os valores padrão e o tamanho das colunas de texto de um schema, como o
+    PostgreSQL os escreve."""
     checks = conexao.execute(
         text(
             "select c.conname, pg_get_constraintdef(c.oid) from pg_constraint c"
@@ -68,23 +69,37 @@ def _checks_e_padroes(conexao: Connection, schema: str) -> dict[str, set[tuple[s
         ),
         {"schema": schema},
     )
+    # Só as colunas com tamanho, como o String(2) da UF. A alembic_version (varchar(32)) só existe
+    # no schema das migrations.
+    tamanhos = conexao.execute(
+        text(
+            "select table_name || '.' || column_name, character_maximum_length"
+            " from information_schema.columns"
+            " where table_schema = :schema and character_maximum_length is not null"
+            " and table_name <> 'alembic_version'"
+        ),
+        {"schema": schema},
+    )
     return {
         "checks": {tuple(linha) for linha in checks},
         "padroes": {tuple(linha) for linha in padroes},
+        "tamanhos": {tuple(linha) for linha in tamanhos},
     }
 
 
-def test_os_checks_e_os_valores_padrao_batem_com_os_modelos(engine_de_teste):
+def test_os_checks_os_valores_padrao_e_os_tamanhos_batem_com_os_modelos(engine_de_teste):
     # O alembic check não compara CHECK nem valor padrão: um valor novo em VALORES_DE_VOTO passaria
-    # sem migration. Aqui o PostgreSQL compara: cria as tabelas dos modelos num schema à parte e
-    # confere com as das migrations. O rollback desfaz o schema.
+    # sem migration. Também não vê o String(2) da UF virar String só no modelo. Aqui o PostgreSQL
+    # compara: cria as tabelas dos modelos num schema à parte e confere com as das migrations. O
+    # rollback desfaz o schema.
     with engine_de_teste.connect() as conexao:
-        das_migrations = _checks_e_padroes(conexao, "public")
+        das_migrations = _checks_padroes_e_tamanhos(conexao, "public")
         conexao.execute(text("create schema modelos"))
         conexao.execute(text("set local search_path to modelos"))
         Base.metadata.create_all(conexao)
-        dos_modelos = _checks_e_padroes(conexao, "modelos")
+        dos_modelos = _checks_padroes_e_tamanhos(conexao, "modelos")
         conexao.rollback()
 
     assert das_migrations["checks"]
+    assert das_migrations["tamanhos"]
     assert das_migrations == dos_modelos

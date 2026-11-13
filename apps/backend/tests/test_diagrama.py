@@ -1,4 +1,8 @@
-"""O diagrama do README, em "Modelo de dados", bate com os modelos: tabelas, colunas e ligações."""
+"""O diagrama do README, em "Modelo de dados", bate com os modelos: tabelas, colunas e ligações.
+
+O README fica na raiz, fora do pacote: o apps/backend/turbo.json o põe entre as entradas do test,
+para o cache do Turbo não devolver o resultado guardado quando só o diagrama muda.
+"""
 
 import re
 from pathlib import Path

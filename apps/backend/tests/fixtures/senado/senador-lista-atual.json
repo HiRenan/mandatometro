@@ -221,15 +221,15 @@
                   "CodigoExercicio": "3057",
                   "DataInicio": "2024-02-21",
                   "DataFim": "2026-07-30",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 },
                 {
                   "CodigoExercicio": "3038",
                   "DataInicio": "2023-02-02",
                   "DataFim": "2024-01-31",
-                  "SiglaCausaAfastamento": "RET",
-                  "DescricaoCausaAfastamento": "Retorno do titular"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -521,22 +521,22 @@
                   "CodigoExercicio": "3083",
                   "DataInicio": "2025-02-01",
                   "DataFim": "2025-02-03",
-                  "SiglaCausaAfastamento": "AFO",
-                  "DescricaoCausaAfastamento": "Afastamento do exercício"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 },
                 {
                   "CodigoExercicio": "3050",
                   "DataInicio": "2023-12-12",
                   "DataFim": "2023-12-13",
-                  "SiglaCausaAfastamento": "AFO",
-                  "DescricaoCausaAfastamento": "Afastamento do exercício"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 },
                 {
                   "CodigoExercicio": "3035",
                   "DataInicio": "2023-02-01",
                   "DataFim": "2023-02-02",
-                  "SiglaCausaAfastamento": "AFO",
-                  "DescricaoCausaAfastamento": "Afastamento do exercício"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -611,71 +611,71 @@
                   "CodigoExercicio": "3098",
                   "DataInicio": "2026-03-27",
                   "DataFim": "2026-03-30",
-                  "SiglaCausaAfastamento": "AFO",
-                  "DescricaoCausaAfastamento": "Afastamento do exercício"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 },
                 {
                   "CodigoExercicio": "3092",
                   "DataInicio": "2025-11-13",
                   "DataFim": "2025-11-14",
-                  "SiglaCausaAfastamento": "AFO",
-                  "DescricaoCausaAfastamento": "Afastamento do exercício"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 },
                 {
                   "CodigoExercicio": "3084",
                   "DataInicio": "2025-02-01",
                   "DataFim": "2025-02-02",
-                  "SiglaCausaAfastamento": "AFO",
-                  "DescricaoCausaAfastamento": "Afastamento do exercício"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 },
                 {
                   "CodigoExercicio": "3079",
                   "DataInicio": "2024-12-18",
                   "DataFim": "2024-12-22",
-                  "SiglaCausaAfastamento": "AFO",
-                  "DescricaoCausaAfastamento": "Afastamento do exercício"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 },
                 {
                   "CodigoExercicio": "3077",
                   "DataInicio": "2024-12-03",
                   "DataFim": "2024-12-04",
-                  "SiglaCausaAfastamento": "AFO",
-                  "DescricaoCausaAfastamento": "Afastamento do exercício"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 },
                 {
                   "CodigoExercicio": "3048",
                   "DataInicio": "2023-12-12",
                   "DataFim": "2023-12-20",
-                  "SiglaCausaAfastamento": "AFO",
-                  "DescricaoCausaAfastamento": "Afastamento do exercício"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 },
                 {
                   "CodigoExercicio": "3046",
                   "DataInicio": "2023-11-22",
                   "DataFim": "2023-11-23",
-                  "SiglaCausaAfastamento": "AFO",
-                  "DescricaoCausaAfastamento": "Afastamento do exercício"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 },
                 {
                   "CodigoExercicio": "3088",
                   "DataInicio": "2023-02-01",
                   "DataFim": "2023-02-02",
-                  "SiglaCausaAfastamento": "AFO",
-                  "DescricaoCausaAfastamento": "Afastamento do exercício"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 },
                 {
                   "CodigoExercicio": "2993",
                   "DataInicio": "2022-10-06",
                   "DataFim": "2023-01-01",
-                  "SiglaCausaAfastamento": "AFO",
-                  "DescricaoCausaAfastamento": "Afastamento do exercício"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 },
                 {
                   "CodigoExercicio": "2960",
                   "DataInicio": "2020-12-15",
                   "DataFim": "2022-06-07",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -829,8 +829,8 @@
                   "CodigoExercicio": "2892",
                   "DataInicio": "2019-02-01",
                   "DataFim": "2024-07-17",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -905,8 +905,8 @@
                   "CodigoExercicio": "2905",
                   "DataInicio": "2019-02-01",
                   "DataFim": "2020-10-20",
-                  "SiglaCausaAfastamento": "LP ",
-                  "DescricaoCausaAfastamento": "Licença Particular"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -987,15 +987,15 @@
                   "CodigoExercicio": "2953",
                   "DataInicio": "2020-04-11",
                   "DataFim": "2022-09-05",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 },
                 {
                   "CodigoExercicio": "2895",
                   "DataInicio": "2019-02-01",
                   "DataFim": "2019-12-11",
-                  "SiglaCausaAfastamento": "LP ",
-                  "DescricaoCausaAfastamento": "Licença Particular"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -1081,8 +1081,8 @@
                   "CodigoExercicio": "2896",
                   "DataInicio": "2019-02-01",
                   "DataFim": "2021-07-27",
-                  "SiglaCausaAfastamento": "AFO",
-                  "DescricaoCausaAfastamento": "Afastamento do exercício"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -1232,8 +1232,8 @@
                   "CodigoExercicio": "2897",
                   "DataInicio": "2019-02-01",
                   "DataFim": "2021-09-24",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -1382,8 +1382,8 @@
                   "CodigoExercicio": "2898",
                   "DataInicio": "2019-02-01",
                   "DataFim": "2020-09-23",
-                  "SiglaCausaAfastamento": "LP ",
-                  "DescricaoCausaAfastamento": "Licença Particular"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -1601,8 +1601,8 @@
                   "CodigoExercicio": "2978",
                   "DataInicio": "2022-05-24",
                   "DataFim": "2022-09-21",
-                  "SiglaCausaAfastamento": "RET",
-                  "DescricaoCausaAfastamento": "Retorno do titular"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -1751,16 +1751,16 @@
                   "CodigoExercicio": "2947",
                   "DataInicio": "2019-08-15",
                   "DataFim": "2022-07-18",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)",
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício",
                   "DataLeitura": "2019-08-15"
                 },
                 {
                   "CodigoExercicio": "2894",
                   "DataInicio": "2019-02-01",
                   "DataFim": "2019-07-12",
-                  "SiglaCausaAfastamento": "AFO",
-                  "DescricaoCausaAfastamento": "Afastamento do exercício",
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício",
                   "DataLeitura": "2019-07-12"
                 }
               ]
@@ -1841,8 +1841,8 @@
                   "CodigoExercicio": "3009",
                   "DataInicio": "2023-02-01",
                   "DataFim": "2024-06-19",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -1917,8 +1917,8 @@
                   "CodigoExercicio": "2900",
                   "DataInicio": "2019-02-01",
                   "DataFim": "2024-07-16",
-                  "SiglaCausaAfastamento": "AFO",
-                  "DescricaoCausaAfastamento": "Afastamento do exercício"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -2146,8 +2146,8 @@
                   "CodigoExercicio": "3000",
                   "DataInicio": "2022-12-07",
                   "DataFim": "2023-09-04",
-                  "SiglaCausaAfastamento": "RET",
-                  "DescricaoCausaAfastamento": "Retorno do titular"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -2644,15 +2644,15 @@
                   "CodigoExercicio": "3003",
                   "DataInicio": "2022-12-30",
                   "DataFim": "2024-08-01",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 },
                 {
                   "CodigoExercicio": "2989",
                   "DataInicio": "2022-08-24",
                   "DataFim": "2022-12-20",
-                  "SiglaCausaAfastamento": "RET",
-                  "DescricaoCausaAfastamento": "Retorno do titular"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -3041,8 +3041,8 @@
                   "CodigoExercicio": "2913",
                   "DataInicio": "2019-02-01",
                   "DataFim": "2022-04-06",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -3196,8 +3196,8 @@
                   "CodigoExercicio": "3024",
                   "DataInicio": "2023-02-01",
                   "DataFim": "2026-05-05",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -3272,22 +3272,22 @@
                   "CodigoExercicio": "3086",
                   "DataInicio": "2025-02-03",
                   "DataFim": "2026-04-28",
-                  "SiglaCausaAfastamento": "RET",
-                  "DescricaoCausaAfastamento": "Retorno do titular"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 },
                 {
                   "CodigoExercicio": "3053",
                   "DataInicio": "2023-12-14",
                   "DataFim": "2025-02-01",
-                  "SiglaCausaAfastamento": "RET",
-                  "DescricaoCausaAfastamento": "Retorno do titular"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 },
                 {
                   "CodigoExercicio": "3041",
                   "DataInicio": "2023-02-06",
                   "DataFim": "2023-12-12",
-                  "SiglaCausaAfastamento": "RET",
-                  "DescricaoCausaAfastamento": "Retorno do titular"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -3506,8 +3506,8 @@
                   "CodigoExercicio": "2921",
                   "DataInicio": "2019-02-01",
                   "DataFim": "2019-12-16",
-                  "SiglaCausaAfastamento": "LS ",
-                  "DescricaoCausaAfastamento": "Licença saúde",
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício",
                   "DataLeitura": "2019-12-17"
                 }
               ]
@@ -3598,8 +3598,8 @@
                   "CodigoExercicio": "2919",
                   "DataInicio": "2019-02-01",
                   "DataFim": "2024-04-08",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -3896,8 +3896,8 @@
                   "CodigoExercicio": "2924",
                   "DataInicio": "2019-02-01",
                   "DataFim": "2022-05-31",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -3972,8 +3972,8 @@
                   "CodigoExercicio": "2926",
                   "DataInicio": "2019-02-01",
                   "DataFim": "2022-12-14",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -4749,8 +4749,8 @@
                   "CodigoExercicio": "2917",
                   "DataInicio": "2019-02-01",
                   "DataFim": "2022-06-02",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -4830,15 +4830,15 @@
                   "CodigoExercicio": "3049",
                   "DataInicio": "2023-12-12",
                   "DataFim": "2023-12-20",
-                  "SiglaCausaAfastamento": "AFO",
-                  "DescricaoCausaAfastamento": "Afastamento do exercício"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 },
                 {
                   "CodigoExercicio": "3014",
                   "DataInicio": "2023-02-01",
                   "DataFim": "2023-02-02",
-                  "SiglaCausaAfastamento": "AFO",
-                  "DescricaoCausaAfastamento": "Afastamento do exercício"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -5055,8 +5055,8 @@
                   "CodigoExercicio": "3016",
                   "DataInicio": "2023-02-01",
                   "DataFim": "2024-06-19",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -5210,8 +5210,8 @@
                   "CodigoExercicio": "3029",
                   "DataInicio": "2023-02-01",
                   "DataFim": "2025-12-09",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -5582,8 +5582,8 @@
                   "CodigoExercicio": "2935",
                   "DataInicio": "2019-02-01",
                   "DataFim": "2022-07-06",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -5802,8 +5802,8 @@
                   "CodigoExercicio": "2938",
                   "DataInicio": "2019-02-01",
                   "DataFim": "2025-07-01",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -5883,8 +5883,8 @@
                   "CodigoExercicio": "2939",
                   "DataInicio": "2019-02-01",
                   "DataFim": "2020-09-23",
-                  "SiglaCausaAfastamento": "LP ",
-                  "DescricaoCausaAfastamento": "Licença Particular"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -5979,15 +5979,15 @@
                   "CodigoExercicio": "3045",
                   "DataInicio": "2023-11-03",
                   "DataFim": "2024-06-11",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 },
                 {
                   "CodigoExercicio": "3032",
                   "DataInicio": "2023-02-01",
                   "DataFim": "2023-07-05",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }
@@ -6067,8 +6067,8 @@
                   "CodigoExercicio": "2940",
                   "DataInicio": "2019-02-01",
                   "DataFim": "2022-07-06",
-                  "SiglaCausaAfastamento": "LCS",
-                  "DescricaoCausaAfastamento": "Licença com convocação de suplente (sup 120 dias)"
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
                 }
               ]
             }

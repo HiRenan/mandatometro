@@ -16,19 +16,26 @@ Respostas reais das APIs da Câmara e do Senado, gravadas para os testes de unid
 | `camara/proposicao-2637478.json` | `/proposicoes/2637478` |
 | `camara/deputado-178843.json` | `/deputados/178843` — **campos pessoais trocados** |
 | `senado/votacao-2026-11-03_2026-11-07.json` | `/votacao?dataInicio=2026-11-03&dataFim=2026-11-07` |
-| `senado/senador-lista-atual.json` | `/senador/lista/atual.json` |
+| `senado/senador-lista-atual.json` | `/senador/lista/atual.json` — **motivos de afastamento trocados** |
 | `senado/processo-9006525.json` | `/processo/9006525` |
 
 Bases: `https://dadosabertos.camara.leg.br/api/v2` e `https://legis.senado.leg.br/dadosabertos`.
 
 ## Dados pessoais
 
-O `AGENTS.md` manda trocar CPF e título de eleitor por valores fictícios nas fixtures. Em `camara/deputado-178843.json`:
+O `AGENTS.md` manda trocar CPF, título de eleitor e motivo de afastamento por valores fictícios nas fixtures. Em `camara/deputado-178843.json`:
 
 - `cpf` virou `00000000000`;
 - `dataNascimento` virou `1970-01-01`.
 
-Nenhum outro arquivo desta pasta traz campo pessoal. Ao gravar uma fixture nova de `/deputados/{id}`, faça a mesma troca.
+Em `senado/senador-lista-atual.json`, os 50 exercícios com motivo de afastamento ficaram com o mesmo valor fictício, porque um motivo pode ser de saúde, e só os de saúde trocados se destacariam:
+
+- `SiglaCausaAfastamento` virou `XXX`;
+- `DescricaoCausaAfastamento` virou `Motivo fictício`.
+
+Um teste em `tests/test_respostas_gravadas.py` confere essa troca: se a lista for gravada de novo sem ela, o CI falha.
+
+Nenhum outro arquivo desta pasta traz campo pessoal. Ao gravar uma fixture nova de `/deputados/{id}` ou da lista de senadores, faça a mesma troca.
 
 ## Por que estes casos
 

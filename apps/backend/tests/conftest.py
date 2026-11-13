@@ -2,7 +2,8 @@
 
 A variável vem só do ambiente, nunca do DATABASE_URL nem do padrão do config.py, porque os testes
 apagam tudo no banco. Sem ela, os testes de banco são pulados; no CI, falham, para não passarem em
-silêncio. Como criar o banco e rodar está no README, em "Como rodar".
+silêncio. O nome do banco tem de terminar em _teste, na URL e no banco que a conexão abriu. Como
+criar o banco e rodar está no README, em "Como rodar".
 """
 
 import os
@@ -39,6 +40,15 @@ def engine_de_teste() -> Iterator[Engine]:
 
     engine = create_engine(url)
     with engine.begin() as conexao:
+        # O nome na URL não basta: um ?dbname= na query troca o banco que o psycopg abre. Confere o
+        # banco conectado, na mesma conexão que vai apagá-lo. Com o schema, nenhuma função do banco
+        # se passa pela do PostgreSQL, nem com o pg_catalog no fim do search_path.
+        banco = conexao.execute(text("select pg_catalog.current_database()")).scalar_one()
+        if not banco.endswith("_teste"):
+            pytest.fail(
+                f"O TEST_DATABASE_URL abriu o banco {banco}, que não termina em _teste: "
+                "os testes apagam tudo nele."
+            )
         # Do zero: apaga o que sobrou de outra rodada, inclusive a extensão vector.
         conexao.execute(text("drop schema public cascade"))
         conexao.execute(text("create schema public"))

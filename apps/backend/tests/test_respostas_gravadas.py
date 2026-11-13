@@ -2,7 +2,8 @@
 
 Não é o conector (#10 e #11): o teste só mostra que cada dado tem onde ficar, com as armadilhas que
 a revisão do dicionário de dados confirmou na API. As asserções usam ids, não nomes. O CPF e a data
-de nascimento do deputado, fictícios na resposta gravada, não entram no modelo.
+de nascimento do deputado, fictícios na resposta gravada, não entram no modelo. O último teste
+confere que os motivos de afastamento da lista de senadores gravada são fictícios.
 """
 
 import json
@@ -311,3 +312,24 @@ def test_a_mesma_materia_tem_uma_linha_em_cada_casa(sessao):
         .order_by(Proposicao.casa)
     )
     assert sessao.execute(mesma_materia).all() == [("camara", 2500080), ("senado", 9006525)]
+
+
+def _valores(dado, chave: str) -> list:
+    """Os valores de uma chave em qualquer nível da resposta gravada, em objetos e listas."""
+    if isinstance(dado, dict):
+        proprio = [dado[chave]] if chave in dado else []
+        return proprio + [valor for filho in dado.values() for valor in _valores(filho, chave)]
+    if isinstance(dado, list):
+        return [valor for filho in dado for valor in _valores(filho, chave)]
+    return []
+
+
+def test_os_motivos_de_afastamento_dos_senadores_sao_ficticios():
+    # Um motivo de afastamento pode ser de saúde: na lista gravada, todos levam o mesmo valor
+    # fictício (README de tests/fixtures). Gravou a lista de novo? Refaça a troca.
+    lista = _ler("senado/senador-lista-atual.json")
+    siglas = _valores(lista, "SiglaCausaAfastamento")
+    descricoes = _valores(lista, "DescricaoCausaAfastamento")
+    assert siglas and descricoes, "a lista gravada não tem os campos do motivo de afastamento"
+    assert set(siglas) == {"XXX"}
+    assert set(descricoes) == {"Motivo fictício"}
