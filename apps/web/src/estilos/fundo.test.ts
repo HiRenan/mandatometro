@@ -91,6 +91,28 @@ describe("o mapa da trilha", () => {
 		);
 	});
 
+	// O mapa sobe com a rolagem (movimento.css). Ele anda por um trecho fixo de
+	// rolagem, e não pelo progresso da página inteira: assim, não salta quando a
+	// página muda de altura com a pessoa parada. E a camada sobra embaixo o tanto
+	// que ela sobe, para o mapa não acabar antes do fim da tela.
+	it("anda por um trecho fixo da rolagem, e a camada sobra embaixo o tanto que sobe", () => {
+		const movimento = arquivo("movimento.css");
+		const sobe =
+			/@keyframes mapa-anda \{\s*to \{\s*transform: translateY\(-(\d+)vh\);/.exec(
+				movimento,
+			)?.[1];
+		const trecho =
+			/animation-timeline: scroll\(root block\);\s*animation-range: 0 (\d+)vh;/.exec(
+				movimento,
+			)?.[1];
+		const sobra = /inset: 0 0 -(\d+)vh;/.exec(arquivo("fundo.css"))?.[1];
+
+		expect(Number(sobe)).toBeGreaterThan(0);
+		expect(sobra).toBe(sobe);
+		// Um décimo do que a página rola.
+		expect(Number(trecho)).toBe(Number(sobe) * 10);
+	});
+
 	it("pesa menos de 20 kB", () => {
 		expect(Buffer.byteLength(svg)).toBeLessThan(20_000);
 	});

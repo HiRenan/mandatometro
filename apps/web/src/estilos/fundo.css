@@ -26,12 +26,12 @@
 		background-size: 320px 320px;
 	}
 
-	/* A camada sobra 30vh embaixo: é o quanto ela sobe na rolagem. */
+	/* A camada sobra 60vh embaixo: é o quanto ela sobe na rolagem, no máximo. */
 	body::before {
 		content: "";
 		position: fixed;
 		z-index: -1;
-		inset: 0 0 -30vh;
+		inset: 0 0 -60vh;
 		pointer-events: none;
 		background: var(--papel-3);
 		opacity: 0.8;

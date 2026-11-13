@@ -70,7 +70,7 @@
 /* O mapa do fundo sobe com a rolagem, mais devagar que a página. */
 @keyframes mapa-anda {
 	to {
-		transform: translateY(-30vh);
+		transform: translateY(-60vh);
 	}
 }
 
@@ -225,15 +225,19 @@
 	}
 
 	/*
-	 * O mapa do fundo (estilos/fundo.css) anda mais devagar que a página: da
-	 * primeira à última linha da rolagem, a camada dele sobe 30vh. Ele só se mexe
-	 * quando a pessoa rola. Sem a animação de rolagem, e com o movimento reduzido,
-	 * fica parado atrás da página.
+	 * O mapa do fundo (estilos/fundo.css) anda mais devagar que a página: sobe um
+	 * décimo do que ela rola, até 60vh, nas seis primeiras telas de rolagem
+	 * (600vh), e depois fica parado. O trecho é um comprimento fixo (o
+	 * animation-range), e não o progresso da página inteira: o mapa só se mexe
+	 * quando a pessoa rola, e não salta quando a página muda de altura com ela
+	 * parada, como ao abrir um passo do caminho. Sem a animação de rolagem, e com
+	 * o movimento reduzido, fica parado atrás da página.
 	 */
-	@supports (animation-timeline: scroll()) {
+	@supports (animation-timeline: scroll()) and (animation-range: 0 600vh) {
 		body::before {
 			animation: mapa-anda linear both;
 			animation-timeline: scroll(root block);
+			animation-range: 0 600vh;
 		}
 	}
 
