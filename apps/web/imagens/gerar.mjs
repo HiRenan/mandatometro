@@ -1,7 +1,8 @@
 // Gera o ícone da aba e a prévia do link a partir de icone.html e previa.html,
 // no Edge ou no Chrome sem janela, pelo protocolo de depuração do navegador,
-// sem dependência nova. A fonte é a do site (a Archivo do @mandatometro/ui),
-// embutida no HTML. Cada PNG leva dentro dele de onde veio.
+// sem dependência nova. As fontes são as do site (a Archivo e a Instrument
+// Serif itálica do @mandatometro/ui), embutidas no HTML. Cada PNG leva dentro
+// dele de onde veio.
 //
 // Uso: pnpm --filter web imagens
 // Com NAVEGADOR=<caminho do Edge ou do Chrome>, usa esse navegador.
@@ -40,9 +41,9 @@ const CANDIDATOS = [
 ];
 
 const ORIGEM_DO_ICONE =
-	"Gerado por apps/web/imagens/gerar.mjs a partir de apps/web/imagens/icone.html: o M do nome em Archivo (peso 900, largura 68%), branco no cartão preto, com as cinco fitas do Bonfim embaixo. Desenhado em HTML e CSS, sem gerador de imagem.";
+	"Gerado por apps/web/imagens/gerar.mjs a partir de apps/web/imagens/icone.html: o M do nome em Archivo (peso 900, largura 68%), em papel no bloco de tinta, com a tira das cinco fitas do Bonfim embaixo. Desenhado em HTML e CSS, sem gerador de imagem.";
 const ORIGEM_DA_PREVIA =
-	"Gerado por apps/web/imagens/gerar.mjs a partir de apps/web/imagens/previa.html: o cartão preto com o nome e o lema, a tira de fitas do Bonfim e a frase da página inicial. Desenhado em HTML e CSS, sem gerador de imagem.";
+	"Gerado por apps/web/imagens/gerar.mjs a partir de apps/web/imagens/previa.html: o bloco de tinta com o nome e o lema, a tira das cinco fitas do Bonfim, o título da página inicial no papel e uma fileira de azulejos. Desenhado em HTML e CSS, sem gerador de imagem.";
 
 const espera = (ms) => new Promise((pronto) => setTimeout(pronto, ms));
 
@@ -64,7 +65,7 @@ function acharNavegador() {
 	return achado;
 }
 
-/** A Archivo do site, embutida: a página não pede nada à rede nem ao disco. */
+/** As fontes do site, embutidas: a página não pede nada à rede nem ao disco. */
 function fontes() {
 	const doUi = createRequire(
 		new URL("../../../packages/ui/package.json", import.meta.url),
@@ -74,6 +75,11 @@ function fontes() {
 			"@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2",
 		),
 	).toString("base64");
+	const italica = readFileSync(
+		doUi.resolve(
+			"@fontsource/instrument-serif/files/instrument-serif-latin-400-italic.woff2",
+		),
+	).toString("base64");
 	return `@font-face {
 		font-family: "Archivo Variable";
 		font-style: normal;
@@ -81,6 +87,13 @@ function fontes() {
 		font-weight: 100 900;
 		font-stretch: 62% 125%;
 		src: url(data:font/woff2;base64,${archivo}) format("woff2-variations");
+	}
+	@font-face {
+		font-family: "Instrument Serif";
+		font-style: italic;
+		font-display: block;
+		font-weight: 400;
+		src: url(data:font/woff2;base64,${italica}) format("woff2");
 	}`;
 }
 
@@ -154,7 +167,7 @@ async function abrirNavegador() {
 	};
 }
 
-/** Abre o HTML do tamanho pedido, espera a fonte e devolve a foto em PNG. */
+/** Abre o HTML do tamanho pedido, espera as fontes e devolve a foto em PNG. */
 async function fotografar(navegador, html, largura, altura) {
 	const { targetId } = await navegador.enviar("Target.createTarget", {
 		url: "about:blank",
@@ -178,15 +191,19 @@ async function fotografar(navegador, html, largura, altura) {
 		html,
 	});
 	const { result } = await enviar("Runtime.evaluate", {
-		expression: `document.fonts.load('900 16px "Archivo Variable"')
+		expression: `Promise.all([
+				document.fonts.load('900 16px "Archivo Variable"'),
+				document.fonts.load('italic 400 16px "Instrument Serif"'),
+			])
 			.then(() => document.fonts.ready)
 			.then(() => new Promise((pronto) => requestAnimationFrame(() => requestAnimationFrame(pronto))))
-			.then(() => document.fonts.check('900 16px "Archivo Variable"'))`,
+			.then(() => document.fonts.check('900 16px "Archivo Variable"')
+				&& document.fonts.check('italic 400 16px "Instrument Serif"'))`,
 		awaitPromise: true,
 		returnByValue: true,
 	});
 	if (result.value !== true) {
-		throw new Error("A Archivo não carregou.");
+		throw new Error("As fontes do site não carregaram.");
 	}
 	const { data } = await enviar("Page.captureScreenshot", {
 		format: "png",
