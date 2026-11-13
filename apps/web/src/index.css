@@ -2222,9 +2222,13 @@
 		text-transform: none;
 	}
 
+	/* A fileira vai de borda a borda. O corte segura a peça que vira: de lado, com a
+	   perspectiva, ela passa uns 5 px da borda da tela, e a página ganharia uma
+	   rolagem lateral enquanto a onda passa. */
 	.faixa-de-azulejos {
 		position: relative;
 		margin-top: clamp(2rem, 5vw, 3.5rem);
+		overflow: clip;
 	}
 
 	/* No celular, a fileira tem os oito primeiros azulejos, que já têm as cinco fitas. */
