@@ -209,6 +209,9 @@ def test_o_banco_recusa_codigo_fora_da_lista(sessao, codigo):
         # As ausências entram sem o código: a licença saúde fica igual à atividade parlamentar.
         ("AP", ("nao_votou", None)),
         ("LS", ("nao_votou", None)),
+        # O espaço em volta sai: o Senado manda as siglas com espaço nos exercícios ("LS ", "LP ").
+        ("LS ", ("nao_votou", None)),
+        (" Sim", ("sim", "Sim")),
         # Um código novo pode ser outro motivo pessoal: entra como outro, sem o código.
         ("XYZ", ("outro", None)),
     ],
