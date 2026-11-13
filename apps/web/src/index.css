@@ -1,6 +1,7 @@
 @import "@mandatometro/ui/globals.css";
 @import "./estilos/azulejos.css";
 @import "./estilos/movimento.css";
+@import "./estilos/quiz.css";
 
 @theme {
 	/*
