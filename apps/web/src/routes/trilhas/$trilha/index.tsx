@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Aviso, useAviso } from "@/components/aviso";
 import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "@/components/botao-continuar";
 import { Caminho } from "@/components/caminho";
+import { ChamadaDoQuiz } from "@/components/chamada-do-quiz";
 import { Infografico } from "@/components/infografico";
 import { MarcaDeLido } from "@/components/marca-de-lido";
 import { buscarTrilha } from "@/lib/conteudo";
@@ -204,6 +205,13 @@ function PaginaDaTrilha() {
 							);
 						})}
 					</ol>
+					{trilha.quiz && (
+						<ChamadaDoQuiz
+							trilha={trilha.slug}
+							quiz={trilha.quiz}
+							className="mt-12"
+						/>
+					)}
 				</div>
 				{trilha.infografico && (
 					<Infografico
