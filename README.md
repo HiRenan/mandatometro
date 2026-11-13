@@ -50,7 +50,7 @@ O banco guarda o que a coleta lê da Câmara e do Senado e o que a newsletter us
 - **Cada Casa tem os seus números:** parlamentar, proposição e votação se identificam pela Casa e pelo id que a Casa dá (`casa`, `id_externo`). A mesma matéria tem uma linha em cada Casa, ligadas por sigla, número e ano.
 - **Fonte em tudo:** cada dado coletado e cada item da edição aponta para uma `fonte`, com o endereço e a data da coleta. Sem fonte, o banco não grava.
 - **O partido fica no voto,** porque muda dentro do mandato. Os totais de uma votação se contam pelos votos.
-- **Licença saúde:** o código "LS" do Senado entra só como `nao_votou`, sem o código, porque é dado de saúde.
+- **Ausência sem motivo:** toda ausência do Senado (atividade parlamentar, licença saúde...) entra como `nao_votou`, sem o código, para a licença saúde ficar igual às outras. O voto só guarda os códigos de voto e de presença da lista `CODIGOS_GRAVADOS`, e o banco recusa os demais. Um código novo entra como `outro`, sem o código, e vai para o log sem a pessoa.
 - **Quem assina** deixa só o e-mail, a data e o código do link de sair. Sair apaga a linha.
 
 ```mermaid
@@ -121,7 +121,7 @@ erDiagram
         int votacao_id PK, FK
         int parlamentar_id PK, FK
         string valor "sim, nao, abstencao, obstrucao, presidente, nao_votou ou outro"
-        string valor_bruto "o código da Casa, vazio só no LS"
+        string valor_bruto "o código da Casa, só os da lista"
         string partido "o do dia do voto"
         string uf "a do dia do voto"
         int fonte_id FK
