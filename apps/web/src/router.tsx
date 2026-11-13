@@ -2,7 +2,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 
-import Loader from "./components/loader";
+import { Carregando, TEMPOS_DO_CARREGANDO } from "./components/carregando";
 import { NaoEncontrado } from "./components/nao-encontrado";
 import { PaginaDeErro } from "./components/pagina-de-erro";
 import {
@@ -20,7 +20,11 @@ export const getRouter = () => {
 		scrollRestoration: true,
 		defaultPreloadStaleTime: 0,
 		context: { queryClient },
-		defaultPendingComponent: () => <Loader />,
+		// Quando a página demora, a frase "Carregando a página…" fica no lugar dela:
+		// numa navegação, depois de 1 s; no "Tentar de novo" da página de erro, na
+		// hora. Quando aparece, fica pelo menos 0,5 s (components/carregando.tsx).
+		defaultPendingComponent: Carregando,
+		...TEMPOS_DO_CARREGANDO,
 		defaultNotFoundComponent: NaoEncontrado,
 		// Quando uma página não chega (a rede caiu ou o servidor falhou), a página de
 		// erro aparece no lugar dela, dentro do site.

@@ -68,8 +68,8 @@ export function PaginaDeErro() {
 	}, [tentouAqui, avisar]);
 
 	// Pede a página de novo, sem recarregar: o que está salvo no navegador fica.
-	// Enquanto o pedido não volta, o router mostra o mesmo aviso de carregando das
-	// navegações.
+	// Enquanto o pedido não volta, o router mostra o carregando no lugar desta
+	// página, na hora, com o foco na frase (components/carregando.tsx).
 	async function tentarDeNovo() {
 		esquecerAoSairDaEntrada(router);
 		ultimaTentativa = chave;
