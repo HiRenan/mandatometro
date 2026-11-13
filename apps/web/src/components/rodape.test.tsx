@@ -37,14 +37,35 @@ describe("rodapé", () => {
 		);
 	});
 
-	it("é o cartão preto, com o foco amarelo e a tira de fitas fora do leitor de tela", () => {
+	it("tem o nome e o lema, e a fileira de azulejos fica fora do leitor de tela", () => {
 		render(<Rodape />);
 		const rodape = screen.getByRole("contentinfo");
+		const fileira = rodape.querySelector(".faixa-de-azulejos");
 
-		expect(rodape.classList.contains("moldura")).toBe(true);
-		expect(
-			rodape.querySelector(".tira-de-fitas")?.getAttribute("aria-hidden"),
-		).toBe("true");
+		expect(rodape.textContent).toContain("Mandatômetro");
+		expect(rodape.textContent).toContain(
+			"o diário oficial político, simplificado",
+		);
+		// O rodapé é de papel: o foco amarelo é só do cabeçalho, que é de tinta.
+		expect(rodape.classList.contains("moldura")).toBe(false);
+		expect(fileira?.getAttribute("aria-hidden")).toBe("true");
+		expect(fileira?.querySelectorAll(".az")).toHaveLength(16);
+	});
+
+	it("as cinco fitas aparecem juntas nos oito azulejos da fileira do celular", () => {
+		render(<Rodape />);
+		const pecas = [
+			...screen
+				.getByRole("contentinfo")
+				.querySelectorAll<HTMLElement>(".faixa-de-azulejos .az"),
+		].slice(0, 8);
+		const cores = pecas
+			.map((peca) => peca.getAttribute("style") ?? "")
+			.join(" ");
+
+		for (const fita of ["verde", "amarela", "azul", "rosa", "vermelha"]) {
+			expect(cores, fita).toContain(`var(--fita-${fita})`);
+		}
 	});
 
 	it("com a letra grande, fica com a largura da tela e as margens de 20 px", () => {

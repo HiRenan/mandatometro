@@ -12,42 +12,46 @@ function estaNaSecao(caminho: string, secao: string): boolean {
 		: caminho === secao || caminho.startsWith(`${secao}/`);
 }
 
-/** O cartão preto da folhinha, com o nome e o lema, e a tira de fitas embaixo. */
+/**
+ * O cabeçalho: o bloco de tinta com o nome, o lema em itálico e os links, e a
+ * tira das cinco fitas embaixo. É o que separa o cabeçalho da página clara (o
+ * Renan, na #89: "um header bem feito"). No celular, ficam só o nome e os links:
+ * o lema está no rodapé.
+ */
 export default function Header() {
 	const caminho = useRouterState({
 		select: (estado) => estado.location.pathname,
 	});
 
 	return (
-		<header className="moldura bg-tinta text-papel">
+		<header className="moldura">
 			<a
 				href="#conteudo"
 				className="bg-papel text-tinta sr-only font-bold focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-10 focus:px-4 focus:py-2"
 			>
 				Pular para o conteúdo
 			</a>
-			{/* No celular, o respiro fica em px, como as margens: com a letra grande, ele
-			    não cresce, e o nome e os links ganham o espaço (o Renan, na #48:
-			    "Espaço de hoje"). */}
-			<div className="px-margem-celular mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-x-8 gap-y-[12px] py-[16px] md:min-h-24 md:px-16 md:py-3">
-				<div className="flex flex-wrap items-baseline gap-x-5 gap-y-[4px]">
-					<Link to="/" className={`${NOME_DO_SITE} no-underline`}>
+			{/* No celular, as margens e o respiro ficam em px: com a letra grande, eles
+			    não crescem, e o nome e os links ganham o espaço (o Renan, na #48:
+			    "Ficam em 20 px" e "Espaço de hoje"). */}
+			<div className="topo-dentro px-margem-celular md:px-margem-larga gap-y-[4px] py-[8px]">
+				<div className="marca">
+					<Link to="/" className={NOME_DO_SITE}>
 						Mandatômetro
 					</Link>
-					<p className="text-[0.9375rem] font-medium md:text-[1.0625rem]">
-						o diário oficial político, simplificado
-					</p>
+					<p className="marca-lema">o diário oficial político, simplificado</p>
 				</div>
 				<nav aria-label="Principal">
-					<ul className="flex gap-7 md:gap-9">
+					<ul className="topo-links">
 						{links.map(({ to, label }) => (
 							<li key={to}>
-								{/* O traço marca a seção inteira, mas o link só diz que é a
-								    página atual (aria-current) na página dele: por isso o exact. */}
+								{/* O traço marca a seção inteira (data-na-secao), mas o link só
+								    diz que é a página atual (aria-current) na página dele: por
+								    isso o exact. */}
 								<Link
 									to={to}
 									activeOptions={{ exact: true }}
-									className={`hover:border-fita-amarela border-b-4 pb-1 text-[1.0625rem] font-bold no-underline md:text-[1.1875rem] ${estaNaSecao(caminho, to) ? "border-papel" : "border-transparent"}`}
+									data-na-secao={estaNaSecao(caminho, to) ? "" : undefined}
 								>
 									{label}
 								</Link>
@@ -56,7 +60,7 @@ export default function Header() {
 					</ul>
 				</nav>
 			</div>
-			<div aria-hidden="true" className="tira-de-fitas h-[18px]" />
+			<div aria-hidden="true" className="tira-de-fitas h-[6px]" />
 		</header>
 	);
 }

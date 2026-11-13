@@ -1,5 +1,6 @@
 @import "@mandatometro/ui/globals.css";
 @import "./estilos/azulejos.css";
+@import "./estilos/movimento.css";
 
 @theme {
 	/*
@@ -438,5 +439,216 @@
 		line-height: 1.2;
 		letter-spacing: calc(0.03em * var(--espacado));
 		text-transform: var(--caixa-alta);
+	}
+
+	/* ───── O cabeçalho ───── */
+
+	/*
+	 * O cabeçalho: um bloco de tinta, com a letra em papel e a tira das cinco fitas
+	 * embaixo, para se destacar da página clara. Nele, o foco aparece em amarelo.
+	 */
+	.moldura {
+		position: relative;
+		z-index: 5;
+		background: var(--tinta);
+		color: var(--papel);
+	}
+
+	.moldura :focus-visible {
+		outline-color: var(--fita-amarela);
+	}
+
+	/* Depois de uma navegação, o foco vai para o título da página nova, ou para o
+	   trecho do endereço, como o #caminho (__root.tsx e lib/foco.ts). Nenhum dos
+	   dois é um controle, então ficam sem o anel. */
+	#conteudo [tabindex="-1"]:focus {
+		outline: none;
+	}
+
+	.topo-dentro {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		column-gap: 1rem;
+		min-height: calc(var(--topo) - 6px);
+	}
+
+	.marca {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		column-gap: 0.9rem;
+	}
+
+	.marca a {
+		display: inline-flex;
+		align-items: center;
+		min-height: 2.75rem;
+		text-decoration: none;
+	}
+
+	/*
+	 * O nome do site, no cabeçalho e no rodapé (o Wordmark do DESIGN.md).
+	 * "Mandatômetro" é uma palavra só, que não quebra: com a letra grande, o nome
+	 * cresce até encostar nas margens, e para aí (o letra-com-teto).
+	 */
+	.nome-do-site {
+		--letra: 1.625rem;
+		font-family: var(--font-sans);
+		font-stretch: 68%;
+		font-weight: 900;
+		line-height: 1;
+		letter-spacing: 0.01em;
+		text-transform: uppercase;
+	}
+
+	.marca-lema {
+		font-family: var(--font-italica);
+		font-size: 1.125rem;
+		font-style: italic;
+		line-height: 1.2;
+		color: var(--papel-3);
+	}
+
+	.topo-links {
+		display: flex;
+		gap: 0.25rem;
+		margin-right: -0.9rem;
+	}
+
+	.topo-links a {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		min-height: 2.75rem;
+		padding: 0 0.9rem;
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		font-weight: 700;
+		line-height: 1;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		text-decoration: none;
+	}
+
+	/* O traço da seção: ele se risca quando o ponteiro passa e fica na seção aberta. */
+	.topo-links a::after {
+		content: "";
+		position: absolute;
+		right: 0.9rem;
+		bottom: 0.3rem;
+		left: 0.9rem;
+		height: 4px;
+		background: var(--papel);
+		transform: scaleX(0);
+		transform-origin: 0 50%;
+		transition: transform 0.35s var(--ease-golpe);
+	}
+
+	.topo-links a:hover::after,
+	.topo-links a[data-na-secao]::after {
+		transform: scaleX(1);
+	}
+
+	/*
+	 * No celular, o lema sai do cabeçalho (ele está no rodapé), e os links se
+	 * apertam. O respiro dos links fica em px, como as margens: com a letra grande,
+	 * ele não cresce, e o nome e os links ganham o espaço.
+	 */
+	@media (width < 48rem) {
+		.moldura .marca-lema {
+			display: none;
+		}
+
+		.topo-links {
+			margin-right: -10px;
+		}
+
+		.topo-links a {
+			padding: 0 10px;
+		}
+
+		.topo-links a::after {
+			right: 10px;
+			left: 10px;
+		}
+	}
+
+	@media (width < 30rem) {
+		.moldura .nome-do-site {
+			--letra: 1.3125rem;
+		}
+
+		.topo-links a {
+			letter-spacing: 0.05em;
+		}
+	}
+
+	/* ───── O rodapé ───── */
+
+	/* O rodapé: papel com fio de tinta, e uma fileira de azulejos embaixo, que faz
+	   a onda quando entra na tela. */
+	.rodape {
+		position: relative;
+		border-top: 2px solid var(--tinta);
+	}
+
+	.rodape-dentro {
+		gap: 1.5rem 3rem;
+		padding-top: clamp(2.5rem, 6vw, 4.5rem);
+	}
+
+	.rodape .nome-do-site {
+		--letra: clamp(2.25rem, 1.2rem + 3.6vw, 4.5rem);
+		line-height: 0.85;
+	}
+
+	.rodape .marca-lema {
+		display: block;
+		margin-top: 0.5rem;
+		font-size: 1.25rem;
+		color: var(--tinta-suave);
+	}
+
+	.rodape-texto {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+		max-width: 40rem;
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.5;
+		color: var(--tinta-suave);
+	}
+
+	/*
+	 * No rodapé, o link do código é texto corrido, com a letra do parágrafo. A área
+	 * de toque dele tem 12 px em cima e embaixo da letra: passa menos da linha que o
+	 * vão de 12 px entre os parágrafos, e um toque na linha de cima não vai para o link.
+	 */
+	.rodape-texto .acao-de-texto {
+		padding-block: 0.75rem;
+		color: var(--tinta);
+		font: inherit;
+		font-weight: 700;
+		letter-spacing: 0;
+		text-transform: none;
+	}
+
+	.faixa-de-azulejos {
+		position: relative;
+		margin-top: clamp(2rem, 5vw, 3.5rem);
+	}
+
+	/* No celular, a fileira tem os oito primeiros azulejos, que já têm as cinco fitas. */
+	@media (width < 48rem) {
+		.faixa-de-azulejos {
+			grid-template-columns: repeat(8, minmax(0, 1fr));
+		}
+
+		.faixa-de-azulejos .az:nth-child(n + 9) {
+			display: none;
+		}
 	}
 }

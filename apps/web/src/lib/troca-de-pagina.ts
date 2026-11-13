@@ -1,8 +1,10 @@
 /**
- * A troca de página, como na folhinha de parede: quem avança arranca a folha da
- * tela, e a página nova já está embaixo; quem volta põe a folha de volta no
- * bloco. Aqui fica só o sentido de cada troca, que o router passa ao navegador
- * como tipo da View Transition (router.tsx). O movimento fica no index.css.
+ * A troca de página: a página nova aparece azulejo por azulejo, num giro de
+ * relógio em cada peça; quem volta vê o giro ao contrário. As páginas ficam em
+ * ordem, como as folhas de um bloco: a inicial em cima, depois a lista das
+ * trilhas, cada trilha e os artigos dela. Aqui fica só o sentido de cada troca,
+ * que o router passa ao navegador como tipo da View Transition (router.tsx). O
+ * movimento fica em estilos/movimento.css.
  */
 
 export type Sentido = "avancar" | "voltar";
@@ -74,8 +76,8 @@ export function sentidoDaTroca(
 
 /**
  * Os tipos da View Transition de uma troca: `folha`, o sentido e, quando o
- * cartão preto do cabeçalho está na tela, `moldura-na-tela`, para ele ficar
- * parado enquanto a folha sai. Sem página de origem (a primeira carga) ou sem
+ * cabeçalho está na tela, `moldura-na-tela`, para ele ficar parado enquanto a
+ * página troca. Sem página de origem (a primeira carga) ou sem
  * mudar de página (um link para um trecho da mesma página, como #caminho), não
  * há troca de folha, e o `false` diz ao router para não animar.
  */
@@ -118,7 +120,7 @@ export function trilhaDoArtigoAberto(
 		?.trilha;
 }
 
-/** Se o cartão preto do cabeçalho aparece na tela, nem que seja um pedaço. */
+/** Se o cabeçalho aparece na tela, nem que seja um pedaço. */
 export function molduraNaTela(): boolean {
 	const moldura = document.querySelector("header.moldura");
 	return moldura ? moldura.getBoundingClientRect().bottom > 0 : false;

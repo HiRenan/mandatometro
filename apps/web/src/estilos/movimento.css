@@ -1,0 +1,357 @@
+/*
+ * O movimento do site (DESIGN.md): os azulejos viram, as palavras do título
+ * tombam no lugar, o que entra na tela sobe, e a página troca azulejo por
+ * azulejo. Tudo é CSS e a animação nativa do navegador, sem biblioteca.
+ *
+ * Cada animação parte de um estado de saída (o `from`) e chega ao estado normal
+ * da peça: onde a animação não roda, a peça aparece pronta. Com o movimento
+ * reduzido, nada vira nem sobe (o bloco do fim).
+ */
+
+/* O azulejo entra virando: ele começa de lado e gira até ficar de frente. */
+@keyframes vira {
+	from {
+		transform: rotateY(90deg);
+		filter: brightness(0.7);
+	}
+}
+
+/* A palavra do título tomba no lugar, como um azulejo assentado. */
+@keyframes palavra-tomba {
+	from {
+		opacity: 0;
+		transform: perspective(40rem) rotateX(-80deg) translateY(0.25em);
+	}
+}
+
+/* A tira das cinco fitas se risca embaixo da frase em itálico. */
+@keyframes risca {
+	from {
+		transform: scaleX(0);
+	}
+}
+
+/* O que entra sobe um pouco e aparece. */
+@keyframes sobe {
+	from {
+		opacity: 0;
+		transform: translateY(1.75rem);
+	}
+}
+
+/* O texto do passo entra de lado: da direita ao avançar, da esquerda ao voltar. */
+@keyframes passo-entra {
+	from {
+		opacity: 0;
+		transform: translateX(var(--de, 1.5rem));
+	}
+}
+
+/* O número do passo tomba no lugar. */
+@keyframes numero-tomba {
+	from {
+		opacity: 0;
+		transform: perspective(50rem) rotateX(-85deg);
+	}
+}
+
+/* O visto se desenha: a perna curta sai devagar, e a longa vai num golpe só. */
+@keyframes tracar {
+	from {
+		stroke-dasharray: 1;
+		stroke-dashoffset: 1;
+	}
+	to {
+		stroke-dasharray: 1;
+		stroke-dashoffset: 0;
+	}
+}
+
+/* A barra da leitura enche com a rolagem do texto. */
+@keyframes enche {
+	from {
+		transform: scaleX(0);
+	}
+	to {
+		transform: scaleX(1);
+	}
+}
+
+@layer components {
+	/* No painel, as peças entram em onda, da ponta de cima à esquerda para fora. */
+	.painel .az {
+		animation: vira 0.7s var(--ease-mola) both;
+		animation-delay: calc(0.08s + var(--i, 0) * 42ms);
+	}
+
+	/* Só as primeiras fileiras do mural entram virando: as de sobra quase nunca aparecem. */
+	.mural .az:nth-child(n + 45),
+	.faixa-de-azulejos .az {
+		animation: none;
+	}
+
+	/* O azulejo do artigo, no canto da folha, entra virando, peça por peça. */
+	.do-artigo .az {
+		animation: vira 0.7s var(--ease-mola) both;
+		animation-delay: calc(0.4s + var(--i, 0) * 90ms);
+	}
+
+	.seta {
+		transition: translate 0.25s var(--ease-mola);
+	}
+
+	a:hover .seta,
+	button:hover .seta {
+		translate: 0.3em 0;
+	}
+
+	/*
+	 * Os azulejos giram um quarto de volta quando o ponteiro passa pela folha, pela
+	 * faixa ou pela chamada deles, e quando o passo da sanfona abre. Na chamada do
+	 * quiz, giram em fila, um depois do outro.
+	 */
+	.da-linha,
+	.chamada-azulejos .grande,
+	.sanfona .grande,
+	.outros-artigos .grande {
+		transition: rotate 0.5s var(--ease-mola);
+	}
+
+	.chamada-azulejos .grande:nth-child(2) {
+		transition-delay: 50ms;
+	}
+
+	.chamada-azulejos .grande:nth-child(3) {
+		transition-delay: 100ms;
+	}
+
+	.chamada-azulejos .grande:nth-child(4) {
+		transition-delay: 150ms;
+	}
+
+	.chamada-azulejos .grande:nth-child(5) {
+		transition-delay: 200ms;
+	}
+
+	.chamada-azulejos .grande:nth-child(n + 6) {
+		transition-delay: 250ms;
+	}
+
+	/*
+	 * No passo a passo da página inicial, o azulejo sobe quando o ponteiro passa. O
+	 * do passo da vez fica no alto, sobre uma sombra de tinta, com ou sem o ponteiro.
+	 */
+	.passos-abas button:hover .grande {
+		translate: 0 -4px;
+	}
+
+	.passos-abas button[aria-current] .grande {
+		translate: 0 -8px;
+		box-shadow: 0 8px 0 var(--tinta);
+	}
+
+	.linha:hover .da-linha,
+	.trilha-da-lista:hover .da-linha,
+	.outros-artigos a:hover .grande,
+	.sanfona details[open] .grande,
+	.chamada-quiz:hover .chamada-azulejos .grande {
+		rotate: 90deg;
+	}
+
+	/* Na folha do artigo, o número chega um pouco para o lado. */
+	.linha:hover > .numeral {
+		translate: 0.35rem 0;
+	}
+
+	/*
+	 * No passo a passo, o passo da vez entra de lado, e o número dele tomba no
+	 * lugar. Só depois da primeira troca (o data-sentido): quando a página carrega,
+	 * o primeiro passo já está no lugar, parado.
+	 */
+	.palco-caminho[data-sentido] .passo[data-ativo] {
+		animation: passo-entra 0.5s var(--ease-suave) both;
+	}
+
+	.palco-caminho[data-sentido="volta"] .passo {
+		--de: -1.5rem;
+	}
+
+	.palco-caminho[data-sentido] .passo[data-ativo] > .numeral {
+		transform-origin: 50% 0;
+		animation: numero-tomba 0.65s 0.05s var(--ease-mola) both;
+	}
+
+	/*
+	 * O que entra na tela com a rolagem sobe e aparece, pela animação de rolagem do
+	 * CSS. Sem ela (e sem JavaScript), a peça já está no lugar: nada fica escondido
+	 * à espera de um script.
+	 */
+	@supports (animation-timeline: view()) {
+		.revelar {
+			animation: sobe linear both;
+			animation-timeline: view();
+			animation-range: entry 0% entry 45%;
+		}
+
+		/* A barra da leitura acompanha o texto do artigo: a linha da leitura fica a
+		   60% da altura da tela. */
+		.pagina-do-artigo {
+			timeline-scope: --leitura;
+		}
+
+		.pagina-do-artigo .texto {
+			view-timeline: --leitura block;
+			view-timeline-inset: 60% 40%;
+		}
+
+		.leitura-barra {
+			display: block;
+			animation: enche linear both;
+			animation-timeline: --leitura;
+			animation-range: cover 0% cover 100%;
+		}
+	}
+
+	/* O visto é desenhado uma vez, quando a pessoa chega ao fim do texto. */
+	.marca-de-lido[data-animar] path {
+		animation: tracar 400ms var(--ease-golpe) both;
+	}
+}
+
+/*
+ * A troca de página (lib/troca-de-pagina.ts): a página nova aparece azulejo por
+ * azulejo, num giro de relógio em cada peça, e a de antes fica parada embaixo.
+ * Ao voltar na trilha, o giro é ao contrário. O navegador fotografa a tela antes
+ * e depois da troca (View Transitions), e a máscara da foto nova é uma grade de
+ * azulejos que se abre com o ângulo --vt.
+ *
+ * O cabeçalho, quando aparece na tela, vai numa foto à parte, por cima, e não
+ * sai do lugar. Com a página rolada, ele vem com a página nova.
+ */
+@property --vt {
+	syntax: "<angle>";
+	inherits: false;
+	initial-value: 0deg;
+}
+
+html:active-view-transition-type(moldura-na-tela) header.moldura {
+	view-transition-name: moldura;
+}
+
+/*
+ * As fotos da troca não seguram o clique: o que a pessoa clica durante a troca
+ * vai para a página nova, que já está embaixo. Sem isto, um clique logo depois
+ * de uma navegação se perdia (o achado da revisão da #37).
+ */
+::view-transition {
+	pointer-events: none;
+}
+
+/* As duas fotos ficam uma sobre a outra, sem a mistura de luz do esmaecer padrão. */
+html:active-view-transition-type(folha)::view-transition-image-pair(root) {
+	isolation: auto;
+}
+
+html:active-view-transition-type(folha)::view-transition-old(root),
+html:active-view-transition-type(folha)::view-transition-new(root) {
+	mix-blend-mode: normal;
+}
+
+html:active-view-transition-type(folha)::view-transition-old(root) {
+	animation: fica 0.6s linear both;
+}
+
+html:active-view-transition-type(folha)::view-transition-new(root) {
+	animation: relogio 0.6s cubic-bezier(0.55, 0, 0.3, 1) both;
+	mask:
+		conic-gradient(from 0deg, #000 var(--vt), transparent 0) 0 0 /
+		max(12.5vw, 5.5rem) max(12.5vw, 5.5rem);
+}
+
+html:active-view-transition-type(voltar)::view-transition-new(root) {
+	mask:
+		conic-gradient(from 0deg, transparent calc(360deg - var(--vt)), #000 0) 0 0
+		/ max(12.5vw, 5.5rem) max(12.5vw, 5.5rem);
+}
+
+/*
+ * Com a página um pouco rolada, o cabeçalho desce até o lugar dele. A troca do
+ * traço do link da seção é um esmaecer curto.
+ */
+html:active-view-transition-type(folha)::view-transition-group(moldura) {
+	animation-duration: 420ms;
+	animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html:active-view-transition-type(folha)::view-transition-old(moldura),
+html:active-view-transition-type(folha)::view-transition-new(moldura) {
+	animation-duration: 200ms;
+}
+
+@keyframes relogio {
+	from {
+		--vt: 0deg;
+	}
+	to {
+		--vt: 360deg;
+	}
+}
+
+/* A foto de antes fica inteira até a nova cobrir a tela. */
+@keyframes fica {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes esmaecer {
+	to {
+		opacity: 0;
+	}
+}
+
+/*
+ * Menos movimento: nada vira, tomba nem sobe, e as peças aparecem no lugar. A
+ * página troca num esmaecer curto, nos dois sentidos, e o cabeçalho vai direto
+ * para o lugar. A barra da leitura sai.
+ */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		/* biome-ignore lint/complexity/noImportantStyles: o pedido de menos movimento vale mais que qualquer regra do site, inclusive as das peças de packages/ui. */
+		animation: none !important;
+		/* biome-ignore lint/complexity/noImportantStyles: idem. */
+		transition: none !important;
+	}
+
+	.leitura-barra {
+		display: none;
+	}
+
+	html:active-view-transition-type(folha)::view-transition-old(root) {
+		z-index: 1;
+		animation: esmaecer 160ms linear both;
+		mask: none;
+	}
+
+	html:active-view-transition-type(folha)::view-transition-new(root) {
+		z-index: auto;
+		animation: none;
+		mask: none;
+	}
+
+	html:active-view-transition-type(folha)::view-transition-group(root),
+	html:active-view-transition-type(folha)::view-transition-group(moldura),
+	html:active-view-transition-type(folha)::view-transition-old(moldura),
+	html:active-view-transition-type(folha)::view-transition-new(moldura) {
+		animation-duration: 160ms;
+	}
+
+	html:active-view-transition-type(folha)::view-transition-group(moldura) {
+		animation-name: none;
+	}
+}
