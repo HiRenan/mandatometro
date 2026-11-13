@@ -84,7 +84,9 @@ def _nao_grava(sessao, *objetos, regra: str) -> None:
 # --- As chaves e o que não pode faltar ---
 
 # Parlamentar, proposição e votação se identificam pela Casa e pelo id que a Casa dá: é a chave do
-# upsert da coleta (#10 e #11).
+# upsert da coleta (#10 e #11), que precisa da chave com exatamente essas colunas. Por isso o nome
+# da regra vai entre aspas, como o PostgreSQL o escreve: uma chave alargada, como a
+# uq_votacao_casa_id_externo_data, começa com o mesmo nome.
 CADA_CASA_TEM_OS_SEUS_NUMEROS = pytest.mark.parametrize(
     "criar", [_parlamentar, _proposicao, _votacao], ids=["parlamentar", "proposicao", "votacao"]
 )
@@ -99,7 +101,7 @@ def test_o_mesmo_id_vale_nas_duas_casas(sessao, criar):
 @CADA_CASA_TEM_OS_SEUS_NUMEROS
 def test_o_id_nao_se_repete_na_mesma_casa(sessao, criar):
     dado = criar()
-    _nao_grava(sessao, dado, criar(), regra=f"uq_{dado.__tablename__}_casa_id_externo")
+    _nao_grava(sessao, dado, criar(), regra=f'"uq_{dado.__tablename__}_casa_id_externo"')
 
 
 @CADA_CASA_TEM_OS_SEUS_NUMEROS
@@ -114,7 +116,7 @@ def test_o_parlamentar_tem_um_mandato_por_legislatura(sessao):
         sessao,
         _mandato(parlamentar),
         _mandato(parlamentar),
-        regra="uq_mandato_parlamentar_id_legislatura",
+        regra='"uq_mandato_parlamentar_id_legislatura"',
     )
 
 
