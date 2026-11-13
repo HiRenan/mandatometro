@@ -504,10 +504,10 @@
 		text-transform: uppercase;
 	}
 
+	/* O lema, batido à máquina, como um diário oficial. */
 	.marca-lema {
-		font-family: var(--font-italica);
-		font-size: 1.125rem;
-		font-style: italic;
+		font-family: var(--font-maquina);
+		font-size: 0.9375rem;
 		line-height: 1.2;
 		color: var(--papel-3);
 	}
@@ -553,15 +553,21 @@
 	}
 
 	/*
-	 * No celular, o lema sai do cabeçalho (ele está no rodapé), e os links se
-	 * apertam. O respiro dos links fica em px, como as margens: com a letra grande,
-	 * ele não cresce, e o nome e os links ganham o espaço.
+	 * O lema, em letra de máquina, é largo: abaixo de 864 px ele não cabe na linha
+	 * do nome e dos links, e sai do cabeçalho (ele está no rodapé).
 	 */
-	@media (width < 48rem) {
+	@media (width < 54rem) {
 		.moldura .marca-lema {
 			display: none;
 		}
+	}
 
+	/*
+	 * No celular, os links se apertam. O respiro dos links fica em px, como as
+	 * margens: com a letra grande, ele não cresce, e o nome e os links ganham o
+	 * espaço.
+	 */
+	@media (width < 48rem) {
 		.topo-links {
 			margin-right: -10px;
 		}
@@ -592,7 +598,7 @@
 	 * O cartaz, a abertura das páginas: a letra gigante em tinta sobre o papel, e o
 	 * painel de azulejos coloridos ao lado. No celular, o painel é uma faixa de duas
 	 * fileiras no alto. As palavras do título tombam no lugar, uma a uma, como
-	 * azulejos, e a tira das cinco fitas se risca embaixo da frase em itálico.
+	 * azulejos, e a tira das cinco fitas se risca embaixo da frase batida à máquina.
 	 *
 	 * As peças vão em coluna, e o título fica no pé: a margem de cima dele toma a
 	 * altura que sobra. O que vem antes do título (a migalha) fica no alto.
@@ -632,14 +638,14 @@
 		display: block;
 		width: fit-content;
 		max-width: 100%;
-		margin-top: 0.1em;
-		padding-bottom: 0.26em;
-		font-family: var(--font-italica);
-		font-size: 0.9em;
-		font-style: italic;
+		margin-top: 0.45em;
+		padding-bottom: 0.36em;
+		font-family: var(--font-maquina);
+		font-size: 0.4em;
+		font-style: normal;
 		font-weight: 400;
-		line-height: 0.95;
-		letter-spacing: -0.01em;
+		line-height: 1.12;
+		letter-spacing: -0.02em;
 		text-transform: none;
 	}
 
@@ -649,7 +655,8 @@
 		right: 0;
 		bottom: 0;
 		left: 0;
-		height: 0.075em;
+		/* A letra da frase é pequena: no celular, a tira não fica mais fina que 3 px. */
+		height: max(3px, 0.075em);
 		background: var(--tira);
 		transform-origin: 0 50%;
 		animation: risca 0.9s 0.8s var(--ease-golpe) both;
@@ -2194,7 +2201,6 @@
 	.rodape .marca-lema {
 		display: block;
 		margin-top: 0.5rem;
-		font-size: 1.25rem;
 		color: var(--tinta-suave);
 	}
 

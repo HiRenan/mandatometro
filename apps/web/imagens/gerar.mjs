@@ -1,7 +1,7 @@
 // Gera o ícone da aba e a prévia do link a partir de icone.html e previa.html,
 // no Edge ou no Chrome sem janela, pelo protocolo de depuração do navegador,
-// sem dependência nova. As fontes são as do site (a Archivo e a Instrument
-// Serif itálica do @mandatometro/ui), embutidas no HTML. Cada PNG leva dentro
+// sem dependência nova. As fontes são as do site (a Archivo e a Courier
+// Prime do @mandatometro/ui), embutidas no HTML. Cada PNG leva dentro
 // dele de onde veio.
 //
 // Uso: pnpm --filter web imagens
@@ -75,9 +75,9 @@ function fontes() {
 			"@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2",
 		),
 	).toString("base64");
-	const italica = readFileSync(
+	const maquina = readFileSync(
 		doUi.resolve(
-			"@fontsource/instrument-serif/files/instrument-serif-latin-400-italic.woff2",
+			"@fontsource/courier-prime/files/courier-prime-latin-400-normal.woff2",
 		),
 	).toString("base64");
 	return `@font-face {
@@ -89,11 +89,11 @@ function fontes() {
 		src: url(data:font/woff2;base64,${archivo}) format("woff2-variations");
 	}
 	@font-face {
-		font-family: "Instrument Serif";
-		font-style: italic;
+		font-family: "Courier Prime";
+		font-style: normal;
 		font-display: block;
 		font-weight: 400;
-		src: url(data:font/woff2;base64,${italica}) format("woff2");
+		src: url(data:font/woff2;base64,${maquina}) format("woff2");
 	}`;
 }
 
@@ -193,12 +193,12 @@ async function fotografar(navegador, html, largura, altura) {
 	const { result } = await enviar("Runtime.evaluate", {
 		expression: `Promise.all([
 				document.fonts.load('900 16px "Archivo Variable"'),
-				document.fonts.load('italic 400 16px "Instrument Serif"'),
+				document.fonts.load('400 16px "Courier Prime"'),
 			])
 			.then(() => document.fonts.ready)
 			.then(() => new Promise((pronto) => requestAnimationFrame(() => requestAnimationFrame(pronto))))
 			.then(() => document.fonts.check('900 16px "Archivo Variable"')
-				&& document.fonts.check('italic 400 16px "Instrument Serif"'))`,
+				&& document.fonts.check('400 16px "Courier Prime"'))`,
 		awaitPromise: true,
 		returnByValue: true,
 	});

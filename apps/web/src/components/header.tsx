@@ -13,10 +13,10 @@ function estaNaSecao(caminho: string, secao: string): boolean {
 }
 
 /**
- * O cabeçalho: o bloco de tinta com o nome, o lema em itálico e os links, e a
- * tira das cinco fitas embaixo. É o que separa o cabeçalho da página clara (o
- * Renan, na #89: "um header bem feito"). No celular, ficam só o nome e os links:
- * o lema está no rodapé.
+ * O cabeçalho: o bloco de tinta com o nome, o lema em letra de máquina e os
+ * links, e a tira das cinco fitas embaixo. É o que separa o cabeçalho da página
+ * clara (o Renan, na #89: "um header bem feito"). Abaixo de 864 px, ficam só o
+ * nome e os links: o lema, que é largo, está no rodapé.
  */
 export default function Header() {
 	const caminho = useRouterState({

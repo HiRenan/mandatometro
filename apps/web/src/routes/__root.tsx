@@ -66,11 +66,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 			{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
 			// As fontes são pedidas junto com o CSS: chegam antes de o texto aparecer, e
 			// o texto não pula quando elas trocam a fonte reserva. Todas as páginas usam
-			// as duas primeiras. A do itálico é a do lema, que só aparece no cabeçalho a
-			// partir do md: no celular, só a página inicial pede essa fonte, para a frase
-			// do título (routes/index.tsx).
+			// as duas primeiras. A de máquina é a do lema, que só aparece no cabeçalho a
+			// partir de 864 px (54rem, no index.css): abaixo disso, só a página inicial
+			// pede essa fonte, para a frase do título (routes/index.tsx).
 			...[fontes.archivo, fontes.literata].map((href) => preloadDaFonte(href)),
-			preloadDaFonte(fontes.italica, "(min-width: 48rem)"),
+			preloadDaFonte(fontes.maquina, "(min-width: 54rem)"),
 		],
 	}),
 

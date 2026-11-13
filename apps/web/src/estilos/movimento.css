@@ -24,7 +24,7 @@
 	}
 }
 
-/* A tira das cinco fitas se risca embaixo da frase em itálico. */
+/* A tira das cinco fitas se risca embaixo da frase do cartaz. */
 @keyframes risca {
 	from {
 		transform: scaleX(0);

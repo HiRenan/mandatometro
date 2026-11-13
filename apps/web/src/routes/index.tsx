@@ -8,9 +8,10 @@ export const Route = createFileRoute("/")({
 	loader: () => buscarInicio(),
 	head: ({ loaderData, match }) => ({
 		meta: loaderData ? metaDaInicial() : metaSemPagina(match),
-		// A frase em itálico do título usa a fonte do lema. A partir do md, a rota
-		// raiz já pede essa fonte, para o cabeçalho; no celular, só esta página usa.
-		links: [preloadDaFonte(fontes.italica, "(max-width: 47.99rem)")],
+		// A frase do título usa a letra de máquina do lema. A partir de 864 px, a
+		// rota raiz já pede essa fonte, para o cabeçalho; abaixo disso, só esta
+		// página usa.
+		links: [preloadDaFonte(fontes.maquina, "(max-width: 53.99rem)")],
 	}),
 	component: Inicio,
 });

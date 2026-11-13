@@ -8,8 +8,8 @@ import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "./botao-continuar";
 import { InfograficoEmLinha } from "./infografico-em-linha";
 import { Palavras } from "./palavras";
 
-// O título em duas linhas: a de cima, na letra do cartaz; a de baixo, em itálico,
-// com a tira das cinco fitas riscada embaixo.
+// O título em duas linhas: a de cima, na letra do cartaz; a de baixo, em letra de
+// máquina, com a tira das cinco fitas riscada embaixo.
 const TITULO = "Entenda a política brasileira,";
 const FRASE = "um passo de cada vez.";
 
