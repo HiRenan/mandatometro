@@ -63,7 +63,47 @@ function controlesDaLinha(botao: HTMLElement): Element[] {
 	return [...linha.querySelectorAll("a, button, input, summary")];
 }
 
+/** Os textos das cópias invisíveis que guardam o lugar do botão de continuar. */
+function reservasDoBotao(): (string | undefined)[] {
+	const lugar = document.querySelector(".cartaz-acao .lugar-do-botao");
+	if (!lugar) {
+		throw new Error("o botão de continuar ficou sem o lugar dele");
+	}
+	return [
+		...lugar.querySelectorAll("span.botao.invisible[aria-hidden=true]"),
+	].map((reserva) => reserva.textContent?.trim());
+}
+
 describe("página da trilha", () => {
+	// O servidor não sabe o que a pessoa leu, e manda "Começar pelo primeiro
+	// artigo". No celular, o botão fica em cima da lista dos artigos: se o lugar
+	// dele não guardasse a altura do texto mais alto, a lista pulava quando o
+	// botão trocava de texto ou sumia, depois que o JavaScript carrega.
+	it("guarda o lugar do botão de continuar com todos os textos que ele pode ter", async () => {
+		abrir([]);
+		const botao = await screen.findByRole("link", {
+			name: "Começar pelo primeiro artigo",
+		});
+		const artigos = acharTrilha(trilhas, TRILHA)?.artigos ?? [];
+
+		expect(artigos.length).toBeGreaterThan(0);
+		expect(botao.closest(".lugar-do-botao")).toBeTruthy();
+		expect(reservasDoBotao()).toEqual([
+			"Começar pelo primeiro artigo",
+			...artigos.map((artigo) => `Continuar de onde parou: ${artigo.titulo}`),
+		]);
+	});
+
+	it("com a trilha terminada, o botão de continuar some, e o lugar dele fica", async () => {
+		abrir(ARTIGOS);
+		await screen.findByText("Você terminou a trilha.");
+
+		expect(
+			screen.queryByRole("link", { name: /^(Começar|Continuar) / }),
+		).toBeNull();
+		expect(reservasDoBotao().length).toBeGreaterThan(1);
+	});
+
 	it("num clique duplo no Recomeçar a trilha, a trilha recomeça, e o Desfazer funciona com um clique depois", async () => {
 		abrir(ARTIGOS.slice(0, 2));
 		const botao = await screen.findByRole("button", {

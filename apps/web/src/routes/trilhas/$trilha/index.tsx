@@ -8,6 +8,7 @@ import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "@/components/botao-continuar";
 import { Caminho } from "@/components/caminho";
 import { ChamadaDoQuiz } from "@/components/chamada-do-quiz";
 import { Infografico } from "@/components/infografico";
+import { LugarDoBotao } from "@/components/lugar-do-botao";
 import { MarcaDeLido } from "@/components/marca-de-lido";
 import { Palavras } from "@/components/palavras";
 import { azulejoDaPosicao, sementeDe } from "@/lib/azulejos";
@@ -36,6 +37,11 @@ export const Route = createFileRoute("/trilhas/$trilha/")({
 	component: PaginaDaTrilha,
 });
 
+// Os textos do botão de continuar: o da primeira visita e o de quem já leu algum
+// artigo da trilha.
+const COMECAR = "Começar pelo primeiro artigo";
+const continuarEm = (titulo: string) => `Continuar de onde parou: ${titulo}`;
+
 function PaginaDaTrilha() {
 	const trilha = Route.useLoaderData();
 	const lidos = useArtigosLidos();
@@ -50,6 +56,12 @@ function PaginaDaTrilha() {
 		(soma, artigo) => soma + artigo.minutos,
 		0,
 	);
+	// Os textos que o botão de continuar pode ter nesta trilha: o servidor manda
+	// o primeiro, e o navegador troca pelo do artigo em que a pessoa parou.
+	const textosDoBotao = [
+		COMECAR,
+		...trilha.artigos.map((artigo) => continuarEm(artigo.titulo)),
+	];
 	const progresso =
 		quantosLidos === 0 && apagadas
 			? "Você recomeçou a trilha."
@@ -110,7 +122,7 @@ function PaginaDaTrilha() {
 					{/* O "Recomeçar a trilha" fica embaixo da descrição, com a linha
 					    reservada desde o HTML do servidor. Ali, ele não muda de lugar
 					    quando vira "Desfazer", e nada aparece no lugar dele: o botão de
-					    continuar, que muda de tamanho e some com a trilha terminada, fica
+					    continuar, que muda de texto e some com a trilha terminada, fica
 					    na outra coluna e, no celular, embaixo. Num clique duplo, o segundo
 					    clique fica de fora (lib/clique.ts) e, se passasse, cairia no mesmo
 					    botão. */}
@@ -130,24 +142,29 @@ function PaginaDaTrilha() {
 						    servidor: quando o progresso aparece, depois da hidratação, o
 						    botão fica no lugar. */}
 						<p className="progresso rotulo">{progresso}</p>
-						{ondeParou && (
-							<Link
-								to="/trilhas/$trilha/$artigo"
-								params={{ trilha: trilha.slug, artigo: ondeParou.slug }}
-								className={BOTAO_CONTINUAR}
-							>
-								{quantosLidos > 0
-									? `Continuar de onde parou: ${ondeParou.titulo}`
-									: "Começar pelo primeiro artigo"}
-								{/* O espaço antes da seta: com a letra grande, quando ela desce
-								    sozinha, começa alinhada com o texto (o SETA_DO_BOTAO). */}{" "}
-								<ArrowRight
-									aria-hidden="true"
-									className={SETA_DO_BOTAO}
-									strokeWidth={2.5}
-								/>
-							</Link>
-						)}
+						{/* O lugar do botão guarda a altura do texto mais alto que ele pode
+						    ter: no celular, a faixa e a lista dos artigos não sobem quando
+						    o botão some, com a trilha terminada, nem descem quando o texto
+						    dele ganha uma linha. */}
+						<LugarDoBotao textos={textosDoBotao}>
+							{ondeParou && (
+								<Link
+									to="/trilhas/$trilha/$artigo"
+									params={{ trilha: trilha.slug, artigo: ondeParou.slug }}
+									className={BOTAO_CONTINUAR}
+								>
+									{quantosLidos > 0 ? continuarEm(ondeParou.titulo) : COMECAR}
+									{/* O espaço antes da seta: com a letra grande, quando ela
+									    desce sozinha, começa alinhada com o texto (o
+									    SETA_DO_BOTAO). */}{" "}
+									<ArrowRight
+										aria-hidden="true"
+										className={SETA_DO_BOTAO}
+										strokeWidth={2.5}
+									/>
+								</Link>
+							)}
+						</LugarDoBotao>
 					</div>
 				</div>
 				<p className="faixa rotulo">

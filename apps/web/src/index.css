@@ -712,11 +712,30 @@
 	 * A linha do "Recomeçar a trilha", embaixo da descrição, com a altura reservada.
 	 * O que vem antes dela não muda com o progresso: o botão fica no mesmo lugar
 	 * quando vira "Desfazer", e nenhum outro controle aparece ali. O botão de
-	 * continuar, que muda de tamanho e some com a trilha terminada, vem depois.
+	 * continuar, que muda de texto e some com a trilha terminada, vem depois.
 	 */
 	.recomeco {
 		display: flex;
 		min-height: 1.25rem;
+	}
+
+	/*
+	 * O lugar de um botão que muda de texto depois que o JavaScript carrega: o de
+	 * continuar a trilha e o de começar o quiz (components/lugar-do-botao.tsx). Cada
+	 * texto que o botão pode ter vem no HTML do servidor, numa cópia invisível, e
+	 * todos ficam empilhados na mesma célula: o lugar tem sempre a altura do texto
+	 * mais alto, com a letra e a largura que a tela tiver. Quando o botão troca de
+	 * texto, aparece ou some, nada embaixo dele muda de lugar.
+	 */
+	.lugar-do-botao {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		justify-items: start;
+		align-items: start;
+	}
+
+	.lugar-do-botao > * {
+		grid-area: 1 / 1;
 	}
 
 	/* O cartaz das páginas de dentro: mais baixo, com a letra ainda maior. */
