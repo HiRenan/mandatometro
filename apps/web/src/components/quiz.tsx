@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useId, useState, useSyncExternalStore } from "react";
+import { semCliqueDuplo } from "@/lib/clique";
 import type { PerguntaNaPagina, QuizNaPagina } from "@/lib/conteudo";
 import { semQuebrarCitacao } from "@/lib/formatar";
 import {
@@ -83,6 +84,7 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 	}
 
 	// O mesmo botão faz as duas coisas, e o foco fica nele quando uma vira a outra.
+	// Num clique duplo, o segundo clique fica de fora (lib/clique.ts).
 	const acao = recomecou
 		? { texto: "Desfazer", fazer: desfazer }
 		: respondidas > 0
@@ -110,7 +112,11 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 			</p>
 			<div className="mt-3 flex min-h-13 flex-wrap items-center gap-x-6 gap-y-4">
 				{acao && (
-					<button type="button" onClick={acao.fazer} className="acao-de-texto">
+					<button
+						type="button"
+						onClick={semCliqueDuplo(acao.fazer)}
+						className="acao-de-texto"
+					>
 						{acao.texto}
 					</button>
 				)}

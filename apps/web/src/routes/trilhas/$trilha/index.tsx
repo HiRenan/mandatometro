@@ -7,6 +7,7 @@ import { Caminho } from "@/components/caminho";
 import { ChamadaDoQuiz } from "@/components/chamada-do-quiz";
 import { Infografico } from "@/components/infografico";
 import { MarcaDeLido } from "@/components/marca-de-lido";
+import { semCliqueDuplo } from "@/lib/clique";
 import { buscarTrilha } from "@/lib/conteudo";
 import { corDaFita, fraseDoProgresso, plural } from "@/lib/formatar";
 import { metaDaPagina, metaSemPagina } from "@/lib/meta";
@@ -61,6 +62,7 @@ function PaginaDaTrilha() {
 	}
 
 	// O mesmo botão faz as duas coisas, e o foco fica nele quando uma vira a outra.
+	// Num clique duplo, o segundo clique fica de fora (lib/clique.ts).
 	const acao = apagadas
 		? { texto: "Desfazer", fazer: desfazer }
 		: quantosLidos > 0
@@ -119,7 +121,7 @@ function PaginaDaTrilha() {
 						{acao && (
 							<button
 								type="button"
-								onClick={acao.fazer}
+								onClick={semCliqueDuplo(acao.fazer)}
 								className="acao-de-texto"
 							>
 								{acao.texto}
