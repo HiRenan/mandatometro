@@ -588,6 +588,31 @@ describe("o quiz", () => {
 		);
 	});
 
+	// O mosaico é desenho e não conta acertos: o azulejo de uma pergunta ganha cor
+	// quando ela é respondida, do mesmo jeito com a resposta certa e com a errada.
+	it.each([
+		["errada", "Não. Só quem tem mandato pode propor uma lei."],
+		["certa", "Pode, pela iniciativa popular."],
+	])(
+		"pinta o azulejo do mosaico da pergunta respondida, com a resposta %s",
+		async (_qual, resposta) => {
+			await mostrar();
+			// As peças sem cor de cada azulejo do mosaico, na ordem das perguntas.
+			const crus = () =>
+				[...document.querySelectorAll(".mosaico .grande")].map(
+					(azulejo) => azulejo.querySelectorAll(".az.cru").length,
+				);
+			// Na abertura, o mosaico é a capa, inteiro e em cor.
+			expect(crus()).toEqual([0, 0]);
+
+			comecar();
+			expect(crus()).toEqual([4, 4]);
+
+			escolherEResponder(resposta);
+			expect(crus()).toEqual([0, 4]);
+		},
+	);
+
 	it("passa para a pergunta seguinte, sem nada marcado e com o foco no enunciado dela", async () => {
 		await mostrar();
 		comecar();

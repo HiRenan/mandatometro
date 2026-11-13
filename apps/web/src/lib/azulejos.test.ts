@@ -30,6 +30,20 @@ describe("azulejos", () => {
 		}
 	});
 
+	it("nenhum azulejo grande leva duas fitas, em nenhuma cor e em nenhum desenho", () => {
+		// As posições dão a volta: doze cores e dez desenhos passam por todos, duas vezes.
+		for (let cor = 0; cor < 12; cor++) {
+			for (let desenho = 0; desenho < 10; desenho++) {
+				for (const { fundo, desenho: traco } of azulejoGrande(desenho, cor)) {
+					expect(
+						ehFita(fundo) && ehFita(traco),
+						`cor ${cor}, desenho ${desenho}: ${fundo} e ${traco}`,
+					).toBe(false);
+				}
+			}
+		}
+	});
+
 	it("nenhum azulejo tem o desenho da cor do fundo", () => {
 		for (const [fundo, desenho] of PARES) {
 			expect(fundo).not.toBe(desenho);

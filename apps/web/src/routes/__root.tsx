@@ -10,6 +10,7 @@ import {
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { type ReactNode, useEffect } from "react";
 
+import { CliqueNaTroca } from "../components/clique-na-troca";
 import Header from "../components/header";
 import { Rodape } from "../components/rodape";
 import { ENV } from "../env";
@@ -22,7 +23,6 @@ import {
 	TITULO_DE_ERRO,
 	TITULO_NAO_ENCONTRADA,
 } from "../lib/meta";
-import { cliqueDuranteATroca } from "../lib/troca-de-pagina";
 
 export interface RouterAppContext {
 	queryClient: QueryClient;
@@ -104,6 +104,8 @@ function Documento({ children }: { children: ReactNode }) {
 					<Rodape />
 				</div>
 				<FocoNaPaginaNova />
+				{/* O clique feito durante a troca de página chega à página nova
+				    (components/clique-na-troca.tsx). */}
 				<CliqueNaTroca />
 				<Toaster richColors />
 				<TanStackRouterDevtools position="bottom-left" />
@@ -130,16 +132,6 @@ function FocoNaPaginaNova() {
 			}),
 		[router],
 	);
-
-	return null;
-}
-
-/**
- * O clique feito enquanto a página troca chega à página nova, em vez de se
- * perder (lib/troca-de-pagina.ts).
- */
-function CliqueNaTroca() {
-	useEffect(() => cliqueDuranteATroca(), []);
 
 	return null;
 }
