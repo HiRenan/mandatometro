@@ -343,6 +343,31 @@ describe("o quiz, no HTML do servidor", () => {
 		expect(semJavaScript.textContent).not.toMatch(/Você (acertou|errou)/);
 	});
 
+	it("guarda o lugar do Começar com os três textos que o botão pode ter, escondidos e sem botão", async () => {
+		const { daPagina } = await htmlDoServidor();
+		const lugar = daPagina.querySelector(".quiz-comeco");
+		const reservas = [...(lugar?.children ?? [])];
+
+		// "Rever as respostas" vai em duas linhas no celular com a letra grande. Com
+		// os três textos no mesmo lugar da grade, invisíveis, o lugar já tem a altura
+		// do mais alto, e nada desce quando o botão aparece, depois do JavaScript.
+		expect(lugar?.classList.contains("lugar-do-botao")).toBe(true);
+		expect(reservas.map((reserva) => reserva.textContent?.trim())).toEqual([
+			"Começar",
+			"Continuar",
+			"Rever as respostas",
+		]);
+		expect(
+			reservas.every(
+				(reserva) =>
+					reserva.tagName === "SPAN" &&
+					reserva.getAttribute("aria-hidden") === "true" &&
+					reserva.classList.contains("botao") &&
+					reserva.classList.contains("invisible"),
+			),
+		).toBe(true);
+	});
+
 	it("guarda a altura da frase mais alta do andamento, escondida do leitor de tela", async () => {
 		const { daPagina } = await htmlDoServidor();
 		const reservas = [

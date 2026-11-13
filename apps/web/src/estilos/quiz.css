@@ -138,11 +138,8 @@
 		animation: sobe 0.8s 0.15s var(--ease-suave) both;
 	}
 
-	/* A linha do "Começar", com a altura do botão reservada. */
-	.quiz-comeco {
-		display: flex;
-		min-height: 3.25rem;
-	}
+	/* A linha do "Começar" é um lugar-do-botao (index.css): guarda a altura do
+	   texto mais alto que o botão pode ter. */
 
 	/* ───── A pergunta ───── */
 
@@ -683,7 +680,7 @@
 		}
 
 		.quiz-pe,
-		.quiz-comeco {
+		.quiz .quiz-comeco {
 			display: none;
 		}
 	}

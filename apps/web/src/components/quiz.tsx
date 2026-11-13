@@ -38,6 +38,7 @@ import { AzulejoGrande } from "./azulejo";
 import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "./botao-continuar";
 import { Caminho } from "./caminho";
 import { ListaDeFontes } from "./fontes";
+import { LugarDoBotao } from "./lugar-do-botao";
 import { OutrosArtigos } from "./outros-artigos";
 
 /*
@@ -59,6 +60,16 @@ const SAIDA: Record<Tela, number> = { abertura: 520, pergunta: 440, fim: 440 };
 
 /** A letra de cada opção, que é só desenho: o leitor de tela diz a posição. */
 const LETRAS = "ABCDEFGHIJ";
+
+/**
+ * Os textos do botão que leva às perguntas: sem resposta, com o quiz pela
+ * metade e com o quiz terminado. O lugar do botão guarda a altura do mais alto.
+ */
+const TEXTOS_DO_COMECO = [
+	"Começar",
+	"Continuar",
+	"Rever as respostas",
+] as const;
 
 /** O título de cada tela, que recebe o foco quando ela aparece. */
 const TITULOS = {
@@ -338,10 +349,10 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 			className={classes(BOTAO_CONTINUAR, vazado && "vazado")}
 		>
 			{respondidas === 0
-				? "Começar"
+				? TEXTOS_DO_COMECO[0]
 				: respondidas < total
-					? "Continuar"
-					: "Rever as respostas"}{" "}
+					? TEXTOS_DO_COMECO[1]
+					: TEXTOS_DO_COMECO[2]}{" "}
 			<ArrowRight
 				aria-hidden="true"
 				className={SETA_DO_BOTAO}
@@ -416,9 +427,13 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 							</p>
 							{recomeco}
 							{/* O "Começar" só funciona com JavaScript, e por isso só aparece
-							    depois que ele carrega. A linha tem a altura reservada desde
-							    o HTML do servidor, e nada sai do lugar. */}
-							<p className="quiz-comeco">{hidratado && comeco(false)}</p>
+							    depois que ele carrega. O lugar dele guarda, desde o HTML do
+							    servidor, a altura do texto mais alto que o botão pode ter
+							    ("Rever as respostas" vai em duas linhas no celular, com a
+							    letra grande), e nada sai do lugar. */}
+							<LugarDoBotao textos={TEXTOS_DO_COMECO} className="quiz-comeco">
+								{hidratado && comeco(false)}
+							</LugarDoBotao>
 						</div>
 					)}
 
