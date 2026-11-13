@@ -268,6 +268,19 @@ describe("lerTrilhas", () => {
 			).toThrow(/processo-legislativo.*trilha\.md/);
 		});
 
+		it("quando há texto embaixo do cabeçalho do trilha.md", () => {
+			expect(() =>
+				lerTrilhas({
+					[`${pasta}/trilha.md`]: `${trilhaMd}\nUm texto que não aparece na página.\n`,
+					[`${pasta}/primeiro.md`]: artigoMd(),
+				}),
+			).toThrow(
+				new ErroDeConteudo([
+					"conteudo/trilhas/processo-legislativo/trilha.md: o trilha.md é só o cabeçalho, e o texto embaixo dele não aparece na página",
+				]),
+			);
+		});
+
 		it("quando a trilha não tem artigos", () => {
 			expect(() => lerTrilhas({ [`${pasta}/trilha.md`]: trilhaMd })).toThrow(
 				/processo-legislativo.*nenhum artigo/,

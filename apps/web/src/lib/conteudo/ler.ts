@@ -382,7 +382,13 @@ export function lerTrilhas(arquivos: Record<string, string>): Trilha[] {
 			continue;
 		}
 
+		// O trilha.md é só o cabeçalho: um texto embaixo dele não aparece na página.
 		if (arquivo === "trilha") {
+			if (lido.corpo !== "") {
+				avisar(
+					"o trilha.md é só o cabeçalho, e o texto embaixo dele não aparece na página",
+				);
+			}
 			const trilha = validar(trilhaSchema, lido.dados);
 			if (trilha.ok) {
 				trilhas.set(pasta, { slug: pasta, ...trilha.valor });
