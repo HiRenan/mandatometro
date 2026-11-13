@@ -8,7 +8,7 @@ from datetime import UTC, date, datetime
 from uuid import UUID
 
 import pytest
-from sqlalchemy import delete, select
+from sqlalchemy import delete, null, select
 from sqlalchemy.exc import IntegrityError
 
 from mandatometro.db.modelos import (
@@ -17,7 +17,9 @@ from mandatometro.db.modelos import (
     Fonte,
     Inscrito,
     ItemEdicao,
+    Mandato,
     Parlamentar,
+    Proposicao,
     Votacao,
     Voto,
     normalizar_resultado,
@@ -35,9 +37,21 @@ def _parlamentar(id_externo: int = 1, casa: str = "camara") -> Parlamentar:
     )
 
 
-def _votacao() -> Votacao:
+def _mandato(parlamentar: Parlamentar) -> Mandato:
+    return Mandato(
+        parlamentar=parlamentar, legislatura=57, uf="SC", em_exercicio=True, fonte=_fonte()
+    )
+
+
+def _proposicao(id_externo: int = 1, casa: str = "camara") -> Proposicao:
+    return Proposicao(
+        casa=casa, id_externo=id_externo, sigla="PL", numero=1, ano=2026, fonte=_fonte()
+    )
+
+
+def _votacao(casa: str = "camara") -> Votacao:
     return Votacao(
-        casa="camara",
+        casa=casa,
         id_externo="1-1",
         data=date(2026, 11, 5),
         descricao="Aprovado o projeto de exemplo.",
@@ -69,28 +83,64 @@ def _nao_grava(sessao, *objetos, regra: str) -> None:
 
 # --- As chaves e o que não pode faltar ---
 
+# Parlamentar, proposição e votação se identificam pela Casa e pelo id que a Casa dá: é a chave do
+# upsert da coleta (#10 e #11).
+CADA_CASA_TEM_OS_SEUS_NUMEROS = pytest.mark.parametrize(
+    "criar", [_parlamentar, _proposicao, _votacao], ids=["parlamentar", "proposicao", "votacao"]
+)
 
-def test_o_mesmo_id_vale_nas_duas_casas(sessao):
-    sessao.add_all([_parlamentar(5672, "camara"), _parlamentar(5672, "senado")])
+
+@CADA_CASA_TEM_OS_SEUS_NUMEROS
+def test_o_mesmo_id_vale_nas_duas_casas(sessao, criar):
+    sessao.add_all([criar(casa="camara"), criar(casa="senado")])
     sessao.flush()
 
 
-def test_o_id_nao_se_repete_na_mesma_casa(sessao):
-    _nao_grava(
-        sessao, _parlamentar(5672), _parlamentar(5672), regra="uq_parlamentar_casa_id_externo"
-    )
+@CADA_CASA_TEM_OS_SEUS_NUMEROS
+def test_o_id_nao_se_repete_na_mesma_casa(sessao, criar):
+    dado = criar()
+    _nao_grava(sessao, dado, criar(), regra=f"uq_{dado.__tablename__}_casa_id_externo")
 
 
-def test_a_casa_e_camara_ou_senado(sessao):
-    _nao_grava(sessao, _parlamentar(1, "assembleia"), regra="ck_parlamentar_casa")
+@CADA_CASA_TEM_OS_SEUS_NUMEROS
+def test_a_casa_e_camara_ou_senado(sessao, criar):
+    dado = criar(casa="assembleia")
+    _nao_grava(sessao, dado, regra=f"ck_{dado.__tablename__}_casa")
 
 
-def test_dado_coletado_sem_fonte_nao_grava(sessao):
+def test_o_parlamentar_tem_um_mandato_por_legislatura(sessao):
+    parlamentar = _parlamentar()
     _nao_grava(
         sessao,
-        Parlamentar(casa="camara", id_externo=1, nome="Parlamentar Inventado"),
-        regra='"fonte_id"',
+        _mandato(parlamentar),
+        _mandato(parlamentar),
+        regra="uq_mandato_parlamentar_id_legislatura",
     )
+
+
+@pytest.mark.parametrize("campo", ["url", "coletado_em"])
+def test_a_fonte_tem_o_endereco_e_a_data_da_coleta(sessao, campo):
+    # O null(), e não o None: a coletado_em tem valor padrão, e o ORM tiraria o None do INSERT.
+    fonte = _fonte()
+    setattr(fonte, campo, null())
+    _nao_grava(sessao, fonte, regra=f'"{campo}" of relation "fonte"')
+
+
+@pytest.mark.parametrize(
+    "criar",
+    [
+        _parlamentar,
+        lambda: _mandato(_parlamentar()),
+        _proposicao,
+        _votacao,
+        lambda: _voto(_votacao(), _parlamentar(), "sim", "Sim"),
+    ],
+    ids=["parlamentar", "mandato", "proposicao", "votacao", "voto"],
+)
+def test_dado_coletado_sem_fonte_nao_grava(sessao, criar):
+    dado = criar()
+    dado.fonte = None
+    _nao_grava(sessao, dado, regra=f'"fonte_id" of relation "{dado.__tablename__}"')
 
 
 def test_o_parlamentar_vota_uma_vez_por_votacao(sessao):
@@ -241,6 +291,16 @@ def test_os_itens_vem_na_ordem_e_ela_nao_se_repete(sessao):
     assert [item.ordem for item in edicao.itens] == [1, 2]
 
     _nao_grava(sessao, _item(edicao, 1, fonte), regra="uq_item_edicao_edicao_id_ordem")
+
+
+def test_apagar_a_edicao_apaga_os_itens(sessao):
+    edicao = _edicao()
+    sessao.add(_item(edicao, 1, _fonte()))
+    sessao.flush()
+
+    # Pelo banco (ON DELETE CASCADE), e não pela sessão, que apagaria os itens por conta própria.
+    sessao.execute(delete(Edicao).where(Edicao.id == edicao.id))
+    assert sessao.scalars(select(ItemEdicao)).all() == []
 
 
 # --- Quem assina a newsletter ---
