@@ -32,6 +32,12 @@ export type ArtigoNaLista = Omit<Artigo, "corpo">;
  */
 export type TrilhaNaLista = Omit<Trilha, "artigos" | "infografico" | "quiz"> & {
 	artigos: ArtigoNaLista[];
+	/**
+	 * O artigo depois do qual o quiz aparece, quando a trilha tem quiz: é o lugar
+	 * dele na ordem da trilha, para a troca de página saber se a pessoa avança ou
+	 * volta (lib/troca-de-pagina.ts).
+	 */
+	quizDepoisDe?: string;
 };
 
 /**
@@ -129,8 +135,16 @@ function trilhaNaLista({
 	descricao,
 	ordem,
 	artigos,
+	quiz,
 }: Trilha): TrilhaNaLista {
-	return { slug, titulo, descricao, ordem, artigos: artigos.map(naLista) };
+	return {
+		slug,
+		titulo,
+		descricao,
+		ordem,
+		artigos: artigos.map(naLista),
+		...(quiz && { quizDepoisDe: quiz.depoisDe }),
+	};
 }
 
 export function listarTrilhas(todas: Trilha[]): TrilhaNaLista[] {

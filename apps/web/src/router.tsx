@@ -8,7 +8,7 @@ import { PaginaDeErro } from "./components/pagina-de-erro";
 import {
 	molduraNaTela,
 	tiposDaTroca,
-	trilhaDoArtigoAberto,
+	trilhaDaPaginaAberta,
 } from "./lib/troca-de-pagina";
 import { routeTree } from "./routeTree.gen";
 
@@ -32,7 +32,7 @@ export const getRouter = () => {
 		defaultViewTransition: {
 			types: (troca): string[] | false =>
 				tiposDaTroca(troca, {
-					trilhaAberta: trilhaDoArtigoAberto(router.state.matches),
+					trilhaAberta: trilhaDaPaginaAberta(router.state.matches),
 					molduraNaTela: molduraNaTela(),
 				}),
 		},

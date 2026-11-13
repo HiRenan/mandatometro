@@ -351,6 +351,25 @@ describe("o quiz da trilha", () => {
 		);
 	});
 
+	// A troca de página usa o lugar do quiz para saber se a pessoa avança ou volta
+	// (lib/troca-de-pagina.ts). As perguntas continuam só na página do quiz.
+	it("diz, em toda página da trilha, depois de qual artigo o quiz aparece", () => {
+		expect(listarTrilhas(exemplos)).toEqual([
+			expect.objectContaining({ slug: "com-quiz", quizDepoisDe: "segundo" }),
+			expect.not.objectContaining({ quizDepoisDe: expect.anything() }),
+		]);
+		expect(acharQuiz(exemplos, "com-quiz")?.trilha.quizDepoisDe).toBe(
+			"segundo",
+		);
+		expect(
+			acharArtigo(exemplos, "com-quiz", "terceiro")?.trilha.quizDepoisDe,
+		).toBe("segundo");
+		expect(acharTrilha(exemplos, "com-quiz")?.quizDepoisDe).toBe("segundo");
+		expect(acharTrilha(exemplos, "sem-quiz")).not.toHaveProperty(
+			"quizDepoisDe",
+		);
+	});
+
 	it("não leva nada do quiz às trilhas sem quiz, às listas e à página inicial", () => {
 		expect(acharTrilha(exemplos, "sem-quiz")).not.toHaveProperty("quiz");
 		expect(acharArtigo(exemplos, "sem-quiz", "unico")).not.toHaveProperty(

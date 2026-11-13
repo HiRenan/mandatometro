@@ -5,7 +5,7 @@ import {
 	molduraNaTela,
 	sentidoDaTroca,
 	tiposDaTroca,
-	trilhaDoArtigoAberto,
+	trilhaDaPaginaAberta,
 } from "./troca-de-pagina";
 
 const TRILHA = "/trilhas/processo-legislativo";
@@ -77,6 +77,59 @@ describe("sentidoDaTroca", () => {
 	});
 
 	it("a página não encontrada fica no fundo do bloco", () => {
+	it("o quiz fica entre o artigo depois do qual aparece e o seguinte", () => {
+		const comQuiz = { ...trilhaAberta, quizDepoisDe: "onde-o-projeto-comeca" };
+		const quiz = `${TRILHA}/quiz`;
+		// O "Artigo anterior" do quiz, e qualquer artigo de antes dele.
+		expect(
+			sentidoDaTroca(quiz, `${TRILHA}/onde-o-projeto-comeca`, comQuiz),
+		).toBe("voltar");
+		expect(
+			sentidoDaTroca(quiz, `${TRILHA}/quem-pode-propor-uma-lei`, comQuiz),
+		).toBe("voltar");
+		// O "Próximo artigo" do quiz.
+		expect(
+			sentidoDaTroca(
+				quiz,
+				`${TRILHA}/o-projeto-passa-pelas-comissoes`,
+				comQuiz,
+			),
+		).toBe("avancar");
+		// A chamada do quiz, no fim do artigo, e o voltar do navegador num artigo
+		// de depois dele.
+		expect(
+			sentidoDaTroca(`${TRILHA}/onde-o-projeto-comeca`, quiz, comQuiz),
+		).toBe("avancar");
+		expect(
+			sentidoDaTroca(
+				`${TRILHA}/o-projeto-passa-pelas-comissoes`,
+				quiz,
+				comQuiz,
+			),
+		).toBe("voltar");
+	});
+
+	it("sem o lugar do quiz na trilha, ir ao quiz ou sair dele para um artigo avança", () => {
+		const quiz = `${TRILHA}/quiz`;
+		expect(
+			sentidoDaTroca(quiz, `${TRILHA}/onde-o-projeto-comeca`, trilhaAberta),
+		).toBe("avancar");
+		expect(
+			sentidoDaTroca(`${TRILHA}/onde-o-projeto-comeca`, quiz, trilhaAberta),
+		).toBe("avancar");
+		expect(
+			sentidoDaTroca(quiz, `${TRILHA}/onde-o-projeto-comeca`, {
+				...trilhaAberta,
+				quizDepoisDe: "artigo-que-nao-existe",
+			}),
+		).toBe("avancar");
+	});
+
+	it("do quiz para a trilha é voltar, e da trilha para o quiz, avançar", () => {
+		expect(sentidoDaTroca(`${TRILHA}/quiz`, TRILHA)).toBe("voltar");
+		expect(sentidoDaTroca(TRILHA, `${TRILHA}/quiz`)).toBe("avancar");
+	});
+
 		expect(sentidoDaTroca(TRILHA, "/pagina-que-nao-existe")).toBe("avancar");
 		expect(sentidoDaTroca("/pagina-que-nao-existe", "/")).toBe("voltar");
 	});
@@ -117,6 +170,18 @@ describe("tiposDaTroca", () => {
 	});
 
 	it("não anima a primeira carga nem um link para um trecho da mesma página", () => {
+	it("usa o lugar do quiz na trilha aberta", () => {
+		expect(
+			tiposDaTroca(troca(`${TRILHA}/quiz`, `${TRILHA}/onde-o-projeto-comeca`), {
+				trilhaAberta: {
+					...trilhaAberta,
+					quizDepoisDe: "onde-o-projeto-comeca",
+				},
+				molduraNaTela: false,
+			}),
+		).toEqual(["folha", "voltar"]);
+	});
+
 		expect(tiposDaTroca(troca(undefined, "/"), { molduraNaTela: true })).toBe(
 			false,
 		);
@@ -126,10 +191,10 @@ describe("tiposDaTroca", () => {
 	});
 });
 
-describe("trilhaDoArtigoAberto", () => {
+describe("trilhaDaPaginaAberta", () => {
 	it("pega a trilha dos dados do artigo que está na tela", () => {
 		expect(
-			trilhaDoArtigoAberto([
+			trilhaDaPaginaAberta([
 				{ routeId: "__root__", loaderData: undefined },
 				{
 					routeId: "/trilhas/$trilha/$artigo",
@@ -139,9 +204,22 @@ describe("trilhaDoArtigoAberto", () => {
 		).toBe(trilhaAberta);
 	});
 
-	it("fora de um artigo, não há trilha aberta", () => {
+	it("pega a trilha dos dados do quiz que está na tela", () => {
+		const comQuiz = { ...trilhaAberta, quizDepoisDe: "onde-o-projeto-comeca" };
 		expect(
-			trilhaDoArtigoAberto([
+			trilhaDaPaginaAberta([
+				{ routeId: "__root__", loaderData: undefined },
+				{
+					routeId: "/trilhas/$trilha/quiz",
+					loaderData: { trilha: comQuiz, perguntas: [] },
+				},
+			]),
+		).toBe(comQuiz);
+	});
+
+	it("fora de um artigo e do quiz, não há trilha aberta", () => {
+		expect(
+			trilhaDaPaginaAberta([
 				{ routeId: "__root__" },
 				{ routeId: "/trilhas/$trilha/", loaderData: { slug: "x" } },
 			]),
