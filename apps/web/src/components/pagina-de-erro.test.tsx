@@ -71,13 +71,18 @@ describe("página de erro", () => {
 		expect(document.body.textContent).not.toContain("Something went wrong");
 	});
 
-	it("com a letra grande, as margens ficam em 20 px", async () => {
+	it("com a letra grande, o título tem teto, dentro do cartaz", async () => {
 		abrir(semRede);
 
-		const pagina = (
-			await screen.findByRole("heading", { name: "A página não carregou" })
-		).closest("[data-pagina-de-erro]");
-		expect(pagina?.classList.contains("px-margem-celular")).toBe(true);
+		const titulo = await screen.findByRole("heading", {
+			name: "A página não carregou",
+		});
+		// O título cresce até "CARREGOU" encostar nas margens, e o cartaz dá as
+		// margens de 20 px do celular (index.css).
+		expect(titulo.classList.contains("letra-com-teto")).toBe(true);
+		expect(
+			titulo.closest("[data-pagina-de-erro]")?.classList.contains("cartaz"),
+		).toBe(true);
 	});
 
 	it("o Tentar de novo refaz o pedido sem recarregar e leva o foco ao título", async () => {

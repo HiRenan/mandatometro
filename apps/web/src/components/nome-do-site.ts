@@ -1,9 +1,10 @@
 /**
- * O nome do site, no cabeçalho e no rodapé (o Wordmark do DESIGN.md): o grotesco
- * condensado bem preto, com 32 px, e 44 px a partir do md. "Mandatômetro" é uma
- * palavra só, que não quebra: com a letra grande, o nome cresce até encostar nas
- * margens do celular, e para aí (o letra-com-teto do index.css). O nome mede
- * 5,59 em, e o --palavra tem uma folga: 5,62.
+ * O nome do site, no cabeçalho e no rodapé (o Wordmark do DESIGN.md): a letra do
+ * cartaz, bem preta, estreita e em maiúsculas (o nome-do-site do index.css).
+ * "MANDATÔMETRO" é uma palavra só, que não quebra: com a letra grande, o nome
+ * cresce até encostar nas margens, e para aí (o letra-com-teto). O nome mede
+ * 7,03 em pela soma das letras, com o espaço entre elas, e o --palavra tem uma
+ * folga: 7,08. O tamanho (--letra) é de cada lugar: 26 px no cabeçalho, 21 px
+ * nele no celular, e de 36 a 72 px no rodapé.
  */
-export const NOME_DO_SITE =
-	"letra-com-teto [--letra:2rem] [--palavra:5.62] leading-none font-black tracking-[-0.01em] [font-stretch:68%] md:text-[2.75rem]";
+export const NOME_DO_SITE = "nome-do-site letra-com-teto [--palavra:7.08]";

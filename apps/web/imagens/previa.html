@@ -5,16 +5,40 @@
 		<title>Prévia do link do Mandatômetro</title>
 		<!--
 			A prévia do link no WhatsApp e nas redes (og:image), com 1200 x 630 px:
-			o cartão preto do cabeçalho, com o nome e o lema, a tira de fitas do
-			Bonfim e, no papel, a frase da página inicial em tinta. As cores e as
-			letras são as do site (globals.css e header.tsx). As redes cortam as
+			o bloco de tinta do cabeçalho, com o nome e o lema, a tira das cinco
+			fitas do Bonfim, o título da página inicial no papel e uma fileira de
+			azulejos embaixo. As cores, as letras e os azulejos são os do site
+			(globals.css, index.css e estilos/azulejos.css). As redes cortam as
 			bordas em alguns formatos, por isso o texto fica longe delas.
 
-			O gerar.mjs abre esta página com 1200 x 630 px, com a fonte do site no
-			lugar do marcador FONTES, e tira a foto.
+			Os azulejos são só desenho, feitos de gradientes do CSS: cada um leva
+			uma fita só, e as cinco aparecem pela ordem, duas vezes.
+
+			O gerar.mjs abre esta página com 1200 x 630 px, com as fontes do site
+			no lugar do marcador FONTES, e tira a foto.
 		-->
 		<style>
 			/* FONTES */
+
+			:root {
+				--papel: #f6f1e4;
+				--papel-2: #ebe4d2;
+				--papel-3: #d8cfb8;
+				--tinta: #14161c;
+				--verde: #00a650;
+				--amarela: #ffd200;
+				--azul: #0a78c8;
+				--rosa: #e6007e;
+				--vermelha: #e30613;
+				--tira: linear-gradient(
+					90deg,
+					var(--verde) 0 20%,
+					var(--amarela) 0 40%,
+					var(--azul) 0 60%,
+					var(--rosa) 0 80%,
+					var(--vermelha) 0
+				);
+			}
 
 			html,
 			body {
@@ -23,81 +47,180 @@
 
 			body {
 				display: grid;
-				grid-template-rows: auto 24px minmax(0, 1fr);
+				grid-template-rows: 96px 10px minmax(0, 1fr) 120px;
 				width: 1200px;
 				height: 630px;
 				overflow: hidden;
-				background: #ffffff;
-				color: #161616;
+				background: var(--papel);
+				color: var(--tinta);
 				font-family: "Archivo Variable", sans-serif;
 			}
 
-			.cartao {
+			.topo {
 				display: flex;
 				align-items: baseline;
-				align-self: stretch;
-				gap: 0 32px;
-				padding: 40px 80px;
-				background: #161616;
-				color: #ffffff;
+				gap: 0 28px;
+				padding: 26px 72px 0;
+				background: var(--tinta);
+				color: var(--papel);
 			}
 
+			/* O nome, como no cabeçalho (.nome-do-site). */
 			.nome {
 				margin: 0;
-				font-size: 88px;
+				font-size: 46px;
 				font-stretch: 68%;
 				font-weight: 900;
-				letter-spacing: -0.01em;
+				letter-spacing: 0.01em;
 				line-height: 1;
+				text-transform: uppercase;
 			}
 
 			.lema {
 				margin: 0;
-				font-size: 32px;
-				font-weight: 500;
+				color: var(--papel-3);
+				font-family: "Courier Prime", monospace;
+				font-size: 26px;
+				line-height: 1;
 			}
 
-			/* A tira de fitas do cabeçalho, na mesma proporção: 18 px de altura
-			   no site, 24 px aqui. */
 			.tira {
-				background: repeating-linear-gradient(
-					90deg,
-					#00a650 0 64px,
-					#ffd200 64px 128px,
-					#0067b1 128px 192px,
-					#e6007e 192px 256px,
-					#e30613 256px 320px,
-					#ffffff 320px 336px
+				background: var(--tira);
+			}
+
+			.cartaz {
+				display: grid;
+				align-content: center;
+				padding: 0 72px;
+			}
+
+			/* O título da página inicial (.cartaz h1): a letra do cartaz em cima, e
+			   a frase em letra de máquina embaixo, com a tira riscada. */
+			.titulo {
+				margin: 0;
+				font-size: 112px;
+				font-stretch: 62%;
+				font-weight: 900;
+				line-height: 0.86;
+				text-transform: uppercase;
+			}
+
+			.titulo em {
+				display: block;
+				width: fit-content;
+				margin-top: 0.45em;
+				padding-bottom: 0.36em;
+				background: var(--tira) 0 100% / 100% 0.075em no-repeat;
+				font-family: "Courier Prime", monospace;
+				font-size: 0.4em;
+				font-style: normal;
+				font-weight: 400;
+				letter-spacing: -0.02em;
+				line-height: 1.12;
+				text-transform: none;
+			}
+
+			/* A fileira de azulejos (estilos/azulejos.css): o fundo (--a), o motivo
+			   por cima (--b) e a volta (--r, em quartos). */
+			.azulejos {
+				display: grid;
+				grid-template-columns: repeat(10, 1fr);
+				gap: 2px;
+				border-top: 2px solid var(--tinta);
+				background: var(--tinta);
+			}
+
+			.az {
+				position: relative;
+				overflow: hidden;
+				background: var(--a);
+			}
+
+			.az::before {
+				content: "";
+				position: absolute;
+				inset: -1px;
+				background: var(--motivo, none);
+				rotate: calc(var(--r, 0) * 90deg);
+			}
+
+			.m1::before {
+				--motivo: radial-gradient(
+					circle at 0 0,
+					var(--b) 70.2%,
+					transparent 70.8%
 				);
 			}
 
-			.papel {
-				display: grid;
-				align-items: center;
-				padding: 0 80px 8px;
+			.m3::before {
+				--motivo: linear-gradient(135deg, var(--b) 49.8%, transparent 50.3%);
 			}
 
-			/* A frase no título condensado das páginas (.titulo-condensado), em
-			   duas linhas de lado a lado. */
-			.frase {
-				margin: 0;
-				font-size: 92px;
-				font-stretch: 72%;
-				font-weight: 850;
-				letter-spacing: -0.02em;
-				line-height: 0.96;
-				text-wrap: balance;
+			.m4::before {
+				--motivo: radial-gradient(
+					circle at 50% 50%,
+					var(--b) 49%,
+					transparent 50%
+				);
+			}
+
+			.m6::before {
+				--motivo: radial-gradient(
+					circle at 0 0,
+					transparent 34.8%,
+					var(--b) 35.4% 70.2%,
+					transparent 70.8%
+				);
+			}
+
+			.m7::before {
+				--motivo:
+					radial-gradient(circle at 0 0, var(--b) 49%, transparent 49.6%),
+					radial-gradient(circle at 100% 100%, var(--b) 49%, transparent 49.6%);
 			}
 		</style>
 	</head>
 	<body>
-		<div class="cartao">
+		<div class="topo">
 			<p class="nome">Mandatômetro</p>
 			<p class="lema">o diário oficial político, simplificado</p>
 		</div>
 		<div class="tira"></div>
-		<div class="papel">
-			<p class="frase">Entenda a política brasileira, um passo de cada vez.</p>
+		<div class="cartaz">
+			<p class="titulo">
+				Entenda a política brasileira,
+				<em>um passo de cada vez.</em>
+			</p>
+		</div>
+		<div class="azulejos">
+			<span class="az m1" style="--a: var(--verde); --b: var(--tinta)"></span>
+			<span
+				class="az m3"
+				style="--a: var(--papel-2); --b: var(--amarela); --r: 1"
+			></span>
+			<span class="az m6" style="--a: var(--azul); --b: var(--papel)"></span>
+			<span class="az m4" style="--a: var(--tinta); --b: var(--rosa)"></span>
+			<span
+				class="az m1"
+				style="--a: var(--vermelha); --b: var(--papel); --r: 2"
+			></span>
+			<span
+				class="az m7"
+				style="--a: var(--papel-2); --b: var(--verde); --r: 1"
+			></span>
+			<span
+				class="az m6"
+				style="--a: var(--amarela); --b: var(--tinta); --r: 3"
+			></span>
+			<span class="az m3" style="--a: var(--tinta); --b: var(--azul)"></span>
+			<span
+				class="az m1"
+				style="--a: var(--rosa); --b: var(--tinta); --r: 1"
+			></span>
+			<span
+				class="az m4"
+				style="--a: var(--papel-2); --b: var(--vermelha)"
+			></span>
 		</div>
 	</body>
 </html>

@@ -1,8 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { AzulejoGrande, Painel } from "@/components/azulejo";
 import { FolhasDaTrilha } from "@/components/folhas-da-trilha";
-import { MarcaX } from "@/components/marca-x";
+import { MarcaDeLido } from "@/components/marca-de-lido";
+import { Palavras } from "@/components/palavras";
+import { azulejoDaPosicao, sementeDe } from "@/lib/azulejos";
+import { classes } from "@/lib/classes";
 import { buscarTrilhas, type TrilhaNaLista } from "@/lib/conteudo";
-import { fraseDoProgresso, plural } from "@/lib/formatar";
+import { classeDaFita, fraseDoProgresso, plural } from "@/lib/formatar";
 import { metaDaPagina, metaSemPagina } from "@/lib/meta";
 import { contarLidos, idDoArtigo, useArtigosLidos } from "@/lib/progresso";
 
@@ -25,35 +29,64 @@ function PaginaDasTrilhas() {
 	const lidos = useArtigosLidos();
 
 	return (
-		<div className="px-margem-celular mx-auto max-w-[1440px] pb-20 md:px-16">
-			<div className="max-w-[56rem]">
-				<h1 className="titulo-condensado mt-10 text-[3rem] md:text-[4.75rem]">
-					Trilhas
+		<>
+			<section className="cartaz cartaz-medio">
+				<Painel
+					semente={sementeDe("trilhas")}
+					colunas={4}
+					quantas={64}
+					className="mural"
+					sozinho
+				/>
+				{/* A palavra tomba no lugar: o leitor de tela lê o título pelo aria-label. */}
+				<h1
+					aria-label="Trilhas"
+					className="titulo-condensado letra-com-teto [--palavra:3.21]"
+				>
+					<span aria-hidden="true" className="caixa">
+						<Palavras texto="Trilhas" />
+					</span>
 				</h1>
-				<p className="mt-5 max-w-[44ch] font-serif text-xl leading-snug font-medium lg:text-[1.5625rem] lg:leading-[1.4]">
-					Artigos curtos que explicam, passo a passo, como funciona a política
-					brasileira. Cada explicação traz a fonte oficial.
-				</p>
-				<p className="mt-4 max-w-[52ch] text-[1.0625rem]">
-					Sem cadastro: os artigos que você lê ficam marcados neste navegador.
-				</p>
+				<div className="cartaz-pe">
+					<p className="abertura">
+						Artigos curtos que explicam, passo a passo, como funciona a política
+						brasileira. Cada explicação traz a fonte oficial.
+					</p>
+					<p className="para-quem">
+						Sem cadastro: os artigos que você lê ficam marcados neste navegador.
+					</p>
+				</div>
+			</section>
+			<div className="artigos">
+				<ol className="linhas">
+					{trilhas.map((trilha, indice) => (
+						<ItemDaTrilha
+							key={trilha.slug}
+							trilha={trilha}
+							posicao={indice + 1}
+							lidos={lidos}
+						/>
+					))}
+				</ol>
 			</div>
-			{/* A lista usa a moldura inteira: a partir do lg, as folhas de cada trilha
-			    ficam numa coluna à direita, da largura do caminho na página da trilha. */}
-			<ol className="border-tinta mt-10 border-t-2">
-				{trilhas.map((trilha) => (
-					<ItemDaTrilha key={trilha.slug} trilha={trilha} lidos={lidos} />
-				))}
-			</ol>
-		</div>
+		</>
 	);
 }
 
+/**
+ * Uma trilha na lista: uma folha com o azulejo dela, o título, a descrição, o
+ * tamanho e o progresso. A cor do azulejo é a fita da posição da trilha na
+ * lista. Abaixo do lg, os artigos aparecem em quadradinhos; a partir do lg, numa
+ * lista à direita, com o link de cada um.
+ */
 function ItemDaTrilha({
 	trilha,
+	posicao,
 	lidos,
 }: {
 	trilha: TrilhaNaLista;
+	/** A posição da trilha na lista, a partir de 1. */
+	posicao: number;
 	lidos: ReadonlySet<string>;
 }) {
 	const total = trilha.artigos.length;
@@ -64,56 +97,52 @@ function ItemDaTrilha({
 	);
 
 	return (
-		<li className="border-tinta folha:grid-cols-[minmax(0,1fr)_28rem] folha:gap-x-12 border-b-2 border-dashed py-7 lg:grid lg:grid-cols-[minmax(0,1fr)_21rem] lg:gap-x-8 lg:py-0 xl:grid-cols-[minmax(0,1fr)_24rem] xl:gap-x-10">
-			<div className="lg:py-7">
-				<h2 className="subtitulo-condensado text-[2rem] md:text-[2.75rem]">
-					<Link
-						to="/trilhas/$trilha"
-						params={{ trilha: trilha.slug }}
-						className="no-underline hover:underline"
-					>
-						{trilha.titulo}
-					</Link>
-				</h2>
-				<p className="mt-2 max-w-[52ch] font-serif text-lg leading-snug">
-					{trilha.descricao}
-				</p>
-				<p className="mt-3 text-[0.9375rem] font-semibold">
-					{plural(total, "artigo", "artigos")} · {minutos} min de leitura
-				</p>
-				{/* No celular, a frase do progresso tem a linha dela, reservada desde o
-				    HTML do servidor; a partir do sm, fica ao lado das folhas em
-				    miniatura, e a partir do lg, sozinha, porque as folhas inteiras estão
-				    à direita. Assim, nada muda de lugar quando o progresso aparece,
-				    depois da hidratação. */}
-				<div className="mt-4 grid items-center gap-x-5 gap-y-2 sm:grid-cols-[auto_minmax(0,1fr)] lg:block">
-					<ol aria-hidden="true" className="flex flex-wrap gap-1.5 lg:hidden">
-						{trilha.artigos.map((artigo, indice) => (
-							<li
-								key={artigo.slug}
-								className="border-tinta relative grid size-11 place-items-center border-2"
-							>
-								<span className="numeral pt-1 text-[1.75rem]">
-									{indice + 1}
-								</span>
-								{lidos.has(idDoArtigo(artigo)) && (
-									<MarcaX className="absolute inset-0 size-full p-0.5" />
-								)}
-							</li>
-						))}
-					</ol>
-					<p className="min-h-7 text-lg font-bold">
-						{fraseDoProgresso(quantosLidos, total)}
+		<li className={classes("trilha-da-lista revelar", classeDaFita(posicao))}>
+			<div className="trilha-cabeca">
+				<AzulejoGrande pecas={azulejoDaPosicao(posicao)} className="da-linha" />
+				<div className="trilha-cabeca-texto">
+					{/* Com a letra grande, o título cresce até "CONSTITUIÇÃO", a palavra mais
+					    larga dos títulos das trilhas, encostar nas bordas da folha (o
+					    letra-com-teto do index.css). */}
+					<h2 className="titulo-de-folha letra-com-teto [--palavra:5.66]">
+						<Link to="/trilhas/$trilha" params={{ trilha: trilha.slug }}>
+							{trilha.titulo}
+						</Link>
+					</h2>
+					<p>{trilha.descricao}</p>
+					<p className="rotulo">
+						{plural(total, "artigo", "artigos")} · {minutos} min de leitura
 					</p>
+					{/* A frase do progresso tem a linha dela, reservada desde o HTML do
+					    servidor: nada muda de lugar quando o progresso aparece, depois da
+					    hidratação. */}
+					<div className="trilha-andamento">
+						{/* As linhas dos quadrados ficam mais afastadas que as colunas,
+						    porque o visto passa da borda de cima (index.css, o
+						    .visto-na-miniatura). */}
+						<ol aria-hidden="true" className="miniaturas lg:hidden">
+							{trilha.artigos.map((artigo, indice) => (
+								<li key={artigo.slug} className={classeDaFita(indice + 1)}>
+									<span className="numeral">
+										{indice + 1}
+										{lidos.has(idDoArtigo(artigo)) && (
+											<MarcaDeLido className="visto-na-miniatura" />
+										)}
+									</span>
+								</li>
+							))}
+						</ol>
+						<p className="progresso rotulo">
+							{fraseDoProgresso(quantosLidos, total)}
+						</p>
+					</div>
 				</div>
 			</div>
-			{/* As fitas penduram da linha que abre a trilha. A linha de baixo da
-			    última folha some, porque a da trilha já fecha a lista. */}
 			<FolhasDaTrilha
 				trilha={trilha}
 				lidos={lidos}
 				aria-label={`Artigos da trilha ${trilha.titulo}`}
-				className="hidden lg:block [&>li:last-child]:border-b-0"
+				className="hidden lg:block"
 			/>
 		</li>
 	);

@@ -9,13 +9,14 @@ apps/web/conteudo/trilhas/
   processo-legislativo/            uma pasta por trilha
     trilha.md                      título, descrição e ordem da trilha
     infografico.md                 o caminho da trilha num infográfico (opcional)
+    quiz.md                        as perguntas do quiz da trilha (opcional)
     quem-pode-propor-uma-lei.md    um arquivo por artigo
     onde-o-projeto-comeca.md
 ```
 
 - **O nome da pasta e o do arquivo viram o endereço da página:** `processo-legislativo/onde-o-projeto-comeca.md` aparece em `/trilhas/processo-legislativo/onde-o-projeto-comeca`. Os nomes só podem ter letras minúsculas sem acento, números e hífens.
 - **Renomear um arquivo muda o endereço** e apaga a marca de lido desse artigo para quem já tinha lido, porque o navegador guarda o progresso pelo par `trilha/artigo`.
-- **`trilha.md` e `infografico.md` são nomes reservados:** um artigo não pode ter esses nomes.
+- **`trilha.md`, `infografico.md` e `quiz.md` são nomes reservados:** um artigo não pode ter esses nomes.
 
 ## A trilha: `trilha.md`
 
@@ -32,6 +33,7 @@ ordem: 1
 - `titulo`: o nome da trilha.
 - `descricao`: uma ou duas frases. Aparece na lista de trilhas, no topo da trilha e na prévia do link.
 - `ordem`: a posição na lista de trilhas, um número inteiro a partir de 1, sem repetir.
+- Um texto embaixo do cabeçalho é erro, porque não apareceria na página.
 
 **A página inicial mostra a trilha `processo-legislativo`,** qualquer que seja o `ordem` dela, com o caminho do `infografico.md` dela. Renomear ou apagar essa pasta faz o teste e o `pnpm build` falharem: sem ela, a página inicial não abre, e o deploy para com o site no ar na versão anterior. Apagar esse infográfico faz o teste falhar.
 
@@ -79,7 +81,7 @@ Em regra, o projeto começa na Câmara dos Deputados, a não ser que...
 
 ## O infográfico: `infografico.md`
 
-O caminho da trilha num desenho: os passos ligados por uma linha cheia, e o que pode mudar o caminho num traço tracejado. Ele aparece na página da trilha, ao lado das folhas a partir de 1024 px de largura e depois delas numa tela menor. É opcional: uma trilha sem `infografico.md` fica com uma coluna só.
+O caminho da trilha, passo a passo: cada passo com o texto, o que pode mudar o caminho, os artigos que o explicam e as fontes. Ele aparece na página da trilha, numa lista em que um passo abre de cada vez, ao lado das folhas a partir de 1400 px de largura e depois delas numa tela menor. É opcional: uma trilha sem `infografico.md` fica com uma coluna só. O da trilha do processo legislativo aparece também na página inicial, um passo por vez, com o mesmo texto.
 
 Como o `trilha.md`, é só o cabeçalho, sem texto: um texto embaixo dele é erro, porque não apareceria na página. Um infográfico de um passo só ficaria assim (o da trilha do processo legislativo tem cinco):
 
@@ -104,7 +106,7 @@ passos:
 
 - `titulo`: o título do infográfico.
 - `resumo`: uma frase, logo abaixo do título.
-- `passos`: pelo menos um, na ordem do caminho. Os passos não têm número, para não confundir com o número das folhas. Cada passo tem:
+- `passos`: pelo menos um, na ordem do caminho. O título do passo vai sem número: a página inicial já conta os passos ("Passo 2 de 5"), e o número de cada artigo é o da folha dele. Cada passo tem:
   - `titulo`: o nome do passo, curto;
   - `texto`: o que acontece no passo, em poucas frases;
   - `desvios` (opcional): o que pode mudar o caminho nesse passo, uma frase por desvio, começando com "Se";
@@ -123,12 +125,93 @@ passos:
   conteudo/trilhas/processo-legislativo/infografico.md: campo "passos.1.fontes.2.url": a fonte "https://www.camara.leg.br/entenda-o-processo-legislativo/" já está neste passo
   ```
 
+## O quiz: `quiz.md`
+
+Perguntas de múltipla escolha sobre os artigos que a pessoa já leu. Ao responder, ela vê se acertou, a resposta certa, a explicação e a fonte oficial, sem pontos nem nota. É opcional: uma trilha sem `quiz.md` fica sem quiz.
+
+Como o `trilha.md`, é só o cabeçalho, sem texto: um texto embaixo dele é erro, porque não apareceria na página. Um quiz de uma pergunta só ficaria assim:
+
+```markdown
+---
+depoisDe: o-projeto-passa-pelas-comissoes
+perguntas:
+  - artigo: onde-o-projeto-comeca
+    enunciado: Uma senadora apresenta um projeto de lei. Por qual Casa do Congresso ele começa?
+    opcoes:
+      - texto: Pelo Senado Federal, que vira a Casa iniciadora.
+        certa: true
+      - texto: Pela Câmara dos Deputados, porque todo projeto de lei começa lá.
+      - texto: Pelas duas Casas ao mesmo tempo, numa sessão conjunta.
+      - texto: Pela Casa que a senadora escolher.
+    explicacao: "Em regra, o projeto de lei começa na Câmara dos Deputados. Uma exceção são os projetos de um senador ou de uma comissão do Senado: esses começam no Senado, que vira a Casa iniciadora."
+    fontes:
+      - titulo: Câmara dos Deputados, Entenda o processo legislativo
+        url: https://www.camara.leg.br/entenda-o-processo-legislativo/
+        consultadoEm: 2026-11-12
+---
+```
+
+- `depoisDe`: o artigo depois do qual o quiz aparece, pelo nome do arquivo, sem o `.md`.
+- `perguntas`: pelo menos uma, na ordem do quiz. Cada pergunta tem:
+  - `artigo`: o artigo de onde sai a resposta, pelo nome do arquivo. Ele vem até o `depoisDe`, porque a pessoa já o leu;
+  - `enunciado`: a pergunta, sem repetir no quiz;
+  - `opcoes`: de 2 a 5, cada uma com o `texto`, sem repetir na pergunta. Só a certa leva `certa: true`, e só uma;
+  - `explicacao`: por que a certa é a certa, em poucas frases;
+  - `fontes`: pelo menos uma, no mesmo formato das fontes do artigo.
+- **A resposta certa está no artigo e na fonte.** Confira a resposta no texto do artigo e abra a fonte oficial antes de escrever a pergunta: o `consultadoEm` é o dia dessa conferência. Quando a explicação cita um artigo de lei, como "(art. 65)", essa lei entra nas fontes da pergunta.
+- **As opções aparecem na ordem do arquivo,** sem sorteio. Varie a posição da certa de uma pergunta para outra.
+- **Valem as regras de conteúdo do `AGENTS.md`:** o quiz pergunta sobre fatos e regras, em tom neutro, e nunca dá nota a político ou partido.
+- **Um artigo que não existe na pasta, ou que vem depois do `depoisDe`, é erro,** com a posição da pergunta, que conta a partir do 0:
+
+  ```text
+  conteudo/trilhas/processo-legislativo/quiz.md: campo "perguntas.3.artigo": o artigo "onde-o-projeto-começa" não existe nesta trilha
+  conteudo/trilhas/processo-legislativo/quiz.md: campo "perguntas.4.artigo": o artigo "o-veto" vem depois de "o-projeto-passa-pelas-comissoes", e o quiz aparece antes de a pessoa ler esse artigo
+  ```
+
+- **Cada pergunta tem uma certa só,** e nenhuma certa também é erro:
+
+  ```text
+  conteudo/trilhas/processo-legislativo/quiz.md: campo "perguntas.1.opcoes": precisa de exatamente uma opção com "certa: true", e tem 2
+  ```
+
+- **Nada se repete:** duas perguntas com o mesmo enunciado são erro, e, na mesma pergunta, uma opção ou uma fonte que aparece duas vezes também. O erro aponta a segunda vez.
+- **Onde aparece:** o quiz tem a página dele, em `/trilhas/<trilha>/quiz`, e a chamada "Quiz da trilha" fica no fim do artigo do `depoisDe` e na página da trilha. A página mostra uma pergunta por vez, na ordem do arquivo; sem JavaScript, mostra todas, uma embaixo da outra.
+- **Mudar o texto de uma pergunta ou de uma opção apaga a resposta de quem já tinha respondido,** porque o navegador guarda a resposta pelo enunciado e pelo texto da opção escolhida. Corrigir uma vírgula também conta.
+
 ## Pegadinhas do YAML
 
 - **Um valor com `: ` (dois-pontos seguido de espaço) vai entre aspas:** `titulo: "Lei 14.133: o que muda"`. Sem as aspas, o cabeçalho deixa de ser YAML válido, e o teste aponta o arquivo.
 - **Um ` #` (espaço e cerquilha) começa um comentário:** em `titulo: O projeto #1 da trilha`, o título vira só "O projeto", sem aviso nenhum. Um valor com ` #` também vai entre aspas.
 - **As fontes ficam recuadas com dois espaços,** com um `-` na frente de cada uma e os três campos alinhados.
 - **No infográfico, cada nível recua mais dois espaços:** os passos debaixo de `passos:`, e os desvios, os artigos e as fontes debaixo do passo deles, como no exemplo.
+- **No quiz também:** as perguntas debaixo de `perguntas:`, e as opções e as fontes debaixo da pergunta delas. O `certa: true` fica alinhado com o `texto` da opção, sem o `-`. Uma explicação com `: ` vai entre aspas, como no exemplo.
+
+## Palavras compridas nos títulos
+
+Muita gente aumenta a letra do navegador no celular, até 200%. Com a letra grande, cada título diminui só o bastante para a palavra mais larga dele caber na tela inteira, sem se partir no meio. Os títulos aparecem em maiúsculas no site, e a medida é a da palavra em maiúsculas. Esse limite foi medido com os títulos de hoje:
+
+| Onde | A palavra mais larga hoje |
+|---|---|
+| O título da trilha (o `titulo:` do `trilha.md`) | "Constituição" |
+| O título do artigo (o `titulo:` do artigo) | "fundamentais?" |
+| O intertítulo (cada `##` do texto) | "constitucionalidade" |
+| O título do infográfico (o `titulo:` do `infografico.md`) | "caminho" |
+| O título de cada passo do infográfico | "Apresentação" |
+
+Uma palavra mais larga que a da tabela não cabe nem no título menor e se parte no meio com a letra grande. A pontuação colada conta: "fundamentais?" é mais larga que "fundamentais". O que conta é a largura, e não o número de letras: "Participação" tem as mesmas 12 letras de "Constituição" e, mesmo assim, passa do limite do título da trilha, por pouco.
+
+O `pnpm --filter web test` mede cada palavra dos títulos e falha com o arquivo, a palavra e o limite:
+
+```text
+conteudo/trilhas/direitos-e-deveres/novo-artigo.md: "inconstitucionalidade" precisa de 10,49 em no intertítulo (##), e o teto é 9,64 em
+```
+
+Quando o teste falhar, há duas saídas:
+
+- **Trocar a palavra** por uma mais curta, ou escrever o título de outro jeito.
+- **Medir o teto de novo**, se a palavra precisa ficar. Quem cuida do site sobe o `--palavra` do título no código, e o título fica um pouco menor com a letra grande, em todas as trilhas.
+
+Essa medida fica só no teste: ela não derruba o build nem o deploy.
 
 ## Como conferir
 
@@ -140,7 +223,7 @@ passos:
 
   O CI roda o mesmo teste, então um artigo com problema não passa no PR.
 - **`pnpm build`** confere a pasta antes de montar o site e para com a mesma lista. Por isso um artigo com problema também derruba o deploy na Vercel e a imagem do Docker, e o site no ar continua na versão anterior.
-- **`pnpm dev`** sobe o site em http://localhost:3001, e o artigo aparece em `/trilhas/<trilha>/<artigo>`. O infográfico aparece em `/trilhas/<trilha>`. Um arquivo novo ou mudado aparece ao recarregar a página, sem reiniciar o `pnpm dev`.
+- **`pnpm dev`** sobe o site em http://localhost:3001, e o artigo aparece em `/trilhas/<trilha>/<artigo>`. O infográfico aparece em `/trilhas/<trilha>`, e o quiz, em `/trilhas/<trilha>/quiz`. Um arquivo novo ou mudado aparece ao recarregar a página, sem reiniciar o `pnpm dev`.
 
 ## Como o site lê os arquivos
 

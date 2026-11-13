@@ -4,6 +4,7 @@ import {
 	metaDaImagem,
 	metaDaInicial,
 	metaDaPagina,
+	preloadDaFonte,
 } from "./meta";
 
 const DESCRICAO_DA_INICIAL =
@@ -59,6 +60,21 @@ describe("metaDaImagem", () => {
 			},
 			{ name: "twitter:card", content: "summary_large_image" },
 		]);
+	});
+});
+
+describe("preloadDaFonte", () => {
+	it("pede a fonte junto com o CSS, e só nas telas do media, quando há", () => {
+		expect(preloadDaFonte("/fonte.woff2")).toEqual({
+			rel: "preload",
+			href: "/fonte.woff2",
+			as: "font",
+			type: "font/woff2",
+			crossOrigin: "anonymous",
+		});
+		expect(preloadDaFonte("/fonte.woff2", "(min-width: 48rem)").media).toBe(
+			"(min-width: 48rem)",
+		);
 	});
 });
 
