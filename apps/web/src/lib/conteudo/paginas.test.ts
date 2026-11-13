@@ -182,21 +182,22 @@ describe("a página inicial", () => {
 	});
 
 	// Sem o infográfico da trilha, a página inicial perde o caminho.
-	it("leva o caminho resumido: de cada passo, só o título e os artigos", () => {
+	it("leva o caminho inteiro: de cada passo, o texto, os desvios, as fontes e os artigos", () => {
 		const { infografico } = trilhaDe("processo-legislativo");
 		const caminho = inicio(trilhas)?.caminho;
 
 		expect(infografico).toBeDefined();
-		expect(caminho).toEqual({
-			titulo: infografico?.titulo,
-			resumo: infografico?.resumo,
-			passos: infografico?.passos.map(({ titulo, artigos }) => ({
-				titulo,
-				artigos,
-			})),
-		});
+		expect(caminho).toEqual(infografico);
 		for (const passo of caminho?.passos ?? []) {
-			expect(Object.keys(passo).sort()).toEqual(["artigos", "titulo"]);
+			expect(Object.keys(passo).sort()).toEqual([
+				"artigos",
+				"desvios",
+				"fontes",
+				"texto",
+				"titulo",
+			]);
+			// Cada passo tem a fonte oficial do que afirma.
+			expect(passo.fontes.length).toBeGreaterThan(0);
 		}
 	});
 

@@ -8,7 +8,13 @@ import {
 	Outlet,
 	RouterProvider,
 } from "@tanstack/react-router";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ArtigoNaLista, PaginaInicial as Dados } from "@/lib/conteudo";
 import { PaginaInicial } from "./pagina-inicial";
@@ -45,6 +51,12 @@ function artigo(slug: string, titulo: string, ordem: number): ArtigoNaLista {
 	};
 }
 
+const FONTE = {
+	titulo: "Câmara dos Deputados, Entenda o processo legislativo",
+	url: "https://www.camara.leg.br/entenda-o-processo-legislativo/",
+	consultadoEm: "2026-11-10",
+};
+
 const pagina: Dados = {
 	trilha: {
 		slug: "processo-legislativo",
@@ -67,12 +79,39 @@ const pagina: Dados = {
 		passos: [
 			{
 				titulo: "Apresentação",
+				texto: "O texto do passo Apresentação.",
 				artigos: ["quem-pode-propor-uma-lei", "onde-o-projeto-comeca"],
+				desvios: [],
+				fontes: [FONTE],
 			},
-			{ titulo: "Comissões", artigos: ["o-projeto-passa-pelas-comissoes"] },
-			{ titulo: "Plenário", artigos: [] },
-			{ titulo: "A outra Casa", artigos: ["onde-o-projeto-comeca"] },
-			{ titulo: "Sanção ou veto", artigos: [] },
+			{
+				titulo: "Comissões",
+				texto: "O texto do passo Comissões.",
+				artigos: ["o-projeto-passa-pelas-comissoes"],
+				desvios: ["Um desvio do passo Comissões, conforme o art. 58."],
+				fontes: [FONTE],
+			},
+			{
+				titulo: "Plenário",
+				texto: "O texto do passo Plenário.",
+				artigos: [],
+				desvios: [],
+				fontes: [FONTE],
+			},
+			{
+				titulo: "A outra Casa",
+				texto: "O texto do passo A outra Casa.",
+				artigos: ["onde-o-projeto-comeca"],
+				desvios: [],
+				fontes: [FONTE],
+			},
+			{
+				titulo: "Sanção ou veto",
+				texto: "O texto do passo Sanção ou veto.",
+				artigos: [],
+				desvios: [],
+				fontes: [FONTE],
+			},
 		],
 	},
 };
@@ -124,10 +163,19 @@ function parada(caminho: HTMLElement, titulo: string): HTMLElement {
 describe("página inicial", () => {
 	it("tem um título só, que diz o que a pessoa vai fazer", async () => {
 		await mostrar();
+		const titulos = screen.getAllByRole("heading", { level: 1 });
 
-		expect(
-			screen.getAllByRole("heading", { level: 1 }).map((h1) => h1.textContent),
-		).toEqual(["Entenda a política brasileira, um passo de cada vez."]);
+		expect(titulos.map((h1) => h1.textContent)).toEqual([
+			"Entenda a política brasileira, um passo de cada vez.",
+		]);
+		// As palavras tombam no lugar uma a uma, cada uma na sua caixa: o leitor de
+		// tela lê o título corrido, e as caixas ficam fora dele.
+		expect(titulos[0].getAttribute("aria-label")).toBe(
+			"Entenda a política brasileira, um passo de cada vez.",
+		);
+		for (const linha of titulos[0].children) {
+			expect(linha.getAttribute("aria-hidden")).toBe("true");
+		}
 	});
 
 	it("diz o que é o Mandatômetro e para quem ele é", async () => {
@@ -206,7 +254,7 @@ describe("página inicial", () => {
 		).toBe("/trilhas/processo-legislativo");
 	});
 
-	it("mostra o caminho de um projeto de lei em cinco paradas, numa lista ordenada", async () => {
+	it("mostra o caminho de um projeto de lei em cinco passos, numa lista ordenada", async () => {
 		await mostrar();
 		const caminho = screen.getByRole("region", {
 			name: "O caminho de um projeto de lei",
@@ -223,14 +271,118 @@ describe("página inicial", () => {
 			"A outra Casa",
 			"Sanção ou veto",
 		]);
+		// O HTML traz os cinco passos, cada um com o texto: sem JavaScript, eles
+		// ficam abertos, um embaixo do outro (index.css).
 		expect(
-			caminho.querySelectorAll(':scope ol[role="list"] > li'),
+			caminho.querySelectorAll('ol.passos-lista[role="list"] > li'),
 		).toHaveLength(5);
 		expect(
 			within(caminho).getByText(
 				"Os passos de um projeto de lei ordinária no Congresso.",
 			),
 		).toBeTruthy();
+	});
+
+	it("tem um azulejo por passo, que leva ao passo dele", async () => {
+		await mostrar();
+		const caminho = screen.getByRole("region", {
+			name: "O caminho de um projeto de lei",
+		});
+		const abas = [
+			...caminho.querySelectorAll('ol.passos-abas[role="list"] > li > button'),
+		];
+
+		// O número gigante é desenho: o nome do botão é "Passo N: título".
+		expect(
+			abas.map((aba) => aba.querySelector(".aba-nome")?.textContent),
+		).toEqual([
+			"Passo 1: Apresentação",
+			"Passo 2: Comissões",
+			"Passo 3: Plenário",
+			"Passo 4: A outra Casa",
+			"Passo 5: Sanção ou veto",
+		]);
+		expect(
+			within(caminho).getByRole("button", { name: "Passo 2: Comissões" }),
+		).toBe(abas[1]);
+		expect(abas.map((aba) => aba.getAttribute("aria-current"))).toEqual([
+			"step",
+			null,
+			null,
+			null,
+			null,
+		]);
+	});
+
+	it("mostra um passo de cada vez e avisa o leitor de tela na troca", async () => {
+		await mostrar();
+		const caminho = screen.getByRole("region", {
+			name: "O caminho de um projeto de lei",
+		});
+		const daVez = () =>
+			[...caminho.querySelectorAll("li.passo[data-ativo]")].map(
+				(passo) => passo.querySelector("h3")?.textContent,
+			);
+		const voltar = within(caminho).getByRole("button", { name: "Voltar" });
+
+		expect(daVez()).toEqual(["Apresentação"]);
+		expect(voltar.hasAttribute("disabled")).toBe(true);
+
+		fireEvent.click(
+			within(caminho).getByRole("button", { name: "Próximo passo" }),
+		);
+		expect(daVez()).toEqual(["Comissões"]);
+		expect(voltar.hasAttribute("disabled")).toBe(false);
+		expect(within(caminho).getByRole("status").textContent).toBe(
+			"Passo 2 de 5: Comissões",
+		);
+		expect(
+			within(caminho)
+				.getByRole("button", { name: "Passo 2: Comissões" })
+				.getAttribute("aria-current"),
+		).toBe("step");
+
+		// No último passo, o botão volta ao começo.
+		fireEvent.click(
+			within(caminho).getByRole("button", { name: "Passo 5: Sanção ou veto" }),
+		);
+		expect(daVez()).toEqual(["Sanção ou veto"]);
+		fireEvent.click(
+			within(caminho).getByRole("button", { name: "Ver do começo" }),
+		);
+		expect(daVez()).toEqual(["Apresentação"]);
+	});
+
+	it("cada passo traz o texto, o que pode mudar o caminho e a fonte, com a data", async () => {
+		await mostrar();
+		const caminho = screen.getByRole("region", {
+			name: "O caminho de um projeto de lei",
+		});
+		const comissoes = parada(caminho, "Comissões");
+
+		expect(comissoes.textContent).toContain("Passo 2 de 5");
+		expect(comissoes.textContent).toContain("O texto do passo Comissões.");
+		// Na tela, o desvio leva um fio da cor do passo; para o leitor de tela, a
+		// lista diz o que é. O "art. 58" não quebra entre o "art." e o número.
+		expect(
+			within(comissoes).getByRole("list", {
+				name: "O que pode mudar o caminho",
+			}).textContent,
+		).toBe("Um desvio do passo Comissões, conforme o art.\u00a058.");
+		expect(
+			within(comissoes)
+				.getByRole("link", { name: FONTE.titulo })
+				.getAttribute("href"),
+		).toBe(FONTE.url);
+		expect(comissoes.textContent).toContain(
+			"consultada em 10 de novembro de 2026",
+		);
+		// O passo sem desvio não tem a lista.
+		expect(
+			within(parada(caminho, "Plenário")).queryByRole("list", {
+				name: "O que pode mudar o caminho",
+			}),
+		).toBeNull();
 	});
 
 	it("leva de cada parada aos artigos que a explicam, com o número da folha", async () => {
@@ -241,7 +393,9 @@ describe("página inicial", () => {
 		const links = (titulo: string) =>
 			within(parada(caminho, titulo))
 				.queryAllByRole("link")
-				.map((link) => [link.textContent, link.getAttribute("href")]);
+				.map((link) => [link.textContent, link.getAttribute("href")])
+				// Os links para a trilha: as fontes, de fora, têm o teste delas.
+				.filter(([, href]) => href?.startsWith("/"));
 
 		expect(links("Apresentação")).toEqual([
 			[
@@ -282,15 +436,12 @@ describe("página inicial", () => {
 		}
 	});
 
-	it("avisa que os desvios estão na trilha e leva ao caminho completo", async () => {
+	it("leva ao caminho completo, na trilha", async () => {
 		await mostrar();
 		const caminho = screen.getByRole("region", {
 			name: "O caminho de um projeto de lei",
 		});
 
-		expect(caminho.textContent).toContain(
-			"A linha mostra o caminho completo. Os desvios, como a comissão que decide sem o plenário, estão na trilha, com as fontes oficiais.",
-		);
 		const link = within(caminho).getByRole("link", {
 			name: "Ver o caminho na trilha",
 		});
@@ -306,7 +457,7 @@ describe("página inicial", () => {
 	it("deixa os desenhos fora do leitor de tela", async () => {
 		const tela = await mostrar();
 
-		const desenhos = tela.querySelectorAll(".fita-curta, svg");
+		const desenhos = tela.querySelectorAll(".painel, .grande, .az, svg");
 		expect(desenhos.length).toBeGreaterThan(0);
 		for (const desenho of desenhos) {
 			expect(desenho.getAttribute("aria-hidden")).toBe("true");
@@ -322,15 +473,14 @@ describe("página inicial", () => {
 		);
 	});
 
-	it("com a letra grande, o título tem teto e as margens ficam em 20 px", async () => {
+	it("com a letra grande, o título tem teto, dentro do cartaz", async () => {
 		await mostrar();
 		const titulo = screen.getByRole("heading", { level: 1 });
 
-		// O título cresce até "brasileira," encostar nas margens (index.css).
+		// O título cresce até "BRASILEIRA," encostar nas margens, e o cartaz dá as
+		// margens de 20 px do celular (index.css).
 		expect(titulo.classList.contains("letra-com-teto")).toBe(true);
-		expect(
-			titulo.closest("div.mx-auto")?.classList.contains("px-margem-celular"),
-		).toBe(true);
+		expect(titulo.closest("section.cartaz")).not.toBeNull();
 	});
 
 	it("sem o caminho, fica com a abertura e o botão", async () => {

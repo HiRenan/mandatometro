@@ -585,6 +585,527 @@
 		}
 	}
 
+	/* ───── O cartaz ───── */
+
+	/*
+	 * O cartaz, a abertura das páginas: a letra gigante em tinta sobre o papel, e o
+	 * painel de azulejos coloridos ao lado. No celular, o painel é uma faixa de duas
+	 * fileiras no alto. As palavras do título tombam no lugar, uma a uma, como
+	 * azulejos, e a tira das cinco fitas se risca embaixo da frase em itálico.
+	 *
+	 * As peças vão em coluna, e o título fica no pé: a margem de cima dele toma a
+	 * altura que sobra. O que vem antes do título (a migalha) fica no alto.
+	 */
+	.cartaz {
+		position: relative;
+		isolation: isolate;
+		display: flex;
+		flex-direction: column;
+		gap: clamp(1.5rem, 4vh, 3rem);
+		min-height: calc(100svh - var(--topo));
+		padding: clamp(1.5rem, 4vw, 3rem) var(--margem) clamp(1.5rem, 3vw, 2.5rem);
+		overflow: clip;
+	}
+
+	.mural {
+		overflow: clip;
+		background: var(--papel);
+	}
+
+	.mural .az,
+	.faixa-de-azulejos .az {
+		cursor: crosshair;
+	}
+
+	.cartaz h1 {
+		--letra: clamp(3.25rem, 1.2rem + 6.1vw, 8rem);
+		margin-top: auto;
+	}
+
+	.cartaz h1 .caixa {
+		display: block;
+	}
+
+	.cartaz h1 em {
+		position: relative;
+		display: block;
+		width: fit-content;
+		max-width: 100%;
+		margin-top: 0.1em;
+		padding-bottom: 0.26em;
+		font-family: var(--font-italica);
+		font-size: 0.9em;
+		font-style: italic;
+		font-weight: 400;
+		line-height: 0.95;
+		letter-spacing: -0.01em;
+		text-transform: none;
+	}
+
+	.cartaz h1 em::after {
+		content: "";
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		height: 0.075em;
+		background: var(--tira);
+		transform-origin: 0 50%;
+		animation: risca 0.9s 0.8s var(--ease-golpe) both;
+	}
+
+	.cartaz h1 .palavra {
+		display: inline-block;
+		transform-origin: 50% 100%;
+		animation: palavra-tomba 0.7s var(--ease-mola) both;
+		animation-delay: calc(0.08s + var(--i, 0) * 70ms);
+	}
+
+	.cartaz-pe {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1.25rem 3rem;
+		padding-top: clamp(1.25rem, 2.5vw, 2rem);
+		border-top: 2px solid var(--tinta);
+		animation: sobe 0.8s 0.45s var(--ease-suave) both;
+	}
+
+	.abertura {
+		max-width: 34rem;
+		font-family: var(--font-serif);
+		font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.25rem);
+		line-height: 1.5;
+	}
+
+	.cartaz-acao {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+		justify-items: start;
+		align-content: start;
+	}
+
+	.para-quem {
+		max-width: 30rem;
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.5;
+		color: var(--tinta-suave);
+	}
+
+	/* A linha do progresso, acima do botão: a etiqueta, com a altura reservada. */
+	.progresso {
+		min-height: 1.0625rem;
+		color: var(--tinta-suave);
+	}
+
+	/*
+	 * A linha do "Recomeçar a trilha", embaixo da descrição, com a altura reservada.
+	 * O que vem antes dela não muda com o progresso: o botão fica no mesmo lugar
+	 * quando vira "Desfazer", e nenhum outro controle aparece ali. O botão de
+	 * continuar, que muda de tamanho e some com a trilha terminada, vem depois.
+	 */
+	.recomeco {
+		display: flex;
+		min-height: 1.25rem;
+	}
+
+	/* O cartaz das páginas de dentro: mais baixo, com a letra ainda maior. */
+	.cartaz-medio {
+		gap: clamp(1rem, 2.5vh, 1.75rem);
+		min-height: min(44rem, calc(100svh - var(--topo)));
+	}
+
+	.cartaz-medio h1 {
+		--letra: clamp(3.5rem, 1.2rem + 8vw, 11rem);
+	}
+
+	.cartaz-medio .faixa {
+		animation: sobe 0.8s 0.5s var(--ease-suave) both;
+	}
+
+	.cartaz-acoes {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 1rem 1.5rem;
+	}
+
+	/* Onde a pessoa está: Trilhas / a trilha. */
+	.migalhas ol {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		column-gap: 0.6rem;
+	}
+
+	.migalhas a {
+		display: inline-flex;
+		align-items: center;
+		min-height: 2.75rem;
+	}
+
+	.migalhas [aria-current] {
+		color: var(--tinta-suave);
+	}
+
+	@media (width >= 62rem) {
+		/* O painel ocupa os 30% da direita, de cima a baixo, e o título para antes dele. */
+		.cartaz {
+			padding-right: calc(30% + var(--margem));
+		}
+
+		.cartaz h1 {
+			--recuo: 30vw;
+		}
+
+		.mural {
+			position: absolute;
+			inset: 0 0 0 auto;
+			width: 30%;
+		}
+
+		.cartaz-pe {
+			grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+		}
+
+		.cartaz-pe > .abertura {
+			grid-row: 1;
+			grid-column: 1;
+		}
+
+		.cartaz-pe > .para-quem,
+		.cartaz-pe > .recomeco {
+			grid-row: 2;
+			grid-column: 1;
+		}
+
+		.cartaz-acao {
+			grid-row: 1 / span 2;
+			grid-column: 2;
+		}
+	}
+
+	@media (width < 62rem) {
+		.cartaz,
+		.cartaz-medio {
+			min-height: 0;
+			padding-top: 0;
+		}
+
+		/* Duas fileiras: os azulejos de sobra saem (6 por fileira; 10 na tela média). */
+		.mural {
+			grid-template-columns: repeat(6, minmax(0, 1fr));
+			position: relative;
+			margin: 0 calc(var(--margem) * -1);
+		}
+
+		.mural .az:nth-child(n + 13) {
+			display: none;
+		}
+	}
+
+	@media (width >= 40rem) and (width < 62rem) {
+		.mural {
+			grid-template-columns: repeat(10, minmax(0, 1fr));
+		}
+
+		.mural .az:nth-child(n + 13) {
+			display: block;
+		}
+
+		.mural .az:nth-child(n + 21) {
+			display: none;
+		}
+	}
+
+	/* ───── O caminho, na página inicial ───── */
+
+	/*
+	 * O caminho de um projeto de lei: cinco azulejos em fila, um por passo. Os passos
+	 * já andados ficam com a cor, o fio de tinta avança até o passo da vez, e o texto
+	 * troca ao lado do número gigante, que tomba no lugar.
+	 */
+	.caminho {
+		position: relative;
+		padding: clamp(3.5rem, 8vw, 7rem) var(--margem) clamp(4rem, 9vw, 7rem);
+		border-top: 2px solid var(--tinta);
+	}
+
+	.caminho-cabeca {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem 3rem;
+		align-items: end;
+		margin-bottom: clamp(2rem, 4vw, 3.5rem);
+	}
+
+	.caminho-cabeca h2 {
+		--letra: clamp(2.75rem, 1.4rem + 5.6vw, 6.5rem);
+		max-width: 9.5em;
+		line-height: 0.88;
+	}
+
+	.caminho-cabeca p {
+		max-width: 26rem;
+		font-family: var(--font-serif);
+		font-size: 1.125rem;
+		line-height: 1.5;
+		color: var(--tinta-suave);
+	}
+
+	.passos-abas {
+		--vao: clamp(0.4rem, 1.6vw, 1.5rem);
+		position: relative;
+		display: grid;
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+		gap: var(--vao);
+		padding-top: 8px;
+	}
+
+	.passos-abas li {
+		position: relative;
+		z-index: 1;
+	}
+
+	.passos-abas button {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		justify-items: start;
+		gap: 0.35rem;
+		width: 100%;
+		padding: 0;
+		color: var(--tinta-suave);
+		text-align: left;
+		cursor: pointer;
+		transition: color 0.2s;
+	}
+
+	.passos-abas .grande {
+		position: relative;
+		width: min(100%, 7.5rem);
+		transition:
+			translate 0.35s var(--ease-mola),
+			box-shadow 0.35s;
+	}
+
+	.passos-abas button[aria-current],
+	.passos-abas button:hover {
+		color: var(--tinta);
+	}
+
+	.aba-n {
+		margin-top: 0.8rem;
+		font-size: 2.25rem;
+		line-height: 0.8;
+		-webkit-text-stroke-width: 2px;
+	}
+
+	.aba-nome {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		font-weight: 700;
+		line-height: 1.15;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		overflow-wrap: anywhere;
+	}
+
+	.passos {
+		margin-top: clamp(1.5rem, 3vw, 2.5rem);
+		padding-top: clamp(1.5rem, 3vw, 2.5rem);
+		border-top: 2px solid var(--tinta);
+	}
+
+	.passos-lista {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2.5rem;
+	}
+
+	.passo {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem 2.5rem;
+		align-content: start;
+	}
+
+	.passo > .numeral {
+		font-size: 7rem;
+	}
+
+	.passo-texto {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.9rem;
+		align-content: start;
+		max-width: 40rem;
+	}
+
+	.passo-texto > .rotulo {
+		color: var(--tinta-suave);
+	}
+
+	.passo h3 {
+		--letra: clamp(2.25rem, 1.6rem + 2.4vw, 3.75rem);
+		line-height: 0.9;
+	}
+
+	.passo-texto > p:not(.rotulo),
+	.desvios {
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.6;
+	}
+
+	.desvios {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.6rem;
+	}
+
+	/* O desvio, o que pode mudar o caminho: um fio da cor do passo ao lado. */
+	.desvio {
+		padding-left: 1rem;
+		border-left: 5px solid var(--fita, var(--tinta));
+	}
+
+	.passo-fontes {
+		font-family: var(--font-serif);
+		font-size: 0.9375rem;
+		line-height: 1.75;
+		color: var(--tinta-suave);
+	}
+
+	.passo-fontes a {
+		color: var(--tinta);
+		font-weight: 700;
+	}
+
+	.passos-controles {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem 1.5rem;
+		min-height: 3.25rem;
+		margin-top: 1.5rem;
+	}
+
+	.passos-botoes {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		margin-left: auto;
+	}
+
+	/*
+	 * Com JavaScript, um passo aparece de cada vez. O navegador que sabe dizer se
+	 * tem JavaScript (o scripting, no CSS) já mostra a página assim, sem esperar o
+	 * código carregar, e nada pula. Sem JavaScript, os cinco passos ficam abertos,
+	 * um embaixo do outro, e a fila de azulejos e os botões saem. No navegador que
+	 * não sabe dizer, os cinco ficam abertos até o código carregar (o data-vivo).
+	 *
+	 * No celular, os outros passos saem da página. A partir do md, os cinco ficam
+	 * empilhados no mesmo lugar, e só o da vez aparece: a altura é a do passo mais
+	 * alto, e os botões não sobem nem descem quando o passo troca. O passo escondido
+	 * fica fora do teclado e do leitor de tela nos dois casos.
+	 */
+	@media (scripting: enabled) {
+		.palco-caminho .passo:not([data-ativo]) {
+			display: none;
+		}
+	}
+
+	.palco-caminho[data-vivo] .passo:not([data-ativo]) {
+		display: none;
+	}
+
+	@media (width >= 48rem) {
+		@media (scripting: enabled) {
+			.palco-caminho .passo {
+				grid-area: 1 / 1;
+			}
+
+			.palco-caminho .passo:not([data-ativo]) {
+				display: grid;
+				visibility: hidden;
+			}
+		}
+
+		.palco-caminho[data-vivo] .passo {
+			grid-area: 1 / 1;
+		}
+
+		.palco-caminho[data-vivo] .passo:not([data-ativo]) {
+			display: grid;
+			visibility: hidden;
+		}
+	}
+
+	@media (scripting: none) {
+		.passos-abas,
+		.passos-botoes {
+			display: none;
+		}
+
+		.passos {
+			margin-top: 0;
+		}
+	}
+
+	@media (width >= 48rem) {
+		/* O fio que liga os cinco azulejos, como estações de um caminho: o de papel é o
+		   caminho inteiro, e o de tinta, o que já foi andado. */
+		.passos-abas::before,
+		.passos-abas::after {
+			content: "";
+			position: absolute;
+			top: calc(8px + 3.75rem - 1px);
+			left: 0;
+			height: 2px;
+		}
+
+		.passos-abas::before {
+			right: calc((100% - 4 * var(--vao)) / 5 - 7.5rem);
+			background: var(--papel-3);
+		}
+
+		.passos-abas::after {
+			right: calc((100% - 4 * var(--vao)) / 5);
+			background: var(--tinta);
+			transform: scaleX(calc((var(--passo, 1) - 1) / 4));
+			transform-origin: 0 50%;
+			transition: transform 0.6s var(--ease-golpe);
+		}
+
+		.passo {
+			grid-template-columns: minmax(0, 0.8fr) minmax(0, 2.2fr);
+		}
+
+		.passo > .numeral {
+			font-size: clamp(7rem, 3rem + 15vw, 17rem);
+		}
+	}
+
+	@media (width < 48rem) {
+		/* No celular, o nome do passo fica só para o leitor de tela: cabe o número. */
+		.aba-nome {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+			white-space: nowrap;
+		}
+	}
+
+	@media (width >= 62rem) {
+		.caminho-cabeca {
+			grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+		}
+	}
+
 	/* ───── O rodapé ───── */
 
 	/* O rodapé: papel com fio de tinta, e uma fileira de azulejos embaixo, que faz
