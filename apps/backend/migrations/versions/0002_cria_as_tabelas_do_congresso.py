@@ -4,6 +4,10 @@ O que a coleta da Câmara (#10) e do Senado (#11) grava: a fonte de cada dado, o
 mandato, a proposição, a votação, a ligação entre votação e proposição e o voto. O modelo está em
 src/mandatometro/db/modelos.py, e o diagrama, no README.
 
+O CHECK ck_voto_valor_bruto foi trocado à mão depois de gerado: o voto só guarda os códigos de
+CODIGOS_GRAVADOS, e toda ausência entra sem o código, para a licença saúde ficar igual às outras.
+O autogenerate não compara CHECK; o teste de migrations confere este com o do modelo.
+
 Revision ID: 0002
 Revises: 0001
 Create Date: 2026-11-12 20:47:52.347604
@@ -153,7 +157,9 @@ def upgrade() -> None:
             name=op.f("ck_voto_valor"),
         ),
         sa.CheckConstraint(
-            "valor_bruto is not null or valor = 'nao_votou'", name=op.f("ck_voto_valor_bruto")
+            "valor_bruto in ('Sim', 'Não', 'Abstenção', 'Obstrução', 'Artigo 17', "
+            "'Presidente (art. 51 RISF)', 'P-NRV')",
+            name=op.f("ck_voto_valor_bruto"),
         ),
         sa.ForeignKeyConstraint(["fonte_id"], ["fonte.id"], name=op.f("fk_voto_fonte_id_fonte")),
         sa.ForeignKeyConstraint(
