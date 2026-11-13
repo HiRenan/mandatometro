@@ -55,7 +55,8 @@ CODIGOS_GRAVADOS = {
 }
 # As ausências do Senado: entram como nao_votou, sem o código, todas iguais. O banco não guarda o
 # motivo, para a licença saúde não sair de consulta nenhuma (decisões do Renan na #7, em
-# 12/11/2026: o LS só como "não votou" e, depois, nenhuma ausência com o código).
+# 12/11/2026: o LS só como "não votou" e, depois, nenhuma ausência com o código). A comparação
+# ignora a caixa: um "ls" que virasse outro ficaria separado das outras ausências.
 CODIGOS_DE_AUSENCIA = {
     "AP",  # "Atividade parlamentar"
     "LS",  # "Licença saúde"
@@ -71,7 +72,8 @@ _RESULTADOS_CONHECIDOS = {"1": "aprovada", "0": "rejeitada", "A": "aprovada"}
 def normalizar_voto(bruto: str) -> tuple[str, str | None]:
     """O (valor, valor_bruto) a gravar para o código de voto que a Casa publicou.
 
-    Só os códigos de CODIGOS_GRAVADOS ficam gravados. Uma ausência vira nao_votou, sem o código.
+    Só os códigos de CODIGOS_GRAVADOS ficam gravados. Uma ausência vira nao_votou, sem o código,
+    com qualquer caixa ("ls" é LS).
     Um código desconhecido vira "outro", também sem o código, porque pode ser outro motivo pessoal,
     e vai para o log sozinho, sem a pessoa: quem conferir o significado o põe numa das listas, e
     uma nova coleta da votação corrige o voto. O conector não acrescenta a pessoa a esse aviso.
@@ -79,7 +81,7 @@ def normalizar_voto(bruto: str) -> tuple[str, str | None]:
     codigo = bruto.strip()
     if codigo in CODIGOS_GRAVADOS:
         return CODIGOS_GRAVADOS[codigo], codigo
-    if codigo in CODIGOS_DE_AUSENCIA:
+    if codigo.upper() in CODIGOS_DE_AUSENCIA:
         return "nao_votou", None
     logger.warning("Código de voto desconhecido: %r. Entra como outro, sem o código.", codigo)
     return "outro", None

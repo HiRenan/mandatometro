@@ -212,6 +212,9 @@ def test_o_banco_recusa_codigo_fora_da_lista(sessao, codigo):
         # O espaço em volta sai: o Senado manda as siglas com espaço nos exercícios ("LS ", "LP ").
         ("LS ", ("nao_votou", None)),
         (" Sim", ("sim", "Sim")),
+        # A ausência vale com qualquer caixa: um "ls" não vira outro, que a separaria das outras.
+        ("ls", ("nao_votou", None)),
+        ("Ls ", ("nao_votou", None)),
         # Um código novo pode ser outro motivo pessoal: entra como outro, sem o código.
         ("XYZ", ("outro", None)),
     ],
