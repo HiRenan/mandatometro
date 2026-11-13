@@ -1,7 +1,10 @@
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { Aviso, useAviso } from "@/components/aviso";
+import { sementeDe } from "@/lib/azulejos";
 import { focarNoTitulo } from "@/lib/foco";
+import { Painel } from "./azulejo";
+import { BOTAO_CONTINUAR } from "./botao-continuar";
 
 const AINDA_NAO =
 	"Ainda não deu. Confira a internet ou espere um pouco e tente de novo.";
@@ -48,38 +51,48 @@ export function PaginaDeErro() {
 	}
 
 	return (
-		<div
-			data-pagina-de-erro
-			className="px-margem-celular mx-auto max-w-[1440px] pt-10 pb-20 md:px-16"
-		>
-			<h1 className="titulo-condensado text-[2.5rem] md:text-[3.5rem] xl:text-[4.75rem]">
+		<section data-pagina-de-erro className="cartaz cartaz-medio">
+			<Painel
+				semente={sementeDe("erro")}
+				colunas={4}
+				quantas={64}
+				className="mural"
+				sozinho
+			/>
+			{/* Com a letra grande, o título cresce até "CARREGOU" encostar nas margens
+			    (o letra-com-teto do index.css). */}
+			<h1 className="titulo-condensado letra-com-teto [--palavra:4.15]">
 				A página não carregou
 			</h1>
-			<p className="mt-5 max-w-[40ch] font-serif text-xl leading-snug xl:text-[1.5625rem]">
-				Pode ser a sua internet ou uma falha no site. Os artigos que você já leu
-				continuam marcados.
-			</p>
-			<ul className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-3 text-[1.1875rem] font-bold">
-				<li>
-					<button
-						ref={botao}
-						type="button"
-						onClick={tentarDeNovo}
-						className="acao-de-texto text-[1.1875rem] font-bold"
-					>
-						Tentar de novo
-					</button>
-				</li>
-				<li>
-					<Link to="/trilhas" activeOptions={{ exact: true }}>
-						Ver as trilhas
-					</Link>
-				</li>
-			</ul>
-			{tentouAqui && (
-				<p className="mt-6 max-w-[40ch] text-xl font-bold">{AINDA_NAO}</p>
-			)}
+			<div className="cartaz-pe">
+				<p className="abertura">
+					Pode ser a sua internet ou uma falha no site. Os artigos que você já
+					leu continuam marcados.
+				</p>
+				<ul className="acoes-da-pagina">
+					<li>
+						<button
+							ref={botao}
+							type="button"
+							onClick={tentarDeNovo}
+							className={BOTAO_CONTINUAR}
+						>
+							Tentar de novo
+						</button>
+					</li>
+					<li>
+						<Link
+							to="/trilhas"
+							activeOptions={{ exact: true }}
+							className="acao-de-texto"
+						>
+							<span>Ver as trilhas</span>
+						</Link>
+					</li>
+				</ul>
+				{tentouAqui && <p className="ainda-nao">{AINDA_NAO}</p>}
+			</div>
 			<Aviso texto={aviso} />
-		</div>
+		</section>
 	);
 }

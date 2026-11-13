@@ -2237,4 +2237,37 @@
 			display: none;
 		}
 	}
+
+	/* ───── A página não encontrada e a de erro ───── */
+
+	/*
+	 * O 404: cada algarismo leva uma fita, pela ordem. O número e o título ficam
+	 * juntos no pé do cartaz: a margem de cima que sobra vai para o número.
+	 */
+	.numero-404 {
+		display: flex;
+		gap: 0.02em;
+		margin-top: auto;
+		font-size: clamp(7rem, 4rem + 14vw, 17rem);
+	}
+
+	.numero-404 + h1 {
+		margin-top: 0;
+	}
+
+	.acoes-da-pagina {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 1rem 1.5rem;
+	}
+
+	/* Na página de erro, o aviso de que a nova tentativa não deu. */
+	.ainda-nao {
+		max-width: 34rem;
+		font-family: var(--font-sans);
+		font-size: 1.0625rem;
+		font-weight: 700;
+		line-height: 1.4;
+	}
 }
