@@ -20,6 +20,7 @@ const codigo = (arquivo: string) =>
 const paginaDaTrilha = codigo("routes/trilhas/$trilha/index.tsx");
 const listaDasTrilhas = codigo("routes/trilhas/index.tsx");
 const paginaDoArtigo = codigo("routes/trilhas/$trilha/$artigo.tsx");
+const passoAPasso = codigo("components/infografico-em-linha.tsx");
 const css = codigo("index.css");
 
 /**
@@ -32,6 +33,8 @@ const FOLGA = 1.005;
 /**
  * A largura de uma palavra, em em, pela soma das letras, mais o que cada par de letras
  * vizinhas passa da soma das duas no navegador (o kerning que afasta, como em "4–").
+ * Os títulos vão em maiúsculas na tela (o text-transform do CSS), e a régua mede a
+ * palavra como ela aparece.
  */
 function largura(palavra: string, estilo: EstiloDeTitulo): number {
 	const letras: Record<string, number> = LARGURAS_DAS_LETRAS[estilo];
@@ -39,7 +42,7 @@ function largura(palavra: string, estilo: EstiloDeTitulo): number {
 	const maisLarga = Math.max(...Object.values(letras));
 	let soma = 0;
 	let anterior = "";
-	for (const letra of palavra.normalize("NFC")) {
+	for (const letra of palavra.normalize("NFC").toLocaleUpperCase("pt-BR")) {
 		soma += (letras[letra] ?? maisLarga) + (pares[anterior + letra] ?? 0);
 		anterior = letra;
 	}
@@ -51,7 +54,10 @@ function palavras(titulo: string): string[] {
 	return titulo.match(/[^\s‐‑-]+[‐‑-]?/g) ?? [];
 }
 
-/** O --palavra de um título, lido da linha do código com as classes dele. */
+/**
+ * O --palavra de um título, lido da primeira linha do código que tem as classes
+ * dele (ou a etiqueta, como "<h3", quando duas linhas têm as mesmas classes).
+ */
 function tetoNoCodigo(
 	codigo: string,
 	arquivo: string,
@@ -91,9 +97,9 @@ const TETOS = {
 	},
 	trilhaNaLista: {
 		lugar: "no título da trilha, em /trilhas",
-		estilo: "subtitulo-condensado",
+		estilo: "titulo-condensado",
 		palavra: tetoNoCodigo(listaDasTrilhas, "routes/trilhas/index.tsx", [
-			"subtitulo-condensado",
+			"titulo-de-folha",
 			"letra-com-teto",
 		]),
 	},
@@ -108,16 +114,42 @@ const TETOS = {
 	},
 	folha: {
 		lugar: "no título da folha, na página da trilha",
-		estilo: "subtitulo-condensado",
+		estilo: "titulo-condensado",
 		palavra: tetoNoCodigo(paginaDaTrilha, "routes/trilhas/$trilha/index.tsx", [
-			"subtitulo-condensado",
+			"titulo-de-folha",
 			"letra-com-teto",
 		]),
+	},
+	outroArtigo: {
+		lugar: "no anterior e no próximo, no pé do artigo",
+		estilo: "titulo-condensado",
+		palavra: tetoNoCodigo(
+			paginaDoArtigo,
+			"routes/trilhas/$trilha/$artigo.tsx",
+			["titulo-de-folha", "letra-com-teto"],
+		),
 	},
 	intertitulo: {
 		lugar: "no intertítulo (##)",
 		estilo: "subtitulo-condensado",
 		palavra: tetoDoIntertitulo(),
+	},
+	caminho: {
+		lugar: "no título do caminho, na página inicial",
+		estilo: "titulo-condensado",
+		palavra: tetoNoCodigo(passoAPasso, "components/infografico-em-linha.tsx", [
+			"titulo-condensado",
+			"letra-com-teto",
+		]),
+	},
+	passo: {
+		lugar: "no título do passo, na página inicial",
+		estilo: "titulo-condensado",
+		palavra: tetoNoCodigo(passoAPasso, "components/infografico-em-linha.tsx", [
+			"<h3",
+			"titulo-condensado",
+			"letra-com-teto",
+		]),
 	},
 } satisfies Record<string, Teto>;
 
@@ -140,20 +172,34 @@ function largasDe(arquivo: string, texto: string, tetos: Teto[]): string[] {
 }
 
 describe("a régua das letras", () => {
-	it("bate com a largura medida no navegador", () => {
-		// Medidas na página, no Edge: "fundamentais?" no título do artigo e no da folha.
-		expect(largura("fundamentais?", "titulo-condensado")).toBeCloseTo(5.636, 2);
-		expect(largura("fundamentais?", "subtitulo-condensado")).toBeCloseTo(
-			5.93,
-			2,
+	it("fica igual ou um pouco acima da largura medida no navegador", () => {
+		// Medidas na página, no navegador do Orca (Chromium 150), em 13/11/2026, com
+		// a palavra inteira. A soma das letras não conta o kerning que aproxima as
+		// letras: ela não pode ficar abaixo da medida, e passa dela em até 2%.
+		const medidas: Array<[string, EstiloDeTitulo, number]> = [
+			["fundamentais?", "titulo-condensado", 6.243],
+			["Constituição", "titulo-condensado", 5.615],
+			["fundamentais?", "subtitulo-condensado", 6.7605],
+			["constitucionalidade", "subtitulo-condensado", 9.5787],
+		];
+		for (const [palavra, estilo, medida] of medidas) {
+			const soma = largura(palavra, estilo);
+			expect(soma, `${palavra}, ${estilo}`).toBeGreaterThanOrEqual(medida);
+			expect(soma, `${palavra}, ${estilo}`).toBeLessThanOrEqual(medida * 1.02);
+		}
+	});
+
+	it("mede a palavra em maiúsculas, como ela aparece na tela", () => {
+		expect(largura("constituição", "titulo-condensado")).toBe(
+			largura("CONSTITUIÇÃO", "titulo-condensado"),
 		);
 	});
 
 	it("conta o par que o navegador alarga", () => {
-		// Medidas no Edge, como as letras da tabela: o algarismo junto de um traço fica
-		// 0,04 em mais largo que a soma das duas letras.
-		expect(largura("4–", "titulo-condensado")).toBeCloseTo(0.843, 3);
-		expect(largura("1-", "subtitulo-condensado")).toBeCloseTo(0.7641, 3);
+		// Medidas como as letras da tabela: o algarismo junto de um traço fica 0,04 em
+		// mais largo que a soma das duas letras.
+		expect(largura("4–", "titulo-condensado")).toBeCloseTo(0.785, 3);
+		expect(largura("1-", "subtitulo-condensado")).toBeCloseTo(0.713, 3);
 	});
 
 	it("mede igual a letra com o acento junto ou separado", () => {
@@ -190,15 +236,31 @@ describe("as palavras dos títulos", () => {
 				...largasDe(`${pasta}/trilha.md`, trilha.titulo, [
 					TETOS.trilha,
 					TETOS.trilhaNaLista,
+					// "Voltar para" e o nome da trilha, no pé do último artigo.
+					TETOS.outroArtigo,
 				]),
 			);
 			for (const artigo of trilha.artigos) {
 				const arquivo = `${pasta}/${artigo.slug}.md`;
 				largas.push(
-					...largasDe(arquivo, artigo.titulo, [TETOS.artigo, TETOS.folha]),
+					...largasDe(arquivo, artigo.titulo, [
+						TETOS.artigo,
+						TETOS.folha,
+						TETOS.outroArtigo,
+					]),
 				);
 				for (const [, intertitulo] of artigo.corpo.matchAll(/^##\s+(.+)$/gm)) {
 					largas.push(...largasDe(arquivo, intertitulo, [TETOS.intertitulo]));
+				}
+			}
+			// O caminho da trilha aparece na página inicial, passo a passo.
+			if (trilha.infografico) {
+				const arquivo = `${pasta}/infografico.md`;
+				largas.push(
+					...largasDe(arquivo, trilha.infografico.titulo, [TETOS.caminho]),
+				);
+				for (const passo of trilha.infografico.passos) {
+					largas.push(...largasDe(arquivo, passo.titulo, [TETOS.passo]));
 				}
 			}
 		}
