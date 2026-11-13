@@ -1,0 +1,128 @@
+/*
+ * Os azulejos (DESIGN.md): cada peça é um quadrado com o fundo (--a), o motivo
+ * desenhado por cima (--b) e a volta (--r, em quartos). Tudo é gradiente do CSS,
+ * sem imagem. O desenho de cada peça vem de lib/azulejos.ts, e o componente
+ * (components/azulejo.tsx) escreve as variáveis. Os azulejos são só desenho e
+ * ficam fora do leitor de tela.
+ */
+@layer components {
+	/* O painel: as peças lado a lado, com 2 px de rejunte. */
+	.painel {
+		display: grid;
+		grid-template-columns: repeat(var(--col), minmax(0, 1fr));
+		align-content: start;
+		gap: 2px;
+		perspective: 70rem;
+	}
+
+	/*
+	 * O corte é overflow: clip, e não hidden, para as fileiras de sobra do painel
+	 * não se achatarem na altura dele. O motivo passa 1 px da borda, para a emenda
+	 * entre duas peças não mostrar um fio.
+	 */
+	.az {
+		position: relative;
+		display: block;
+		aspect-ratio: 1;
+		overflow: clip;
+		background: var(--a);
+	}
+
+	.az::before {
+		content: "";
+		position: absolute;
+		inset: -1px;
+		background: var(--motivo, none);
+		rotate: calc(var(--r, 0) * 90deg);
+	}
+
+	/* Os motivos. O 8 não tem desenho: é a peça lisa, só com o fundo. */
+	.m1::before {
+		--motivo: radial-gradient(circle at 0 0, var(--b) 70.2%, transparent 70.8%);
+	}
+
+	.m2::before {
+		--motivo: radial-gradient(
+			circle at 50% 0,
+			var(--b) 44.2%,
+			transparent 44.9%
+		);
+	}
+
+	.m3::before {
+		--motivo: linear-gradient(135deg, var(--b) 49.8%, transparent 50.3%);
+	}
+
+	.m4::before {
+		--motivo: radial-gradient(circle at 50% 50%, var(--b) 49%, transparent 50%);
+	}
+
+	.m5::before {
+		--motivo: repeating-linear-gradient(
+			90deg,
+			var(--b) 0 12.5%,
+			transparent 12.5% 25%
+		);
+	}
+
+	.m6::before {
+		--motivo: radial-gradient(
+			circle at 0 0,
+			transparent 34.8%,
+			var(--b) 35.4% 70.2%,
+			transparent 70.8%
+		);
+	}
+
+	.m7::before {
+		--motivo:
+			radial-gradient(circle at 0 0, var(--b) 49%, transparent 49.6%),
+			radial-gradient(circle at 100% 100%, var(--b) 49%, transparent 49.6%);
+	}
+
+	.m9::before {
+		--motivo:
+			radial-gradient(circle, var(--b) 30%, transparent 33%) 0 0 / 50% 50%;
+	}
+
+	.m10::before {
+		--motivo: linear-gradient(90deg, var(--b) 49.8%, transparent 50.3%);
+	}
+
+	/*
+	 * O azulejo cru: papel sobre papel. Ele ganha a cor quando vira. O fundo e o
+	 * desenho da peça vêm escritos nela (--a e --b): aqui, o fundo troca direto, e
+	 * o desenho, na camada do motivo.
+	 */
+	.az.cru {
+		background: var(--papel-2);
+	}
+
+	.az.cru::before {
+		--b: var(--papel-3);
+	}
+
+	/* O azulejo grande: quatro peças que formam um desenho. */
+	.grande {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		width: 100%;
+		aspect-ratio: 1;
+		perspective: 30rem;
+	}
+
+	.grande.pequeno {
+		flex: none;
+		width: 2.5rem;
+	}
+
+	/*
+	 * Nas cores forçadas do Windows, o navegador apaga os fundos, e os azulejos
+	 * somem: são só desenho, e nada do que a página diz depende deles.
+	 */
+	@media (forced-colors: active) {
+		.az::before {
+			display: none;
+		}
+	}
+}
