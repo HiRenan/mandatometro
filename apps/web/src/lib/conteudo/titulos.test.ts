@@ -21,6 +21,7 @@ const paginaDaTrilha = codigo("routes/trilhas/$trilha/index.tsx");
 const listaDasTrilhas = codigo("routes/trilhas/index.tsx");
 const paginaDoArtigo = codigo("routes/trilhas/$trilha/$artigo.tsx");
 const passoAPasso = codigo("components/infografico-em-linha.tsx");
+const outrosArtigos = codigo("components/outros-artigos.tsx");
 const css = codigo("index.css");
 
 /**
@@ -121,13 +122,12 @@ const TETOS = {
 		]),
 	},
 	outroArtigo: {
-		lugar: "no anterior e no próximo, no pé do artigo",
+		lugar: "no anterior e no próximo, no pé do artigo e do quiz",
 		estilo: "titulo-condensado",
-		palavra: tetoNoCodigo(
-			paginaDoArtigo,
-			"routes/trilhas/$trilha/$artigo.tsx",
-			["titulo-de-folha", "letra-com-teto"],
-		),
+		palavra: tetoNoCodigo(outrosArtigos, "components/outros-artigos.tsx", [
+			"titulo-de-folha",
+			"letra-com-teto",
+		]),
 	},
 	intertitulo: {
 		lugar: "no intertítulo (##)",

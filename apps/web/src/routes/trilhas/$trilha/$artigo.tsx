@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Aviso, useAviso } from "@/components/aviso";
 import { AzulejoGrande } from "@/components/azulejo";
@@ -7,6 +7,7 @@ import { ChamadaDoQuiz } from "@/components/chamada-do-quiz";
 import { Fontes } from "@/components/fontes";
 import { MarcaDeLido } from "@/components/marca-de-lido";
 import { NestaTrilha } from "@/components/nesta-trilha";
+import { OutrosArtigos } from "@/components/outros-artigos";
 import { TextoDoArtigo } from "@/components/texto-do-artigo";
 import { azulejoDaPosicao } from "@/lib/azulejos";
 import { classes } from "@/lib/classes";
@@ -193,64 +194,14 @@ function Folha({
 							/>
 						)}
 
-						{/* O anterior e o próximo, no pé da folha: em cima, o número na fita da
-						    posição, o que é e o azulejo do artigo; embaixo, o título, com a
-						    largura toda da faixa. Com a letra grande, o título cresce até
-						    "FUNDAMENTAIS?" encostar nas bordas da folha (o letra-com-teto). */}
-						<nav
-							aria-label="Outros artigos da trilha"
-							className={classes("outros-artigos", anterior && "dois")}
-						>
-							{anterior && (
-								<Link
-									to="/trilhas/$trilha/$artigo"
-									params={{ trilha: trilha.slug, artigo: anterior.slug }}
-									className={classeDaFita(posicao - 1)}
-								>
-									<span className="outros-artigos-cabeca">
-										<span aria-hidden="true" className="numeral">
-											{posicao - 1}
-										</span>
-										<span className="rotulo">Artigo anterior</span>
-										<AzulejoGrande pecas={azulejoDaPosicao(posicao - 1)} />
-									</span>{" "}
-									<strong className="titulo-de-folha letra-com-teto [--palavra:6.34]">
-										{anterior.titulo}
-									</strong>
-								</Link>
-							)}
-							{proximo ? (
-								<Link
-									to="/trilhas/$trilha/$artigo"
-									params={{ trilha: trilha.slug, artigo: proximo.slug }}
-									className={classeDaFita(posicao + 1)}
-								>
-									<span className="outros-artigos-cabeca">
-										<span aria-hidden="true" className="numeral">
-											{posicao + 1}
-										</span>
-										<span className="rotulo">Próximo artigo</span>
-										<AzulejoGrande pecas={azulejoDaPosicao(posicao + 1)} />
-									</span>{" "}
-									<strong className="titulo-de-folha letra-com-teto [--palavra:6.34]">
-										{proximo.titulo}
-									</strong>
-								</Link>
-							) : (
-								<Link
-									to="/trilhas/$trilha"
-									params={{ trilha: trilha.slug }}
-									activeOptions={{ exact: true }}
-								>
-									<span className="outros-artigos-cabeca">
-										<span className="rotulo">Último artigo da trilha</span>
-									</span>{" "}
-									<strong className="titulo-de-folha letra-com-teto [--palavra:6.34]">
-										Voltar para {trilha.titulo}
-									</strong>
-								</Link>
-							)}
-						</nav>
+						{/* O anterior e o próximo, no pé da folha (components/outros-artigos.tsx). */}
+						<OutrosArtigos
+							trilha={trilha}
+							anterior={anterior && { ...anterior, posicao: posicao - 1 }}
+							proximo={proximo && { ...proximo, posicao: posicao + 1 }}
+							nome="Outros artigos da trilha"
+							fim="Último artigo da trilha"
+						/>
 					</article>
 
 					<div className="ao-lado-do-artigo">
