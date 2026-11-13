@@ -1,4 +1,10 @@
-import { Link, useRouter, useRouterState } from "@tanstack/react-router";
+import {
+	type AnyRouter,
+	Link,
+	type ParsedLocation,
+	useRouter,
+	useRouterState,
+} from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { Aviso, useAviso } from "@/components/aviso";
 import { sementeDe } from "@/lib/azulejos";
@@ -9,10 +15,34 @@ import { BOTAO_CONTINUAR } from "./botao-continuar";
 const AINDA_NAO =
 	"Ainda não deu. Confira a internet ou espere um pouco e tente de novo.";
 
+/** A entrada do histórico: o voltar do navegador devolve a mesma chave. */
+function entradaDe(local: ParsedLocation): string {
+	return local.state.__TSR_key ?? local.href;
+}
+
 // O router monta a página de erro de novo a cada tentativa que falha, e o estado
-// do componente se perde. Por isso a última tentativa fica aqui fora, com a chave
-// da navegação: numa navegação nova, a página de erro começa sem o aviso.
+// do componente se perde. Por isso a última tentativa fica aqui fora, com a
+// entrada do histórico em que ela foi feita.
 let ultimaTentativa: string | undefined;
+
+// Quem sai da entrada esquece a tentativa: numa visita nova, inclusive pelo
+// voltar do navegador, a página de erro começa sem o aviso. O "Tentar de novo"
+// pede a mesma entrada e não esquece. A escuta fica no router, uma por router,
+// e não num efeito do componente: durante a tentativa, a página de erro sai da
+// tela, e a pessoa ainda pode navegar.
+const routersOuvidos = new WeakSet<AnyRouter>();
+
+function esquecerAoSairDaEntrada(router: AnyRouter) {
+	if (routersOuvidos.has(router)) {
+		return;
+	}
+	routersOuvidos.add(router);
+	router.subscribe("onBeforeNavigate", ({ fromLocation, toLocation }) => {
+		if (!fromLocation || entradaDe(fromLocation) !== entradaDe(toLocation)) {
+			ultimaTentativa = undefined;
+		}
+	});
+}
 
 /**
  * A página de erro, para quando uma página não chega: a internet caiu no meio da
@@ -22,7 +52,7 @@ let ultimaTentativa: string | undefined;
 export function PaginaDeErro() {
 	const router = useRouter();
 	const chave = useRouterState({
-		select: (estado) => estado.location.state.__TSR_key ?? estado.location.href,
+		select: (estado) => entradaDe(estado.location),
 	});
 	const tentouAqui = ultimaTentativa === chave;
 	const { aviso, avisar } = useAviso();
@@ -41,6 +71,7 @@ export function PaginaDeErro() {
 	// Enquanto o pedido não volta, o router mostra o mesmo aviso de carregando das
 	// navegações.
 	async function tentarDeNovo() {
+		esquecerAoSairDaEntrada(router);
 		ultimaTentativa = chave;
 		await router.invalidate();
 		// Se a página chegou, o foco vai para o título dela, como numa navegação.

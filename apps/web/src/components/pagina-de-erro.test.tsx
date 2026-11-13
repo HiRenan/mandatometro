@@ -52,6 +52,7 @@ function abrir(carregar: () => Promise<string>) {
 		defaultErrorComponent: PaginaDeErro,
 	});
 	render(<RouterProvider router={router} />);
+	return router;
 }
 
 const semRede = () => Promise.reject(new TypeError("Failed to fetch"));
@@ -116,5 +117,27 @@ describe("página de erro", () => {
 		expect(document.activeElement).toBe(
 			screen.getByRole("button", { name: "Tentar de novo" }),
 		);
+	});
+
+	it("voltar pelo histórico à página que falhou não repete o aviso da tentativa antiga", async () => {
+		const router = abrir(semRede);
+
+		fireEvent.click(
+			await screen.findByRole("button", { name: "Tentar de novo" }),
+		);
+		expect(await screen.findByText(/^Ainda não deu\./)).toBeTruthy();
+
+		// Ainda sem rede, a pessoa vai para outra página e volta pelo histórico: a
+		// entrada é a mesma, mas a tentativa ficou para trás.
+		fireEvent.click(screen.getByRole("link", { name: "Ver as trilhas" }));
+		await screen.findByRole("heading", { name: "Trilhas" });
+		router.history.back();
+
+		expect(
+			await screen.findByRole("heading", { name: "A página não carregou" }),
+		).toBeTruthy();
+		// Nem na tela, nem no anúncio do leitor de tela.
+		expect(screen.queryAllByText(/^Ainda não deu\./)).toEqual([]);
+		expect(screen.getByRole("status").textContent).toBe("");
 	});
 });
