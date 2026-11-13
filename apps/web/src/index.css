@@ -1693,6 +1693,484 @@
 		box-shadow: inset 6px 0 0 var(--tinta);
 	}
 
+	/* ───── O artigo ───── */
+
+	/* A barra da leitura, no alto da tela: a tira das cinco fitas, que enche com o
+	   texto (estilos/movimento.css). Sem a animação de rolagem, ela não aparece. */
+	.leitura-barra {
+		position: fixed;
+		inset: 0 0 auto;
+		z-index: 20;
+		display: none;
+		height: 6px;
+		background: var(--tira);
+		transform: scaleX(0);
+		transform-origin: 0 50%;
+		pointer-events: none;
+	}
+
+	/* A parede de papel, com a folha de leitura por cima. */
+	.parede {
+		--margem: 8px;
+		position: relative;
+		padding: clamp(0.5rem, 2vw, 1.5rem) var(--margem) clamp(3rem, 7vw, 6rem);
+	}
+
+	.artigo-grade {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2.5rem;
+		max-width: 82rem;
+		margin-inline: auto;
+	}
+
+	/*
+	 * A folha de leitura. O --recuo-de-fora é o que a folha tira da largura da
+	 * página, sem contar as margens: o respiro dos dois lados e os fios, e a coluna
+	 * de "Nesta trilha", quando ela fica ao lado. Os títulos de dentro contam com
+	 * ele no teto da letra. O azulejo do canto (--selo) tem o tamanho em px no
+	 * celular: com a letra grande, ele não cresce, e a migalha fica com o espaço.
+	 */
+	.artigo-folha {
+		--selo: clamp(64px, 10vw, 8.5rem);
+		--respiro-da-folha: 16px;
+		--recuo-de-fora: calc(2 * var(--respiro-da-folha) + 4px);
+		min-width: 0;
+		padding: clamp(1.75rem, 4vw, 3rem) var(--respiro-da-folha) 0;
+		animation: sobe 0.7s var(--ease-suave) both;
+	}
+
+	/* O azulejo do artigo, no canto de cima da folha. */
+	.do-artigo {
+		position: absolute;
+		top: clamp(1.25rem, 4vw, 3rem);
+		right: var(--respiro-da-folha);
+		width: var(--selo);
+	}
+
+	.artigo-folha .migalhas,
+	.sobretitulo {
+		max-width: calc(100% - var(--selo) - 16px);
+	}
+
+	/* O número do artigo e "Artigo N de tantos": lado a lado quando cabem, e a
+	   etiqueta embaixo do número quando não. */
+	.sobretitulo {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: 0.5rem 1rem;
+		margin-top: 0.5rem;
+	}
+
+	.sobretitulo .numeral {
+		font-size: clamp(5rem, 3rem + 8vw, 9rem);
+	}
+
+	.sobretitulo .rotulo {
+		flex: 1 1 8rem;
+		min-width: 0;
+	}
+
+	.de-tantos {
+		color: var(--tinta-suave);
+	}
+
+	.artigo-folha h1 {
+		--letra: clamp(2.75rem, 1.6rem + 5vw, 6rem);
+		--recuo: var(--recuo-de-fora);
+		max-width: 10em;
+		margin-top: 1rem;
+		line-height: 0.88;
+	}
+
+	.artigo-folha > .faixa {
+		margin-top: 1.5rem;
+		padding: 0.7rem 0;
+		border-block: 2px solid var(--tinta);
+		color: var(--tinta);
+	}
+
+	/* As fontes oficiais: a lista numerada, com o número na letra do cartaz. */
+	.fontes {
+		max-width: 39rem;
+		padding-top: 1.25rem;
+		border-top: 6px solid var(--tinta);
+	}
+
+	.fontes > h2 {
+		font-size: 1.5rem;
+		line-height: 1;
+	}
+
+	.lista-de-fontes {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.9rem;
+	}
+
+	.lista-de-fontes > li {
+		display: grid;
+		grid-template-columns: 1.75rem minmax(0, 1fr);
+		gap: 0 0.5rem;
+	}
+
+	.lista-de-fontes .numero {
+		font-family: var(--font-sans);
+		font-size: 1.75rem;
+		font-stretch: 62%;
+		font-weight: 900;
+		line-height: 1;
+	}
+
+	.lista-de-fontes p {
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.4;
+	}
+
+	.lista-de-fontes a {
+		font-weight: 700;
+	}
+
+	.lista-de-fontes .endereco {
+		display: block;
+		margin-top: 0.15rem;
+		font-size: 0.875rem;
+		color: var(--tinta-suave);
+		overflow-wrap: anywhere;
+	}
+
+	/* O resumo, antes do texto: a serifa um pouco maior. */
+	.lide {
+		max-width: 39rem;
+		margin-top: clamp(1.5rem, 4vw, 2.5rem);
+		font-family: var(--font-serif);
+		font-size: clamp(1.25rem, 1.15rem + 0.5vw, 1.4375rem);
+		font-weight: 500;
+		line-height: 1.45;
+	}
+
+	/* O texto corrido do artigo: serifa de leitura, tinta na folha. */
+	.texto {
+		max-width: 39rem;
+		font-family: var(--font-serif);
+		font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.1875rem);
+		line-height: 1.68;
+	}
+
+	.texto > * + * {
+		margin-top: 1.1em;
+	}
+
+	/*
+	 * O intertítulo, com o teto da letra grande (o letra-com-teto): a palavra mais
+	 * larga dos intertítulos de hoje é "CONSTITUCIONALIDADE", com 9,59 em. A margem de
+	 * cima é em em e diminui junto com a letra.
+	 */
+	.texto h2 {
+		--letra: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+		--palavra: 9.64;
+		--recuo: var(--recuo-de-fora, 0px);
+		margin-top: 1.7em;
+		font-family: var(--font-sans);
+		font-stretch: 68%;
+		font-weight: 900;
+		line-height: 0.95;
+		text-transform: uppercase;
+		text-wrap: balance;
+	}
+
+	.texto h2 + * {
+		margin-top: 0.6em;
+	}
+
+	.texto ol {
+		padding-left: 1.25em;
+		list-style: decimal;
+	}
+
+	/*
+	 * As listas do texto levam um azulejinho no lugar do marcador: um quarto de
+	 * círculo da cor da fita da posição, que dá um quarto de volta a cada item.
+	 */
+	.texto ul {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.6em;
+	}
+
+	.texto ul > li {
+		position: relative;
+		padding-left: 1.8rem;
+	}
+
+	.texto ul > li::before {
+		content: "";
+		position: absolute;
+		top: 0.4em;
+		left: 0;
+		width: 1rem;
+		height: 1rem;
+		background: radial-gradient(
+			circle at 0 0,
+			var(--marcador, var(--tinta)) 70.2%,
+			transparent 70.8%
+		);
+	}
+
+	.texto ul > li:nth-child(5n + 1)::before {
+		--marcador: var(--fita-verde);
+	}
+
+	.texto ul > li:nth-child(5n + 2)::before {
+		--marcador: var(--fita-amarela);
+	}
+
+	.texto ul > li:nth-child(5n + 3)::before {
+		--marcador: var(--fita-azul);
+	}
+
+	.texto ul > li:nth-child(5n + 4)::before {
+		--marcador: var(--fita-rosa);
+	}
+
+	.texto ul > li:nth-child(5n + 5)::before {
+		--marcador: var(--fita-vermelha);
+	}
+
+	.texto ul > li:nth-child(4n + 2)::before {
+		rotate: 90deg;
+	}
+
+	.texto ul > li:nth-child(4n + 3)::before {
+		rotate: 180deg;
+	}
+
+	.texto ul > li:nth-child(4n + 4)::before {
+		rotate: 270deg;
+	}
+
+	.texto ol > li + li {
+		margin-top: 0.35em;
+	}
+
+	.texto a {
+		text-decoration-line: underline;
+	}
+
+	.texto strong {
+		font-weight: 700;
+	}
+
+	/*
+	 * O lido: um azulejo cru no fim do texto, que vira para o verde, com o visto,
+	 * quando a pessoa chega ali. A altura fica reservada: quando o aviso aparece, as
+	 * fontes não descem.
+	 */
+	.lido {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem 1rem;
+		min-height: 4.5rem;
+	}
+
+	.lido-azulejo {
+		position: relative;
+		display: block;
+		flex: none;
+		width: 3.5rem;
+		perspective: 20rem;
+	}
+
+	.lido-azulejo .az {
+		background: var(--papel-2);
+		transform: rotateY(-180deg);
+	}
+
+	.lido-azulejo .marca-de-lido {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		opacity: 0;
+	}
+
+	.lido[data-lido] .lido-azulejo .az {
+		background: var(--fita-verde);
+		transform: none;
+	}
+
+	.lido[data-lido] .lido-azulejo .marca-de-lido {
+		opacity: 1;
+	}
+
+	/* Só vira quando a pessoa acabou de ler: quem volta ao artigo já o vê verde. */
+	.lido[data-animar] .lido-azulejo .az {
+		transition:
+			transform 0.6s var(--ease-mola),
+			background 0s 0.2s;
+	}
+
+	.lido[data-animar] .lido-azulejo .marca-de-lido {
+		transition: opacity 0s 0.3s;
+	}
+
+	.lido[data-animar] .lido-azulejo .marca-de-lido path {
+		animation-delay: 0.35s;
+	}
+
+	/* O aviso e o "Desmarcar", ao lado do azulejo; embaixo dele quando não cabem. */
+	.lido-palavras {
+		display: grid;
+		flex: 1 1 10rem;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.35rem;
+		justify-items: start;
+		min-width: 0;
+	}
+
+	.lido-texto {
+		font-family: var(--font-sans);
+		font-size: 1.125rem;
+		font-weight: 800;
+		line-height: 1.1;
+		letter-spacing: calc(0.04em * var(--espacado));
+		text-transform: var(--caixa-alta);
+	}
+
+	/*
+	 * O anterior e o próximo: duas faixas no pé da folha, de borda a borda. Em cima,
+	 * o número na fita da posição, o que é a faixa e o azulejo do artigo, que gira
+	 * quando o ponteiro passa; embaixo, o título, com a largura toda da faixa.
+	 */
+	.outros-artigos {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		margin: 2.5rem calc(var(--respiro-da-folha) * -1) 0;
+	}
+
+	.outros-artigos a {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+		align-content: start;
+		padding: 1.5rem var(--respiro-da-folha);
+		border-top: 2px solid var(--tinta);
+		background: var(--papel);
+		text-decoration: none;
+		transition: background 0.2s;
+	}
+
+	.outros-artigos a:hover {
+		background: var(--papel-2);
+	}
+
+	.outros-artigos-cabeca {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		min-height: 2.75rem;
+	}
+
+	.outros-artigos .numeral {
+		font-size: 2.75rem;
+		-webkit-text-stroke-width: 2px;
+	}
+
+	.outros-artigos .rotulo {
+		min-width: 0;
+		color: var(--tinta-suave);
+	}
+
+	.outros-artigos .grande {
+		flex: none;
+		width: 2.75rem;
+		margin-left: auto;
+	}
+
+	.outros-artigos strong {
+		--letra: clamp(1.5rem, 1.2rem + 1.6vw, 2.5rem);
+		--recuo: var(--recuo-de-fora);
+		display: block;
+	}
+
+	/* Com a letra grande, o azulejo da faixa sai: cabem o número e a etiqueta. */
+	@media (width < 22rem) {
+		.outros-artigos .grande {
+			display: none;
+		}
+	}
+
+	/* O espaço entre as peças da folha. */
+	.artigo-folha > .texto,
+	.artigo-folha > .lido,
+	.artigo-folha > .fontes {
+		margin-top: 2rem;
+	}
+
+	.artigo-folha > .chamada-quiz {
+		margin-top: 2.5rem;
+	}
+
+	@media (width >= 40rem) {
+		.parede {
+			--margem: var(--spacing-margem-celular);
+		}
+
+		.artigo-folha {
+			--respiro-da-folha: clamp(1.25rem, 5vw, 4.5rem);
+		}
+	}
+
+	@media (width >= 48rem) {
+		.parede {
+			--margem: var(--spacing-margem-larga);
+		}
+
+		.outros-artigos.dois {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		}
+
+		.outros-artigos.dois a + a {
+			border-left: 2px solid var(--tinta);
+		}
+
+		/* Lado a lado, cada faixa tem metade da folha: a outra metade entra no recuo. */
+		.outros-artigos.dois strong {
+			--recuo: calc(
+				(100vw - 2 * var(--margem) + var(--recuo-de-fora)) /
+				2 +
+				var(--respiro-da-folha)
+			);
+		}
+	}
+
+	@media (width >= 75rem) {
+		.artigo-grade {
+			grid-template-columns: minmax(0, 1fr) 17rem;
+			gap: 3.5rem;
+			align-items: start;
+		}
+
+		/* A coluna de "Nesta trilha" (17 rem) e o vão até ela (3,5 rem). */
+		.artigo-folha {
+			--recuo-de-fora: calc(2 * var(--respiro-da-folha) + 4px + 20.5rem);
+		}
+
+		/* A rolagem da coluna cortaria o anel de foco dos links: o respiro de 8 px em
+		   volta (com a margem negativa, a coluna fica no lugar) dá espaço a ele. */
+		.ao-lado-do-artigo {
+			position: sticky;
+			top: 2rem;
+			max-height: calc(100svh - 4rem);
+			margin: 14rem -0.5rem 0;
+			padding: 0 0.5rem 0.5rem;
+			overflow-y: auto;
+		}
+	}
+
 	/* ───── O rodapé ───── */
 
 	/* O rodapé: papel com fio de tinta, e uma fileira de azulejos embaixo, que faz
