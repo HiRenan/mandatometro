@@ -1,10 +1,13 @@
 // @vitest-environment jsdom
 
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { CARREGANDO, Carregando } from "./carregando";
 
-afterEach(cleanup);
+afterEach(() => {
+	cleanup();
+	vi.restoreAllMocks();
+});
 
 /**
  * O site em volta do carregando: o cabeçalho, com um link, e o conteúdo, onde a
@@ -77,6 +80,24 @@ describe("o carregando", () => {
 		rerender(<Site carregando />);
 
 		expect(document.activeElement).toBe(screen.getByRole("status"));
+	});
+
+	it("com o foco, a frase entra na tela, mesmo se a pessoa tinha rolado a página", () => {
+		// Com a letra grande, quem rola até o "Tentar de novo" fica, sem a página,
+		// com o rodapé na tela, e a frase fica acima dela. Sem o preventScroll, o
+		// navegador rola até a frase quando ela recebe o foco. O jsdom não rola:
+		// o teste confere a chamada.
+		const focar = vi.spyOn(HTMLElement.prototype, "focus");
+		const { rerender } = render(<Site carregando={false} />);
+		screen.getByRole("button", { name: "Tentar de novo" }).focus();
+		focar.mockClear();
+
+		rerender(<Site carregando />);
+
+		const regiao = screen.getByRole("status");
+		const naFrase = focar.mock.contexts.indexOf(regiao);
+		expect(naFrase).toBeGreaterThanOrEqual(0);
+		expect(focar.mock.calls[naFrase][0]?.preventScroll).not.toBe(true);
 	});
 
 	it("também leva o foco quando ele ficou na página escondida", () => {

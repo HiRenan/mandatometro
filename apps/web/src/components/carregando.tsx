@@ -26,6 +26,10 @@ export const TEMPOS_DO_CARREGANDO = {
  * link que a pessoa tocou), ele vem para a frase, sem o anel; quando a página
  * chega, vai para o título dela (__root.tsx e pagina-de-erro.tsx). Um foco que
  * continua na tela, como o de um link do cabeçalho, fica onde está.
+ *
+ * O foco vem sem o preventScroll: com a letra grande, quem rolou até o "Tentar
+ * de novo" ficava, sem a página, com o rodapé na tela e a frase acima dela.
+ * Assim, o navegador rola até a frase; se ela já está na tela, nada rola.
  */
 export function Carregando() {
 	const [frase, setFrase] = useState("");
@@ -35,7 +39,7 @@ export function Carregando() {
 		const focado = document.activeElement;
 		const conteudo = document.getElementById("conteudo");
 		if (!focado || focado === document.body || conteudo?.contains(focado)) {
-			regiao.current?.focus({ preventScroll: true });
+			regiao.current?.focus();
 		}
 		setFrase(CARREGANDO);
 	}, []);
