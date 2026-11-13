@@ -2145,13 +2145,15 @@
 		align-content: start;
 		padding: 1.5rem var(--respiro-da-folha);
 		border-top: 2px solid var(--tinta);
-		background: var(--papel);
+		/* A faixa é papel, com o grão do fundo: no quiz, ela fica direto na página, e
+		   lisa cortava o grão. Quando o ponteiro passa, só a cor muda. */
+		background: var(--papel) var(--grao) 0 0 / 320px 320px;
 		text-decoration: none;
-		transition: background 0.2s;
+		transition: background-color 0.2s;
 	}
 
 	.outros-artigos a:hover {
-		background: var(--papel-2);
+		background-color: var(--papel-2);
 	}
 
 	.outros-artigos-cabeca {
