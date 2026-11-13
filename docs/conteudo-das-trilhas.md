@@ -175,7 +175,7 @@ perguntas:
   ```
 
 - **Nada se repete:** duas perguntas com o mesmo enunciado são erro, e, na mesma pergunta, uma opção ou uma fonte que aparece duas vezes também. O erro aponta a segunda vez.
-- **Onde aparece:** o quiz tem a página dele, em `/trilhas/<trilha>/quiz`, e a chamada "Quiz da trilha" fica no fim do artigo do `depoisDe` e na página da trilha.
+- **Onde aparece:** o quiz tem a página dele, em `/trilhas/<trilha>/quiz`, e a chamada "Quiz da trilha" fica no fim do artigo do `depoisDe` e na página da trilha. A página mostra uma pergunta por vez, na ordem do arquivo; sem JavaScript, mostra todas, uma embaixo da outra.
 - **Mudar o texto de uma pergunta ou de uma opção apaga a resposta de quem já tinha respondido,** porque o navegador guarda a resposta pelo enunciado e pelo texto da opção escolhida. Corrigir uma vírgula também conta.
 
 ## Pegadinhas do YAML
