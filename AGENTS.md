@@ -39,10 +39,11 @@ Monorepo com pnpm e Turborepo. O porquê de cada escolha está no [ADR 0001](doc
 - `apps/web/`: TanStack Start (React com SSR), Tailwind e shadcn/ui, gerado pelo Better-T-Stack. As variáveis do site ficam em `.env.schema` (varlock), e as marcadas `@public` entram no bundle do navegador. Código que só roda no servidor fica em arquivos `*.server.ts`, e o build falha se o navegador importar um deles; os loaders chegam a esse código por `createServerFn`, em arquivos `*.functions.ts`.
 - `apps/web/conteudo/`: os textos das trilhas, em Markdown, com uma pasta por trilha e um arquivo por artigo. O formato e como conferir estão em [docs/conteudo-das-trilhas.md](docs/conteudo-das-trilhas.md); um teste do Vitest lê a pasta, e o CI falha se um artigo estiver mal formado.
 - `apps/web/imagens/`: o HTML do ícone da aba e da prévia do link. O `pnpm --filter web imagens` grava o `favicon.ico`, o `apple-touch-icon.png` e o `previa.png` em `apps/web/public/`. Para mudar uma imagem, mude o HTML e gere de novo, sem editar o PNG.
+- `apps/web/src/index.css` e `apps/web/src/estilos/`: o visual do site. As cores e as fontes ficam em `packages/ui/src/styles/globals.css`; as peças, no `index.css`; os azulejos, em `estilos/azulejos.css`; as animações, a troca de página e o movimento reduzido, em `estilos/movimento.css`.
 - `packages/ui/` (componentes shadcn/ui) e `packages/config/` (tsconfig base): gerados pelo Better-T-Stack.
 - `docker-compose.yml`: serviços `db` (imagem `pgvector/pgvector:pg17`), `api` e `web`. O banco atende na porta 5433 do computador, para não brigar com um PostgreSQL instalado na 5432.
 - `docs/`: decisões do time em `docs/adr/`, o formato do conteúdo das trilhas e o dicionário de dados (issue #4).
-- `PRODUCT.md` e `DESIGN.md`, na raiz: o produto (público, voz e princípios) e o visual do site (cores, fontes e componentes), escritos com o Impeccable.
+- `PRODUCT.md` e `DESIGN.md`, na raiz: o produto (público, voz e princípios) e o visual do site (cores, letras, peças e movimento), no formato do Impeccable. O `DESIGN.md` descreve o que o código faz: mudou o visual, atualize ele e o `apps/web/.impeccable/design.json`, que mostra as mesmas peças no painel do Impeccable.
 - **Hospedagem:** o site vai para a Vercel, que monta a pasta `apps/web` com o `apps/web/vercel.json`: a `main` publica em mandatometro.com.br, a `develop` no endereço do time, e cada PR ganha uma prévia. A configuração fica no repositório, sem variável no painel. O build da Vercel grava as variáveis do site na função, em texto puro (`ssrInjectMode: "resolved-env"`, no `vite.config.ts`), porque a função não tem o CLI do varlock nem o `.env.schema`: por isso o `buildCommand` fixa o `NODE_ENV=production`, e uma variável sensível no site pede antes o `@encryptInjectedEnv` do varlock.
 - **Contrato da API:** o cliente TypeScript em `apps/web/src/client/` sai do `apps/backend/openapi.json`. Mudou a API, rode `pnpm generate:client` e faça commit dos dois; o CI falha se um deles ficar desatualizado.
 - **Migrations:** numeradas em sequência (`--rev-id 0002`, `0003`...), com a mensagem sem acento, porque ela vira o nome do arquivo.
@@ -59,6 +60,15 @@ O produto fala de pessoas reais. Estas regras valem para a interface, as trilhas
 - **Domínios das fontes das trilhas:** o validador aceita `gov.br`, `leg.br`, `jus.br`, `mp.br` e `def.br`. As referências planejadas do Ministério Público e da Defensoria Pública usam os dois últimos; mantenha esses links oficiais ao escrever os artigos.
 - **Promessas e patrimônio (depois do MVP):** a ligação entre promessa e ato tem um destes status: `ato a favor`, `ato contra` ou `nenhum ato encontrado`. Deputado e senador não são obrigados a entregar proposta ao TSE (só prefeito, governador e presidente): sem promessa, escreva "Não encontramos promessas públicas nas fontes consultadas" e liste as fontes. O patrimônio se chama "patrimônio declarado ao TSE", vem corrigido pelo IPCA, com o aviso de que o valor declarado costuma ser o de compra, e aparece só nos anos em que a pessoa concorreu, em tom descritivo.
 - **Dados pessoais:** CPF, título de eleitor e data de nascimento servem só para ligar registros entre bases e ficam no banco. A API, o front, os logs e os fixtures de teste identificam pessoas pelo id interno. O e-mail de quem se inscreve segue a mesma regra, e as respostas do quiz não identificam quem respondeu. O regulamento do hackathon (item 6.9) também proíbe a demo de expor dados pessoais reais de terceiros.
+
+## Regras do visual
+
+O desenho inteiro está no [DESIGN.md](DESIGN.md). O que mais pega quem mexe numa tela:
+
+- **Azulejos são desenho:** ficam fora do leitor de tela (`aria-hidden`) e não dizem nada sobre o assunto. A cor de cada artigo, trilha e passo vem da posição (`classeDaFita`, em `lib/formatar.ts`), na ordem verde, amarela, azul, rosa e vermelha: ninguém escolhe cor por assunto ou partido. Nenhum texto fica em cima de uma cor de fita.
+- **Títulos em maiúsculas, com teto:** o `[--palavra:N]` de um título é a largura da palavra mais comprida dele, medida em maiúsculas. Ele fica na mesma linha do TSX que as classes do título, porque o `titulos.test.ts` lê o número dali. A tabela dos tetos está em [docs/conteudo-das-trilhas.md](docs/conteudo-das-trilhas.md).
+- **Movimento:** é CSS e a animação nativa do navegador, sem biblioteca. O conteúdo já vem no HTML do servidor, e cada animação chega ao estado normal da peça; com `prefers-reduced-motion`, nada vira nem sobe.
+- **Classes montadas:** junte os nomes com `classes()`, de `lib/classes.ts`. Num texto montado com `${}`, a ordenação de classes do Biome mexe nos espaços.
 
 ## Fontes de dados
 
