@@ -1,0 +1,58 @@
+/*
+ * O fundo do site (DESIGN.md): o papel, com o grão e o mapa da trilha. O Renan,
+ * na #89: o fundo liso estava "meio inanimado", "apenas uma cor", e o que
+ * entrasse não podia poluir.
+ *
+ * O grão (grao.svg) é um ruído miúdo, com pontos claros e escuros na mesma
+ * medida: o papel ganha textura sem escurecer. O ladrilho tem 320 px e emenda.
+ *
+ * O mapa (mapa.svg) são curvas de nível, como num mapa de trilha, um tom acima
+ * do papel. Ele fica parado atrás da página, numa camada fixa; onde o navegador
+ * deixa, anda mais devagar que a página na rolagem (estilos/movimento.css). O
+ * arquivo é a máscara, e a cor vem do Papel 3. Ele sai do imagens/mapa.mjs
+ * (pnpm --filter web mapa): para mudar o mapa, mude o roteiro e gere de novo,
+ * sem editar o SVG.
+ *
+ * Os dois são desenho: não dizem nada sobre o assunto, e nenhum texto depende
+ * deles. As folhas, os azulejos e as peças com fundo próprio ficam por cima.
+ */
+@layer base {
+	:root {
+		--grao: url("./grao.svg");
+	}
+
+	body {
+		background-image: var(--grao);
+		background-size: 320px 320px;
+	}
+
+	/* A camada sobra 30vh embaixo: é o quanto ela sobe na rolagem. */
+	body::before {
+		content: "";
+		position: fixed;
+		z-index: -1;
+		inset: 0 0 -30vh;
+		pointer-events: none;
+		background: var(--papel-3);
+		opacity: 0.8;
+		mask: url("./mapa.svg") 50% 0 / 1400px 1400px repeat;
+	}
+
+	/* No celular, o texto fica direto no papel: o mapa vai mais fraco. */
+	@media (width < 48rem) {
+		body::before {
+			opacity: 0.6;
+		}
+	}
+
+	/* No alto contraste e no papel de verdade, o fundo é liso. */
+	@media (forced-colors: active), print {
+		body {
+			background-image: none;
+		}
+
+		body::before {
+			display: none;
+		}
+	}
+}

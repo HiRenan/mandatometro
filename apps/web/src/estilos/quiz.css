@@ -587,7 +587,8 @@
 		margin: 0 calc(var(--margem) * -1);
 		padding: 0.75rem var(--margem);
 		border-top: 2px solid var(--tinta);
-		background: var(--papel);
+		/* O pé cobre a página que rola por baixo: é papel, com o grão do fundo. */
+		background: var(--papel) var(--grao) 0 0 / 320px 320px;
 	}
 
 	@media (height >= 40rem) {

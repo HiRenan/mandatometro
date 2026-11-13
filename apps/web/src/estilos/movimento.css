@@ -67,6 +67,13 @@
 	}
 }
 
+/* O mapa do fundo sobe com a rolagem, mais devagar que a página. */
+@keyframes mapa-anda {
+	to {
+		transform: translateY(-30vh);
+	}
+}
+
 /* A barra da leitura enche com a rolagem do texto. */
 @keyframes enche {
 	from {
@@ -214,6 +221,19 @@
 			animation: enche linear both;
 			animation-timeline: --leitura;
 			animation-range: cover 0% cover 100%;
+		}
+	}
+
+	/*
+	 * O mapa do fundo (estilos/fundo.css) anda mais devagar que a página: da
+	 * primeira à última linha da rolagem, a camada dele sobe 30vh. Ele só se mexe
+	 * quando a pessoa rola. Sem a animação de rolagem, e com o movimento reduzido,
+	 * fica parado atrás da página.
+	 */
+	@supports (animation-timeline: scroll()) {
+		body::before {
+			animation: mapa-anda linear both;
+			animation-timeline: scroll(root block);
 		}
 	}
 
