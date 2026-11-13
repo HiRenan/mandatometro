@@ -33,6 +33,8 @@ Em `senado/senador-lista-atual.json`, os 50 exercícios com motivo de afastament
 - `SiglaCausaAfastamento` virou `XXX`;
 - `DescricaoCausaAfastamento` virou `Motivo fictício`.
 
+Um teste em `tests/test_respostas_gravadas.py` confere essa troca: se a lista for gravada de novo sem ela, o CI falha.
+
 Nenhum outro arquivo desta pasta traz campo pessoal. Ao gravar uma fixture nova de `/deputados/{id}` ou da lista de senadores, faça a mesma troca.
 
 ## Por que estes casos
