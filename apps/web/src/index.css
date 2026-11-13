@@ -946,7 +946,6 @@
 		line-height: 1.15;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		overflow-wrap: anywhere;
 	}
 
 	.passos {
@@ -1093,6 +1092,14 @@
 	}
 
 	@media (width >= 48rem) {
+		/* Com o nome à vista, cada aba tem pelo menos a largura da palavra mais
+		   comprida dela, e as outras dividem o resto: "APRESENTAÇÃO" pedia 1 px a
+		   mais que um quinto da largura logo acima de 768 px, numa janela com a barra
+		   de rolagem, e se partia. */
+		.passos-abas {
+			grid-template-columns: repeat(5, minmax(min-content, 1fr));
+		}
+
 		/* O fio que liga os cinco azulejos, como estações de um caminho: o de papel é o
 		   caminho inteiro, e o de tinta, o que já foi andado. */
 		.passos-abas::before,
