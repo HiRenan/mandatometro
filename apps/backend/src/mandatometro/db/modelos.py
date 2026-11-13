@@ -54,8 +54,9 @@ _VOTOS_CONHECIDOS = {
 _SEM_O_CODIGO = {"LS"}
 
 RESULTADOS = ("aprovada", "rejeitada", "outro")
-# Câmara: aprovacao 1 ou 0. Senado: resultadoVotacao "A" nas 7 votações vistas, todas aprovadas
-# segundo o informeLegislativo; as outras letras ainda não apareceram.
+# Câmara: aprovacao 1 ou 0. Senado: resultadoVotacao "A" nas 7 votações que a revisão do PR #79
+# viu; nas 4 gravadas em tests/fixtures, o informeLegislativo da sessão diz que cada uma foi
+# aprovada. As outras letras ainda não apareceram e viram "outro".
 _RESULTADOS_CONHECIDOS = {"1": "aprovada", "0": "rejeitada", "A": "aprovada"}
 
 
