@@ -33,17 +33,22 @@ const ordem = z
 	.int(exigido("precisa ser um número inteiro a partir de 1"))
 	.min(1, "precisa ser um número inteiro a partir de 1");
 
-const fonteSchema = z.strictObject({
-	titulo: texto,
-	url: z.url({
-		protocol: /^https$/,
-		hostname: SITE_OFICIAL,
-		...exigido(
-			"precisa ser um link https de um site oficial (gov.br, leg.br, jus.br, mp.br ou def.br)",
-		),
-	}),
-	consultadoEm: z.iso.date(exigido("precisa ser uma data AAAA-MM-DD")),
-});
+// Os itens das listas (fonte, passo, pergunta e opção) levam uma mensagem para
+// quando o item é um texto solto, sem os campos: sem ela, o zod avisa em inglês.
+const fonteSchema = z.strictObject(
+	{
+		titulo: texto,
+		url: z.url({
+			protocol: /^https$/,
+			hostname: SITE_OFICIAL,
+			...exigido(
+				"precisa ser um link https de um site oficial (gov.br, leg.br, jus.br, mp.br ou def.br)",
+			),
+		}),
+		consultadoEm: z.iso.date(exigido("precisa ser uma data AAAA-MM-DD")),
+	},
+	exigido("precisa ser uma fonte com os campos titulo, url e consultadoEm"),
+);
 
 const trilhaSchema = z.strictObject({
 	titulo: texto,
@@ -94,38 +99,44 @@ function semRepetir<T>(
 }
 
 // O infográfico da trilha: o caminho em passos, cada um com as fontes dele.
-const passoSchema = z.strictObject({
-	titulo: texto,
-	texto,
-	// O que pode mudar o caminho neste passo, uma frase por desvio.
-	desvios: z
-		.array(texto, exigido("precisa ser uma lista de frases"))
-		.superRefine(
+const passoSchema = z.strictObject(
+	{
+		titulo: texto,
+		texto,
+		// O que pode mudar o caminho neste passo, uma frase por desvio.
+		desvios: z
+			.array(texto, exigido("precisa ser uma lista de frases"))
+			.superRefine(
+				semRepetir(
+					(desvio) => desvio,
+					(desvio) => `o desvio "${desvio}" já está neste passo`,
+				),
+			)
+			.default([]),
+		// Os artigos da trilha que explicam o passo.
+		artigos: z
+			.array(
+				nomeDeArtigo,
+				exigido("precisa ser uma lista de artigos da trilha"),
+			)
+			.superRefine(
+				semRepetir(
+					(artigo) => artigo,
+					(artigo) => `o artigo "${artigo}" já está neste passo`,
+				),
+			)
+			.default([]),
+		// A mesma fonte é o mesmo link, mesmo com outro título.
+		fontes: fontes.superRefine(
 			semRepetir(
-				(desvio) => desvio,
-				(desvio) => `o desvio "${desvio}" já está neste passo`,
+				(fonte) => fonte.url,
+				(url) => `a fonte "${url}" já está neste passo`,
+				["url"],
 			),
-		)
-		.default([]),
-	// Os artigos da trilha que explicam o passo.
-	artigos: z
-		.array(nomeDeArtigo, exigido("precisa ser uma lista de artigos da trilha"))
-		.superRefine(
-			semRepetir(
-				(artigo) => artigo,
-				(artigo) => `o artigo "${artigo}" já está neste passo`,
-			),
-		)
-		.default([]),
-	// A mesma fonte é o mesmo link, mesmo com outro título.
-	fontes: fontes.superRefine(
-		semRepetir(
-			(fonte) => fonte.url,
-			(url) => `a fonte "${url}" já está neste passo`,
-			["url"],
 		),
-	),
-});
+	},
+	exigido("precisa ser um passo com os campos titulo, texto e fontes"),
+);
 
 const infograficoSchema = z.strictObject({
 	titulo: texto,
@@ -144,49 +155,57 @@ const infograficoSchema = z.strictObject({
 
 // O quiz da trilha: perguntas de múltipla escolha sobre os artigos que a pessoa
 // já leu, cada uma com a explicação e as fontes da resposta certa.
-const opcaoSchema = z.strictObject({
-	texto,
-	// Só a opção certa leva "certa: true".
-	certa: z.boolean({ error: "precisa ser true ou false" }).default(false),
-});
+const opcaoSchema = z.strictObject(
+	{
+		texto,
+		// Só a opção certa leva "certa: true".
+		certa: z.boolean({ error: "precisa ser true ou false" }).default(false),
+	},
+	exigido("precisa ser uma opção com o campo texto"),
+);
 
 const MAXIMO_DE_OPCOES = 5;
 
-const perguntaSchema = z.strictObject({
-	// O artigo de onde sai a resposta. Ele vem até o depoisDe do quiz.
-	artigo: nomeDeArtigo,
-	enunciado: texto,
-	// Na ordem do arquivo, sem sorteio: o HTML do servidor e o do navegador
-	// ficam iguais.
-	opcoes: z
-		.array(opcaoSchema, exigido("precisa ser uma lista de opções"))
-		.min(2, "precisa de pelo menos 2 opções")
-		.max(MAXIMO_DE_OPCOES, `pode ter no máximo ${MAXIMO_DE_OPCOES} opções`)
-		.superRefine(
+const perguntaSchema = z.strictObject(
+	{
+		// O artigo de onde sai a resposta. Ele vem até o depoisDe do quiz.
+		artigo: nomeDeArtigo,
+		enunciado: texto,
+		// Na ordem do arquivo, sem sorteio: o HTML do servidor e o do navegador
+		// ficam iguais.
+		opcoes: z
+			.array(opcaoSchema, exigido("precisa ser uma lista de opções"))
+			.min(2, "precisa de pelo menos 2 opções")
+			.max(MAXIMO_DE_OPCOES, `pode ter no máximo ${MAXIMO_DE_OPCOES} opções`)
+			.superRefine(
+				semRepetir(
+					(opcao) => opcao.texto,
+					(opcao) => `a opção "${opcao}" já está nesta pergunta`,
+					["texto"],
+				),
+			)
+			.superRefine((opcoes, ctx) => {
+				const certas = opcoes.filter((opcao) => opcao.certa).length;
+				if (certas !== 1) {
+					ctx.addIssue({
+						code: "custom",
+						message: `precisa de exatamente uma opção com "certa: true", e tem ${certas}`,
+					});
+				}
+			}),
+		explicacao: texto,
+		fontes: fontes.superRefine(
 			semRepetir(
-				(opcao) => opcao.texto,
-				(opcao) => `a opção "${opcao}" já está nesta pergunta`,
-				["texto"],
+				(fonte) => fonte.url,
+				(url) => `a fonte "${url}" já está nesta pergunta`,
+				["url"],
 			),
-		)
-		.superRefine((opcoes, ctx) => {
-			const certas = opcoes.filter((opcao) => opcao.certa).length;
-			if (certas !== 1) {
-				ctx.addIssue({
-					code: "custom",
-					message: `precisa de exatamente uma opção com "certa: true", e tem ${certas}`,
-				});
-			}
-		}),
-	explicacao: texto,
-	fontes: fontes.superRefine(
-		semRepetir(
-			(fonte) => fonte.url,
-			(url) => `a fonte "${url}" já está nesta pergunta`,
-			["url"],
 		),
+	},
+	exigido(
+		"precisa ser uma pergunta com os campos artigo, enunciado, opcoes, explicacao e fontes",
 	),
-});
+);
 
 const quizSchema = z.strictObject({
 	// O artigo depois do qual o quiz aparece.

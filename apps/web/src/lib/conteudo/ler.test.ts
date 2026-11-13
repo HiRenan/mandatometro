@@ -201,6 +201,18 @@ describe("lerTrilhas", () => {
 			expect(ler(semFonte)).toThrow(/primeiro\.md.*"fontes"/);
 		});
 
+		it("em português, quando uma fonte é um texto solto, sem os campos", () => {
+			const fonteEmTexto = artigoMd().replace(
+				/ {2}- titulo: (.*)\n {4}url: .*\n {4}consultadoEm: .*\n/,
+				"  - $1\n",
+			);
+			expect(ler(fonteEmTexto)).toThrow(
+				new ErroDeConteudo([
+					'conteudo/trilhas/processo-legislativo/primeiro.md: campo "fontes.0": precisa ser uma fonte com os campos titulo, url e consultadoEm',
+				]),
+			);
+		});
+
 		it("quando a ordem não é um número inteiro", () => {
 			expect(ler(artigoMd({ ordem: "primeiro" }))).toThrow(
 				/primeiro\.md.*"ordem"/,
@@ -383,6 +395,18 @@ describe("o infográfico da trilha", () => {
 		it("quando o infográfico não tem passos", () => {
 			const semPassos = infograficoMd.replace(/passos:[\s\S]*?(?=---)/, "");
 			expect(() => ler(semPassos)).toThrow(/infografico\.md.*"passos"/);
+		});
+
+		it("em português, quando um passo é um texto solto, sem os campos", () => {
+			const passoEmTexto = infograficoMd.replace(
+				/ {2}- titulo: Comissões[\s\S]*?(?=---)/,
+				"  - Comissões\n",
+			);
+			expect(() => ler(passoEmTexto)).toThrow(
+				new ErroDeConteudo([
+					'conteudo/trilhas/processo-legislativo/infografico.md: campo "passos.1": precisa ser um passo com os campos titulo, texto e fontes',
+				]),
+			);
 		});
 
 		it("quando um campo tem outro nome", () => {
@@ -648,6 +672,28 @@ describe("o quiz da trilha", () => {
 				ler(quizMd.replace("        certa: true\n", "        certa: sim\n")),
 			).toThrow(
 				erro('campo "perguntas.0.opcoes.1.certa": precisa ser true ou false'),
+			);
+		});
+
+		it("em português, quando uma opção é um texto solto, sem o campo texto", () => {
+			expect(() =>
+				ler(quizMd.replace(OPCAO_DO_SENADO, "      - Pelo Senado Federal.\n")),
+			).toThrow(
+				erro(
+					'campo "perguntas.1.opcoes.1": precisa ser uma opção com o campo texto',
+				),
+			);
+		});
+
+		it("em português, quando uma pergunta é um texto solto, sem os campos", () => {
+			const perguntaEmTexto = quizMd.replace(
+				/ {2}- artigo: segundo[\s\S]*?(?=---)/,
+				"  - Por onde começa um projeto de lei de um deputado?\n",
+			);
+			expect(() => ler(perguntaEmTexto)).toThrow(
+				erro(
+					'campo "perguntas.1": precisa ser uma pergunta com os campos artigo, enunciado, opcoes, explicacao e fontes',
+				),
 			);
 		});
 
