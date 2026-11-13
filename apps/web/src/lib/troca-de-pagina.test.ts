@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+	cliqueDuranteATroca,
 	molduraNaTela,
 	sentidoDaTroca,
 	tiposDaTroca,
@@ -76,7 +77,6 @@ describe("sentidoDaTroca", () => {
 		).toBe("avancar");
 	});
 
-	it("a página não encontrada fica no fundo do bloco", () => {
 	it("o quiz fica entre o artigo depois do qual aparece e o seguinte", () => {
 		const comQuiz = { ...trilhaAberta, quizDepoisDe: "onde-o-projeto-comeca" };
 		const quiz = `${TRILHA}/quiz`;
@@ -130,6 +130,7 @@ describe("sentidoDaTroca", () => {
 		expect(sentidoDaTroca(TRILHA, `${TRILHA}/quiz`)).toBe("avancar");
 	});
 
+	it("a página não encontrada fica no fundo do bloco", () => {
 		expect(sentidoDaTroca(TRILHA, "/pagina-que-nao-existe")).toBe("avancar");
 		expect(sentidoDaTroca("/pagina-que-nao-existe", "/")).toBe("voltar");
 	});
@@ -169,7 +170,6 @@ describe("tiposDaTroca", () => {
 		).toEqual(["folha", "voltar"]);
 	});
 
-	it("não anima a primeira carga nem um link para um trecho da mesma página", () => {
 	it("usa o lugar do quiz na trilha aberta", () => {
 		expect(
 			tiposDaTroca(troca(`${TRILHA}/quiz`, `${TRILHA}/onde-o-projeto-comeca`), {
@@ -182,6 +182,7 @@ describe("tiposDaTroca", () => {
 		).toEqual(["folha", "voltar"]);
 	});
 
+	it("não anima a primeira carga nem um link para um trecho da mesma página", () => {
 		expect(tiposDaTroca(troca(undefined, "/"), { molduraNaTela: true })).toBe(
 			false,
 		);
@@ -249,5 +250,131 @@ describe("molduraNaTela", () => {
 		expect(molduraNaTela()).toBe(false);
 		document.body.innerHTML = `<footer class="moldura"></footer>`;
 		expect(molduraNaTela()).toBe(false);
+	});
+});
+
+describe("cliqueDuranteATroca", () => {
+	let desligar: (() => void) | undefined;
+
+	afterEach(() => {
+		desligar?.();
+		desligar = undefined;
+		Reflect.deleteProperty(document, "activeViewTransition");
+		Reflect.deleteProperty(document, "elementFromPoint");
+	});
+
+	/**
+	 * Uma página com um botão embaixo do ponteiro e, se pedido, uma troca
+	 * rodando. O jsdom não tem o activeViewTransition nem o elementFromPoint.
+	 */
+	function pagina({ trocando }: { trocando: boolean }) {
+		document.body.innerHTML = "<button>Começar</button>";
+		const botao = document.querySelector("button");
+		if (!botao) {
+			throw new Error("sem o botão");
+		}
+		const cliques: MouseEvent[] = [];
+		botao.addEventListener("click", (evento) => cliques.push(evento));
+		const troca = { skipTransition: vi.fn() };
+		Object.defineProperty(document, "activeViewTransition", {
+			configurable: true,
+			get: () => (trocando ? troca : null),
+		});
+		Object.defineProperty(document, "elementFromPoint", {
+			configurable: true,
+			value: () => botao,
+		});
+		desligar = cliqueDuranteATroca();
+		return { botao, cliques, troca };
+	}
+
+	// Durante a troca, o navegador entrega o toque e o clique ao documento.
+	function tocar() {
+		document.documentElement.dispatchEvent(
+			new Event("pointerdown", { bubbles: true }),
+		);
+	}
+
+	function clicar(alvo: Element, detail: number) {
+		alvo.dispatchEvent(
+			new MouseEvent("click", {
+				bubbles: true,
+				detail,
+				clientX: 120,
+				clientY: 340,
+			}),
+		);
+	}
+
+	it("no toque, encerra a troca, e o clique segue para o que está embaixo do ponteiro", () => {
+		const { cliques, troca } = pagina({ trocando: true });
+
+		tocar();
+		clicar(document.documentElement, 1);
+
+		expect(troca.skipTransition).toHaveBeenCalledTimes(1);
+		expect(
+			cliques.map(({ detail, clientX, clientY }) => [detail, clientX, clientY]),
+		).toEqual([[1, 120, 340]]);
+	});
+
+	it("deixa de fora o segundo clique de um clique duplo", () => {
+		const { cliques, troca } = pagina({ trocando: true });
+
+		tocar();
+		clicar(document.documentElement, 2);
+
+		expect(troca.skipTransition).toHaveBeenCalledTimes(1);
+		expect(cliques).toHaveLength(0);
+	});
+
+	it("sem troca rodando, não mexe no clique", () => {
+		const { cliques, troca } = pagina({ trocando: false });
+
+		tocar();
+		clicar(document.documentElement, 1);
+
+		expect(troca.skipTransition).not.toHaveBeenCalled();
+		expect(cliques).toHaveLength(0);
+	});
+
+	it("não repete o clique que já chegou a uma peça da página", () => {
+		const { botao, cliques } = pagina({ trocando: true });
+
+		tocar();
+		clicar(botao, 1);
+
+		expect(cliques).toHaveLength(1);
+	});
+
+	it("vale para um clique só: o seguinte, sem toque durante a troca, não segue", () => {
+		const { cliques } = pagina({ trocando: true });
+
+		tocar();
+		clicar(document.documentElement, 1);
+		clicar(document.documentElement, 1);
+
+		expect(cliques).toHaveLength(1);
+	});
+
+	it("num navegador sem o activeViewTransition, não faz nada", () => {
+		const { cliques } = pagina({ trocando: false });
+		Reflect.deleteProperty(document, "activeViewTransition");
+
+		expect(tocar).not.toThrow();
+		clicar(document.documentElement, 1);
+
+		expect(cliques).toHaveLength(0);
+	});
+
+	it("desligado, não encerra a troca nem manda o clique", () => {
+		const { cliques, troca } = pagina({ trocando: true });
+		desligar?.();
+
+		tocar();
+		clicar(document.documentElement, 1);
+
+		expect(troca.skipTransition).not.toHaveBeenCalled();
+		expect(cliques).toHaveLength(0);
 	});
 });

@@ -147,3 +147,60 @@ export function molduraNaTela(): boolean {
 	const moldura = document.querySelector("header.moldura");
 	return moldura ? moldura.getBoundingClientRect().bottom > 0 : false;
 }
+
+/**
+ * O clique durante a troca de página. Enquanto a troca roda, o navegador mostra
+ * fotos das duas páginas, e nada da página nova responde ao ponteiro: o clique
+ * vai para o documento, e um clique logo depois de uma navegação se perdia. O
+ * `pointer-events: none` nas fotos não resolve, porque a página inteira está na
+ * foto.
+ *
+ * Aqui, o toque encerra a troca na hora, e o clique que o navegador entregou ao
+ * documento segue para o que está embaixo do ponteiro, já na página nova. O
+ * segundo clique de um clique duplo (`detail` 2) não segue: ele cairia num
+ * botão da página nova sem a pessoa ter visto o botão (lib/clique.ts).
+ *
+ * Num navegador sem o `activeViewTransition`, nada muda: o clique feito durante
+ * a troca continua se perdendo. Devolve a função que desliga.
+ */
+export function cliqueDuranteATroca(): () => void {
+	let encerrou = false;
+	const aoTocar = () => {
+		const troca = document.activeViewTransition;
+		encerrou = Boolean(troca);
+		troca?.skipTransition();
+	};
+	const aoClicar = (evento: MouseEvent) => {
+		if (!encerrou) {
+			return;
+		}
+		encerrou = false;
+		if (
+			evento.target !== document.documentElement ||
+			evento.button !== 0 ||
+			evento.detail > 1
+		) {
+			return;
+		}
+		document.elementFromPoint(evento.clientX, evento.clientY)?.dispatchEvent(
+			new MouseEvent("click", {
+				bubbles: true,
+				cancelable: true,
+				composed: true,
+				detail: evento.detail,
+				clientX: evento.clientX,
+				clientY: evento.clientY,
+				ctrlKey: evento.ctrlKey,
+				metaKey: evento.metaKey,
+				shiftKey: evento.shiftKey,
+				altKey: evento.altKey,
+			}),
+		);
+	};
+	document.addEventListener("pointerdown", aoTocar, true);
+	document.addEventListener("click", aoClicar, true);
+	return () => {
+		document.removeEventListener("pointerdown", aoTocar, true);
+		document.removeEventListener("click", aoClicar, true);
+	};
+}

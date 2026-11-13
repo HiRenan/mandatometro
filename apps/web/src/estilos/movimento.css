@@ -239,13 +239,11 @@ html:active-view-transition-type(moldura-na-tela) header.moldura {
 }
 
 /*
- * As fotos da troca não seguram o clique: o que a pessoa clica durante a troca
- * vai para a página nova, que já está embaixo. Sem isto, um clique logo depois
- * de uma navegação se perdia (o achado da revisão da #37).
+ * Durante a troca, nada da página responde ao ponteiro: a página inteira está
+ * na foto, e o `pointer-events: none` nas fotos não muda isso. O clique feito
+ * nessa hora não se perde por causa do cliqueDuranteATroca (lib/troca-de-pagina.ts),
+ * que encerra a troca no toque e manda o clique para a página nova.
  */
-::view-transition {
-	pointer-events: none;
-}
 
 /* As duas fotos ficam uma sobre a outra, sem a mistura de luz do esmaecer padrão. */
 html:active-view-transition-type(folha)::view-transition-image-pair(root) {
