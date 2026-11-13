@@ -261,12 +261,14 @@ def test_os_votos_do_senado(sessao):
     _gravar_senado(sessao)
     sessao.flush()
 
+    # Os seis códigos da amostra. O AP ("atividade parlamentar") entra sem o código, como toda
+    # ausência, para a licença saúde ficar igual a ela; o P-NRV, de quem estava presente, fica.
     assert _votos(sessao, "senado", Voto.valor_bruto) == {
         "Sim": 253,
         "Não": 36,
         "P-NRV": 26,
         "Presidente (art. 51 RISF)": 4,
-        "AP": 4,
+        None: 4,
         "Abstenção": 1,
     }
     assert _votos(sessao, "senado", Voto.valor) == {

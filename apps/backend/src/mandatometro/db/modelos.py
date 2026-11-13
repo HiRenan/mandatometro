@@ -13,6 +13,7 @@
 - O diagrama está no README, em "Modelo de dados".
 """
 
+import logging
 from datetime import date, datetime
 from uuid import UUID
 
@@ -31,27 +32,34 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from mandatometro.db import Base
 
+logger = logging.getLogger(__name__)
+
 CASAS = ("camara", "senado")
 
-# --- O voto e o resultado: o valor num conjunto nosso e o código como a Casa publica ---
+# --- O voto e o resultado: o valor num conjunto nosso e, se pode, o código da Casa ---
 
-# presidente: quem presidiu a sessão e não vota. nao_votou: presente sem voto, em atividade
-# parlamentar ou de licença. outro: um código que ainda não está em _VOTOS_CONHECIDOS.
+# presidente: quem presidiu a sessão e não vota. nao_votou: presente sem voto, ausente em atividade
+# parlamentar ou de licença. outro: um código que ainda não está em nenhuma das listas abaixo.
 VALORES_DE_VOTO = ("sim", "nao", "abstencao", "obstrucao", "presidente", "nao_votou", "outro")
-_VOTOS_CONHECIDOS = {
+
+# Os códigos que o banco guarda como a Casa publica: votos e presença, nenhum motivo pessoal. O
+# CHECK do voto só aceita estes. Código novo entra aqui depois de conferido, com a migration.
+CODIGOS_GRAVADOS = {
     "Sim": "sim",
     "Não": "nao",
     "Abstenção": "abstencao",
     "Obstrução": "obstrucao",  # da Câmara; ainda não apareceu nas respostas gravadas
     "Artigo 17": "presidente",  # Câmara: art. 17 do Regimento Interno
     "Presidente (art. 51 RISF)": "presidente",
-    "P-NRV": "nao_votou",  # "Presente – Não registrou voto"
-    "AP": "nao_votou",  # "Atividade parlamentar"
-    "LS": "nao_votou",  # "Licença saúde"
+    "P-NRV": "nao_votou",  # "Presente – Não registrou voto": estava lá e não votou
 }
-# Códigos que revelam a saúde de quem não votou: entram só como nao_votou, sem o código. O banco
-# não guarda motivo de saúde (decisão do Renan na #7, em 12/11/2026).
-_SEM_O_CODIGO = {"LS"}
+# As ausências do Senado: entram como nao_votou, sem o código, todas iguais. O banco não guarda o
+# motivo, para a licença saúde não sair de consulta nenhuma (decisões do Renan na #7, em
+# 12/11/2026: o LS só como "não votou" e, depois, nenhuma ausência com o código).
+CODIGOS_DE_AUSENCIA = {
+    "AP",  # "Atividade parlamentar"
+    "LS",  # "Licença saúde"
+}
 
 RESULTADOS = ("aprovada", "rejeitada", "outro")
 # Câmara: aprovacao 1 ou 0. Senado: resultadoVotacao "A" nas 7 votações que a revisão do PR #79
@@ -63,12 +71,18 @@ _RESULTADOS_CONHECIDOS = {"1": "aprovada", "0": "rejeitada", "A": "aprovada"}
 def normalizar_voto(bruto: str) -> tuple[str, str | None]:
     """O (valor, valor_bruto) a gravar para o código de voto que a Casa publicou.
 
-    Um código novo vira "outro", com o código ao lado, sem quebrar a coleta: o conector avisa no
-    log, e alguém acrescenta o código em _VOTOS_CONHECIDOS.
+    Só os códigos de CODIGOS_GRAVADOS ficam gravados. Uma ausência vira nao_votou, sem o código.
+    Um código desconhecido vira "outro", também sem o código, porque pode ser outro motivo pessoal,
+    e vai para o log sozinho, sem a pessoa: quem conferir o significado o põe numa das listas, e
+    uma nova coleta da votação corrige o voto. O conector não acrescenta a pessoa a esse aviso.
     """
     codigo = bruto.strip()
-    valor = _VOTOS_CONHECIDOS.get(codigo, "outro")
-    return valor, None if codigo in _SEM_O_CODIGO else codigo
+    if codigo in CODIGOS_GRAVADOS:
+        return CODIGOS_GRAVADOS[codigo], codigo
+    if codigo in CODIGOS_DE_AUSENCIA:
+        return "nao_votou", None
+    logger.warning("Código de voto desconhecido: %r. Entra como outro, sem o código.", codigo)
+    return "outro", None
 
 
 def normalizar_resultado(bruto: str | int | None) -> tuple[str, str | None]:
@@ -250,14 +264,18 @@ class Voto(Base):
     """Como um parlamentar votou numa votação.
 
     - valor e valor_bruto: saem de normalizar_voto. O valor_bruto, o código como a Casa publicou,
-      só fica vazio no nao_votou: a "Licença saúde" (LS) entra sem o código.
+      só existe para os códigos de CODIGOS_GRAVADOS, e o CHECK garante. Uma ausência (atividade
+      parlamentar, licença saúde...) fica nao_votou sem código, igual a qualquer outra; o P-NRV,
+      de quem estava presente e não votou, guarda o código.
     - partido e uf: os do dia do voto. O partido muda dentro do mandato.
+
+    A fonte é a da lista de votos, sem trecho: o motivo da ausência também não vai para a fonte.
     """
 
     __tablename__ = "voto"
     __table_args__ = (
         CheckConstraint(_um_de("valor", VALORES_DE_VOTO), name="valor"),
-        CheckConstraint("valor_bruto is not null or valor = 'nao_votou'", name="valor_bruto"),
+        CheckConstraint(_um_de("valor_bruto", tuple(CODIGOS_GRAVADOS)), name="valor_bruto"),
     )
 
     votacao_id: Mapped[int] = mapped_column(

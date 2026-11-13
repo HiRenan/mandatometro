@@ -3,6 +3,7 @@
 Os dados são inventados: nenhum CPF, nome ou e-mail de verdade.
 """
 
+import logging
 from datetime import UTC, date, datetime
 from uuid import UUID
 
@@ -11,6 +12,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 
 from mandatometro.db.modelos import (
+    CODIGOS_GRAVADOS,
     Edicao,
     Fonte,
     Inscrito,
@@ -107,21 +109,40 @@ def test_o_resultado_fica_no_conjunto(sessao):
     _nao_grava(sessao, votacao, regra="ck_votacao_resultado")
 
 
-# --- O voto: o valor no conjunto e o código como a Casa publica ---
+# --- O voto: o valor no conjunto e, só dos códigos da lista, o código como a Casa publica ---
 
 
 def test_o_voto_fica_no_conjunto(sessao):
-    _nao_grava(
-        sessao, _voto(_votacao(), _parlamentar(), "talvez", "Talvez"), regra='"ck_voto_valor"'
-    )
+    _nao_grava(sessao, _voto(_votacao(), _parlamentar(), "talvez", "Sim"), regra='"ck_voto_valor"')
 
 
-def test_so_o_nao_votou_fica_sem_o_codigo(sessao):
+def test_a_licenca_saude_fica_igual_a_outra_ausencia(sessao):
+    # Decisão do Renan (12/11/2026): nenhuma consulta separa a licença saúde de outra ausência.
     votacao = _votacao()
-    sessao.add(_voto(votacao, _parlamentar(1), "nao_votou", None))
+    for numero, codigo in enumerate(["LS", "AP"], start=1):
+        sessao.add(_voto(votacao, _parlamentar(numero), *normalizar_voto(codigo)))
     sessao.flush()
 
-    _nao_grava(sessao, _voto(votacao, _parlamentar(2), "sim", None), regra="ck_voto_valor_bruto")
+    colunas = [coluna for coluna in Voto.__table__.columns if coluna.name != "parlamentar_id"]
+    licenca_saude, atividade_parlamentar = sessao.execute(select(*colunas)).all()
+    assert licenca_saude == atividade_parlamentar
+
+
+def test_o_banco_guarda_os_codigos_da_lista(sessao):
+    votacao = _votacao()
+    for numero, codigo in enumerate(CODIGOS_GRAVADOS, start=1):
+        sessao.add(_voto(votacao, _parlamentar(numero), *normalizar_voto(codigo)))
+    sessao.flush()
+
+
+@pytest.mark.parametrize("codigo", ["LS", "AP", "XYZ"])
+def test_o_banco_recusa_codigo_fora_da_lista(sessao, codigo):
+    # Nem um conector que pule o normalizar_voto grava a ausência ou um código novo cru.
+    _nao_grava(
+        sessao,
+        _voto(_votacao(), _parlamentar(), "nao_votou", codigo),
+        regra="ck_voto_valor_bruto",
+    )
 
 
 @pytest.mark.parametrize(
@@ -133,16 +154,25 @@ def test_so_o_nao_votou_fica_sem_o_codigo(sessao):
         ("Obstrução", ("obstrucao", "Obstrução")),
         ("Artigo 17", ("presidente", "Artigo 17")),
         ("Presidente (art. 51 RISF)", ("presidente", "Presidente (art. 51 RISF)")),
+        # Presente, não registrou voto: o código fica, e a presença continua separada da ausência.
         ("P-NRV", ("nao_votou", "P-NRV")),
-        ("AP", ("nao_votou", "AP")),
-        # Licença saúde é dado de saúde: entra só como não votou, sem o código.
+        # As ausências entram sem o código: a licença saúde fica igual à atividade parlamentar.
+        ("AP", ("nao_votou", None)),
         ("LS", ("nao_votou", None)),
-        # Um código que ainda não está na tabela não quebra a coleta.
-        ("XYZ", ("outro", "XYZ")),
+        # Um código novo pode ser outro motivo pessoal: entra como outro, sem o código.
+        ("XYZ", ("outro", None)),
     ],
 )
 def test_normalizar_voto(bruto, esperado):
     assert normalizar_voto(bruto) == esperado
+
+
+def test_o_codigo_novo_vai_ao_log_sem_a_pessoa(caplog):
+    with caplog.at_level(logging.WARNING, logger="mandatometro.db.modelos"):
+        normalizar_voto("XYZ")
+    assert [registro.getMessage() for registro in caplog.records] == [
+        "Código de voto desconhecido: 'XYZ'. Entra como outro, sem o código."
+    ]
 
 
 @pytest.mark.parametrize(
