@@ -298,6 +298,12 @@ Com a letra do navegador grande, no celular, o título cresce com a letra até a
 | O nome do site (largura 68%) | MANDATÔMETRO | 7.08 |
 
 - **O recuo** é o que fica entre a caixa do título e as margens da página: o respiro e os fios da folha, a coluna do número e a do azulejo. Quando a folha divide a página com uma coluna ao lado (o caminho, na trilha; "Nesta trilha", no artigo), o contêiner diz quanto ela toma no `--recuo-de-fora`, e os títulos de dentro somam.
+- **Na lista das trilhas:**
+  - de 640 a 1407 px, o recuo do título é o do azulejo ao lado;
+  - a partir de 1408 px, o título divide a cabeça com a coluna da descrição, e o recuo soma também os 42rem dela e o vão entre as duas;
+  - até uns 1500 px, é o teto que dá o tamanho do título, e ele mede a página pelo `100vw`, que conta a barra de rolagem (15 px no Edge e no Chrome do Windows). Por isso, o recuo da cabeça aberta leva 1rem a mais, e o título cabe na coluna com a barra à vista ou sem ela;
+  - quando a coluna da descrição cresce, a do título também passa de 42rem, e o título já parou no tamanho maior: 4,5rem × 5,66 = 25,5rem.
+  - O `lib/lista-das-trilhas.test.ts` confere a conta com as medidas do CSS.
 - **O aviso a quem escreve:** um teste (`src/lib/conteudo/titulos.test.ts`) soma a largura de cada letra em maiúsculas (`larguras-das-letras.ts`, medida no navegador nos dois estilos) e falha quando uma palavra de um título do conteúdo passa do teto, com o arquivo, a palavra e o que fazer (`docs/conteudo-das-trilhas.md`). Os tetos saem do código, e o teste fica fora do `conferir.ts`: ele não derruba o build nem o deploy.
 
 ### Named Rules
@@ -313,7 +319,11 @@ A página usa a largura toda da tela, com as margens do `--margem`: 20 px no cel
 - **O painel de azulejos** fica à direita do cartaz, nos 30% da largura, de cima a baixo, a partir de 992 px. Abaixo disso, é uma faixa de duas fileiras no alto, de borda a borda: 6 azulejos por fileira no celular e 10 a partir de 640 px.
 - **Página inicial:** o cartaz e, depois de um fio de tinta, o caminho de um projeto de lei, passo a passo. Abaixo de 768 px, o "para quem" vem depois do botão, para o botão caber na primeira tela do celular. O HTML tem o "para quem" duas vezes, e o CSS mostra um de cada vez: o leitor de tela e o Tab seguem a ordem da tela em cada largura, o que o `order` do CSS não faria. O Renan escolheu essa ordem em 10/11/2026.
 - **Trilha:** o cartaz e as folhas dos artigos, uma embaixo da outra, e depois a chamada do quiz e o caminho. A partir de 1400 px, o caminho fica numa coluna de 24rem à direita das folhas. A ordem do HTML é a mesma em todas as larguras.
-- **Lista das trilhas:** o cartaz e uma folha por trilha. A partir de 1024 px, a folha tem duas colunas: à esquerda, o azulejo, o título, a descrição e o progresso; à direita (22rem), as folhas dos artigos em lista. Abaixo disso, os artigos viram quadradinhos.
+- **Lista das trilhas:** o cartaz e uma folha por trilha.
+  - **A partir de 1024 px:** a folha tem a cabeça em cima (o azulejo, o título, a descrição, o rótulo e o progresso) e, embaixo, as folhas dos artigos em colunas que terminam juntas.
+  - **A partir de 1408 px:** a cabeça se abre em duas colunas.
+  - **Abaixo de 1024 px:** os artigos viram quadradinhos.
+  - **Antes da #104:** a lista ficava à direita, numa coluna de 22rem, e nas trilhas de 6 e 8 artigos deixava um vão embaixo da descrição. O Renan pediu, em 13/11/2026, para acabar com esses vãos.
 - **Artigo:** a parede de papel com a folha de leitura por cima, até 82rem. A partir de 1200 px, "Nesta trilha" fica numa coluna de 17rem à direita, fixa ao rolar; abaixo disso, vem depois da folha. No celular, a folha fica a 8 px das bordas da tela, com 16 px de respiro por dentro.
 - **Quiz:** o palco tem pelo menos a altura da primeira tela, com o andamento no pé, e as faixas do anterior e do próximo vêm embaixo dele. A partir de 992 px, o texto fica à esquerda e o mosaico, à direita; na pergunta, as opções à esquerda e a folha da resposta à direita. Abaixo disso, tudo vai numa coluna, com o mosaico embaixo da migalha.
 - **Rodapé:** o documento é uma grade de três linhas (cabeçalho, conteúdo e rodapé), e o conteúdo estica: numa página curta, como o 404 e a de erro, o rodapé fica no fim da tela.
@@ -433,10 +443,21 @@ Tudo é reto: raio zero (`--radius: 0`).
 - **O título é o link** para a trilha, o único no celular. A área de toque dele tem pelo menos 44 px de altura, também quando o título cabe numa linha: um `::before` soma o que falta, por igual em cima e embaixo, sem mexer no desenho.
 - **Com a letra grande** (abaixo de 22rem, a variante `letra-grande`), o azulejo passa para cima do texto, como nas folhas da trilha, e a descrição fica em 1rem. Ao lado, o azulejo crescia com a letra, e a coluna do texto ficava estreita demais: palavras como "Constituição" se partiam. Nenhuma palavra da página se parte, de 320 a 430 px, com a letra de 100% a 200%.
 - **As miniaturas** (abaixo de 1024 px): um quadrado de 44 px por artigo, com fio de tinta e o número na fita da posição; os lidos levam o visto no canto de cima, por cima da borda. Os quadrados ficam a 6 px um do outro e, quando quebram de linha, as linhas ficam a 12 px (o Renan, em 11/11/2026: "Linhas mais afastadas"). São desenho: o estado está na frase do progresso.
-- **A partir de 1024 px,** os quadrados dão lugar às folhas da trilha em lista, à direita.
+- **A partir de 1024 px,** os quadrados dão lugar às folhas da trilha, embaixo da cabeça, com o desenho de "Nesta trilha":
+  - **A ordem:** as folhas descem uma coluna e passam para a próxima (1 a 4 | 5 a 8). A ordem do Tab é a da leitura: a cabeça e depois os artigos 1, 2, 3..., coluna por coluna.
+  - **Quantas colunas:** até 2, até 3 a partir de 1280 px e até 4 a partir de 1600 px. É o maior número que divide os artigos, para as colunas terminarem juntas. Com 8 artigos, 2 colunas e, a partir de 1600 px, 4; com 6, 2 e, a partir de 1280 px, 3; com 3, 2 e, a partir de 1280 px, 3. Sem divisor, a última coluna fica no máximo uma linha mais curta.
+  - **De onde vêm as linhas:** do número de artigos (`variaveisDaLista`, em `lib/lista-das-trilhas.ts`), em variáveis de CSS que saem iguais no HTML do servidor e no navegador.
+  - **Os fios:** cada folha leva o fio de baixo, e o fio de cima da seguinte o cobre. A última de cada coluna fecha a coluna.
+- **O progresso, a partir de 1024 px,** fica no fim da linha do rótulo, na mesma célula da grade. A linha já está lá desde o HTML do servidor, e nada pula quando ele chega, nem com "Você terminou a trilha.", a frase mais longa.
+- **A cabeça aberta, a partir de 1408 px:**
+  - o título fica à esquerda; a descrição e o rótulo, à direita, numa coluna de pelo menos 42rem (a largura da descrição), rentes à base do título;
+  - nas telas bem largas, as duas colunas ficam iguais;
+  - na coluna estreita, o título quebra em duas linhas logo depois dos 1408 px. Com a barra de rolagem à vista, A Constituição fica em duas linhas até 1551 px, Os Três Poderes até 1586 px, Direitos e Deveres até 1655 px e Processo legislativo até 1761 px; sem a barra, a coluna tem 15 px a mais, e cada título volta a uma linha uns 15 a 21 px antes.
+- **Nenhum vão:** de 1024 a 2560 px, com a letra a 100%, a cabeça não deixa ao lado do texto uma faixa vazia de mais de 6rem de altura com mais de um terço da largura da folha.
 
 ### "Nesta trilha"
 - A lista dos artigos da trilha, no artigo e na lista das trilhas: em cada linha, entre dois fios, o número pequeno na fita da posição, o título em maiúsculas e o estado ("Lido · 2 min"). A lida leva o visto no número; a aberta leva um fio grosso de tinta do lado e "Você está aqui". A lista tem `role="list"`.
+- **No artigo,** a lista fica numa coluna só. **Na lista das trilhas,** a partir de 1024 px, ela vai em colunas (veja "A trilha na lista das trilhas"). As regras das colunas ficam presas à `.trilha-da-lista`, e dois testes conferem que "Nesta trilha" não as recebe: o `lib/lista-das-trilhas.test.ts`, no CSS, e o `components/folhas-da-trilha.test.tsx`, que mostra a lista do artigo e confere que ela não leva classe além da `folhas-da-trilha` (uma classe do Tailwind, como `lg:grid-flow-col`, traria as colunas).
 
 ### O passo a passo (página inicial)
 - **Caráter:** o caminho de um projeto de lei, um passo de cada vez. O conteúdo é o do `infografico.md` da trilha: o texto, os desvios, as fontes e os artigos de cada passo.

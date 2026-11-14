@@ -1712,13 +1712,109 @@
 		}
 	}
 
+	/*
+	 * A partir de 1024 px, a folha continua numa coluna só: a cabeça em cima e as
+	 * folhas dos artigos embaixo, em colunas. Com a lista à direita, a coluna mais
+	 * curta deixava um vão na folha (a #104). Na cabeça, os quadradinhos saem, e a
+	 * frase do progresso vai para o fim da linha do rótulo, na mesma célula da
+	 * grade: a linha já está lá desde o HTML do servidor, e nada pula quando o
+	 * progresso chega. O título fica com o recuo do tablet, o do azulejo ao lado.
+	 */
 	@media (width >= 64rem) {
-		.trilha-da-lista {
-			grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
+		.trilha-cabeca-texto {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr);
+			align-items: start;
+		}
+
+		.trilha-cabeca-texto > .rotulo,
+		.trilha-cabeca-texto > .trilha-andamento {
+			grid-row: 3;
+			grid-column: 1;
+		}
+
+		.trilha-cabeca-texto > .rotulo {
+			justify-self: start;
+		}
+
+		.trilha-cabeca-texto > .trilha-andamento {
+			justify-self: end;
+			margin-top: 0.7rem;
+		}
+
+		/*
+		 * As folhas dos artigos, com o desenho de "Nesta trilha", descem uma coluna e
+		 * passam para a próxima (1 a 4 | 5 a 8), na ordem do Tab. Cada folha leva o
+		 * fio de baixo, que o de cima da seguinte cobre: a última de cada coluna
+		 * fecha a coluna. O número de linhas vem do TSX (--linhas-2, --linhas-3 e
+		 * --linhas-4, do variaveisDaLista), para as colunas terminarem juntas; o
+		 * display: grid, do lg:grid da lista.
+		 */
+		.trilha-da-lista .folhas-da-trilha {
+			grid-auto-flow: column;
+			grid-template-rows: repeat(var(--linhas-2), auto);
+			grid-auto-columns: minmax(0, 1fr);
+			column-gap: var(--respiro);
+		}
+
+		.trilha-da-lista .folhas-da-trilha > li {
+			border-bottom: 2px solid var(--tinta);
+			margin-bottom: -2px;
+		}
+	}
+
+	/* Até 3 colunas a partir de 1280 px. */
+	@media (width >= 80rem) {
+		.trilha-da-lista .folhas-da-trilha {
+			grid-template-rows: repeat(var(--linhas-3), auto);
+		}
+	}
+
+	/*
+	 * A partir de 1408 px, a cabeça se abre em duas colunas: o título à esquerda; a
+	 * descrição e a linha do rótulo à direita, numa coluna de pelo menos 42rem (a
+	 * largura da descrição), rentes à base do título quando ele é o mais alto. Nas
+	 * telas bem largas, as duas colunas ficam iguais. O recuo do título conta a
+	 * coluna da direita com os 42rem dela: quando ela cresce, a do título já passou
+	 * de 42rem, e o título parou antes, no --letra (4,5rem × 5,66 = 25,5rem). Até
+	 * uns 1500 px, é o teto que dá o tamanho do título, e ele mede a página pelo
+	 * 100vw, que conta a barra de rolagem (15 px no Windows): o recuo leva 1rem a
+	 * mais por ela, e o título cabe na coluna com a barra à vista ou sem ela.
+	 */
+	@media (width >= 88rem) {
+		.trilha-cabeca-texto {
+			grid-template-columns: minmax(0, 1fr) minmax(42rem, 1fr);
+			grid-template-rows: 1fr auto;
+			column-gap: var(--respiro);
+		}
+
+		.trilha-cabeca-texto > h2 {
+			grid-row: 1 / span 2;
+			grid-column: 1;
+		}
+
+		.trilha-cabeca-texto > p:not(.rotulo) {
+			grid-row: 1;
+			grid-column: 2;
+			align-self: end;
+			margin-top: 0;
+		}
+
+		.trilha-cabeca-texto > .rotulo,
+		.trilha-cabeca-texto > .trilha-andamento {
+			grid-row: 2;
+			grid-column: 2;
 		}
 
 		.trilha-da-lista .titulo-de-folha {
-			--recuo: calc(4 * var(--respiro) + 4px + 29.5rem);
+			--recuo: calc(4 * var(--respiro) + 4px + 49.5rem + 1rem);
+		}
+	}
+
+	/* Até 4 colunas a partir de 1600 px. */
+	@media (width >= 100rem) {
+		.trilha-da-lista .folhas-da-trilha {
+			grid-template-rows: repeat(var(--linhas-4), auto);
 		}
 	}
 
