@@ -7,6 +7,7 @@ import { azulejoDaPosicao, sementeDe } from "@/lib/azulejos";
 import { classes } from "@/lib/classes";
 import { buscarTrilhas, type TrilhaNaLista } from "@/lib/conteudo";
 import { classeDaFita, fraseDoProgresso, plural } from "@/lib/formatar";
+import { variaveisDaLista } from "@/lib/lista-das-trilhas";
 import { metaDaPagina, metaSemPagina } from "@/lib/meta";
 import { contarLidos, idDoArtigo, useArtigosLidos } from "@/lib/progresso";
 
@@ -76,8 +77,9 @@ function PaginaDasTrilhas() {
 /**
  * Uma trilha na lista: uma folha com o azulejo dela, o título, a descrição, o
  * tamanho e o progresso. A cor do azulejo é a fita da posição da trilha na
- * lista. Abaixo do lg, os artigos aparecem em quadradinhos; a partir do lg, numa
- * lista à direita, com o link de cada um.
+ * lista. Abaixo do lg, os artigos aparecem em quadradinhos; a partir do lg, embaixo
+ * da cabeça, em colunas que terminam juntas, com o link de cada um. As linhas das
+ * colunas vêm do número de artigos (variaveisDaLista).
  */
 function ItemDaTrilha({
 	trilha,
@@ -97,7 +99,10 @@ function ItemDaTrilha({
 	);
 
 	return (
-		<li className={classes("trilha-da-lista revelar", classeDaFita(posicao))}>
+		<li
+			className={classes("trilha-da-lista revelar", classeDaFita(posicao))}
+			style={variaveisDaLista(total)}
+		>
 			<div className="trilha-cabeca">
 				<AzulejoGrande pecas={azulejoDaPosicao(posicao)} className="da-linha" />
 				<div className="trilha-cabeca-texto">
@@ -115,7 +120,8 @@ function ItemDaTrilha({
 					</p>
 					{/* A frase do progresso tem a linha dela, reservada desde o HTML do
 					    servidor: nada muda de lugar quando o progresso aparece, depois da
-					    hidratação. */}
+					    hidratação. A partir do lg, ela fica no fim da linha do rótulo,
+					    que já está lá. */}
 					<div className="trilha-andamento">
 						{/* As linhas dos quadrados ficam mais afastadas que as colunas,
 						    porque o visto passa da borda de cima (index.css, o
@@ -142,7 +148,7 @@ function ItemDaTrilha({
 				trilha={trilha}
 				lidos={lidos}
 				aria-label={`Artigos da trilha ${trilha.titulo}`}
-				className="hidden lg:block"
+				className="hidden lg:grid"
 			/>
 		</li>
 	);
