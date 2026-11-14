@@ -93,6 +93,13 @@ describe("as linhas da lista das trilhas", () => {
 		expect(colunas(11, linhasDaLista(11, 4))).toEqual([3, 3, 3, 2]);
 	});
 
+	it("com uma coluna só, põem um artigo por linha", () => {
+		// O site não usa uma coluna só (os máximos são 2, 3 e 4), e só ela chega ao
+		// fim da conta: com 2 colunas ou mais, a regra de cima sempre acha as linhas.
+		expect(colunas(5, linhasDaLista(5, 1))).toEqual([5]);
+		expect(colunas(2, linhasDaLista(2, 1))).toEqual([2]);
+	});
+
 	it("nunca passam do máximo de colunas, de 1 a 30 artigos", () => {
 		for (let artigos = 1; artigos <= 30; artigos++) {
 			for (const maximo of MAXIMOS_DE_COLUNAS) {
@@ -167,6 +174,8 @@ describe("o CSS da lista das trilhas no computador", () => {
 				}
 			}
 		}
+		// As classes da lista do artigo, que não podem trazer colunas do Tailwind,
+		// o components/folhas-da-trilha.test.tsx confere.
 		expect(codigo("components/nesta-trilha.tsx")).not.toContain(
 			"trilha-da-lista",
 		);

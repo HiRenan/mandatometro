@@ -30,6 +30,8 @@ export function linhasDaLista(artigos: number, maximo: number): number {
 			return linhas;
 		}
 	}
+	// Com uma coluna só, um artigo por linha. Com 2 colunas ou mais, a conta de cima
+	// sempre acha as linhas (com 2, a última fica no máximo uma linha mais curta).
 	return artigos;
 }
 
