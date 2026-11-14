@@ -121,6 +121,9 @@ components:
   acao-de-texto:
     textColor: "{colors.tinta}"
     typography: "{typography.action}"
+  carregando:
+    textColor: "{colors.tinta-suave}"
+    typography: "{typography.label}"
   cartaz:
     backgroundColor: "{colors.papel}"
     textColor: "{colors.tinta}"
@@ -255,7 +258,7 @@ No quiz, a opção que se apaga depois da resposta passa para a tinta suave na f
 **Body Font:** Literata Variable, eixo de tamanho óptico, com itálico (com ui-serif, Georgia)
 **Accent Font:** Courier Prime 400, letra de máquina de escrever (com Courier New, ui-monospace)
 
-As três são servidas pelo próprio site, pelo `@fontsource`. Os arquivos latinos da Archivo e da Literata são pré-carregados no `<head>` de todas as páginas, para o texto não pular quando elas chegam. A Courier Prime é baixada em todas as páginas, porque o lema está no rodapé de todas. O pré-carregamento dela só vale onde ela aparece na primeira tela: a partir de 864 px, por causa do lema no cabeçalho, e, abaixo disso, só na página inicial, para a frase do título. Nas outras páginas, no celular, o navegador a pede pelo CSS, para o rodapé.
+As três são servidas pelo próprio site, pelo `@fontsource`, com `font-display: swap`: o texto aparece na letra reserva e troca de letra quando a fonte chega. Os arquivos latinos da Archivo e da Literata são pré-carregados no `<head>` de todas as páginas, e o navegador os pede junto com o CSS. Numa rede boa, eles chegam antes de o texto aparecer, que já sai na letra certa; numa rede lenta, chegam depois, e o texto ainda pula na troca. A Courier Prime é baixada em todas as páginas, porque o lema está no rodapé de todas. O pré-carregamento dela só vale onde ela aparece na primeira tela: a partir de 864 px, por causa do lema no cabeçalho, e, abaixo disso, só na página inicial, para a frase do título. Nas outras páginas, no celular, o navegador a pede pelo CSS, para o rodapé.
 
 A Courier Prime entrou na #89 só para a frase do cartaz e o lema: `@fontsource/courier-prime`, licença SIL OFL 1.1, 19 kB. É a única dependência nova da direção. Ela tomou o lugar da Instrument Serif itálica (22 kB), que o Renan achou com "muito cara de IA": em 13/11/2026, ele escolheu a letra de máquina num rascunho com cinco letras.
 
@@ -494,11 +497,15 @@ Tudo é reto: raio zero (`--radius: 0`).
 ### Página não encontrada e página de erro
 - **Forma:** o cartaz das páginas de dentro, com o painel de azulejos. No 404, o número gigante em cima do título "Página não encontrada", com um algarismo em cada fita, pela ordem; o número é desenho, e o título diz o que houve. Na de erro, só o título, "A página não carregou". Embaixo, uma frase em Literata e as duas ações: o botão e uma ação em texto.
 - **Página de erro:** aparece quando a página pedida não chega (a rede caiu, o pedido foi bloqueado ou o servidor deu erro), em todas as rotas, dentro do site, com o cabeçalho e o rodapé. Sem ícone de alerta e sem cor de erro: o erro é dito em palavras.
-- **Tentar de novo:** pede a página de novo, sem recarregar (`router.invalidate()`). Se der certo, a página pedida abre com o foco no título. Se falhar de novo, aparece "Ainda não deu. Confira a internet ou espere um pouco e tente de novo.", o foco fica no botão e a frase é anunciada pela região `role="status"`.
+- **Tentar de novo:** pede a página de novo, sem recarregar (`router.invalidate()`). Enquanto o pedido não volta, o carregando aparece na hora, no lugar da página de erro, com o foco na frase (veja "Carregando"). Se der certo, a página pedida abre com o foco no título. Se falhar de novo, aparece "Ainda não deu. Confira a internet ou espere um pouco e tente de novo.", o foco volta ao botão e a frase é anunciada pela região `role="status"`.
+- **O aviso é da visita:** o "Ainda não deu" vale só para a tentativa feita ali. Quem sai da página de erro e volta, inclusive pelo voltar do navegador, encontra a página sem o aviso, e o leitor de tela não o anuncia de novo.
 - **Título da aba:** "Erro ao carregar a página · Mandatômetro". A tela não mostra a mensagem técnica nem a pilha do erro.
 
 ### Carregando
-- O aviso de carregando das navegações é da #45 e ainda não tem o desenho desta direção. Quando vier, é texto, sem ícone girando.
+- **Quando aparece:** quando a página pedida demora. Numa navegação, se ela levar mais de 1 s; no "Tentar de novo" da página de erro, na hora. Quando aparece, fica pelo menos 0,5 s, para não piscar (`TEMPOS_DO_CARREGANDO`, em `components/carregando.tsx`, que o `router.tsx` passa ao router).
+- **Forma:** a frase "Carregando a página…", no lugar da página, no alto do conteúdo, em Label e tinta suave, como a linha do progresso. Ela fica na margem da página, a mesma da migalha da trilha e do quiz e do título das páginas (no artigo, a migalha fica dentro da folha). Sem ícone, sem giro e sem barra: o estado é dito em palavras, e nada se mexe, com ou sem o movimento reduzido.
+- **Leitor de tela e foco:** a frase fica numa região `role="status"`, que entra vazia e recebe a frase logo depois, para ser anunciada. Se o foco estava na página que saiu (o "Tentar de novo" ou o link que a pessoa tocou dentro dela), ele vem para a frase, sem o anel, e o navegador rola até ela, se ela estiver fora da tela; quando a página chega, o foco vai para o título dela, ou volta ao botão, se a tentativa falhar. Um foco num link do cabeçalho fica onde está.
+- **As escolhas do Renan,** em 13/11/2026: o texto "Carregando a página…", o lugar "Etiqueta no alto", a espera "1 s, e fica 0,5 s" e o foco "Na frase".
 
 ### Ícone da aba e prévia do link
 - **O ícone:** o M do nome em Archivo 900, largura 68%, em papel no quadrado de tinta, com a tira das cinco fitas embaixo. O `favicon.ico` tem 16, 32 e 48 px, e o `apple-touch-icon.png`, 180 px. É a letra do nome, não um logo, e troca quando o logo existir.
@@ -524,7 +531,7 @@ Três curvas: o **golpe** (`cubic-bezier(0.5, 0, 0.15, 1)`), seco, para o que se
 - **O sentido** vem do lugar da página no site, e não da ordem da visita (`lib/troca-de-pagina.ts`): a página inicial em cima, depois Trilhas, cada trilha e os artigos dela, na ordem da trilha, com o quiz no lugar dele, logo depois do artigo que o chama. Ir mais para dentro, ou para um artigo mais adiante, é avançar; o contrário é voltar, também pelo botão voltar do navegador. Do quiz para o "Artigo anterior" é voltar.
 - **O cabeçalho,** quando aparece na tela, fica parado por cima, e só o traço da seção troca, num esmaecer de 200 ms. Com a página rolada, ele vem com a página nova.
 - **Os cliques:** enquanto a troca roda, o navegador mostra fotos das duas páginas, e nada da página nova responde ao ponteiro (o `pointer-events: none` nas fotos não muda isso, porque a página inteira está na foto). Para o clique não se perder, o toque encerra a troca na hora, e o clique segue para o que está embaixo do ponteiro na página nova (`cliqueDuranteATroca`, em `lib/troca-de-pagina.ts`). O segundo clique de um clique duplo não segue: ele cairia num botão que a pessoa nem viu. Num navegador sem o `activeViewTransition`, o clique feito durante a troca ainda se perde.
-- **Quando não anima:** na primeira carga, num link para um trecho da mesma página e no "Tentar de novo" da página de erro. Num navegador sem as View Transitions, a página troca direto; num que não tem os tipos de transição, vira o esmaecer padrão do navegador.
+- **Quando não anima:** na primeira carga, num link para um trecho da mesma página e no "Tentar de novo" da página de erro. O carregando também entra sem animação, no lugar da página de antes; numa navegação, a página que chega depois dele aparece azulejo por azulejo, por cima da frase. Num navegador sem as View Transitions, a página troca direto; num que não tem os tipos de transição, vira o esmaecer padrão do navegador.
 - **Foco e leitor de tela:** nada muda. O foco vai para o título da página nova, ou para o trecho do endereço; a animação é só da tela.
 - **Como:** pelas View Transitions do navegador, que o TanStack Router pede em cada navegação (o `defaultViewTransition` do `router.tsx`), com os tipos `folha`, `avancar` ou `voltar` e `moldura-na-tela`. A máscara da foto nova é uma grade de azulejos que se abre com um ângulo animado (`@property --vt`).
 
@@ -562,6 +569,7 @@ Com `prefers-reduced-motion: reduce`, nada vira, tomba, sobe nem se risca: as pe
 - **Don't** usar a vermelha como cor de domingo antes da decisão da issue #39.
 - **Don't** trazer uma biblioteca de animação nem imagem para os azulejos: o movimento é do navegador, e o desenho, do CSS.
 - **Don't** esconder conteúdo à espera de um script: o que anima na entrada já está no HTML, no lugar.
+- **Don't** pôr ícone girando ou barra no carregando: ele diz em palavras que a página está a caminho, e nada nele se mexe.
 - **Don't** marcar o lido com um X: ele lê como "errado" ou "cancelado", ainda mais num site com quiz.
 - **Don't** prender um tamanho de letra só à largura da tela (`vw` puro): a letra para de crescer com a configuração do navegador.
 - **Don't** pôr hífen automático (`hyphens`): a palavra só se parte, sem hífen, quando não cabe sozinha na linha.

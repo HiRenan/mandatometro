@@ -2374,4 +2374,18 @@
 		font-weight: 700;
 		line-height: 1.4;
 	}
+
+	/* ───── O carregando ───── */
+
+	/*
+	 * Quando uma página demora, a frase "Carregando a página…" fica no lugar dela,
+	 * no alto do conteúdo, na margem da página, a mesma da migalha da trilha e do
+	 * quiz: na letra da etiqueta (o .rotulo) e em tinta suave, como a linha do
+	 * progresso. É texto, sem ícone e sem giro, e não se mexe, com ou sem o
+	 * movimento reduzido (components/carregando.tsx).
+	 */
+	.carregando {
+		padding: clamp(1.5rem, 4vw, 3rem) var(--margem);
+		color: var(--tinta-suave);
+	}
 }
