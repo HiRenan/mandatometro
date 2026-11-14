@@ -301,6 +301,7 @@ Com a letra do navegador grande, no celular, o título cresce com a letra até a
 - **Na lista das trilhas:**
   - de 640 a 1407 px, o recuo do título é o do azulejo ao lado;
   - a partir de 1408 px, o título divide a cabeça com a coluna da descrição, e o recuo soma também os 42rem dela e o vão entre as duas;
+  - até uns 1500 px, é o teto que dá o tamanho do título, e ele mede a página pelo `100vw`, que conta a barra de rolagem (15 px no Edge e no Chrome do Windows). Por isso, o recuo da cabeça aberta leva 1rem a mais, e o título cabe na coluna com a barra à vista ou sem ela;
   - quando a coluna da descrição cresce, a do título também passa de 42rem, e o título já parou no tamanho maior: 4,5rem × 5,66 = 25,5rem.
   - O `lib/lista-das-trilhas.test.ts` confere a conta com as medidas do CSS.
 - **O aviso a quem escreve:** um teste (`src/lib/conteudo/titulos.test.ts`) soma a largura de cada letra em maiúsculas (`larguras-das-letras.ts`, medida no navegador nos dois estilos) e falha quando uma palavra de um título do conteúdo passa do teto, com o arquivo, a palavra e o que fazer (`docs/conteudo-das-trilhas.md`). Os tetos saem do código, e o teste fica fora do `conferir.ts`: ele não derruba o build nem o deploy.
@@ -451,12 +452,12 @@ Tudo é reto: raio zero (`--radius: 0`).
 - **A cabeça aberta, a partir de 1408 px:**
   - o título fica à esquerda; a descrição e o rótulo, à direita, numa coluna de pelo menos 42rem (a largura da descrição), rentes à base do título;
   - nas telas bem largas, as duas colunas ficam iguais;
-  - na coluna estreita, o título quebra em duas linhas logo depois dos 1408 px: A Constituição até 1551 px, Os Três Poderes até 1591 px, Direitos e Deveres até 1655 px e Processo legislativo até 1767 px.
+  - na coluna estreita, o título quebra em duas linhas logo depois dos 1408 px. Com a barra de rolagem à vista, A Constituição fica em duas linhas até 1551 px, Os Três Poderes até 1586 px, Direitos e Deveres até 1655 px e Processo legislativo até 1761 px; sem a barra, a coluna tem 15 px a mais, e cada título volta a uma linha uns 15 a 21 px antes.
 - **Nenhum vão:** de 1024 a 2560 px, com a letra a 100%, a cabeça não deixa ao lado do texto uma faixa vazia de mais de 6rem de altura com mais de um terço da largura da folha.
 
 ### "Nesta trilha"
 - A lista dos artigos da trilha, no artigo e na lista das trilhas: em cada linha, entre dois fios, o número pequeno na fita da posição, o título em maiúsculas e o estado ("Lido · 2 min"). A lida leva o visto no número; a aberta leva um fio grosso de tinta do lado e "Você está aqui". A lista tem `role="list"`.
-- **No artigo,** a lista fica numa coluna só. **Na lista das trilhas,** a partir de 1024 px, ela vai em colunas (veja "A trilha na lista das trilhas"). As regras das colunas ficam presas à `.trilha-da-lista`, e um teste (`lib/lista-das-trilhas.test.ts`) confere que "Nesta trilha" não as recebe.
+- **No artigo,** a lista fica numa coluna só. **Na lista das trilhas,** a partir de 1024 px, ela vai em colunas (veja "A trilha na lista das trilhas"). As regras das colunas ficam presas à `.trilha-da-lista`, e dois testes conferem que "Nesta trilha" não as recebe: o `lib/lista-das-trilhas.test.ts`, no CSS, e o `components/folhas-da-trilha.test.tsx`, que mostra a lista do artigo e confere que ela não leva classe além da `folhas-da-trilha` (uma classe do Tailwind, como `lg:grid-flow-col`, traria as colunas).
 
 ### O passo a passo (página inicial)
 - **Caráter:** o caminho de um projeto de lei, um passo de cada vez. O conteúdo é o do `infografico.md` da trilha: o texto, os desvios, as fontes e os artigos de cada passo.
