@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-router";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { CARREGANDO, Carregando, TEMPOS_DO_CARREGANDO } from "./carregando";
 import { PaginaDeErro } from "./pagina-de-erro";
 
 beforeEach(() => {
@@ -24,7 +25,10 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-/** Um site de mentira com a página de erro do router.tsx e uma página que pede dados. */
+/**
+ * Um site de mentira com a página de erro e o carregando do router.tsx, e uma
+ * página que pede dados.
+ */
 function abrir(carregar: () => Promise<string>) {
 	const raiz = createRootRoute({
 		component: () => (
@@ -50,8 +54,11 @@ function abrir(carregar: () => Promise<string>) {
 		routeTree: raiz.addChildren([pagina, trilhas]),
 		history: createMemoryHistory({ initialEntries: ["/artigo"] }),
 		defaultErrorComponent: PaginaDeErro,
+		defaultPendingComponent: Carregando,
+		...TEMPOS_DO_CARREGANDO,
 	});
 	render(<RouterProvider router={router} />);
+	return router;
 }
 
 const semRede = () => Promise.reject(new TypeError("Failed to fetch"));
@@ -116,5 +123,56 @@ describe("página de erro", () => {
 		expect(document.activeElement).toBe(
 			screen.getByRole("button", { name: "Tentar de novo" }),
 		);
+	});
+
+	it("enquanto o Tentar de novo espera, diz que está carregando, com o foco na frase", async () => {
+		let chegar: (titulo: string) => void = () => {};
+		const carregar = vi
+			.fn<() => Promise<string>>()
+			.mockImplementationOnce(semRede)
+			.mockImplementationOnce(
+				() =>
+					new Promise((resolver) => {
+						chegar = resolver;
+					}),
+			);
+		abrir(carregar);
+
+		// O clique de verdade deixa o foco no botão, que sai da tela com a página.
+		const botao = await screen.findByRole("button", { name: "Tentar de novo" });
+		botao.focus();
+		fireEvent.click(botao);
+
+		const frase = await screen.findByText(CARREGANDO);
+		expect(frase.getAttribute("role")).toBe("status");
+		expect(document.activeElement).toBe(frase);
+
+		chegar("Quem pode propor uma lei");
+		const titulo = await screen.findByRole("heading", {
+			name: "Quem pode propor uma lei",
+		});
+		expect(document.activeElement).toBe(titulo);
+	});
+
+	it("voltar pelo histórico à página que falhou não repete o aviso da tentativa antiga", async () => {
+		const router = abrir(semRede);
+
+		fireEvent.click(
+			await screen.findByRole("button", { name: "Tentar de novo" }),
+		);
+		expect(await screen.findByText(/^Ainda não deu\./)).toBeTruthy();
+
+		// Ainda sem rede, a pessoa vai para outra página e volta pelo histórico: a
+		// entrada é a mesma, mas a tentativa ficou para trás.
+		fireEvent.click(screen.getByRole("link", { name: "Ver as trilhas" }));
+		await screen.findByRole("heading", { name: "Trilhas" });
+		router.history.back();
+
+		expect(
+			await screen.findByRole("heading", { name: "A página não carregou" }),
+		).toBeTruthy();
+		// Nem na tela, nem no anúncio do leitor de tela.
+		expect(screen.queryAllByText(/^Ainda não deu\./)).toEqual([]);
+		expect(screen.getByRole("status").textContent).toBe("");
 	});
 });
