@@ -1776,7 +1776,10 @@
 	 * largura da descrição), rentes à base do título quando ele é o mais alto. Nas
 	 * telas bem largas, as duas colunas ficam iguais. O recuo do título conta a
 	 * coluna da direita com os 42rem dela: quando ela cresce, a do título já passou
-	 * de 42rem, e o título parou antes, no --letra (4,5rem × 5,66 = 25,5rem).
+	 * de 42rem, e o título parou antes, no --letra (4,5rem × 5,66 = 25,5rem). Até
+	 * uns 1500 px, é o teto que dá o tamanho do título, e ele mede a página pelo
+	 * 100vw, que conta a barra de rolagem (15 px no Windows): o recuo leva 1rem a
+	 * mais por ela, e o título cabe na coluna com a barra à vista ou sem ela.
 	 */
 	@media (width >= 88rem) {
 		.trilha-cabeca-texto {
@@ -1804,7 +1807,7 @@
 		}
 
 		.trilha-da-lista .titulo-de-folha {
-			--recuo: calc(4 * var(--respiro) + 4px + 49.5rem);
+			--recuo: calc(4 * var(--respiro) + 4px + 49.5rem + 1rem);
 		}
 	}
 
