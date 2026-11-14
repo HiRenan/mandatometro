@@ -190,4 +190,21 @@ describe("nesta trilha", () => {
 		// A folha aberta leva o fio de tinta do lado (index.css).
 		expect(aberta.closest("li")?.classList.contains("aqui")).toBe(true);
 	});
+
+	it("fica numa coluna só: a lista não leva classe além da folhas-da-trilha", async () => {
+		// As colunas são só da lista das trilhas: no CSS, presas à .trilha-da-lista
+		// (lib/lista-das-trilhas.test.ts). Uma classe do Tailwind aqui, como
+		// lg:grid lg:grid-flow-col, poria as colunas também no artigo.
+		const pagina = await mostrar(
+			<NestaTrilha
+				trilha={trilha}
+				atual="onde-o-projeto-comeca"
+				lidos={lidos}
+			/>,
+		);
+		const lista = within(pagina).getByRole("list");
+
+		expect([...lista.classList]).toEqual(["folhas-da-trilha"]);
+		expect(lista.getAttribute("style")).toBeNull();
+	});
 });
