@@ -164,6 +164,28 @@ describe("página de erro", () => {
 		);
 	});
 
+	// Durante a tentativa, o carregando ocupa o lugar da página de erro, e a que
+	// volta é montada de novo. Ela volta parada: os azulejos não viram e o pé não
+	// sobe outra vez (o data-de-novo, no movimento.css).
+	it("na primeira visita, entra; depois de uma tentativa que falha, volta parada", async () => {
+		abrir(semRede);
+		const titulo = await screen.findByRole("heading", {
+			name: "A página não carregou",
+		});
+		expect(
+			titulo.closest("[data-pagina-de-erro]")?.hasAttribute("data-de-novo"),
+		).toBe(false);
+
+		fireEvent.click(screen.getByRole("button", { name: "Tentar de novo" }));
+		await screen.findByText(/^Ainda não deu\./);
+
+		expect(
+			document
+				.querySelector("[data-pagina-de-erro]")
+				?.hasAttribute("data-de-novo"),
+		).toBe(true);
+	});
+
 	it("enquanto o Tentar de novo espera, diz que está carregando, com o foco na frase", async () => {
 		let chegar: (titulo: string) => void = () => {};
 		const carregar = vi

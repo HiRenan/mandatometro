@@ -100,8 +100,14 @@ export function PaginaDeErro() {
 		}
 	}
 
+	// Depois de uma tentativa que falhou, a página volta parada (o data-de-novo,
+	// no movimento.css): ela já estava na tela antes do carregando.
 	return (
-		<section data-pagina-de-erro className="cartaz cartaz-medio">
+		<section
+			data-pagina-de-erro
+			data-de-novo={tentouAqui || undefined}
+			className="cartaz cartaz-medio"
+		>
 			<Painel
 				semente={sementeDe("erro")}
 				colunas={4}
