@@ -3,7 +3,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	cliqueDuranteATroca,
+	foiTrocaPulada,
 	molduraNaTela,
+	semErroNaTrocaPulada,
 	sentidoDaTroca,
 	tiposDaTroca,
 	trilhaDaPaginaAberta,
@@ -376,5 +378,92 @@ describe("cliqueDuranteATroca", () => {
 
 		expect(troca.skipTransition).not.toHaveBeenCalled();
 		expect(cliques).toHaveLength(0);
+	});
+});
+
+describe("foiTrocaPulada", () => {
+	it("é o AbortError da troca que o navegador pulou", () => {
+		expect(
+			foiTrocaPulada(new DOMException("Transition was skipped", "AbortError")),
+		).toBe(true);
+	});
+
+	it("outro erro da troca, ou um erro qualquer, não é", () => {
+		expect(
+			foiTrocaPulada(
+				new DOMException(
+					"Transition was aborted because of invalid state",
+					"InvalidStateError",
+				),
+			),
+		).toBe(false);
+		expect(foiTrocaPulada(new TypeError("Failed to fetch"))).toBe(false);
+		expect(foiTrocaPulada(undefined)).toBe(false);
+	});
+});
+
+describe("semErroNaTrocaPulada", () => {
+	afterEach(() => {
+		Reflect.deleteProperty(document, "activeViewTransition");
+	});
+
+	/**
+	 * Um router de mentira que, como o TanStack Router, começa a troca no
+	 * navegador e devolve a página nova; a troca rejeita o `ready` com o erro dado.
+	 */
+	function routerComTroca(erro: unknown) {
+		const troca = { ready: Promise.reject(erro) };
+		const router = {
+			startViewTransition: vi.fn((novaPagina: () => Promise<void>) => {
+				Object.defineProperty(document, "activeViewTransition", {
+					configurable: true,
+					get: () => troca,
+				});
+				return novaPagina();
+			}),
+		};
+		return router;
+	}
+
+	async function soltasDurante(fazer: () => Promise<unknown>) {
+		const soltas: unknown[] = [];
+		const anotar = (motivo: unknown) => soltas.push(motivo);
+		process.on("unhandledRejection", anotar);
+		try {
+			await fazer();
+			await new Promise((pronto) => setTimeout(pronto, 20));
+		} finally {
+			process.off("unhandledRejection", anotar);
+		}
+		return soltas;
+	}
+
+	it("trata o AbortError da troca pulada, e a página nova chega", async () => {
+		const router = routerComTroca(
+			new DOMException("Transition was skipped", "AbortError"),
+		);
+		const comecar = router.startViewTransition;
+		semErroNaTrocaPulada(router);
+		const novaPagina = vi.fn(async () => {});
+
+		const soltas = await soltasDurante(() =>
+			router.startViewTransition(novaPagina),
+		);
+
+		expect(comecar).toHaveBeenCalledWith(novaPagina);
+		expect(novaPagina).toHaveBeenCalledTimes(1);
+		expect(soltas).toEqual([]);
+	});
+
+	it("num navegador sem o activeViewTransition, só começa a troca", async () => {
+		const novaPagina = vi.fn(async () => {});
+		const router = {
+			startViewTransition: vi.fn((fazer: () => Promise<void>) => fazer()),
+		};
+		semErroNaTrocaPulada(router);
+
+		await router.startViewTransition(novaPagina);
+
+		expect(novaPagina).toHaveBeenCalledTimes(1);
 	});
 });
