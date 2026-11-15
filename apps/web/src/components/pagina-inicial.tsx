@@ -3,85 +3,111 @@ import { ArrowRight } from "lucide-react";
 import type { PaginaInicial as Dados } from "@/lib/conteudo";
 import { fraseDoProgresso, tamanhoDaTrilha } from "@/lib/formatar";
 import { contarLidos, primeiroNaoLido, useArtigosLidos } from "@/lib/progresso";
-import { BOTAO_CONTINUAR } from "./botao-continuar";
+import { Painel } from "./azulejo";
+import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "./botao-continuar";
 import { InfograficoEmLinha } from "./infografico-em-linha";
+import { Palavras } from "./palavras";
+
+// O título em duas linhas: a de cima, na letra do cartaz; a de baixo, em letra de
+// máquina, com a tira das cinco fitas riscada embaixo.
+const TITULO = "Entenda a política brasileira,";
+const FRASE = "um passo de cada vez.";
 
 /**
- * A página inicial: o que é o Mandatômetro e para quem ele é, o botão que
- * começa ou continua a trilha, e o caminho de um projeto de lei, com os
- * artigos que explicam cada parada. A partir do xl, o título fica à esquerda,
- * e o texto e o botão à direita. Abaixo do md, o "para quem" vem depois do
- * botão (`ParaQuem`).
+ * A página inicial: o cartaz, com o título gigante, o painel de azulejos, o que
+ * é o Mandatômetro e para quem ele é, e o botão que começa ou continua a trilha;
+ * depois, o caminho de um projeto de lei, passo a passo. A partir do lg, o
+ * painel fica à direita, de cima a baixo; antes disso, é uma faixa de duas
+ * fileiras no alto. Abaixo do md, o "para quem" vem depois do botão (`ParaQuem`).
  */
 export function PaginaInicial({ pagina }: { pagina: Dados }) {
 	const { trilha, caminho } = pagina;
 	const lidos = useArtigosLidos();
 	const quantosLidos = contarLidos(trilha.artigos, lidos);
 	const ondeParou = primeiroNaoLido(trilha.artigos, lidos);
+	// O espaço antes da seta, e não uma margem: com a letra grande, quando ela desce
+	// sozinha para a linha de baixo, começa alinhada com o texto (o SETA_DO_BOTAO).
 	const seta = (
-		<ArrowRight
-			aria-hidden="true"
-			className="size-5 shrink-0"
-			strokeWidth={2.5}
-		/>
+		<>
+			{" "}
+			<ArrowRight
+				aria-hidden="true"
+				className={SETA_DO_BOTAO}
+				strokeWidth={2.5}
+			/>
+		</>
 	);
 
 	return (
-		<div className="px-margem-celular mx-auto max-w-[1440px] pt-10 pb-20 md:px-16 lg:pt-14">
-			<div className="xl:grid xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] xl:gap-x-16">
-				{/* Com a letra grande, o título cresce até "brasileira," encostar nas
-				    margens (o letra-com-teto do index.css). */}
-				<h1 className="titulo-condensado letra-com-teto [--letra:2.75rem] [--palavra:3.8] md:text-[4.75rem]">
-					Entenda a política brasileira, um passo de cada vez.
+		<>
+			<section className="cartaz">
+				{/* Quatro colunas de azulejos, com fileiras de sobra para cobrir o cartaz
+				    em qualquer janela: a parte que não cabe fica cortada. */}
+				<Painel
+					semente={7}
+					colunas={4}
+					quantas={96}
+					className="mural"
+					sozinho
+				/>
+				{/* Com a letra grande, o título cresce até "BRASILEIRA," encostar nas
+				    margens (o letra-com-teto do index.css). As palavras tombam no lugar
+				    uma a uma: o leitor de tela lê o título corrido, pelo aria-label. */}
+				<h1
+					aria-label={`${TITULO} ${FRASE}`}
+					className="titulo-condensado letra-com-teto [--palavra:4.72]"
+				>
+					<span aria-hidden="true" className="caixa">
+						<Palavras texto={TITULO} />
+					</span>{" "}
+					<em aria-hidden="true">
+						<Palavras texto={FRASE} de={4} />
+					</em>
 				</h1>
-				<div className="mt-6 xl:mt-2">
-					<p className="max-w-[40ch] font-serif text-xl leading-snug font-medium lg:text-[1.5625rem] lg:leading-[1.4] xl:text-[1.375rem]">
+				<div className="cartaz-pe">
+					<p className="abertura">
 						O Mandatômetro explica como funciona a política no Brasil, em
 						artigos curtos e em linguagem simples. A trilha do processo
 						legislativo mostra como uma ideia vira lei.
 					</p>
-					<ParaQuem className="mt-4 hidden md:block" />
-					{/* A linha acima do botão diz o tamanho da trilha e, depois que a
-					    pessoa lê um artigo, o progresso. Ela tem a altura reservada desde
-					    o HTML do servidor: quando o progresso aparece, depois da
-					    hidratação, o botão fica no lugar, e só os textos e o destino dele
-					    mudam. */}
-					<p className="mt-5 min-h-7 text-xl font-bold">
-						{fraseDoProgresso(quantosLidos, trilha.artigos.length) ||
-							tamanhoDaTrilha(trilha.artigos)}
-					</p>
-					<p className="mt-2">
-						{ondeParou ? (
-							<Link
-								to="/trilhas/$trilha/$artigo"
-								params={{ trilha: trilha.slug, artigo: ondeParou.slug }}
-								className={BOTAO_CONTINUAR}
-							>
-								{quantosLidos > 0 ? "Continuar a trilha" : "Começar a trilha"}
-								{seta}
-							</Link>
-						) : (
-							<Link
-								to="/trilhas/$trilha"
-								params={{ trilha: trilha.slug }}
-								className={BOTAO_CONTINUAR}
-							>
-								Ver a trilha
-								{seta}
-							</Link>
-						)}
-					</p>
-					<ParaQuem className="mt-5 md:hidden" />
+					<ParaQuem className="hidden md:block" />
+					<div className="cartaz-acao">
+						{/* A linha acima do botão diz o tamanho da trilha e, depois que a
+						    pessoa lê um artigo, o progresso. Ela tem a altura reservada desde
+						    o HTML do servidor: quando o progresso aparece, depois da
+						    hidratação, o botão fica no lugar, e só os textos e o destino dele
+						    mudam. */}
+						<p className="progresso rotulo">
+							{fraseDoProgresso(quantosLidos, trilha.artigos.length) ||
+								tamanhoDaTrilha(trilha.artigos)}
+						</p>
+						<p>
+							{ondeParou ? (
+								<Link
+									to="/trilhas/$trilha/$artigo"
+									params={{ trilha: trilha.slug, artigo: ondeParou.slug }}
+									className={BOTAO_CONTINUAR}
+								>
+									{quantosLidos > 0 ? "Continuar a trilha" : "Começar a trilha"}
+									{seta}
+								</Link>
+							) : (
+								<Link
+									to="/trilhas/$trilha"
+									params={{ trilha: trilha.slug }}
+									className={BOTAO_CONTINUAR}
+								>
+									Ver a trilha
+									{seta}
+								</Link>
+							)}
+						</p>
+					</div>
+					<ParaQuem className="md:hidden" />
 				</div>
-			</div>
-			{caminho && (
-				<InfograficoEmLinha
-					caminho={caminho}
-					trilha={trilha}
-					className="mt-16 lg:mt-20"
-				/>
-			)}
-		</div>
+			</section>
+			{caminho && <InfograficoEmLinha caminho={caminho} trilha={trilha} />}
+		</>
 	);
 }
 
@@ -94,7 +120,7 @@ export function PaginaInicial({ pagina }: { pagina: Dados }) {
  */
 function ParaQuem({ className }: { className: string }) {
 	return (
-		<p className={`max-w-[52ch] text-[1.0625rem] ${className}`}>
+		<p className={`para-quem ${className}`}>
 			É para quem vota e quer entender o que acontece depois do voto. Cada
 			explicação traz a fonte oficial, e você não precisa criar conta.
 		</p>

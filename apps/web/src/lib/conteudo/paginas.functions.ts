@@ -2,6 +2,7 @@ import { notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import {
 	acharArtigo,
+	acharQuiz,
 	acharTrilha,
 	inicio,
 	listarTrilhas,
@@ -52,4 +53,15 @@ export const buscarArtigo = createServerFn({ method: "GET" })
 			throw notFound();
 		}
 		return artigo;
+	});
+
+// Só pede a página: as respostas da pessoa ficam no navegador e não vêm aqui.
+export const buscarQuiz = createServerFn({ method: "GET" })
+	.validator((dados: { trilha: string }) => ({ trilha: texto(dados?.trilha) }))
+	.handler(({ data }) => {
+		const quiz = acharQuiz(trilhas, data.trilha);
+		if (!quiz) {
+			throw notFound();
+		}
+		return quiz;
 	});

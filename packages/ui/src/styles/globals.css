@@ -4,26 +4,43 @@
 @import "@fontsource-variable/archivo/wdth.css";
 @import "@fontsource-variable/literata/opsz.css";
 @import "@fontsource-variable/literata/opsz-italic.css";
+@import "@fontsource/courier-prime/latin-400.css";
 @source "../../../apps/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 
 @custom-variant dark (&:is(.dark *));
 
 /*
- * A folhinha de parede (DESIGN.md): papel branco, tinta preta e as cinco fitas do
- * Bonfim. A cor fica na moldura e nas fitas; o texto é sempre tinta no papel.
- * As fitas não levam texto por cima: só o preto no amarelo tem contraste.
+ * O cartaz de azulejos (DESIGN.md): papel claro, tinta e as cinco fitas do Bonfim.
+ * O fundo é papel e o texto é sempre tinta. A cor vem das fitas, sempre juntas e
+ * pela ordem: nos azulejos, nos números e na tira. As fitas não levam texto por
+ * cima: só a tinta no amarelo tem contraste.
  */
 :root {
-	--papel: #ffffff;
-	--tinta: #161616;
-	--tinta-suave: #4a4a4a;
-	--reticula: #ededed;
+	--papel: #f6f1e4;
+	/* Os dois tons do azulejo cru, papel sobre papel, e do que fica em segundo plano. */
+	--papel-2: #ebe4d2;
+	--papel-3: #d8cfb8;
+	/* A folha, mais clara que a parede, para o que se lê com calma. */
+	--folha: #fffdf7;
+	--tinta: #14161c;
+	--tinta-suave: #4f5461;
 	--fita-verde: #00a650;
 	--fita-amarela: #ffd200;
-	--fita-azul: #0067b1;
+	--fita-azul: #0a78c8;
 	--fita-rosa: #e6007e;
 	--fita-vermelha: #e30613;
+	/* O anel de foco no papel: um azul mais escuro que a fita, com contraste de 3:1. */
+	--foco: #0b5cad;
+	/* A tira das cinco fitas, em faixas iguais. */
+	--tira: linear-gradient(
+		90deg,
+		var(--fita-verde) 0 20%,
+		var(--fita-amarela) 0 40%,
+		var(--fita-azul) 0 60%,
+		var(--fita-rosa) 0 80%,
+		var(--fita-vermelha) 0
+	);
 
 	--background: var(--papel);
 	--foreground: var(--tinta);
@@ -33,16 +50,16 @@
 	--popover-foreground: var(--tinta);
 	--primary: var(--tinta);
 	--primary-foreground: var(--papel);
-	--secondary: var(--reticula);
+	--secondary: var(--papel-2);
 	--secondary-foreground: var(--tinta);
-	--muted: var(--reticula);
+	--muted: var(--papel-2);
 	--muted-foreground: var(--tinta-suave);
-	--accent: var(--reticula);
+	--accent: var(--papel-2);
 	--accent-foreground: var(--tinta);
 	--destructive: var(--fita-vermelha);
 	--border: var(--tinta);
 	--input: var(--tinta);
-	--ring: var(--fita-azul);
+	--ring: var(--foco);
 	--chart-1: var(--fita-verde);
 	--chart-2: var(--fita-amarela);
 	--chart-3: var(--fita-azul);
@@ -53,16 +70,21 @@
 	--sidebar-foreground: var(--tinta);
 	--sidebar-primary: var(--tinta);
 	--sidebar-primary-foreground: var(--papel);
-	--sidebar-accent: var(--reticula);
+	--sidebar-accent: var(--papel-2);
 	--sidebar-accent-foreground: var(--tinta);
 	--sidebar-border: var(--tinta);
-	--sidebar-ring: var(--fita-azul);
+	--sidebar-ring: var(--foco);
 }
 
 @theme inline {
 	--font-sans: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
 	--font-serif: "Literata Variable", ui-serif, Georgia, serif;
+	/* A letra de máquina de escrever: a frase do cartaz e o lema. */
+	--font-maquina: "Courier Prime", "Courier New", ui-monospace, monospace;
 	--color-papel: var(--papel);
+	--color-papel-2: var(--papel-2);
+	--color-papel-3: var(--papel-3);
+	--color-folha: var(--folha);
 	--color-tinta: var(--tinta);
 	--color-tinta-suave: var(--tinta-suave);
 	--color-fita-verde: var(--fita-verde);
@@ -121,7 +143,7 @@
 	}
 	body {
 		@apply font-sans bg-background text-foreground;
-		caret-color: var(--fita-azul);
+		caret-color: var(--foco);
 	}
 	/* Títulos com as linhas equilibradas e parágrafos sem palavra sozinha na última linha. */
 	h1,

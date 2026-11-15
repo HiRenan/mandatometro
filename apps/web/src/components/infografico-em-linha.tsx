@@ -1,87 +1,207 @@
 // biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
 import { Link } from "@tanstack/react-router";
+import { ArrowLeft, ArrowRight, RotateCcw } from "lucide-react";
+import { type CSSProperties, useEffect, useState } from "react";
+import { azulejoGrande } from "@/lib/azulejos";
+import { classes } from "@/lib/classes";
 import type { ArtigoNaLista, CaminhoNaInicial } from "@/lib/conteudo";
-import { idDoPasso } from "@/lib/formatar";
-import { ArtigosDoPasso } from "./infografico";
+import { classeDaFita, idDoPasso, semQuebrarCitacao } from "@/lib/formatar";
+import { Aviso, useAviso } from "./aviso";
+import { AzulejoGrande } from "./azulejo";
+import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "./botao-continuar";
+import { ArtigosDoPasso, DesviosDoPasso, FontesDoPasso } from "./infografico";
 
 /**
- * O caminho de um projeto de lei na página inicial: as paradas ligadas pela
- * linha cheia, cada uma com os artigos que a explicam. A parada sem artigo leva
- * ao passo dela no infográfico da trilha, com o texto e as fontes: nenhuma
- * parada fica sem destino. Abaixo do lg, a linha
- * fica em pé, como no infográfico da trilha; a partir do lg, deitada, de lado
- * a lado (index.css). Só o caminho completo: o texto de cada passo, os desvios
- * e as fontes ficam na trilha, e a frase embaixo da linha avisa e leva até lá.
- * O caminho não mostra o progresso, que fica na abertura da página.
+ * O caminho de um projeto de lei na página inicial, passo a passo: cinco
+ * azulejos em fila, um por passo, e o texto do passo da vez ao lado do número
+ * gigante. Os azulejos dos passos já andados ficam com a cor, e o fio de tinta
+ * avança até o passo da vez. Cada passo tem o texto, os desvios, as fontes e os
+ * artigos que o explicam; o passo sem artigo leva ao passo dele na trilha.
+ *
+ * O HTML do servidor traz os cinco passos, cada um com o título e o texto. Sem
+ * JavaScript, eles ficam abertos, um embaixo do outro, e os azulejos e os botões
+ * saem; com JavaScript, o CSS mostra um de cada vez desde a primeira pintura, e
+ * nada pula quando o código carrega (index.css). O caminho não mostra o
+ * progresso da leitura, que fica na abertura da página.
  */
 export function InfograficoEmLinha({
 	caminho,
 	trilha,
-	className = "",
 }: {
 	caminho: CaminhoNaInicial;
 	trilha: { slug: string; artigos: Pick<ArtigoNaLista, "slug" | "titulo">[] };
-	className?: string;
 }) {
+	const { passos } = caminho;
+	const total = passos.length;
+	// O passo da vez e o de antes, a partir de 1: o de antes diz o sentido da troca.
+	const [passo, setPasso] = useState(1);
+	const [antes, setAntes] = useState(1);
+	const [vivo, setVivo] = useState(false);
+	const { aviso, avisar } = useAviso();
+
+	// Para o navegador que não sabe dizer no CSS se tem JavaScript.
+	useEffect(() => setVivo(true), []);
+
+	function ir(para: number) {
+		if (para === passo) {
+			return;
+		}
+		setAntes(passo);
+		setPasso(para);
+		avisar(`Passo ${para} de ${total}: ${passos[para - 1].titulo}`);
+	}
+
+	const sentido =
+		passo > antes ? "avanca" : passo < antes ? "volta" : undefined;
+
 	return (
-		<section aria-labelledby="caminho" className={className}>
-			{/* A partir do xl, o título e o resumo ficam nas colunas da abertura da
-			    página: o título à esquerda, o texto à direita. */}
-			<div className="xl:grid xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] xl:items-end xl:gap-x-16">
+		<section aria-labelledby="caminho" className="caminho">
+			<div className="caminho-cabeca revelar">
 				<h2
 					id="caminho"
-					className="subtitulo-condensado text-[2rem] md:text-[2.75rem]"
+					className="titulo-condensado letra-com-teto [--palavra:3.62]"
 				>
 					{caminho.titulo}
 				</h2>
-				<p className="mt-3 max-w-[52ch] font-serif text-lg leading-snug lg:text-xl xl:mt-0">
-					{caminho.resumo}
-				</p>
+				<p>{caminho.resumo}</p>
 			</div>
-			<ol role="list" className="caminho-em-linha mt-8 lg:mt-10">
-				{caminho.passos.map((passo) => (
-					<li key={passo.titulo} className="parada">
-						<h3 className="subtitulo-condensado text-[1.375rem]">
-							{passo.titulo}
-						</h3>
-						{passo.artigos.length > 0 ? (
-							<ArtigosDoPasso
-								slugs={passo.artigos}
-								trilha={trilha}
-								className="mt-3"
-							/>
-						) : (
-							<p className="mt-3">
-								<Link
-									to="/trilhas/$trilha"
-									params={{ trilha: trilha.slug }}
-									hash={idDoPasso(passo.titulo)}
-									className="link-do-caminho text-[0.9375rem] leading-snug font-semibold"
+			<div
+				className="palco-caminho revelar"
+				data-vivo={vivo ? "" : undefined}
+				data-sentido={sentido}
+				style={{ "--passo": passo } as CSSProperties}
+			>
+				{/* Os azulejos em fila: cada um leva ao passo dele. */}
+				<ol role="list" className="passos-abas">
+					{passos.map((doPasso, indice) => {
+						const numero = indice + 1;
+						return (
+							<li key={doPasso.titulo} className={classeDaFita(numero)}>
+								<button
+									type="button"
+									aria-current={numero === passo ? "step" : undefined}
+									onClick={() => ir(numero)}
 								>
-									<span>
-										Ler este passo na trilha
-										<span className="sr-only">: {passo.titulo}</span>
+									{/* Os azulejos entre o passo de antes e o da vez viram em
+									    fila, um depois do outro. */}
+									<AzulejoGrande
+										pecas={azulejoGrande(indice, indice % 5)}
+										cru={numero > passo}
+										atraso={Math.max(0, Math.abs(numero - antes) - 1) * 110}
+									/>
+									<span aria-hidden="true" className="numeral aba-n">
+										{numero}
 									</span>
-								</Link>
-							</p>
-						)}
-					</li>
-				))}
-			</ol>
-			<p className="mt-10 max-w-[64ch] text-[1.0625rem] leading-snug">
-				A linha mostra o caminho completo. Os desvios, como a comissão que
-				decide sem o plenário, estão na trilha, com as fontes oficiais.
-			</p>
-			<p className="mt-4">
-				<Link
-					to="/trilhas/$trilha"
-					params={{ trilha: trilha.slug }}
-					hash="caminho"
-					className="acao-de-texto font-bold"
-				>
-					<span>Ver o caminho na trilha</span>
-				</Link>
-			</p>
+									{/* O espaço fica fora do trecho escondido: dentro dele, o leitor de
+									    tela juntava "Passo 2:" com o nome do passo. */}
+									<span className="aba-nome">
+										<span className="sr-only">Passo {numero}:</span>{" "}
+										{doPasso.titulo}
+									</span>
+								</button>
+							</li>
+						);
+					})}
+				</ol>
+				<div className="passos">
+					<ol role="list" className="passos-lista">
+						{passos.map((doPasso, indice) => {
+							const numero = indice + 1;
+							return (
+								<li
+									key={doPasso.titulo}
+									className={classes("passo", classeDaFita(numero))}
+									data-ativo={numero === passo ? "" : undefined}
+								>
+									<span aria-hidden="true" className="numeral">
+										{numero}
+									</span>
+									<div className="passo-texto">
+										<p className="rotulo">
+											Passo {numero} de {total}
+										</p>
+										{/* Com a letra grande, o título cresce até "APRESENTAÇÃO", a
+										    palavra mais larga dos títulos dos passos, encostar nas
+										    margens (o letra-com-teto do index.css). */}
+										<h3 className="titulo-condensado letra-com-teto [--palavra:6.07]">
+											{doPasso.titulo}
+										</h3>
+										<p>{semQuebrarCitacao(doPasso.texto)}</p>
+										<DesviosDoPasso desvios={doPasso.desvios} />
+										<FontesDoPasso fontes={doPasso.fontes} />
+										{doPasso.artigos.length > 0 ? (
+											<ArtigosDoPasso slugs={doPasso.artigos} trilha={trilha} />
+										) : (
+											<p>
+												<Link
+													to="/trilhas/$trilha"
+													params={{ trilha: trilha.slug }}
+													hash={idDoPasso(doPasso.titulo)}
+													className="link-do-caminho link-do-passo"
+												>
+													<span>
+														Ler este passo na trilha
+														<span className="sr-only">: {doPasso.titulo}</span>
+													</span>
+												</Link>
+											</p>
+										)}
+									</div>
+								</li>
+							);
+						})}
+					</ol>
+					<div className="passos-controles">
+						<p>
+							<Link
+								to="/trilhas/$trilha"
+								params={{ trilha: trilha.slug }}
+								hash="caminho"
+								className="acao-de-texto"
+							>
+								<span>Ver o caminho na trilha</span>
+							</Link>
+						</p>
+						<div className="passos-botoes">
+							<button
+								type="button"
+								className={classes(BOTAO_CONTINUAR, "vazado")}
+								disabled={passo === 1}
+								onClick={() => ir(passo - 1)}
+							>
+								<ArrowLeft
+									aria-hidden="true"
+									className={SETA_DO_BOTAO}
+									strokeWidth={2.5}
+								/>{" "}
+								Voltar
+							</button>
+							<button
+								type="button"
+								className={BOTAO_CONTINUAR}
+								onClick={() => ir(passo === total ? 1 : passo + 1)}
+							>
+								{passo === total ? "Ver do começo" : "Próximo passo"}{" "}
+								{passo === total ? (
+									<RotateCcw
+										aria-hidden="true"
+										className={SETA_DO_BOTAO}
+										strokeWidth={2.5}
+									/>
+								) : (
+									<ArrowRight
+										aria-hidden="true"
+										className={SETA_DO_BOTAO}
+										strokeWidth={2.5}
+									/>
+								)}
+							</button>
+						</div>
+					</div>
+				</div>
+				{/* O leitor de tela ouve o passo que entrou na tela. */}
+				<Aviso texto={aviso} />
+			</div>
 		</section>
 	);
 }

@@ -40,6 +40,24 @@ fontes:
 Um texto curto.
 `;
 
+const QUIZ_COM_DUAS_CERTAS = `---
+depoisDe: um-artigo
+perguntas:
+  - artigo: um-artigo
+    enunciado: Quem pode propor uma lei?
+    opcoes:
+      - texto: Os deputados.
+        certa: true
+      - texto: Os cidadãos.
+        certa: true
+    explicacao: Os dois podem, e a pergunta precisa de uma certa só.
+    fontes:
+      - titulo: Constituição Federal, art. 61
+        url: https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm#art61
+        consultadoEm: 2026-11-12
+---
+`;
+
 const pastasTemporarias: string[] = [];
 
 afterEach(() => {
@@ -115,6 +133,21 @@ describe("conferirConteudo", () => {
 
 		expect(() => plugin.buildStart()).toThrow(
 			'conteudo/trilhas/uma-trilha/sem-titulo.md: campo "titulo": falta este campo',
+		);
+	});
+
+	it("para o build quando uma pergunta do quiz não tem uma certa só", () => {
+		const plugin = conferirConteudo();
+		plugin.configResolved({
+			root: pastaCom({
+				"conteudo/trilhas/uma-trilha/trilha.md": TRILHA,
+				"conteudo/trilhas/uma-trilha/um-artigo.md": ARTIGO,
+				"conteudo/trilhas/uma-trilha/quiz.md": QUIZ_COM_DUAS_CERTAS,
+			}),
+		});
+
+		expect(() => plugin.buildStart()).toThrow(
+			'conteudo/trilhas/uma-trilha/quiz.md: campo "perguntas.0.opcoes": precisa de exatamente uma opção com "certa: true", e tem 2',
 		);
 	});
 

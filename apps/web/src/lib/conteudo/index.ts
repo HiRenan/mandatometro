@@ -4,6 +4,7 @@ export type { Fonte, Infografico, Passo } from "./ler";
 export {
 	buscarArtigo,
 	buscarInicio,
+	buscarQuiz,
 	buscarTrilha,
 	buscarTrilhas,
 } from "./paginas.functions";
@@ -11,7 +12,10 @@ export type {
 	ArtigoNaLista,
 	ArtigoNaTrilha,
 	CaminhoNaInicial,
+	ChamadaDoQuiz,
 	PaginaInicial,
+	PerguntaNaPagina,
+	QuizNaPagina,
 	TrilhaNaLista,
 	TrilhaNaPagina,
 } from "./paginas.server";

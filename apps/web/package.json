@@ -13,6 +13,7 @@
 		"check-types": "vite build && tsc --noEmit",
 		"env:generate": "varlock codegen",
 		"imagens": "node imagens/gerar.mjs",
+		"mapa": "node imagens/mapa.mjs",
 		"generate:client": "openapi-ts"
 	},
 	"dependencies": {

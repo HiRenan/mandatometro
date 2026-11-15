@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
-	corDaFita,
+	classeDaFita,
 	dominio,
+	fitaDaPosicao,
 	formatarData,
 	fraseDoProgresso,
 	idDoPasso,
+	pedacosDoDominio,
 	plural,
 	tamanhoDaTrilha,
 } from "./formatar";
@@ -40,12 +42,38 @@ describe("dominio", () => {
 	});
 });
 
-describe("corDaFita", () => {
-	it("dá uma fita por artigo, na ordem das fitas, e recomeça depois da quinta", () => {
-		expect(corDaFita(1)).toBe("var(--fita-verde)");
-		expect(corDaFita(2)).toBe("var(--fita-amarela)");
-		expect(corDaFita(5)).toBe("var(--fita-vermelha)");
-		expect(corDaFita(6)).toBe("var(--fita-verde)");
+describe("pedacosDoDominio", () => {
+	it("parte o site da fonte antes de cada ponto, para a linha quebrar ali", () => {
+		expect(
+			pedacosDoDominio("https://direitoshumanos.dpu.def.br/defensoria/"),
+		).toEqual(["direitoshumanos", ".dpu", ".def", ".br"]);
+		expect(
+			pedacosDoDominio("https://www.congressonacional.leg.br/materias"),
+		).toEqual(["congressonacional", ".leg", ".br"]);
+	});
+
+	it("junta os pedaços no mesmo texto do dominio", () => {
+		const url = "https://www12.senado.leg.br/noticias/glossario-legislativo";
+		expect(pedacosDoDominio(url).join("")).toBe(dominio(url));
+	});
+});
+
+describe("a fita da posição", () => {
+	it("segue a ordem das cinco fitas e volta à primeira na sexta posição", () => {
+		expect([1, 2, 3, 4, 5, 6].map(fitaDaPosicao)).toEqual([
+			"verde",
+			"amarela",
+			"azul",
+			"rosa",
+			"vermelha",
+			"verde",
+		]);
+	});
+
+	it("dá a classe que põe a cor da fita no elemento", () => {
+		expect(classeDaFita(1)).toBe("fita-verde");
+		expect(classeDaFita(5)).toBe("fita-vermelha");
+		expect(classeDaFita(7)).toBe("fita-amarela");
 	});
 });
 

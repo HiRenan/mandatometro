@@ -1,9 +1,18 @@
 /**
  * O botão "Continuar" (DESIGN.md): o bloco reto de tinta, a única ação em bloco
- * das páginas, na trilha e na página inicial. A borda de 2 px é transparente e
- * não aparece no papel. Nas cores forçadas do Windows, o navegador apaga o fundo
- * e pinta a borda na cor do texto, e o botão continua com cara de botão. O
- * respiro de 10 por 18 px, mais a borda, dá os 12 por 20 px do bloco.
+ * das páginas, na trilha, na página inicial e no quiz. O desenho está no index.css
+ * (o botao): a tira das cinco fitas aparece embaixo quando o ponteiro passa, e,
+ * com a letra grande, a seta vem logo depois da última palavra, com o respiro dos
+ * lados em 18 px (o Renan, na #76: "Seta no fim, respiro fixo").
  */
-export const BOTAO_CONTINUAR =
-	"bg-tinta text-papel inline-flex items-center gap-3 border-2 border-transparent px-4.5 py-2.5 text-lg font-bold no-underline hover:underline";
+export const BOTAO_CONTINUAR = "botao";
+
+/**
+ * A seta do botão "Continuar": com a letra grande, ela segue a última palavra. Entre
+ * a palavra e a seta vai um espaço ({" "} antes da seta), e não uma margem: quando a
+ * seta desce sozinha para a linha de baixo, o espaço fica no fim da linha de cima, e
+ * a seta começa alinhada com o texto. No flex, a partir de 20rem, o espaço no fim do
+ * texto não conta, e o vão continua o do botão. Quando o ponteiro passa, a seta
+ * anda um pouco (estilos/movimento.css).
+ */
+export const SETA_DO_BOTAO = "seta";

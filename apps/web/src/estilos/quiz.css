@@ -1,0 +1,877 @@
+/*
+ * O quiz (DESIGN.md): uma pergunta por vez, no papel. A abertura tem o título
+ * gigante e o mosaico, com um azulejo por pergunta; as opções tombam no lugar
+ * como azulejos; a resposta chega numa folha; e o mosaico e os quadradinhos do
+ * andamento ganham cor a cada pergunta respondida, sem contar acertos. A tela
+ * fica em components/quiz.tsx.
+ *
+ * As animações de entrada partem de um estado de saída (o `from`) e chegam ao
+ * estado normal da peça: onde a animação não roda, a peça aparece pronta. Com o
+ * movimento reduzido, nada tomba nem vira (o bloco do fim do movimento.css).
+ */
+
+/* A opção tomba no lugar, como um azulejo assentado. */
+@keyframes opcao-tomba {
+	from {
+		opacity: 0;
+		transform: rotateX(-80deg);
+	}
+}
+
+/* Depois da resposta, a opção vira com o estado dela. */
+@keyframes opcao-vira {
+	from {
+		transform: rotateX(90deg);
+	}
+}
+
+/* A folha da resposta tomba no lugar, presa pela borda de cima. */
+@keyframes folha-tomba {
+	from {
+		opacity: 0;
+		transform: perspective(60rem) rotateX(-70deg);
+	}
+}
+
+/*
+ * A tela que sai sobe um pouco e some. É a única animação que termina fora do
+ * estado normal: a tela seguinte entra logo depois (o `trocar`, no quiz.tsx).
+ */
+@keyframes sai {
+	to {
+		opacity: 0;
+		transform: translateY(-1.25rem);
+	}
+}
+
+@layer components {
+	/* ───── O palco ───── */
+
+	/*
+	 * O palco ocupa a primeira tela, embaixo do cabeçalho. As peças vão em coluna:
+	 * a migalha, o título, a tela da vez e, no pé, o andamento.
+	 *
+	 * O mosaico tem a largura da capa (--capa) e, nas perguntas, encolhe até o
+	 * canto de cima (--canto é a largura que sobra dele ali). As fileiras dele
+	 * (--fileiras) vêm do número de perguntas, três por fileira.
+	 */
+	.quiz {
+		--alto: clamp(0.75rem, 2vw, 1.5rem);
+		--capa: 10.75rem;
+		--canto: 4.75rem;
+		position: relative;
+		isolation: isolate;
+		display: flex;
+		flex-direction: column;
+		min-height: calc(100svh - var(--topo));
+		padding: var(--alto) var(--margem) 0;
+		overflow: clip;
+	}
+
+	/*
+	 * O desenho do palco fica atrás do texto, e o ponteiro passa por ele. Ele não
+	 * ocupa altura: é a linha embaixo da migalha, de onde o mosaico parte no
+	 * celular. Assim a migalha fica com a largura toda, com a letra que tiver.
+	 */
+	.quiz-cena {
+		position: relative;
+		z-index: -1;
+		height: 0;
+		pointer-events: none;
+	}
+
+	.mosaico {
+		position: absolute;
+		top: 0;
+		right: 0;
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 2px;
+		width: var(--capa);
+		transform-origin: 100% 0;
+		transition: transform 0.7s var(--ease-suave);
+	}
+
+	/* Na abertura, o mosaico entra virando, peça por peça. */
+	.quiz[data-fase="abertura"] .mosaico .az {
+		animation: vira 0.7s var(--ease-mola) both;
+		animation-delay: calc(0.15s + var(--i, 0) * 110ms);
+	}
+
+	/*
+	 * O título da página. Na abertura, é a letra gigante do cartaz, no pé do palco;
+	 * nas outras telas, a etiqueta do alto.
+	 */
+	.quiz[data-fase="abertura"] .quiz-titulo {
+		--letra: clamp(4rem, 1.5rem + 11vw, 12.5rem);
+		margin-top: auto;
+		line-height: 0.82;
+		animation: sobe 0.8s var(--ease-suave) both;
+	}
+
+	.quiz:not([data-fase="abertura"]) .quiz-titulo {
+		font-size: 0.875rem;
+		font-stretch: 100%;
+		font-weight: 700;
+		line-height: 1.2;
+		letter-spacing: calc(0.1em * var(--espacado));
+		text-transform: var(--caixa-alta);
+		color: var(--tinta-suave);
+	}
+
+	.quiz-palco {
+		flex: 1 0 auto;
+		padding: 1.25rem 0 1.75rem;
+	}
+
+	.quiz[data-fase="abertura"] .quiz-palco {
+		flex: 0 0 auto;
+	}
+
+	/* ───── A abertura ───── */
+
+	.quiz-abertura {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem;
+		justify-items: start;
+		animation: sobe 0.8s 0.15s var(--ease-suave) both;
+	}
+
+	/* A linha do "Começar" é um lugar-do-botao (index.css): guarda a altura do
+	   texto mais alto que o botão pode ter. */
+
+	/* ───── A pergunta ───── */
+
+	.quiz-pergunta {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1.5rem 3.5rem;
+		align-items: start;
+	}
+
+	/* Sem o min-width: 0, o fieldset não encolhe, e a página rola de lado no
+	   celular com a letra grande. */
+	.quiz fieldset,
+	.quiz-sem-js fieldset {
+		min-width: 0;
+	}
+
+	.quiz legend,
+	.quiz-sem-js legend {
+		width: 100%;
+	}
+
+	.quiz-contagem {
+		display: block;
+		color: var(--tinta-suave);
+	}
+
+	/* O enunciado: a letra do cartaz um pouco mais larga, em minúsculas, que se lê
+	   como frase. */
+	.quiz-enunciado {
+		max-width: 19em;
+		margin: 0.6rem 0 1.1rem;
+		font-family: var(--font-sans);
+		font-size: clamp(1.75rem, 1.1rem + 1.7vw, 2.75rem);
+		font-stretch: 72%;
+		font-weight: 800;
+		line-height: 1.02;
+		letter-spacing: -0.005em;
+		text-wrap: pretty;
+	}
+
+	.quiz-pergunta .quiz-enunciado {
+		animation: sobe 0.5s var(--ease-suave) both;
+	}
+
+	.quiz-opcoes {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.5rem;
+		perspective: 60rem;
+	}
+
+	/*
+	 * A opção: uma folha com a letra na cor da posição dela (--c), pela ordem das
+	 * fitas, e o texto em tinta. O rádio de verdade cobre a opção inteira, sem
+	 * aparecer: o clique, o teclado e o leitor de tela são os do navegador.
+	 */
+	.quiz-opcao {
+		position: relative;
+		display: grid;
+		grid-template-rows: 1fr auto;
+		grid-template-columns: auto minmax(0, 1fr);
+		column-gap: 1rem;
+		align-items: center;
+		min-height: 3.5rem;
+		padding: 0.6rem 1rem 0.6rem 1.1rem;
+		border: 2px solid var(--tinta);
+		background: var(--folha);
+		cursor: pointer;
+		transform-origin: 50% 0;
+		transition:
+			background 0.2s,
+			color 0.2s,
+			translate 0.25s var(--ease-mola),
+			box-shadow 0.25s var(--ease-mola);
+	}
+
+	.quiz-pergunta .quiz-opcao {
+		animation: opcao-tomba 0.6s var(--ease-mola) both;
+		animation-delay: calc(0.25s + var(--j, 0) * 80ms);
+	}
+
+	.quiz-opcao:nth-child(5n + 1) {
+		--c: var(--fita-verde);
+	}
+
+	.quiz-opcao:nth-child(5n + 2) {
+		--c: var(--fita-amarela);
+	}
+
+	.quiz-opcao:nth-child(5n + 3) {
+		--c: var(--fita-azul);
+	}
+
+	.quiz-opcao:nth-child(5n + 4) {
+		--c: var(--fita-rosa);
+	}
+
+	.quiz-opcao:nth-child(5n + 5) {
+		--c: var(--fita-vermelha);
+	}
+
+	/*
+	 * O fio da opção (--fio), que aparece quando o ponteiro passa e na escolhida,
+	 * antes da resposta: só a rosa, a amarela e a azul, nessa ordem. O verde e o
+	 * vermelho ficam para depois da resposta, na certa e na errada, e a pessoa não
+	 * lê a cor da escolhida como acerto (o Renan, na #89). Da segunda à quarta
+	 * opção, o fio é da cor da letra; a letra continua na fita da posição, e é ela
+	 * que distingue as opções.
+	 */
+	.quiz-opcao:nth-child(3n + 1) {
+		--fio: var(--fita-rosa);
+	}
+
+	.quiz-opcao:nth-child(3n + 2) {
+		--fio: var(--fita-amarela);
+	}
+
+	.quiz-opcao:nth-child(3n + 3) {
+		--fio: var(--fita-azul);
+	}
+
+	.quiz-opcao input {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		margin: 0;
+		opacity: 0;
+		cursor: pointer;
+	}
+
+	/*
+	 * O anel de foco contorna a opção, porque o rádio não aparece. Num navegador
+	 * sem o :has(), o anel aparece também no clique: o foco continua visível.
+	 */
+	.quiz-opcao:focus-within {
+		outline: 3px solid var(--ring);
+		outline-offset: 3px;
+	}
+
+	@supports selector(:has(*)) {
+		.quiz-opcao:focus-within {
+			outline: none;
+		}
+
+		.quiz-opcao:has(input:focus-visible) {
+			outline: 3px solid var(--ring);
+			outline-offset: 3px;
+		}
+	}
+
+	/* O ponteiro empurra a opção para o lado e mostra o fio dela; a escolhida fica
+	   assim, em tinta. */
+	@media (hover: hover) {
+		.quiz-opcao:hover {
+			translate: 0.45rem 0;
+			box-shadow: -0.45rem 0 0 var(--fio);
+		}
+	}
+
+	.quiz-opcao:has(input:checked) {
+		background: var(--tinta);
+		color: var(--papel);
+		translate: 0.45rem 0;
+		box-shadow: -0.45rem 0 0 var(--fio);
+	}
+
+	.quiz-letra {
+		grid-row: span 2;
+		width: 1.5rem;
+		font-family: var(--font-sans);
+		font-size: 2.25rem;
+		font-stretch: 62%;
+		font-weight: 900;
+		line-height: 0.8;
+		text-align: center;
+		color: var(--c);
+		-webkit-text-stroke: max(3px, 0.05em) var(--tinta);
+		paint-order: stroke fill;
+	}
+
+	.quiz-texto {
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.35;
+	}
+
+	.quiz-marca {
+		grid-column: 2;
+		margin-top: 0.2rem;
+		font-size: 0.75rem;
+		font-weight: 750;
+	}
+
+	/*
+	 * Depois da resposta, as opções viram com o estado: a certa, com o fio verde
+	 * e "Resposta certa"; a que a pessoa marcou e estava errada, tracejada, com o
+	 * fio vermelho e "Sua resposta"; as outras se apagam. O estado nunca é só a
+	 * cor: vem escrito na opção.
+	 */
+	.quiz .quiz-opcao[data-estado] {
+		background: var(--folha);
+		color: var(--tinta);
+		translate: none;
+		animation:
+			opcao-tomba 0.6s var(--ease-mola) both,
+			opcao-vira 0.6s var(--ease-mola) both;
+		animation-delay: calc(0.25s + var(--j, 0) * 80ms), calc(var(--j, 0) * 70ms);
+	}
+
+	.quiz .quiz-opcao[data-estado="certa"] {
+		box-shadow: inset 0.5rem 0 0 var(--fita-verde);
+	}
+
+	.quiz .quiz-opcao[data-estado="errada"] {
+		border-style: dashed;
+		box-shadow: inset 0.5rem 0 0 var(--fita-vermelha);
+	}
+
+	/* A opção apagada continua legível: o texto e o fio passam para a tinta suave,
+	   que tem contraste AA na folha, e só a letra, que é desenho, esmaece. */
+	.quiz .quiz-opcao[data-estado="apagada"] {
+		border-color: var(--tinta-suave);
+		color: var(--tinta-suave);
+		box-shadow: none;
+	}
+
+	.quiz-opcao[data-estado="apagada"] .quiz-letra {
+		opacity: 0.4;
+	}
+
+	/* A linha do "Responder", com o aviso de que falta escolher ao lado. */
+	.quiz-acao {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.6rem 1.2rem;
+		align-items: center;
+		min-height: 3.5rem;
+		margin-top: 1rem;
+	}
+
+	.quiz-falta {
+		padding-left: 0.7rem;
+		border-left: 5px solid var(--fita-vermelha);
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 700;
+		line-height: 1.2;
+	}
+
+	/* ───── A resposta ───── */
+
+	/* A folha da resposta, com a tira das cinco fitas no alto. Ela chega depois
+	   que as opções viram. */
+	.quiz-retorno {
+		padding: calc(clamp(1.5rem, 2.6vw, 2rem) + 0.5rem) var(--respiro)
+			clamp(1.25rem, 2.6vw, 1.75rem);
+		transform-origin: 50% 0;
+		animation: folha-tomba 0.65s 0.5s var(--ease-mola) both;
+	}
+
+	.quiz-retorno::before {
+		content: "";
+		position: absolute;
+		inset: 0 0 auto;
+		height: 0.625rem;
+		border-bottom: 2px solid var(--tinta);
+		background: var(--tira);
+	}
+
+	/*
+	 * O resultado: "Você acertou." ou "Você errou.", com o visto ou o xis em tinta
+	 * e um fio verde ou vermelho embaixo. Com a letra grande, a letra para de
+	 * crescer quando "ACERTOU." encosta nas bordas da folha (o --palavra, medido
+	 * como os outros tetos).
+	 */
+	.quiz-veredito {
+		--letra: clamp(2.25rem, 1.6rem + 2.2vw, 3.5rem);
+		--palavra: 3.79;
+		--recuo: calc(2 * var(--respiro) + 4px);
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem 0.75rem;
+		align-items: center;
+		padding-bottom: 0.7rem;
+		border-bottom: 6px solid var(--fita-verde);
+		font-family: var(--font-sans);
+		font-size: min(
+			var(--letra),
+			calc((100vw - 2 * var(--margem) - var(--recuo)) / var(--palavra))
+		);
+		font-stretch: 62%;
+		font-weight: 900;
+		line-height: 0.88;
+		text-transform: uppercase;
+	}
+
+	.quiz-veredito::before {
+		content: "";
+		flex: none;
+		width: 0.85em;
+		height: 0.85em;
+		background: var(--tinta);
+		mask:
+			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cpath d='M9 31 C13.5 35.5 18 40.5 22.5 46.5 C30 33.5 39.5 21.5 52 10' fill='none' stroke='%23000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+			center / contain no-repeat;
+	}
+
+	.quiz[data-resultado="errada"] .quiz-veredito {
+		border-bottom-color: var(--fita-vermelha);
+	}
+
+	.quiz[data-resultado="errada"] .quiz-veredito::before {
+		mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cpath d='M12 12 L48 48 M48 12 L12 48' fill='none' stroke='%23000' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E");
+	}
+
+	.quiz-certa {
+		margin-top: 1rem;
+		padding: 0.7rem 0.9rem;
+		background: var(--papel-2);
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.4;
+	}
+
+	.quiz-certa strong {
+		display: block;
+		margin-bottom: 0.2rem;
+		font-family: var(--font-sans);
+		font-size: 0.75rem;
+		font-weight: 650;
+		line-height: 1.3;
+		letter-spacing: calc(0.08em * var(--espacado));
+		text-transform: var(--caixa-alta);
+	}
+
+	.quiz-explicacao {
+		margin-top: 1rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.55;
+	}
+
+	.quiz-rever {
+		margin-top: 0.8rem;
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.4;
+	}
+
+	.quiz-rever a {
+		font-weight: 700;
+	}
+
+	.quiz-fontes {
+		margin-top: 1rem;
+	}
+
+	.quiz-fontes > .rotulo {
+		color: var(--tinta-suave);
+	}
+
+	.quiz-seguir {
+		margin-top: 1.25rem;
+	}
+
+	/* ───── O fim ───── */
+
+	/*
+	 * O fim fica preso ao alto do palco: o que muda com o "Recomeçar o quiz" vem
+	 * depois da linha dele, e o botão não sai do lugar quando vira "Desfazer".
+	 */
+	.quiz-fim {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		justify-items: start;
+		max-width: 52rem;
+		animation: sobe 0.7s var(--ease-suave) both;
+	}
+
+	.quiz-fim h2 {
+		--letra: clamp(3.25rem, 1.5rem + 5.4vw, 7.5rem);
+	}
+
+	.quiz-fim .recomeco {
+		margin-top: 1.25rem;
+	}
+
+	.quiz-fim-texto {
+		margin-top: 1.25rem;
+		font-family: var(--font-serif);
+		font-size: 1.125rem;
+		line-height: 1.4;
+		color: var(--tinta-suave);
+	}
+
+	.quiz-fim-lista {
+		width: 100%;
+		margin-top: 0.75rem;
+		border-bottom: 2px solid var(--tinta);
+	}
+
+	.quiz-fim-lista li {
+		border-top: 2px solid var(--tinta);
+	}
+
+	.quiz-fim-lista a {
+		display: grid;
+		grid-template-columns: 6.5rem minmax(0, 1fr);
+		gap: 0.2rem 1rem;
+		align-items: baseline;
+		min-height: 3.25rem;
+		padding: 0.7rem 0;
+		text-decoration: none;
+		transition:
+			padding 0.3s var(--ease-mola),
+			background 0.2s;
+	}
+
+	.quiz-fim-lista a:hover {
+		padding-left: 0.75rem;
+		background: var(--papel-2);
+	}
+
+	.quiz-fim-lista .rotulo {
+		color: var(--tinta-suave);
+	}
+
+	.quiz-fim-artigo {
+		font-family: var(--font-sans);
+		font-size: 1.25rem;
+		font-stretch: 80%;
+		font-weight: 800;
+		line-height: 1.1;
+		text-transform: var(--caixa-alta);
+	}
+
+	.quiz-fim-acoes {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem 1.5rem;
+		align-items: center;
+		margin-top: 1.5rem;
+	}
+
+	/* ───── O andamento ───── */
+
+	/*
+	 * O pé do palco: um quadradinho por pergunta e a frase do andamento. Numa tela
+	 * com altura para isso, ele fica à vista, preso embaixo, enquanto a pessoa rola
+	 * a pergunta. Com a letra grande, a tela fica baixa em rem, e ele não prende:
+	 * não toma o espaço da leitura nem cobre o que tem o foco.
+	 */
+	.quiz-pe {
+		z-index: 3;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 1rem;
+		align-items: center;
+		min-height: 4rem;
+		margin: 0 calc(var(--margem) * -1);
+		padding: 0.75rem var(--margem);
+		border-top: 2px solid var(--tinta);
+		/* O pé cobre a página que rola por baixo: é papel, com o grão do fundo. */
+		background: var(--papel) var(--grao) 0 0 / 320px 320px;
+	}
+
+	@media (height >= 40rem) {
+		.quiz-pe {
+			position: sticky;
+			bottom: 0;
+		}
+
+		/* O que recebe o foco, ou é levado para a tela, para acima do pé. */
+		html:has(.quiz-pe) {
+			scroll-padding-bottom: 5rem;
+		}
+	}
+
+	.quiz-andamento {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		perspective: 20rem;
+	}
+
+	/* O quadradinho vira e ganha a cor da posição dele quando a pergunta é
+	   respondida, com qualquer resposta. O contorno marca a pergunta da vez. */
+	.quiz-andamento li {
+		width: 1.1rem;
+		aspect-ratio: 1;
+		border: 2px solid var(--tinta);
+		background: var(--papel);
+		transition:
+			transform 0.6s var(--ease-mola),
+			background 0s 0.2s;
+	}
+
+	.quiz-andamento li[data-estado="feito"] {
+		background: var(--c, var(--tinta));
+		transform: rotateY(180deg);
+	}
+
+	.quiz-andamento li:nth-child(6n + 1) {
+		--c: var(--fita-verde);
+	}
+
+	.quiz-andamento li:nth-child(6n + 2) {
+		--c: var(--fita-amarela);
+	}
+
+	.quiz-andamento li:nth-child(6n + 3) {
+		--c: var(--fita-azul);
+	}
+
+	.quiz-andamento li:nth-child(6n + 4) {
+		--c: var(--fita-rosa);
+	}
+
+	.quiz-andamento li:nth-child(6n + 5) {
+		--c: var(--fita-vermelha);
+	}
+
+	.quiz-andamento li[data-agora] {
+		outline: 2px solid var(--tinta);
+		outline-offset: 3px;
+	}
+
+	/* A frase se lê como frase, em minúsculas: o seletor passa na frente do
+	   .rotulo, que vem depois, no index.css. */
+	.quiz-pe .quiz-andamento-texto {
+		font-size: 0.875rem;
+		letter-spacing: 0;
+		text-transform: none;
+	}
+
+	/* ───── A saída de cada tela ───── */
+
+	.quiz[data-saindo] .quiz-abertura,
+	.quiz[data-saindo][data-fase="abertura"] .quiz-titulo,
+	.quiz[data-saindo] .quiz-lado,
+	.quiz[data-saindo] .quiz-retorno,
+	.quiz[data-saindo] .quiz-fim {
+		animation: sai 0.4s ease-in both;
+	}
+
+	/* ───── Sem JavaScript ───── */
+
+	/*
+	 * Sem JavaScript, as perguntas vêm todas na página, embaixo do palco, cada uma
+	 * numa folha, com o "Ver a resposta" do navegador. O palco fica só com a
+	 * abertura, sem a altura da tela e sem o andamento, que não anda.
+	 */
+	@media (scripting: none) {
+		.quiz {
+			min-height: 0;
+		}
+
+		.quiz-pe,
+		.quiz .quiz-comeco {
+			display: none;
+		}
+	}
+
+	.quiz-sem-js {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1.5rem;
+		max-width: 60rem;
+		padding: 0 var(--margem) clamp(2.5rem, 6vw, 4rem);
+	}
+
+	.quiz-sem-js > li {
+		padding: clamp(1.25rem, 3vw, 2rem) var(--respiro);
+	}
+
+	.quiz-sem-js details {
+		margin-top: 1.25rem;
+	}
+
+	.quiz-sem-js summary {
+		width: fit-content;
+	}
+
+	.quiz-resposta {
+		margin-top: 0.5rem;
+	}
+
+	/* ───── O anterior e o próximo, embaixo do palco ───── */
+
+	/* As faixas vão de borda a borda, com a margem da página por dentro. */
+	.pagina-do-quiz .outros-artigos {
+		--respiro-da-folha: var(--margem);
+		--recuo-de-fora: 0px;
+		margin: 0;
+	}
+
+	/* ───── As larguras de tela ───── */
+
+	@media (width < 62rem) {
+		/*
+		 * Nas perguntas, o mosaico se recolhe no canto, embaixo da migalha. As duas
+		 * etiquetas que ficam ao lado dele param antes, e a de cima guarda a altura
+		 * dele: nenhum texto passa por cima de um azulejo, com quantas fileiras o
+		 * mosaico tiver.
+		 */
+		.quiz:is([data-fase="pergunta"], [data-fase="resposta"]) .mosaico {
+			transform: scale(0.44);
+		}
+
+		.quiz:is([data-fase="pergunta"], [data-fase="resposta"])
+			:is(.quiz-titulo, .quiz-contagem) {
+			max-width: calc(100% - var(--canto) - 0.75rem);
+		}
+
+		.quiz:is([data-fase="pergunta"], [data-fase="resposta"]) .quiz-titulo {
+			min-height: calc(var(--canto) / 3 * var(--fileiras, 2) - 2rem);
+		}
+
+		/* Na abertura e no fim, o mosaico fica inteiro embaixo da migalha, e o
+		   título desce para baixo dele. */
+		.quiz:is([data-fase="abertura"], [data-fase="fim"]) .quiz-titulo {
+			padding-top: calc(var(--capa) / 3 * var(--fileiras, 2) + 1rem);
+		}
+
+		/* O pé fica mais baixo, para tomar pouco da tela do celular. */
+		.quiz-pe {
+			min-height: 3.25rem;
+			padding-block: 0.6rem;
+		}
+	}
+
+	/* Com a letra grande, o mosaico diminui, e as opções ganham a largura. */
+	@media (width < 22rem) {
+		.quiz {
+			--capa: 6.25rem;
+			--canto: 2.75rem;
+		}
+
+		.quiz-opcao {
+			column-gap: 0.5rem;
+			padding-inline: 0.6rem 0.5rem;
+		}
+
+		.quiz-enunciado {
+			font-size: 1.375rem;
+		}
+
+		.quiz-fim-lista a {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+
+	@media (width >= 62rem) {
+		/*
+		 * O mosaico fica grande no meio do papel, à direita; respondida a pergunta,
+		 * ele se recolhe no canto de cima, e a folha da resposta toma o lugar. A
+		 * largura dá peças de pixel inteiro.
+		 */
+		.quiz {
+			--capa: min(34vw, 30rem);
+		}
+
+		/* Aqui o mosaico se mede pelo palco inteiro, e não pela linha da migalha. */
+		.quiz-cena {
+			position: static;
+		}
+
+		.mosaico {
+			top: calc(50svh - 3.25rem);
+			right: var(--margem);
+			width: calc(round(down, var(--capa) - 4px, 6px) + 4px);
+			translate: 0 -50%;
+		}
+
+		.quiz[data-fase="resposta"] .mosaico {
+			transform: translateY(calc(-50svh + 3.25rem + 50% + 1rem)) scale(0.26);
+		}
+
+		/* O título e o texto da abertura e do fim param antes do mosaico. */
+		.quiz[data-fase="abertura"] .quiz-titulo {
+			--recuo: calc(var(--capa) + 2rem);
+			max-width: calc(100% - var(--capa) - 2rem);
+		}
+
+		.quiz-abertura {
+			max-width: calc(100% - var(--capa) - 2rem);
+		}
+
+		.quiz-fim {
+			max-width: min(52rem, 58%);
+		}
+
+		.quiz-fim h2 {
+			--recuo: calc((100vw - 2 * var(--margem)) * 0.42);
+		}
+
+		.quiz-pergunta {
+			grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+		}
+
+		/* Ao lado das opções, a resposta certa já está marcada nelas. */
+		.quiz-retorno {
+			margin-top: 1rem;
+		}
+
+		.quiz-retorno .quiz-certa {
+			display: none;
+		}
+
+		.quiz-explicacao {
+			font-size: 1rem;
+		}
+
+		.quiz-seguir {
+			margin-top: 1rem;
+		}
+	}
+
+	/*
+	 * Nas cores forçadas do Windows, o navegador apaga os fundos e as sombras: a
+	 * opção escolhida ganha um contorno, e o estado de cada opção já vem escrito.
+	 */
+	@media (forced-colors: active) {
+		.quiz-opcao:has(input:checked) {
+			outline: 3px solid Highlight;
+			outline-offset: -5px;
+		}
+
+		.quiz-veredito::before {
+			background: CanvasText;
+		}
+	}
+}

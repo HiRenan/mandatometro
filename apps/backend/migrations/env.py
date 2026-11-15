@@ -1,8 +1,9 @@
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import create_engine, pool
+from sqlalchemy import Connection, create_engine, pool
 
+import mandatometro.db.modelos  # noqa: F401  (registra as tabelas no Base.metadata)
 from mandatometro.config import config as config_do_app
 from mandatometro.db import Base
 
@@ -12,13 +13,12 @@ if config.config_file_name is not None:
 
 # O autogenerate compara os modelos (Base.metadata) com o banco.
 target_metadata = Base.metadata
-url = config_do_app().database_url
 
 
 def run_migrations_offline() -> None:
     """Gera o SQL sem conectar ao banco (alembic upgrade --sql)."""
     context.configure(
-        url=url,
+        url=config_do_app().database_url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -27,12 +27,24 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+def _rodar(connection: Connection) -> None:
+    context.configure(connection=connection, target_metadata=target_metadata)
+    with context.begin_transaction():
+        context.run_migrations()
+
+
 def run_migrations_online() -> None:
-    """Aplica as migrations conectando ao banco do DATABASE_URL."""
+    """Aplica as migrations conectando ao banco do DATABASE_URL.
+
+    Os testes passam a própria conexão, com o banco de teste, em config.attributes["connection"].
+    """
+    conexao_dos_testes = config.attributes.get("connection")
+    if conexao_dos_testes is not None:
+        _rodar(conexao_dos_testes)
+        return
+    url = config_do_app().database_url
     with create_engine(url, poolclass=pool.NullPool).connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
-        with context.begin_transaction():
-            context.run_migrations()
+        _rodar(connection)
 
 
 if context.is_offline_mode():

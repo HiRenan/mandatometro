@@ -63,6 +63,22 @@ export function metaDaImagem(enderecoDoSite: string) {
 }
 
 /**
+ * O pedido de uma fonte no começo da página, junto com o CSS: ela chega antes de
+ * o texto aparecer, e o texto não pula quando troca a fonte reserva. Com o
+ * `media`, o navegador só pede a fonte nas telas em que ela aparece.
+ */
+export function preloadDaFonte(href: string, media?: string) {
+	return {
+		rel: "preload",
+		href,
+		as: "font",
+		type: "font/woff2",
+		crossOrigin: "anonymous" as const,
+		...(media ? { media } : {}),
+	};
+}
+
+/**
  * Os cabeçalhos de toda página. Na Vercel, fora da produção (nas prévias e na
  * develop), a página pede aos buscadores para não indexá-la; na produção e fora
  * da Vercel, nada muda. O ambiente é o VERCEL_ENV.

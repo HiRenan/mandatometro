@@ -14,8 +14,8 @@ export function Caminho({
 	naTrilha?: boolean;
 }) {
 	return (
-		<nav aria-label="Caminho" className="pt-[18px] text-base font-semibold">
-			<ol className="flex flex-wrap gap-x-2">
+		<nav aria-label="Caminho" className="migalhas rotulo">
+			<ol>
 				<li>
 					<Link to="/trilhas" activeOptions={{ exact: true }}>
 						Trilhas

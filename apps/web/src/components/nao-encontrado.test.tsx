@@ -55,14 +55,23 @@ describe("não encontrado", () => {
 		).toBe("/");
 	});
 
-	it("com a letra grande, o título tem teto e a página, uma coluna com as margens de 20 px", async () => {
+	it("com a letra grande, o título tem teto, dentro do cartaz", async () => {
 		const titulo = await mostrar();
-		const pagina = titulo.closest("div.mx-auto");
 
-		// O título cresce até "encontrada" encostar nas margens (index.css).
+		// O título cresce até "ENCONTRADA" encostar nas margens, e o cartaz dá as
+		// margens de 20 px do celular (index.css).
 		expect(titulo.classList.contains("letra-com-teto")).toBe(true);
-		// Abaixo do xl, a coluna não cresce até a peça mais larga.
-		expect(pagina?.classList.contains("grid-cols-[minmax(0,1fr)]")).toBe(true);
-		expect(pagina?.classList.contains("px-margem-celular")).toBe(true);
+		expect(titulo.closest("section.cartaz")).not.toBeNull();
+	});
+
+	it("deixa o 404 gigante e os azulejos fora do leitor de tela", async () => {
+		const cartaz = (await mostrar()).closest("section.cartaz");
+		const numero = cartaz?.querySelector(".numero-404");
+
+		expect(numero?.textContent).toBe("404");
+		expect(numero?.getAttribute("aria-hidden")).toBe("true");
+		expect(cartaz?.querySelector(".mural")?.getAttribute("aria-hidden")).toBe(
+			"true",
+		);
 	});
 });

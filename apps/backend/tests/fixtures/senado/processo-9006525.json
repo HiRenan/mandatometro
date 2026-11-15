@@ -1,0 +1,3336 @@
+{
+  "id": 9006525,
+  "codigoMateria": 172997,
+  "identificacao": "PEC 18/2025",
+  "sigla": "PEC",
+  "descricaoSigla": "Proposta de Emenda à Constituição",
+  "numero": "18",
+  "ano": 2025,
+  "apelido": "PEC da Segurança Pública",
+  "objetivo": "Revisora",
+  "casaIdentificadora": "SF",
+  "siglaEnteIdentificador": "SF",
+  "identificacaoExterna": {},
+  "conteudo": {
+    "id": 7648346,
+    "idTipo": 11,
+    "siglaTipo": "NORMA_GERAL",
+    "tipo": "Norma Geral",
+    "ementa": "Altera os arts. 5º, 15, 22, 23, 24, 40, 49, 84, 103-B, 130-A e 144 da Constituição Federal e o art.76 do Ato das Disposições Constitucionais Transitórias; acrescenta os arts. 144-A e 144-B à Constituição Federal e os arts. 139, 140 e 141 ao Ato das Disposições Constitucionais Transitórias; e dá outras providências.",
+    "tipoNormaIndicada": "EMC"
+  },
+  "documento": {
+    "id": 10173590,
+    "siglaTipo": "PROPOSTA_EMENDA_CONSTITUICAO",
+    "tipo": "Proposta de Emenda à Constituição",
+    "dataApresentacao": "2026-03-10",
+    "indexacao": " ALTERAÇÃO ,  DISPOSIÇÕES CONSTITUCIONAIS TRANSITORIAS ,  DESVINCULAÇÃO DE RECEITAS DA UNIÃO (DRU) ,  PREVISÃO ,  FONTE ,  RECURSOS ,  Fundo Nacional de Segurança Pública (FNSP) ,  FUNDO PENITENCIARIO NACIONAL (FUNPEN) ,  DIRETRIZ ,  META FISCAL ,  GASTOS PUBLICOS . ALTERAÇÃO ,  CONSTITUIÇÃO FEDERAL ,  FIXAÇÃO ,  RESERVA LEGAL ,  DEFINIÇÃO ,  ORGANIZAÇÃO CRIMINOSA ,  ORGANIZAÇÃO PARAMILITAR ,  MILICIA ,  SANÇÃO ,  REGIME JURIDICO ,  CRIME ,  OBRIGATORIEDADE ,  PRISÃO PROVISORIA ,  CARATER PERMANENTE ,  ESTABELECIMENTO PENAL ,  SEGURANÇA ,  RESTRIÇÃO ,  PROIBIÇÃO ,  PROGRESSÃO ,  REGIME ,  LIBERDADE PROVISORIA ,  AUDIENCIA DE CUSTODIA ,  ACORDO DE NÃO PERSECUÇÃO PENAL (ANPP) ,  CONVERSÃO ,  PENA ,  CARATER RESTRITIVO ,  SUSPENSÃO CONDICIONAL DA PENA ,  LIVRAMENTO CONDICIONAL ,  REMIÇÃO ,  SAIDA TEMPORARIA ,  MEDIDA CAUTELAR ,  NATUREZA PATRIMONIAL ,  RESPONSABILIDADE CIVIL ,  RESPONSABILIDADE PENAL ,  RESPONSABILIDADE ADMINISTRATIVA ,  PESSOA JURIDICA ,  PROTEÇÃO ,  TESTEMUNHA ,  GARANTIA ,  DIREITOS ,  VITIMA ,  FUNÇÃO ,  HIPOTESE ,  SUSPENSÃO ,  DIREITOS POLITICOS ,  COMPETENCIA PRIVATIVA ,  UNIÃO FEDERAL ,  POLICIA FEDERAL ,  POLICIA RODOVIARIA FEDERAL ,  NORMAS GERAIS ,  ATIVIDADE ,  INTELIGENCIA ,  COMPETENCIA COMUM ,  MANUTENÇÃO ,  SEGURANÇA PUBLICA ,  DEFESA ,  CRIAÇÃO ,  CONSELHO DE SEGURANÇA ,  POLITICAS PUBLICAS ,  PLANO ,  COMPETENCIA CONCORRENTE ,  GRUPO TAREFA ,  COOPERAÇÃO ,  ORGANIZAÇÃO ,  INTEGRAÇÃO ,  ORGÃOS ,  SISTEMA ,  MEDIDA SOCIOEDUCATIVA ,  CONCESSÃO ,  PENSÃO PREVIDENCIARIA ,  APOSENTADORIA POR INVALIDEZ ,  LEGISLAÇÃO ,  ENTE FEDERADO ,  AGENTE PENITENCIARIO ,  POLICIAL ,  COMPETENCIA ,  CONGRESSO NACIONAL ,  SUSTAÇÃO ,  ATO NORMATIVO ,  CONSELHO NACIONAL DE JUSTIÇA (CNJ) ,  CONSELHO NACIONAL DO MINISTERIO PUBLICO (CNMP) ,  FISCALIZAÇÃO ,  CONTROLE ,  INCLUSÃO ,  ORGÃO PUBLICO ,  MUNICIPIOS ,  DIRETRIZES GERAIS ,  GUARDA MUNICIPAL ,  POLICIA PENAL ,  CRITERIOS ,  DISTRIBUIÇÃO ,  RECURSOS ,  Fundo Nacional de Segurança Pública (FNSP) ,  FUNDO PENITENCIARIO NACIONAL (FUNPEN) ,  Sistema Único de Segurança Pública (SUSP) ,  OBJETIVO .",
+    "url": "https://legis.senado.gov.br/sdleg-getter/dadosabertos/documento/e6034c8c-f874-487c-9bd7-62c549e49253",
+    "autoria": [
+      {
+        "autor": "Câmara dos Deputados",
+        "siglaTipo": "CAMARA",
+        "descricaoTipo": "CAMARA",
+        "ordem": 1,
+        "outrosAutoresNaoInformados": "Não",
+        "idEnte": 2,
+        "siglaEnte": "CD",
+        "casaEnte": "CD",
+        "ente": "Câmara dos Deputados"
+      }
+    ],
+    "resumoAutoria": "Câmara dos Deputados"
+  },
+  "tramitando": "Não",
+  "dataInicioEfetivo": "2026-03-10",
+  "situacaoAtual": "APROVADA",
+  "siglaSituacaoAtual": "APRVD",
+  "dataSituacaoAtual": "2026-11-03",
+  "classificacoes": [
+    {
+      "codigo": 33769062,
+      "descricao": "Controle Externo",
+      "descricaoHierarquia": "Organização do Estado / Fiscalização e Controle / Controle Externo"
+    },
+    {
+      "codigo": 33805422,
+      "descricao": "Processo Penal",
+      "descricaoHierarquia": "Jurídico / Processo / Processo Penal"
+    },
+    {
+      "codigo": 33805617,
+      "descricao": "Direito Penal e Penitenciário",
+      "descricaoHierarquia": "Jurídico / Direito Penal e Penitenciário"
+    },
+    {
+      "codigo": 33809619,
+      "descricao": "Segurança Pública",
+      "descricaoHierarquia": "Soberania, Defesa Nacional e Ordem Pública / Defesa do Estado e das Instituições Democráticas / Segurança Pública"
+    }
+  ],
+  "autoriaIniciativa": [
+    {
+      "autor": "Presidência da República",
+      "siglaTipo": "PRESIDENTE_REPUBLICA",
+      "descricaoTipo": "PRESIDENTE_REPUBLICA",
+      "ordem": 1,
+      "outrosAutoresNaoInformados": "Não",
+      "idEnte": 55126,
+      "siglaEnte": "PR",
+      "ente": "Presidência da República"
+    }
+  ],
+  "idProcessoCasaInicial": 9006524,
+  "identificacaoProcessoInicial": "PEC 18/2025",
+  "siglaCasaIniciadora": "CD",
+  "comissaoMpv": "{}",
+  "outrosNumeros": [
+    {
+      "idOutroProcesso": 9006524,
+      "sigla": "PEC",
+      "numero": "00018",
+      "ano": 2025,
+      "tramitando": "Sim",
+      "externaAoCongresso": "Não",
+      "casaIdentificadora": "CD",
+      "siglaEnteIdentificador": "CD",
+      "enteIdentificador": "Câmara dos Deputados"
+    }
+  ],
+  "processosRelacionados": [
+    {
+      "idOutroProcesso": 9119849,
+      "tipoRelacao": "CONCLUSAO_PARECER_GERAL",
+      "sigla": "RQS",
+      "numero": "741",
+      "ano": 2026,
+      "tramitando": "Não",
+      "casaIdentificadora": "SF",
+      "siglaEnteIdentificador": "PLEN",
+      "enteIdentificador": "Plenário do Senado Federal"
+    },
+    {
+      "idOutroProcesso": 9119871,
+      "tipoRelacao": "CONCLUSAO_PARECER_GERAL",
+      "sigla": "RQS",
+      "numero": "742",
+      "ano": 2026,
+      "tramitando": "Não",
+      "casaIdentificadora": "SF",
+      "siglaEnteIdentificador": "PLEN",
+      "enteIdentificador": "Plenário do Senado Federal"
+    },
+    {
+      "idOutroProcesso": 9114260,
+      "tipoRelacao": "REFERENCIA",
+      "sigla": "RQS",
+      "numero": "711",
+      "ano": 2026,
+      "tramitando": "Não",
+      "casaIdentificadora": "SF",
+      "siglaEnteIdentificador": "PLEN",
+      "enteIdentificador": "Plenário do Senado Federal"
+    },
+    {
+      "idOutroProcesso": 9114274,
+      "tipoRelacao": "REFERENCIA",
+      "sigla": "RQS",
+      "numero": "712",
+      "ano": 2026,
+      "tramitando": "Não",
+      "casaIdentificadora": "SF",
+      "siglaEnteIdentificador": "PLEN",
+      "enteIdentificador": "Plenário do Senado Federal"
+    },
+    {
+      "idOutroProcesso": 9114315,
+      "tipoRelacao": "REFERENCIA",
+      "sigla": "RQS",
+      "numero": "713",
+      "ano": 2026,
+      "tramitando": "Não",
+      "casaIdentificadora": "SF",
+      "siglaEnteIdentificador": "PLEN",
+      "enteIdentificador": "Plenário do Senado Federal"
+    },
+    {
+      "idOutroProcesso": 9114592,
+      "tipoRelacao": "REFERENCIA",
+      "sigla": "RQS",
+      "numero": "714",
+      "ano": 2026,
+      "tramitando": "Não",
+      "casaIdentificadora": "SF",
+      "siglaEnteIdentificador": "PLEN",
+      "enteIdentificador": "Plenário do Senado Federal"
+    },
+    {
+      "idOutroProcesso": 9114779,
+      "tipoRelacao": "REFERENCIA",
+      "sigla": "RQS",
+      "numero": "717",
+      "ano": 2026,
+      "tramitando": "Não",
+      "casaIdentificadora": "SF",
+      "siglaEnteIdentificador": "PLEN",
+      "enteIdentificador": "Plenário do Senado Federal"
+    },
+    {
+      "idOutroProcesso": 9114804,
+      "tipoRelacao": "REFERENCIA",
+      "sigla": "RQS",
+      "numero": "718",
+      "ano": 2026,
+      "tramitando": "Não",
+      "casaIdentificadora": "SF",
+      "siglaEnteIdentificador": "PLEN",
+      "enteIdentificador": "Plenário do Senado Federal"
+    },
+    {
+      "idOutroProcesso": 9114810,
+      "tipoRelacao": "REFERENCIA",
+      "sigla": "RQS",
+      "numero": "719",
+      "ano": 2026,
+      "tramitando": "Não",
+      "casaIdentificadora": "SF",
+      "siglaEnteIdentificador": "PLEN",
+      "enteIdentificador": "Plenário do Senado Federal"
+    },
+    {
+      "idOutroProcesso": 9119849,
+      "tipoRelacao": "REFERENCIA",
+      "sigla": "RQS",
+      "numero": "741",
+      "ano": 2026,
+      "tramitando": "Não",
+      "casaIdentificadora": "SF",
+      "siglaEnteIdentificador": "PLEN",
+      "enteIdentificador": "Plenário do Senado Federal"
+    },
+    {
+      "idOutroProcesso": 9119857,
+      "tipoRelacao": "REFERENCIA",
+      "sigla": "RQS",
+      "numero": "740",
+      "ano": 2026,
+      "tramitando": "Não",
+      "casaIdentificadora": "SF",
+      "siglaEnteIdentificador": "PLEN",
+      "enteIdentificador": "Plenário do Senado Federal"
+    },
+    {
+      "idOutroProcesso": 9119871,
+      "tipoRelacao": "REFERENCIA",
+      "sigla": "RQS",
+      "numero": "742",
+      "ano": 2026,
+      "tramitando": "Não",
+      "casaIdentificadora": "SF",
+      "siglaEnteIdentificador": "PLEN",
+      "enteIdentificador": "Plenário do Senado Federal"
+    }
+  ],
+  "despachos": [
+    {
+      "id": 10304229,
+      "data": "2026-08-21",
+      "siglaTipoMotivacao": "DECISAO_PRESID",
+      "tipoMotivacao": "Decisão da Presidência",
+      "cancelado": "Não",
+      "encontroLegislativo": {
+        "id": 9099362,
+        "numero": 1,
+        "data": "2026-08-21",
+        "casa": "SF",
+        "tipo": "SES",
+        "descricao": "Eventos Independentes de Sessão",
+        "colegiado": {
+          "codigo": 1998,
+          "casa": "SF",
+          "sigla": "PLEN",
+          "nome": "Plenário do Senado Federal"
+        }
+      },
+      "providencias": [
+        {
+          "id": 9099369,
+          "tipo": "ANALISE",
+          "descricao": "Análise",
+          "ordem": 1,
+          "analiseTempo": "SUCESSIVA",
+          "analiseConteudo": null,
+          "reexame": "Não",
+          "unidadesDestinatarias": [
+            {
+              "ordem": 1,
+              "tipoAnaliseDeliberacao": "NAO_TERMINATIVA",
+              "colegiado": {
+                "codigo": 34,
+                "sigla": "CCJ",
+                "casa": "SF",
+                "nome": "Comissão de Constituição, Justiça e Cidadania"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "autuacoes": [
+    {
+      "numero": 1,
+      "descricao": "Autuação Principal",
+      "idEnteControleAtual": 55304,
+      "siglaEnteControleAtual": "SEXPE",
+      "nomeEnteControleAtual": "Secretaria de Expediente",
+      "situacoes": [
+        {
+          "idTipo": 175,
+          "sigla": "AGDESP",
+          "descricao": "AGUARDANDO DESPACHO",
+          "inicio": "2026-03-10",
+          "fim": "2026-08-21",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          }
+        },
+        {
+          "idTipo": 177,
+          "sigla": "MATDESP",
+          "descricao": "MATÉRIA DESPACHADA",
+          "inicio": "2026-08-21",
+          "fim": "2026-08-21",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          }
+        },
+        {
+          "idTipo": 87,
+          "sigla": "AGDREL",
+          "descricao": "AGUARDANDO DESIGNAÇÃO DO RELATOR",
+          "inicio": "2026-08-21",
+          "fim": "2026-08-21",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          }
+        },
+        {
+          "idTipo": 91,
+          "sigla": "RELATOR",
+          "descricao": "MATÉRIA COM A RELATORIA",
+          "inicio": "2026-08-21",
+          "fim": "2026-08-25",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          }
+        },
+        {
+          "idTipo": 42,
+          "sigla": "PRONTPAUT",
+          "descricao": "PRONTA PARA A PAUTA NA COMISSÃO",
+          "inicio": "2026-08-25",
+          "fim": "2026-08-26",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          }
+        },
+        {
+          "idTipo": 42,
+          "sigla": "PRONTPAUT",
+          "descricao": "PRONTA PARA A PAUTA NA COMISSÃO",
+          "inicio": "2026-08-26",
+          "fim": "2026-08-31",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          }
+        },
+        {
+          "idTipo": 138,
+          "sigla": "INPAUTA",
+          "descricao": "INCLUÍDA NA PAUTA DA REUNIÃO",
+          "inicio": "2026-08-31",
+          "fim": "2026-10-14",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          }
+        },
+        {
+          "idTipo": 89,
+          "sigla": "APRVPAR",
+          "descricao": "APROVADO PARECER NA COMISSÃO",
+          "inicio": "2026-10-14",
+          "fim": "2026-10-14",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          }
+        },
+        {
+          "idTipo": 78,
+          "sigla": "INCLOD",
+          "descricao": "INCLUÍDA EM ORDEM DO DIA",
+          "inicio": "2026-10-14",
+          "fim": "2026-10-15",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          }
+        },
+        {
+          "idTipo": 8,
+          "sigla": "PRONDEPLEN",
+          "descricao": "PRONTO PARA DELIBERAÇÃO DO PLENÁRIO",
+          "inicio": "2026-10-15",
+          "fim": "2026-11-03",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          }
+        },
+        {
+          "idTipo": 78,
+          "sigla": "INCLOD",
+          "descricao": "INCLUÍDA EM ORDEM DO DIA",
+          "inicio": "2026-11-03",
+          "fim": "2026-11-03",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          }
+        },
+        {
+          "idTipo": 25,
+          "sigla": "APRVD",
+          "descricao": "APROVADA",
+          "inicio": "2026-11-03",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          }
+        }
+      ],
+      "informesLegislativos": [
+        {
+          "id": 2276424,
+          "data": "2026-03-10 14:18:56",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Autuada a Proposta de Emenda à Constituição nº 18/2025 proveniente da Câmara dos Deputados. A proposta vai à publicação.",
+          "idSituacaoIniciada": 175,
+          "siglaSituacaoIniciada": "AGDESP",
+          "documentosAssociados": [
+            {
+              "id": 10173633,
+              "tipo": "Avulso inicial da matéria",
+              "siglaTipo": "AVULSO_INICIAL",
+              "identificacao": "Avulso inicial da matéria - SF264119026243",
+              "descricao": "-",
+              "data": "2026-03-10T00:00:00",
+              "autoria": "Senado Federal",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/e5475586-1999-43b5-b386-a7876649a4ca"
+            },
+            {
+              "id": 10173590,
+              "tipo": "Proposta de Emenda à Constituição",
+              "siglaTipo": "PROPOSTA_EMENDA_CONSTITUICAO",
+              "identificacao": "PEC 18/2025",
+              "descricao": "Altera os arts. 5º, 15, 22, 23, 24, 40, 49, 84, 103-B, 130-A e 144 da Constituição Federal e o art.76 do Ato das Disposições Constitucionais Transitórias; acrescenta os arts. 144-A e 144-B à Constituição Federal e os arts. 139, 140 e 141 ao Ato das Disposições Constitucionais Transitórias; e dá outras providências.",
+              "data": "2026-03-10T13:34:25",
+              "autoria": "Câmara dos Deputados",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/e6034c8c-f874-487c-9bd7-62c549e49253"
+            }
+          ]
+        },
+        {
+          "id": 2309363,
+          "data": "2026-08-21 16:18:38",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "descricao": "A matéria vai à Comissão de Constituição, Justiça e Cidadania. ",
+          "idSituacaoIniciada": 177,
+          "siglaSituacaoIniciada": "MATDESP"
+        },
+        {
+          "id": 2309344,
+          "data": "2026-08-21 16:22:21",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebido nesta Comissão, às 16h21.\nMatéria aguardando distribuição.",
+          "idSituacaoIniciada": 87,
+          "siglaSituacaoIniciada": "AGDREL"
+        },
+        {
+          "id": 2309365,
+          "data": "2026-08-21 16:37:00",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Distribuído ao Senador Rogério Carvalho, para emitir relatório.",
+          "idSituacaoIniciada": 91,
+          "siglaSituacaoIniciada": "RELATOR"
+        },
+        {
+          "id": 2309535,
+          "data": "2026-08-24 13:21:11",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda n° 1, de autoria da Senadora Leila Barros.\nEncaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10304515,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 1 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 VF",
+              "data": "2026-08-24T11:28:44",
+              "autoria": "Senadora Leila Barros (PDT/DF)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/635a86f8-0a89-4260-a9b0-d2599a2e2158"
+            }
+          ]
+        },
+        {
+          "id": 2309684,
+          "data": "2026-08-24 18:37:09",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda n° 2, de autoria do Senador Hamilton Mourão.\nEncaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10304777,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 2 - PEC 18/2025",
+              "descricao": "Emenda I à PEC 18/2025",
+              "data": "2026-08-24T17:46:06",
+              "autoria": "Senador Hamilton Mourão (REPUBLICANOS/RS)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/e4c22afe-11a8-4a2f-84d7-0af51ec82a2f"
+            }
+          ]
+        },
+        {
+          "id": 2309890,
+          "data": "2026-08-25 13:03:18",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda n° 3, de autoria do Senador Sargento Reginauro.\nEncaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10305076,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 3 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - tribunal do Juri",
+              "data": "2026-08-25T12:01:38",
+              "autoria": "Senador Sargento Reginauro (PSDB/CE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/1b670301-1ae1-49eb-b152-af87f9ee4224"
+            }
+          ]
+        },
+        {
+          "id": 2309938,
+          "data": "2026-08-25 15:19:52",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda n° 4, de autoria do Senador Izalci Lucas.\nEncaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10305126,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 4 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 agentes de trânsito",
+              "data": "2026-08-25T15:04:38",
+              "autoria": "Senador Izalci Lucas (PL/DF)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/9102b790-6632-47fe-a7e2-fe0e4c370b22"
+            }
+          ]
+        },
+        {
+          "id": 2309990,
+          "data": "2026-08-25 17:36:02",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebido Relatório do Senador Rogério Carvalho, favorável à Proposta, nos termos do substitutivo aprovado pela Câmara dos Deputados, e rejeitadas as Emendas de nºs 1 a 4.",
+          "idSituacaoIniciada": 42,
+          "siglaSituacaoIniciada": "PRONTPAUT",
+          "documentosAssociados": [
+            {
+              "id": 10305253,
+              "tipo": "Relatório Legislativo",
+              "siglaTipo": "RELATORIO",
+              "identificacao": "Relatório Legislativo - SF260544433727",
+              "descricao": "v.2. Relatório PEC 18-2025 (Segurança Pública)",
+              "data": "2026-08-25T17:35:04",
+              "autoria": "Senador Rogério Carvalho (PT/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/16f44c6e-1555-4fdd-a952-345d0794d00c"
+            }
+          ]
+        },
+        {
+          "id": 2310043,
+          "data": "2026-08-25 18:58:45",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebidas as Emendas nºs 5 e 13, de autoria do Senador Eduardo Gomes, e nºs 6 a 12, de autoria do Senador Fabiano Contarato. Encaminhadas ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10305275,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 5 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025",
+              "data": "2026-08-25T18:40:45",
+              "autoria": "Senador Eduardo Gomes (PL/TO)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/43b9e34f-957f-448c-bb24-32a71e234bd6"
+            },
+            {
+              "id": 10305279,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 6 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 (art. 2º)",
+              "data": "2026-08-25T18:41:23",
+              "autoria": "Senador Fabiano Contarato (PT/ES)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/9e08f8c6-796c-42e3-8670-93371ea4f58b"
+            },
+            {
+              "id": 10305283,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 7 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 (art. 144, §11º)",
+              "data": "2026-08-25T18:41:32",
+              "autoria": "Senador Fabiano Contarato (PT/ES)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/d2175d31-fc11-46f5-a028-5b5fa0a275d7"
+            },
+            {
+              "id": 10305287,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 8 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 (art. 144-A § 5º guardas municipais e ORC e meio ambiente)",
+              "data": "2026-08-25T18:41:40",
+              "autoria": "Senador Fabiano Contarato (PT/ES)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/6d4caf52-5788-456e-b128-8af24f1f5be8"
+            },
+            {
+              "id": 10305291,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 9 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 (art. 144, §8º)",
+              "data": "2026-08-25T18:41:49",
+              "autoria": "Senador Fabiano Contarato (PT/ES)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/b0d7157f-3c11-4e18-b31b-da1fb8421616"
+            },
+            {
+              "id": 10305295,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 10 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 (socioeducativo)",
+              "data": "2026-08-25T18:41:57",
+              "autoria": "Senador Fabiano Contarato (PT/ES)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/e582b027-babd-4633-9798-3f79c3723b07"
+            },
+            {
+              "id": 10305299,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 11 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 (agentes de trânsito)",
+              "data": "2026-08-25T18:42:05",
+              "autoria": "Senador Fabiano Contarato (PT/ES)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/cdb7903a-0f5d-4169-8e69-8256503b3cec"
+            },
+            {
+              "id": 10305303,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 12 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 (guardas portuários)",
+              "data": "2026-08-25T18:42:13",
+              "autoria": "Senador Fabiano Contarato (PT/ES)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/b2079804-a7f5-47de-bf0e-fb387a244c88"
+            },
+            {
+              "id": 10305307,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 13 - PEC 18/2025",
+              "descricao": "Emenda 2 à PEC 18/2025",
+              "data": "2026-08-25T18:55:31",
+              "autoria": "Senador Eduardo Gomes (PL/TO)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/06f6af1e-a4b3-441e-9392-42c8e8622cf3"
+            }
+          ]
+        },
+        {
+          "id": 2310150,
+          "data": "2026-08-26 11:29:58",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda nº 14, de autoria do Senador Weverton. Encaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10305522,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 14 - PEC 18/2025",
+              "descricao": "Emenda 1 à PEC 18/2025",
+              "data": "2026-08-26T11:27:53",
+              "autoria": "Senador Weverton (PDT/MA)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/9eccff0f-72e6-4a63-aace-1af871e5bda4"
+            }
+          ]
+        },
+        {
+          "id": 2310203,
+          "data": "2026-08-26 13:40:53",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebidas as Emenda nºs 15 a 17, de autoria da Senadora Professora Dorinha.\nEncaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10305636,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 15 - PEC 18/2025",
+              "descricao": "Emenda à PEC 18/2025 - ABC",
+              "data": "2026-08-26T13:35:09",
+              "autoria": "Senadora Professora Dorinha Seabra (UNIÃO/TO)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/ca171d1a-d6a7-4b71-91f5-6570b1806e2f"
+            },
+            {
+              "id": 10305640,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 16 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - agentes de trânsito",
+              "data": "2026-08-26T13:35:21",
+              "autoria": "Senadora Professora Dorinha Seabra (UNIÃO/TO)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/577f0bb8-9e50-4d68-b7ab-d31613266fa1"
+            },
+            {
+              "id": 10305644,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 17 - PEC 18/2025",
+              "descricao": "Emenda à PEC 18/2025 - Órgãos do Sistema Socioeducativo",
+              "data": "2026-08-26T13:35:29",
+              "autoria": "Senadora Professora Dorinha Seabra (UNIÃO/TO)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/2e51e377-0fcd-443a-a7d8-6db103ca1045"
+            }
+          ]
+        },
+        {
+          "id": 2310243,
+          "data": "2026-08-26 16:07:39",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebidas as Emendas de n°s 18 e 19, de autoria do Senador Fabiano Contarato.\nEncaminhadas ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10305740,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 19 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025",
+              "data": "2026-08-26T15:51:21",
+              "autoria": "Senador Fabiano Contarato (PT/ES)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/62bd3b4d-6c68-40cf-b28d-2bf578ac29e9"
+            },
+            {
+              "id": 10305749,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 18 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 (art. 91-A)",
+              "data": "2026-08-26T15:51:27",
+              "autoria": "Senador Fabiano Contarato (PT/ES)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/bdff241c-bd7a-4051-af27-dc93150a4b3d"
+            }
+          ]
+        },
+        {
+          "id": 2310248,
+          "data": "2026-08-26 16:33:41",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda nº 20, de autoria do Senador Hermes Klann. Encaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10305804,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 20 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - SisGAAz",
+              "data": "2026-08-26T16:21:58",
+              "autoria": "Senador Hermes Klann (PL/SC)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/b208bd94-b254-4253-8a66-95c42347f6c2"
+            }
+          ]
+        },
+        {
+          "id": 2310250,
+          "data": "2026-08-26 16:44:59",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebidas as Emenda nºs 21 a 23, de autoria da Senadora Damares Alves.\nEncaminhadas ao Relator para análise.",
+          "idSituacaoIniciada": 42,
+          "siglaSituacaoIniciada": "PRONTPAUT",
+          "documentosAssociados": [
+            {
+              "id": 10305816,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 21 - PEC 18/2025",
+              "descricao": "Emenda à PEC 18/2025 - nova redação ao § 2º do art. 22 da Constituição Federal.",
+              "data": "2026-08-26T16:42:03",
+              "autoria": "Senadora Damares Alves (REPUBLICANOS/DF)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/2371efa9-61ca-4222-9e7d-cf66f2e9e0ba"
+            },
+            {
+              "id": 10305820,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 22 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - Supressão art. 139 ADCT - BETs",
+              "data": "2026-08-26T16:42:16",
+              "autoria": "Senadora Damares Alves (REPUBLICANOS/DF)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/dc879438-7362-423d-a9d7-8dc37e3ced6d"
+            },
+            {
+              "id": 10305824,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 23 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - Emenda de Salvaguarda das Competências Estaduais e Distritais",
+              "data": "2026-08-26T16:42:26",
+              "autoria": "Senadora Damares Alves (REPUBLICANOS/DF)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/a610690e-f123-4fae-bdae-39a7542b9172"
+            }
+          ]
+        },
+        {
+          "id": 2310384,
+          "data": "2026-08-27 10:34:32",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebidas as Emendas de n°s 24 a 33, de autoria do Senador Alessandro Vieira, a Emenda nº 34, de autoria do Senador Weverton, e a Emenda nº 35, de autoria do Senador Fabiano Contarato.\nEncaminhadas ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10306069,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 24 - PEC 18/2025",
+              "descricao": "Emenda  1.PEC 18.Restrição ao registro de candidatura",
+              "data": "2026-08-27T10:00:27",
+              "autoria": "Senador Alessandro Vieira (MDB/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/1372864f-ab26-4978-b4e6-2ac195094413"
+            },
+            {
+              "id": 10306050,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 25 - PEC 18/2025",
+              "descricao": "Emenda 2.PEC 18.Regime especial para ORCRIM e crimes contra a adm.",
+              "data": "2026-08-27T10:00:39",
+              "autoria": "Senador Alessandro Vieira (MDB/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/730c810e-1f57-43b6-81fa-ecbea59cc99a"
+            },
+            {
+              "id": 10306073,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 26 - PEC 18/2025",
+              "descricao": "Emenda 4.PEC 18.Suprime inciso XIX do art. 24",
+              "data": "2026-08-27T10:00:59",
+              "autoria": "Senador Alessandro Vieira (MDB/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/f2fcb75b-5799-496f-928b-e6bc029f2206"
+            },
+            {
+              "id": 10306054,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 27 - PEC 18/2025",
+              "descricao": "Emenda 5.PEC 18.Sistema de inteligência",
+              "data": "2026-08-27T10:01:08",
+              "autoria": "Senador Alessandro Vieira (MDB/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/42510577-8f95-4fc7-837d-08367951f820"
+            },
+            {
+              "id": 10306063,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 28 - PEC 18/2025",
+              "descricao": "Emenda 6.PEC 18.Órgãos socioeducativos",
+              "data": "2026-08-27T10:01:16",
+              "autoria": "Senador Alessandro Vieira (MDB/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/27c5c49c-178a-4651-a5a2-6c46b57d04a2"
+            },
+            {
+              "id": 10306067,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 29 - PEC 18/2025",
+              "descricao": "Emenda 7.PEC 18.Retira acreditação por conselhos estaduais",
+              "data": "2026-08-27T10:01:25",
+              "autoria": "Senador Alessandro Vieira (MDB/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/54a1675c-5f42-4107-86b3-d511167afb2a"
+            },
+            {
+              "id": 10306091,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 30 - PEC 18/2025",
+              "descricao": "Emenda 8.PEC 18.Polícias municipais § 5º",
+              "data": "2026-08-27T10:05:25",
+              "autoria": "Senador Alessandro Vieira (MDB/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/39d1f6cc-516b-4a06-a4fc-57ea436c6c04"
+            },
+            {
+              "id": 10306095,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 31 - PEC 18/2025",
+              "descricao": "Emenda 9.PEC 18.Condiciona repasse",
+              "data": "2026-08-27T10:05:33",
+              "autoria": "Senador Alessandro Vieira (MDB/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/597b4a80-d37f-48ef-8d50-e3cbccffbfe2"
+            },
+            {
+              "id": 10306077,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 32 - PEC 18/2025",
+              "descricao": "Emenda 11.PEC 18.Suprime inciso acreditação Conselhos",
+              "data": "2026-08-27T10:05:57",
+              "autoria": "Senador Alessandro Vieira (MDB/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/7bc14de9-0e2b-48a0-b9b3-3064b734eefa"
+            },
+            {
+              "id": 10306081,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 33 - PEC 18/2025",
+              "descricao": "Emenda 12.PEC 18.Autonomia da perícia",
+              "data": "2026-08-27T10:06:08",
+              "autoria": "Senador Alessandro Vieira (MDB/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/2be8c80f-cdd6-4ff5-99c8-9452a7e0e6f7"
+            },
+            {
+              "id": 10306099,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 34 - PEC 18/2025",
+              "descricao": "Emenda 2 à PEC 18/2025 - guarda portuária",
+              "data": "2026-08-27T10:14:43",
+              "autoria": "Senador Weverton (PDT/MA)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/c2d9d2ee-ac2d-492e-8e7a-bcbff0ca1911"
+            },
+            {
+              "id": 10306110,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 35 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 (previdenciário)",
+              "data": "2026-08-27T11:07:15",
+              "autoria": "Senador Fabiano Contarato (PT/ES)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/50b7f748-a094-4a80-911d-606a55476c50"
+            }
+          ]
+        },
+        {
+          "id": 2310447,
+          "data": "2026-08-27 13:32:51",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda nº 36, de autoria do Senador Sargento Reginauro.\nEncaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10306267,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 36 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - pensão para todos os profissionais de segurança pública",
+              "data": "2026-08-27T13:11:51",
+              "autoria": "Senador Sargento Reginauro (PSDB/CE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/6f1f7bc9-5121-4862-b57f-38e001cdd1c6"
+            }
+          ]
+        },
+        {
+          "id": 2310483,
+          "data": "2026-08-27 15:11:20",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebidas as Emendas nºs 37 e 38, de autoria do Senador Alessandro Vieira.\nEncaminhadas ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10306337,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 37 - PEC 18/2025",
+              "descricao": "Emenda 3.PEC 18/2025. Prisão segunda instância",
+              "data": "2026-08-27T14:45:50",
+              "autoria": "Senador Alessandro Vieira (MDB/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/d8afc5df-6e90-4759-aeff-3bb94a55489d"
+            },
+            {
+              "id": 10306341,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 38 - PEC 18/2025",
+              "descricao": "Emenda 10.PEC 18.Agentes de trânsito",
+              "data": "2026-08-27T14:45:57",
+              "autoria": "Senador Alessandro Vieira (MDB/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/012796e8-e55a-413b-95a3-ab5767a3b838"
+            }
+          ]
+        },
+        {
+          "id": 2310524,
+          "data": "2026-08-27 17:15:02",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda nº 39, de autoria do Senador Humberto Costa. Encaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10306473,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 39 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025",
+              "data": "2026-08-27T17:08:23",
+              "autoria": "Senador Humberto Costa (PT/PE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/382997d1-8f91-4526-ae39-537018f72a1a"
+            }
+          ]
+        },
+        {
+          "id": 2310679,
+          "data": "2026-08-28 11:03:28",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda nº 40, de autoria do Senador Weverton. Encaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10306774,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 40 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 (peritos federais e  estaduais))",
+              "data": "2026-08-28T10:08:37",
+              "autoria": "Senador Weverton (PDT/MA)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/cdbb1057-29d5-421b-b513-300db7f4d29c"
+            }
+          ]
+        },
+        {
+          "id": 2310704,
+          "data": "2026-08-28 11:33:53",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda nº 41, de autoria do Senador Fabiano Contarato. Encaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10306790,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 41 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 (defensoria Pública)",
+              "data": "2026-08-28T11:06:16",
+              "autoria": "Senador Fabiano Contarato (PT/ES)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/f96ba746-0138-46cd-b0b8-462f5ecfdbd1"
+            }
+          ]
+        },
+        {
+          "id": 2310724,
+          "data": "2026-08-28 12:37:45",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda nº 42, de autoria do Senador Vanderlan Cardoso. Encaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10306877,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 42 - PEC 18/2025",
+              "descricao": "Emenda agentes transito",
+              "data": "2026-08-28T12:12:49",
+              "autoria": "Senador Vanderlan Cardoso (PSD/GO)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/8531e5f0-86f6-49ec-a3f0-1f1d9a8582b4"
+            }
+          ]
+        },
+        {
+          "id": 2310735,
+          "data": "2026-08-28 14:32:49",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda nº 43, de autoria da Senadora Mara Gabrilli. Encaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10306969,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 43 - PEC 18/2025",
+              "descricao": "Emenda à PEC 18/2025 - Manutenção das Policias Municipais no combate à crimes ambientais",
+              "data": "2026-08-28T14:10:14",
+              "autoria": "Senadora Mara Gabrilli (PSD/SP)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/0322c110-280f-48b5-b0ee-660fce563905"
+            }
+          ]
+        },
+        {
+          "id": 2310825,
+          "data": "2026-08-28 16:25:18",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebidas as Emendas nºs 44 e 45, de autoria do Senador Carlos Portinho.\nEncaminhadas ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10307047,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 44 - PEC 18/2025",
+              "descricao": "Emenda à PEC 18/2025 Agentes de Trânsito",
+              "data": "2026-08-28T15:50:00",
+              "autoria": "Senador Carlos Portinho (PL/RJ)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/2b9e2a99-ad54-4e16-9a99-53d679a551e7"
+            },
+            {
+              "id": 10307091,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 45 - PEC 18/2025",
+              "descricao": "Emenda à PEC 18/2025 - novo §11-A ao art. 144, na forma do art. 1°.",
+              "data": "2026-08-28T15:50:10",
+              "autoria": "Senador Carlos Portinho (PL/RJ)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/f069de0f-7a2b-4f4e-9fc5-f39d54932ceb"
+            }
+          ]
+        },
+        {
+          "id": 2310904,
+          "data": "2026-08-28 17:00:26",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebidas as Emendas nºs 46 a 48, de autoria do Senador Izalci Lucas.\nEncaminhadas ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10307195,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 46 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 supressiva",
+              "data": "2026-08-28T16:53:03",
+              "autoria": "Senador Izalci Lucas (PL/DF)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/4673fcab-c1de-48fe-8068-6594c5702f6e"
+            },
+            {
+              "id": 10307199,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 47 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 metroviários",
+              "data": "2026-08-28T16:53:09",
+              "autoria": "Senador Izalci Lucas (PL/DF)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/343a2a9a-19ac-48de-966c-be8c1ae542ab"
+            },
+            {
+              "id": 10307203,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 48 - PEC 18/2025",
+              "descricao": "Emenda à PEC 18/2025 Sistema Brasileiro de Inteligência",
+              "data": "2026-08-28T16:53:16",
+              "autoria": "Senador Izalci Lucas (PL/DF)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/10898fa3-b8df-4dad-bbce-0cb5ba89d937"
+            }
+          ]
+        },
+        {
+          "id": 2311045,
+          "data": "2026-08-31 10:49:37",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Matéria incluída na Pauta da 13ª Reunião Extraordinária da Comissão de Constituição, Justiça e Cidadania, agendada para o dia 02/09/2026.",
+          "idSituacaoIniciada": 138,
+          "siglaSituacaoIniciada": "INPAUTA"
+        },
+        {
+          "id": 2311176,
+          "data": "2026-08-31 16:15:18",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda nº 49, de autoria do Senador Zequinha Marinho.\nEncaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10307778,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 49 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - guardas municipais",
+              "data": "2026-08-31T16:07:46",
+              "autoria": "Senador Zequinha Marinho (PODEMOS/PA)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/8dbdc194-5d73-44fe-9214-d934a20acc09"
+            }
+          ]
+        },
+        {
+          "id": 2311186,
+          "data": "2026-08-31 18:23:02",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebidas as Emendas nºs 50 e 51, de autoria da Senadora Soraya Thronicke.\nEncaminhadas ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10307929,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 51 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 defensoria",
+              "data": "2026-08-31T17:49:26",
+              "autoria": "Senadora Soraya Thronicke (PSB/MS)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/0955bd3f-cefd-47d8-978a-9058daf7b745"
+            },
+            {
+              "id": 10307921,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 50 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 Sistema Socioeducativo",
+              "data": "2026-08-31T17:50:14",
+              "autoria": "Senadora Soraya Thronicke (PSB/MS)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/e60e2cc2-9390-49b9-a9e4-941ef150bb62"
+            }
+          ]
+        },
+        {
+          "id": 2311427,
+          "data": "2026-09-01 11:29:34",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebidas as Emendas nºs 52 a 54, de autoria do Senador Hamilton Mourão.  \nEncaminhadas ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10308597,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 52 - PEC 18/2025",
+              "descricao": "Emenda  III (Acreditação) à PEC 18/2025",
+              "data": "2026-09-01T11:09:04",
+              "autoria": "Senador Hamilton Mourão (REPUBLICANOS/RS)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/10a9d0f5-33a4-4abf-b389-41dbdf56aee1"
+            },
+            {
+              "id": 10308621,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 53 - PEC 18/2025",
+              "descricao": "Emenda  II (Policias Municipais) à PEC 18/2025",
+              "data": "2026-09-01T11:09:09",
+              "autoria": "Senador Hamilton Mourão (REPUBLICANOS/RS)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/3ddc2304-1299-442e-bb90-c8763d2de243"
+            },
+            {
+              "id": 10308625,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 54 - PEC 18/2025",
+              "descricao": "Emenda  I (Municípios) à PEC 18/2025",
+              "data": "2026-09-01T11:09:15",
+              "autoria": "Senador Hamilton Mourão (REPUBLICANOS/RS)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/a37a5ea4-ee9e-46a0-97ec-0baa6a93e6f6"
+            }
+          ]
+        },
+        {
+          "id": 2311434,
+          "data": "2026-09-01 12:01:39",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda nº 55, de autoria da Senadora Mara Gabrilli.\nEncaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10308715,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 55 - PEC 18/2025",
+              "descricao": "Emenda à PEC 18/2025 - Supressão do art. 139 (Constitucionalização das Bets)",
+              "data": "2026-09-01T11:49:13",
+              "autoria": "Senadora Mara Gabrilli (PSD/SP)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/116758c7-a066-4470-b079-56cbecc97ac4"
+            }
+          ]
+        },
+        {
+          "id": 2311615,
+          "data": "2026-09-01 16:05:05",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda nº 56, de autoria do Senador Sérgio Petecão.\nEncaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10309654,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 56 - PEC 18/2025",
+              "descricao": "Emenda PEC 18/2025 - guarda portuária (STC 2026-03339 TT 338447)",
+              "data": "2026-09-01T15:30:21",
+              "autoria": "Senador Sérgio Petecão (PSD/AC)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/8d3d099f-d210-471a-aaea-8e8d5e628b5f"
+            }
+          ]
+        },
+        {
+          "id": 2311699,
+          "data": "2026-09-01 16:44:38",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda de n° 57, de autoria da Senadora Professora Dorinha, a Emenda nº 58, de autoria do Senador Rogério Marinho, e a Emenda nº 59, de autoria do Senador Magno Malta.\nEncaminhadas ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10309811,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 57 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - art. 37 perito criminal",
+              "data": "2026-09-01T16:11:40",
+              "autoria": "Senadora Professora Dorinha Seabra (UNIÃO/TO)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/dad894d8-578d-44a6-a01d-aa4a008592f8"
+            },
+            {
+              "id": 10309828,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 58 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - proibição de bets - VFinal",
+              "data": "2026-09-01T16:11:44",
+              "autoria": "Senador Rogerio Marinho (PL/RN)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/e368a78e-4ba7-4d25-8114-f9223630ef80"
+            },
+            {
+              "id": 10309842,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 59 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - Guarda Portuária",
+              "data": "2026-09-01T16:37:52",
+              "autoria": "Senador Magno Malta (PL/ES)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/421fce7b-aaef-4d53-b51a-829380c8422b"
+            }
+          ]
+        },
+        {
+          "id": 2311716,
+          "data": "2026-09-01 17:07:14",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda de n° 60, de autoria do Senador Dr Hiran, e a Emenda nº 61, de autoria do Senador Humberto Costa.\nEncaminhadas ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10309896,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 60 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - Reconhecimento expresso das polícias científicas como órgãos da segurança pública",
+              "data": "2026-09-01T16:59:33",
+              "autoria": "Senador Dr. Hiran (PP/RR)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/575af6ae-4a59-4f88-9180-a69bfaf874db"
+            },
+            {
+              "id": 10309920,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 61 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025",
+              "data": "2026-09-01T17:02:51",
+              "autoria": "Senador Humberto Costa (PT/PE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/228c1883-1533-4da1-beb4-0d3d13b25e9e"
+            }
+          ]
+        },
+        {
+          "id": 2311754,
+          "data": "2026-09-01 18:34:44",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebidas as Emendas nº 62, de autoria da Senadora Leila Barros, e nº 63, de autoria do Senador Alessandro Vieira.\nEncaminhadas ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10310117,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 62 - PEC 18/2025",
+              "descricao": "Emenda  II à PEC 18/2025",
+              "data": "2026-09-01T18:30:51",
+              "autoria": "Senadora Leila Barros (PDT/DF)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/9cd0b0e3-3fdf-4049-a55c-8f24c7da5470"
+            },
+            {
+              "id": 10310125,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 63 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - Financiamento",
+              "data": "2026-09-01T18:33:55",
+              "autoria": "Senador Alessandro Vieira (MDB/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/6b12e68e-8148-4716-a336-b3d9662dbd47"
+            }
+          ]
+        },
+        {
+          "id": 2311777,
+          "data": "2026-09-01 18:55:22",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda nº 64, de autoria do Senador Alan Rick.\nEncaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10310134,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 64 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - Supressão do art. 139",
+              "data": "2026-09-01T18:45:51",
+              "autoria": "Senador Alan Rick (REPUBLICANOS/AC)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/91299def-ee86-4aac-8c26-4bcc6c81d3e3"
+            }
+          ]
+        },
+        {
+          "id": 2311800,
+          "data": "2026-09-01 19:47:56",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebidas as Emendas nºs 65 e 66, de autoria do Senador Hamilton Mourão.\nEncaminhadas ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10310242,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 66 - PEC 18/2025",
+              "descricao": "Emenda VI  à PEC 18/2025",
+              "data": "2026-09-01T19:41:32",
+              "autoria": "Senador Hamilton Mourão (REPUBLICANOS/RS)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/6c13aca4-c906-47cc-9728-7c47836148a6"
+            },
+            {
+              "id": 10310197,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 65 - PEC 18/2025",
+              "descricao": "Emenda VII  à PEC 18/2025",
+              "data": "2026-09-01T19:41:48",
+              "autoria": "Senador Hamilton Mourão (REPUBLICANOS/RS)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/3d6bf55e-1b55-454e-8618-5b89cbc190be"
+            }
+          ]
+        },
+        {
+          "id": 2311825,
+          "data": "2026-09-01 20:48:02",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebido nesta Comissão o relatório do Senador Rogério Carvalho, com voto favorável à Proposta e às Emendas nºs 22, 39, 55 e 64, parcialmente às Emendas nºs 58 e 63, com uma emenda (de redação) que apresenta e contrário às demais emendas apresentadas.",
+          "documentosAssociados": [
+            {
+              "id": 10310314,
+              "tipo": "Relatório Legislativo",
+              "siglaTipo": "RELATORIO",
+              "identificacao": "Relatório Legislativo - SF266300208544",
+              "descricao": "Da COMISSÃO DE CONSTITUIÇÃO, JUSTIÇA E CIDADANIA, sobre Proposta de Emenda à Constituição n° 18, de 2025, de  Presidência da República, que Altera os arts. 5º, 15, 22, 23, 24, 40, 49, 84, 103-B, 130-A e 144 da Constituição Federal e o art.76 do Ato das Disposições Constitucionais Transitórias; acrescenta os arts. 144-A e 144-B à Constituição Federal e os arts. 139, 140 e 141 ao Ato das Disposições Constitucionais Transitórias; e dá outras providências.",
+              "data": "2026-09-01T20:48:58",
+              "autoria": "Senador Rogério Carvalho (PT/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/2ca0e90a-d058-4c32-82a8-06336b1e2254"
+            }
+          ]
+        },
+        {
+          "id": 2311838,
+          "data": "2026-09-02 08:40:53",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebidas as Emendas nºs 67 a 70, de autoria da Senadora Mara Gabrilli, nº 71, de autoria da Senadora Leila Barros, nº 72, de autoria da Senadora Soraya Thronicke, nºs 73 e 74, de autoria do Senador Zequinha Marinho, e nºs 75 a 77, de autoria do Senador Jayme Campos.\nEncaminhadas ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10310582,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 71 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 para criação da Guarda metroviária",
+              "data": "2026-09-01T20:15:12",
+              "autoria": "Senadora Leila Barros (PDT/DF)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/1e9d7612-b966-49a4-90dc-0c686cf56757"
+            },
+            {
+              "id": 10310565,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 67 - PEC 18/2025",
+              "descricao": "Emenda à PEC 18/2025 - Demonstração de capacidade financeira",
+              "data": "2026-09-01T20:55:41",
+              "autoria": "Senadora Mara Gabrilli (PSD/SP)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/9e01106b-6472-4b86-97fb-8727170faa30"
+            },
+            {
+              "id": 10310569,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 68 - PEC 18/2025",
+              "descricao": "Emenda à PEC 18/2025 - Transformação dos cargos",
+              "data": "2026-09-01T20:55:49",
+              "autoria": "Senadora Mara Gabrilli (PSD/SP)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/a1c6b7d2-9a18-4212-961a-6af85bb760ea"
+            },
+            {
+              "id": 10310573,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 69 - PEC 18/2025",
+              "descricao": "Emenda à PEC 18/2025 - Supressão da competência dos Estados de legislar sobre a organização dos guardas municipais",
+              "data": "2026-09-01T20:56:11",
+              "autoria": "Senadora Mara Gabrilli (PSD/SP)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/ab6cff02-1b88-4c19-94a6-29d85d829c40"
+            },
+            {
+              "id": 10310577,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 70 - PEC 18/2025",
+              "descricao": "Emenda à PEC 18/2025 - Recursos do FNSP e do Funpen",
+              "data": "2026-09-01T20:56:17",
+              "autoria": "Senadora Mara Gabrilli (PSD/SP)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/88908445-85d4-4352-9af7-9d8ee35714ff"
+            },
+            {
+              "id": 10310586,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 72 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - Guardas Metroferroviárias.",
+              "data": "2026-09-01T21:54:02",
+              "autoria": "Senadora Soraya Thronicke (PSB/MS)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/8853d051-94a4-442e-b7a5-afc24f4eb503"
+            },
+            {
+              "id": 10310597,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 75 - PEC 18/2025",
+              "descricao": "PEC da Segurança Pública: Carreira Policial",
+              "data": "2026-09-02T08:51:03",
+              "autoria": "Senador Jayme Campos (UNIÃO/MT)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/98a2ba4a-dcaf-4f0f-b3e0-586ba089493e"
+            },
+            {
+              "id": 10310601,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 76 - PEC 18/2025",
+              "descricao": "PEC 18/2025: Polícia Municipal",
+              "data": "2026-09-02T08:51:07",
+              "autoria": "Senador Jayme Campos (UNIÃO/MT)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/9fe60185-048d-40f4-983a-fddc5f78e247"
+            },
+            {
+              "id": 10310605,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 77 - PEC 18/2025",
+              "descricao": "PEC da Segurança Pública: Fronteiras",
+              "data": "2026-09-02T08:51:12",
+              "autoria": "Senador Jayme Campos (UNIÃO/MT)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/07356504-6e36-473a-92dd-54018eb16195"
+            },
+            {
+              "id": 10310749,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 73 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - SINDPOL",
+              "data": "2026-09-02T08:54:13",
+              "autoria": "Senador Zequinha Marinho (PODEMOS/PA)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/8eabd0c3-0f1d-4ffc-98a6-0dbfd839eefd"
+            },
+            {
+              "id": 10310753,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 74 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 competência da União, dos Estados, do Distrito Federal e dos Municípios",
+              "data": "2026-09-02T08:54:24",
+              "autoria": "Senador Zequinha Marinho (PODEMOS/PA)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/a7d910df-7f76-48ab-a9f3-2b89be0b30a3"
+            }
+          ]
+        },
+        {
+          "id": 2311881,
+          "data": "2026-09-02 10:17:37",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebidas as Emendas nºs 78 e 79, de autoria da Senadora Mara Gabrilli. \nEncaminhadas ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10310902,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 79 - PEC 18/2025",
+              "descricao": "Emenda à PEC 18/2025 - ABIN art. 91-A",
+              "data": "2026-09-02T10:12:26",
+              "autoria": "Senadora Mara Gabrilli (PSD/SP)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/d13149c3-06a8-4ef5-8e90-8b432f936bba"
+            },
+            {
+              "id": 10310880,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 78 - PEC 18/2025",
+              "descricao": "Emenda à PEC 18/2025 - ABIN art. 109",
+              "data": "2026-09-02T10:12:35",
+              "autoria": "Senadora Mara Gabrilli (PSD/SP)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/435dbe57-717a-4db7-af4c-ac6aa7f64e25"
+            }
+          ]
+        },
+        {
+          "id": 2312016,
+          "data": "2026-09-02 13:06:04",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda nº 80, de autoria da Senadora Leila Barros.\nEncaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10311363,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 80 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 PF PF CSB",
+              "data": "2026-09-02T13:01:03",
+              "autoria": "Senadora Leila Barros (PDT/DF)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/8a645f93-c7ed-4728-95cc-d2c68ce01440"
+            }
+          ]
+        },
+        {
+          "id": 2312114,
+          "data": "2026-09-02 15:43:44",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebida a Emenda nº 81, de autoria do Senador Rogerio Marinho.\nEncaminhada ao Relator para análise.",
+          "documentosAssociados": [
+            {
+              "id": 10312147,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 81 - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - referendo e maioridade penal",
+              "data": "2026-09-02T15:40:45",
+              "autoria": "Senador Rogerio Marinho (PL/RN)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/3896848d-6a42-4194-b568-6cb1cf0ab4b2"
+            }
+          ]
+        },
+        {
+          "id": 2312240,
+          "data": "2026-09-02 17:00:28",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Na 13ª Reunião Extraordinária, realizada nesta data, durante a discussão da matéria, o Senador Rogerio Carvalho apresenta Complementação de Voto sobre as Emendas n°s 67 a 81, concluindo pela rejeição dessas emendas.\n\nA Comissão aprova o Relatório, que passa a constituir o Parecer da CCJ, favorável à Proposta e às Emendas nºs 22-CCJ, 39-CCJ, 55-CCJ e 64-CCJ, parcialmente às Emendas nºs 58-CCJ e 63-CCJ, com a Emenda n° 82-CCJ (de redação) que apresenta e contrário às demais emendas apresentadas, ressalvados os destaques.\n\nNos termos do art. 312, parágrafo único do RISF, serão colocadas em votação as emendas destacadas n°s 13, 29 e 45, em data oportuna.\n\n",
+          "documentosAssociados": [
+            {
+              "id": 10312670,
+              "tipo": "Requerimento",
+              "siglaTipo": "REQUERIMENTO",
+              "identificacao": "REQ 33/2026 - CCJ",
+              "descricao": "Requer destaque da Emenda 13 à PEC 18 de 2025.",
+              "data": "2026-09-02T17:21:23",
+              "autoria": "Líder do PL Carlos Portinho (PL/RJ)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/a749b578-da8b-4805-85f3-8f9fcec55e17"
+            },
+            {
+              "id": 10312721,
+              "tipo": "Requerimento",
+              "siglaTipo": "REQUERIMENTO",
+              "identificacao": "REQ 34/2026 - CCJ",
+              "descricao": "Requer destaque da Emenda 29 à PEC 18 de 2025",
+              "data": "2026-09-02T17:28:27",
+              "autoria": "Líder do PL Carlos Portinho (PL/RJ)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/02a15ad6-d9a2-4e8f-b79a-e21fa870c77a"
+            },
+            {
+              "id": 10312791,
+              "tipo": "Requerimento",
+              "siglaTipo": "REQUERIMENTO",
+              "identificacao": "REQ 35/2026 - CCJ",
+              "descricao": "Requer destaque da Emenda 45 à PEC 18/2025.",
+              "data": "2026-09-02T17:35:11",
+              "autoria": "Líder do PL Carlos Portinho (PL/RJ)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/32e2bca5-0eea-4e44-b46d-c7c84887d305"
+            },
+            {
+              "id": 10312735,
+              "tipo": "Relatório Legislativo",
+              "siglaTipo": "RELATORIO",
+              "identificacao": "Relatório Legislativo - SF262807260637",
+              "descricao": "Da COMISSÃO DE CONSTITUIÇÃO, JUSTIÇA E CIDADANIA, sobre Proposta de Emenda à Constituição n° 18, de 2025, de  Presidência da República, que Altera os arts. 5º, 15, 22, 23, 24, 40, 49, 84, 103-B, 130-A e 144 da Constituição Federal e o art.76 do Ato das Disposições Constitucionais Transitórias; acrescenta os arts. 144-A e 144-B à Constituição Federal e os arts. 139, 140 e 141 ao Ato das Disposições Constitucionais Transitórias; e dá outras providências.",
+              "data": "2026-09-02T17:44:16",
+              "autoria": "Senador Rogério Carvalho (PT/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/ca5af4dc-c2d4-47aa-a947-6818a66caece"
+            }
+          ]
+        },
+        {
+          "id": 2319307,
+          "data": "2026-10-14 09:41:55",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Na 14ª Reunião Extraordinária, realizada nesta data, a Comissão aprova os ajustes redacionais propostos pelo relator, Senador Rogério Carvalho (Emenda n° 83-CCJ, de redação).\n\nFicam prejudicados os Destaques para as Emendas n°s 13, 29 e 45, nos termos do art. 300, XVII, do RISF.\n",
+          "idSituacaoIniciada": 89,
+          "siglaSituacaoIniciada": "APRVPAR",
+          "documentosAssociados": [
+            {
+              "id": 10329877,
+              "tipo": "Parecer",
+              "siglaTipo": "PARECER",
+              "identificacao": "P.S 61/2026 - CCJ",
+              "descricao": "Da COMISSÃO DE CONSTITUIÇÃO, JUSTIÇA E CIDADANIA, sobre Proposta de Emenda à Constituição n° 18, de 2025, de  Presidência da República, que Altera os arts. 5º, 15, 22, 23, 24, 40, 49, 84, 103-B, 130-A e 144 da Constituição Federal e o art.76 do Ato das Disposições Constitucionais Transitórias; acrescenta os arts. 144-A e 144-B à Constituição Federal e os arts. 139, 140 e 141 ao Ato das Disposições Constitucionais Transitórias; e dá outras providências.",
+              "data": "2026-10-14T00:00:00",
+              "autoria": "Comissão de Constituição, Justiça e Cidadania",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/6d95e961-fb10-4a5b-9b7c-dfaec52c4d59"
+            }
+          ]
+        },
+        {
+          "id": 2319377,
+          "data": "2026-10-14 10:54:35",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Encerrada a relatoria do Senador Rogério Carvalho por deliberação da matéria.\nÀ SLSF, para prosseguimento da tramitação."
+        },
+        {
+          "id": 2319467,
+          "data": "2026-10-14 16:38:30",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Recebida a Emenda nº 84, do Senador Rogerio Marinho e outros Senadores.",
+          "documentosAssociados": [
+            {
+              "id": 10330441,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 84 PLEN - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - redução da maioridade penal",
+              "data": "2026-10-14T16:33:13",
+              "autoria": "Senador Rogerio Marinho (PL/RN), Senador Carlos Portinho (PL/RJ), Senador Jorge Seif (PL/SC), Senador Eduardo Gomes (PL/TO), Senador Marcos do Val (AVANTE/ES), Senador Zequinha Marinho (PODE/PA), Senador Wilder Morais (PL/GO), Senador Laércio Oliveira (PP/SE), Senador Angelo Coronel (REPUBLICANOS/BA), Senador Nelsinho Trad (PSD/MS), Senador Izalci Lucas (PL/DF), Senador Vanderlan Cardoso (PSD/GO), Senador Jaime Bagattoli (PL/RO), Senador Styvenson Valentim (PODE/RN), Senador Sargento Reginauro (PSDB/CE), Senador Oriovisto Guimarães (PSDB/PR), Senador Wellington Fagundes (PL/MT), Senador Hamilton Mourão (REPUBLICANOS/RS), Senador Efraim Filho (PL/PB), Senadora Roberta Acioly (REPUBLICANOS/RR), Senador Luis Carlos Heinze (PP/RS), Senador Sergio Moro (PL/PR), Senador Ciro Nogueira (PP/PI), Senadora Tereza Cristina (PP/MS), Senador Esperidião Amin (PP/SC), Senador Dr. Hiran (PP/RR), Senador Alan Rick (REPUBLICANOS/AC), Senador Magno Malta (PL/ES), Senador Flávio Bolsonaro (PL/RJ), Senador Renzo Braz (PP/MG), Senador Marcos Rogério (PL/RO), Senador Marcio Bittar (PL/AC), Senador Confúcio Moura (MDB/RO), Senador Giordano (PODE/SP), Senador Cleitinho (REPUBLICANOS/MG), Senador Astronauta Marcos Pontes (PL/SP), Senador Jayme Campos (UNIÃO/MT)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/04871ea6-1d8d-4354-8270-25c550bdf686"
+            }
+          ]
+        },
+        {
+          "id": 2319468,
+          "data": "2026-10-14 16:46:57",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Recebida a Emenda nº 85, do Senador Carlos Portinho e outros Senadores.",
+          "documentosAssociados": [
+            {
+              "id": 10330417,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 85 PLEN - PEC 18/2025",
+              "descricao": "Emenda à PEC 18/2025 - defesa nacional",
+              "data": "2026-10-14T16:39:36",
+              "autoria": "Senador Carlos Portinho (PL/RJ), Senador Jorge Seif (PL/SC), Senador Jaime Bagattoli (PL/RO), Senadora Damares Alves (REPUBLICANOS/DF), Senador Eduardo Gomes (PL/TO), Senador Marcos do Val (AVANTE/ES), Senador Omar Aziz (PSD/AM), Senador Zequinha Marinho (PODE/PA), Senador Wilder Morais (PL/GO), Senador Izalci Lucas (PL/DF), Senador Vanderlan Cardoso (PSD/GO), Senador Chico Rodrigues (PSB/RR), Senador Sergio Moro (PL/PR), Senador Wellington Fagundes (PL/MT), Senador Oriovisto Guimarães (PSDB/PR), Senadora Roberta Acioly (REPUBLICANOS/RR), Senador Hamilton Mourão (REPUBLICANOS/RS), Senador Efraim Filho (PL/PB), Senador Luis Carlos Heinze (PP/RS), Senador Dr. Hiran (PP/RR), Senador Giordano (PODE/SP), Senador Nelsinho Trad (PSD/MS), Senador Marcos Rogério (PL/RO), Senador Marcio Bittar (PL/AC), Senador Magno Malta (PL/ES), Senador Astronauta Marcos Pontes (PL/SP), Senador Rogerio Marinho (PL/RN), Senadora Tereza Cristina (PP/MS)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/0f3d23b0-2415-4b78-9ff9-d5ff7ae627fd"
+            }
+          ]
+        },
+        {
+          "id": 2319537,
+          "data": "2026-10-14 17:16:09",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Recebido o Requerimento n° 711, de 2026, da Liderança do PL, que solicita destaque para votação em separado da Emenda nº 85.",
+          "documentosAssociados": [
+            {
+              "id": 10330449,
+              "tipo": "Requerimento",
+              "siglaTipo": "REQUERIMENTO",
+              "identificacao": "RQS 711/2026",
+              "descricao": "Requer, pela Liderança do Partido Liberal, destaque para votação em separado da Emenda nº 85 ao Projeto de Emenda à Constituição nº 18/2025.",
+              "data": "2026-10-14T17:03:13",
+              "autoria": "Líder do PL Carlos Portinho (PL/RJ)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/7e2f9491-a252-4185-a5b6-5c3192a96451"
+            }
+          ]
+        },
+        {
+          "id": 2319519,
+          "data": "2026-10-14 17:18:43",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Recebido o Requerimento n° 712, de 2026, da Liderança do PL, que solicita destaque para votação em separado da Emenda nº 84.",
+          "documentosAssociados": [
+            {
+              "id": 10330490,
+              "tipo": "Requerimento",
+              "siglaTipo": "REQUERIMENTO",
+              "identificacao": "RQS 712/2026",
+              "descricao": "Requer, pela Liderança do PL, destaque para votação em separado da Emenda nº 84 à Proposta de Emenda à Constituição nº 18/2025.",
+              "data": "2026-10-14T17:09:50",
+              "autoria": "Líder do PL Carlos Portinho (PL/RJ)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/53de05da-ff80-40e3-bb03-5315eafb3ed0"
+            }
+          ]
+        },
+        {
+          "id": 2319557,
+          "data": "2026-10-14 18:51:39",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Recebido o Requerimento nº 713, de 2026, de Líderes, que solicita calendário especial para a matéria.",
+          "documentosAssociados": [
+            {
+              "id": 10330515,
+              "tipo": "Requerimento",
+              "siglaTipo": "REQUERIMENTO",
+              "identificacao": "RQS 713/2026",
+              "descricao": "Requer calendário especial para a Proposta de Emenda à Constituição nº 18, de 2025.",
+              "data": "2026-10-14T18:45:39",
+              "autoria": "Líder do MDB Eduardo Braga (MDB/AM), Líder do PSD Omar Aziz (PSD/AM), Líder do Governo Teresa Leitão (PT/PE), Líder do MDB Marcelo Castro (MDB/PI), Líder do Bloco Parlamentar Pelo Brasil Weverton (PDT/MA), Líder do PT Camilo Santana (PT/CE), Líder do Bloco Parlamentar da Resistência Democrática Eliziane Gama (PSD/MA), Líder do Bloco Parlamentar Democracia Professora Dorinha Seabra (UNIÃO/TO)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/da001b29-9aa5-4c86-9c02-2e0920cc80a2"
+            }
+          ]
+        },
+        {
+          "id": 2319580,
+          "data": "2026-10-14 22:48:58",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "descricao": "(Sessão Deliberativa Ordinária - semipresencial - de 14 de outubro de 2026) \nCalendário especial aprovado para a matéria (Requerimento nº 713/2026 encaminhado à publicação). "
+        },
+        {
+          "id": 2319581,
+          "data": "2026-10-14 22:53:35",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Incluída em Ordem do Dia da Sessão Deliberativa Ordinária Semipresencial de 15/10/2026.\nDiscussão, em primeiro turno.",
+          "idSituacaoIniciada": 78,
+          "siglaSituacaoIniciada": "INCLOD"
+        },
+        {
+          "id": 2319740,
+          "data": "2026-10-15 13:28:47",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Recebida a Emenda nº 86, do Senador Eduardo Gomes e outros Senadores.",
+          "documentosAssociados": [
+            {
+              "id": 10330817,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 86 PLEN - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 agentes transito",
+              "data": "2026-10-15T13:22:23",
+              "autoria": "Senador Eduardo Gomes (PL/TO), Senador Hamilton Mourão (REPUBLICANOS/RS), Senador Veneziano Vital do Rêgo (MDB/PB), Senador Carlos Portinho (PL/RJ), Senador Jorge Kajuru (PSB/GO), Senadora Professora Dorinha Seabra (UNIÃO/TO), Senadora Roberta Acioly (REPUBLICANOS/RR), Senador Confúcio Moura (MDB/RO), Senador Efraim Filho (PL/PB), Senador Wellington Fagundes (PL/MT), Senador Jayme Campos (UNIÃO/MT), Senador Laércio Oliveira (PP/SE), Senador Irajá (PSD/TO), Senador Izalci Lucas (PL/DF), Senador Astronauta Marcos Pontes (PL/SP), Senador Magno Malta (PL/ES), Senador Wilder Morais (PL/GO), Senador Alessandro Vieira (MDB/SE), Senador Ciro Nogueira (PP/PI), Senador Zequinha Marinho (PODE/PA), Senador Jorge Seif (PL/SC), Senador Weverton (PDT/MA), Senador Cleitinho (REPUBLICANOS/MG), Senador Fabiano Contarato (PT/ES), Senador Marcos Rogério (PL/RO), Senadora Tereza Cristina (PP/MS), Senador Styvenson Valentim (PODE/RN)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/1bc19ad7-4ad3-406e-8ea9-d84a1e7970d4"
+            }
+          ]
+        },
+        {
+          "id": 2319723,
+          "data": "2026-10-15 15:43:11",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Recebido o Requerimento n° 714, de 2026, da Liderança do PL, que solicita destaque para votação em separado da Emenda nº 86.",
+          "documentosAssociados": [
+            {
+              "id": 10330875,
+              "tipo": "Requerimento",
+              "siglaTipo": "REQUERIMENTO",
+              "identificacao": "RQS 714/2026",
+              "descricao": "Requer, pela Liderança do PL, destaque para votação em separado da Emenda nº 86 da Proposta de Emenda à Constituição nº 18/2025.",
+              "data": "2026-10-15T15:36:10",
+              "autoria": "Líder do PL Carlos Portinho (PL/RJ)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/2f62dbe6-e74f-466c-8648-514d407e84e3"
+            }
+          ]
+        },
+        {
+          "id": 2319731,
+          "data": "2026-10-15 16:10:38",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Recebida a Emenda nº 87, do Senador Camilo Santana e outros Senadores.",
+          "documentosAssociados": [
+            {
+              "id": 10330955,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 87 PLEN - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - Versão Final Revisada",
+              "data": "2026-10-15T16:09:19",
+              "autoria": "Senador Camilo Santana (PT/CE), Senador Otto Alencar (PSD/BA), Senador Marcelo Castro (MDB/PI), Senador Omar Aziz (PSD/AM), Senador Eduardo Braga (MDB/AM), Senador Veneziano Vital do Rêgo (MDB/PB), Senador Beto Faro (PT/PA), Senador Chico Rodrigues (PSB/RR), Senador Jorge Kajuru (PSB/GO), Senadora Eliziane Gama (PSD/MA), Senador Sérgio Petecão (PSD/AC), Senador Fabiano Contarato (PT/ES), Senador Carlos Fávaro (PSD/MT), Senador Cid Gomes (PSB/CE), Senador Renan Filho (MDB/AL), Senador Cleitinho (REPUBLICANOS/MG), Senador Jaques Wagner (PT/BA), Senadora Daniella Ribeiro (PP/PB), Senadora Ana Paula Lobato (PSB/MA), Senador Flávio Arns (PSB/PR), Senador Rogério Carvalho (PT/SE), Senador Confúcio Moura (MDB/RO), Senador Irajá (PSD/TO), Senadora Soraya Thronicke (PSB/MS), Senadora Leany Lemos (PSB/DF), Senador Jader Barbalho (MDB/PA), Senador Renan Calheiros (MDB/AL), Senador Weverton (PDT/MA)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/468c39b1-cc18-4ecc-a14e-77348e5215e9"
+            }
+          ]
+        },
+        {
+          "id": 2319798,
+          "data": "2026-10-15 16:15:44",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Recebida a Emenda nº 88, do Senador Eduardo Gomes e outros Senadores.",
+          "documentosAssociados": [
+            {
+              "id": 10330946,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 88 PLEN - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 agentes socioeducativos",
+              "data": "2026-10-15T16:12:56",
+              "autoria": "Senador Eduardo Gomes (PL/TO), Senador Sergio Moro (PL/PR), Senador Hamilton Mourão (REPUBLICANOS/RS), Senador Jorge Kajuru (PSB/GO), Senador Jayme Campos (UNIÃO/MT), Senadora Professora Dorinha Seabra (UNIÃO/TO), Senador Alan Rick (REPUBLICANOS/AC), Senadora Roberta Acioly (REPUBLICANOS/RR), Senador Confúcio Moura (MDB/RO), Senador Izalci Lucas (PL/DF), Senador Astronauta Marcos Pontes (PL/SP), Senador Wilder Morais (PL/GO), Senador Zequinha Marinho (PODE/PA), Senador Jorge Seif (PL/SC), Senador Sargento Reginauro (PSDB/CE), Senador Lucas Barreto (PSD/AP), Senador Fabiano Contarato (PT/ES), Senador Marcos Rogério (PL/RO), Senadora Tereza Cristina (PP/MS), Senador Styvenson Valentim (PODE/RN), Senador Giordano (PODE/SP), Senador Vanderlan Cardoso (PSD/GO), Senador Jaime Bagattoli (PL/RO), Senador Cleitinho (REPUBLICANOS/MG), Senador Efraim Filho (PL/PB), Senador Marcio Bittar (PL/AC), Senador Esperidião Amin (PP/SC)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/70eaa57b-0525-48a2-ba4d-b43124d679f3"
+            }
+          ]
+        },
+        {
+          "id": 2319820,
+          "data": "2026-10-15 17:45:45",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Recebido o Requerimento nº 717, de 2026, da Liderança do PL, que solicita retirada do Requerimento nº 714, de 2026. ",
+          "documentosAssociados": [
+            {
+              "id": 10331058,
+              "tipo": "Requerimento",
+              "siglaTipo": "REQUERIMENTO",
+              "identificacao": "RQS 717/2026",
+              "descricao": "Requer, pela Liderança do PL, a retirada do Requerimento nº 714, de 2026, à Proposta de Emenda à Constituição nº 18/2025.",
+              "data": "2026-10-15T17:40:46",
+              "autoria": "Líder do PL Carlos Portinho (PL/RJ)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/28a41515-6e7c-46e5-9af8-9245644ec4f5"
+            }
+          ]
+        },
+        {
+          "id": 2319843,
+          "data": "2026-10-15 17:54:33",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Recebido o Requerimento nº 718 de 2026, da Liderança do PL, que solicita destaque para votação em separado da Emenda nº 87.",
+          "documentosAssociados": [
+            {
+              "id": 10331071,
+              "tipo": "Requerimento",
+              "siglaTipo": "REQUERIMENTO",
+              "identificacao": "RQS 718/2026",
+              "descricao": "Requer, pela Liderança do Partido Liberal, destaque para votação em separado da Emenda nº 87 à Proposta de Emenda à Constituição nº 18, de 2025.",
+              "data": "2026-10-15T17:45:53",
+              "autoria": "Líder do PL Carlos Portinho (PL/RJ)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/0631e207-7752-4b7f-a4ae-ae41c5873116"
+            }
+          ]
+        },
+        {
+          "id": 2319844,
+          "data": "2026-10-15 17:56:04",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Recebido o Requerimento n° 719, de 2026, da Liderança do PP, que solicita destaque para votação em separado da Emenda nº 86.",
+          "documentosAssociados": [
+            {
+              "id": 10331074,
+              "tipo": "Requerimento",
+              "siglaTipo": "REQUERIMENTO",
+              "identificacao": "RQS 719/2026",
+              "descricao": "Requer, pela Liderança do Progressistas, destaque para votação em separado da Emenda nº 86 à Proposta de Emenda à Constituição nº 18, de 2025.",
+              "data": "2026-10-15T17:47:37",
+              "autoria": "Líder do PP Tereza Cristina (PP/MS)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/38c8a64d-760b-4289-98c8-2b9ab0bfc755"
+            }
+          ]
+        },
+        {
+          "id": 2319847,
+          "data": "2026-10-15 19:07:09",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "descricao": "(Sessão Deliberativa Ordinária - semipresencial - de 15 de outubro de 2026) \nEncaminhado à publicação os Requerimentos nºs 714, 717, 718 e 719, de 2026.\nA matéria foi retirada de pauta. ",
+          "idSituacaoIniciada": 8,
+          "siglaSituacaoIniciada": "PRONDEPLEN"
+        },
+        {
+          "id": 2320236,
+          "data": "2026-10-19 16:13:48",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Aguardando inclusão em Ordem do Dia.\nDiscussão, em primeiro turno.\n(Aprovado o Requerimento nº 713, de 2026, de calendário especial para a matéria, na Sessão Plenária de 14/10/2026)"
+        },
+        {
+          "id": 2322658,
+          "data": "2026-11-03 08:54:06",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Incluída em Ordem do Dia da Sessão Deliberativa Ordinária Semipresencial de 03/11/2026.\nPrimeira sessão de discussão, em primeiro turno.",
+          "idSituacaoIniciada": 78,
+          "siglaSituacaoIniciada": "INCLOD"
+        },
+        {
+          "id": 2322880,
+          "data": "2026-11-03 15:29:28",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Recebida a Emenda nº 89, do Senador Dr. Hiran e outros Senadores.",
+          "documentosAssociados": [
+            {
+              "id": 10339418,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 89 PLEN - PEC 18/2025",
+              "descricao": "Emenda de Plenário à PEC 18/2025 - Reconhecimento expresso das polícias científicas como órgãos da segurança pública.",
+              "data": "2026-11-03T14:48:37",
+              "autoria": "Senador Dr. Hiran (PP/RR), Senador Styvenson Valentim (PODE/RN), Senador Astronauta Marcos Pontes (PL/SP), Senador Cleitinho (REPUBLICANOS/MG), Senador Weverton (PDT/MA), Senador Hamilton Mourão (REPUBLICANOS/RS), Senador Lucas Barreto (PSD/AP), Senador Marcos Rogério (PL/RO), Senador Jorge Seif (PL/SC), Senador Plínio Valério (PSDB/AM), Senador Esperidião Amin (PP/SC), Senadora Tereza Cristina (PP/MS), Senador Magno Malta (PL/ES), Senador Jaime Bagattoli (PL/RO), Senador Sargento Reginauro (PSDB/CE), Senador Carlos Portinho (PL/RJ), Senador Zequinha Marinho (PODE/PA), Senadora Roberta Acioly (REPUBLICANOS/RR), Senador Eduardo Gomes (PL/TO), Senador Ciro Nogueira (PP/PI), Senador Marcio Bittar (PL/AC), Senadora Damares Alves (REPUBLICANOS/DF), Senador Nelsinho Trad (PSD/MS), Senador Rogerio Marinho (PL/RN), Senador Vanderlan Cardoso (PSD/GO), Senador Wilder Morais (PL/GO), Senador Laércio Oliveira (PP/SE), Senador Alessandro Vieira (MDB/SE), Senador Sergio Moro (PL/PR)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/51e62e87-6ae4-4e5f-b397-67e85964b6d3"
+            }
+          ]
+        },
+        {
+          "id": 2322893,
+          "data": "2026-11-03 16:54:56",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Recebido Relatório do Senador Rogério Carvalho sobre as Emendas nºs 84 a 89.",
+          "documentosAssociados": [
+            {
+              "id": 10339581,
+              "tipo": "Relatório Legislativo",
+              "siglaTipo": "RELATORIO",
+              "identificacao": "Relatório Legislativo - SF261549391410",
+              "descricao": "Relatório emendas PEC 18-2025",
+              "data": "2026-11-03T16:52:59",
+              "autoria": "Senador Rogério Carvalho (PT/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/a49b2fa6-9df2-40af-ad61-4b384e287843"
+            }
+          ]
+        },
+        {
+          "id": 2322938,
+          "data": "2026-11-03 17:05:10",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Recebida a Emenda nº 90, da Senadora Professora Dorinha Seabra e outros Senadores.",
+          "documentosAssociados": [
+            {
+              "id": 10339563,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 90 PLEN - PEC 18/2025",
+              "descricao": "Emenda  à PEC 18/2025 - ABC",
+              "data": "2026-11-03T17:01:01",
+              "autoria": "Senadora Professora Dorinha Seabra (UNIÃO/TO), Senador Hamilton Mourão (REPUBLICANOS/RS), Senador Jader Barbalho (MDB/PA), Senador Weverton (PDT/MA), Senador Confúcio Moura (MDB/RO), Senadora Soraya Thronicke (PSB/MS), Senador Eduardo Gomes (PL/TO), Senador Wellington Fagundes (PL/MT), Senador Zequinha Marinho (PODE/PA), Senador Sergio Moro (PL/PR), Senador Cleitinho (REPUBLICANOS/MG), Senador Jayme Campos (UNIÃO/MT), Senador Nelsinho Trad (PSD/MS), Senador Efraim Filho (PL/PB), Senador Plínio Valério (PSDB/AM), Senador Jorge Seif (PL/SC), Senadora Ivete da Silveira (MDB/SC), Senador Flávio Arns (PSB/PR), Senador Sargento Reginauro (PSDB/CE), Senador Magno Malta (PL/ES), Senador Irajá (PSD/TO), Senadora Mara Gabrilli (PSD/SP), Senador Lucas Barreto (PSD/AP), Senador Alessandro Vieira (MDB/SE), Senador Astronauta Marcos Pontes (PL/SP), Senadora Roberta Acioly (REPUBLICANOS/RR), Senadora Zenaide Maia (PSD/RN)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/c1aa9732-4d6b-4d09-9127-ee4dbbf157b2"
+            }
+          ]
+        },
+        {
+          "id": 2322966,
+          "data": "2026-11-03 17:40:22",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Recebido o Requerimento n° 740, de 2026, da Liderança do União Brasil, que solicita destaque para votação em separado da Emenda nº 90.",
+          "documentosAssociados": [
+            {
+              "id": 10339659,
+              "tipo": "Requerimento",
+              "siglaTipo": "REQUERIMENTO",
+              "identificacao": "RQS 740/2026",
+              "descricao": "Requer, pela Liderança do União Brasil, destaque para votação em separado da Emenda nº 90 da Proposta de Emenda à Constituição nº 18/2025. ",
+              "data": "2026-11-03T17:27:04",
+              "autoria": "Líder do UNIÃO Professora Dorinha Seabra (UNIÃO/TO)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/ca776b8b-b9b1-4f0b-b01e-df51618cb6aa"
+            }
+          ]
+        },
+        {
+          "id": 2322988,
+          "data": "2026-11-03 20:49:57",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "descricao": "(Sessão Deliberativa Ordinária de 3 de novembro de 2026) \nEncaminhadas à publicação as Emendas nºs: 84 a 90 apresentadas perante a Mesa. \nEncaminhado à publicação o Parecer nº 212, de 2026-PLEN/SF, do Senador Rogério Carvalho, contrário às Emendas nºs 85, 86, 88 e 89, com a apresentação da Emenda nº 91, de redação, e dos Requerimentos nºs 741 e 742/2026 de destaque das Emendas nºs 84 e 87, respectivamente, para constituição de proposições em separado. \nEncerrada a discussão da matéria. \nEncaminhados à publicação e aprovados os Requerimentos nºs 741 e 742/2026, do Relator. Verificação de votação - Sim: 38, Não: 36, Abstenção: 1, Total: 76. \nAs Emendas nºs 84 e 87 passam a tramitar autonomamente, na forma de Propostas de Emenda à Constituição, e vão ao exame da Comissão de Constituição, Justiça e Cidadania. Em razão da tramitação autônoma, ficam prejudicados os Requerimentos nºs 712 e 718/2026, de destaque para votação em separado das referidas emendas. \nEncaminhado à publicação o Parecer nº 213, de 2026-PLEN-SF, do Senador Rogério Carvalho, contrário à emenda nº 90. \nEncaminhado à publicação o RQS nº 740, de 2026, da Senadora Professora Dorinha Seabra, Líder do União Brasil, de destaque, para votação em separado, da Emenda nº 90.  \nDeferido o Requerimento nº 711/2026, de destaque para votação em separado da Emenda nº 85. \nPrejudicados os Requerimentos nº 719 e 740/2026.\nAprovada a proposta, com as Emendas nºs 22, 39, 55, 64 e parcialmente as Emendas nºs 58 e 63, e as Emendas nºs 82, 83 e 91, de redação, em primeiro turno, com o seguinte resultado: Sim: 73, Não: 0, Abstenção: 0, Total: 74 \nRejeitado o art. 139, fica prejudicado o parágrafo único do art. 140 do ADCT, constante no art. 4º da proposta, que será excluído do texto da matéria.  \nAprovada a Emenda nº 85, nos termos do texto acordado em Plenário, com o seguinte resultado: Sim: 67, Não: 0, Abstenção: 0, Total: 68. \nEncaminhado à publicação o Parecer nº 214, de 2026-PLEN/SF, da Comissão Diretora, com a redação para o segundo turno.  \nAprovada a proposta, em segundo turno, com o seguinte resultado: Sim: 75, Não: 0, Abstenção: 0, Total: 76. ",
+          "idSituacaoIniciada": 25,
+          "siglaSituacaoIniciada": "APRVD",
+          "documentosAssociados": [
+            {
+              "id": 10340044,
+              "tipo": "Parecer de redação",
+              "siglaTipo": "PARECER_REDACAO",
+              "identificacao": "P.S 214/2026 - PLEN",
+              "descricao": "Parecer nº 214, de 2026-PLEN/SF, da Comissão Diretora, com a redação para o segundo turno.",
+              "data": "2026-11-03T00:00:00",
+              "autoria": "Comissão Diretora do Senado Federal",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/763e8e44-a9c5-4bcd-be7a-8ef444910e21"
+            },
+            {
+              "id": 10340014,
+              "tipo": "Listagem ou relatório descritivo",
+              "siglaTipo": "LISTAGEM_RELATORIO",
+              "identificacao": "Listagem ou relatório descritivo - SF264476534486",
+              "descricao": "Lista da terceira votação.",
+              "data": "2026-11-03T00:00:00",
+              "autoria": "Senado Federal",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/03e0e172-adf7-44f3-b1a5-22568946476d"
+            },
+            {
+              "id": 10340006,
+              "tipo": "Adendo de Plenário",
+              "siglaTipo": "ADENDO_PLENARIO",
+              "identificacao": "Adendo de Plenário - SF266473318916",
+              "descricao": "Acordo em Plenário sobre a Emenda nº 85.",
+              "data": "2026-11-03T00:00:00",
+              "autoria": "Senador Rogério Carvalho (PT/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/8be99b91-030f-4360-bc7e-63e070e8174c"
+            },
+            {
+              "id": 10340009,
+              "tipo": "Parecer",
+              "siglaTipo": "PARECER",
+              "identificacao": "P.S 213/2026 - PLEN",
+              "descricao": "Parecer nº 213, de 2026 PLEN/SF",
+              "data": "2026-11-03T00:00:00",
+              "autoria": "Senador Rogério Carvalho (PT/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/1ffc577a-6750-4c2f-a90f-afbb19763bf9"
+            },
+            {
+              "id": 10340050,
+              "tipo": "Listagem ou relatório descritivo",
+              "siglaTipo": "LISTAGEM_RELATORIO",
+              "identificacao": "Listagem ou relatório descritivo - SF263096390951",
+              "descricao": "Lista da primeira votação.",
+              "data": "2026-11-03T00:00:00",
+              "autoria": "Senado Federal",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/8b8a38d7-89ca-4a74-ab2e-6c302c636145"
+            },
+            {
+              "id": 10340047,
+              "tipo": "Parecer",
+              "siglaTipo": "PARECER",
+              "identificacao": "P.S 212/2026 - PLEN",
+              "descricao": "Parecer nº 212, de 2026 PLEN/SF",
+              "data": "2026-11-03T00:00:00",
+              "autoria": "Senador Rogério Carvalho (PT/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/778b70bb-7970-4586-b850-1c1f2fc72e6a"
+            },
+            {
+              "id": 10340053,
+              "tipo": "Listagem ou relatório descritivo",
+              "siglaTipo": "LISTAGEM_RELATORIO",
+              "identificacao": "Listagem ou relatório descritivo - SF266489754806",
+              "descricao": "Lista da segunda votação.",
+              "data": "2026-11-03T00:00:00",
+              "autoria": "Senado Federal",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/065abd0b-05af-4387-aeb7-0683bf755a8b"
+            },
+            {
+              "id": 10340056,
+              "tipo": "Listagem ou relatório descritivo",
+              "siglaTipo": "LISTAGEM_RELATORIO",
+              "identificacao": "Listagem ou relatório descritivo - SF262375478516",
+              "descricao": "Lista da quarta votação.",
+              "data": "2026-11-03T00:00:00",
+              "autoria": "Senado Federal",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/b73cc5f8-2867-4523-a919-8b8928a2d2aa"
+            },
+            {
+              "id": 10340466,
+              "tipo": "Emenda",
+              "siglaTipo": "EMENDA",
+              "identificacao": "EMENDA 91 PLEN - PEC 18/2025",
+              "descricao": "Emenda nº 91-PLEN, de redação.",
+              "data": "2026-11-04T00:00:00",
+              "autoria": "Senador Rogério Carvalho (PT/SE)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/df4687b9-d5ce-4036-9995-2b05f5e18b12"
+            }
+          ]
+        },
+        {
+          "id": 2323918,
+          "data": "2026-11-05 10:23:15",
+          "colegiado": {},
+          "enteAdministrativo": {
+            "id": 55304,
+            "casa": "SF",
+            "sigla": "SEXPE",
+            "nome": "Secretaria de Expediente"
+          },
+          "descricao": "Anexado o texto revisado.",
+          "documentosAssociados": [
+            {
+              "id": 10343454,
+              "tipo": "Minuta",
+              "siglaTipo": "MINUTA",
+              "identificacao": "Minuta - SF261185982144",
+              "data": "2026-11-05T10:23:08",
+              "autoria": "Senado Federal",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/46a6dc8e-687b-4667-8404-7d7cf1b7a4a0"
+            }
+          ]
+        },
+        {
+          "id": 2324696,
+          "data": "2026-11-06 17:21:44",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Recebida e encaminhada à publicação declaração de voto do Senador Carlos Portinho.",
+          "documentosAssociados": [
+            {
+              "id": 10345323,
+              "tipo": "Ofício",
+              "siglaTipo": "OFICIO",
+              "identificacao": "OF 16/2026 - Gabinete do Senador Carlos Portinho",
+              "descricao": "Declaração de voto contrário aos RQS 741 e 742/2026.",
+              "data": "2026-11-06T16:34:34",
+              "autoria": "Senador Carlos Portinho (PL/RJ)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/3e38e4e0-f626-4434-a9b6-89e16af83c99"
+            }
+          ]
+        }
+      ],
+      "movimentacoes": [
+        {
+          "id": 10304194,
+          "dataEnvio": "2026-08-21 16:11:55",
+          "enteOrigem": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "dataRecebimento": "2026-08-21 16:18:00",
+          "enteDestino": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "colegiadoDestino": {}
+        },
+        {
+          "id": 10304231,
+          "dataEnvio": "2026-08-21 16:20:01",
+          "enteOrigem": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "dataRecebimento": "2026-08-21 16:21:26",
+          "enteDestino": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "colegiadoDestino": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          }
+        },
+        {
+          "id": 10330056,
+          "dataEnvio": "2026-10-14 12:39:32",
+          "enteOrigem": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "dataRecebimento": "2026-10-14 13:39:34",
+          "enteDestino": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "colegiadoDestino": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          }
+        },
+        {
+          "id": 10330617,
+          "dataEnvio": "2026-10-14 22:48:03",
+          "enteOrigem": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "dataRecebimento": "2026-10-14 22:48:52",
+          "enteDestino": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "colegiadoDestino": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          }
+        },
+        {
+          "id": 10330618,
+          "dataEnvio": "2026-10-14 22:50:41",
+          "enteOrigem": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "dataRecebimento": "2026-10-14 22:53:23",
+          "enteDestino": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "colegiadoDestino": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          }
+        },
+        {
+          "id": 10331129,
+          "dataEnvio": "2026-10-15 19:02:07",
+          "enteOrigem": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "dataRecebimento": "2026-10-15 19:06:42",
+          "enteDestino": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "colegiadoDestino": {}
+        },
+        {
+          "id": 10331181,
+          "dataEnvio": "2026-10-15 19:45:21",
+          "enteOrigem": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "dataRecebimento": "2026-10-15 20:21:25",
+          "enteDestino": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "colegiadoDestino": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          }
+        },
+        {
+          "id": 10339999,
+          "dataEnvio": "2026-11-03 20:48:58",
+          "enteOrigem": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "dataRecebimento": "2026-11-03 20:49:26",
+          "enteDestino": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "colegiadoDestino": {}
+        },
+        {
+          "id": 10340012,
+          "dataEnvio": "2026-11-03 21:19:11",
+          "enteOrigem": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "dataRecebimento": null,
+          "enteDestino": {
+            "id": 7359809,
+            "casa": "SF",
+            "sigla": "NRELE",
+            "nome": "Núcleo de Redação Legislativa"
+          },
+          "colegiadoDestino": {}
+        },
+        {
+          "id": 10340071,
+          "dataEnvio": "2026-11-03 23:26:05",
+          "enteOrigem": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "dataRecebimento": null,
+          "enteDestino": {
+            "id": 7359809,
+            "casa": "SF",
+            "sigla": "NRELE",
+            "nome": "Núcleo de Redação Legislativa"
+          },
+          "colegiadoDestino": {}
+        },
+        {
+          "id": 10340475,
+          "dataEnvio": "2026-11-04 09:27:09",
+          "enteOrigem": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "dataRecebimento": null,
+          "enteDestino": {
+            "id": 7359809,
+            "casa": "SF",
+            "sigla": "NRELE",
+            "nome": "Núcleo de Redação Legislativa"
+          },
+          "colegiadoDestino": {}
+        },
+        {
+          "id": 10341557,
+          "dataEnvio": "2026-11-04 14:03:06",
+          "enteOrigem": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "dataRecebimento": "2026-11-04 14:04:54",
+          "enteDestino": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "colegiadoDestino": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          }
+        },
+        {
+          "id": 10341561,
+          "dataEnvio": "2026-11-04 14:09:18",
+          "enteOrigem": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "dataRecebimento": "2026-11-04 14:11:05",
+          "enteDestino": {
+            "id": 7359809,
+            "casa": "SF",
+            "sigla": "NRELE",
+            "nome": "Núcleo de Redação Legislativa"
+          },
+          "colegiadoDestino": {}
+        },
+        {
+          "id": 10343452,
+          "dataEnvio": "2026-11-05 10:09:28",
+          "enteOrigem": {
+            "id": 7359809,
+            "casa": "SF",
+            "sigla": "NRELE",
+            "nome": "Núcleo de Redação Legislativa"
+          },
+          "dataRecebimento": "2026-11-05 10:17:35",
+          "enteDestino": {
+            "id": 55304,
+            "casa": "SF",
+            "sigla": "SEXPE",
+            "nome": "Secretaria de Expediente"
+          },
+          "colegiadoDestino": {}
+        },
+        {
+          "id": 10345421,
+          "dataEnvio": "2026-11-06 17:15:03",
+          "enteOrigem": {
+            "id": 55304,
+            "casa": "SF",
+            "sigla": "SEXPE",
+            "nome": "Secretaria de Expediente"
+          },
+          "dataRecebimento": "2026-11-06 17:15:17",
+          "enteDestino": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "colegiadoDestino": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          }
+        },
+        {
+          "id": 10345429,
+          "dataEnvio": "2026-11-06 17:24:39",
+          "enteOrigem": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "dataRecebimento": "2026-11-09 08:56:08",
+          "enteDestino": {
+            "id": 55304,
+            "casa": "SF",
+            "sigla": "SEXPE",
+            "nome": "Secretaria de Expediente"
+          },
+          "colegiadoDestino": {}
+        }
+      ]
+    }
+  ],
+  "ordensDoDia": [
+    {
+      "codigoSessao": 594169,
+      "dataSessao": "2026-11-03T14:00:00",
+      "casaSessao": "SF",
+      "codigoSessaoLegislativa": 874,
+      "siglaTipoSessao": "DOR",
+      "numeroSessao": "139",
+      "tipoApreciacao": "Primeira sessão de discussão, em primeiro turno"
+    },
+    {
+      "codigoSessao": 594169,
+      "dataSessao": "2026-11-03T14:00:00",
+      "casaSessao": "SF",
+      "codigoSessaoLegislativa": 874,
+      "siglaTipoSessao": "DOR",
+      "numeroSessao": "139",
+      "tipoApreciacao": "Primeira sessão de discussão, em primeiro turno"
+    }
+  ],
+  "deliberacao": {
+    "data": "2026-11-03",
+    "siglaTipo": "APROVADA_NO_PLENARIO",
+    "tipoDeliberacao": "Aprovada pelo Plenário",
+    "idDestino": 2,
+    "siglaDestino": "PROMULGACAO",
+    "destino": "À promulgação"
+  },
+  "normaGerada": {},
+  "ultimaInformacaoAtualizada": "EVENTO_LEGISLATIVO",
+  "dthUltimaAtualizacao": "2026-11-09T08:56:08.591000"
+}
