@@ -59,7 +59,7 @@ A política explicada em linguagem simples e de forma interativa, a partir de ca
 ## Evidence on Hand
 
 - **Os textos das trilhas ainda não existem.** Os tópicos saem na #31, e os artigos e as perguntas do quiz, na #34. Até lá, o site usa artigos de exemplo, com a fonte oficial real.
-- **A pesquisa sobre o que o eleitor sabe de política ainda está na #33.** Nenhuma tela afirma números sobre o eleitor sem essa fonte.
+- **A pesquisa sobre o que o eleitor sabe de política está no `docs/problema.md`.** Nenhuma tela afirma números sobre o eleitor sem essa fonte.
 - **O piloto ainda não aconteceu (#40).** Não há depoimentos, números de uso nem resultados para mostrar.
 
 ## Product Principles
