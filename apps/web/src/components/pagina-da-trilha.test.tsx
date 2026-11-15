@@ -70,11 +70,20 @@ function perguntasDoQuiz() {
  * a página do quiz guarda.
  */
 function responderOQuiz(quantas: number) {
-	const respostas = Object.fromEntries(
-		perguntasDoQuiz()
-			.slice(0, quantas)
-			.map((pergunta) => [pergunta.enunciado, pergunta.opcoes[0]]),
+	guardarRespostas(
+		Object.fromEntries(
+			perguntasDoQuiz()
+				.slice(0, quantas)
+				.map((pergunta) => [pergunta.enunciado, pergunta.opcoes[0]]),
+		),
 	);
+}
+
+/**
+ * Guarda no navegador as respostas, do enunciado para o texto da opção, como a
+ * página do quiz guarda.
+ */
+function guardarRespostas(respostas: Record<string, string>) {
 	window.localStorage.setItem(
 		RESPOSTAS,
 		JSON.stringify({ [`${TRILHA}/quiz`]: { tentativas: [{ respostas }] } }),
@@ -174,6 +183,28 @@ describe("página da trilha", () => {
 		expect(botao.getAttribute("href")).toBe("/trilhas");
 		expect(
 			screen.queryByRole("link", { name: "Responder o quiz da trilha" }),
+		).toBeNull();
+	});
+
+	// Uma resposta cujo texto não está mais entre as opções do arquivo conta como
+	// sem resposta, como na página do quiz.
+	it("com todas as respostas guardadas, mas uma com um texto que mudou no arquivo, o botão continua levando ao quiz", async () => {
+		const perguntas = perguntasDoQuiz();
+		guardarRespostas({
+			...Object.fromEntries(
+				perguntas.map((pergunta) => [pergunta.enunciado, pergunta.opcoes[0]]),
+			),
+			[perguntas[0].enunciado]: "Uma opção que mudou no arquivo",
+		});
+		abrir(ARTIGOS);
+		const botao = await screen.findByRole("link", {
+			name: "Responder o quiz da trilha",
+		});
+
+		expect(perguntas).toHaveLength(6);
+		expect(botao.getAttribute("href")).toBe(`/trilhas/${TRILHA}/quiz`);
+		expect(
+			screen.queryByRole("link", { name: "Ver as outras trilhas" }),
 		).toBeNull();
 	});
 

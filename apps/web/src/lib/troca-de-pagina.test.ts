@@ -455,6 +455,22 @@ describe("semErroNaTrocaPulada", () => {
 		expect(soltas).toEqual([]);
 	});
 
+	it("deixa solto o erro de outro tipo, que continua aparecendo no console", async () => {
+		const erro = new DOMException(
+			"Transition was aborted because of invalid state",
+			"InvalidStateError",
+		);
+		const router = routerComTroca(erro);
+		semErroNaTrocaPulada(router);
+
+		const soltas = await soltasDurante(() =>
+			router.startViewTransition(async () => {}),
+		);
+
+		expect(soltas).toHaveLength(1);
+		expect(soltas[0]).toBe(erro);
+	});
+
 	it("num navegador sem o activeViewTransition, só começa a troca", async () => {
 		const novaPagina = vi.fn(async () => {});
 		const router = {

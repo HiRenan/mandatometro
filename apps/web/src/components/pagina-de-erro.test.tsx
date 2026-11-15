@@ -33,10 +33,13 @@ afterEach(() => {
 
 /**
  * Um site de mentira com a página de erro e o carregando do router.tsx, e uma
- * página que pede dados. Com a `rolagem`, o router devolve a rolagem de cada
- * endereço, como o do site (router.tsx).
+ * página que pede dados, com um trecho (#caminho). Com a `rolagem`, o router
+ * devolve a rolagem de cada endereço, como o do site (router.tsx).
  */
-function abrir(carregar: () => Promise<string>, { rolagem = false } = {}) {
+function abrir(
+	carregar: () => Promise<string>,
+	{ rolagem = false, endereco = "/artigo" } = {},
+) {
 	const raiz = createRootRoute({
 		component: () => (
 			<main id="conteudo">
@@ -49,7 +52,12 @@ function abrir(carregar: () => Promise<string>, { rolagem = false } = {}) {
 		path: "/artigo",
 		loader: carregar,
 		component: function Pagina() {
-			return <h1>{pagina.useLoaderData()}</h1>;
+			return (
+				<>
+					<h1>{pagina.useLoaderData()}</h1>
+					<h2 id="caminho">O caminho</h2>
+				</>
+			);
 		},
 	});
 	const trilhas = createRoute({
@@ -59,7 +67,7 @@ function abrir(carregar: () => Promise<string>, { rolagem = false } = {}) {
 	});
 	const router = createRouter({
 		routeTree: raiz.addChildren([pagina, trilhas]),
-		history: createMemoryHistory({ initialEntries: ["/artigo"] }),
+		history: createMemoryHistory({ initialEntries: [endereco] }),
 		defaultErrorComponent: PaginaDeErro,
 		defaultPendingComponent: Carregando,
 		...TEMPOS_DO_CARREGANDO,
@@ -147,6 +155,48 @@ describe("página de erro", () => {
 			expect.objectContaining({ top: 575 }),
 		);
 		expect(rolagens.mock.lastCall).toEqual([0, 0]);
+	});
+
+	// Com o endereço num trecho da página (o #caminho do link da página inicial),
+	// a página que chega começa nele, como numa navegação.
+	it("num endereço com #caminho, a página que chega depois de um Tentar de novo começa no trecho", async () => {
+		const carregar = vi
+			.fn<() => Promise<string>>()
+			.mockImplementationOnce(semRede)
+			.mockResolvedValue("Quem pode propor uma lei");
+		// As rolagens, na ordem: as da janela e as do trecho, que o jsdom não tem.
+		const rolagens: unknown[][] = [];
+		vi.mocked(window.scrollTo).mockImplementation((...valores: unknown[]) => {
+			rolagens.push(["janela", ...valores]);
+		});
+		Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+			configurable: true,
+			value: function (this: HTMLElement) {
+				rolagens.push(["trecho", this.id]);
+			},
+		});
+		try {
+			abrir(carregar, { rolagem: true, endereco: "/artigo#caminho" });
+			const botao = await screen.findByRole("button", {
+				name: "Tentar de novo",
+			});
+			vi.spyOn(window, "scrollY", "get").mockReturnValue(575);
+			document.dispatchEvent(new Event("scroll"));
+			rolagens.length = 0;
+
+			fireEvent.click(botao);
+			const trecho = await screen.findByRole("heading", { name: "O caminho" });
+			await waitFor(() => expect(document.activeElement).toBe(trecho));
+
+			// O router devolveu os 575 px, e a página foi ao trecho depois.
+			expect(rolagens).toContainEqual([
+				"janela",
+				expect.objectContaining({ top: 575 }),
+			]);
+			expect(rolagens.at(-1)).toEqual(["trecho", "caminho"]);
+		} finally {
+			Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
+		}
 	});
 
 	it("se falha de novo, avisa e devolve o foco ao botão", async () => {
