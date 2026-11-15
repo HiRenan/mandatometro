@@ -52,7 +52,7 @@ Os três números para o README e para o vídeo:
 
 #### 87% sabem pouco ou nada sobre emendas parlamentares
 
-- **Números:** 69% já ouviram falar em emendas parlamentares, mas 87% desses dizem saber pouco ou nada sobre o assunto; apenas 11% dizem saber muito. No mesmo levantamento, o interesse por política caiu de 63% para 53% em dez anos, e 58% não recordavam em quem votaram para senador.
+- **Números:** 69% já ouviram falar em emendas parlamentares, mas 87% desses dizem saber pouco ou nada sobre o assunto; apenas 11% dizem saber muito. No mesmo levantamento, o interesse por política caiu de 65%, em novembro de 2011, para 53%, em dezembro de 2021 (relatório em PDF, p. 4), e 58% não recordavam em quem votaram para senador.
 - **Fonte:** DataSenado, Senado Federal (órgão público) — pesquisa *Panorama Político 2022: opiniões sobre a sociedade e democracia*
 - **Links:** [matéria oficial, 17/03/2022](https://www12.senado.leg.br/noticias/materias/2022/03/17/falta-conhecimento-do-eleitor-sobre-o-sistema-politico-aponta-datasenado) · [relatório em PDF](https://www12.senado.leg.br/institucional/datasenado/arquivos/panorama-politico-2022)
 - **Data do campo:** 18/11 a 14/12/2021
@@ -93,7 +93,7 @@ Os três números para o README e para o vídeo:
 
 ### 4. O recorte de 20 a 40 anos
 
-O `PRODUCT.md` define o público como eleitores de 20 a 40 anos. Nenhuma fonte usa essa faixa, mas o *Panorama Político 2022* traz tabelas por idade (16 a 29, 30 a 39, 40 a 49 e 50 anos ou mais). Nelas, quem tem de 16 a 29 anos é quem menos conhece as emendas parlamentares: só 53% já ouviram falar (69% no total), e 90% desses sabem pouco ou nada (relatório em PDF, p. 173 e 178). Na faixa de 30 a 39 anos, os números ficam perto da média. O interesse por política e o apoio à democracia não caem entre os mais jovens (p. 105 e 185). Os grupos focais da mesma pesquisa, com turmas de 25 a 40 anos, apontaram a falta de compreensão do sistema político como a principal causa do pouco interesse (p. 4). O *Panorama Político 2024* mostra a faixa etária só no perfil da amostra, sem cruzá-la com as perguntas.
+O `PRODUCT.md` define o público como eleitores de 20 a 40 anos. Nenhuma fonte usa essa faixa, mas o *Panorama Político 2022* traz tabelas por idade (16 a 29, 30 a 39, 40 a 49 e 50 anos ou mais). Nelas, quem tem de 16 a 29 anos é quem menos conhece as emendas parlamentares: 53% já ouviram falar (69% no total), e 90% desses sabem pouco ou nada (relatório em PDF, p. 173 e 178). Na faixa de 30 a 39 anos, os números ficam perto da média. O interesse por política e o apoio à democracia não caem entre os mais jovens (p. 105 e 185). Os grupos focais da mesma pesquisa, com turmas de 25 a 40 anos, apontaram a falta de compreensão do sistema político como a principal causa do pouco interesse (p. 4). O *Panorama Político 2024* mostra a faixa etária só no perfil da amostra, sem cruzá-la com as perguntas.
 
 Há também o **gradiente por escolaridade**, descrito nos dois verbetes acima:
 
