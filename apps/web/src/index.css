@@ -712,7 +712,7 @@
 	 * A linha do "Recomeçar a trilha", embaixo da descrição, com a altura reservada.
 	 * O que vem antes dela não muda com o progresso: o botão fica no mesmo lugar
 	 * quando vira "Desfazer", e nenhum outro controle aparece ali. O botão de
-	 * continuar, que muda de texto e some com a trilha terminada, vem depois.
+	 * continuar, que muda de texto, vem depois.
 	 */
 	.recomeco {
 		display: flex;

@@ -9,10 +9,12 @@ import {
 } from "@tanstack/react-router";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { acharTrilha, trilhas } from "@/lib/conteudo/paginas.server";
+import { acharQuiz, acharTrilha, trilhas } from "@/lib/conteudo/paginas.server";
+import { idDoArtigo } from "@/lib/progresso";
 import { Route } from "@/routes/trilhas/$trilha/index";
 
 const CHAVE = "mandatometro:artigos-lidos";
+const RESPOSTAS = "mandatometro:respostas-do-quiz";
 const TRILHA = "processo-legislativo";
 const ARTIGOS = [
 	`${TRILHA}/quem-pode-propor-uma-lei`,
@@ -38,20 +40,45 @@ const lidos = () => JSON.parse(window.localStorage.getItem(CHAVE) ?? "[]");
  * já lidos. A rota entra na árvore como no routeTree.gen.ts, e os dados vêm do
  * paginas.server.ts, sem a função do servidor.
  */
-function abrir(jaLidos: string[]) {
+function abrir(jaLidos: string[], trilha = TRILHA) {
 	window.localStorage.setItem(CHAVE, JSON.stringify(jaLidos));
 	const raiz = createRootRoute({ component: () => <Outlet /> });
 	const pagina = Route.update({
 		id: "/trilhas/$trilha/",
 		path: "/trilhas/$trilha/",
 		getParentRoute: () => raiz,
-		loader: () => acharTrilha(trilhas, TRILHA),
+		loader: () => acharTrilha(trilhas, trilha),
 	} as never);
 	const router = createRouter({
 		routeTree: raiz.addChildren([pagina]),
-		history: createMemoryHistory({ initialEntries: [`/trilhas/${TRILHA}`] }),
+		history: createMemoryHistory({ initialEntries: [`/trilhas/${trilha}`] }),
 	});
 	render(<RouterProvider router={router} />);
+}
+
+/** As perguntas do quiz de verdade da trilha. */
+function perguntasDoQuiz() {
+	const quiz = acharQuiz(trilhas, TRILHA);
+	if (!quiz) {
+		throw new Error(`a trilha ${TRILHA} ficou sem quiz`);
+	}
+	return quiz.perguntas;
+}
+
+/**
+ * Guarda no navegador a resposta das `quantas` primeiras perguntas do quiz, como
+ * a página do quiz guarda.
+ */
+function responderOQuiz(quantas: number) {
+	const respostas = Object.fromEntries(
+		perguntasDoQuiz()
+			.slice(0, quantas)
+			.map((pergunta) => [pergunta.enunciado, pergunta.opcoes[0]]),
+	);
+	window.localStorage.setItem(
+		RESPOSTAS,
+		JSON.stringify({ [`${TRILHA}/quiz`]: { tentativas: [{ respostas }] } }),
+	);
 }
 
 /** A linha do botão, embaixo da descrição: os controles que estão nela. */
@@ -75,10 +102,10 @@ function reservasDoBotao(): (string | undefined)[] {
 }
 
 describe("página da trilha", () => {
-	// O servidor não sabe o que a pessoa leu, e manda "Começar pelo primeiro
-	// artigo". No celular, o botão fica em cima da lista dos artigos: se o lugar
-	// dele não guardasse a altura do texto mais alto, a lista pulava quando o
-	// botão trocava de texto ou sumia, depois que o JavaScript carrega.
+	// O servidor não sabe o que a pessoa leu nem o que ela respondeu, e manda
+	// "Começar pelo primeiro artigo". No celular, o botão fica em cima da lista dos
+	// artigos: se o lugar dele não guardasse a altura do texto mais alto, a lista
+	// pulava quando o botão trocava de texto, depois que o JavaScript carrega.
 	it("guarda o lugar do botão de continuar com todos os textos que ele pode ter", async () => {
 		abrir([]);
 		const botao = await screen.findByRole("link", {
@@ -91,6 +118,8 @@ describe("página da trilha", () => {
 		expect(reservasDoBotao()).toEqual([
 			"Começar pelo primeiro artigo",
 			...artigos.map((artigo) => `Continuar de onde parou: ${artigo.titulo}`),
+			"Responder o quiz da trilha",
+			"Ver as outras trilhas",
 		]);
 	});
 
@@ -105,14 +134,64 @@ describe("página da trilha", () => {
 		expect(vistos[0].closest(".numeral")?.textContent).toBe("1");
 	});
 
-	it("com a trilha terminada, o botão de continuar some, e o lugar dele fica", async () => {
+	// Com a trilha terminada, o lugar do botão leva ao que vem depois dela: ao
+	// quiz, enquanto falta alguma resposta, e depois às outras trilhas.
+	it("com a trilha terminada e o quiz sem resposta, o botão leva ao quiz da trilha", async () => {
 		abrir(ARTIGOS);
-		await screen.findByText("Você terminou a trilha.");
+		const botao = await screen.findByRole("link", {
+			name: "Responder o quiz da trilha",
+		});
 
+		expect(screen.getByText("Você terminou a trilha.")).toBeTruthy();
+		expect(botao.closest(".lugar-do-botao")).toBeTruthy();
+		expect(botao.getAttribute("href")).toBe(`/trilhas/${TRILHA}/quiz`);
 		expect(
 			screen.queryByRole("link", { name: /^(Começar|Continuar) / }),
 		).toBeNull();
-		expect(reservasDoBotao().length).toBeGreaterThan(1);
+	});
+
+	it("com a trilha terminada e uma pergunta do quiz sem resposta, o botão continua levando ao quiz", async () => {
+		responderOQuiz(perguntasDoQuiz().length - 1);
+		abrir(ARTIGOS);
+		const botao = await screen.findByRole("link", {
+			name: "Responder o quiz da trilha",
+		});
+
+		expect(botao.getAttribute("href")).toBe(`/trilhas/${TRILHA}/quiz`);
+		expect(
+			screen.queryByRole("link", { name: "Ver as outras trilhas" }),
+		).toBeNull();
+	});
+
+	it("com a trilha e o quiz terminados, o botão leva às outras trilhas", async () => {
+		responderOQuiz(perguntasDoQuiz().length);
+		abrir(ARTIGOS);
+		const botao = await screen.findByRole("link", {
+			name: "Ver as outras trilhas",
+		});
+
+		expect(botao.closest(".lugar-do-botao")).toBeTruthy();
+		expect(botao.getAttribute("href")).toBe("/trilhas");
+		expect(
+			screen.queryByRole("link", { name: "Responder o quiz da trilha" }),
+		).toBeNull();
+	});
+
+	it("numa trilha sem quiz, terminada, o botão leva às outras trilhas", async () => {
+		const semQuiz = trilhas.find((trilha) => !trilha.quiz);
+		if (!semQuiz) {
+			throw new Error("o teste precisa de uma trilha sem quiz");
+		}
+		abrir(semQuiz.artigos.map(idDoArtigo), semQuiz.slug);
+		const botao = await screen.findByRole("link", {
+			name: "Ver as outras trilhas",
+		});
+
+		expect(botao.closest(".lugar-do-botao")).toBeTruthy();
+		expect(botao.getAttribute("href")).toBe("/trilhas");
+		// Sem quiz, o lugar não guarda a altura do botão do quiz.
+		expect(reservasDoBotao()).not.toContain("Responder o quiz da trilha");
+		expect(reservasDoBotao().at(-1)).toBe("Ver as outras trilhas");
 	});
 
 	it("num clique duplo no Recomeçar a trilha, a trilha recomeça, e o Desfazer funciona com um clique depois", async () => {
@@ -139,10 +218,10 @@ describe("página da trilha", () => {
 		expect(lidos()).toEqual(ARTIGOS.slice(0, 2));
 	});
 
-	// Com a trilha terminada, o botão de continuar não existe, e ele aparece
-	// ("Começar pelo primeiro artigo") depois do recomeço. Ele não pode aparecer
-	// onde o "Recomeçar a trilha" estava: o segundo clique de um clique duplo
-	// cairia nele, e a pessoa sairia da página sem o "Desfazer".
+	// Com a trilha terminada, o botão do lugar leva ao quiz, e vira "Começar pelo
+	// primeiro artigo" depois do recomeço. Nenhum dos dois pode aparecer onde o
+	// "Recomeçar a trilha" estava: o segundo clique de um clique duplo cairia
+	// nele, e a pessoa sairia da página sem o "Desfazer".
 	it("com a trilha terminada, o Desfazer fica no lugar do Recomeçar a trilha, sozinho na linha dele", async () => {
 		abrir(ARTIGOS);
 		const botao = await screen.findByRole("button", {

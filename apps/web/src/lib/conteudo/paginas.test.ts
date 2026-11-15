@@ -104,7 +104,7 @@ describe("conteúdo das trilhas", () => {
 		const trilha = trilhaDe("processo-legislativo");
 		const chamada = { perguntas: 6, artigos: [1, 2, 3] };
 
-		expect(acharTrilha(trilhas, trilha.slug)?.quiz).toEqual(chamada);
+		expect(acharTrilha(trilhas, trilha.slug)?.quiz).toMatchObject(chamada);
 		expect(
 			trilha.artigos.map(
 				(artigo) => acharArtigo(trilhas, trilha.slug, artigo.slug)?.quiz,
@@ -341,7 +341,10 @@ describe("o quiz da trilha", () => {
 	it("chama para o quiz na página da trilha e no artigo do depoisDe, com as perguntas e os artigos delas", () => {
 		const chamada = { perguntas: 3, artigos: [1, 2] };
 
-		expect(acharTrilha(exemplos, "com-quiz")?.quiz).toEqual(chamada);
+		expect(acharTrilha(exemplos, "com-quiz")?.quiz).toEqual({
+			...chamada,
+			perguntasSemACerta: expect.any(Array),
+		});
 		expect(acharArtigo(exemplos, "com-quiz", "segundo")?.quiz).toEqual(chamada);
 		expect(acharArtigo(exemplos, "com-quiz", "primeiro")).not.toHaveProperty(
 			"quiz",
@@ -351,8 +354,42 @@ describe("o quiz da trilha", () => {
 		);
 	});
 
+	// Com elas, a página da trilha sabe se a pessoa já respondeu o quiz todo, e
+	// conta as respondidas como a página do quiz (lib/quiz.ts). A certa fica só
+	// na página do quiz.
+	it("leva à página da trilha o enunciado e as opções de cada pergunta, sem a certa", () => {
+		const perguntas = acharTrilha(exemplos, "com-quiz")?.quiz
+			?.perguntasSemACerta;
+
+		expect(perguntas).toEqual([
+			{
+				enunciado: "Por onde começa um projeto de lei de um deputado?",
+				opcoes: ["Pelo Senado Federal.", "Pela Câmara dos Deputados."],
+			},
+			{
+				enunciado: "Quem pode propor uma lei?",
+				opcoes: [
+					"Os cidadãos, entre outros.",
+					"Só os deputados.",
+					"Só o presidente da República.",
+				],
+			},
+			{
+				enunciado: "Para onde vai o projeto depois da Câmara?",
+				opcoes: ["Para o Senado Federal.", "Para o arquivo."],
+			},
+		]);
+		expect(perguntas).toEqual(
+			acharQuiz(exemplos, "com-quiz")?.perguntas.map(
+				({ enunciado, opcoes }) => ({ enunciado, opcoes }),
+			),
+		);
+		expect(acharTrilha(exemplos, "sem-quiz")).not.toHaveProperty("quiz");
+	});
+
 	// A troca de página usa o lugar do quiz para saber se a pessoa avança ou volta
-	// (lib/troca-de-pagina.ts). As perguntas continuam só na página do quiz.
+	// (lib/troca-de-pagina.ts). As perguntas ficam fora das listas: inteiras na
+	// página do quiz e, sem a certa, na da trilha.
 	it("diz, em toda página da trilha, depois de qual artigo o quiz aparece", () => {
 		expect(listarTrilhas(exemplos)).toEqual([
 			expect.objectContaining({ slug: "com-quiz", quizDepoisDe: "segundo" }),

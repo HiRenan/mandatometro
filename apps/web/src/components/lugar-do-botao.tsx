@@ -4,10 +4,11 @@ import { classes } from "@/lib/classes";
 import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "./botao-continuar";
 
 /**
- * O lugar de um botão "Continuar" que muda de texto, aparece ou some depois que
- * o JavaScript carrega: o da trilha ("Começar pelo primeiro artigo" vira
- * "Continuar de onde parou: …" e some com a trilha terminada) e o do quiz
- * ("Começar", "Continuar" e "Rever as respostas").
+ * O lugar de um botão "Continuar" que muda de texto ou aparece depois que o
+ * JavaScript carrega: o da trilha ("Começar pelo primeiro artigo" vira
+ * "Continuar de onde parou: …" e, com a trilha terminada, "Responder o quiz da
+ * trilha" ou "Ver as outras trilhas") e o do quiz ("Começar", "Continuar" e
+ * "Rever as respostas").
  *
  * O servidor não sabe o que a pessoa já leu ou respondeu. Por isso, cada texto
  * que o botão pode ter (`textos`) vem no HTML numa cópia invisível, com o mesmo
