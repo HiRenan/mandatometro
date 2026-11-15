@@ -15,6 +15,7 @@ export type {
 	ChamadaDoQuiz,
 	PaginaInicial,
 	PerguntaNaPagina,
+	PerguntaSemACerta,
 	QuizNaPagina,
 	TrilhaNaLista,
 	TrilhaNaPagina,

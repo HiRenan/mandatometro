@@ -50,10 +50,17 @@ export type ChamadaDoQuiz = {
 	artigos: number[];
 };
 
+/**
+ * Uma pergunta do quiz na página da trilha: o enunciado e os textos das opções,
+ * sem a certa. Com elas, a página sabe se a pessoa já respondeu o quiz todo, e
+ * conta as respondidas como a página do quiz.
+ */
+export type PerguntaSemACerta = { enunciado: string; opcoes: string[] };
+
 /** A trilha na página dela, com o infográfico e a chamada do quiz, quando ela tem. */
 export type TrilhaNaPagina = TrilhaNaLista & {
 	infografico?: Infografico;
-	quiz?: ChamadaDoQuiz;
+	quiz?: ChamadaDoQuiz & { perguntasSemACerta: PerguntaSemACerta[] };
 };
 
 /** Uma pergunta na página do quiz. As opções são só os textos, e a certa, a posição. */
@@ -183,6 +190,11 @@ function chamadaDoQuiz(trilha: Trilha): ChamadaDoQuiz | undefined {
 	};
 }
 
+/** Uma pergunta do quiz como a página da trilha recebe, sem a certa. */
+function semACerta({ enunciado, opcoes }: Pergunta): PerguntaSemACerta {
+	return { enunciado, opcoes: opcoes.map((opcao) => opcao.texto) };
+}
+
 export function acharTrilha(
 	todas: Trilha[],
 	slug: string,
@@ -191,12 +203,18 @@ export function acharTrilha(
 	if (!trilha) {
 		return undefined;
 	}
-	const { infografico } = trilha;
-	const quiz = chamadaDoQuiz(trilha);
+	const { infografico, quiz } = trilha;
+	const chamada = chamadaDoQuiz(trilha);
 	return {
 		...trilhaNaLista(trilha),
 		...(infografico && { infografico }),
-		...(quiz && { quiz }),
+		...(quiz &&
+			chamada && {
+				quiz: {
+					...chamada,
+					perguntasSemACerta: quiz.perguntas.map(semACerta),
+				},
+			}),
 	};
 }
 
