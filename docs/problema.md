@@ -8,13 +8,13 @@ Este arquivo reúne as pesquisas que sustentam a escolha do tema do Mandatômetr
 
 O Mandatômetro parte de uma frase: falta aos eleitores conhecimento sobre o sistema político brasileiro. As pesquisas abaixo mostram que o problema é mais específico do que isso, e esse recorte é o que define o produto.
 
-Não se trata de desinteresse por política. Trata-se de um ponto cego no **Legislativo**. O mesmo eleitor que lembra com clareza em quem votou para presidente não consegue citar o nome de um único deputado federal, nem sabe o que faz quem ele elegeu. Em junho de 2026, 85% dos brasileiros lembravam o voto para presidente, mas 67% não lembravam o voto para deputado federal.
+O desinteresse por política existe: no fim de 2021, só 53% diziam ter interesse alto ou médio, e o DataSenado aponta a falta de compreensão do sistema político como a principal causa. Dentro disso, há um ponto cego no **Legislativo**. A maioria lembra em quem votou para presidente, mas não consegue citar o nome de um único deputado federal: em junho de 2026, 85% dos eleitores lembravam o voto de 2022 para presidente, mas 67% não lembravam o voto para deputado federal.
 
 Esse ponto cego tem três consequências que aparecem nos dados:
 
 1. **O eleitor não fiscaliza o que não entende.** Quando 87% de quem já ouviu falar em emendas parlamentares diz saber pouco ou nada sobre elas, o controle social do orçamento não acontece.
-2. **O desconhecimento anda junto com a insatisfação democrática.** Dois terços dos brasileiros dizem que a democracia é sempre a melhor forma de governo, mas 80% se dizem pouco ou nada satisfeitos com o funcionamento dela.
-3. **Quem tem menos estudo tem mais dificuldade de se defender da desinformação.** Metade da população acha difícil distinguir notícia falsa de verdadeira, e essa dificuldade vai de 39% entre quem tem superior completo a 63% entre quem tem fundamental incompleto.
+2. **O apoio à democracia convive com a insatisfação.** Dois terços dos brasileiros dizem que a democracia é sempre a melhor forma de governo, mas 80% se dizem pouco ou nada satisfeitos com o funcionamento dela.
+3. **Quem tem menos estudo tem mais dificuldade de se defender da desinformação.** Metade de quem vê notícias suspeitas acha difícil distinguir a falsa da verdadeira, e essa dificuldade vai de 39% entre quem tem superior completo a 63% entre quem tem fundamental incompleto.
 
 O mesmo gradiente de escolaridade aparece no apoio à democracia: 83% entre quem tem superior completo, 50% entre quem tem fundamental incompleto. É o dado que mais justifica a trilha do hackathon ser Acesso à educação — explicar como o sistema funciona não é um fim em si, é o que permite fiscalizar e resistir à desinformação.
 
@@ -25,7 +25,7 @@ Os três números para o README e para o vídeo:
 | Número | O que mostra | Fonte |
 |---|---|---|
 | **68%** não citam o nome de nenhum deputado federal em exercício; **75%**, de nenhum senador | A distância entre o eleitor e o Legislativo | Datafolha, 17–18/06/2026 |
-| **85%** lembram em quem votaram para presidente, mas **67%** não lembram o voto para deputado federal | O ponto cego é o Legislativo, não a política | Datafolha, 17–18/06/2026 |
+| **85%** dos eleitores lembram em quem votaram para presidente em 2022, mas **67%** não lembram o voto para deputado federal | O ponto cego é o Legislativo | Datafolha, 17–18/06/2026 |
 | **87%** de quem já ouviu falar em emendas parlamentares sabe pouco ou nada sobre elas | Desconhecer o mecanismo impede fiscalizar o orçamento | DataSenado, campo em 2021 |
 
 ## As pesquisas
@@ -36,19 +36,19 @@ Os três números para o README e para o vídeo:
 
 - **Números:** 68% não citam nenhum integrante da Câmara dos Deputados em exercício; 75% não citam nenhum senador. Dos 513 deputados, só 6 foram lembrados espontaneamente; dos 81 senadores, 15.
 - **Fonte:** Datafolha (instituto privado), divulgada pela Folhapress
-- **Link:** [Gazeta do Povo, 29/06/2026](https://www.gazetadopovo.com.br/republica/maioria-dos-brasileiros-nao-sabe-citar-deputados-e-senadores-aponta-datafolha/)
+- **Links:** [Gazeta do Povo, 29/06/2026](https://www.gazetadopovo.com.br/republica/maioria-dos-brasileiros-nao-sabe-citar-deputados-e-senadores-aponta-datafolha/) · [Correio Braziliense, 29/06/2026](https://www.correiobraziliense.com.br/politica/2026/06/7450902-maioria-nao-consegue-citar-nome-de-nenhum-parlamentar-diz-datafolha.html)
 - **Data do campo:** 17 e 18/06/2026
 - **Amostra:** 2.004 pessoas de 16 anos ou mais, em 139 municípios; margem de erro de 2 pontos percentuais
 - **Por que importa:** é o número mais direto do problema. Se o eleitor não sabe quem são seus representantes no Congresso, a votação da semana não tem rosto nem consequência para ele.
 
 #### O eleitor lembra o voto para presidente, mas não o do Congresso
 
-- **Números:** 85% lembram em quem votaram para presidente em 2022. Para deputado federal, 67% não lembram; para senador e deputado estadual, 66%.
+- **Números:** 85% dos eleitores de 20 anos ou mais lembram em quem votaram para presidente em 2022. Para deputado federal, 67% não lembram; para senador e deputado estadual, 66%.
 - **Fonte:** Datafolha (instituto privado)
-- **Link:** [Gazeta do Povo, 29/06/2026](https://www.gazetadopovo.com.br/republica/maioria-dos-brasileiros-nao-sabe-citar-deputados-e-senadores-aponta-datafolha/)
+- **Links:** [Gazeta do Povo, 29/06/2026](https://www.gazetadopovo.com.br/republica/maioria-dos-brasileiros-nao-sabe-citar-deputados-e-senadores-aponta-datafolha/) · [Correio Braziliense, 29/06/2026](https://www.correiobraziliense.com.br/politica/2026/06/7450902-maioria-nao-consegue-citar-nome-de-nenhum-parlamentar-diz-datafolha.html)
 - **Data do campo:** 17 e 18/06/2026
-- **Amostra:** 2.004 pessoas de 16 anos ou mais, em 139 municípios; margem de erro de 2 pontos percentuais
-- **Por que importa:** este é o dado que define o recorte do Mandatômetro. O problema não é falta de interesse por política em geral — é o Legislativo que fica invisível. Por isso a primeira trilha é a do processo legislativo, e não uma introdução genérica à política.
+- **Amostra:** 2.004 pessoas de 16 anos ou mais, em 139 municípios, com margem de erro de 2 pontos percentuais; as perguntas sobre o voto de 2022 foram feitas aos 1.898 eleitores de 20 anos ou mais. Registro no TSE: BR-09956/2026.
+- **Por que importa:** este é o dado que define o recorte do Mandatômetro. O voto para presidente fica na memória; o do Legislativo, não. Por isso a primeira trilha é a do processo legislativo, e não uma introdução genérica à política.
 
 #### 87% sabem pouco ou nada sobre emendas parlamentares
 
@@ -62,7 +62,7 @@ Os três números para o README e para o vídeo:
 
 #### 54% não acompanham o que o Congresso discute
 
-- **Número:** 54% dos brasileiros dizem não acompanhar as discussões sobre assuntos ou leis em debate no Senado. O índice é a média nacional e varia entre os estados — no Acre, o mais alto entre os divulgados, chega a 62%.
+- **Número:** 54% dos brasileiros dizem não acompanhar as discussões sobre assuntos ou leis em debate no Senado. O índice é a média nacional e varia entre os estados: vai de 44%, em São Paulo, a 65%, no Maranhão.
 - **Fonte:** DataSenado, Senado Federal (órgão público) — *Panorama Político 2024*, 21ª edição
 - **Link:** [relatório interativo oficial](https://www.senado.leg.br/institucional/datasenado/relatorio_online/pesquisa_panorama_politico/2024/interativo.html)
 - **Data do campo:** 5 a 28/06/2024
@@ -82,33 +82,33 @@ Os três números para o README e para o vídeo:
 
 ### 3. Desinformação política
 
-#### Metade da população acha difícil identificar uma notícia falsa
+#### Metade de quem vê notícias suspeitas acha difícil distinguir a falsa da verdadeira
 
-- **Números:** 72% dos usuários de redes sociais tiveram acesso a notícias suspeitas de serem falsas nos seis meses anteriores, o equivalente a 67% da população de 16 anos ou mais (cerca de 113,4 milhões de pessoas). 50% consideram difícil distinguir uma notícia falsa de uma verdadeira — 39% entre quem tem superior completo e 63% entre quem tem fundamental incompleto. E 81% acreditam que a desinformação afeta muito o resultado das eleições.
+- **Números:** 72% dos usuários de redes sociais tiveram acesso a notícias suspeitas de serem falsas nos seis meses anteriores, o equivalente a 67% da população de 16 anos ou mais (cerca de 113,4 milhões de pessoas). Entre essas pessoas, 50%, cerca de 56,3 milhões, consideram difícil distinguir uma notícia falsa de uma verdadeira — 39% entre quem tem superior completo e 63% entre quem tem fundamental incompleto —, e 81% acreditam que a desinformação pode afetar muito o resultado das eleições.
 - **Fonte:** DataSenado, Senado Federal (órgão público) — *Panorama Político 2024*, módulo de notícias falsas e democracia
 - **Link:** [relatório interativo oficial](https://www.senado.leg.br/institucional/datasenado/relatorio_online/pesquisa_fake_news/2024/interativo.html)
 - **Data do campo:** 5 a 28/06/2024
 - **Amostra:** 21.808 entrevistas por telefone (CATI); margem de erro média de 1,22 ponto percentual, com 95% de confiança
-- **Por que importa:** sustenta a regra mais rígida do projeto, a de que toda afirmação leva a fonte oficial e a data da coleta. Num ambiente em que metade das pessoas não consegue separar o verdadeiro do falso, mostrar de onde vem cada informação é parte do conteúdo, não um detalhe de rodapé.
+- **Por que importa:** sustenta a regra mais rígida do projeto, a de que toda afirmação leva a fonte oficial e a data da coleta. Num ambiente em que metade de quem vê notícias suspeitas acha difícil separar o verdadeiro do falso, mostrar de onde vem cada informação é parte do conteúdo, não um detalhe de rodapé.
 
 ### 4. O recorte de 20 a 40 anos
 
-O `PRODUCT.md` define o público como eleitores de 20 a 40 anos. **Não encontramos, nas fontes primárias consultadas, um recorte por faixa de idade** para conhecimento do sistema político, acompanhamento do Legislativo ou apoio à democracia. O *Panorama Político 2024* publica os cortes por sexo, escolaridade, renda, ocupação, religião e raça, mas não por idade para essas perguntas.
+O `PRODUCT.md` define o público como eleitores de 20 a 40 anos. Nenhuma fonte usa essa faixa, mas o *Panorama Político 2022* traz tabelas por idade (16 a 29, 30 a 39, 40 a 49 e 50 anos ou mais). Nelas, quem tem de 16 a 29 anos é quem menos conhece as emendas parlamentares: só 53% já ouviram falar (69% no total), e 90% desses sabem pouco ou nada (relatório em PDF, p. 173 e 178). Na faixa de 30 a 39 anos, os números ficam perto da média. O interesse por política e o apoio à democracia não caem entre os mais jovens (p. 105 e 185). Os grupos focais da mesma pesquisa, com turmas de 25 a 40 anos, apontaram a falta de compreensão do sistema político como a principal causa do pouco interesse (p. 4). O *Panorama Político 2024* mostra a faixa etária só no perfil da amostra, sem cruzá-la com as perguntas.
 
-O que existe, e é oficial, é o **gradiente por escolaridade**, descrito nos dois verbetes acima:
+Há também o **gradiente por escolaridade**, descrito nos dois verbetes acima:
 
 | Indicador | Fundamental incompleto | Superior completo |
 |---|---|---|
-| Acha difícil identificar notícia falsa | 63% | 39% |
+| Acha difícil identificar notícia falsa (entre quem viu notícias suspeitas) | 63% | 39% |
 | A democracia é sempre a melhor forma de governo | 50% | 83% |
 
-Até que exista um dado por idade, **a escolha do público de 20 a 40 anos é uma decisão de produto, não uma conclusão de pesquisa.** Ela se apoia no piloto (#40), que é onde o projeto vai medir o aprendizado de verdade: cerca de 50 pessoas, de uma turma do Senai e do Instagram, respondendo ao quiz antes e depois da trilha.
+Como nenhuma fonte usa a faixa de 20 a 40 anos, **a escolha do público é uma decisão de produto, não uma conclusão de pesquisa.** Ela se apoia no piloto (#40), que é onde o projeto vai medir o aprendizado de verdade: cerca de 50 pessoas, de uma turma do Senai e do Instagram, respondendo ao quiz antes e depois da trilha.
 
 ## O que as pesquisas não mostram
 
 Registrado aqui para que ninguém use estes dados além do que eles dizem:
 
-- **Não há recorte por idade** nas fontes primárias consultadas, como explicado acima.
+- **Nenhuma fonte usa a faixa de 20 a 40 anos.** O mais perto são as faixas de 16 a 29 e de 30 a 39 anos do *Panorama Político 2022*, com campo em 2021. Nos números citados na seção 4, a margem de erro dessas faixas chega a 8,5 pontos.
 - **Nenhuma das pesquisas mede se explicar política muda comportamento.** O gradiente de escolaridade é correlação. A única evidência de aprendizado que o projeto vai ter é a do próprio piloto (#40).
 - **Dois números que circulam foram descartados por falta de fonte primária:**
   - Atribui-se à Quaest que cerca de 55% dos eleitores não sabem o que faz um deputado federal. O texto que divulga o percentual não informa o nome da pesquisa, a data, a amostra nem o link do levantamento original. Sem isso, o número fica fora.
@@ -124,7 +124,7 @@ Cada eixo tem uma resposta no site:
 | O eleitor lembra o presidente, mas não o Congresso | A primeira trilha é a do processo legislativo: como nasce uma lei, quem propõe, o que fazem as comissões |
 | Desconhecimento de mecanismos, como emendas | Artigos curtos sobre um passo por vez, com o quiz no meio e no fim para fixar |
 | 54% não acompanham o debate legislativo | A newsletter semanal, de domingo, com o que o Congresso votou em linguagem simples |
-| Metade não distingue notícia falsa de verdadeira | A regra de fonte oficial e data da coleta em toda afirmação; depois do MVP, o "fake ou fato" (#41) |
+| Metade de quem vê notícias suspeitas acha difícil distinguir a falsa da verdadeira | A regra de fonte oficial e data da coleta em toda afirmação; depois do MVP, o "fake ou fato" (#41) |
 | Apoio à democracia cresce com a escolaridade | O enquadramento na trilha Acesso à educação: aprender é a função principal do site |
 
 ## Como conferir estas fontes
