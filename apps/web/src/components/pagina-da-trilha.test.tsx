@@ -94,6 +94,17 @@ describe("página da trilha", () => {
 		]);
 	});
 
+	// Dentro do número, o visto apaga a cor dele (.numeral:has(.marca-de-lido), no
+	// index.css).
+	it("põe o visto do artigo lido dentro do número dele", async () => {
+		abrir([ARTIGOS[0]]);
+		await screen.findByRole("link", { name: /^Continuar de onde parou: / });
+		const vistos = document.querySelectorAll("svg.marca-de-lido");
+
+		expect(vistos).toHaveLength(1);
+		expect(vistos[0].closest(".numeral")?.textContent).toBe("1");
+	});
+
 	it("com a trilha terminada, o botão de continuar some, e o lugar dele fica", async () => {
 		abrir(ARTIGOS);
 		await screen.findByText("Você terminou a trilha.");
