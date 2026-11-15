@@ -45,6 +45,21 @@ function esquecerAoSairDaEntrada(router: AnyRouter) {
 }
 
 /**
+ * Leva a página que chegou ao começo, como numa navegação: ao trecho do endereço
+ * (#caminho), quando ele existe, ou ao alto. No "Tentar de novo", o endereço é o
+ * mesmo, e o router devolve a rolagem que a página de erro tinha: com a letra
+ * grande, o botão fica embaixo, e a página nova chegava rolada, sem o título.
+ */
+function rolarAoComeco(trecho: string) {
+	const doTrecho = trecho ? document.getElementById(trecho) : null;
+	if (doTrecho) {
+		doTrecho.scrollIntoView();
+	} else {
+		window.scrollTo(0, 0);
+	}
+}
+
+/**
  * A página de erro, para quando uma página não chega: a internet caiu no meio da
  * navegação ou o servidor falhou. Ela fica dentro do site, com o cabeçalho, e não
  * mostra a mensagem técnica do erro.
@@ -74,10 +89,14 @@ export function PaginaDeErro() {
 		esquecerAoSairDaEntrada(router);
 		ultimaTentativa = chave;
 		await router.invalidate();
-		// Se a página chegou, o foco vai para o título dela, como numa navegação.
+		// Se a página chegou, ela começa como numa navegação: do alto, com o foco no
+		// título, ou no trecho do endereço. O router já devolveu a rolagem antiga
+		// quando o invalidate volta.
 		if (!document.querySelector("[data-pagina-de-erro]")) {
 			ultimaTentativa = undefined;
-			focarNoTitulo();
+			const { hash } = router.state.location;
+			rolarAoComeco(hash);
+			focarNoTitulo(hash);
 		}
 	}
 

@@ -8,7 +8,13 @@ import {
 	Outlet,
 	RouterProvider,
 } from "@tanstack/react-router";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CARREGANDO, Carregando, TEMPOS_DO_CARREGANDO } from "./carregando";
 import { PaginaDeErro } from "./pagina-de-erro";
@@ -27,9 +33,10 @@ afterEach(() => {
 
 /**
  * Um site de mentira com a página de erro e o carregando do router.tsx, e uma
- * página que pede dados.
+ * página que pede dados. Com a `rolagem`, o router devolve a rolagem de cada
+ * endereço, como o do site (router.tsx).
  */
-function abrir(carregar: () => Promise<string>) {
+function abrir(carregar: () => Promise<string>, { rolagem = false } = {}) {
 	const raiz = createRootRoute({
 		component: () => (
 			<main id="conteudo">
@@ -56,6 +63,7 @@ function abrir(carregar: () => Promise<string>) {
 		defaultErrorComponent: PaginaDeErro,
 		defaultPendingComponent: Carregando,
 		...TEMPOS_DO_CARREGANDO,
+		scrollRestoration: rolagem,
 	});
 	render(<RouterProvider router={router} />);
 	return router;
@@ -108,6 +116,37 @@ describe("página de erro", () => {
 		});
 		expect(carregar).toHaveBeenCalledTimes(2);
 		expect(document.activeElement).toBe(titulo);
+	});
+
+	// No "Tentar de novo", o endereço é o mesmo, e o router devolve a rolagem que a
+	// página de erro tinha. Com a letra grande, o botão fica embaixo, e a página
+	// nova chegava rolada, sem o título na tela (575 px a 1366 px, com a letra a
+	// 200%).
+	it("depois de um Tentar de novo que dá certo, a página chega do alto", async () => {
+		const carregar = vi
+			.fn<() => Promise<string>>()
+			.mockImplementationOnce(semRede)
+			.mockResolvedValue("Quem pode propor uma lei");
+		abrir(carregar, { rolagem: true });
+		const botao = await screen.findByRole("button", { name: "Tentar de novo" });
+		// A pessoa rolou a página de erro até o botão. O jsdom não rola: o router lê
+		// o scrollY e ouve o evento.
+		vi.spyOn(window, "scrollY", "get").mockReturnValue(575);
+		document.dispatchEvent(new Event("scroll"));
+		const rolagens = vi.mocked(window.scrollTo);
+		rolagens.mockClear();
+
+		fireEvent.click(botao);
+		const titulo = await screen.findByRole("heading", {
+			name: "Quem pode propor uma lei",
+		});
+		await waitFor(() => expect(document.activeElement).toBe(titulo));
+
+		// O router devolveu os 575 px, e a página voltou ao alto depois.
+		expect(rolagens).toHaveBeenCalledWith(
+			expect.objectContaining({ top: 575 }),
+		);
+		expect(rolagens.mock.lastCall).toEqual([0, 0]);
 	});
 
 	it("se falha de novo, avisa e devolve o foco ao botão", async () => {
