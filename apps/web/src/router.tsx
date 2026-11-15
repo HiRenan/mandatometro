@@ -7,6 +7,7 @@ import { NaoEncontrado } from "./components/nao-encontrado";
 import { PaginaDeErro } from "./components/pagina-de-erro";
 import {
 	molduraNaTela,
+	semErroNaTrocaPulada,
 	tiposDaTroca,
 	trilhaDaPaginaAberta,
 } from "./lib/troca-de-pagina";
@@ -41,6 +42,9 @@ export const getRouter = () => {
 				}),
 		},
 	});
+	// Quando a pessoa volta pelo navegador antes de a troca começar a animar, o
+	// navegador pula a troca, e o AbortError dela não vai para o console.
+	semErroNaTrocaPulada(router);
 	setupRouterSsrQueryIntegration({ router, queryClient });
 
 	return router;

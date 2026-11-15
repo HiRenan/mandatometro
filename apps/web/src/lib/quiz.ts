@@ -25,7 +25,7 @@ export function acertou(pergunta: PerguntaDoQuiz, opcao: number): boolean {
  * mudar no arquivo, a resposta antiga fica sem opção, em vez de apontar outra.
  */
 export function opcaoRespondida(
-	pergunta: PerguntaDoQuiz,
+	pergunta: Pick<PerguntaDoQuiz, "enunciado" | "opcoes">,
 	respostas: Respostas,
 ): number | undefined {
 	const texto = Object.hasOwn(respostas, pergunta.enunciado)
@@ -35,8 +35,12 @@ export function opcaoRespondida(
 	return posicao >= 0 ? posicao : undefined;
 }
 
+/**
+ * Quantas perguntas têm resposta, sem olhar a certa: a página da trilha conta
+ * como a do quiz, com as perguntas sem a certa.
+ */
 export function contarRespondidas(
-	perguntas: readonly PerguntaDoQuiz[],
+	perguntas: readonly Pick<PerguntaDoQuiz, "enunciado" | "opcoes">[],
 	respostas: Respostas,
 ): number {
 	return perguntas.filter(

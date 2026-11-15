@@ -104,6 +104,9 @@ describe("folhas da trilha", () => {
 
 		expect(visto).not.toBeNull();
 		expect(visto?.getAttribute("aria-hidden")).toBe("true");
+		// Dentro do número, o visto apaga a cor dele (.numeral:has(.marca-de-lido),
+		// no index.css).
+		expect(visto?.closest(".numeral")).not.toBeNull();
 		expect(lida.textContent).toContain("Lido · 3 min");
 		expect(naoLida.querySelector("svg.marca-de-lido")).toBeNull();
 		expect(naoLida.textContent).not.toContain("Lido");

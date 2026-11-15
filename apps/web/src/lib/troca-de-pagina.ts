@@ -3,9 +3,9 @@
  * relógio em cada peça; quem volta vê o giro ao contrário. As páginas ficam em
  * ordem, como as folhas de um bloco: a inicial em cima, depois a lista das
  * trilhas, cada trilha e os artigos dela, com o quiz no lugar dele entre os
- * artigos. Aqui fica só o sentido de cada troca, que o router passa ao navegador
- * como tipo da View Transition (router.tsx). O movimento fica em
- * estilos/movimento.css.
+ * artigos. Aqui ficam o sentido de cada troca, que o router passa ao navegador
+ * como tipo da View Transition (router.tsx), o clique feito durante a troca e a
+ * troca que o navegador pula. O movimento fica em estilos/movimento.css.
  */
 
 export type Sentido = "avancar" | "voltar";
@@ -202,5 +202,53 @@ export function cliqueDuranteATroca(): () => void {
 	return () => {
 		document.removeEventListener("pointerdown", aoTocar, true);
 		document.removeEventListener("click", aoClicar, true);
+	};
+}
+
+/**
+ * Se o erro é o da troca que o navegador pulou: um AbortError. Ele chega quando
+ * a pessoa volta pelo navegador antes de a troca começar a animar.
+ */
+export function foiTrocaPulada(erro: unknown): boolean {
+	return erro instanceof DOMException && erro.name === "AbortError";
+}
+
+/** O router, com a função que começa cada troca de página no navegador. */
+type ComTroca = {
+	startViewTransition: (novaPagina: () => Promise<void>) => unknown;
+};
+
+/**
+ * A troca pulada sem erro no console. Quando a pessoa volta pelo navegador antes
+ * de a troca começar a animar (da trilha para o quiz, por exemplo), o navegador
+ * pula a troca e rejeita a promessa `ready` dela com um AbortError. O router só
+ * espera a página nova (o `updateCallbackDone`), e ninguém esperava o `ready`: o
+ * erro ia para o console, com a página certa na tela.
+ *
+ * Aqui, cada troca que o router começa ganha quem espere o `ready` e deixe passar
+ * só esse AbortError; outro erro continua aparecendo. A troca que o router
+ * começou é o `activeViewTransition` do documento, quando ele muda na chamada.
+ * Quando o router não anima (na primeira carga, num link para um trecho da mesma
+ * página e no "Tentar de novo"), ele não muda, e nenhum `ready` ganha outro
+ * `catch`: uma troca anterior que ainda está na tela já ganhou o dela quando
+ * começou, e o erro dela apareceria duas vezes. Num navegador sem o
+ * `activeViewTransition`, nada muda, como no clique durante a troca.
+ */
+export function semErroNaTrocaPulada(router: ComTroca): void {
+	const comecar = router.startViewTransition;
+	const trocaNaTela = () =>
+		typeof document === "undefined" ? undefined : document.activeViewTransition;
+	router.startViewTransition = (novaPagina) => {
+		const anterior = trocaNaTela();
+		const chegou = comecar.call(router, novaPagina);
+		const troca = trocaNaTela();
+		if (troca && troca !== anterior) {
+			troca.ready.catch((erro: unknown) => {
+				if (!foiTrocaPulada(erro)) {
+					throw erro;
+				}
+			});
+		}
+		return chegou;
 	};
 }
