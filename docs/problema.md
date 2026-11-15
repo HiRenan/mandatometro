@@ -8,7 +8,7 @@ Este arquivo reúne as pesquisas que sustentam a escolha do tema do Mandatômetr
 
 O Mandatômetro parte de uma frase: falta aos eleitores conhecimento sobre o sistema político brasileiro. As pesquisas abaixo mostram que o problema é mais específico do que isso, e esse recorte é o que define o produto.
 
-O desinteresse por política existe: no fim de 2021, só 53% diziam ter interesse alto ou médio, e o DataSenado aponta a falta de compreensão do sistema político como a principal causa. Dentro disso, há um ponto cego no **Legislativo**. A maioria lembra em quem votou para presidente, mas não consegue citar o nome de um único deputado federal: em junho de 2026, 85% dos eleitores lembravam o voto de 2022 para presidente, mas 67% não lembravam o voto para deputado federal.
+O desinteresse por política existe: no fim de 2021, 45% diziam ter interesse baixo (17%) ou nenhum (28%), e o DataSenado aponta a falta de compreensão do sistema político como a principal causa (*Panorama Político 2022*, p. 4 e 59). Dentro disso, há um ponto cego no **Legislativo**. A maioria lembra em quem votou para presidente, mas não consegue citar o nome de um único deputado federal: em junho de 2026, 85% dos eleitores lembravam o voto de 2022 para presidente, mas 67% não lembravam o voto para deputado federal.
 
 Os dados mostram mais três coisas:
 
@@ -26,7 +26,7 @@ Os três números para o README e para o vídeo:
 |---|---|---|
 | **68%** não citam o nome de nenhum deputado federal em exercício; **75%**, de nenhum senador | A distância entre o eleitor e o Legislativo | Datafolha, 17–18/06/2026 |
 | **85%** dos eleitores lembram em quem votaram para presidente em 2022, mas **67%** não lembram o voto para deputado federal | O ponto cego é o Legislativo | Datafolha, 17–18/06/2026 |
-| **87%** de quem já ouviu falar em emendas parlamentares sabe pouco ou nada sobre elas | Desconhecer o mecanismo impede fiscalizar o orçamento | DataSenado, campo em 2021 |
+| **87%** de quem já ouviu falar em emendas parlamentares sabe pouco ou nada sobre elas | As emendas parlamentares são pouco conhecidas | DataSenado, campo em 2021 |
 
 ## As pesquisas
 
@@ -35,7 +35,7 @@ Os três números para o README e para o vídeo:
 #### 68% não sabem citar um único deputado federal
 
 - **Números:** 68% não citam nenhum integrante da Câmara dos Deputados em exercício; 75% não citam nenhum senador. Dos 513 deputados, só 6 foram lembrados espontaneamente; dos 81 senadores, 15.
-- **Fonte:** Datafolha (instituto privado), divulgada pela Folha de S.Paulo em 28/06/2026; registro no TSE BR-09956/2026
+- **Fonte:** Datafolha (instituto privado); registro no TSE BR-09956/2026
 - **Links:** [Gazeta do Povo, 29/06/2026](https://www.gazetadopovo.com.br/republica/maioria-dos-brasileiros-nao-sabe-citar-deputados-e-senadores-aponta-datafolha/) · [Correio Braziliense, 29/06/2026](https://www.correiobraziliense.com.br/politica/2026/06/7450902-maioria-nao-consegue-citar-nome-de-nenhum-parlamentar-diz-datafolha.html)
 - **Data do campo:** 17 e 18/06/2026
 - **Amostra:** 2.004 pessoas de 16 anos ou mais, em 139 municípios; margem de erro de 2 pontos percentuais
@@ -115,7 +115,7 @@ Registrado aqui para que ninguém use estes dados além do que eles dizem:
 - **Dois números que circulam foram descartados por falta de fonte primária:**
   - Atribui-se à Quaest que 55% dos eleitores não sabem o que faz um deputado federal. O texto que divulga o percentual (Terra Brasil Notícias, 12/07/2022) diz só que a pesquisa foi feita em junho de 2022, a pedido do RenovaBR, sem a amostra, as datas do campo nem o link do levantamento. Sem isso, o número fica fora.
   - O Latinobarómetro 2024 é citado com 45% de apoio à democracia e 28% de satisfação no Brasil. Não foi possível confirmar os valores no informe original nas cópias localizadas, e o DataSenado cobre o mesmo tema com fonte oficial brasileira e amostra muito maior. Se o informe for obtido em formato legível, vale reavaliar.
-- **A pesquisa do Datafolha não foi lida no release original.** Ela foi divulgada pela Folha de S.Paulo em 28/06/2026, e os percentuais vêm das matérias da Gazeta do Povo e do Correio Braziliense, que batem entre si. Pesquisas eleitorais são registradas no TSE, e a metodologia completa pode ser conferida no sistema [PesqEle](https://www.tse.jus.br/eleicoes/pesquisa-eleitorais/consulta-as-pesquisas-registradas) pelo registro BR-09956/2026 — a consulta exige navegador e não abriu por requisição automática.
+- **A pesquisa do Datafolha não foi lida no release original.** Os percentuais vêm das matérias da Gazeta do Povo e do Correio Braziliense, de 29/06/2026, que batem entre si. Pesquisas eleitorais são registradas no TSE, e a metodologia completa pode ser conferida no sistema [PesqEle](https://www.tse.jus.br/eleicoes/pesquisa-eleitorais/consulta-as-pesquisas-registradas) pelo registro BR-09956/2026 — a consulta exige navegador e não abriu por requisição automática.
 
 ## Como isso virou produto
 
