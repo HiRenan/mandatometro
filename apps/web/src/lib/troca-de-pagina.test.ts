@@ -471,6 +471,28 @@ describe("semErroNaTrocaPulada", () => {
 		expect(soltas[0]).toBe(erro);
 	});
 
+	// Na primeira carga, num link para um trecho da mesma página e no "Tentar de
+	// novo", o router troca a página sem animar. Uma troca anterior que ainda está
+	// na tela já ganhou quem espere o ready dela quando começou.
+	it("quando o router não anima, o ready da troca anterior não ganha outro catch", async () => {
+		const anterior = { ready: new Promise<void>(() => {}) };
+		const tratou = vi.spyOn(anterior.ready, "catch");
+		Object.defineProperty(document, "activeViewTransition", {
+			configurable: true,
+			get: () => anterior,
+		});
+		const novaPagina = vi.fn(async () => {});
+		const router = {
+			startViewTransition: vi.fn((fazer: () => Promise<void>) => fazer()),
+		};
+		semErroNaTrocaPulada(router);
+
+		await router.startViewTransition(novaPagina);
+
+		expect(novaPagina).toHaveBeenCalledTimes(1);
+		expect(tratou).not.toHaveBeenCalled();
+	});
+
 	it("num navegador sem o activeViewTransition, só começa a troca", async () => {
 		const novaPagina = vi.fn(async () => {});
 		const router = {

@@ -226,16 +226,24 @@ type ComTroca = {
  * erro ia para o console, com a página certa na tela.
  *
  * Aqui, cada troca que o router começa ganha quem espere o `ready` e deixe passar
- * só esse AbortError; outro erro continua aparecendo. A troca que acabou de
- * começar é o `activeViewTransition` do documento: num navegador sem ele, nada
- * muda, como no clique durante a troca.
+ * só esse AbortError; outro erro continua aparecendo. A troca que o router
+ * começou é o `activeViewTransition` do documento, quando ele muda na chamada.
+ * Quando o router não anima (na primeira carga, num link para um trecho da mesma
+ * página e no "Tentar de novo"), ele não muda, e nenhum `ready` ganha outro
+ * `catch`: uma troca anterior que ainda está na tela já ganhou o dela quando
+ * começou, e o erro dela apareceria duas vezes. Num navegador sem o
+ * `activeViewTransition`, nada muda, como no clique durante a troca.
  */
 export function semErroNaTrocaPulada(router: ComTroca): void {
 	const comecar = router.startViewTransition;
+	const trocaNaTela = () =>
+		typeof document === "undefined" ? undefined : document.activeViewTransition;
 	router.startViewTransition = (novaPagina) => {
+		const anterior = trocaNaTela();
 		const chegou = comecar.call(router, novaPagina);
-		if (typeof document !== "undefined") {
-			document.activeViewTransition?.ready.catch((erro: unknown) => {
+		const troca = trocaNaTela();
+		if (troca && troca !== anterior) {
+			troca.ready.catch((erro: unknown) => {
 				if (!foiTrocaPulada(erro)) {
 					throw erro;
 				}
