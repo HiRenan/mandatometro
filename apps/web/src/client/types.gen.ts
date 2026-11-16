@@ -5,6 +5,60 @@ export type ClientOptions = {
 };
 
 /**
+ * ArtigoDaEdicao
+ */
+export type ArtigoDaEdicao = {
+    /**
+     * Titulo
+     */
+    titulo: string;
+    /**
+     * Caminho
+     */
+    caminho: string;
+};
+
+/**
+ * EdicaoPublica
+ */
+export type EdicaoPublica = {
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Titulo
+     */
+    titulo: string;
+    /**
+     * Inicio
+     */
+    inicio: string;
+    /**
+     * Fim
+     */
+    fim: string;
+    /**
+     * Publicada Em
+     */
+    publicada_em: string;
+    /**
+     * Itens
+     */
+    itens: Array<ItemPublico>;
+};
+
+/**
+ * ErroEdicaoPublica
+ */
+export type ErroEdicaoPublica = {
+    /**
+     * Erro
+     */
+    erro: 'dados_invalidos' | 'edicao_nao_encontrada' | 'servico_indisponivel';
+};
+
+/**
  * ErroNewsletter
  */
 export type ErroNewsletter = {
@@ -22,6 +76,80 @@ export type ErroPiloto = {
      * Erro
      */
     erro: 'dados_invalidos' | 'corpo_muito_grande' | 'limite_de_tentativas' | 'servico_indisponivel' | 'piloto_encerrado';
+};
+
+/**
+ * FatosPublicos
+ */
+export type FatosPublicos = {
+    /**
+     * Votacoes
+     */
+    votacoes: Array<VotacaoPublica>;
+};
+
+/**
+ * FontePublica
+ */
+export type FontePublica = {
+    /**
+     * Url
+     */
+    url: string;
+    /**
+     * Coletado Em
+     */
+    coletado_em: string;
+    /**
+     * Trecho
+     */
+    trecho: string | null;
+};
+
+/**
+ * ItemPublico
+ */
+export type ItemPublico = {
+    /**
+     * Ordem
+     */
+    ordem: number;
+    /**
+     * Titulo
+     */
+    titulo: string;
+    /**
+     * Texto
+     */
+    texto: string;
+    fatos: FatosPublicos | null;
+    /**
+     * Fontes
+     */
+    fontes: Array<FontePublica>;
+    artigo: ArtigoDaEdicao | null;
+};
+
+/**
+ * ListaEdicoes
+ */
+export type ListaEdicoes = {
+    /**
+     * Edicoes
+     */
+    edicoes: Array<ResumoEdicao>;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Limite
+     */
+    limite: number;
+    /**
+     * Deslocamento
+     */
+    deslocamento: number;
 };
 
 /**
@@ -61,6 +189,32 @@ export type PedidoTentativaPiloto = {
 };
 
 /**
+ * PlacarPublico
+ */
+export type PlacarPublico = {
+    /**
+     * Sim
+     */
+    sim: number;
+    /**
+     * Nao
+     */
+    nao: number;
+    /**
+     * Abstencao
+     */
+    abstencao: number;
+    /**
+     * Obstrucao
+     */
+    obstrucao: number;
+    /**
+     * Presidente
+     */
+    presidente: number;
+};
+
+/**
  * ResultadoInscricao
  */
 export type ResultadoInscricao = {
@@ -81,6 +235,32 @@ export type ResultadoTentativaPiloto = {
 };
 
 /**
+ * ResumoEdicao
+ */
+export type ResumoEdicao = {
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Titulo
+     */
+    titulo: string;
+    /**
+     * Inicio
+     */
+    inicio: string;
+    /**
+     * Fim
+     */
+    fim: string;
+    /**
+     * Publicada Em
+     */
+    publicada_em: string;
+};
+
+/**
  * Saude
  */
 export type Saude = {
@@ -88,6 +268,25 @@ export type Saude = {
      * Status
      */
     status: string;
+};
+
+/**
+ * VotacaoPublica
+ */
+export type VotacaoPublica = {
+    /**
+     * Data
+     */
+    data: string;
+    /**
+     * Resultado
+     */
+    resultado: 'aprovada' | 'rejeitada' | 'outro';
+    placar: PlacarPublico | null;
+    /**
+     * Fontes
+     */
+    fontes: Array<FontePublica>;
 };
 
 export type InscreverNewsletterData = {
@@ -179,6 +378,82 @@ export type SairDaNewsletterResponses = {
      */
     200: unknown;
 };
+
+export type ListarEdicoesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Limite
+         */
+        limite?: number;
+        /**
+         * Deslocamento
+         */
+        deslocamento?: number;
+    };
+    url: '/edicoes';
+};
+
+export type ListarEdicoesErrors = {
+    /**
+     * Unprocessable Content
+     */
+    422: ErroEdicaoPublica;
+    /**
+     * Service Unavailable
+     */
+    503: ErroEdicaoPublica;
+};
+
+export type ListarEdicoesError = ListarEdicoesErrors[keyof ListarEdicoesErrors];
+
+export type ListarEdicoesResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListaEdicoes;
+};
+
+export type ListarEdicoesResponse = ListarEdicoesResponses[keyof ListarEdicoesResponses];
+
+export type ObterEdicaoData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: number;
+    };
+    query?: never;
+    url: '/edicoes/{id}';
+};
+
+export type ObterEdicaoErrors = {
+    /**
+     * Not Found
+     */
+    404: ErroEdicaoPublica;
+    /**
+     * Unprocessable Content
+     */
+    422: ErroEdicaoPublica;
+    /**
+     * Service Unavailable
+     */
+    503: ErroEdicaoPublica;
+};
+
+export type ObterEdicaoError = ObterEdicaoErrors[keyof ObterEdicaoErrors];
+
+export type ObterEdicaoResponses = {
+    /**
+     * Successful Response
+     */
+    200: EdicaoPublica;
+};
+
+export type ObterEdicaoResponse = ObterEdicaoResponses[keyof ObterEdicaoResponses];
 
 export type RegistrarTentativaPilotoData = {
     body: PedidoTentativaPiloto;

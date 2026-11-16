@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AbrirSaidaData, AbrirSaidaErrors, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses } from './types.gen';
+import type { AbrirSaidaData, AbrirSaidaErrors, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, ListarEdicoesData, ListarEdicoesErrors, ListarEdicoesResponses, ObterEdicaoData, ObterEdicaoErrors, ObterEdicaoResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -43,6 +43,16 @@ export const abrirSaida = <ThrowOnError extends boolean = false>(options: Option
  * POST idempotente, sem autenticação ou corpo obrigatório. Aceita RFC 8058 e a confirmação no site; o corpo é ignorado. Código desconhecido também recebe 200 vazio.
  */
 export const sairDaNewsletter = <ThrowOnError extends boolean = false>(options: Options<SairDaNewsletterData, ThrowOnError>): RequestResult<SairDaNewsletterResponses, SairDaNewsletterErrors, ThrowOnError> => (options.client ?? client).post<SairDaNewsletterResponses, SairDaNewsletterErrors, ThrowOnError>({ url: '/newsletter/saida/{codigo_saida}', ...options });
+
+/**
+ * Listar as edições publicadas
+ */
+export const listarEdicoes = <ThrowOnError extends boolean = false>(options?: Options<ListarEdicoesData, ThrowOnError>): RequestResult<ListarEdicoesResponses, ListarEdicoesErrors, ThrowOnError> => (options?.client ?? client).get<ListarEdicoesResponses, ListarEdicoesErrors, ThrowOnError>({ url: '/edicoes', ...options });
+
+/**
+ * Ler uma edição publicada com fatos, fontes e artigos da trilha
+ */
+export const obterEdicao = <ThrowOnError extends boolean = false>(options: Options<ObterEdicaoData, ThrowOnError>): RequestResult<ObterEdicaoResponses, ObterEdicaoErrors, ThrowOnError> => (options.client ?? client).get<ObterEdicaoResponses, ObterEdicaoErrors, ThrowOnError>({ url: '/edicoes/{id}', ...options });
 
 /**
  * Receber a primeira conclusão de uma etapa do piloto
