@@ -28,15 +28,15 @@ A política explicada em linguagem simples e de forma interativa, a partir de ca
 
 ## Operating Context
 
-- **Sem conta:** o navegador guarda os artigos lidos, e o progresso não passa de um aparelho para outro.
+- **Conta opcional:** sem conta, o navegador guarda os artigos lidos, e o progresso fica nele. Com a conta, o progresso fica no perfil e passa de um aparelho para outro (ADR 0003).
 - **Os textos das trilhas ficam em Markdown no repositório.** Mudar um texto vira um PR, que também é a revisão do conteúdo.
 - **A edição da semana sai da coleta diária da Câmara e do Senado.** O LLM escreve o rascunho, e uma pessoa do time revisa antes de publicar. Os e-mails saem pelo Resend.
 - **As páginas aparecem no Google e têm prévia de link no WhatsApp** (ADR 0001).
 
 ## Capabilities and Constraints
 
-- **MVP:** as trilhas (artigos, infográfico e quiz), a newsletter semanal com as edições no site e a inscrição só com o e-mail.
-- **Sem login no MVP.** O login está planejado para depois (#30). Também ficam para depois:
+- **MVP:** as trilhas (artigos, infográfico e quiz), a newsletter semanal com as edições no site, a inscrição só com o e-mail e a conta opcional, que guarda o progresso no perfil (ADR 0003).
+- **Depois do MVP:**
   - as páginas de cada parlamentar, com as promessas, os atos e o patrimônio declarado ao TSE;
   - o "fake ou fato";
   - o jogo das comissões.
@@ -44,6 +44,7 @@ A política explicada em linguagem simples e de forma interativa, a partir de ca
 - **Dados pessoais:**
   - as trilhas não pedem nada;
   - a newsletter pede só o e-mail, que fica no banco e nunca aparece no site, na API nem nos logs;
+  - a conta é opcional e pede nome completo, e-mail e senha, que servem só à conta e ficam no banco;
   - as respostas do quiz não identificam quem respondeu.
 - **Fonte em tudo:** cada afirmação sobre um político ou uma votação leva o link oficial, a data da coleta e, quando vier de texto, o trecho literal. O que não tem fonte fica fora do site e da newsletter.
 - **Neutro e apartidário:** o texto descreve o que o dado mostra e deixa o julgamento para o leitor, com os mesmos critérios para todos os partidos e parlamentares. O quiz pergunta sobre fatos e regras e nunca dá nota a político ou partido.
@@ -67,7 +68,7 @@ A política explicada em linguagem simples e de forma interativa, a partir de ca
 1. **Aprender vem primeiro:** cada tela ajuda a pessoa a entender um passo da política, e o resto serve a isso.
 2. **Tudo conferível:** nenhuma explicação sem a fonte oficial.
 3. **Sem lado:** os mesmos critérios para todos, e quem tira a conclusão é o leitor.
-4. **Simples de verdade:** linguagem do dia a dia, artigos curtos, sem conta e sem barreira de entrada.
+4. **Simples de verdade:** linguagem do dia a dia, artigos curtos e sem barreira de entrada: nada pede conta, e a conta é opcional.
 5. **Interativo para fixar:** o quiz, o infográfico e o progresso existem para a pessoa aprender, nunca para pontuar.
 
 ## Accessibility & Inclusion
