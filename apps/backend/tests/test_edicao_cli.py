@@ -63,5 +63,7 @@ def test_chave_tem_repr_protegida_e_catalogo_so_tem_artigos_existentes():
     configuracao = Config(_env_file=None, llm_api_key="chave-ficticia")
     assert "chave-ficticia" not in repr(configuracao)
     raiz = Path(__file__).resolve().parents[3] / "apps/web/conteudo"
-    for caminho in CATALOGO:
-        assert (raiz / (caminho.lstrip("/") + ".md")).is_file()
+    assert len(CATALOGO) == 6
+    for caminho, titulo in CATALOGO.items():
+        artigo = raiz / (caminho.lstrip("/") + ".md")
+        assert f"titulo: {titulo}" in artigo.read_text("utf-8").splitlines()
