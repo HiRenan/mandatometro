@@ -88,6 +88,7 @@ def _numero_pagina(url: str) -> int:
 
 def _paginas(http: ClienteHttp, caminho: str, params=None) -> list[Resposta]:
     paginas, visitadas = [], set()
+    ultima_anunciada = 1
     while caminho:
         resposta = http.obter_json(caminho, params=params)
         params = None
@@ -100,9 +101,15 @@ def _paginas(http: ClienteHttp, caminho: str, params=None) -> list[Resposta]:
         proximas = [_texto(_objeto(x)["href"]) for x in links if x.get("rel") == "next"]
         ultimas = [_texto(_objeto(x)["href"]) for x in links if x.get("rel") == "last"]
         atual = _numero_pagina(resposta.url)
-        if len(proximas) > 1 or any(_numero_pagina(x) <= atual for x in proximas):
+        if (
+            atual != len(paginas) + 1
+            or len(proximas) > 1
+            or any(_numero_pagina(x) != atual + 1 for x in proximas)
+        ):
             raise ErroColeta("Paginação inconsistente na Câmara.")
-        if not proximas and any(_numero_pagina(x) > atual for x in ultimas):
+        # Omitir last numa página seguinte não invalida o limite já informado.
+        ultima_anunciada = max([ultima_anunciada, *(_numero_pagina(x) for x in ultimas)])
+        if not proximas and atual < ultima_anunciada:
             raise ErroColeta("A lista da Câmara está incompleta.")
         paginas.append(resposta)
         caminho = proximas[0] if proximas else None

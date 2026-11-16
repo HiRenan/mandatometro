@@ -37,6 +37,8 @@ O `AGENTS.md` manda trocar CPF, título de eleitor e motivo de afastamento por v
 
 Na página curta de deputados acrescentada em 16/11, o `email` foi substituído por `parlamentar@example.com`. Ela não traz CPF nem data de nascimento. Os testes do conector simulam as páginas seguintes em memória, sem gravar os 513 cadastros. Os dois outros acréscimos não contêm cadastro pessoal.
 
+O `tests/test_respostas_gravadas.py` verifica recursivamente os três acréscimos de 16/11: `cpf` e `dataNascimento` devem estar ausentes, e qualquer `email` deve ser exatamente `parlamentar@example.com`. A verificação percorre objetos e listas, inclusive campos aninhados; uma nova gravação sem sanitização faz o CI falhar, sem imprimir os valores encontrados.
+
 Em `senado/senador-lista-atual.json`, os 50 exercícios com motivo de afastamento ficaram com o mesmo valor fictício, porque um motivo pode ser de saúde, e só os de saúde trocados se destacariam:
 
 - `SiglaCausaAfastamento` virou `XXX`;
