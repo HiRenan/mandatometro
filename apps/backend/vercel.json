@@ -1,0 +1,11 @@
+{
+	"$schema": "https://openapi.vercel.sh/vercel.json",
+	"framework": "fastapi",
+	"regions": ["gru1"],
+	"functions": {
+		"app.py": {
+			"maxDuration": 30,
+			"excludeFiles": "{tests/**,migrations/**,scripts/**,.pytest_cache/**,.ruff_cache/**}"
+		}
+	}
+}
