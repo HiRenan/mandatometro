@@ -28,6 +28,8 @@ def main(argv: list[str] | None = None) -> int:
     openapi.add_argument("caminho", nargs="?", default="openapi.json")
     openapi.set_defaults(rodar=_openapi)
 
+    coleta = comandos.add_parser("coleta", help="coleta os dados oficiais do Congresso")
+    coleta.add_subparsers(dest="casa", required=True)
+
     args = parser.parse_args(argv)
-    args.rodar(args)
-    return 0
+    return args.rodar(args) or 0

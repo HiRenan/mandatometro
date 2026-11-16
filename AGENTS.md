@@ -77,6 +77,7 @@ Endpoints, campos, chaves de ligação e exemplos reais de cada fonte estão em 
 
 - Toda chamada externa tem timeout e nova tentativa com backoff. A API da Câmara devolve 504 de vez em quando.
 - O User-Agent identifica o projeto (`mandatometro (Hack Brasil 2026)`), e a coleta respeita o robots.txt dos sites.
+- **Robots da coleta:** em 16/11/2026, `dadosabertos.camara.leg.br/robots.txt` respondeu HTTP 200 com HTML de página inexistente, sem regras, e `legis.senado.leg.br/robots.txt` respondeu 403. A base lê o arquivo uma vez por execução, usa `RobotFileParser.parse()` e segue a RFC 9309: aplica as regras legíveis; sem regras ou com 4xx no arquivo (exceto 408/429, transitórios), continua; falha de rede/5xx persistente interrompe. Um 403 no endpoint de dados continua sendo erro. `Crawl-delay`, `Request-rate` e `Retry-After` são respeitados.
 - As respostas da Câmara e do Senado são UTF-8, e a Câmara não declara o charset no `content-type`: decodifique explicitamente como UTF-8, ou os acentos embaralham no Windows.
 - **No Senado, data vai com hífen:** `dataInicio=2026-11-03`. No formato `20261103`, a API devolve HTTP 400.
 - **No Senado, `/processo?id={id}` ignora o filtro** e responde HTTP 200 com uma lista arbitrária de matérias, em vez de erro. Use sempre o id no caminho, `/processo/{id}`. A forma com query string vem com o `ementa` do primeiro nível preenchido, o que faz um conector errado parecer funcionar; em `/processo/{id}`, esse `ementa` vem `null` e a ementa de verdade está em `conteudo.ementa`.
