@@ -1,9 +1,13 @@
 """Os jobs pulam sem configuração inicial e nunca imprimem a falha bruta."""
 
+import json
+import logging
 import runpy
 from pathlib import Path
 
 import pytest
+
+from mandatometro.coleta.tipos import ResumoColeta
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "tarefas.py"
 
@@ -68,6 +72,30 @@ def test_coleta_sem_datas_usa_a_janela_existente(tarefa, monkeypatch):
     assert recebidos == ["coleta", "senado"]
 
 
+@pytest.mark.parametrize("casa", ["camara", "senado"])
+@pytest.mark.parametrize("completa", [True, False])
+def test_coleta_no_actions_mostra_so_o_resumo(tarefa, monkeypatch, capsys, caplog, casa, completa):
+    monkeypatch.setenv("DATABASE_URL", "banco-ficticio")
+
+    def coletar(inicio, fim, **kwargs):
+        logging.getLogger(f"mandatometro.coleta.{casa}").warning("Aviso da coleta.")
+        logging.getLogger("httpx2").info("GET /senador/990001/mandatos.json")
+        return ResumoColeta(casa, inicio, fim, completa=completa)
+
+    monkeypatch.setattr(f"mandatometro.coleta.{casa}.coletar", coletar)
+    anterior = logging.root.manager.disable
+    with caplog.at_level(logging.INFO):
+        assert tarefa(["coletar", casa]) == (0 if completa else 1)
+    assert logging.root.manager.disable == anterior
+    saida = capsys.readouterr()
+    assert len(saida.out.splitlines()) == 1
+    resumo = json.loads(saida.out)
+    assert resumo["casa"] == casa
+    assert resumo["completa"] == completa
+    assert saida.err == ""
+    assert caplog.records == []
+
+
 @pytest.mark.parametrize("inicio,fim", [("invalido", "2026-11-15"), ("2026-11-09", "")])
 def test_datas_invalidas_param_antes_da_coleta(tarefa, monkeypatch, inicio, fim, capsys):
     monkeypatch.setenv("DATABASE_URL", "banco-ficticio")
@@ -87,7 +115,9 @@ def test_erro_inesperado_falha_sem_segredos(tarefa, monkeypatch, operacao, capsy
 
     monkeypatch.setattr("mandatometro.cli.main", falhar)
     monkeypatch.setattr("alembic.command.upgrade", falhar)
+    anterior = logging.root.manager.disable
     assert tarefa(operacao) == 1
+    assert logging.root.manager.disable == anterior
     saida = capsys.readouterr()
     assert "segredo-ficticio-nao-mostrar" not in saida.out + saida.err
     assert "Traceback" not in saida.out + saida.err

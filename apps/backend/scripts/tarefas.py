@@ -4,6 +4,7 @@ O preparo da migration usa só a biblioteca padrão, antes de instalar dependên
 A regra de coleta continua no CLI; este arquivo só adapta a execução ao Actions.
 """
 
+import logging
 import os
 import sys
 from pathlib import Path
@@ -38,7 +39,13 @@ def coletar(casa: str) -> int:
     argumentos = ["coleta", casa]
     if inicio is not None and fim is not None:
         argumentos += ["--inicio", inicio, "--fim", fim]
-    return cli(argumentos) or 0
+    # O Actions publica só o resumo; bibliotecas também podem registrar URLs de pessoas.
+    anterior = logging.root.manager.disable
+    logging.disable(logging.CRITICAL)
+    try:
+        return cli(argumentos) or 0
+    finally:
+        logging.disable(anterior)
 
 
 def migrar() -> int:
