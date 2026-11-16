@@ -13,6 +13,7 @@ from mandatometro.avisos.cli import ParserEnvio
 from mandatometro.coleta import camara
 from mandatometro.coleta.senado import registrar as registrar_senado
 from mandatometro.ia import cli as edicao
+from mandatometro.piloto.cli import registrar_comando as registrar_piloto
 
 
 def _openapi(args: argparse.Namespace) -> None:
@@ -42,6 +43,7 @@ def main(argv: list[str] | None = None) -> int:
     camara.registrar_comando(casas)
     registrar_senado(casas)
     edicao.registrar_comando(comandos)
+    registrar_piloto(comandos)
 
     args = parser.parse_args(argumentos)
     return args.rodar(args) or 0

@@ -3,8 +3,8 @@
 import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { abrirSaida, health, inscreverNewsletter, type Options, sairDaNewsletter } from '../sdk.gen';
-import type { AbrirSaidaData, AbrirSaidaError, HealthData, HealthResponse, InscreverNewsletterData, InscreverNewsletterError, InscreverNewsletterResponse, SairDaNewsletterData, SairDaNewsletterError } from '../types.gen';
+import { abrirSaida, health, inscreverNewsletter, type Options, registrarTentativaPiloto, sairDaNewsletter } from '../sdk.gen';
+import type { AbrirSaidaData, AbrirSaidaError, HealthData, HealthResponse, InscreverNewsletterData, InscreverNewsletterError, InscreverNewsletterResponse, RegistrarTentativaPilotoData, RegistrarTentativaPilotoError, RegistrarTentativaPilotoResponse, SairDaNewsletterData, SairDaNewsletterError } from '../types.gen';
 
 /**
  * Receber a inscrição e enviar a última edição publicada
@@ -85,6 +85,25 @@ export const sairDaNewsletterMutation = (options?: Partial<Options<SairDaNewslet
     const mutationOptions: UseMutationOptions<unknown, SairDaNewsletterError, Options<SairDaNewsletterData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await sairDaNewsletter({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Receber a primeira conclusão de uma etapa do piloto
+ *
+ * O mesmo código nas duas etapas permite parear resultados; códigos diferentes permitem apenas médias independentes. Reenvios não alteram a primeira conclusão. Novo e repetido recebem a mesma resposta, sem revelar acertos ou existência anterior.
+ */
+export const registrarTentativaPilotoMutation = (options?: Partial<Options<RegistrarTentativaPilotoData>>): UseMutationOptions<RegistrarTentativaPilotoResponse, RegistrarTentativaPilotoError, Options<RegistrarTentativaPilotoData>> => {
+    const mutationOptions: UseMutationOptions<RegistrarTentativaPilotoResponse, RegistrarTentativaPilotoError, Options<RegistrarTentativaPilotoData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await registrarTentativaPiloto({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

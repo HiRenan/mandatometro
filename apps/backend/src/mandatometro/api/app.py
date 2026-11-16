@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from mandatometro.api.edicoes import router as edicoes
 from mandatometro.api.newsletter import router as newsletter
+from mandatometro.api.piloto import router as piloto
 from mandatometro.config import config
 
 
@@ -24,6 +25,7 @@ app.add_middleware(
 )
 app.include_router(newsletter)
 app.include_router(edicoes)
+app.include_router(piloto)
 
 
 class Saude(BaseModel):
