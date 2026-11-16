@@ -1,0 +1,115 @@
+/*
+ * A newsletter (DESIGN.md). Na página inicial, depois do caminho, a folha da
+ * inscrição: a folha clara com fio de tinta, como a chamada do quiz, com o
+ * título, a faixa, a abertura, o formulário e a nota; ao lado, seis azulejos,
+ * que giram em fila quando o ponteiro passa (movimento.css). A partir do md, os
+ * azulejos ficam numa coluna à direita, em duas fileiras de três; antes, numa
+ * fileira de seis, embaixo. A tela fica em components/inscricao-na-newsletter.tsx.
+ *
+ * As mensagens do envio ficam embaixo do botão: o erro do e-mail leva o fio
+ * vermelho do "Escolha uma opção" do quiz; o do serviço, as palavras em negrito,
+ * sem cor, como o "Ainda não deu" da página de erro.
+ */
+@layer components {
+	.newsletter-folha {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1.5rem 3rem;
+		align-items: center;
+		margin: 0 var(--margem) clamp(4rem, 9vw, 7rem);
+		padding: clamp(1.5rem, 4vw, 3rem) var(--respiro);
+		border: 2px solid var(--tinta);
+		background: var(--folha);
+	}
+
+	.newsletter-texto {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.9rem;
+		justify-items: start;
+	}
+
+	.newsletter-folha h2 {
+		--letra: clamp(2.5rem, 1.5rem + 4.5vw, 5.5rem);
+		--recuo: calc(var(--recuo-de-fora, 0px) + 2 * var(--respiro) + 4px);
+	}
+
+	.newsletter-abertura,
+	.newsletter-nota {
+		max-width: 34rem;
+		font-family: var(--font-serif);
+		color: var(--tinta-suave);
+	}
+
+	.newsletter-abertura {
+		font-size: 1.0625rem;
+		line-height: 1.5;
+	}
+
+	/* O rótulo, o campo com o botão e a linha da mensagem. Quando o campo e o botão
+	   não cabem lado a lado, o botão desce para a linha de baixo. */
+	.newsletter-formulario {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.5rem;
+		width: 100%;
+		max-width: 40rem;
+		margin-top: 0.6rem;
+	}
+
+	.newsletter-linha {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+
+	.newsletter-linha > .campo {
+		flex: 1 1 15rem;
+	}
+
+	.newsletter-linha > .botao {
+		flex: none;
+		max-width: 100%;
+	}
+
+	.newsletter-enviando {
+		margin-top: 0.4rem;
+		color: var(--tinta-suave);
+	}
+
+	.newsletter-mensagem {
+		max-width: 34rem;
+		margin-top: 0.4rem;
+		font-family: var(--font-sans);
+		font-size: 1.0625rem;
+		font-weight: 600;
+		line-height: 1.4;
+	}
+
+	.falta-no-campo {
+		padding-left: 0.7rem;
+		border-left: 5px solid var(--fita-vermelha);
+		font-weight: 700;
+	}
+
+	.newsletter-nota {
+		font-size: 0.9375rem;
+		line-height: 1.5;
+	}
+
+	@media (width >= 48rem) {
+		.newsletter-folha {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 15.25rem);
+		}
+
+		.newsletter-folha h2 {
+			--recuo: calc(
+				var(--recuo-de-fora, 0px) +
+				2 *
+				var(--respiro) +
+				4px +
+				18.25rem
+			);
+		}
+	}
+}
