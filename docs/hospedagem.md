@@ -47,6 +47,8 @@ Comece depois de conferir a inscrição de teste no ambiente anterior. A publica
 
 3. **API → Settings → Environment Variables → Add:** em **Production**, cadastre `APP_BASE_URL=https://mandatometro.com.br` e `API_URL=https://api.mandatometro.com.br`. Para envio real, o Renan acrescenta `RESEND_API_KEY` e `RESEND_FROM`, com o remetente verificado. **Settings → Domains → Add:** adicione `api.mandatometro.com.br` a **Production** e crie o CNAME `api` no provedor DNS, usando o valor mostrado pela Vercel. **Confira:** HTTPS válido; banco e Resend não aparecem nas variáveis do site.
 
+   `PILOTO_ATIVO` fica desligado por padrão; o Renan define `true` nas variáveis da **API** e faz nova publicação quando aprovar as decisões da [medição do piloto](medicao-do-piloto.md), com a migration aplicada e a tela integrada.
+
 4. **GitHub → PR da develop para main:** Renan e Atena publicam a versão aprovada. **Não pule este passo:** em 16/11/2026, a `main` em `2b1bcea` ainda não tinha os conectores. A mudança de migrations no push aciona **Migrar banco** para produção. Se não houve mudança nesses arquivos, ou se a execução anterior pulou por falta do segredo, use **Actions → Migrar banco → Run workflow → main** uma vez. **Confira:** migration aplicada e publicação da API pronta. Mantenha a folha de produção oculta até concluir; publicação e migration são processos separados.
 
 5. **GitHub → Actions → Coletar Congresso → Run workflow → main:** deixe as datas vazias para carregar os sete dias completos anteriores. **Confira:** resumo das duas Casas, commit publicado na `main` e ausência de falhas. Não copie a edição de prova do banco local. A edição real precisa do preparo e da revisão da #22; só a coleta não a publica.
