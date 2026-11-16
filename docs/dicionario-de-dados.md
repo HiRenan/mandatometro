@@ -477,26 +477,38 @@ O `apelido` (`"PEC da Segurança Pública"`) é o campo mais útil para a newsle
 
 ## Da API para os nomes do domínio
 
-O `AGENTS.md` fixa os nomes do domínio em português e sem acento. Este é o mapa que a #7 deve seguir:
+O `AGENTS.md` fixa os nomes do domínio em português e sem acento. Este é o mapa que o modelo da #7 segue, em `apps/backend/src/mandatometro/db/modelos.py`, conferido com ele em 16/11/2026. A chave de parlamentar, proposição e votação é a `casa` (`camara` ou `senado`) com o `id_externo`, e cada registro aponta para uma `fonte`: a `url` que a coleta leu, a `url_publica` que o leitor abre, quando houver, e a data da coleta (`coletado_em`).
 
 | Nosso nome | Câmara | Senado |
 |---|---|---|
-| `parlamentar.id_externo` | `deputados.id` | `IdentificacaoParlamentar.CodigoParlamentar` |
+| `parlamentar.id_externo` | `deputados.id` | `IdentificacaoParlamentar.CodigoParlamentar`, convertido para inteiro: na lista vem `"5672"`, e no `/votacao`, `5672` |
 | `parlamentar.nome` | `ultimoStatus.nome` | `IdentificacaoParlamentar.NomeParlamentar` |
 | nenhum no MVP | `deputados.cpf`, que o conector descarta (ver [Campos pessoais](#campos-pessoais)) | não vem nos endpoints que usamos |
+| `mandato.legislatura` | `ultimoStatus.idLegislatura` | `Mandato.PrimeiraLegislaturaDoMandato.NumeroLegislatura`, a primeira das duas legislaturas do mandato |
 | `mandato.uf` | `ultimoStatus.siglaUf` | `Mandato.UfParlamentar` |
-| `mandato.partido` | `ultimoStatus.siglaPartido` | `IdentificacaoParlamentar.SiglaPartidoParlamentar` (o histórico de partidos só vem em `/senador/{cod}/mandatos.json`, em `MandatoParlamentar.Parlamentar.Mandatos.Mandato[].Partidos.Partido[].Sigla`) |
-| `proposicao.sigla` / `numero` / `ano` | `siglaTipo` / `numero` / `ano` | `sigla` / `numero` / `ano` |
+| `mandato.condicao` | `ultimoStatus.condicaoEleitoral` | `Mandato.DescricaoParticipacao` |
+| `mandato.em_exercicio` | `ultimoStatus.situacao` é `Exercício` | está na lista atual (`/senador/lista/atual.json`) |
+| `proposicao.id_externo` | `proposicoes.id` | `idProcesso`, e não o `codigoMateria` |
+| `proposicao.sigla` / `numero` / `ano` | `siglaTipo` / `numero` / `ano` | `sigla` / `numero` / `ano`; o `numero` vem como texto e vira inteiro (`"00018"` e `"18"` viram `18`) |
 | `proposicao.ementa` | `proposicoes.ementa` | `votacao.ementa` ou `processo.conteudo.ementa` — **nunca `processo.ementa`, que não vem** |
+| `proposicao.apelido` | não existe | `processo.apelido` |
 | `proposicao.url_inteiro_teor` | `urlInteiroTeor` | `documento.url` (o PDF da proposta) |
-| `votacao.id_externo` | `votacoes.id` (`"2637478-26"`) | `codigoSessaoVotacao` (`7109`) |
+| `votacao.id_externo` | `votacoes.id` (`"2637478-26"`) | `codigoSessaoVotacao`, como texto (`"7109"`) |
 | `votacao.data` | `data` | `dataSessao` |
-| `votacao.resultado` | `aprovacao` (`1`/`0`) | `resultadoVotacao` (letra) |
 | `votacao.descricao` | `descricao` | `descricaoVotacao` |
-| `voto.valor` | `tipoVoto` | `siglaVotoParlamentar` |
+| `votacao.resultado` / `resultado_bruto` | `aprovacao` (`1`/`0`) | `resultadoVotacao` (letra) |
+| `votacao_proposicao` | `proposicoesAfetadas[]` do `/votacoes/{id}` — **nunca o prefixo do id da votação** | `idProcesso` |
 | `voto.parlamentar` | `votos[].deputado_.id` | `votos[].codigoParlamentar` |
+| `voto.valor` / `valor_bruto` | `tipoVoto` | `siglaVotoParlamentar` |
+| `voto.partido` | `votos[].deputado_.siglaPartido` | `votos[].siglaPartidoParlamentar` |
+| `voto.uf` | `votos[].deputado_.siglaUf` | `votos[].siglaUFParlamentar` |
 
-Como `resultado` e `voto.valor` têm domínios diferentes nas duas Casas, o conector precisa normalizá-los para um conjunto nosso. Vale decidir isso na #7 e registrar aqui.
+O partido e a UF ficam no voto, e não no mandato: são os do dia do voto, porque o partido muda dentro do mandato. O histórico de partidos do `/senador/{cod}/mandatos.json` não entra no banco.
+
+O `resultado` e o `voto.valor` têm domínios diferentes nas duas Casas, e o modelo traduz os dois para um conjunto nosso, com o `normalizar_resultado` e o `normalizar_voto` (decisões do Renan na #7, em 12/11/2026, com os ajustes da #97):
+
+- **`votacao.resultado`:** `aprovada`, `rejeitada` ou `outro`. O `1` e o `"A"` viram `aprovada`, o `0` vira `rejeitada`, e uma letra que ainda não apareceu vira `outro`. O `resultado_bruto` guarda o código como a Casa publicou.
+- **`voto.valor`:** `sim`, `nao`, `abstencao`, `obstrucao`, `presidente`, `nao_votou` ou `outro`. O `Artigo 17` e o `Presidente (art. 51 RISF)` viram `presidente`, e o `P-NRV` vira `nao_votou`. O `valor_bruto` guarda só os códigos de `CODIGOS_GRAVADOS`: a ausência do Senado (`AP`, `LS`) vira `nao_votou` sem o código, e um código desconhecido vira `outro`, também sem o código.
 
 ## Campos pessoais
 
@@ -512,5 +524,4 @@ Nome, partido, UF e voto de parlamentar **não** são dados pessoais protegidos 
 ## O que ficou em aberto
 
 - **Separar a votação de mérito das de rito.** Das 27 votações do plenário da Câmara na semana do exemplo, a maioria é procedimental ("Aprovada a Emenda de Redação", "Aprovada a Redação Final"), e as 4 do Senado eram todas da mesma PEC. A newsletter precisa de um critério para escolher o que contar. Fica para a #22, que monta a edição.
-- **Normalizar `resultado` e `voto.valor`** num conjunto único para as duas Casas: decisão da #7.
 - **O TSE,** depois do MVP (#12 e #13). Os CSVs vêm em latin-1, separados por `;`, um por UF dentro de cada ZIP; `SQ_CANDIDATO` liga os arquivos dentro de uma eleição e o CPF liga eleições diferentes.
