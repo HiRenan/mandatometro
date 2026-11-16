@@ -130,6 +130,7 @@ def test_erro_permanente_e_json_invalido_nao_vazam_resposta():
         with pytest.raises(ErroColeta) as erro:
             http.obter_json("/votos")
         assert "SEGREDO" not in str(erro.value)
+        assert erro.value.status_http == (status if status != 200 else None)
         assert http.chamadas == 2
 
 

@@ -20,6 +20,10 @@ USER_AGENT = "mandatometro (Hack Brasil 2026)"
 class ErroColeta(Exception):
     """Falha comunicável sem corpo de resposta, dados pessoais ou parâmetros de SQL."""
 
+    def __init__(self, mensagem: str, *, status_http: int | None = None):
+        super().__init__(mensagem)
+        self.status_http = status_http
+
 
 @dataclass(frozen=True)
 class Resposta:
@@ -185,7 +189,10 @@ class ClienteHttp:
         self._ler_robots()
         resposta = self._obter(url)
         if not resposta.is_success:
-            raise ErroColeta(f"A fonte respondeu HTTP {resposta.status_code}.")
+            raise ErroColeta(
+                f"A fonte respondeu HTTP {resposta.status_code}.",
+                status_http=resposta.status_code,
+            )
         try:
             dados = json.loads(resposta.content.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError):
