@@ -104,3 +104,46 @@ def test_os_checks_os_valores_padrao_e_os_tamanhos_batem_com_os_modelos(engine_d
     assert das_migrations["checks"]
     assert das_migrations["tamanhos"]
     assert das_migrations == dos_modelos
+
+
+def test_fatos_e_artigo_sao_opcionais_e_preservam_item_antigo(engine_de_teste, alembic):
+    alembic("downgrade", "0004")
+    with engine_de_teste.begin() as c:
+        fonte = c.execute(
+            text(
+                "insert into fonte (url) values ('https://www.camara.leg.br/exemplo') returning id"
+            )
+        ).scalar_one()
+        edicao = c.execute(
+            text(
+                "insert into edicao (titulo, inicio, fim)"
+                " values ('Edicao ficticia', '2026-11-09', '2026-11-15') returning id"
+            )
+        ).scalar_one()
+        item = c.execute(
+            text(
+                "insert into item_edicao (edicao_id, ordem, titulo, texto, fonte_id)"
+                " values (:edicao, 1, 'Item ficticio', 'Texto preservado', :fonte) returning id"
+            ),
+            {"edicao": edicao, "fonte": fonte},
+        ).scalar_one()
+    try:
+        alembic("upgrade", "head")
+        colunas = {c["name"]: c for c in inspect(engine_de_teste).get_columns("item_edicao")}
+        assert str(colunas["fatos"]["type"]) == "JSONB"
+        assert colunas["fatos"]["nullable"] and colunas["artigo_caminho"]["nullable"]
+        with engine_de_teste.connect() as c:
+            registro = c.execute(
+                text("select texto, fatos, artigo_caminho from item_edicao where id=:id"),
+                {"id": item},
+            ).one()
+            assert registro == ("Texto preservado", None, None)
+        alembic("downgrade", "0004")
+        assert "fatos" not in {
+            c["name"] for c in inspect(engine_de_teste).get_columns("item_edicao")
+        }
+    finally:
+        alembic("upgrade", "head")
+        with engine_de_teste.begin() as c:
+            c.execute(text("delete from edicao where id=:id"), {"id": edicao})
+            c.execute(text("delete from fonte where id=:id"), {"id": fonte})

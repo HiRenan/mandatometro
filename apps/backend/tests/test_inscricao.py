@@ -131,6 +131,44 @@ def test_sem_publicada_grava_e_nao_envia(ambiente):
     assert ambiente["chamadas"] == []
 
 
+def test_edicao_com_fatos_carrega_fontes_adicionais_antes_do_envio(ambiente):
+    from mandatometro.ia.esquemas import Fatos, FatoVotacao, Placar
+
+    edicao = publicar(ambiente)
+    with Session(ambiente["banco"]) as sessao, sessao.begin():
+        item = sessao.scalars(select(ItemEdicao).where(ItemEdicao.edicao_id == edicao.id)).one()
+        outra = Fonte(
+            url="https://dadosabertos.camara.leg.br/api/v2/proposicoes/20",
+            url_publica="https://www.camara.leg.br/proposicoesWeb/fichadetramitacao?idProposicao=20",
+            coletado_em=datetime(2026, 11, 14, tzinfo=UTC),
+            trecho="Ementa de teste para conferir a referência adicional.",
+        )
+        sessao.add(outra)
+        sessao.flush()
+        item.fatos = Fatos(
+            proposicoes=[20],
+            votacoes=[
+                FatoVotacao(
+                    id=30,
+                    data=date(2026, 11, 10),
+                    resultado="aprovada",
+                    placar=Placar(sim=12, presidente=1),
+                    fontes=[item.fonte_id],
+                )
+            ],
+            fontes=[item.fonte_id, outra.id],
+            pendencias=[],
+        ).model_dump(mode="json")
+        item.artigo_caminho = "/trilhas/processo-legislativo/onde-o-projeto-comeca"
+    resposta = ambiente["cliente"].post(ROTA, json={"email": "pessoa@example.com"})
+    assert resposta.json() == {"situacao": "edicao_enviada"}
+    corpo = json.loads(ambiente["chamadas"][0].content)
+    assert "Sim: 12" in corpo["text"]
+    assert "idProposicao=20" in corpo["text"]
+    assert "Ementa de teste para conferir" in corpo["text"]
+    assert "https://site.example.com/trilhas/processo-legislativo/" in corpo["html"]
+
+
 def test_falha_no_resend_preserva_inscricao_e_permite_tentar_de_novo(ambiente, caplog):
     publicar(ambiente)
     ambiente["status"] = 401

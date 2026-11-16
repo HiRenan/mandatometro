@@ -1,0 +1,66 @@
+name: Coletar Congresso
+
+on:
+  schedule:
+    # 03h17 em Brasília. A agenda pertence à develop, mas coleta com o código da main.
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      inicio:
+        description: "Primeiro dia (AAAA-MM-DD); deixe os dois campos vazios para os últimos 7 dias"
+        required: false
+        type: string
+      fim:
+        description: "Último dia, inclusive (AAAA-MM-DD)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+# A mesma fila de migrar.yml: as duas Casas e as migrations não disputam o banco.
+concurrency:
+  group: ${{ (github.event_name == 'schedule' || github.ref == 'refs/heads/main') && 'banco-producao' || 'banco-desenvolvimento' }}
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  coletar:
+    if: >-
+      ${{ (github.event_name == 'schedule' && vars.COLETAS_ATIVAS == 'true') ||
+          (github.event_name == 'workflow_dispatch' &&
+          (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')) }}
+    name: Coletar ${{ matrix.casa }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ (github.event_name == 'schedule' || github.ref == 'refs/heads/main') && 'producao' || 'desenvolvimento' }}
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        casa: [camara, senado]
+    defaults:
+      run:
+        working-directory: apps/backend
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      COLETA_INICIO: ${{ inputs.inicio }}
+      COLETA_FIM: ${{ inputs.fim }}
+      CASA: ${{ matrix.casa }}
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'schedule' && 'main' || github.sha }}
+          persist-credentials: false
+      - name: Registrar o código executado
+        run: git rev-parse HEAD
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.7"
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: apps/backend/uv.lock
+      - run: uv sync --locked --no-dev
+      - name: Coletar e mostrar o resumo sem dados pessoais
+        run: uv run --no-sync python scripts/tarefas.py coletar "$CASA"

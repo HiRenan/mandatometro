@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from mandatometro.avisos.email import MensagemInvalida, montar_email
 from mandatometro.avisos.resend import EnvioIndisponivel, Resend
-from mandatometro.db.modelos import Edicao, Inscrito, ItemEdicao
+from mandatometro.db.modelos import Edicao, Fonte, Inscrito, ItemEdicao
 
 logger = logging.getLogger(__name__)
 SituacaoInscricao = Literal["edicao_enviada", "aguardando_edicao", "envio_indisponivel"]
@@ -23,6 +23,7 @@ class InscricaoPreparada:
     email: str = field(repr=False)
     codigo_saida: UUID = field(repr=False)
     edicao: Edicao | None = field(repr=False)
+    fontes: dict[int, Fonte] = field(default_factory=dict, repr=False)
 
 
 def preparar_inscricao(banco: Engine, email: str) -> InscricaoPreparada:
@@ -42,7 +43,16 @@ def preparar_inscricao(banco: Engine, email: str) -> InscricaoPreparada:
             .options(selectinload(Edicao.itens).joinedload(ItemEdicao.fonte))
             .limit(1)
         )
-        preparada = InscricaoPreparada(inscrito.id, inscrito.email, inscrito.codigo_saida, edicao)
+        # Carrega referências antes de fechar a transação. A validação continua na montagem:
+        # edição inválida deve resultar em envio indisponível, preservando a inscrição.
+        ids = set()
+        for item in edicao.itens if edicao else []:
+            if isinstance(item.fatos, dict) and isinstance(item.fatos.get("fontes"), list):
+                ids.update(i for i in item.fatos["fontes"] if type(i) is int)
+        fontes = {f.id: f for f in sessao.scalars(select(Fonte).where(Fonte.id.in_(ids)))}
+        preparada = InscricaoPreparada(
+            inscrito.id, inscrito.email, inscrito.codigo_saida, edicao, fontes
+        )
     # Todas as relações já vieram do banco. Não há transação/conexão aberta durante a rede.
     return preparada
 
@@ -54,7 +64,11 @@ async def enviar_ultima_edicao(
         return "aguardando_edicao"
     try:
         mensagem = montar_email(
-            inscricao.edicao, inscricao.codigo_saida, app_base_url=app_base_url, api_url=api_url
+            inscricao.edicao,
+            inscricao.codigo_saida,
+            app_base_url=app_base_url,
+            api_url=api_url,
+            fontes=inscricao.fontes,
         )
         await envio.enviar(
             inscricao.email,

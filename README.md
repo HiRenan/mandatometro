@@ -141,6 +141,8 @@ erDiagram
         string titulo
         string texto
         int fonte_id FK
+        jsonb fatos "fotografia editorial sem dados individuais"
+        string artigo_caminho "artigo permitido da trilha"
     }
     inscrito {
         int id PK
@@ -185,6 +187,10 @@ O resumo final é uma linha JSON com contagens confirmadas, chamadas HTTP (inclu
 
 A coleta é sequencial, usa timeout, backoff e o User-Agent do projeto, e consulta o `robots.txt`. Os testes usam respostas gravadas e o banco de teste, sem rede; a coleta real exige executar o comando. Ela roda em lote, fora das requisições do site.
 
+**Coleta e migrations na hospedagem.** O [passo a passo de ativação](docs/hospedagem.md) começa pelo desenvolvimento e depois passa à produção. O workflow **Coletar Congresso** roda às 03h17 de Brasília com o código da `main`, só depois de criar a variável de repositório `COLETAS_ATIVAS=true`. O botão **Run workflow** permite a primeira carga e a recuperação por datas: `develop` usa o banco de desenvolvimento, `main` usa o de produção. Cada Casa é tentada mesmo se a outra falhar.
+
+**Migrar banco** aplica `alembic upgrade head` automaticamente no push que muda `apps/backend/migrations/**`, no banco correspondente à branch. Sem o secret `DATABASE_URL_UNPOOLED`, o push avisa e pula; um disparo manual sem segredo falha. O botão **Run workflow** serve para a primeira carga num banco recém-criado e para recuperação. As duas tarefas compartilham uma fila por banco. A migration fica fora da função e do build; mudanças de esquema precisam ser compatíveis com o código antigo e o novo, pois o deploy não espera o Actions.
+
 **Coleta da Câmara.**
 
 ```bash
@@ -208,6 +214,93 @@ uv run mandatometro coleta senado
 O comando divide períodos maiores em janelas de até 365 dias e coleta as votações nominais e secretas publicadas em `/votacao`, só das sessões do Senado, os votos individuais disponíveis e os senadores em exercício. As simbólicas e as sessões conjuntas do Congresso ficam de fora. Votações secretas ficam sem votos individuais; o modelo não guarda seus totais nem permite identificar com segurança a modalidade apenas pela ausência de votos.
 
 Se o histórico de um votante fora da lista atual falhar, seus votos ficam gravados, o mandato não é inventado e `falhas_parlamentares` conta o parlamentar uma vez. Recurso indisponível entra no resumo pelo caminho com seu id (por exemplo, `/processo/9006525`): sem o processo, a votação é pulada; sem o histórico, os votos são preservados.
+
+**Edição semanal.** O comando usa só as votações já coletadas. Não coleta, não envia e-mail e não publica ao gerar. Sem datas, usa os sete dias completos anteriores, como a coleta. O provedor ainda não tem adaptador: todos os itens começam com redação manual pendente. As variáveis `LLM_PROVIDER`, `LLM_MODEL` e `LLM_API_KEY` estão preparadas para essa integração futura; preenchê-las ainda não liga um provedor.
+
+**Preparação do ambiente.** Peça ao time a URL autorizada do banco com as migrations aplicadas e a coleta da semana, junto com os resumos das duas Casas. Confira servidor, porta e nome do banco antes de usar. Abra um terminal PowerShell na raiz do repositório pelo Orca, entre na pasta abaixo e substitua o valor de exemplo pela URL recebida. A variável vale nesse terminal; configure-a novamente se abrir outro.
+
+```powershell
+Set-Location .\apps\backend
+uv sync --frozen
+$env:DATABASE_URL = 'COLE_A_URL_AUTORIZADA_PELO_TIME'
+```
+
+Prepare uma pasta **fora do repositório**, por exemplo `$HOME\Documents\mandatometro-revisoes`. No PowerShell, `$HOME` é sua pasta de usuário; crie a pasta de revisões pelo explorador de arquivos se ela ainda não existir. O JSON contém descrições e trechos oficiais para consulta: ele e a prévia ficam fora de commits e logs. Os comandos seguintes usam essa pasta e são executados no mesmo terminal, em `apps/backend`.
+
+**Rotina de toda semana.** Uma pessoa opera por vez.
+
+1. Gere o rascunho com as datas da semana e leia o resumo, inclusive as exclusões. Anote o `edicao_id` retornado: nos comandos seguintes, substitua `1` por ele.
+
+   ```powershell
+   uv run mandatometro edicao rascunho --inicio 2026-11-09 --fim 2026-11-15 --teto 8
+   ```
+
+2. Exporte para a pasta externa preparada acima. Escolha um nome novo por edição ou rodada de revisão; a exportação recusa sobrescrever arquivos.
+
+   ```powershell
+   uv run mandatometro edicao exportar 1 --arquivo "$HOME\Documents\mandatometro-revisoes\edicao-2026-11-15.json"
+   ```
+
+3. Abra o JSON no editor e salve em UTF-8. Confira os fatos e as fontes de cada item, substitua a redação pendente e confirme a revisão e o artigo escolhido. Se um item falar da licença, do afastamento ou da saúde de um parlamentar, exclua-o com `excluir: true` e preencha `motivo_exclusao`. O aviso em `contexto.avisos` indica esses termos no texto oficial: confira se tratam de uma pessoa ou de política pública antes de confirmar o item. A `explicacao` é uma lista de parágrafos. Confirme a cobertura uma única vez, depois de ler os resumos das duas coletas e conhecer suas lacunas: o banco não certifica a cobertura de todo o Congresso.
+
+   Este é um **recorte fictício dos campos editáveis**; mantenha os demais campos exportados, sem substituir o arquivo inteiro pelo exemplo:
+
+   ```json
+   {
+     "titulo": "Jornal legislativo da semana",
+     "cobertura_confirmada": true,
+     "itens": [
+       {
+         "titulo": "Uma proposta para o serviço público",
+         "explicacao": [
+           "A proposta organiza um serviço público fictício.",
+           "A explicação deste exemplo é inventada para mostrar o formato da revisão."
+         ],
+         "artigo_caminho": "/trilhas/processo-legislativo/o-plenario-vota-o-projeto",
+         "revisado": true,
+         "artigo_confirmado": true
+       }
+     ]
+   }
+   ```
+
+4. Importe a revisão. O comando valida o arquivo e salva as confirmações. Se houver erro, corrija o campo indicado e repita; o rascunho anterior fica preservado. Se a revisão já foi salva, exporte um arquivo novo antes de fazer outros ajustes.
+
+   ```powershell
+   uv run mandatometro edicao revisar 1 --arquivo "$HOME\Documents\mandatometro-revisoes\edicao-2026-11-15.json"
+   ```
+
+5. Leia a prévia completa, com fatos, fontes e link da trilha, no formato de texto do e-mail. Não redirecione essa saída para o log do job. A prévia admite `APP_BASE_URL` local; envio real exige HTTPS.
+
+   ```powershell
+   uv run mandatometro edicao mostrar 1
+   ```
+
+6. Com a revisão concluída e nenhuma pendência, publique. O comando lê a revisão salva no banco, sem receber arquivo. A publicação é definitiva e não envia o e-mail.
+
+   ```powershell
+   uv run mandatometro edicao publicar 1
+   ```
+
+A seleção agrupa votações pelas proposições ligadas na fonte, unindo os grupos que se conectam, dentro da mesma Casa. Primeiro vêm os grupos com placar registrado; depois, os demais. Em cada parte, a ordem é data mais recente, Casa e menor id externo da proposição principal. O teto padrão é oito grupos, ajustável por `--teto N`. O resumo lista ids e quantidades de votações sem proposição, sem página pública e cortadas pelo teto. Não se deduz o vínculo pelo prefixo do id da votação.
+
+Licença, afastamento ou saúde, incluindo as flexões de internar, hospitalizar, adoecer, adoentar e convalescer, além de atendimento médico, excluem o ato quando ligados a parlamentar na mesma frase, com até seis palavras entre termo e sinal. Os adjetivos `interna` e `internas` ficam fora dos termos; `interna-se` continua reconhecido. Quebra de linha vale como espaço; ponto só encerra a frase após palavra de cinco letras ou mais, enquanto `!` e `?` sempre encerram. Requerimento sem essa ligação só sai por licença ou afastamento e sem outra proposição numerada, citada por sigla ou por extenso, inclusive no plural e com o nome da Casa. Artigo de regimento ou lei não é proposição citada; saúde sozinha não basta. O nome da Casa não conta como ligação. Por privacidade, saem também a regra geral de licença das próprias parlamentares e a emenda sobre licenciamento ambiental com nome de parlamentar próximo do termo. Essas exclusões mostram **só a quantidade**, sem ids.
+
+Se o item continua elegível e qualquer descrição ou ementa ligada tem termo dessa família, ele recebe redação pendente com motivo `termo_pessoal`, sem chamada ao redator. A ordem e o teto continuam iguais. O resumo conta esses itens em `itens_com_termo_pessoal`; o arquivo exportado e o `revisar` avisam item por item para conferir se há assunto pessoal e, se houver, usar `excluir: true`. A publicação exige a confirmação de cada item, inclusive os avisados.
+
+O item aponta para a fonte da votação mais recente do grupo (desempate pelo id externo numérico); sem página pública nessa fonte, usa a ficha de uma proposição ligada àquela votação. Sem nenhuma dessas páginas, a votação sai. Todas as referências usadas ficam preservadas, com data da coleta e trecho quando disponível. O placar conta Sim, Não, Abstenções e Obstruções por votação, com Presidência à parte; ausência e valores não classificados ficam de fora. Sem placar gravado, o texto informa a indisponibilidade, sem concluir que foi votação secreta ou simbólica nem mostrar zero. O resultado `outro` informa que o resultado não está classificado. Aprovação de requerimento, recurso ou destaque não significa aprovação da proposta.
+
+No arquivo, edite o título da edição, os títulos e a lista `explicacao` de cada item. Pode reordenar a lista de itens; para retirar um, marque `excluir: true` e escreva `motivo_exclusao`, mantendo ao menos um item. Não remova linhas nem altere ids, datas, `fatos`, `fontes`, `contexto` ou o catálogo. Números inseridos pela pessoa precisam aparecer nos fatos ou textos oficiais daquele item; a verificação não substitui a leitura do significado de cada número.
+
+Escolha `artigo_caminho` entre os seis artigos do catálogo e marque `artigo_confirmado: true`, ou use `null` quando nenhum se aplicar. A sugestão depende da forma do ato: recurso contra decisão conclusiva aponta para comissões, e grupo só de PL/PLP aponta para Plenário; os demais ficam sem sugestão. Os artigos sobre revisão pela outra Casa e sanção ou veto também podem ser escolhidos na revisão. Um arquivo com catálogo antigo precisa ser exportado novamente. O `revisar` aplica o mesmo filtro de assunto pessoal ao título e aos parágrafos humanos, sem usar as siglas da fonte, e avisa apenas o número do item se o texto puder identificar parlamentar ou partido. Tirar só o marcador de redação não basta para confirmar a revisão.
+
+Repetir o rascunho no mesmo período retorna a edição existente sem sobrescrever ajustes. `--refazer` recompõe **só um rascunho**, descarta a revisão anterior e invalida os arquivos exportados; use-o também se a coleta mudou os dados usados. Depois de salvar uma revisão, exporte outro arquivo para fazer novos ajustes. Edição publicada permanece intocada, inclusive ao repetir geração ou publicação. Mais de uma edição no período é erro a resolver. O fluxo prevê uma pessoa operando por vez, sem travas para execuções simultâneas.
+
+Sem votação no banco, retorna `sem_votacoes_no_banco`; se todas saírem da seleção, `sem_itens_elegiveis`. Não cria uma edição vazia nem afirma que o Congresso não votou. Saídas: **0** para operação concluída, inclusive redação pendente, repetição sem efeito e período sem itens; **1** para falha operacional ou revisão/publicação recusada; **2** para argumentos inválidos. Exceto a prévia e os erros de sintaxe do comando, a saída é JSON com ids, contagens e mensagens sem conteúdo de fonte ou exceção bruta. Erros de sintaxe, como `publicar --arquivo`, imprimem o texto de uso e o erro em stderr, com saída **2**, sem JSON.
+
+O contrato para os consumidores da edição é `item_edicao.texto` como explicação em texto puro, `artigo_caminho` opcional e `fatos` JSONB versionado, também opcional para itens antigos. A versão 1 guarda ids de proposições/votações/fontes, data, resultado, placar agregado, origem (`codigo`, `modelo` ou `revisao`) e pendências. A confirmação única da cobertura é persistida pela presença ou ausência da pendência `cobertura` nos itens. Os fatos publicados não são recalculados após uma coleta. Para a #39, reutilize `formatar_edicao`/`montar_email` e carregue as fontes pelos ids de `fatos.fontes`, além da fonte principal; renderizar apenas `texto` perderia os blocos factuais. Itens antigos, sem os novos campos, mantêm a apresentação anterior.
+
+Os testes são offline, com redator falso e dados inventados: com `TEST_DATABASE_URL` explícito, rode `uv run pytest`. Não é necessário chave ou SDK de LLM.
 
 **Checagens,** as mesmas do CI:
 
@@ -258,11 +351,13 @@ Na produção, desligue o access log do Uvicorn com `--no-access-log`, como faz 
 
 - a `main` vai para https://mandatometro.com.br; a `develop`, para o endereço do time; e cada PR ganha uma prévia;
 - o build roda no Node 24, pelo `engines` de `apps/web/package.json`;
-- o painel da Vercel não pede variáveis: o endereço do site (`APP_BASE_URL`) sai do ambiente da Vercel, com o domínio na `main` e o endereço da branch nas prévias, e as páginas fora da `main` pedem aos buscadores para não indexar (`X-Robots-Tag: noindex`);
-- até a API ter casa (#23), o `API_URL` fica vazio na Vercel: a página inicial sai sem a folha da newsletter, e a página de sair diz que a newsletter ainda não funciona naquele endereço;
+- o endereço do site (`APP_BASE_URL`) sai do ambiente da Vercel, com o domínio na `main` e o endereço da branch nas prévias, e as páginas fora da `main` pedem aos buscadores para não indexar (`X-Robots-Tag: noindex`);
+- o `API_URL` fica vazio por padrão. Depois de validar a API, cadastre-o no painel em Production e no Preview só da `develop`, seguindo [docs/hospedagem.md](docs/hospedagem.md), e faça novo build. PRs continuam sem newsletter;
 - um artigo mal formado ou a falta da pasta da trilha da página inicial derruba o deploy, com o arquivo e o problema no log, e o site no ar continua na versão anterior.
 
 Fora da Vercel, como no Docker, defina o `APP_BASE_URL` com o endereço do site antes do build: a prévia do link no WhatsApp e nas redes (`og:image`) leva o endereço completo da imagem, com ele na frente. Sem ele, vale o `http://localhost:3001`.
+
+**A API tem seu próprio projeto Vercel**, com raiz em `apps/backend`, preset FastAPI e região São Paulo. `app.py` exporta a aplicação existente; o `vercel.json` limita a chamada a 30 segundos. Na Vercel, `DATABASE_URL` é obrigatório e aponta para o pool do Neon; o SQLAlchemy usa `NullPool`, sem manter conexões ociosas na função. Fora dela, continua o pool local. Não conecte o banco ao projeto do site: a configuração resolvida do site é gravada em texto puro na função. O [guia de hospedagem](docs/hospedagem.md) cobre os dois bancos, os dois ambientes do GitHub, DNS, checagens e limites gratuitos.
 
 **Mudou o ícone ou a prévia do link?** Eles saem de `apps/web/imagens/icone.html` e `previa.html`. Rode `pnpm --filter web imagens`: o Edge ou o Chrome abre sem janela e grava o `favicon.ico`, o `apple-touch-icon.png` e o `previa.png` em `apps/web/public/` (`NAVEGADOR=<caminho>` escolhe outro navegador). Faça commit do HTML e das imagens. O mapa do fundo do site sai do `apps/web/imagens/mapa.mjs`: mude o roteiro e rode `pnpm --filter web mapa`, que grava o `apps/web/src/estilos/mapa.svg`.
 
