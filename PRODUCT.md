@@ -68,7 +68,7 @@ A política explicada em linguagem simples e de forma interativa, a partir de ca
 1. **Aprender vem primeiro:** cada tela ajuda a pessoa a entender um passo da política, e o resto serve a isso.
 2. **Tudo conferível:** nenhuma explicação sem a fonte oficial.
 3. **Sem lado:** os mesmos critérios para todos, e quem tira a conclusão é o leitor.
-4. **Simples de verdade:** linguagem do dia a dia, artigos curtos e sem barreira de entrada: nada pede conta, e a conta é opcional.
+4. **Simples de verdade:** linguagem do dia a dia, artigos curtos e sem barreira de entrada: nada pede conta.
 5. **Interativo para fixar:** o quiz, o infográfico e o progresso existem para a pessoa aprender, nunca para pontuar.
 
 ## Accessibility & Inclusion

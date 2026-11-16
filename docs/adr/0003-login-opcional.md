@@ -19,7 +19,7 @@ Em 15/11/2026, o Renan confirmou o que o time tinha combinado: o login (#109), o
 ## Consequências
 
 - **A conta traz dado pessoal novo.** Até aqui, o banco só guardava, de quem usa o site, o e-mail de quem assina a newsletter. Com a conta, ele guarda também o nome, o e-mail, a senha e os campos opcionais de quem se cadastra, e o progresso no perfil fica ligado a essa pessoa.
-- **A regra desses dados fica no [`AGENTS.md`](../../AGENTS.md),** em "Dados pessoais". Eles servem só à conta e ficam no banco. A API, os logs e os fixtures de teste não os levam, fora a resposta à própria pessoa. A senha nunca é guardada em texto puro, e nos testes os dados da conta são inventados.
+- **A regra desses dados fica no [`AGENTS.md`](../../AGENTS.md),** em "Dados pessoais". Eles servem só à conta e ficam no banco. A API, os logs e os fixtures de teste não os levam, fora a resposta à própria pessoa. A senha nunca é guardada em texto puro e não sai do banco, nem na resposta à própria pessoa. Nos testes, os dados da conta são inventados.
 - **Na demo,** o login e o perfil não podem expor dados pessoais reais de terceiros (regulamento do hackathon, item 6.9).
 - **O banco recebe mais do que as inscrições.** O [ADR 0001](0001-stack.md) diz que a API só lê o banco e recebe inscrições. Com a conta, o banco guarda também as contas e o progresso no perfil.
 - **Nada pede conta,** e o princípio "Simples de verdade" do [`PRODUCT.md`](../../PRODUCT.md) continua: sem barreira de entrada. O piloto (#40) não pede nome nem e-mail, e com o login opcional ele roda sem conta.
