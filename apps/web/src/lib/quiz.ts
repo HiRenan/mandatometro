@@ -48,6 +48,20 @@ export function contarRespondidas(
 	).length;
 }
 
+/**
+ * Quantas respostas são a certa. A tela nunca mostra esse total: ele só vai à
+ * API no piloto, ao fim de cada etapa (lib/piloto.ts).
+ */
+export function contarAcertos(
+	perguntas: readonly PerguntaDoQuiz[],
+	respostas: Respostas,
+): number {
+	return perguntas.filter((pergunta) => {
+		const opcao = opcaoRespondida(pergunta, respostas);
+		return opcao !== undefined && acertou(pergunta, opcao);
+	}).length;
+}
+
 /** O andamento, sem contar acertos: o quiz não dá nota. */
 export function fraseDoAndamento(respondidas: number, total: number): string {
 	if (respondidas === 0) {

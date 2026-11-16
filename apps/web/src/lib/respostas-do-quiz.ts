@@ -9,9 +9,9 @@ import type { Respostas } from "./quiz";
  *
  *   { "processo-legislativo/quiz": { "tentativas": [{ "respostas": { ... } }] } }
  *
- * Nada disso vai ao servidor. Cada tentativa é um objeto, e uma etapa depois
- * pode marcar nela se foi antes ou depois da trilha, para a medição do piloto,
- * sem mudar o que já está guardado.
+ * Nada disso vai ao servidor. No piloto, o antes guarda as respostas num quiz
+ * à parte, e o depois é o próprio quiz final: só o total de acertos de cada
+ * etapa sai do navegador (lib/piloto.ts).
  */
 const CHAVE = "mandatometro:respostas-do-quiz";
 
@@ -116,13 +116,20 @@ export function lerRespostas(quiz: string): Respostas {
 }
 
 function gravar(quiz: string, tentativas: readonly Tentativa[]): void {
-	const bruto = JSON.stringify({ ...lerGuardado(), [quiz]: { tentativas } });
+	gravarTudo(JSON.stringify({ ...lerGuardado(), [quiz]: { tentativas } }));
+}
+
+function gravarTudo(bruto: string): void {
 	try {
 		window.localStorage.setItem(CHAVE, bruto);
 		emMemoria = null;
 	} catch {
 		emMemoria = bruto;
 	}
+	avisarTodos();
+}
+
+function avisarTodos(): void {
 	for (const avisar of ouvintes) {
 		avisar();
 	}
@@ -171,6 +178,36 @@ export function desfazerRecomeco(quiz: string): void {
 		...tentativas.slice(0, -2),
 		{ respostas: { ...anterior.respostas, ...ultima.respostas } },
 	]);
+}
+
+/** Apaga as tentativas de um quiz, sem mexer nas dos outros. Não se desfaz. */
+export function apagarQuiz(quiz: string): void {
+	const guardado = lerGuardado();
+	if (Object.hasOwn(guardado, quiz)) {
+		gravarTudo(
+			JSON.stringify(
+				Object.fromEntries(
+					Object.entries(guardado).filter(([outro]) => outro !== quiz),
+				),
+			),
+		);
+	}
+}
+
+/**
+ * Apaga as respostas e as tentativas de todos os quizzes deste navegador,
+ * também as que só estavam na memória, para outra pessoa começar do zero
+ * (lib/piloto.ts). Sem as tentativas, o "Desfazer" do recomeço não traz nada de
+ * volta.
+ */
+export function apagarTodasAsRespostas(): void {
+	try {
+		window.localStorage.removeItem(CHAVE);
+	} catch {
+		// Com o armazenamento bloqueado, as respostas estão só na memória.
+	}
+	emMemoria = null;
+	avisarTodos();
 }
 
 function assinar(avisar: () => void): () => void {

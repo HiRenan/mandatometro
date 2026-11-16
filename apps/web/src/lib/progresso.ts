@@ -102,6 +102,22 @@ export function restaurarLidos(ids: readonly string[]): void {
 	}
 }
 
+/**
+ * Apaga todas as marcas de lido deste navegador, também as que só estavam na
+ * memória, para outra pessoa começar do zero (lib/piloto.ts). Não se desfaz.
+ */
+export function apagarLidos(): void {
+	try {
+		window.localStorage.removeItem(CHAVE);
+	} catch {
+		// Com o armazenamento bloqueado, as marcas estão só na memória.
+	}
+	emMemoria = null;
+	for (const avisar of ouvintes) {
+		avisar();
+	}
+}
+
 function assinar(avisar: () => void): () => void {
 	const aoMudarEmOutraAba = (evento: StorageEvent) => {
 		if (evento.key === CHAVE || evento.key === null) {

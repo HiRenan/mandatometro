@@ -151,6 +151,15 @@ describe("sentidoDaTroca", () => {
 		expect(sentidoDaTroca(TRILHA, `${TRILHA}/quiz-final`)).toBe("avancar");
 	});
 
+	it("a página do piloto fica no nível da lista das trilhas", () => {
+		expect(sentidoDaTroca("/", "/piloto")).toBe("avancar");
+		expect(
+			sentidoDaTroca("/piloto", `${TRILHA}/quem-pode-propor-uma-lei`),
+		).toBe("avancar");
+		expect(sentidoDaTroca(TRILHA, "/piloto")).toBe("voltar");
+		expect(sentidoDaTroca("/piloto", "/")).toBe("voltar");
+	});
+
 	it("a página não encontrada fica no fundo do bloco", () => {
 		expect(sentidoDaTroca(TRILHA, "/pagina-que-nao-existe")).toBe("avancar");
 		expect(sentidoDaTroca("/pagina-que-nao-existe", "/")).toBe("voltar");

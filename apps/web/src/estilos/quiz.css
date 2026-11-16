@@ -679,6 +679,133 @@
 		text-transform: none;
 	}
 
+	/* ───── O piloto ───── */
+
+	/*
+	 * A linha do piloto no quiz final, embaixo do título: a segunda etapa, ou o
+	 * pedido para terminar a primeira. É frase, na letra das mensagens da folha
+	 * da newsletter, sem cor (components/piloto.tsx).
+	 */
+	.piloto-linha,
+	.piloto-situacao {
+		max-width: 34rem;
+		font-family: var(--font-sans);
+		font-size: 1.0625rem;
+		font-weight: 600;
+		line-height: 1.4;
+	}
+
+	.quiz-fim .piloto-linha {
+		margin-top: 1.25rem;
+	}
+
+	/*
+	 * Os passos do piloto, na abertura de /piloto: a lista entre fios das folhas
+	 * da trilha (index.css), sem link. O número pequeno fica na fita da posição;
+	 * o feito leva o visto, e o da vez, o fio grosso de tinta do lado.
+	 */
+	.piloto-passos {
+		justify-self: stretch;
+		max-width: 34rem;
+		margin-block: 0.25rem;
+	}
+
+	.piloto-passos > li {
+		display: grid;
+		grid-template-columns: 1.75rem minmax(0, 1fr);
+		grid-template-areas:
+			"numero titulo"
+			"numero detalhe";
+		gap: 0.25rem 0.9rem;
+		align-content: center;
+		align-items: center;
+		min-height: 4rem;
+		padding: 0.7rem 0;
+		border-top: 2px solid var(--tinta);
+	}
+
+	.piloto-passos > li:last-child {
+		border-bottom: 2px solid var(--tinta);
+	}
+
+	.piloto-passos .numeral {
+		grid-area: numero;
+		justify-self: center;
+		font-size: 2.75rem;
+		-webkit-text-stroke-width: 2px;
+	}
+
+	.piloto-passos .titulo {
+		grid-area: titulo;
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 700;
+		line-height: 1.2;
+		letter-spacing: calc(0.03em * var(--espacado));
+		text-transform: var(--caixa-alta);
+	}
+
+	.piloto-passos .detalhe {
+		grid-area: detalhe;
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		font-weight: 700;
+		line-height: 1.2;
+		letter-spacing: calc(0.06em * var(--espacado));
+		text-transform: var(--caixa-alta);
+		color: var(--tinta-suave);
+	}
+
+	.piloto-passos > li.aqui {
+		padding-left: 1rem;
+		box-shadow: inset 6px 0 0 var(--tinta);
+	}
+
+	.piloto-passos > li.aqui .detalhe {
+		color: var(--tinta);
+	}
+
+	/* As notas: o que vale saber antes de começar, na letra de leitura. */
+	.piloto-notas {
+		display: grid;
+		gap: 0.5rem;
+		max-width: 34rem;
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.5;
+		color: var(--tinta-suave);
+	}
+
+	/*
+	 * O "Começar como outra pessoa" fecha a abertura, depois de um fio: é para
+	 * quem senta depois de outra pessoa, e não o caminho de quem chega.
+	 */
+	.piloto-outra-pessoa {
+		justify-self: stretch;
+		max-width: 34rem;
+		margin-top: 0.75rem;
+		padding-top: 1.25rem;
+		border-top: 2px solid var(--tinta);
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		line-height: 1.5;
+	}
+
+	.piloto-pronto {
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		font-weight: 700;
+		line-height: 1.375;
+	}
+
+	/* Sem JavaScript, nada do piloto funciona, e o noscript explica. */
+	@media (scripting: none) {
+		.piloto-outra-pessoa,
+		.piloto-recomeco {
+			display: none;
+		}
+	}
+
 	/* ───── A saída de cada tela ───── */
 
 	.quiz[data-saindo] .quiz-abertura,

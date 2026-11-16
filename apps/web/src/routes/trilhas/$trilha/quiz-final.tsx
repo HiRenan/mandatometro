@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Quiz } from "@/components/quiz";
+import { QuizFinal } from "@/components/piloto";
+import { ENV } from "@/env";
 import { buscarQuizFinal } from "@/lib/conteudo";
 import { metaDaPagina, metaSemPagina } from "@/lib/meta";
 import { fraseDaChamada } from "@/lib/quiz";
-import { idDoQuizFinal } from "@/lib/respostas-do-quiz";
 
 // O quiz final, depois do último artigo, com perguntas da trilha toda. O nome
 // do endereço é reservado: nenhum artigo pode se chamar quiz-final
@@ -25,15 +25,9 @@ export const Route = createFileRoute("/trilhas/$trilha/quiz-final")({
 	component: PaginaDoQuizFinal,
 });
 
+// No piloto, o quiz final é também o depois (components/piloto.tsx).
 function PaginaDoQuizFinal() {
-	const pagina = Route.useLoaderData();
-	// A chave zera o quiz quando a pessoa passa para o de outra trilha.
 	return (
-		<Quiz
-			key={pagina.trilha.slug}
-			{...pagina}
-			titulo="Quiz final"
-			quiz={idDoQuizFinal(pagina.trilha.slug)}
-		/>
+		<QuizFinal pagina={Route.useLoaderData()} comApi={Boolean(ENV.API_URL)} />
 	);
 }

@@ -16,7 +16,16 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { acharQuizFinal, trilhas } from "@/lib/conteudo/paginas.server";
+import {
+	comecarPiloto,
+	concluirEtapa,
+	proximoPedido,
+	registrarResposta,
+} from "@/lib/piloto";
 import { Route } from "@/routes/trilhas/$trilha/quiz-final";
+
+// A rota lê do ENV, do varlock, se o site tem a API, e o ENV só existe no site.
+vi.mock("@/env", () => ({ ENV: { API_URL: "https://api.exemplo.test" } }));
 
 const RESPOSTAS = "mandatometro:respostas-do-quiz";
 const TRILHA = "processo-legislativo";
@@ -56,6 +65,24 @@ async function abrir() {
 }
 
 describe("página do quiz final", () => {
+	it("no piloto, com o antes feito, diz que é a segunda etapa", async () => {
+		comecarPiloto();
+		concluirEtapa("antes", 2);
+		const antes = proximoPedido();
+		if (!antes) {
+			throw new Error("o antes devia esperar o envio");
+		}
+		registrarResposta(antes, "recebida");
+
+		await abrir();
+
+		expect(
+			screen.getByText(/^Piloto, segunda etapa: /, {
+				ignore: "[aria-hidden=true], [role=status]",
+			}),
+		).toBeTruthy();
+	});
+
 	it("abre com doze azulejos e, embaixo, o último artigo e a volta para a trilha", async () => {
 		await abrir();
 		const rodape = screen.getByRole("navigation", {
