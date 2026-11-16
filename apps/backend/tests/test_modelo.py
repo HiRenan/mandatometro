@@ -288,6 +288,19 @@ def test_a_edicao_nasce_rascunho(sessao):
     assert (edicao.estado, edicao.publicada_em) == ("rascunho", None)
 
 
+def test_a_fotografia_editorial_volta_do_banco_sem_alterar_o_texto(sessao):
+    item = _item(_edicao(), 1, _fonte())
+    item.fatos = {"versao": 1, "proposicoes": [10], "fontes": [20], "pendencias": ["revisao"]}
+    item.artigo_caminho = "/trilhas/processo-legislativo/onde-o-projeto-comeca"
+    sessao.add(item)
+    sessao.flush()
+    sessao.expire(item)
+    assert item.fatos["proposicoes"] == [10]
+    assert item.fatos["pendencias"] == ["revisao"]
+    assert item.texto == "Texto de exemplo."
+    assert item.artigo_caminho.endswith("/onde-o-projeto-comeca")
+
+
 def test_o_estado_e_rascunho_ou_publicada(sessao):
     _nao_grava(sessao, _edicao(estado="revisada"), regra="ck_edicao_estado")
 

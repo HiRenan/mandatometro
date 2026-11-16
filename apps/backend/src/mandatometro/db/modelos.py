@@ -28,6 +28,7 @@ from sqlalchemy import (
     func,
     text,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from mandatometro.db import Base
@@ -357,6 +358,9 @@ class ItemEdicao(Base):
     titulo: Mapped[str]
     texto: Mapped[str]
     fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+    # Fotografia versionada: ids de matérias/votações/fontes e contagens, sem dados de pessoas.
+    fatos: Mapped[dict | None] = mapped_column(JSONB)
+    artigo_caminho: Mapped[str | None]
 
     edicao: Mapped[Edicao] = relationship(back_populates="itens")
     fonte: Mapped[Fonte] = relationship()

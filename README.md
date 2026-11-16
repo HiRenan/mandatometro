@@ -141,6 +141,8 @@ erDiagram
         string titulo
         string texto
         int fonte_id FK
+        jsonb fatos "fotografia editorial sem dados individuais"
+        string artigo_caminho "artigo permitido da trilha"
     }
     inscrito {
         int id PK
