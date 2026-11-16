@@ -148,6 +148,8 @@ describe("o e-mail que falta", () => {
 	it.each([
 		["vazio", "", VAZIO],
 		["só com espaço", "   ", VAZIO],
+		// O espaço que não quebra, de um texto colado: o navegador não o tira.
+		["só com o espaço que não quebra", "  ", VAZIO],
 		["sem o domínio", "pessoa@", CONFIRA],
 		["sem o @", "pessoa.example.com", CONFIRA],
 	])(
@@ -160,9 +162,9 @@ describe("o e-mail que falta", () => {
 			expect(campo.getAttribute("aria-invalid")).toBe("true");
 			expect(campo.getAttribute("aria-describedby")).toBe(erro.id);
 			expect(document.activeElement).toBe(campo);
-			// O texto fica no campo, como o navegador guarda: o campo de e-mail tira os
-			// espaços das pontas.
-			expect(campo.value).toBe(texto.trim());
+			// O texto fica no campo, como o navegador guarda: o campo de e-mail tira das
+			// pontas os espaços comuns, e não o que não quebra.
+			expect(campo.value).toBe(texto.replace(/^ +| +$/g, ""));
 			expect(aviso()).toBe(mensagem);
 			expect(botao.hasAttribute("aria-disabled")).toBe(false);
 		},
