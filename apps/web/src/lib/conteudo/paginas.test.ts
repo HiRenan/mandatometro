@@ -420,6 +420,44 @@ describe("o quiz da trilha", () => {
 		);
 	});
 
+	// O quiz final ainda não tem tela (é da #92): as perguntas dele ficam no
+	// servidor, e nenhuma página as leva ao navegador.
+	it("não leva o quiz final a nenhuma página", () => {
+		const soDoQuizFinal = "Uma pergunta que só existe no quiz final?";
+		const comQuizFinal: Trilha = {
+			...comQuiz,
+			quizFinal: {
+				perguntas: [
+					{
+						artigo: "terceiro",
+						enunciado: soDoQuizFinal,
+						opcoes: [
+							{ texto: "Uma opção certa.", certa: true },
+							{ texto: "Uma opção errada.", certa: false },
+						],
+						explicacao: "Uma explicação.",
+						fontes: [constituicao],
+					},
+				],
+			},
+		};
+		const todas = [comQuizFinal];
+		const paginas = [
+			...listarTrilhas(todas),
+			acharTrilha(todas, "com-quiz"),
+			...comQuizFinal.artigos.map((artigo) =>
+				acharArtigo(todas, "com-quiz", artigo.slug),
+			),
+			acharQuiz(todas, "com-quiz"),
+		];
+
+		for (const pagina of paginas) {
+			expect(pagina).toBeDefined();
+			expect(JSON.stringify(pagina)).not.toContain("quizFinal");
+			expect(JSON.stringify(pagina)).not.toContain(soDoQuizFinal);
+		}
+	});
+
 	it("não leva nada do quiz às trilhas sem quiz, às listas e à página inicial", () => {
 		expect(acharTrilha(exemplos, "sem-quiz")).not.toHaveProperty("quiz");
 		expect(acharArtigo(exemplos, "sem-quiz", "unico")).not.toHaveProperty(

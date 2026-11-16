@@ -10,13 +10,14 @@ apps/web/conteudo/trilhas/
     trilha.md                      título, descrição e ordem da trilha
     infografico.md                 o caminho da trilha num infográfico (opcional)
     quiz.md                        as perguntas do quiz da trilha (opcional)
+    quiz-final.md                  as perguntas do quiz final, que o site ainda não mostra (opcional)
     quem-pode-propor-uma-lei.md    um arquivo por artigo
     onde-o-projeto-comeca.md
 ```
 
 - **O nome da pasta e o do arquivo viram o endereço da página:** `processo-legislativo/onde-o-projeto-comeca.md` aparece em `/trilhas/processo-legislativo/onde-o-projeto-comeca`. Os nomes só podem ter letras minúsculas sem acento, números e hífens.
 - **Renomear um arquivo muda o endereço** e apaga a marca de lido desse artigo para quem já tinha lido, porque o navegador guarda o progresso pelo par `trilha/artigo`.
-- **`trilha.md`, `infografico.md` e `quiz.md` são nomes reservados:** um artigo não pode ter esses nomes.
+- **`trilha.md`, `infografico.md`, `quiz.md` e `quiz-final.md` são nomes reservados:** um artigo não pode ter esses nomes.
 
 ## A trilha: `trilha.md`
 
@@ -178,13 +179,47 @@ perguntas:
 - **Onde aparece:** o quiz tem a página dele, em `/trilhas/<trilha>/quiz`, e a chamada "Quiz da trilha" fica no fim do artigo do `depoisDe` e na página da trilha. A página mostra uma pergunta por vez, na ordem do arquivo; sem JavaScript, mostra todas, uma embaixo da outra.
 - **Mudar o texto de uma pergunta ou de uma opção apaga a resposta de quem já tinha respondido,** porque o navegador guarda a resposta pelo enunciado e pelo texto da opção escolhida. Corrigir uma vírgula também conta.
 
+## O quiz final: `quiz-final.md`
+
+Perguntas de múltipla escolha sobre a trilha toda, para depois do último artigo. É opcional. **O site ainda não mostra o quiz final:** a tela e a medição do piloto são da #92. Até lá, o teste e o `pnpm build` já conferem as perguntas, e nenhuma página as leva ao navegador.
+
+O formato é o do `quiz.md`, sem o `depoisDe`: só o cabeçalho, com as `perguntas`. Um quiz final de uma pergunta só ficaria assim:
+
+```markdown
+---
+perguntas:
+  - artigo: o-presidente-sanciona-ou-veta
+    enunciado: O presidente da República recebe um projeto aprovado pelo Congresso e não se manifesta em 15 dias úteis. O que acontece?
+    opcoes:
+      - texto: O projeto é arquivado.
+      - texto: O projeto volta ao Congresso para uma nova votação.
+      - texto: "O projeto é sancionado: o silêncio vale como sanção."
+        certa: true
+    explicacao: "O presidente tem 15 dias úteis para sancionar ou vetar o projeto. Se o prazo passa sem resposta, o silêncio vale como sanção (art. 66, §§ 1º e 3º)."
+    fontes:
+      - titulo: Constituição Federal, art. 66
+        url: https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art66
+        consultadoEm: 2026-11-16
+---
+```
+
+- **Cada pergunta segue as regras das perguntas do `quiz.md`:** o artigo, o enunciado sem repetir no quiz final, de 2 a 5 opções com uma certa só, a explicação e as fontes oficiais. A resposta certa está no artigo e na fonte.
+- **A pergunta pode ser de qualquer artigo da trilha,** porque o quiz final vem depois do último. Um artigo que não existe na pasta é erro:
+
+  ```text
+  conteudo/trilhas/processo-legislativo/quiz-final.md: campo "perguntas.11.artigo": o artigo "o-veto" não existe nesta trilha
+  ```
+
+- **Um `depoisDe` é erro,** como qualquer campo a mais, e um texto embaixo do cabeçalho também.
+- **Congele o texto antes do piloto (#40).** Se a tela guardar as respostas como a do `quiz.md`, pelo enunciado e pelo texto da opção, mudar uma vírgula de uma pergunta apaga a resposta de quem já respondeu e muda o que o piloto mede.
+
 ## Pegadinhas do YAML
 
 - **Um valor com `: ` (dois-pontos seguido de espaço) vai entre aspas:** `titulo: "Lei 14.133: o que muda"`. Sem as aspas, o cabeçalho deixa de ser YAML válido, e o teste aponta o arquivo.
 - **Um ` #` (espaço e cerquilha) começa um comentário:** em `titulo: O projeto #1 da trilha`, o título vira só "O projeto", sem aviso nenhum. Um valor com ` #` também vai entre aspas.
 - **As fontes ficam recuadas com dois espaços,** com um `-` na frente de cada uma e os três campos alinhados.
 - **No infográfico, cada nível recua mais dois espaços:** os passos debaixo de `passos:`, e os desvios, os artigos e as fontes debaixo do passo deles, como no exemplo.
-- **No quiz também:** as perguntas debaixo de `perguntas:`, e as opções e as fontes debaixo da pergunta delas. O `certa: true` fica alinhado com o `texto` da opção, sem o `-`. Uma explicação com `: ` vai entre aspas, como no exemplo.
+- **No quiz e no quiz final também:** as perguntas debaixo de `perguntas:`, e as opções e as fontes debaixo da pergunta delas. O `certa: true` fica alinhado com o `texto` da opção, sem o `-`. Uma explicação com `: ` vai entre aspas, como no exemplo.
 
 ## Palavras compridas nos títulos
 
@@ -223,7 +258,7 @@ Essa medida fica só no teste: ela não derruba o build nem o deploy.
 
   O CI roda o mesmo teste, então um artigo com problema não passa no PR.
 - **`pnpm build`** confere a pasta antes de montar o site e para com a mesma lista. Por isso um artigo com problema também derruba o deploy na Vercel e a imagem do Docker, e o site no ar continua na versão anterior.
-- **`pnpm dev`** sobe o site em http://localhost:3001, e o artigo aparece em `/trilhas/<trilha>/<artigo>`. O infográfico aparece em `/trilhas/<trilha>`, e o quiz, em `/trilhas/<trilha>/quiz`. Um arquivo novo ou mudado aparece ao recarregar a página, sem reiniciar o `pnpm dev`.
+- **`pnpm dev`** sobe o site em http://localhost:3001, e o artigo aparece em `/trilhas/<trilha>/<artigo>`. O infográfico aparece em `/trilhas/<trilha>`, e o quiz, em `/trilhas/<trilha>/quiz`. O quiz final ainda não aparece. Um arquivo novo ou mudado aparece ao recarregar a página, sem reiniciar o `pnpm dev`.
 
 ## Como o site lê os arquivos
 
