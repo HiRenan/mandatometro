@@ -104,6 +104,14 @@ Endpoints, campos, chaves de ligação e exemplos reais da Câmara e do Senado e
 - Não registre e-mail, corpo, código de saída ou exceção bruta. As mensagens de validação, SQL e Resend podem conter dados pessoais. Desligue o access log da API na produção. No desenvolvimento, use só dados fictícios.
 - Monte o e-mail em `avisos/email.py` e envie por `avisos/resend.py`. O envio tem até 8 segundos no total e idempotência por 24 horas. A #39 reutiliza esses módulos e define sua política de envio. Esta fatia não tem fila nem histórico de entrega. Use endereços públicos HTTPS em `APP_BASE_URL` e `API_URL` para os links de um envio real.
 
+## Piloto: medição
+
+- O contrato e a operação estão em [docs/medicao-do-piloto.md](docs/medicao-do-piloto.md). `PILOTO_ATIVO` começa falso e não há fechamento por data. Ativação, menores, guarda e ligação entre etapas dependem do Renan.
+- `POST /piloto/tentativas` guarda só código UUIDv4, versão, etapa e total de acertos. O código vai no corpo, nunca na URL ou em log; não deriva de pessoa, conta ou aparelho. O mesmo código nas duas etapas produz pares; códigos distintos por etapa produzem médias independentes. O relatório conta códigos, sem comprovar pessoas únicas.
+- A primeira conclusão por `(participacao, versao_quiz, etapa)` prevalece, inclusive se um reenvio válido trouxer outro total. Não guardar turma, hora, dia, opções ou texto livre. A cota global própria, em `limite_piloto`, confirma antes do JSON e não compartilha contador com a newsletter.
+- A leitura é só por CLI e suprime médias abaixo de 5, inclusive médias sobrepostas que revelariam subgrupos pequenos. Para apagar, desligar todas as instâncias e aguardar pedidos em andamento; o CLI recusa se sua configuração estiver ativa e exige `--confirmar`. Não reativar a coleta depois da exclusão sem rever a rodada e as pendências da tela.
+- A versão `processo-legislativo-final-v1` fixa as 12 perguntas do quiz final. Mudou enunciado, opções ou gabarito, combine outra versão entre API e tela; nunca pareie versões diferentes.
+
 ## Segredos
 
 As chaves (Firecrawl, Resend, Devin e LLM) ficam só no `.env` local, criado a partir do `.env.example`, e nos secrets da hospedagem. Código, issues, PRs e logs citam a chave pelo nome da variável. Variável nova entra no `.env.example` com valor vazio e um comentário.

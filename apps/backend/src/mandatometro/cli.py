@@ -10,6 +10,7 @@ from pathlib import Path
 
 from mandatometro.coleta import camara
 from mandatometro.coleta.senado import registrar as registrar_senado
+from mandatometro.piloto.cli import registrar_comando as registrar_piloto
 
 
 def _openapi(args: argparse.Namespace) -> None:
@@ -36,6 +37,7 @@ def main(argv: list[str] | None = None) -> int:
     casas.required = True
     camara.registrar_comando(casas)
     registrar_senado(casas)
+    registrar_piloto(comandos)
 
     args = parser.parse_args(argv)
     return args.rodar(args) or 0

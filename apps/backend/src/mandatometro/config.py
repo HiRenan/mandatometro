@@ -24,6 +24,8 @@ class Config(BaseSettings):
     resend_api_key: SecretStr | None = None
     resend_from: str | None = None
     newsletter_limite_por_minuto: int = Field(default=30, gt=0)
+    piloto_ativo: bool = False
+    piloto_limite_por_minuto: int = Field(default=120, gt=0)
 
 
 @lru_cache

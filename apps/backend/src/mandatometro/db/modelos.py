@@ -22,6 +22,7 @@ from sqlalchemy import (
     Column,
     ForeignKey,
     Index,
+    SmallInteger,
     String,
     Table,
     UniqueConstraint,
@@ -393,6 +394,38 @@ class LimiteInscricao(Base):
     """Cota global por minuto: sem identificar quem tentou se inscrever."""
 
     __tablename__ = "limite_inscricao"
+    __table_args__ = (
+        CheckConstraint("quantidade > 0", name="quantidade_positiva"),
+        CheckConstraint("janela = date_trunc('minute', janela)", name="janela_minuto"),
+    )
+
+    janela: Mapped[datetime] = mapped_column(primary_key=True)
+    quantidade: Mapped[int]
+
+
+class TentativaPiloto(Base):
+    """Primeira conclusão por etapa; o código aleatório só liga respostas do piloto.
+
+    Não há hora, turma, conta ou id sequencial. A tela pode usar o mesmo código nas duas
+    etapas ou códigos diferentes; só o primeiro caso produz pares no relatório.
+    """
+
+    __tablename__ = "tentativa_piloto"
+    __table_args__ = (
+        CheckConstraint("etapa IN ('antes', 'depois')", name="etapa_valida"),
+        CheckConstraint("acertos >= 0 AND acertos <= 12", name="acertos_validos"),
+    )
+
+    participacao: Mapped[UUID] = mapped_column(primary_key=True)
+    versao_quiz: Mapped[str] = mapped_column(String(40), primary_key=True)
+    etapa: Mapped[str] = mapped_column(primary_key=True)
+    acertos: Mapped[int] = mapped_column(SmallInteger)
+
+
+class LimitePiloto(Base):
+    """Cota global do piloto, sem relação com a tentativa ou com a newsletter."""
+
+    __tablename__ = "limite_piloto"
     __table_args__ = (
         CheckConstraint("quantidade > 0", name="quantidade_positiva"),
         CheckConstraint("janela = date_trunc('minute', janela)", name="janela_minuto"),
