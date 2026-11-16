@@ -1,6 +1,7 @@
 """O conector inteiro contra respostas gravadas, num banco isolado, sem rede."""
 
 import json
+from contextlib import nullcontext
 from copy import deepcopy
 from datetime import date
 from pathlib import Path
@@ -10,6 +11,8 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from mandatometro.cli import main
+from mandatometro.coleta import camara
 from mandatometro.coleta.camara import coletar
 from mandatometro.coleta.http import ClienteHttp
 from mandatometro.db.modelos import Fonte, Mandato, Parlamentar, Proposicao, Votacao, Voto
@@ -41,7 +44,7 @@ def roteiro():
     return dados
 
 
-def executar(sessao, roteiro, *, inicio=INICIO, fim=FIM, interceptar=None):
+def executar(sessao, roteiro, *, inicio=INICIO, fim=FIM, interceptar=None, saida_esperada=None):
     caminhos = []
 
     def atender(req):
@@ -64,12 +67,23 @@ def executar(sessao, roteiro, *, inicio=INICIO, fim=FIM, interceptar=None):
         httpx2.Client(transport=httpx2.MockTransport(atender)) as transporte,
         ClienteHttp(BASE, cliente=transporte, intervalo=0) as http,
     ):
-        resumo = coletar(
-            inicio,
-            fim,
-            http=http,
-            criar_sessao=lambda: Session(bind=conexao, join_transaction_mode="create_savepoint"),
-        )
+
+        def criar_sessao():
+            return Session(bind=conexao, join_transaction_mode="create_savepoint")
+
+        if saida_esperada is None:
+            resumo = coletar(inicio, fim, http=http, criar_sessao=criar_sessao)
+        else:
+            resumos = []
+            with pytest.MonkeyPatch.context() as patch:
+                patch.setattr(camara, "ClienteHttp", lambda _: nullcontext(http))
+                patch.setattr(camara, "sessao_do_banco", criar_sessao)
+                patch.setattr(camara, "mostrar_resumo", resumos.append)
+                codigo = main(
+                    ["coleta", "camara", "--inicio", inicio.isoformat(), "--fim", fim.isoformat()]
+                )
+            resumo = resumos[0]
+            assert codigo == saida_esperada
     sessao.expire_all()
     return resumo, caminhos
 
@@ -298,6 +312,85 @@ def test_pagina_vazia_no_cadastro_paginado_nao_reconcilia(sessao, roteiro):
 
     resumo, _ = executar(sessao, roteiro, interceptar=interceptar)
     assert not resumo.completa and contar(sessao, Mandato) == 0
+
+
+@pytest.mark.parametrize("modo", ["salto", "fim_antecipado"])
+def test_lista_incompleta_com_lacuna_preserva_exercicio(sessao, roteiro, modo):
+    modelo = roteiro["/deputados"]["dados"][0]
+    pessoas = [dict(modelo, id=900001 + i, nome="Pessoa inventada") for i in range(3)]
+    roteiro["/deputados"] = {"dados": pessoas, "links": []}
+    roteiro["/votacoes"] = {"dados": [], "links": []}
+    for pessoa in pessoas:
+        detalhe = deepcopy(roteiro["/deputados/178843"])
+        detalhe["dados"]["id"] = pessoa["id"]
+        roteiro[f"/deputados/{pessoa['id']}"] = detalhe
+    resumo, _ = executar(sessao, roteiro)
+    assert resumo.completa
+    consulta = select(Mandato.id, Mandato.em_exercicio, Mandato.fonte_id)
+    antes = set(sessao.execute(consulta))
+    assert len(antes) == 3 and all(linha.em_exercicio for linha in antes)
+    fontes_antes = contar(sessao, Fonte)
+
+    proxima = 3 if modo == "salto" else 2
+    roteiro["/deputados"] = {
+        "dados": pessoas[:1],
+        "links": [
+            {"rel": "next", "href": BASE + f"/deputados?pagina={proxima}"},
+            {"rel": "last", "href": BASE + "/deputados?pagina=3"},
+        ],
+    }
+
+    def interceptar(req):
+        if req.url.path.endswith("/deputados") and "pagina" in req.url.params:
+            return httpx2.Response(200, json={"dados": [pessoas[proxima - 1]], "links": []})
+
+    resumo, chamadas = executar(sessao, roteiro, interceptar=interceptar, saida_esperada=1)
+    assert not resumo.completa and resumo.erro
+    assert resumo.parlamentares == resumo.mandatos == resumo.fontes == 0
+    assert set(sessao.execute(consulta)) == antes
+    assert contar(sessao, Fonte) == fontes_antes
+    assert not any("/deputados/" in url or "/votacoes" in url for url in chamadas)
+
+
+@pytest.mark.parametrize("modo", ["salto", "fim_antecipado"])
+def test_votos_incompletos_com_lacuna_preservam_votacao(sessao, roteiro, modo):
+    resumo, _ = executar(sessao, roteiro)
+    assert resumo.completa and resumo.votos == 429
+    consulta = select(Voto.parlamentar_id, Voto.valor, Voto.fonte_id)
+    votos_antes = set(sessao.execute(consulta))
+    consulta_votacao = select(Votacao.descricao, Votacao.fonte_id).where(
+        Votacao.id_externo == "2236186-60"
+    )
+    votacao_antes = sessao.execute(consulta_votacao).one()
+    roteiro["/votacoes/2236186-60"]["dados"]["descricao"] = "Descricao corrigida de teste"
+    caminho = "/votacoes/2236186-60/votos"
+    votos = roteiro[caminho]["dados"]
+    proxima = 3 if modo == "salto" else 2
+    roteiro[caminho] = {
+        "dados": votos[:1],
+        "links": [
+            {"rel": "next", "href": BASE + caminho + f"?pagina={proxima}"},
+            {"rel": "last", "href": BASE + caminho + "?pagina=3"},
+        ],
+    }
+
+    def interceptar(req):
+        if req.url.path.endswith(caminho) and "pagina" in req.url.params:
+            return httpx2.Response(200, json={"dados": [votos[proxima - 1]], "links": []})
+
+    resumo, _ = executar(sessao, roteiro, interceptar=interceptar, saida_esperada=1)
+    assert not resumo.completa and resumo.falhas_votacoes == ["2236186-60"]
+    assert resumo.votacoes == 1 and resumo.votos == 0
+    assert set(sessao.execute(consulta)) == votos_antes
+    assert sessao.execute(consulta_votacao).one() == votacao_antes
+    assert (
+        sessao.scalar(
+            select(func.count())
+            .select_from(Fonte)
+            .where(Fonte.trecho == "Descricao corrigida de teste")
+        )
+        == 0
+    )
 
 
 def test_falha_na_recoleta_nao_apaga_votos_anteriores(sessao, roteiro):
