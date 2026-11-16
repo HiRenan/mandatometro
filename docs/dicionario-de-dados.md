@@ -35,7 +35,7 @@ As diferenças abaixo não são detalhe de implementação: elas mudam o desenho
 | | Câmara | Senado |
 |---|---|---|
 | Envelope | `{"dados": [...], "links": [...]}` | sem envelope comum: o `/votacao` é um **array JSON puro**, e a lista de senadores, o `mandatos.json` e o `/processo/{id}` vêm dentro de um objeto |
-| Chamadas para montar um item da newsletter | **4** (lista → detalhe → votos → orientações) | **1** (`/votacao` já traz tudo) |
+| Chamadas para montar um item da newsletter | **3** (lista → detalhe → votos); as orientações ficaram para depois do MVP | **1** (`/votacao` já traz tudo) |
 | Paginação | 100 itens por página, siga `links[rel=next]` | sem paginação nos endpoints que usamos |
 | Formato de data | `dataInicio=2026-11-03` | `dataInicio=2026-11-03` (**`20261103` devolve HTTP 400**) |
 | Quem aparece na lista de votos | **só quem votou** (429 de 513 deputados, no exemplo) | **todos os 81 senadores**, com o estado de cada um |
@@ -181,12 +181,14 @@ Três coisas para o conector:
 /votacoes/2236186-60/orientacoes
 ```
 
+As orientações ficaram para depois do MVP (decisão do Renan na #7, em 12/11/2026): o banco do MVP não tem tabela para elas, e os campos abaixo ficam de referência.
+
 | Campo | Tipo | O que é | Usamos |
 |---|---|---|---|
-| `siglaPartidoBloco` | texto | partido ou bloco; inclui `Governo`, `Maioria`, `Minoria` e `Oposição` | sim |
-| `orientacaoVoto` | texto | `Sim`, `Não` ou **texto vazio** quando a bancada liberou ou não orientou | sim |
-| `codTipoLideranca` | texto | `P` partido, `B` bloco ou bancada | sim |
-| `codPartidoBloco`, `uriPartidoBloco` | — | `null` para as bancadas que não são partido | chave |
+| `siglaPartidoBloco` | texto | partido ou bloco; inclui `Governo`, `Maioria`, `Minoria` e `Oposição` | não |
+| `orientacaoVoto` | texto | `Sim`, `Não` ou **texto vazio** quando a bancada liberou ou não orientou | não |
+| `codTipoLideranca` | texto | `P` partido, `B` bloco ou bancada | não |
+| `codPartidoBloco`, `uriPartidoBloco` | — | `null` para as bancadas que não são partido | não |
 
 ```json
 { "orientacaoVoto": "Não", "codTipoLideranca": "B", "siglaPartidoBloco": "Governo", "codPartidoBloco": null }
@@ -524,4 +526,5 @@ Nome, partido, UF e voto de parlamentar **não** são dados pessoais protegidos 
 ## O que ficou em aberto
 
 - **Separar a votação de mérito das de rito.** Das 27 votações do plenário da Câmara na semana do exemplo, a maioria é procedimental ("Aprovada a Emenda de Redação", "Aprovada a Redação Final"), e as 4 do Senado eram todas da mesma PEC. A newsletter precisa de um critério para escolher o que contar. Fica para a #22, que monta a edição.
+- **As orientações de bancada,** depois do MVP (decisão do Renan na #7): o banco do MVP não tem tabela para elas.
 - **O TSE,** depois do MVP (#12 e #13). Os CSVs vêm em latin-1, separados por `;`, um por UF dentro de cada ZIP; `SQ_CANDIDATO` liga os arquivos dentro de uma eleição e o CPF liga eleições diferentes.
