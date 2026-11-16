@@ -32,7 +32,7 @@ class Base(DeclarativeBase):
 
 @lru_cache
 def engine() -> Engine:
-    return create_engine(config().database_url, pool_pre_ping=True)
+    return create_engine(config().database_url, pool_pre_ping=True, hide_parameters=True)
 
 
 def sessao() -> Session:

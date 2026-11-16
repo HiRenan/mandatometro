@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from pydantic import BaseModel
 
+from mandatometro.api.newsletter import router as newsletter
 from mandatometro.config import config
 
 
@@ -13,7 +14,14 @@ def _id_da_operacao(rota: APIRoute) -> str:
 
 
 app = FastAPI(title="Mandatômetro", version="0.1.0", generate_unique_id_function=_id_da_operacao)
-app.add_middleware(CORSMiddleware, allow_origins=[config().app_base_url])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[config().app_base_url],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+    expose_headers=["Retry-After"],
+)
+app.include_router(newsletter)
 
 
 class Saude(BaseModel):

@@ -40,7 +40,7 @@ Em `senado/senador-lista-atual.json`, os 50 exercícios com motivo de afastament
 
 Um teste em `tests/test_respostas_gravadas.py` confere essa troca: se a lista for gravada de novo sem ela, o CI falha.
 
-Nenhum outro arquivo desta pasta traz campo pessoal. Ao gravar uma fixture nova de `/deputados/{id}` ou da lista de senadores, faça a mesma troca.
+Nenhum outro arquivo desta pasta traz CPF, título de eleitor, data de nascimento ou motivo de afastamento. Como a fonte publica, os arquivos trazem e-mail e telefone de gabinete, foto, nome completo e sexo de deputados e senadores, e o `camara/deputado-178843.json` traz também a cidade e a UF de nascimento e a escolaridade. Ao gravar uma fixture nova de `/deputados/{id}` ou da lista de senadores, faça a mesma troca.
 
 ## Por que estes casos
 
