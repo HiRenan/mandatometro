@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { HealthData, HealthResponses } from './types.gen';
+import type { AbrirSaidaData, AbrirSaidaErrors, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -17,6 +17,32 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
+
+/**
+ * Receber a inscrição e enviar a última edição publicada
+ *
+ * Novo e repetido têm a mesma resposta. edicao_enviada confirma a aceitação pelo Resend, não a entrega na caixa postal. Nas outras situações a inscrição também fica gravada.
+ */
+export const inscreverNewsletter = <ThrowOnError extends boolean = false>(options: Options<InscreverNewsletterData, ThrowOnError>): RequestResult<InscreverNewsletterResponses, InscreverNewsletterErrors, ThrowOnError> => (options.client ?? client).post<InscreverNewsletterResponses, InscreverNewsletterErrors, ThrowOnError>({
+    url: '/newsletter/inscricoes',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Abrir a página de confirmação de saída, sem apagar a inscrição
+ */
+export const abrirSaida = <ThrowOnError extends boolean = false>(options: Options<AbrirSaidaData, ThrowOnError>): RequestResult<unknown, AbrirSaidaErrors, ThrowOnError> => (options.client ?? client).get<unknown, AbrirSaidaErrors, ThrowOnError>({ url: '/newsletter/saida/{codigo_saida}', ...options });
+
+/**
+ * Apagar a inscrição pelo código de saída
+ *
+ * POST idempotente, sem autenticação ou corpo obrigatório. Aceita RFC 8058 e a confirmação no site; o corpo é ignorado. Código desconhecido também recebe 200 vazio.
+ */
+export const sairDaNewsletter = <ThrowOnError extends boolean = false>(options: Options<SairDaNewsletterData, ThrowOnError>): RequestResult<SairDaNewsletterResponses, SairDaNewsletterErrors, ThrowOnError> => (options.client ?? client).post<SairDaNewsletterResponses, SairDaNewsletterErrors, ThrowOnError>({ url: '/newsletter/saida/{codigo_saida}', ...options });
 
 /**
  * Health

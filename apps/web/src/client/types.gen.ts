@@ -5,6 +5,38 @@ export type ClientOptions = {
 };
 
 /**
+ * ErroNewsletter
+ */
+export type ErroNewsletter = {
+    /**
+     * Erro
+     */
+    erro: 'dados_invalidos' | 'limite_de_inscricoes' | 'servico_indisponivel';
+};
+
+/**
+ * PedidoInscricao
+ */
+export type PedidoInscricao = {
+    /**
+     * Email
+     *
+     * Somente o endereço de e-mail.
+     */
+    email: string;
+};
+
+/**
+ * ResultadoInscricao
+ */
+export type ResultadoInscricao = {
+    /**
+     * Situacao
+     */
+    situacao: 'edicao_enviada' | 'aguardando_edicao' | 'envio_indisponivel';
+};
+
+/**
  * Saude
  */
 export type Saude = {
@@ -12,6 +44,96 @@ export type Saude = {
      * Status
      */
     status: string;
+};
+
+export type InscreverNewsletterData = {
+    body: PedidoInscricao;
+    path?: never;
+    query?: never;
+    url: '/newsletter/inscricoes';
+};
+
+export type InscreverNewsletterErrors = {
+    /**
+     * Dados inválidos, sem repetir a entrada.
+     */
+    422: ErroNewsletter;
+    /**
+     * Cota global por minuto atingida.
+     */
+    429: ErroNewsletter;
+    /**
+     * Operação no banco não confirmada.
+     */
+    503: ErroNewsletter;
+};
+
+export type InscreverNewsletterError = InscreverNewsletterErrors[keyof InscreverNewsletterErrors];
+
+export type InscreverNewsletterResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResultadoInscricao;
+};
+
+export type InscreverNewsletterResponse = InscreverNewsletterResponses[keyof InscreverNewsletterResponses];
+
+export type AbrirSaidaData = {
+    body?: never;
+    path: {
+        /**
+         * Codigo Saida
+         */
+        codigo_saida: string;
+    };
+    query?: never;
+    url: '/newsletter/saida/{codigo_saida}';
+};
+
+export type AbrirSaidaErrors = {
+    /**
+     * Dados inválidos, sem repetir a entrada.
+     */
+    422: ErroNewsletter;
+    /**
+     * Operação no banco não confirmada.
+     */
+    503: ErroNewsletter;
+};
+
+export type AbrirSaidaError = AbrirSaidaErrors[keyof AbrirSaidaErrors];
+
+export type SairDaNewsletterData = {
+    body?: never;
+    path: {
+        /**
+         * Codigo Saida
+         */
+        codigo_saida: string;
+    };
+    query?: never;
+    url: '/newsletter/saida/{codigo_saida}';
+};
+
+export type SairDaNewsletterErrors = {
+    /**
+     * Dados inválidos, sem repetir a entrada.
+     */
+    422: ErroNewsletter;
+    /**
+     * Operação no banco não confirmada.
+     */
+    503: ErroNewsletter;
+};
+
+export type SairDaNewsletterError = SairDaNewsletterErrors[keyof SairDaNewsletterErrors];
+
+export type SairDaNewsletterResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
 };
 
 export type HealthData = {

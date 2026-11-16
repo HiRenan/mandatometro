@@ -5,6 +5,167 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/newsletter/inscricoes": {
+      "post": {
+        "tags": [
+          "newsletter"
+        ],
+        "summary": "Receber a inscrição e enviar a última edição publicada",
+        "description": "Novo e repetido têm a mesma resposta. edicao_enviada confirma a aceitação pelo Resend, não a entrega na caixa postal. Nas outras situações a inscrição também fica gravada.",
+        "operationId": "inscrever_newsletter",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PedidoInscricao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoInscricao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos, sem repetir a entrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroNewsletter"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Operação no banco não confirmada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroNewsletter"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Cota global por minuto atingida.",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos para tentar novamente.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroNewsletter"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/newsletter/saida/{codigo_saida}": {
+      "post": {
+        "tags": [
+          "newsletter"
+        ],
+        "summary": "Apagar a inscrição pelo código de saída",
+        "description": "POST idempotente, sem autenticação ou corpo obrigatório. Aceita RFC 8058 e a confirmação no site; o corpo é ignorado. Código desconhecido também recebe 200 vazio.",
+        "operationId": "sair_da_newsletter",
+        "parameters": [
+          {
+            "name": "codigo_saida",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Codigo Saida"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Dados inválidos, sem repetir a entrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroNewsletter"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Operação no banco não confirmada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroNewsletter"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "newsletter"
+        ],
+        "summary": "Abrir a página de confirmação de saída, sem apagar a inscrição",
+        "operationId": "abrir_saida",
+        "parameters": [
+          {
+            "name": "codigo_saida",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Codigo Saida"
+            }
+          }
+        ],
+        "responses": {
+          "303": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Dados inválidos, sem repetir a entrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroNewsletter"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Operação no banco não confirmada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroNewsletter"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -29,6 +190,59 @@
   },
   "components": {
     "schemas": {
+      "ErroNewsletter": {
+        "properties": {
+          "erro": {
+            "type": "string",
+            "enum": [
+              "dados_invalidos",
+              "limite_de_inscricoes",
+              "servico_indisponivel"
+            ],
+            "title": "Erro"
+          }
+        },
+        "type": "object",
+        "required": [
+          "erro"
+        ],
+        "title": "ErroNewsletter"
+      },
+      "PedidoInscricao": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 320,
+            "format": "email",
+            "title": "Email",
+            "description": "Somente o endereço de e-mail."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "PedidoInscricao"
+      },
+      "ResultadoInscricao": {
+        "properties": {
+          "situacao": {
+            "type": "string",
+            "enum": [
+              "edicao_enviada",
+              "aguardando_edicao",
+              "envio_indisponivel"
+            ],
+            "title": "Situacao"
+          }
+        },
+        "type": "object",
+        "required": [
+          "situacao"
+        ],
+        "title": "ResultadoInscricao"
+      },
       "Saude": {
         "properties": {
           "status": {
