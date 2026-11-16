@@ -85,9 +85,9 @@ perguntas:
   - artigo: o-projeto-passa-pelas-comissoes
     enunciado: Como os lugares de uma comissão são divididos entre os partidos?
     opcoes:
-      - texto: Cada partido tem o mesmo número de lugares, seja grande ou pequeno.
+      - texto: Cada partido tem o mesmo número de lugares na comissão, seja ele grande ou pequeno.
       - texto: Por sorteio, a cada ano.
-      - texto: Em proporção ao tamanho de cada partido, ou bloco de partidos, na Casa, tanto quanto possível.
+      - texto: Em proporção ao tamanho de cada partido ou bloco na Casa, tanto quanto possível.
         certa: true
       - texto: O partido com mais parlamentares escolhe todos os membros.
     explicacao: "Na formação de cada comissão, a Constituição garante, tanto quanto possível, a representação proporcional dos partidos ou dos blocos de partidos da Casa (art. 58, § 1º). Quem tem mais parlamentares ocupa mais lugares."
@@ -193,7 +193,7 @@ perguntas:
     enunciado: O presidente vetou um trecho de um projeto. O que o Congresso precisa para derrubar esse veto?
     opcoes:
       - texto: Uma decisão do Supremo Tribunal Federal, a pedido de um partido.
-      - texto: O voto da maioria absoluta dos deputados e da maioria absoluta dos senadores, numa sessão conjunta.
+      - texto: O voto da maioria absoluta de cada Casa, numa sessão conjunta.
         certa: true
       - texto: A maioria dos votos dos deputados presentes, numa sessão só da Câmara.
       - texto: Dois terços dos senadores, numa sessão só do Senado.
