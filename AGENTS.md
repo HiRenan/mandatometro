@@ -36,7 +36,7 @@ As APIs oficiais e os arquivos de dados abertos (Câmara, Senado e TSE) são lid
 
 Monorepo com pnpm e Turborepo. O porquê de cada escolha está no [ADR 0001](docs/adr/0001-stack.md).
 
-- `apps/backend/`: Python 3.13 com uv, num pacote só (`src/mandatometro`): FastAPI, SQLAlchemy 2 com Alembic, psycopg 3, pgvector, Ruff e pytest. Módulos `db` (modelos e sessão), `coleta`, `ia`, `avisos` (e-mails) e `api`. Coleta e IA entram como subcomandos de `cli.py` e gravam no banco; a API só lê o banco e recebe inscrições. O `package.json` só repassa as tarefas do Turborepo para o uv.
+- `apps/backend/`: Python 3.13 com uv, num pacote só (`src/mandatometro`): FastAPI, SQLAlchemy 2 com Alembic, psycopg 3, pgvector, Ruff e pytest. Módulos `db` (modelos e sessão), `coleta`, `ia`, `avisos` (e-mails), `piloto` (medição) e `api`. Coleta e IA entram como subcomandos de `cli.py` e gravam no banco; a API lê o banco e recebe inscrições e tentativas do piloto. O piloto tem comandos de leitura agregada e exclusão. O `package.json` só repassa as tarefas do Turborepo para o uv.
 - `apps/web/`: TanStack Start (React com SSR), Tailwind e shadcn/ui, gerado pelo Better-T-Stack. As variáveis do site ficam em `.env.schema` (varlock), e as marcadas `@public` entram no bundle do navegador. Código que só roda no servidor fica em arquivos `*.server.ts`, e o build falha se o navegador importar um deles; os loaders chegam a esse código por `createServerFn`, em arquivos `*.functions.ts`.
 - `apps/web/conteudo/`: os textos das trilhas, em Markdown, com uma pasta por trilha e um arquivo por artigo. O formato e como conferir estão em [docs/conteudo-das-trilhas.md](docs/conteudo-das-trilhas.md); um teste do Vitest lê a pasta, e o CI falha se um artigo estiver mal formado.
 - `apps/web/imagens/`: o HTML do ícone da aba e da prévia do link. O `pnpm --filter web imagens` grava o `favicon.ico`, o `apple-touch-icon.png` e o `previa.png` em `apps/web/public/`. Para mudar uma imagem, mude o HTML e gere de novo, sem editar o PNG. O `mapa.mjs` desenha o mapa do fundo: o `pnpm --filter web mapa` grava o `apps/web/src/estilos/mapa.svg`, e vale a mesma regra, mude o roteiro e gere de novo.
@@ -115,6 +115,14 @@ Endpoints, campos, chaves de ligação e exemplos reais da Câmara e do Senado e
 - **Formulário do React 19:** a função do `action` não espera a API. Ela confere o dado e dispara o pedido. Uma função `async` ali prende à espera dela as outras transições, inclusive a troca de página do TanStack Router, que roda num `startTransition`: um link tocado durante o envio só abriria depois da resposta. Enquanto o pedido espera, o botão fica com o `aria-disabled`, que guarda o foco, e não com o `disabled`.
 - Não registre e-mail, corpo, código de saída ou exceção bruta. As mensagens de validação, SQL e Resend podem conter dados pessoais. Desligue o access log da API na produção. No desenvolvimento, use só dados fictícios.
 - Monte o e-mail em `avisos/email.py` e envie por `avisos/resend.py`. O envio tem até 8 segundos no total e idempotência por 24 horas. A #39 reutiliza esses módulos e define sua política de envio. Esta fatia não tem fila nem histórico de entrega. Use endereços públicos HTTPS em `APP_BASE_URL` e `API_URL` para os links de um envio real.
+
+## Piloto: medição
+
+- O contrato e a operação estão em [docs/medicao-do-piloto.md](docs/medicao-do-piloto.md). `PILOTO_ATIVO` começa falso e não há fechamento por data. Ativação, menores, guarda e ligação entre etapas dependem do Renan.
+- `POST /piloto/tentativas` guarda só código UUIDv4, versão, etapa e total de acertos. O código vai no corpo, nunca na URL ou em log; não deriva de pessoa, conta ou aparelho. O mesmo código nas duas etapas produz pares; códigos distintos por etapa produzem médias independentes. O relatório conta códigos, sem comprovar pessoas únicas.
+- A primeira conclusão por `(participacao, versao_quiz, etapa)` prevalece, inclusive se um reenvio válido trouxer outro total. Não guardar turma, hora, dia, opções ou texto livre. A cota global própria, em `limite_piloto`, confirma antes do JSON e não compartilha contador com a newsletter.
+- A leitura é só por CLI e suprime médias abaixo de 5, inclusive médias sobrepostas que revelariam subgrupos pequenos. Para apagar, desligar todas as instâncias e aguardar pedidos em andamento; o CLI recusa se sua configuração estiver ativa e exige `--confirmar`. Não reativar a coleta depois da exclusão sem rever a rodada e as pendências da tela.
+- A versão `processo-legislativo-final-v1` fixa as 12 perguntas do quiz final. Mudou enunciado, opções ou gabarito, combine outra versão entre API e tela; nunca pareie versões diferentes.
 
 ## Segredos
 

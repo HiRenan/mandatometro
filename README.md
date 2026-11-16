@@ -45,13 +45,14 @@ O porquê de cada escolha está no [ADR 0001](docs/adr/0001-stack.md).
 
 ## Modelo de dados
 
-O banco guarda o que a coleta lê da Câmara e do Senado e o que a newsletter usa. Os modelos ficam em `apps/backend/src/mandatometro/db/modelos.py`, e cada mudança vira uma migration do Alembic.
+O banco guarda o que a coleta lê da Câmara e do Senado, o que a newsletter usa e a medição do piloto. Os modelos ficam em `apps/backend/src/mandatometro/db/modelos.py`, e cada mudança vira uma migration do Alembic.
 
 - **Cada Casa tem os seus números:** parlamentar, proposição e votação se identificam pela Casa e pelo id que a Casa dá (`casa`, `id_externo`). A mesma matéria tem uma linha em cada Casa, ligadas por sigla, número e ano.
 - **Fonte em tudo:** cada dado coletado e cada item da edição aponta para uma `fonte`, com o endereço e a data da coleta. Sem fonte, o banco não grava.
 - **O partido fica no voto,** porque muda dentro do mandato. Os totais das nominais se contam pelos votos. Nas secretas do Senado, a coleta guarda matéria, votação e resultado, sem votos individuais; o banco não guarda os totais nem a modalidade. Ausência de votos no banco não significa zero votos na sessão nem identifica, sozinha, uma votação secreta.
 - **Ausência sem motivo:** toda ausência reconhecida do Senado (`AP`, `LS`, `MIS`, `NCom`, `LAP` e `LP`, em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, para a licença saúde ficar igual às outras. O voto só guarda os códigos de voto e de presença da lista `CODIGOS_GRAVADOS`, e o banco recusa os demais. Um código ainda não classificado, como `NA`, entra como `outro`, sem o código, e o log não leva o código nem a pessoa: a coleta registra só a votação e quantos códigos desconhecidos vieram nela.
 - **Quem assina** deixa só o e-mail, a data e o código do link de sair. Sair apaga a linha.
+- **Medição do piloto:** cada conclusão guarda apenas código aleatório, versão do quiz, etapa e total de acertos. Não tem ligação com conta ou newsletter; não guarda turma, data nem hora da tentativa.
 
 ```mermaid
 erDiagram
@@ -152,6 +153,16 @@ erDiagram
     }
     limite_inscricao {
         timestamptz janela PK "o minuto da cota global"
+        int quantidade "tentativas admitidas, sem identificar pessoas"
+    }
+    tentativa_piloto {
+        uuid participacao PK "código sorteado no navegador"
+        string versao_quiz PK
+        string etapa PK "antes ou depois"
+        smallint acertos "de 0 a 12"
+    }
+    limite_piloto {
+        timestamptz janela PK "o minuto da cota global do piloto"
         int quantidade "tentativas admitidas, sem identificar pessoas"
     }
 ```
@@ -322,6 +333,17 @@ TEST_DATABASE_URL=postgresql+psycopg://mandatometro:troque-esta-senha@localhost:
 
 Sem a variável, o pytest pula os testes de banco e diz o motivo. No CI, que sobe o próprio banco, eles falham.
 
+**Medição do piloto.** `POST /piloto/tentativas` recebe apenas código aleatório, versão, etapa e total de acertos. `PILOTO_ATIVO` começa desligado (HTTP 410); o Renan o liga após decidir a ligação entre etapas, os menores e a guarda, com a tela integrada. A cota própria é de 120 pedidos por minuto, ajustável por `PILOTO_LIMITE_POR_MINUTO`.
+
+Em `apps/backend`, com as migrations aplicadas e `DATABASE_URL` explícito para o banco escolhido, o time lê o resultado agregado e, depois de encerrar a coleta em todas as instâncias, apaga a medição:
+
+```text
+uv run mandatometro piloto resultado --versao processo-legislativo-final-v1
+uv run mandatometro piloto apagar --versao processo-legislativo-final-v1 --confirmar
+```
+
+O relatório suprime médias de grupos pequenos e não imprime identificadores. A exclusão recusa `PILOTO_ATIVO=true`; não há data de fechamento automático. O [contrato e o roteiro de encerramento](docs/medicao-do-piloto.md) explicam as respostas HTTP, os reenvios, o computador compartilhado e as limitações da medição.
+
 **Newsletter.** Depois das migrations, envie `POST /newsletter/inscricoes` com JSON contendo só `email`. A API libera o CORS só para `APP_BASE_URL`, conforme o [ADR 0001](docs/adr/0001-stack.md). Aceita GET e POST com `Content-Type` e expõe `Retry-After` ao navegador. No site, quem chama a rota é a folha da newsletter, no fim da página inicial, pelo cliente gerado (`apps/web/src/lib/newsletter.ts`). A folha só aparece quando o build do site tem o `API_URL`. Uma inscrição nova ou repetida recebe as mesmas respostas, sem revelar se o endereço já estava na lista:
 
 | HTTP | Corpo | Significado |
@@ -363,7 +385,7 @@ Fora da Vercel, como no Docker, defina o `APP_BASE_URL` com o endereço do site 
 
 **Mudou a API?** `pnpm generate:client` grava o `openapi.json` e gera de novo o cliente TypeScript. Faça commit dos dois.
 
-**Migration nova,** em `apps/backend`, com o próximo número: `uv run alembic revision --autogenerate --rev-id 0005 -m "cria a tabela orientacao"`. O autogenerate não vê mudança de CHECK nem de valor padrão: um valor novo num conjunto, como o do voto, pede essa parte da migration escrita à mão, e o teste de migrations acusa o que faltar. `uv run alembic check` diz se algum modelo mudou sem migration. Mudou uma tabela? Atualize o diagrama em "Modelo de dados": um teste confere.
+**Migration nova,** em `apps/backend`, com o próximo número: `uv run alembic revision --autogenerate --rev-id 0007 -m "cria a tabela orientacao"`. O autogenerate não vê mudança de CHECK nem de valor padrão: um valor novo num conjunto, como o do voto, pede essa parte da migration escrita à mão, e o teste de migrations acusa o que faltar. `uv run alembic check` diz se algum modelo mudou sem migration. Mudou uma tabela? Atualize o diagrama em "Modelo de dados": um teste confere.
 
 ## Time
 
