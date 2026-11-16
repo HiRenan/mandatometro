@@ -3,7 +3,7 @@
 Não é o conector (#10 e #11): o teste só mostra que cada dado tem onde ficar, com as armadilhas que
 a revisão do dicionário de dados confirmou na API. As asserções usam ids, não nomes. O CPF e a data
 de nascimento do deputado, fictícios na resposta gravada, não entram no modelo. Os testes de
-privacidade conferem os motivos fictícios do Senado e a sanitização dos novos fixtures da Câmara.
+privacidade conferem os motivos fictícios e o processo do Senado e os novos fixtures da Câmara.
 """
 
 import json
@@ -263,8 +263,8 @@ def test_os_votos_do_senado(sessao):
     _gravar_senado(sessao)
     sessao.flush()
 
-    # Os seis códigos da amostra. O AP ("atividade parlamentar") entra sem o código, como toda
-    # ausência, para a licença saúde ficar igual a ela; o P-NRV, de quem estava presente, fica.
+    # Os motivos sanitizados são XXX: código desconhecido, normalizado como outro sem bruto.
+    # Ausências conhecidas são testadas com dados inventados em test_modelo.py; P-NRV fica.
     assert _votos(sessao, "senado", Voto.valor_bruto) == {
         "Sim": 253,
         "Não": 36,
@@ -276,7 +276,8 @@ def test_os_votos_do_senado(sessao):
     assert _votos(sessao, "senado", Voto.valor) == {
         "sim": 253,
         "nao": 36,
-        "nao_votou": 30,
+        "nao_votou": 26,
+        "outro": 4,
         "presidente": 4,
         "abstencao": 1,
     }
@@ -399,13 +400,27 @@ def test_os_motivos_de_afastamento_dos_senadores_sao_ficticios(caminho):
     assert set(descricoes) <= {"Motivo fictício"}
 
 
-def test_os_motivos_de_ausencia_da_secreta_gravada_sao_ficticios():
-    resposta = _ler("senado/votacao-secreta-7081.json")
-    permitidos = {"Votou", "P-NRV", "Presidente (art. 51 RISF)", "XXX"}
-    motivos = []
-    for votacao in resposta:
-        for voto in votacao["votos"]:
-            assert voto["siglaVotoParlamentar"] in permitidos
-            if voto["siglaVotoParlamentar"] == "XXX":
-                motivos.append(voto["descricaoVotoParlamentar"])
-    assert motivos and set(motivos) == {"Motivo fictício"}
+@pytest.mark.parametrize(
+    "caminho",
+    sorted((FIXTURES / "senado").glob("votacao-*.json")),
+    ids=lambda caminho: caminho.name,
+)
+def test_os_motivos_de_ausencia_das_votacoes_gravadas_sao_ficticios(caminho):
+    resposta = json.loads(caminho.read_text(encoding="utf-8"))
+    permitidos = {
+        ("Sim", None),
+        ("Não", None),
+        ("Abstenção", None),
+        ("Presidente (art. 51 RISF)", None),
+        ("Votou", None),
+        ("P-NRV", "Presente – Não registrou voto"),
+        ("XXX", "Motivo fictício"),
+    }
+    # Confira o par inteiro: nenhuma descrição pessoal pode voltar sob um código permitido.
+    # A asserção mostra só o arquivo, nunca o código, a descrição ou a pessoa.
+    pares_validos = all(
+        (voto["siglaVotoParlamentar"], voto["descricaoVotoParlamentar"]) in permitidos
+        for votacao in resposta
+        for voto in votacao["votos"]
+    )
+    assert pares_validos, f"Refaça a sanitização dos votos de {caminho.name} conforme o README."

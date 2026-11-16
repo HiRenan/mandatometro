@@ -354,6 +354,8 @@ Quatro coisas para o conector:
 
 **Na votação secreta, o conector descarta toda a lista `votos`, inclusive `Votou`, presenças e ausências.** Grava matéria, votação, resultado e fontes, sem linhas de `voto` nem contagem de códigos desconhecidos. A fixture da votação 7081 contém 81 registros, dos quais 77 são `Votou`, e comprova esse comportamento. O modelo não tem colunas de total nem de modalidade: uma lista vazia no banco não prova segredo nem significa que houve zero votos. A #22 precisa considerar essa limitação ao escrever a newsletter.
 
+**Sanitização das respostas gravadas:** os quatro pares de código e descrição de ausência das nominais de 03–07/11/2026 e os dois da secreta 7081 foram substituídos pelo mesmo `XXX` / `Motivo fictício`. Os códigos de ausência descritos acima são observações da fonte; não permanecem nessas fixtures. O normalizador os testa com dados inventados, enquanto `XXX` continua desconhecido (`outro`, sem bruto).
+
 ### `/senador/lista/atual.json` e `/senador/{cod}/mandatos.json`
 
 ```text

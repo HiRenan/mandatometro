@@ -18,7 +18,7 @@ Respostas reais das APIs da Câmara e do Senado, gravadas para os testes de unid
 | `camara/deputados-atuais-pagina-curta.json` | `/deputados?id=178843&itens=2` — 16/11, página curta com um deputado e e-mail fictício |
 | `camara/votacao-2236186-60.json` | `/votacoes/2236186-60` — 16/11, detalhe da votação nominal já gravada |
 | `camara/proposicao-2236186.json` | `/proposicoes/2236186` — 16/11, proposição daquela votação nominal |
-| `senado/votacao-2026-11-03_2026-11-07.json` | `/votacao?dataInicio=2026-11-03&dataFim=2026-11-07` |
+| `senado/votacao-2026-11-03_2026-11-07.json` | `/votacao?dataInicio=2026-11-03&dataFim=2026-11-07` — **todos os motivos de ausência trocados** |
 | `senado/senador-lista-atual.json` | `/senador/lista/atual.json` — **motivos de afastamento trocados** |
 | `senado/processo-9006525.json` | `/processo/9006525` |
 | `senado/senador-5672-mandatos.json` | `/senador/5672/mandatos.json` — um mandato como objeto, sem causa de afastamento |
@@ -48,7 +48,9 @@ O histórico `senador-4525-mandatos.json` segue a mesma regra em todos os exerc�
 
 O processo `senado/processo-9026396.json` não contém campos de identificação pessoal (CPF, documento de identidade, título de eleitor ou nascimento), contato ou afastamento. O guarda em `tests/test_respostas_gravadas.py` percorre objetos e listas e recusa esses campos mesmo vazios, sem imprimir valores da resposta; uma nova gravação exige a mesma conferência.
 
-Na votação secreta 7081, os dois códigos de ausência foram trocados por `XXX`, e suas descrições, por `Motivo fictício`. A mesma troca vale para qualquer código que não esteja na lista de votos/presenças conhecidos, para não guardar um motivo pessoal ainda não classificado. O teste confere os códigos permitidos nessa fixture e o marcador de cada motivo. A resposta permanece inteira, com 81 registros, incluindo 77 `Votou`; nenhum deles vira voto individual no banco por ser uma votação secreta.
+Nas votações nominais de 03–07/11/2026, os quatro códigos de ausência foram trocados por `XXX`, e suas quatro descrições, por `Motivo fictício`, em 16/11/2026. É o mesmo par usado nas duas ausências da votação secreta 7081: todos os motivos recebem o mesmo marcador, para nenhum se destacar. A mesma troca vale para qualquer código que não esteja na lista de votos/presenças conhecidos, para não guardar um motivo pessoal ainda não classificado.
+
+O teste percorre todos os arquivos `senado/votacao-*.json` e confere os pares permitidos de código e descrição, inclusive o marcador único; uma descrição pessoal também é recusada sob um código de voto permitido. As respostas permanecem inteiras: 324 registros nas quatro nominais e 81 na secreta, incluindo 77 `Votou`. O marcador `XXX` é desconhecido pelo normalizador e vira `outro`, sem código bruto, nos testes das nominais; os testes de `test_modelo.py` continuam exercitando as ausências conhecidas com dados inventados no próprio teste. Nenhum registro da secreta vira voto individual no banco.
 
 Nenhum outro arquivo desta pasta traz CPF, título de eleitor, data de nascimento ou motivo de afastamento. Como a fonte publica, os arquivos trazem e-mail e telefone de gabinete, foto, nome completo e sexo de deputados e senadores, e o `camara/deputado-178843.json` traz também a cidade e a UF de nascimento e a escolaridade. Ao gravar uma fixture nova de `/deputados/{id}`, da lista de senadores ou dos mandatos, faça a mesma troca. Ausências nos votos também precisam de sanitização: nunca grave uma licença real ligada ao parlamentar. Os testes do conector que exercitam ausências e códigos desconhecidos usam pessoas inventadas.
 
