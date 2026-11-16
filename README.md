@@ -211,6 +211,36 @@ O comando divide períodos maiores em janelas de até 365 dias e coleta as vota�
 
 Se o histórico de um votante fora da lista atual falhar, seus votos ficam gravados, o mandato não é inventado e `falhas_parlamentares` conta o parlamentar uma vez. Recurso indisponível entra no resumo pelo caminho com seu id (por exemplo, `/processo/9006525`): sem o processo, a votação é pulada; sem o histórico, os votos são preservados.
 
+**Edição semanal.** Em `apps/backend`, com as migrations aplicadas e `DATABASE_URL` explícito, o comando usa só as votações já coletadas. Não coleta, não envia e-mail e não publica ao gerar. Sem datas, usa os sete dias completos anteriores, como a coleta. O provedor ainda não tem adaptador: todos os itens começam com redação manual pendente. As variáveis `LLM_PROVIDER`, `LLM_MODEL` e `LLM_API_KEY` estão preparadas para essa integração futura; preenchê-las ainda não liga um provedor.
+
+```bash
+uv run mandatometro edicao rascunho --inicio 2026-11-09 --fim 2026-11-15 --teto 8
+uv run mandatometro edicao mostrar 1
+uv run mandatometro edicao exportar 1 --arquivo caminho-da-revisao.json
+# Edite o arquivo, confira as fontes e substitua a redação pendente.
+uv run mandatometro edicao revisar 1 --arquivo caminho-da-revisao.json
+uv run mandatometro edicao mostrar 1
+uv run mandatometro edicao publicar 1
+```
+
+Troque `1` pelo `edicao_id` do resumo e `caminho-da-revisao.json` por um caminho **fora do repositório**, em uma pasta existente. O arquivo é UTF-8, tem recuo e parágrafos em lista, e a exportação recusa sobrescrever um arquivo. Ele contém as descrições e os trechos oficiais para a pessoa conferir; não deve entrar em commits ou logs. O `mostrar` imprime o conteúdo da edição, com as referências, como a versão em texto do e-mail; use-o para revisão, sem encaminhar sua saída ao log do job. A prévia admite `APP_BASE_URL` local, e um envio real continua exigindo HTTPS.
+
+A seleção agrupa votações pelas proposições ligadas na fonte, unindo os grupos que se conectam, dentro da mesma Casa. Primeiro vêm os grupos com placar registrado; depois, os demais. Em cada parte, a ordem é data mais recente, Casa e menor id externo da proposição principal. O teto padrão é oito grupos, ajustável por `--teto N`. O resumo lista ids e quantidades de votações sem proposição, sem página pública e cortadas pelo teto. Assuntos pessoais de licença, afastamento ou saúde parlamentar saem antes, com **só a quantidade**. Não se deduz o vínculo pelo prefixo do id da votação.
+
+O item aponta para a fonte da votação mais recente do grupo (desempate pelo id externo numérico); sem página pública nessa fonte, usa a ficha de uma proposição ligada àquela votação. Sem nenhuma dessas páginas, a votação sai. Todas as referências usadas ficam preservadas, com data da coleta e trecho quando disponível. O placar conta Sim, Não, Abstenções e Obstruções por votação, com Presidência à parte; ausência e valores não classificados ficam de fora. Sem placar gravado, o texto informa a indisponibilidade, sem concluir que foi votação secreta ou simbólica nem mostrar zero. O resultado `outro` informa que o resultado não está classificado. Aprovação de requerimento, recurso ou destaque não significa aprovação da proposta.
+
+No arquivo, edite o título da edição, os títulos e a lista `explicacao` de cada item. Pode reordenar a lista de itens; para retirar um, marque `excluir: true` e escreva `motivo_exclusao`, mantendo ao menos um item. Não remova linhas nem altere ids, datas, `fatos`, `fontes`, `contexto` ou o catálogo. Números inseridos pela pessoa precisam aparecer nos fatos ou textos oficiais daquele item; a verificação não substitui a leitura do significado de cada número.
+
+Depois de conferir o ato votado e a explicação, marque `revisado: true` em cada item. Escolha `artigo_caminho` entre os três artigos do catálogo e confirme `artigo_confirmado`, ou use `null` quando nenhum se aplicar. Confirme **uma vez**, em `cobertura_confirmada`, que leu os resumos das duas coletas e conhece suas lacunas: o banco não certifica a cobertura de todo o Congresso. O `revisar` valida tudo e salva o rascunho e as confirmações; avisa apenas o número do item se o texto puder identificar parlamentar ou partido. O `publicar` lê essa revisão salva, sem receber arquivo, e exige ausência de pendências. Tirar só o marcador de redação não basta. Qualquer erro preserva o rascunho anterior.
+
+Repetir o rascunho no mesmo período retorna a edição existente sem sobrescrever ajustes. `--refazer` recompõe **só um rascunho**, descarta a revisão anterior e invalida os arquivos exportados; use-o também se a coleta mudou os dados usados. Depois de salvar uma revisão, exporte outro arquivo para fazer novos ajustes. Edição publicada permanece intocada, inclusive ao repetir geração ou publicação. Mais de uma edição no período é erro a resolver. O fluxo prevê uma pessoa operando por vez, sem travas para execuções simultâneas.
+
+Sem votação no banco, retorna `sem_votacoes_no_banco`; se todas saírem da seleção, `sem_itens_elegiveis`. Não cria uma edição vazia nem afirma que o Congresso não votou. Saídas: **0** para operação concluída, inclusive redação pendente, repetição sem efeito e período sem itens; **1** para falha operacional ou revisão/publicação recusada; **2** para argumentos inválidos. Exceto a prévia, a saída é JSON com ids, contagens e mensagens sem conteúdo de fonte ou exceção bruta.
+
+O contrato para os consumidores da edição é `item_edicao.texto` como explicação em texto puro, `artigo_caminho` opcional e `fatos` JSONB versionado, também opcional para itens antigos. A versão 1 guarda ids de proposições/votações/fontes, data, resultado, placar agregado, origem (`codigo`, `modelo` ou `revisao`) e pendências. A confirmação única da cobertura é persistida pela presença ou ausência da pendência `cobertura` nos itens. Os fatos publicados não são recalculados após uma coleta. Para a #39, reutilize `formatar_edicao`/`montar_email` e carregue as fontes pelos ids de `fatos.fontes`, além da fonte principal; renderizar apenas `texto` perderia os blocos factuais. Itens antigos, sem os novos campos, mantêm a apresentação anterior.
+
+Os testes são offline, com redator falso e dados inventados: com `TEST_DATABASE_URL` explícito, rode `uv run pytest`. Não é necessário chave ou SDK de LLM.
+
 **Checagens,** as mesmas do CI:
 
 ```bash
