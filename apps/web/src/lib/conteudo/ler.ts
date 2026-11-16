@@ -168,7 +168,7 @@ const MAXIMO_DE_OPCOES = 5;
 
 const perguntaSchema = z.strictObject(
 	{
-		// O artigo de onde sai a resposta. Ele vem até o depoisDe do quiz.
+		// O artigo de onde sai a resposta. No quiz.md, ele vem até o depoisDe.
 		artigo: nomeDeArtigo,
 		enunciado: texto,
 		// Na ordem do arquivo, sem sorteio: o HTML do servidor e o do navegador
@@ -207,21 +207,28 @@ const perguntaSchema = z.strictObject(
 	),
 );
 
+// As perguntas de um quiz, na ordem do arquivo. O navegador guarda a resposta
+// pelo enunciado, que não pode se repetir.
+const perguntas = z
+	.array(perguntaSchema, exigido("precisa ser uma lista de perguntas"))
+	.min(1, "precisa de pelo menos uma pergunta")
+	.superRefine(
+		semRepetir(
+			(pergunta) => pergunta.enunciado,
+			(enunciado) => `a pergunta "${enunciado}" já está no quiz`,
+			["enunciado"],
+		),
+	);
+
 const quizSchema = z.strictObject({
 	// O artigo depois do qual o quiz aparece.
 	depoisDe: nomeDeArtigo,
-	// O navegador guarda a resposta pelo enunciado, que não pode se repetir.
-	perguntas: z
-		.array(perguntaSchema, exigido("precisa ser uma lista de perguntas"))
-		.min(1, "precisa de pelo menos uma pergunta")
-		.superRefine(
-			semRepetir(
-				(pergunta) => pergunta.enunciado,
-				(enunciado) => `a pergunta "${enunciado}" já está no quiz`,
-				["enunciado"],
-			),
-		),
+	perguntas,
 });
+
+// O quiz final: perguntas sobre a trilha toda, depois do último artigo. O site
+// ainda não o mostra (a tela é da #92), mas o leitor já confere as perguntas.
+const quizFinalSchema = z.strictObject({ perguntas });
 
 export type Fonte = z.output<typeof fonteSchema>;
 
@@ -234,6 +241,8 @@ export type Opcao = z.output<typeof opcaoSchema>;
 export type Pergunta = z.output<typeof perguntaSchema>;
 
 export type Quiz = z.output<typeof quizSchema>;
+
+export type QuizFinal = z.output<typeof quizFinalSchema>;
 
 export type Artigo = {
 	trilha: string;
@@ -256,6 +265,11 @@ export type Trilha = {
 	infografico?: Infografico;
 	/** As perguntas sobre os artigos lidos, quando a trilha tem um quiz.md. */
 	quiz?: Quiz;
+	/**
+	 * As perguntas sobre a trilha toda, quando ela tem um quiz-final.md. Nenhuma
+	 * página as leva ao navegador ainda: a tela do quiz final é da #92.
+	 */
+	quizFinal?: QuizFinal;
 };
 
 export class ErroDeConteudo extends Error {
@@ -349,11 +363,12 @@ export function lerTrilhas(arquivos: Record<string, string>): Trilha[] {
 	const problemas: string[] = [];
 	const trilhas = new Map<
 		string,
-		Omit<Trilha, "artigos" | "infografico" | "quiz">
+		Omit<Trilha, "artigos" | "infografico" | "quiz" | "quizFinal">
 	>();
 	const artigos = new Map<string, Artigo[]>();
 	const infograficos = new Map<string, Infografico>();
 	const quizzes = new Map<string, Quiz>();
+	const quizzesFinais = new Map<string, QuizFinal>();
 	// Os nomes dos arquivos de artigo de cada pasta, mesmo os que têm problema,
 	// para conferir os artigos que o infográfico e o quiz apontam.
 	const nomesDosArtigos = new Map<string, Set<string>>();
@@ -430,6 +445,22 @@ export function lerTrilhas(arquivos: Record<string, string>): Trilha[] {
 			continue;
 		}
 
+		// O quiz final também, e ainda não aparece no site.
+		if (arquivo === "quiz-final") {
+			if (lido.corpo !== "") {
+				avisar(
+					"o quiz final é só o cabeçalho, e o texto embaixo dele não aparece no site",
+				);
+			}
+			const quizFinal = validar(quizFinalSchema, lido.dados);
+			if (quizFinal.ok) {
+				quizzesFinais.set(pasta, quizFinal.valor);
+			} else {
+				quizFinal.problemas.forEach(avisar);
+			}
+			continue;
+		}
+
 		nomesDosArtigos.set(
 			pasta,
 			(nomesDosArtigos.get(pasta) ?? new Set<string>()).add(arquivo),
@@ -462,6 +493,7 @@ export function lerTrilhas(arquivos: Record<string, string>): Trilha[] {
 		...artigos.keys(),
 		...infograficos.keys(),
 		...quizzes.keys(),
+		...quizzesFinais.keys(),
 	]);
 	for (const pasta of pastas) {
 		const local = `conteudo/trilhas/${pasta}`;
@@ -501,6 +533,10 @@ export function lerTrilhas(arquivos: Record<string, string>): Trilha[] {
 		if (quiz) {
 			problemas.push(...conferirArtigosDoQuiz(quiz, nomes, daTrilha, local));
 		}
+		const quizFinal = quizzesFinais.get(pasta);
+		if (quizFinal) {
+			problemas.push(...conferirArtigosDoQuizFinal(quizFinal, nomes, local));
+		}
 	}
 	for (const repetido of repetidos(
 		[...trilhas.values()],
@@ -518,13 +554,34 @@ export function lerTrilhas(arquivos: Record<string, string>): Trilha[] {
 	return [...trilhas.values()].sort(porOrdem).map((trilha) => {
 		const infografico = infograficos.get(trilha.slug);
 		const quiz = quizzes.get(trilha.slug);
+		const quizFinal = quizzesFinais.get(trilha.slug);
 		return {
 			...trilha,
 			artigos: (artigos.get(trilha.slug) ?? []).sort(porOrdem),
 			...(infografico && { infografico }),
 			...(quiz && { quiz }),
+			...(quizFinal && { quizFinal }),
 		};
 	});
+}
+
+/**
+ * Confere os artigos que o quiz final aponta: o de cada pergunta existe na
+ * trilha. O quiz final vem depois do último artigo, e a pergunta pode ser de
+ * qualquer um deles.
+ */
+function conferirArtigosDoQuizFinal(
+	quizFinal: QuizFinal,
+	nomes: ReadonlySet<string>,
+	local: string,
+): string[] {
+	return quizFinal.perguntas.flatMap((pergunta, indice) =>
+		nomes.has(pergunta.artigo)
+			? []
+			: [
+					`${local}/quiz-final.md: campo "perguntas.${indice}.artigo": o artigo "${pergunta.artigo}" não existe nesta trilha`,
+				],
+	);
 }
 
 /**

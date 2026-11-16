@@ -76,6 +76,19 @@ describe("conteúdo das trilhas", () => {
 		]);
 	});
 
+	it("liga cada passo do infográfico do processo legislativo aos artigos que o explicam", () => {
+		const passos =
+			acharTrilha(trilhas, "processo-legislativo")?.infografico?.passos ?? [];
+
+		expect(passos.map((passo) => passo.artigos)).toEqual([
+			["quem-pode-propor-uma-lei", "onde-o-projeto-comeca"],
+			["o-projeto-passa-pelas-comissoes"],
+			["o-plenario-vota-o-projeto"],
+			["onde-o-projeto-comeca", "a-outra-casa-revisa-o-projeto"],
+			["o-presidente-sanciona-ou-veta"],
+		]);
+	});
+
 	it("define o plenário com o glossário do Congresso Nacional", () => {
 		const plenario = acharTrilha(
 			trilhas,
@@ -109,7 +122,32 @@ describe("conteúdo das trilhas", () => {
 			trilha.artigos.map(
 				(artigo) => acharArtigo(trilhas, trilha.slug, artigo.slug)?.quiz,
 			),
-		).toEqual([undefined, undefined, chamada]);
+		).toEqual([undefined, undefined, chamada, undefined, undefined, undefined]);
+	});
+
+	it("tem o quiz final do processo legislativo, com duas perguntas de cada artigo, na ordem da trilha", () => {
+		const trilha = trilhaDe("processo-legislativo");
+		const posicoes = trilha.quizFinal?.perguntas.map(
+			(pergunta) =>
+				trilha.artigos.findIndex((artigo) => artigo.slug === pergunta.artigo) +
+				1,
+		);
+
+		expect(posicoes).toEqual([1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6]);
+	});
+
+	it("não repete no quiz final uma pergunta do quiz do meio", () => {
+		const trilha = trilhaDe("processo-legislativo");
+		const doMeio = new Set(
+			trilha.quiz?.perguntas.map((pergunta) => pergunta.enunciado),
+		);
+
+		expect(trilha.quizFinal?.perguntas.length).toBeGreaterThan(0);
+		expect(
+			trilha.quizFinal?.perguntas.filter((pergunta) =>
+				doMeio.has(pergunta.enunciado),
+			),
+		).toEqual([]);
 	});
 
 	it("não acha trilha nem artigo que não existe", () => {
@@ -139,6 +177,29 @@ describe("o que vai para o navegador", () => {
 		]) {
 			for (const outro of naLista.artigos) {
 				expect(outro).not.toHaveProperty("corpo");
+			}
+		}
+	});
+
+	it("não leva as perguntas do quiz final do processo legislativo a nenhuma página", () => {
+		const trilha = trilhaDe("processo-legislativo");
+		const enunciados =
+			trilha.quizFinal?.perguntas.map((pergunta) => pergunta.enunciado) ?? [];
+		const paginas = [
+			...listarTrilhas(trilhas),
+			inicio(trilhas),
+			acharTrilha(trilhas, trilha.slug),
+			...trilha.artigos.map((artigo) =>
+				acharArtigo(trilhas, trilha.slug, artigo.slug),
+			),
+			acharQuiz(trilhas, trilha.slug),
+		];
+
+		expect(enunciados).toHaveLength(12);
+		for (const pagina of paginas) {
+			const json = JSON.stringify(pagina);
+			for (const enunciado of enunciados) {
+				expect(json).not.toContain(enunciado);
 			}
 		}
 	});
@@ -405,6 +466,44 @@ describe("o quiz da trilha", () => {
 		expect(acharTrilha(exemplos, "sem-quiz")).not.toHaveProperty(
 			"quizDepoisDe",
 		);
+	});
+
+	// O quiz final ainda não tem tela (é da #92): as perguntas dele ficam no
+	// servidor, e nenhuma página as leva ao navegador.
+	it("não leva o quiz final a nenhuma página", () => {
+		const soDoQuizFinal = "Uma pergunta que só existe no quiz final?";
+		const comQuizFinal: Trilha = {
+			...comQuiz,
+			quizFinal: {
+				perguntas: [
+					{
+						artigo: "terceiro",
+						enunciado: soDoQuizFinal,
+						opcoes: [
+							{ texto: "Uma opção certa.", certa: true },
+							{ texto: "Uma opção errada.", certa: false },
+						],
+						explicacao: "Uma explicação.",
+						fontes: [constituicao],
+					},
+				],
+			},
+		};
+		const todas = [comQuizFinal];
+		const paginas = [
+			...listarTrilhas(todas),
+			acharTrilha(todas, "com-quiz"),
+			...comQuizFinal.artigos.map((artigo) =>
+				acharArtigo(todas, "com-quiz", artigo.slug),
+			),
+			acharQuiz(todas, "com-quiz"),
+		];
+
+		for (const pagina of paginas) {
+			expect(pagina).toBeDefined();
+			expect(JSON.stringify(pagina)).not.toContain("quizFinal");
+			expect(JSON.stringify(pagina)).not.toContain(soDoQuizFinal);
+		}
 	});
 
 	it("não leva nada do quiz às trilhas sem quiz, às listas e à página inicial", () => {

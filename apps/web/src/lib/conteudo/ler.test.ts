@@ -831,3 +831,189 @@ describe("o quiz da trilha", () => {
 		});
 	});
 });
+
+// O quiz final cobre a trilha toda, depois do último artigo. O site ainda não
+// mostra esse quiz (a tela é da #92), mas o leitor já confere as perguntas.
+const quizFinalMd = `---
+perguntas:
+  - artigo: primeiro
+    enunciado: Quem pode propor uma lei?
+    opcoes:
+      - texto: Só os deputados.
+      - texto: Os deputados, os senadores, o presidente e os cidadãos, entre outros.
+        certa: true
+    explicacao: A Constituição lista quem pode propor.
+    fontes:
+      - titulo: Constituição Federal, art. 61
+        url: https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art61
+        consultadoEm: 2026-11-16
+  - artigo: terceiro
+    enunciado: O que acontece se o presidente da República não se manifesta em 15 dias úteis?
+    opcoes:
+      - texto: O projeto é arquivado.
+      - texto: O projeto é sancionado.
+        certa: true
+    explicacao: O silêncio do presidente no prazo vale como sanção.
+    fontes:
+      - titulo: Constituição Federal, art. 66
+        url: https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art66
+        consultadoEm: 2026-11-16
+---
+`;
+
+describe("o quiz final da trilha", () => {
+	function ler(quizFinal: string, outros: Record<string, string> = {}) {
+		return lerTrilhas({
+			[`${pasta}/trilha.md`]: trilhaMd,
+			[`${pasta}/primeiro.md`]: artigoMd({ ordem: "1" }),
+			[`${pasta}/segundo.md`]: artigoMd({ ordem: "2" }),
+			[`${pasta}/terceiro.md`]: artigoMd({ ordem: "3" }),
+			[`${pasta}/quiz-final.md`]: quizFinal,
+			...outros,
+		});
+	}
+
+	function erro(problema: string) {
+		return new ErroDeConteudo([
+			`conteudo/trilhas/processo-legislativo/quiz-final.md: ${problema}`,
+		]);
+	}
+
+	it("lê o quiz-final.md, com as perguntas e as opções na ordem do arquivo", () => {
+		const [trilha] = ler(quizFinalMd);
+
+		expect(
+			trilha.quizFinal?.perguntas.map((pergunta) => pergunta.artigo),
+		).toEqual(["primeiro", "terceiro"]);
+		expect(trilha.quizFinal?.perguntas[1]).toEqual({
+			artigo: "terceiro",
+			enunciado:
+				"O que acontece se o presidente da República não se manifesta em 15 dias úteis?",
+			opcoes: [
+				{ texto: "O projeto é arquivado.", certa: false },
+				{ texto: "O projeto é sancionado.", certa: true },
+			],
+			explicacao: "O silêncio do presidente no prazo vale como sanção.",
+			fontes: [
+				{
+					titulo: "Constituição Federal, art. 66",
+					url: "https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art66",
+					consultadoEm: "2026-11-16",
+				},
+			],
+		});
+	});
+
+	it("não vira um artigo da trilha", () => {
+		const [trilha] = ler(quizFinalMd);
+
+		expect(trilha.artigos.map((artigo) => artigo.slug)).toEqual([
+			"primeiro",
+			"segundo",
+			"terceiro",
+		]);
+	});
+
+	it("é opcional: a trilha sem o arquivo nem leva o campo do quiz final", () => {
+		const [trilha] = lerTrilhas({
+			[`${pasta}/trilha.md`]: trilhaMd,
+			[`${pasta}/primeiro.md`]: artigoMd(),
+		});
+
+		expect(trilha).not.toHaveProperty("quizFinal");
+	});
+
+	it("convive com o quiz do meio da trilha, cada um no seu campo", () => {
+		const [trilha] = ler(quizFinalMd, { [`${pasta}/quiz.md`]: quizMd });
+
+		expect(trilha.quiz?.depoisDe).toBe("segundo");
+		expect(trilha.quizFinal?.perguntas).toHaveLength(2);
+	});
+
+	describe("avisa o erro com o nome do arquivo", () => {
+		it("quando a pergunta aponta um artigo que não existe na trilha", () => {
+			expect(() =>
+				ler(
+					quizFinalMd.replace("  - artigo: terceiro", "  - artigo: nao-existe"),
+				),
+			).toThrow(
+				erro(
+					'campo "perguntas.1.artigo": o artigo "nao-existe" não existe nesta trilha',
+				),
+			);
+		});
+
+		it("quando nenhuma opção é a certa", () => {
+			expect(() =>
+				ler(quizFinalMd.replace("        certa: true\n", "")),
+			).toThrow(
+				erro(
+					'campo "perguntas.0.opcoes": precisa de exatamente uma opção com "certa: true", e tem 0',
+				),
+			);
+		});
+
+		it("quando a fonte não é um site oficial", () => {
+			expect(() =>
+				ler(
+					quizFinalMd.replace(
+						"https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art66",
+						"https://exemplo.com/constituicao",
+					),
+				),
+			).toThrow(
+				erro(
+					'campo "perguntas.1.fontes.0.url": precisa ser um link https de um site oficial (gov.br, leg.br, jus.br, mp.br ou def.br)',
+				),
+			);
+		});
+
+		it("quando duas perguntas têm o mesmo enunciado", () => {
+			expect(() =>
+				ler(
+					quizFinalMd.replace(
+						"O que acontece se o presidente da República não se manifesta em 15 dias úteis?",
+						"Quem pode propor uma lei?",
+					),
+				),
+			).toThrow(
+				erro(
+					'campo "perguntas.1.enunciado": a pergunta "Quem pode propor uma lei?" já está no quiz',
+				),
+			);
+		});
+
+		it("quando o quiz final não tem perguntas", () => {
+			expect(() => ler("---\nperguntas: []\n---\n")).toThrow(
+				erro('campo "perguntas": precisa de pelo menos uma pergunta'),
+			);
+		});
+
+		it("quando um campo tem outro nome, como o depoisDe do quiz do meio", () => {
+			expect(() =>
+				ler(
+					quizFinalMd.replace(
+						"---\nperguntas:",
+						"---\ndepoisDe: terceiro\nperguntas:",
+					),
+				),
+			).toThrow(erro('campo desconhecido "depoisDe"'));
+		});
+
+		it("quando há texto embaixo do cabeçalho", () => {
+			expect(() =>
+				ler(`${quizFinalMd}\nUm texto que não aparece no site.\n`),
+			).toThrow(
+				erro(
+					"o quiz final é só o cabeçalho, e o texto embaixo dele não aparece no site",
+				),
+			);
+		});
+
+		it("quando a pasta só tem o quiz final, sem o trilha.md", () => {
+			expect(() =>
+				lerTrilhas({ [`${pasta}/quiz-final.md`]: quizFinalMd }),
+			).toThrow(/processo-legislativo: falta o trilha\.md/);
+		});
+	});
+});

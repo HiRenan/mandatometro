@@ -32,6 +32,8 @@ passos:
         consultadoEm: 2026-11-10
   - titulo: Plenário
     texto: O plenário é a reunião de todos os deputados, ou de todos os senadores. Ali, o projeto é discutido e votado. Ele é aprovado pela maioria dos votos, desde que mais da metade dos membros da Casa esteja presente (art. 47).
+    artigos:
+      - o-plenario-vota-o-projeto
     fontes:
       - titulo: Constituição Federal, art. 47
         url: https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art47
@@ -49,6 +51,7 @@ passos:
       - Se a outra Casa rejeita o projeto, ele é arquivado.
     artigos:
       - onde-o-projeto-comeca
+      - a-outra-casa-revisa-o-projeto
     fontes:
       - titulo: Constituição Federal, art. 65
         url: https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art65
@@ -60,6 +63,8 @@ passos:
     texto: A Casa que terminou a votação envia o projeto ao presidente da República. Ele tem 15 dias úteis para sancionar o projeto, ou seja, aprová-lo, ou para vetá-lo, no todo ou em parte. Se ficar em silêncio nesse prazo, o projeto é sancionado. Sancionado, o projeto vira lei (art. 66).
     desvios:
       - Se o presidente vetar, o veto vai ao Congresso, que o analisa em sessão conjunta de deputados e senadores e pode mantê-lo ou derrubá-lo (art. 66, § 4º).
+    artigos:
+      - o-presidente-sanciona-ou-veta
     fontes:
       - titulo: Constituição Federal, art. 66
         url: https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art66
