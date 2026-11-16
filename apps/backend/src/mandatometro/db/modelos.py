@@ -60,6 +60,8 @@ CODIGOS_GRAVADOS = {
 CODIGOS_DE_AUSENCIA = {
     "AP",  # "Atividade parlamentar"
     "LS",  # "Licença saúde"
+    "MIS",  # "Missão da Casa no País/exterior"
+    "NCOM",  # "Não Compareceu"; publicado como NCom, comparado em maiúsculas
 }
 
 RESULTADOS = ("aprovada", "rejeitada", "outro")
