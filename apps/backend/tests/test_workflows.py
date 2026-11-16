@@ -44,6 +44,7 @@ def avaliar(expressao, evento, branch, **variaveis):
                 COLETAS_ATIVAS=variaveis.get("COLETAS_ATIVAS", ""),
                 ENVIOS_ATIVOS=variaveis.get("ENVIOS_ATIVOS", ""),
             ),
+            "inputs": SimpleNamespace(simular=variaveis.get("simular", False)),
         },
     )
 
@@ -147,3 +148,23 @@ def test_envio_tem_chave_propria_e_destino_por_evento(
     assert job["env"]["DATABASE_URL"] == "${{ secrets.DATABASE_URL }}"
     assert job["env"]["RESEND_API_KEY"] == "${{ secrets.RESEND_API_KEY }}"
     assert job["steps"][-1]["run"] == "uv run --no-sync python scripts/tarefas.py enviar"
+
+
+def test_envio_manual_inicia_em_simulacao():
+    simular = ler("enviar-edicao.yml")["on"]["workflow_dispatch"]["inputs"]["simular"]
+    assert simular["type"] == "boolean"
+    assert simular["default"] == "true"
+
+
+@pytest.mark.parametrize(
+    "evento,simular,esperado",
+    [
+        ("workflow_dispatch", True, "true"),
+        ("workflow_dispatch", False, "false"),
+        ("schedule", False, "false"),
+        ("schedule", True, "false"),
+    ],
+)
+def test_envio_simula_so_no_manual_marcado(evento, simular, esperado):
+    expressao = ler("enviar-edicao.yml")["jobs"]["enviar"]["env"]["ENVIO_SIMULAR"]
+    assert avaliar(expressao, evento, "develop", simular=simular) == esperado
