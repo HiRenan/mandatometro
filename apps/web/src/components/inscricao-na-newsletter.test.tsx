@@ -302,11 +302,14 @@ describe("a inscrição", () => {
 		expect(botao.getAttribute("aria-disabled")).toBe("true");
 		expect(campo.readOnly).toBe(true);
 		// O botão continua com o foco, e o segundo clique e o Enter não mandam outro.
+		// O clique no botão com o aria-disabled nem chega a enviar o formulário.
 		expect(document.activeElement).toBe(botao);
+		let enviou = true;
 		await act(async () => {
-			fireEvent.click(botao);
+			enviou = fireEvent.click(botao);
 			fireEvent.submit(campo.form as HTMLFormElement);
 		});
+		expect(enviou).toBe(false);
 		expect(pedir).toHaveBeenCalledTimes(1);
 
 		await act(async () => {
