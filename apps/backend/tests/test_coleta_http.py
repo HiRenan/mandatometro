@@ -40,6 +40,20 @@ def test_utf8_headers_timeout_e_uma_consulta_a_robots():
     assert requisicoes[1].headers["accept"] == "application/json"
 
 
+def test_utf8_independente_do_charset_declarado():
+    def atender(req):
+        if req.url.path == "/robots.txt":
+            return httpx2.Response(200, text="User-agent: *\nAllow: /\n")
+        return httpx2.Response(
+            200,
+            content='{"valor": "Não"}'.encode(),
+            headers={"content-type": "application/json; charset=iso-8859-1"},
+        )
+
+    with cliente(atender) as http:
+        assert http.obter_json("/teste").dados == {"valor": "Não"}
+
+
 @pytest.mark.parametrize(
     "status,corpo", [(200, "<html>não encontrado</html>"), (403, ""), (404, "")]
 )
