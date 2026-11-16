@@ -16,11 +16,11 @@ import { Route } from "@/routes/trilhas/$trilha/index";
 const CHAVE = "mandatometro:artigos-lidos";
 const RESPOSTAS = "mandatometro:respostas-do-quiz";
 const TRILHA = "processo-legislativo";
-const ARTIGOS = [
-	`${TRILHA}/quem-pode-propor-uma-lei`,
-	`${TRILHA}/onde-o-projeto-comeca`,
-	`${TRILHA}/o-projeto-passa-pelas-comissoes`,
-];
+/**
+ * Os artigos da trilha de verdade, na ordem, como o navegador guarda os lidos.
+ * Com todos eles lidos, a trilha está terminada.
+ */
+const ARTIGOS = (acharTrilha(trilhas, TRILHA)?.artigos ?? []).map(idDoArtigo);
 
 beforeEach(() => {
 	// O jsdom não rola a janela.
@@ -230,7 +230,8 @@ describe("página da trilha", () => {
 		const botao = await screen.findByRole("button", {
 			name: "Recomeçar a trilha",
 		});
-		expect(screen.getByText("Você leu 2 de 3.")).toBeTruthy();
+		expect(ARTIGOS.length).toBeGreaterThan(2);
+		expect(screen.getByText(`Você leu 2 de ${ARTIGOS.length}.`)).toBeTruthy();
 
 		// O navegador marca com 2 o segundo clique de um clique duplo.
 		fireEvent.click(botao, { detail: 1 });
@@ -245,7 +246,9 @@ describe("página da trilha", () => {
 		fireEvent.click(botao, { detail: 1 });
 
 		expect(botao.textContent).toBe("Recomeçar a trilha");
-		expect(screen.getByRole("status").textContent).toBe("Você leu 2 de 3.");
+		expect(screen.getByRole("status").textContent).toBe(
+			`Você leu 2 de ${ARTIGOS.length}.`,
+		);
 		expect(lidos()).toEqual(ARTIGOS.slice(0, 2));
 	});
 
