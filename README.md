@@ -261,7 +261,7 @@ TEST_DATABASE_URL=postgresql+psycopg://mandatometro:troque-esta-senha@localhost:
 
 Sem a variável, o pytest pula os testes de banco e diz o motivo. No CI, que sobe o próprio banco, eles falham.
 
-**Newsletter.** Depois das migrations, envie `POST /newsletter/inscricoes` com JSON contendo só `email`. A API libera o CORS só para `APP_BASE_URL`, conforme o [ADR 0001](docs/adr/0001-stack.md). Aceita GET e POST com `Content-Type` e expõe `Retry-After` ao navegador. A fatia da tela define como chamar a rota. Uma inscrição nova ou repetida recebe as mesmas respostas, sem revelar se o endereço já estava na lista:
+**Newsletter.** Depois das migrations, envie `POST /newsletter/inscricoes` com JSON contendo só `email`. A API libera o CORS só para `APP_BASE_URL`, conforme o [ADR 0001](docs/adr/0001-stack.md). Aceita GET e POST com `Content-Type` e expõe `Retry-After` ao navegador. No site, quem chama a rota é a folha da newsletter, no fim da página inicial, pelo cliente gerado (`apps/web/src/lib/newsletter.ts`). A folha só aparece quando o build do site tem o `API_URL`. Uma inscrição nova ou repetida recebe as mesmas respostas, sem revelar se o endereço já estava na lista:
 
 | HTTP | Corpo | Significado |
 | --- | --- | --- |
@@ -278,7 +278,9 @@ Para enviar de verdade, configure `RESEND_API_KEY`, `RESEND_FROM` e os endereço
 
 O envio faz até três tentativas dentro de **8 segundos no total**, com tempo limite e espera entre elas. Usa a mesma chave para cada par de inscrito e edição, sem e-mail nela. A [idempotência do Resend dura 24 horas](https://resend.com/docs/dashboard/emails/idempotency-keys). Depois desse prazo, outra inscrição pode reenviar a edição. Não há fila para tentar de novo automaticamente. A [cota do plano Free é de 100 e-mails por dia e 3.000 por mês](https://resend.com/pricing), compartilhada com os outros envios da conta. Considere essa cota no envio dominical da #39.
 
-`POST /newsletter/saida/{codigo_saida}` apaga a inscrição e responde 200 vazio, inclusive para código desconhecido ou já removido. Não lê nem exige corpo. O programa de e-mail usa essa rota com os cabeçalhos da RFC 8058. GET e HEAD só redirecionam para `/newsletter/sair?codigo=...` no site. Na página, espere a confirmação no botão antes do POST, para leitores automáticos não cancelarem a inscrição. A tela vem em outro PR da #21.
+`POST /newsletter/saida/{codigo_saida}` apaga a inscrição e responde 200 vazio, inclusive para código desconhecido ou já removido. Não lê nem exige corpo. O programa de e-mail usa essa rota com os cabeçalhos da RFC 8058. GET e HEAD só redirecionam para `/newsletter/sair?codigo=...` no site. Essa página só manda o POST no clique em "Confirmar a saída", para os leitores automáticos de links não cancelarem a inscrição. Ela não tem loader e fica fora dos buscadores, do Referer e do cache.
+
+**Para ver a tela no computador,** com o banco e as migrations, `pnpm dev` sobe a API na 8000 e o site na 3001, com o `API_URL` em `http://localhost:8000`. A folha da newsletter fica no fim da página inicial. Sem a chave do Resend, a inscrição responde `aguardando_edicao`, e, com uma edição `publicada` no banco, `envio_indisponivel`. Para abrir a página de sair, use o link da API, `http://localhost:8000/newsletter/saida/<codigo>`, com o `codigo_saida` de um inscrito fictício. O navegador vai para `/newsletter/sair?codigo=<codigo>`, e o botão apaga a inscrição.
 
 Os testes da newsletter usam o banco de teste e chamadas HTTP simuladas, sem chave nem e-mail real. Em `apps/backend`, com `TEST_DATABASE_URL` explícito, rode `uv run pytest tests/test_inscricao.py tests/test_limite_inscricao.py tests/test_email.py tests/test_resend.py`.
 
@@ -289,6 +291,7 @@ Na produção, desligue o access log do Uvicorn com `--no-access-log`, como faz 
 - a `main` vai para https://mandatometro.com.br; a `develop`, para o endereço do time; e cada PR ganha uma prévia;
 - o build roda no Node 24, pelo `engines` de `apps/web/package.json`;
 - o painel da Vercel não pede variáveis: o endereço do site (`APP_BASE_URL`) sai do ambiente da Vercel, com o domínio na `main` e o endereço da branch nas prévias, e as páginas fora da `main` pedem aos buscadores para não indexar (`X-Robots-Tag: noindex`);
+- até a API ter casa (#23), o `API_URL` fica vazio na Vercel: a página inicial sai sem a folha da newsletter, e a página de sair diz que a newsletter ainda não funciona naquele endereço;
 - um artigo mal formado ou a falta da pasta da trilha da página inicial derruba o deploy, com o arquivo e o problema no log, e o site no ar continua na versão anterior.
 
 Fora da Vercel, como no Docker, defina o `APP_BASE_URL` com o endereço do site antes do build: a prévia do link no WhatsApp e nas redes (`og:image`) leva o endereço completo da imagem, com ele na frente. Sem ele, vale o `http://localhost:3001`.

@@ -119,14 +119,14 @@
 	}
 
 	a:hover .seta,
-	button:hover .seta {
+	button:hover:not(:disabled, [aria-disabled="true"]) .seta {
 		translate: 0.3em 0;
 	}
 
 	/*
 	 * Os azulejos giram um quarto de volta quando o ponteiro passa pela folha, pela
 	 * faixa ou pela chamada deles, e quando o passo da sanfona abre. Na chamada do
-	 * quiz, giram em fila, um depois do outro.
+	 * quiz e na folha da newsletter, giram em fila, um depois do outro.
 	 */
 	.da-linha,
 	.chamada-azulejos .grande,
@@ -172,7 +172,8 @@
 	.trilha-da-lista:hover .da-linha,
 	.outros-artigos a:hover .grande,
 	.sanfona details[open] .grande,
-	.chamada-quiz:hover .chamada-azulejos .grande {
+	.chamada-quiz:hover .chamada-azulejos .grande,
+	.newsletter-folha:hover .chamada-azulejos .grande {
 		rotate: 90deg;
 	}
 

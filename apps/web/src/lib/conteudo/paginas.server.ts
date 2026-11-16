@@ -27,10 +27,13 @@ export const trilhas: Trilha[] = lerTrilhas(arquivos);
 export type ArtigoNaLista = Omit<Artigo, "corpo">;
 
 /**
- * A trilha nas listas e no artigo: sem o texto dos artigos, o infográfico e o
- * quiz.
+ * A trilha nas listas e no artigo: sem o texto dos artigos, o infográfico e os
+ * quizzes. O quiz final não vai a nenhuma página, porque a tela dele é da #92.
  */
-export type TrilhaNaLista = Omit<Trilha, "artigos" | "infografico" | "quiz"> & {
+export type TrilhaNaLista = Omit<
+	Trilha,
+	"artigos" | "infografico" | "quiz" | "quizFinal"
+> & {
 	artigos: ArtigoNaLista[];
 	/**
 	 * O artigo depois do qual o quiz aparece, quando a trilha tem quiz: é o lugar

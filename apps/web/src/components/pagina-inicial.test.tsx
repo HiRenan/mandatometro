@@ -116,13 +116,16 @@ const pagina: Dados = {
 	},
 };
 
-/** Mostra a página num site de mentira, com as rotas da trilha e dos artigos para os links. */
-async function mostrar(dados: Dados = pagina) {
+/**
+ * Mostra a página num site de mentira, com as rotas da trilha e dos artigos para
+ * os links. A folha da newsletter só aparece com a API (o `newsletter`).
+ */
+async function mostrar(dados: Dados = pagina, { newsletter = false } = {}) {
 	const raiz = createRootRoute({ component: () => <Outlet /> });
 	const inicio = createRoute({
 		getParentRoute: () => raiz,
 		path: "/",
-		component: () => <PaginaInicial pagina={dados} />,
+		component: () => <PaginaInicial pagina={dados} newsletter={newsletter} />,
 	});
 	const trilha = createRoute({
 		getParentRoute: () => raiz,
@@ -464,12 +467,35 @@ describe("página inicial", () => {
 		}
 	});
 
-	it("não pede dado nenhum e não fala do que ainda não existe", async () => {
+	it("sem a API, não pede dado nenhum e não fala do que ainda não existe", async () => {
 		const tela = await mostrar();
 
 		expect(tela.querySelector("form, input, select, textarea")).toBeNull();
 		expect(tela.textContent).not.toMatch(
 			/status da api|newsletter|inscri|quiz|em breve|em construção/i,
+		);
+	});
+
+	it("com a API, pede só o e-mail, na folha da newsletter depois do caminho", async () => {
+		const tela = await mostrar(pagina, { newsletter: true });
+
+		const folha = screen.getByRole("region", { name: "O jornal legislativo" });
+		expect(tela.querySelectorAll("form")).toHaveLength(1);
+		expect(
+			[...tela.querySelectorAll("input, select, textarea")].map((campo) =>
+				campo.getAttribute("type"),
+			),
+		).toEqual(["email"]);
+		expect(folha.querySelector("form")).not.toBeNull();
+		expect(
+			vemDepois(
+				screen.getByRole("region", { name: pagina.caminho?.titulo }),
+				folha,
+			),
+		).toBe(true);
+		expect(folha.classList.contains("revelar")).toBe(true);
+		expect(tela.textContent).not.toMatch(
+			/status da api|quiz|em breve|em construção/i,
 		);
 	});
 
