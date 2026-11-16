@@ -280,7 +280,7 @@ def test_os_votos_do_senado(sessao):
         "presidente": 4,
         "abstencao": 1,
     }
-    # Os totais do Senado vêm null: o total se conta pelos votos, 81 em cada votação.
+    # Nas quatro nominais desta amostra, os totais vêm null: conte os 81 registros de cada lista.
     votacoes = sessao.scalars(select(Votacao).where(Votacao.casa == "senado")).all()
     assert sorted(v.id_externo for v in votacoes) == ["7109", "7110", "7111", "7112"]
     assert {(len(v.votos), v.resultado, v.resultado_bruto) for v in votacoes} == {

@@ -2,7 +2,7 @@
 
 O que cada API devolve, quais campos usamos e como os registros se ligam. É a referência do modelo de dados (#7) e dos conectores (#10 e #11).
 
-**Conferido em:** 11/11/2026, por chamada real a cada endpoint, e de novo em 16/11/2026, nas correções da revisão (#90). As respostas completas estão em [`apps/backend/tests/fixtures/`](../apps/backend/tests/fixtures/), e os testes offline leem de lá. Faltam só a da lista de deputados e a do `mandatos.json`, que entram com a #10 e a #11.
+**Conferido em:** 11/11/2026, por chamada real a cada endpoint, e de novo em 16/11/2026, nas correções da revisão (#90) e na coleta do Senado (#11). As respostas completas estão em [`apps/backend/tests/fixtures/`](../apps/backend/tests/fixtures/), e os testes offline leem de lá. Os históricos `mandatos.json` e uma votação secreta entraram com a #11; a lista de deputados entra com a #10.
 
 Bases, as duas sem chave de acesso:
 
@@ -35,12 +35,12 @@ As diferenças abaixo não são detalhe de implementação: elas mudam o desenho
 | | Câmara | Senado |
 |---|---|---|
 | Envelope | `{"dados": [...], "links": [...]}` | sem envelope comum: o `/votacao` é um **array JSON puro**, e a lista de senadores, o `mandatos.json` e o `/processo/{id}` vêm dentro de um objeto |
-| Chamadas para montar um item da newsletter | **3** (lista → detalhe → votos); as orientações ficaram para depois do MVP | **1** (`/votacao` já traz tudo) |
+| Chamadas para montar um item da newsletter | **3** (lista → detalhe → votos); as orientações ficaram para depois do MVP | **1** para votações e votos do período, mais **1 por matéria distinta** em `/processo/{id}`; a lista de senadores é compartilhada pela execução, e só quem está fora dela pede histórico |
 | Paginação | 100 itens por página, siga `links[rel=next]` | sem paginação nos endpoints que usamos |
 | Formato de data | `dataInicio=2026-11-03` | `dataInicio=2026-11-03` (**`20261103` devolve HTTP 400**) |
 | Quem aparece na lista de votos | **só quem votou** (429 de 513 deputados, no exemplo) | **todos os 81 senadores**, com o estado de cada um |
 | Totais de Sim/Não | não existem: conte os votos | na votação aberta, **vêm `null`**: conte os votos. Na secreta, a lista traz `Votou`, sem Sim nem Não, e o placar só vem nos totais |
-| Resultado | `aprovacao`, inteiro `1`/`0` | `resultadoVotacao`, letra (`"A"` no exemplo) |
+| Resultado | `aprovacao`, inteiro `1`/`0` | `resultadoVotacao`, letra (`"A"` para aprovação, `"R"` para rejeição) |
 | Orientação de bancada | `/votacoes/{id}/orientacoes` | não encontrada nos endpoints que usamos |
 
 ## Chaves de ligação
@@ -288,6 +288,8 @@ O detalhe acrescenta:
 
 Devolve um **array JSON puro**, sem envelope. A semana de 03 a 07/11/2026 teve 4 votações.
 
+Uma consulta só com `dataInicio` e `dataFim` aceita **no máximo um ano**, conforme o [OpenAPI oficial](https://legis.senado.leg.br/dadosabertos/v3/api-docs); acima disso, a API respondeu HTTP 400 na conferência de 16/11/2026. O conector divide o intervalo em janelas de até **365 dias, incluindo as duas datas**, sem sobreposição. Uma semana sem votação devolve `[]`: o cadastro atual ainda é atualizado, e a coleta termina sem votações. Só entram sessões com `casaSessao == "SF"`; as conjuntas (`"CN"`) e as votações simbólicas, ausentes deste endpoint, ficam fora.
+
 | Campo | Tipo | O que é | Usamos |
 |---|---|---|---|
 | `idProcesso` | inteiro | id do processo → `/processo/{id}` | chave |
@@ -342,9 +344,11 @@ Cada item de `votos[]`:
 Quatro coisas para o conector:
 
 - **Os totais só vêm na votação secreta.** Na aberta (`votacaoSecreta` `"N"`), `totalVotosSim`, `totalVotosNao` e `totalVotosAbstencao` vêm `null`, mesmo com os 81 votos presentes: **conte a lista `votos`**. Na secreta (`votacaoSecreta` `"S"`), a lista traz `Votou`, sem Sim nem Não, para cada senador que votou, e o placar só vem nos totais. Das 70 votações de 2026 até 15/11, 40 foram secretas: nas 40, os totais vieram preenchidos, e a soma dos três deu o número de `Votou`. Nas 30 abertas, como nas quatro do exemplo, vieram `null`. Nas do exemplo, os números aparecem em prosa dentro de `informeLegislativo.texto`, que não é campo estruturado.
-- **`votos` traz os 81 senadores sempre,** inclusive quem não votou. É o estado de cada um, não a lista de quem votou — o oposto da Câmara.
-- **`siglaVotoParlamentar` vai muito além de Sim e Não.** Valores observados nas quatro votações: `Sim`, `Não`, `Abstenção`, `P-NRV`, `AP` e `Presidente (art. 51 RISF)`; em outubro de 2026, apareceu também o `LS`. É o que apareceu, e não a lista completa: o conector precisa aceitar um código novo sem quebrar. Contar só `Sim` e `Não` não fecha 81. O significado vem no `descricaoVotoParlamentar`: `P-NRV` é "Presente – Não registrou voto" (26 vezes na semana gravada), `AP` é "Atividade parlamentar" (4 vezes) e `LS` é "Licença saúde". O banco guarda o `P-NRV`, de quem estava presente, e nenhum código de ausência: o voto com um código de `CODIGOS_DE_AUSENCIA` (em `apps/backend/src/mandatometro/db/modelos.py`) entra como `nao_votou`, sem o código, e o voto com um código ainda desconhecido entra como `outro`, também sem o código. Nos dois casos, o motivo fica fora do banco e do log (`AGENTS.md`, "Dados pessoais").
+- **`votos` traz os 81 senadores nas respostas conferidas,** inclusive quem não votou. É o estado de cada um, não a lista de quem votou — o oposto da Câmara. O conector não exige exatamente 81 registros para aceitar uma resposta válida.
+- **`siglaVotoParlamentar` vai muito além de Sim e Não.** Valores observados nas quatro votações: `Sim`, `Não`, `Abstenção`, `P-NRV`, `AP` e `Presidente (art. 51 RISF)`; em outubro de 2026, apareceu também o `LS`. A consulta de 2026 até 15/11 trouxe também `MIS`, `NCom`, `LAP`, `LP` e `NA`. É o que apareceu, e não a lista completa: o conector aceita um código novo sem quebrar. Contar só `Sim` e `Não` não fecha 81. O significado vem em `descricaoVotoParlamentar`. O banco guarda `P-NRV`, de quem estava presente, e nenhum código de ausência: `AP`, `LS`, `MIS`, `NCom`, `LAP` e `LP` estão em `CODIGOS_DE_AUSENCIA` (em `apps/backend/src/mandatometro/db/modelos.py`) e entram como `nao_votou`, sem o código, ignorando diferenças de caixa e espaços. Um código ainda não classificado, como `NA`, entra como `outro`, também sem o código. Nos dois casos, o motivo fica fora do banco e do log (`AGENTS.md`, "Dados pessoais").
 - **`identificacao` identifica a matéria, não a votação.** As quatro votações da semana do exemplo eram todas da PEC 18/2025. Para distinguir uma votação da outra, use o `codigoSessaoVotacao`, que é único.
+
+**Na votação secreta, o conector descarta toda a lista `votos`, inclusive `Votou`, presenças e ausências.** Grava matéria, votação, resultado e fontes, sem linhas de `voto` nem contagem de códigos desconhecidos. A fixture da votação 7081 contém 81 registros, dos quais 77 são `Votou`, e comprova esse comportamento. O modelo não tem colunas de total nem de modalidade: uma lista vazia no banco não prova segredo nem significa que houve zero votos. A #22 precisa considerar essa limitação ao escrever a newsletter.
 
 ### `/senador/lista/atual.json` e `/senador/{cod}/mandatos.json`
 
@@ -387,7 +391,7 @@ A lista vem aninhada em `ListaParlamentarEmExercicio.Parlamentares.Parlamentar`,
 }
 ```
 
-O `/senador/{cod}/mandatos.json` traz os mandatos do senador com o **histórico de partidos**, que **não existe** na lista atual. O caminho completo é `MandatoParlamentar.Parlamentar.Mandatos.Mandato[].Partidos.Partido[]`: ali, o `Mandato` é uma lista, e cada partido traz `Sigla`, `Nome`, `DataFiliacao` e `DataDesfiliacao`, que dizem o partido na data de cada voto. O partido atual vem sem `DataDesfiliacao`: o campo não existe nele. A resposta vem embrulhada em `MandatoParlamentar`, com um bloco `Metadados` na frente. Um exemplo de 16/11/2026, recortado:
+O `/senador/{cod}/mandatos.json` traz os mandatos do senador com o **histórico de partidos**, que **não existe** na lista atual. O caminho é `MandatoParlamentar.Parlamentar.Mandatos.Mandato`, seguido de `Partidos.Partido`: o `Mandato` pode vir como objeto único (fixture 5672) ou lista (fixture 4525), e o conector aceita as duas formas. Cada partido traz `Sigla`, `Nome`, `DataFiliacao` e `DataDesfiliacao`, que dizem o partido na data de cada voto. O partido atual vem sem `DataDesfiliacao`: o campo não existe nele. A resposta vem embrulhada em `MandatoParlamentar`, com um bloco `Metadados` na frente. Um exemplo de 16/11/2026, recortado:
 
 ```json
 {
@@ -396,19 +400,17 @@ O `/senador/{cod}/mandatos.json` traz os mandatos do senador com o **histórico 
       "Codigo": "5672",
       "Nome": "Alan Rick",
       "Mandatos": {
-        "Mandato": [
-          {
-            "CodigoMandato": "596",
-            "UfParlamentar": "AC",
-            "DescricaoParticipacao": "Titular",
-            "Partidos": {
-              "Partido": [
-                { "Sigla": "REPUBLICANOS", "Nome": "Republicanos", "DataFiliacao": "2025-11-12" },
-                { "Sigla": "UNIÃO", "Nome": "União Brasil", "DataFiliacao": "2022-02-24", "DataDesfiliacao": "2025-11-10" }
-              ]
-            }
+        "Mandato": {
+          "CodigoMandato": "596",
+          "UfParlamentar": "AC",
+          "DescricaoParticipacao": "Titular",
+          "Partidos": {
+            "Partido": [
+              { "Sigla": "REPUBLICANOS", "Nome": "Republicanos", "DataFiliacao": "2025-11-12" },
+              { "Sigla": "UNIÃO", "Nome": "União Brasil", "DataFiliacao": "2022-02-24", "DataDesfiliacao": "2025-11-10" }
+            ]
           }
-        ]
+        }
       }
     }
   }
@@ -419,6 +421,8 @@ Duas observações:
 
 - **Os números vêm como texto**, entre aspas (`"5672"`, `"596"`), ao contrário da Câmara, que manda inteiros. Converta na borda.
 - **Um mandato de senador cobre duas legislaturas,** porque o mandato é de oito anos. No exemplo, a segunda legislatura é a 58ª, que começa em 2027 — ou seja, a resposta traz data no futuro. Não confunda com mandato encerrado.
+
+A lista atual basta para cadastrar quem está em exercício: a coleta usa a primeira legislatura, a UF e a condição do seu `Mandato`, sem consultar histórico individual. Para um votante fora dessa lista, os dados públicos do voto criam o parlamentar, e o histórico tenta localizar o mandato pelas datas das duas legislaturas; datas de exercício podem desempatar. Motivos de afastamento não são lidos nem gravados. Sem um mandato inequívoco, os votos permanecem e nenhum mandato é inventado.
 
 ### `/processo/{id}` — a matéria
 
@@ -509,7 +513,7 @@ O partido fica no voto, e não no mandato: é o do dia do voto, porque muda dent
 
 O `resultado` e o `voto.valor` têm domínios diferentes nas duas Casas, e o modelo traduz os dois para um conjunto nosso, com o `normalizar_resultado` e o `normalizar_voto` (decisões do Renan na #7, em 12/11/2026, com os ajustes da #97):
 
-- **`votacao.resultado`:** `aprovada`, `rejeitada` ou `outro`. O `1` e o `"A"` viram `aprovada`, o `0` vira `rejeitada`, e uma letra que ainda não apareceu vira `outro`. O `resultado_bruto` guarda o código como a Casa publicou.
+- **`votacao.resultado`:** `aprovada`, `rejeitada` ou `outro`. O `1` e o `"A"` viram `aprovada`, o `0` e o `"R"` viram `rejeitada`, e um código ainda não classificado vira `outro`. O `resultado_bruto` guarda o código como a Casa publicou.
 - **`voto.valor`:** `sim`, `nao`, `abstencao`, `obstrucao`, `presidente`, `nao_votou` ou `outro`. O `Artigo 17` e o `Presidente (art. 51 RISF)` viram `presidente`, e o `P-NRV` vira `nao_votou`. O `valor_bruto` guarda só os códigos de `CODIGOS_GRAVADOS`: a ausência do Senado com código de `CODIGOS_DE_AUSENCIA` vira `nao_votou` sem o código, e um código desconhecido vira `outro`, também sem o código.
 
 ## Campos pessoais
