@@ -2,16 +2,20 @@
 
 import asyncio
 import json
+import logging
 from datetime import UTC, date, datetime
+from functools import partial
+from types import SimpleNamespace
 from uuid import UUID
 
 import httpx2
 import pytest
 from sqlalchemy.exc import OperationalError
 
-from mandatometro.avisos import envio
+from mandatometro.avisos import cli, envio
 from mandatometro.avisos.consulta import EdicaoCarregada
 from mandatometro.avisos.resend import Resend
+from mandatometro.cli import main
 from mandatometro.db.modelos import Edicao, Fonte, ItemEdicao
 
 
@@ -153,6 +157,112 @@ def test_falha_geral_ou_mensal_para_sem_marcar_sucesso(rodada, status, nome, cam
     resumo, codigo = rodada["executar"]()
     assert codigo == 1 and resumo[campo] == 1 and resumo["faltam"] == 3
     assert not rodada["aceitos"] and len(rodada["chamadas"]) == 1
+
+
+@pytest.mark.parametrize(
+    "status,nome,mensagem",
+    [
+        (400, "validation_error", "API key is invalid"),
+        (400, "validation_error", " \tApI KeY IS INVALID\n"),
+        (422, "missing_required_field", "Campo ausente: pessoa1@example.com"),
+    ],
+)
+def test_configuracao_invalida_para_na_primeira_chamada(rodada, status, nome, mensagem):
+    rodada["inscritos"].update([1, 2, 3])
+    rodada["falha"] = lambda _: httpx2.Response(status, json={"name": nome, "message": mensagem})
+    resumo, codigo = rodada["executar"]()
+    assert codigo == 1
+    assert resumo["falhas_gerais"] == 1 and resumo["recusados"] == 0
+    assert resumo["faltam"] == 3 and resumo["aceitos_nesta_execucao"] == 0
+    assert not rodada["aceitos"] and len(rodada["chamadas"]) == 1
+
+
+@pytest.mark.parametrize("intervalo", ["aceito", "concorrente", "transitoria"])
+def test_duas_recusas_seguidas_continuam_e_outro_resultado_zera_contagem(rodada, intervalo):
+    rodada["inscritos"].update(range(1, 7))
+
+    def responder(request):
+        inscrito_id = int(request.headers["Idempotency-Key"].split("/")[1])
+        if inscrito_id in {1, 2, 4, 5}:
+            return httpx2.Response(400, json={"name": "validation_error"})
+        if inscrito_id == 3:
+            if intervalo == "concorrente":
+                return httpx2.Response(409, json={"name": "concurrent_idempotent_requests"})
+            if intervalo == "transitoria":
+                return httpx2.Response(503, json={"name": "service_unavailable"})
+
+    rodada["falha"] = responder
+    resumo, codigo = rodada["executar"]()
+    assert codigo == 1 and resumo["falhas_gerais"] == 0 and resumo["recusados"] == 4
+    assert resumo["concorrentes"] == int(intervalo == "concorrente")
+    assert resumo["falhas_transitorias"] == int(intervalo == "transitoria")
+    assert rodada["aceitos"] == ({3, 6} if intervalo == "aceito" else {6})
+    assert resumo["faltam"] == 6 - len(rodada["aceitos"])
+    assert len(rodada["chamadas"]) == (8 if intervalo == "transitoria" else 6)
+
+
+@pytest.mark.parametrize("aceitos_antes", [0, 1])
+def test_tres_recusas_seguidas_param_e_retomada_preserva_pendentes(rodada, aceitos_antes):
+    rodada["inscritos"].update(range(1, 6))
+    rodada["falha"] = lambda _: (
+        httpx2.Response(400, json={"name": "validation_error", "message": "Remetente inválido"})
+        if len(rodada["aceitos"]) == aceitos_antes
+        else None
+    )
+    resumo, codigo = rodada["executar"]()
+    assert codigo == 1 and resumo["recusados"] == 3 and resumo["falhas_gerais"] == 1
+    assert resumo["aceitos_nesta_execucao"] == aceitos_antes
+    assert resumo["faltam"] == 5 - aceitos_antes
+    assert len(rodada["chamadas"]) == 3 + aceitos_antes
+
+    rodada["falha"] = None
+    resumo, codigo = rodada["executar"](edicao_id=10)
+    assert codigo == 0 and resumo["faltam"] == 0 and resumo["falhas_gerais"] == 0
+    assert resumo["aceitos_nesta_execucao"] == 5 - aceitos_antes
+    assert rodada["aceitos"] == {1, 2, 3, 4, 5}
+    assert len(rodada["chamadas"]) == 8
+
+
+@pytest.mark.parametrize(
+    "status,nome,mensagem,recusados",
+    [
+        (400, "validation_error", "API key is invalid", 0),
+        (422, "missing_required_field", "Campo ausente: pessoa1@example.com", 0),
+        (400, "validation_error", "Remetente inválido: remetente@example.com", 3),
+    ],
+)
+def test_cli_com_falha_geral_so_mostra_contagens(
+    rodada, monkeypatch, capsys, caplog, status, nome, mensagem, recusados
+):
+    rodada["inscritos"].update(range(1, 6))
+    rodada["falha"] = lambda _: httpx2.Response(status, json={"name": nome, "message": mensagem})
+    monkeypatch.setattr(cli, "engine", lambda: None)
+    monkeypatch.setattr(cli, "Resend", lambda *_: rodada["provedor"])
+    monkeypatch.setattr(
+        cli,
+        "config",
+        lambda: SimpleNamespace(
+            resend_api_key=None,
+            resend_from=None,
+            app_base_url="https://site.example.com",
+            api_url="https://api.example.com",
+        ),
+    )
+
+    async def sem_espera(_):
+        pass
+
+    monkeypatch.setattr(cli, "enviar_edicao", partial(envio.enviar_edicao, dormir=sem_espera))
+    caplog.set_level(logging.DEBUG)
+    assert main(["edicao", "enviar", "10"]) == 1
+    saida = capsys.readouterr()
+    assert len(saida.out.splitlines()) == 1 and not saida.err
+    resumo = json.loads(saida.out)
+    assert resumo["edicao_id"] == 10 and resumo["faltam"] == 5
+    assert resumo["falhas_gerais"] == 1 and resumo["recusados"] == recusados
+    assert all(type(valor) is int for valor in resumo.values())
+    for privado in (mensagem, "@example.com", str(UUID(int=1)), "Texto fictício."):
+        assert privado not in saida.out + saida.err + caplog.text
 
 
 def test_simulacao_sem_chave_nao_chama_http_nem_confirma(rodada):

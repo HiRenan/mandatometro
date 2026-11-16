@@ -107,7 +107,18 @@ class Resend:
                                     raise EnvioIndisponivel from None
                                 return
                             status, nome = resposta.status_code, dados.get("name")
-                            if status in (401, 403):
+                            mensagem_erro = dados.get("message")
+                            chave_invalida = (
+                                status == 400
+                                and nome == "validation_error"
+                                and isinstance(mensagem_erro, str)
+                                and mensagem_erro.strip().casefold() == "api key is invalid"
+                            )
+                            if (
+                                status in (401, 403)
+                                or chave_invalida
+                                or (status == 422 and nome == "missing_required_field")
+                            ):
                                 raise EnvioIndisponivel("geral")
                             if status == 409 and nome == "concurrent_idempotent_requests":
                                 raise EnvioIndisponivel("concorrente")

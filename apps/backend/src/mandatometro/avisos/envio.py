@@ -206,6 +206,7 @@ async def enviar_edicao(
     if simular:
         return resumo, 0
     tentados, ultimo_inicio = 0, None
+    recusas_seguidas = 0
     try:
         for inscrito_id in _ids(banco, edicao, teto):
             if limite is not None and tentados >= limite:
@@ -222,6 +223,7 @@ async def enviar_edicao(
                     app_base_url=app_base_url,
                     api_url=api_url,
                 )
+                recusas_seguidas = 0
                 if resultado == "aceito":
                     resumo["aceitos_nesta_execucao"] += 1
                     tentados += 1
@@ -236,6 +238,10 @@ async def enviar_edicao(
                     "transitoria": "falhas_transitorias",
                 }.get(erro.motivo, erro.motivo)
                 resumo[campo] += 1
+                recusas_seguidas = recusas_seguidas + 1 if erro.motivo == "individual" else 0
+                if recusas_seguidas == 3:
+                    resumo["falhas_gerais"] += 1
+                    break
                 if erro.motivo in {"geral", "cota_diaria", "cota_mensal"}:
                     break
     except (SQLAlchemyError, MensagemInvalida):
