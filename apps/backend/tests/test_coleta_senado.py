@@ -470,3 +470,27 @@ def test_404_na_listagem_principal_continua_sendo_falha(executar, respostas):
     resumo, _ = executar()
     assert not resumo.completa
     assert resumo.indisponiveis_na_fonte == []
+
+
+def test_secreta_real_com_votou_e_ausencias_nao_gera_votos_nem_desconhecidos(
+    sessao, executar, respostas, caplog
+):
+    respostas["/votacao"] = ler("votacao-secreta-7081.json")
+    respostas["/processo/9026396"] = ler("processo-9026396.json")
+    original = respostas["/votacao"][0]
+    assert len(original["votos"]) == 81
+    assert sum(v["siglaVotoParlamentar"] == "Votou" for v in original["votos"]) == 77
+    assert original["totalVotosNao"] == 42
+    resumo, requisicoes = executar(date(2026, 4, 29), date(2026, 4, 29))
+    assert resumo.completa
+    assert (resumo.votacoes, resumo.votos, resumo.codigos_desconhecidos) == (1, 0, 0)
+    assert total(sessao, Voto) == 0
+    gravada = sessao.scalars(select(Votacao)).one()
+    assert (gravada.id_externo, gravada.resultado, gravada.resultado_bruto) == (
+        "7081",
+        "rejeitada",
+        "R",
+    )
+    assert gravada.descricao == original["descricaoVotacao"]
+    assert len(requisicoes) == 4
+    assert "desconhecido" not in caplog.text

@@ -337,3 +337,15 @@ def test_os_motivos_de_afastamento_dos_senadores_sao_ficticios(caminho):
     assert len(siglas) == len(descricoes)
     assert set(siglas) <= {"XXX"}
     assert set(descricoes) <= {"Motivo fictício"}
+
+
+def test_os_motivos_de_ausencia_da_secreta_gravada_sao_ficticios():
+    resposta = _ler("senado/votacao-secreta-7081.json")
+    permitidos = {"Votou", "P-NRV", "Presidente (art. 51 RISF)", "XXX"}
+    motivos = []
+    for votacao in resposta:
+        for voto in votacao["votos"]:
+            assert voto["siglaVotoParlamentar"] in permitidos
+            if voto["siglaVotoParlamentar"] == "XXX":
+                motivos.append(voto["descricaoVotoParlamentar"])
+    assert motivos and set(motivos) == {"Motivo fictício"}

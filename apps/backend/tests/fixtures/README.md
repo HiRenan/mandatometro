@@ -2,7 +2,7 @@
 
 Respostas reais das APIs da Câmara e do Senado, gravadas para os testes de unidade rodarem offline, como o `AGENTS.md` pede. Os conectores (#10 e #11) leem estes arquivos em vez de chamar a rede.
 
-**Coletadas em:** 11/11/2026; os dois históricos de mandatos do Senado foram acrescentados em 16/11/2026. O formato de cada campo está em [docs/dicionario-de-dados.md](../../../../docs/dicionario-de-dados.md).
+**Coletadas em:** 11/11/2026; os dois históricos de mandatos, a votação secreta 7081 e seu processo foram acrescentados em 16/11/2026. O formato de cada campo está em [docs/dicionario-de-dados.md](../../../../docs/dicionario-de-dados.md).
 
 ## De onde veio cada arquivo
 
@@ -20,6 +20,8 @@ Respostas reais das APIs da Câmara e do Senado, gravadas para os testes de unid
 | `senado/processo-9006525.json` | `/processo/9006525` |
 | `senado/senador-5672-mandatos.json` | `/senador/5672/mandatos.json` — um mandato como objeto, sem causa de afastamento |
 | `senado/senador-4525-mandatos.json` | `/senador/4525/mandatos.json` — dois mandatos como lista, **todas as causas de afastamento trocadas** |
+| `senado/votacao-secreta-7081.json` | `/votacao?dataInicio=2026-04-29&dataFim=2026-04-29&idProcesso=9026396` — uma votação secreta com resultado `R`, **todos os motivos de ausência trocados** |
+| `senado/processo-9026396.json` | `/processo/9026396` — a matéria da votação secreta |
 
 Bases: `https://dadosabertos.camara.leg.br/api/v2` e `https://legis.senado.leg.br/dadosabertos`.
 
@@ -37,6 +39,8 @@ Em `senado/senador-lista-atual.json`, os 50 exercícios com motivo de afastament
 
 O histórico `senador-4525-mandatos.json` segue a mesma regra em todos os exercícios. Um teste em `tests/test_respostas_gravadas.py` percorre a lista e os históricos para conferir essa troca: se forem gravados de novo sem ela, o CI falha.
 
+Na votação secreta 7081, os dois códigos de ausência foram trocados por `XXX`, e suas descrições, por `Motivo fictício`. A mesma troca vale para qualquer código que não esteja na lista de votos/presenças conhecidos, para não guardar um motivo pessoal ainda não classificado. O teste confere os códigos permitidos nessa fixture e o marcador de cada motivo. A resposta permanece inteira, com 81 registros, incluindo 77 `Votou`; nenhum deles vira voto individual no banco por ser uma votação secreta.
+
 Nenhum outro arquivo desta pasta traz campo pessoal. Ao gravar uma fixture nova de `/deputados/{id}`, da lista de senadores ou dos mandatos, faça a mesma troca. Ausências nos votos também precisam de sanitização: nunca grave uma licença real ligada ao parlamentar. Os testes do conector que exercitam ausências e códigos desconhecidos usam pessoas inventadas.
 
 ## Por que estes casos
@@ -47,6 +51,7 @@ Cada arquivo cobre um comportamento que o conector precisa tratar:
 - **Uma votação nominal e uma não nominal** na Câmara: na segunda, `/votos` responde HTTP 200 com lista vazia, e é o caso comum.
 - **Uma votação do Senado com os 81 senadores** e com os totais vindo `null`, que obriga a contar a lista.
 - **Um processo do Senado com `outrosNumeros`**, que é por onde se tenta ligar a matéria à versão da Câmara.
+- **Uma votação secreta rejeitada no Senado**, com `Votou` e ausências na lista e placar nos totais; testa o resultado `R` e que nenhum voto individual é gravado.
 
 ## Como atualizar
 
