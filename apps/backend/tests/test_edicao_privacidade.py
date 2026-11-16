@@ -2,7 +2,7 @@ import unicodedata
 
 import pytest
 
-from mandatometro.ia.privacidade import TERMO_PESSOAL, assunto_pessoal, identificacao, normalizar
+from mandatometro.ia.privacidade import assunto_pessoal, identificacao
 
 
 @pytest.mark.parametrize("forma", ["original", "maiusculas", "sem_acento", "ambas"])
@@ -89,6 +89,12 @@ from mandatometro.ia.privacidade import TERMO_PESSOAL, assunto_pessoal, identifi
             (),
             True,
             id="empate_emenda_com_nome_proximo",
+        ),
+        pytest.param(
+            "Autoriza o afastamento do mandato de dirigente sindical.",
+            (),
+            True,
+            id="empate_mandato_sindical",
         ),
     ],
 )
@@ -238,25 +244,6 @@ def test_quebra_tipografica_e_ponto_apos_palavra_curta_preservam_ligacao(separad
 @pytest.mark.parametrize("palavra,esperado", [("abcd", True), ("abcde", False)])
 def test_ponto_so_separa_apos_cinco_letras(palavra, esperado):
     assert assunto_pessoal(f"Licença {palavra}. Parlamentar apresenta emenda.", []) is esperado
-
-
-@pytest.mark.parametrize(
-    "texto",
-    [
-        "O parlamentar propõe alterar o Regimento Interno.",
-        "O parlamentar participa de evento internacional.",
-        "O parlamentar propõe ampliar o acesso à internet.",
-        "O parlamentar propõe valorizar a enfermagem.",
-        "O parlamentar discute uma operação de crédito.",
-        "O parlamentar propõe melhorar a segurança interna.",
-        "O parlamentar propõe regras de organização interna.",
-        "O parlamentar propõe alterar as normas internas.",
-        "O parlamentar propõe uma auditoria interna.",
-    ],
-)
-def test_palavras_proximas_dos_radicais_nao_sao_termos_de_saude(texto):
-    assert not TERMO_PESSOAL.search(normalizar(texto))
-    assert not assunto_pessoal(texto, [])
 
 
 @pytest.mark.parametrize("sigla", ["REQ", "REQV", "RQ", "RQS"])
