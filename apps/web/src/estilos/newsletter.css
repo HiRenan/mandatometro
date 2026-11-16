@@ -9,6 +9,10 @@
  * As mensagens do envio ficam embaixo do botão: o erro do e-mail leva o fio
  * vermelho do "Escolha uma opção" do quiz; o do serviço, as palavras em negrito,
  * sem cor, como o "Ainda não deu" da página de erro.
+ *
+ * A página de sair (components/pagina-de-sair.tsx) é o cartaz das páginas de
+ * dentro, como o da página não encontrada: daqui, ela só leva a linha do
+ * "Confirmando a saída…", embaixo das ações.
  */
 @layer components {
 	.newsletter-folha {
@@ -72,9 +76,13 @@
 		max-width: 100%;
 	}
 
+	.newsletter-enviando,
+	.saida-confirmando {
+		color: var(--tinta-suave);
+	}
+
 	.newsletter-enviando {
 		margin-top: 0.4rem;
-		color: var(--tinta-suave);
 	}
 
 	.newsletter-mensagem {
