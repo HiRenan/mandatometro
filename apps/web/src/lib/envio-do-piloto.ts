@@ -21,25 +21,33 @@ export type ResultadoDoEnvio =
 	| { tipo: "recusado" }
 	/** Muitos envios no minuto (429). Os segundos vêm do Retry-After. */
 	| { tipo: "limite"; segundos?: number }
-	/** O serviço não confirmou a gravação (503 e o resto): dá para repetir. */
+	/**
+	 * O serviço não confirmou a gravação (503 e o resto), ou o pedido não teve
+	 * resposta com o aparelho conectado: dá para repetir.
+	 */
 	| { tipo: "fora-do-ar" }
-	/** Sem internet ou com o tempo esgotado. */
+	/** Sem internet no aparelho: o pedido sai de novo quando ela voltar. */
 	| { tipo: "sem-conexao" };
 
 /** Manda uma etapa concluída e diz o que a API respondeu. */
 export async function enviarEtapa(
 	pedido: PedidoTentativaPiloto,
 ): Promise<ResultadoDoEnvio> {
+	// O relógio é daqui, e não o AbortSignal.timeout, que o Safari só tem a
+	// partir da versão 16: num iPhone que parou no iOS 15, o envio não sairia.
+	const desistir = new AbortController();
+	const relogio = setTimeout(() => desistir.abort(), TEMPO_DE_ESPERA);
 	try {
 		const { response } = await registrarTentativaPiloto({
 			body: pedido,
-			signal: AbortSignal.timeout(TEMPO_DE_ESPERA),
+			signal: desistir.signal,
 		});
-		// Sem internet ou com o tempo esgotado, o cliente gerado devolve a
-		// resposta vazia, embora o tipo dele diga que ela sempre vem.
+		// Sem resposta, como sem internet ou com o tempo esgotado, o cliente
+		// gerado devolve a resposta vazia, embora o tipo dele diga que ela
+		// sempre vem.
 		const resposta: Response | undefined = response;
 		if (!resposta) {
-			return { tipo: "sem-conexao" };
+			return semResposta();
 		}
 		if (resposta.ok) {
 			return { tipo: "recebida" };
@@ -56,8 +64,21 @@ export async function enviarEtapa(
 				return { tipo: "fora-do-ar" };
 		}
 	} catch {
-		return { tipo: "sem-conexao" };
+		return semResposta();
+	} finally {
+		clearTimeout(relogio);
 	}
+}
+
+/**
+ * O pedido que ficou sem resposta. O navegador só sabe com certeza quando o
+ * aparelho está sem internet (o `navigator.onLine` falso); conectado, a API não
+ * aceitou a conexão ou não respondeu a tempo, como quando está fora do ar.
+ */
+function semResposta(): ResultadoDoEnvio {
+	return navigator.onLine === false
+		? { tipo: "sem-conexao" }
+		: { tipo: "fora-do-ar" };
 }
 
 /** A espera antes do reenvio de número `vez`, a partir de 0, em segundos. */

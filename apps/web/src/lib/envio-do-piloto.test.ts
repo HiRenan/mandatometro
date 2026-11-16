@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PedidoTentativaPiloto } from "@/client";
-import { enviarEtapa, esperaDoReenvio } from "./envio-do-piloto";
+import {
+	enviarEtapa,
+	esperaDoReenvio,
+	type ResultadoDoEnvio,
+} from "./envio-do-piloto";
 
 // O cliente da API lê o endereço dela ao ser importado, e o ENV do varlock só
 // existe no site. Aqui, a API é um endereço de mentira, e o fetch, simulado.
@@ -14,16 +18,17 @@ const PEDIDO: PedidoTentativaPiloto = {
 };
 
 afterEach(() => {
+	vi.useRealTimers();
 	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
 });
 
 /** Simula a API: cada pedido recebe a resposta de `responder`, e o pedido fica guardado. */
-function api(responder: () => Response | Promise<Response>) {
+function api(responder: (pedido: Request) => Response | Promise<Response>) {
 	const pedidos: Request[] = [];
 	const fetch = vi.fn(async (pedido: Request) => {
 		pedidos.push(pedido);
-		return responder();
+		return responder(pedido);
 	});
 	vi.stubGlobal("fetch", fetch);
 	return { fetch, pedidos };
@@ -85,27 +90,55 @@ describe("o envio de uma etapa do piloto", () => {
 		expect(await enviarEtapa(PEDIDO)).toEqual({ tipo: "fora-do-ar" });
 	});
 
-	it("sem internet, diz que não houve conexão, sem lançar erro nem escrever no console", async () => {
+	it("com o aparelho sem internet, diz que não houve conexão, sem lançar erro nem escrever no console", async () => {
 		const consoleErro = vi.spyOn(console, "error");
+		vi.stubGlobal("navigator", { onLine: false });
 		api(() => Promise.reject(new TypeError("Failed to fetch")));
 
 		expect(await enviarEtapa(PEDIDO)).toEqual({ tipo: "sem-conexao" });
 		expect(consoleErro).not.toHaveBeenCalled();
 	});
 
-	it("com o tempo esgotado, diz que não houve conexão", async () => {
-		api(() => Promise.reject(new DOMException("tempo", "TimeoutError")));
+	it("com o aparelho conectado, o pedido que não chega à API ou esgota o tempo é como a API fora do ar", async () => {
+		vi.stubGlobal("navigator", { onLine: true });
+		api(() => Promise.reject(new TypeError("Failed to fetch")));
+		expect(await enviarEtapa(PEDIDO)).toEqual({ tipo: "fora-do-ar" });
 
-		expect(await enviarEtapa(PEDIDO)).toEqual({ tipo: "sem-conexao" });
+		api(() => Promise.reject(new DOMException("tempo", "TimeoutError")));
+		expect(await enviarEtapa(PEDIDO)).toEqual({ tipo: "fora-do-ar" });
 	});
 
-	it("espera a API por até 20 segundos", async () => {
-		const tempo = vi.spyOn(AbortSignal, "timeout");
+	it("desiste do pedido depois de 20 segundos sem resposta, como com a API fora do ar", async () => {
+		vi.useFakeTimers();
+		vi.stubGlobal("navigator", { onLine: true });
+		// Um pedido que só acaba quando o site desiste dele.
+		api(
+			(pedido) =>
+				new Promise((_, rejeitar) => {
+					pedido.signal.addEventListener("abort", () =>
+						rejeitar(pedido.signal.reason),
+					);
+				}),
+		);
+		let resultado: ResultadoDoEnvio | undefined;
+		void enviarEtapa(PEDIDO).then((recebido) => {
+			resultado = recebido;
+		});
+
+		await vi.advanceTimersByTimeAsync(19_999);
+		expect(resultado).toBeUndefined();
+
+		await vi.advanceTimersByTimeAsync(1);
+		expect(resultado).toEqual({ tipo: "fora-do-ar" });
+	});
+
+	it("com a resposta, não deixa o relógio da espera correndo", async () => {
+		vi.useFakeTimers();
 		api(() => json(200, { situacao: "recebida" }));
 
 		await enviarEtapa(PEDIDO);
 
-		expect(tempo).toHaveBeenCalledWith(20_000);
+		expect(vi.getTimerCount()).toBe(0);
 	});
 });
 
