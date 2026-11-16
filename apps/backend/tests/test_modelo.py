@@ -171,13 +171,13 @@ def test_o_voto_fica_no_conjunto(sessao):
 def test_a_licenca_saude_fica_igual_a_outra_ausencia(sessao):
     # Decisão do Renan (12/11/2026): nenhuma consulta separa a licença saúde de outra ausência.
     votacao = _votacao()
-    for numero, codigo in enumerate(["LS", "AP"], start=1):
+    for numero, codigo in enumerate(["LS", "AP", "MIS", "NCom", "LAP", "LP"], start=1):
         sessao.add(_voto(votacao, _parlamentar(numero), *normalizar_voto(codigo)))
     sessao.flush()
 
     colunas = [coluna for coluna in Voto.__table__.columns if coluna.name != "parlamentar_id"]
-    licenca_saude, atividade_parlamentar = sessao.execute(select(*colunas)).all()
-    assert licenca_saude == atividade_parlamentar
+    ausencias = sessao.execute(select(*colunas)).all()
+    assert all(ausencia == ausencias[0] for ausencia in ausencias)
 
 
 def test_o_banco_guarda_os_codigos_da_lista(sessao):
@@ -187,7 +187,7 @@ def test_o_banco_guarda_os_codigos_da_lista(sessao):
     sessao.flush()
 
 
-@pytest.mark.parametrize("codigo", ["LS", "AP", "XYZ"])
+@pytest.mark.parametrize("codigo", ["LS", "AP", "MIS", "NCom", "NCOM", "LAP", "LP", "XYZ"])
 def test_o_banco_recusa_codigo_fora_da_lista(sessao, codigo):
     # Nem um conector que pule o normalizar_voto grava a ausência ou um código novo cru.
     _nao_grava(
@@ -217,6 +217,20 @@ def test_o_banco_recusa_codigo_fora_da_lista(sessao, codigo):
         # A ausência vale com qualquer caixa: um "ls" não vira outro, que a separaria das outras.
         ("ls", ("nao_votou", None)),
         ("Ls ", ("nao_votou", None)),
+        ("MIS", ("nao_votou", None)),
+        ("mis", ("nao_votou", None)),
+        ("MiS ", ("nao_votou", None)),
+        ("NCom", ("nao_votou", None)),
+        ("NCOM", ("nao_votou", None)),
+        ("ncom", ("nao_votou", None)),
+        (" nCoM ", ("nao_votou", None)),
+        ("LAP", ("nao_votou", None)),
+        ("lap", ("nao_votou", None)),
+        ("LaP ", ("nao_votou", None)),
+        ("LP", ("nao_votou", None)),
+        ("lp", ("nao_votou", None)),
+        ("lP ", ("nao_votou", None)),
+        ("NA", ("outro", None)),
         # Um código novo pode ser outro motivo pessoal: entra como outro, sem o código.
         ("XYZ", ("outro", None)),
     ],
@@ -243,6 +257,8 @@ def test_o_aviso_do_codigo_novo_nao_leva_o_codigo(caplog):
         (1, ("aprovada", "1")),
         (0, ("rejeitada", "0")),
         ("A", ("aprovada", "A")),
+        ("R", ("rejeitada", "R")),
+        (" R ", ("rejeitada", "R")),
         ("Z", ("outro", "Z")),
         (None, ("outro", None)),
     ],

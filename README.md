@@ -49,8 +49,8 @@ O banco guarda o que a coleta lê da Câmara e do Senado e o que a newsletter us
 
 - **Cada Casa tem os seus números:** parlamentar, proposição e votação se identificam pela Casa e pelo id que a Casa dá (`casa`, `id_externo`). A mesma matéria tem uma linha em cada Casa, ligadas por sigla, número e ano.
 - **Fonte em tudo:** cada dado coletado e cada item da edição aponta para uma `fonte`, com o endereço e a data da coleta. Sem fonte, o banco não grava.
-- **O partido fica no voto,** porque muda dentro do mandato. Os totais de uma votação se contam pelos votos.
-- **Ausência sem motivo:** toda ausência do Senado (atividade parlamentar, licença saúde...) entra como `nao_votou`, sem o código, para a licença saúde ficar igual às outras. O voto só guarda os códigos de voto e de presença da lista `CODIGOS_GRAVADOS`, e o banco recusa os demais. Um código novo entra como `outro`, sem o código, e o log não leva o código nem a pessoa: a coleta registra só a votação e quantos códigos desconhecidos vieram nela.
+- **O partido fica no voto,** porque muda dentro do mandato. Os totais das nominais se contam pelos votos. Nas secretas do Senado, a coleta guarda matéria, votação e resultado, sem votos individuais; o banco não guarda os totais nem a modalidade. Ausência de votos no banco não significa zero votos na sessão nem identifica, sozinha, uma votação secreta.
+- **Ausência sem motivo:** toda ausência reconhecida do Senado (`AP`, `LS`, `MIS`, `NCom`, `LAP` e `LP`, em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, para a licença saúde ficar igual às outras. O voto só guarda os códigos de voto e de presença da lista `CODIGOS_GRAVADOS`, e o banco recusa os demais. Um código ainda não classificado, como `NA`, entra como `outro`, sem o código, e o log não leva o código nem a pessoa: a coleta registra só a votação e quantos códigos desconhecidos vieram nela.
 - **Quem assina** deixa só o e-mail, a data e o código do link de sair. Sair apaga a linha.
 
 ```mermaid
@@ -173,24 +173,41 @@ pnpm --filter backend migrate   # aplica as migrations
 pnpm dev                        # site na porta 3001 e API na 8000
 ```
 
-**Coleta da Câmara.** Com as migrations aplicadas e `DATABASE_URL` apontando para o banco que deve receber os dados, rode em `apps/backend`:
+**Coleta das duas Casas.** Com as migrations aplicadas e `DATABASE_URL` apontando explicitamente para o banco que deve receber os dados, rode os comandos abaixo em `apps/backend`. As datas incluem o primeiro e o último dia: informe `--inicio` e `--fim` juntos, no formato `AAAA-MM-DD`, ou nenhum dos dois. Sem datas, valem os sete dias completos anteriores, no fuso de Brasília.
+
+Repetir o período atualiza os registros pelas mesmas chaves, inclusive votos corrigidos, sem duplicar parlamentar, mandato, proposição, votação ou voto. Cada rodada cria novas fontes com URL, data da coleta e trecho quando aplicável; as anteriores permanecem, inclusive quando deixam de ser referenciadas.
+
+O resumo final é uma linha JSON com contagens confirmadas, chamadas HTTP (incluindo robots e retries), tentativas extras, duração, falhas e `indisponiveis_na_fonte`. Os códigos de saída são:
+
+- **0:** coleta concluída para os registros disponíveis. Um recurso apontado pela fonte que responda 404/410 entra em `indisponiveis_na_fonte`, sem contar como queda da API. Confira também essa lista: saída 0 não significa que a fonte publicou todos os detalhes;
+- **1:** coleta parcial ou interrompida. Uma votação que falha mantém a versão anterior e não impede as seguintes; seus ids aparecem em `falhas_votacoes`. Três votações consecutivas com falha interrompem a execução. Falhas no cadastro entram em `falhas_parlamentares`. As listagens principais são obrigatórias, e uma lista atual inválida não altera quem está em exercício;
+- **2:** argumentos inválidos, antes de acessar a rede ou o banco.
+
+A coleta é sequencial, usa timeout, backoff e o User-Agent do projeto, e consulta o `robots.txt`. Os testes usam respostas gravadas e o banco de teste, sem rede; a coleta real exige executar o comando. Ela roda em lote, fora das requisições do site.
+
+**Coleta da Câmara.**
 
 ```bash
 uv run mandatometro coleta camara --inicio 2026-11-09 --fim 2026-11-15
-uv run mandatometro coleta camara   # os últimos sete dias completos, no fuso de Brasília
+uv run mandatometro coleta camara
 ```
 
-As datas incluem o primeiro e o último dia; informe as duas ou nenhuma. O comando divide consultas que atravessam a virada do ano, percorre todas as páginas e grava as votações do plenário, as proposições afetadas, os votos publicados e os deputados em exercício com seus mandatos. Consulta os detalhes dos deputados a cada execução para atualizar a condição do mandato. Quem aparece num voto antigo e não está em exercício hoje também ganha cadastro, a partir daquele voto, sem inferir a condição do mandato.
+O comando divide consultas que atravessam a virada do ano, percorre todas as páginas e grava as votações do plenário, as proposições afetadas, os votos publicados e os deputados em exercício com seus mandatos. Consulta os detalhes dos deputados a cada execução para atualizar a condição do mandato. Quem aparece num voto antigo e não está em exercício hoje também ganha cadastro, a partir daquele voto, sem inferir a condição do mandato.
 
-Repetir o período atualiza os registros pelas mesmas chaves, inclusive votos corrigidos pela Câmara. As fontes são novas observações com URL, data da coleta e trecho quando aplicável; as anteriores permanecem, inclusive quando deixam de ser referenciadas. As fontes de proposição apontam para a ficha de tramitação e as de votação, para a página da sessão que apresenta o passo a passo daquela votação.
+As fontes de proposição apontam para a ficha de tramitação e as de votação, quando há `idEvento`, para a página da sessão que apresenta o passo a passo daquela votação. No resumo da Câmara, `parlamentares` e `mandatos` contam o cadastro atual processado mais os registros históricos criados; `proposicoes` conta as distintas processadas naquela execução, e `votacoes`/`votos`, as unidades confirmadas.
 
-O resumo final é uma linha JSON com as contagens confirmadas, o número de chamadas HTTP (incluindo robots e retries), as tentativas extras, a duração e as falhas. `parlamentares` e `mandatos` contam o cadastro atual processado mais os registros históricos criados; `proposicoes` conta as distintas processadas naquela execução, e `votacoes`/`votos`, as unidades confirmadas. O código de saída é:
+Detalhe ou votos indisponíveis deixam a votação fora daquela rodada, sem inventar dados a partir da lista. Falha no detalhe de deputado preserva a condição anterior ou deixa `None` quando ele é novo. Lista atual de deputados incompleta interrompe sem reconciliar o exercício.
 
-- **0:** coleta concluída para os registros disponíveis. Um 404/410 no detalhe ou nos votos de um id devolvido pela lista oficial entra em `indisponiveis_na_fonte`, sem contar como queda da API; o comando continua e não inventa a proposição a partir da lista;
-- **1:** coleta parcial ou interrompida. Uma votação que falha mantém a versão anterior e não impede as seguintes; os ids que falharam aparecem em `falhas_votacoes`. Falha no detalhe de deputado preserva a condição anterior ou deixa `None` quando é novo, e entra em `falhas_parlamentares`. Três falhas consecutivas interrompem a execução. Lista atual de deputados incompleta interrompe sem reconciliar o exercício;
-- **2:** argumentos inválidos, antes de acessar a rede ou o banco.
+**Coleta do Senado.**
 
-A coleta é sequencial, usa timeout, backoff e o User-Agent do projeto, e consulta o `robots.txt`. Os testes do conector usam respostas gravadas e o banco de teste, sem rede; a coleta real é uma execução explícita do comando acima. Ela roda em lote, fora das requisições do site.
+```bash
+uv run mandatometro coleta senado --inicio 2026-11-09 --fim 2026-11-15
+uv run mandatometro coleta senado
+```
+
+O comando divide períodos maiores em janelas de até 365 dias e coleta as votações nominais e secretas publicadas em `/votacao`, só das sessões do Senado, os votos individuais disponíveis e os senadores em exercício. As simbólicas e as sessões conjuntas do Congresso ficam de fora. Votações secretas ficam sem votos individuais; o modelo não guarda seus totais nem permite identificar com segurança a modalidade apenas pela ausência de votos.
+
+Se o histórico de um votante fora da lista atual falhar, seus votos ficam gravados, o mandato não é inventado e `falhas_parlamentares` conta o parlamentar uma vez. Recurso indisponível entra no resumo pelo caminho com seu id (por exemplo, `/processo/9006525`): sem o processo, a votação é pulada; sem o histórico, os votos são preservados.
 
 **Checagens,** as mesmas do CI:
 

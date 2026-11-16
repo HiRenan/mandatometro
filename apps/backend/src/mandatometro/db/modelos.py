@@ -60,13 +60,17 @@ CODIGOS_GRAVADOS = {
 CODIGOS_DE_AUSENCIA = {
     "AP",  # "Atividade parlamentar"
     "LS",  # "Licença saúde"
+    "LAP",  # "Licença paternidade ou ao adotante"
+    "LP",  # "Licença Particular"
+    "MIS",  # "Missão da Casa no País/exterior"
+    "NCOM",  # "Não Compareceu"; publicado como NCom, comparado em maiúsculas
 }
 
 RESULTADOS = ("aprovada", "rejeitada", "outro")
-# Câmara: aprovacao 1 ou 0. Senado: resultadoVotacao "A" nas 7 votações que a revisão do PR #79
-# viu; nas 4 gravadas em tests/fixtures, o informeLegislativo da sessão diz que cada uma foi
-# aprovada. As outras letras ainda não apareceram e viram "outro".
-_RESULTADOS_CONHECIDOS = {"1": "aprovada", "0": "rejeitada", "A": "aprovada"}
+# Câmara: aprovacao 1 ou 0. Senado: A é aprovação; R é rejeição, conferida no informeLegislativo
+# das votações 7081, 7099 e 7100 em /votacao de 01/01 a 15/11/2026. A 7081, secreta, também está
+# gravada em tests/fixtures. Letras ainda não classificadas viram outro, com o resultado bruto.
+_RESULTADOS_CONHECIDOS = {"1": "aprovada", "0": "rejeitada", "A": "aprovada", "R": "rejeitada"}
 
 
 def normalizar_voto(bruto: str) -> tuple[str, str | None]:
@@ -238,10 +242,12 @@ class Votacao(Base):
       codigoSessaoVotacao ("7109"), que sozinho é único.
     - resultado e resultado_bruto: saem de normalizar_resultado.
 
-    Não há colunas de total: no Senado elas vêm null, e na Câmara não existem. O total se conta
-    pelos votos. Na Câmara, consulte /votos nas nominais e nas simbólicas, pois algumas simbólicas
-    também publicam registros. Quem não aparece não vira linha. A lista pode incluir a presidência
-    (Artigo 17): separe os valores normalizados ao contar votos e presença.
+    Não há colunas de total nem de modalidade. No Senado, os totais vêm null nas nominais: conte
+    os votos. Nas secretas, a API traz o placar nos totais e Votou na lista; a coleta guarda somente
+    matéria, votação e resultado, sem votos individuais. Lista vazia no banco não prova segredo.
+    Na Câmara, não há totais na API: consulte /votos nas nominais e nas simbólicas, pois algumas
+    simbólicas também publicam registros. Quem não aparece não vira linha. A lista pode incluir
+    a presidência (Artigo 17): separe os valores normalizados ao contar votos e presença.
     """
 
     __tablename__ = "votacao"

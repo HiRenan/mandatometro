@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 
 from mandatometro.coleta import camara
+from mandatometro.coleta.senado import registrar as registrar_senado
 
 
 def _openapi(args: argparse.Namespace) -> None:
@@ -34,6 +35,7 @@ def main(argv: list[str] | None = None) -> int:
     casas = coleta.add_subparsers(dest="casa")
     casas.required = True
     camara.registrar_comando(casas)
+    registrar_senado(casas)
 
     args = parser.parse_args(argv)
     return args.rodar(args) or 0
