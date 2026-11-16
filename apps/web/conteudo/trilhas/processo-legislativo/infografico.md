@@ -51,6 +51,7 @@ passos:
       - Se a outra Casa rejeita o projeto, ele é arquivado.
     artigos:
       - onde-o-projeto-comeca
+      - a-outra-casa-revisa-o-projeto
     fontes:
       - titulo: Constituição Federal, art. 65
         url: https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art65

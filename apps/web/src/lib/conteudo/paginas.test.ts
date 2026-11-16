@@ -84,7 +84,7 @@ describe("conteúdo das trilhas", () => {
 			["quem-pode-propor-uma-lei", "onde-o-projeto-comeca"],
 			["o-projeto-passa-pelas-comissoes"],
 			["o-plenario-vota-o-projeto"],
-			["onde-o-projeto-comeca"],
+			["onde-o-projeto-comeca", "a-outra-casa-revisa-o-projeto"],
 			[],
 		]);
 	});
@@ -122,7 +122,7 @@ describe("conteúdo das trilhas", () => {
 			trilha.artigos.map(
 				(artigo) => acharArtigo(trilhas, trilha.slug, artigo.slug)?.quiz,
 			),
-		).toEqual([undefined, undefined, chamada, undefined]);
+		).toEqual([undefined, undefined, chamada, undefined, undefined]);
 	});
 
 	it("não acha trilha nem artigo que não existe", () => {
