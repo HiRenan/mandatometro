@@ -88,10 +88,12 @@ Endpoints, campos, chaves de ligação e exemplos reais de cada fonte estão em 
 
 ## Newsletter: inscrição e saída
 
-- O formulário chama a API pelo servidor do site (`createServerFn`); a API não configura CORS. Depois de confirmar a inscrição no banco, responde sempre 200 com `situacao`: `edicao_enviada` (aceito pelo Resend, sem garantir entrega), `aguardando_edicao` ou `envio_indisponivel`. E-mail repetido segue o mesmo fluxo e não revela cadastro anterior.
-- A cota global usa `limite_inscricao`, apenas `janela` e `quantidade`: nada de IP, e-mail ou hash de pessoa. Vale antes de validar o JSON e usa transação própria; a saída não consome essa cota.
-- Sair só apaga com POST pelo `codigo_saida`. O corpo é ignorado, inclusive o formulário da RFC 8058; GET/HEAD só abrem a confirmação no site. Não faça POST automático ao carregar essa página. Não registrar e-mail, corpo, token de saída ou exceção bruta: as mensagens de validação, SQL e Resend podem carregar dados pessoais. O access log da API fica desligado na produção; no dev, só use dados fictícios.
-- `avisos/email.py` centraliza a montagem; `avisos/resend.py`, o envio com até 8 segundos totais e idempotência por 24 horas. A #39 reutiliza esses módulos, mas precisa de sua própria política de envio: não há fila nem histórico de entrega nesta fatia. APP_BASE_URL e API_URL precisam ser públicos e HTTPS para montar os links de um envio real.
+- Libere o CORS só para `APP_BASE_URL`, conforme o [ADR 0001](docs/adr/0001-stack.md). Use GET e POST, aceite `Content-Type` e exponha `Retry-After`. A fatia da tela define como chamar a rota.
+- Depois de confirmar a inscrição no banco, responda 200 com `situacao`: `edicao_enviada`, `aguardando_edicao` ou `envio_indisponivel`. `edicao_enviada` significa que o Resend aceitou o envio, sem garantir a entrega. Trate o e-mail repetido pelo mesmo fluxo, sem revelar o cadastro anterior.
+- Conte as tentativas em `limite_inscricao`, só com `janela` e `quantidade`. Não guarde IP, e-mail ou hash de pessoa. Aplique a cota antes de validar o JSON, em transação própria. Deixe a saída fora dessa cota.
+- Apague a inscrição só com POST pelo `codigo_saida`. Ignore o corpo, inclusive o formulário da RFC 8058. GET e HEAD só abrem a confirmação no site. Não faça POST automático ao carregar essa página.
+- Não registre e-mail, corpo, código de saída ou exceção bruta. As mensagens de validação, SQL e Resend podem conter dados pessoais. Desligue o access log da API na produção. No desenvolvimento, use só dados fictícios.
+- Monte o e-mail em `avisos/email.py` e envie por `avisos/resend.py`. O envio tem até 8 segundos no total e idempotência por 24 horas. A #39 reutiliza esses módulos e define sua política de envio. Esta fatia não tem fila nem histórico de entrega. Use endereços públicos HTTPS em `APP_BASE_URL` e `API_URL` para os links de um envio real.
 
 ## Segredos
 

@@ -18,6 +18,7 @@ from mandatometro.db import engine
 from mandatometro.db.modelos import Edicao, Fonte, Inscrito, ItemEdicao
 
 ROTA = "/newsletter/inscricoes"
+ORIGEM_DO_SITE = config().app_base_url
 
 
 @pytest.fixture
@@ -186,12 +187,16 @@ def test_limite_conta_json_invalido_e_repeticoes_sem_olhar_ip(ambiente, monkeypa
     assert cliente.post(ROTA, content=b'{"email":').status_code == 422
     assert cliente.post(ROTA, json={"email": "pessoa@example.com"}).status_code == 200
     resposta = cliente.post(
-        ROTA, json={"email": "pessoa@example.com"}, headers={"X-Forwarded-For": "192.0.2.1"}
+        ROTA,
+        json={"email": "pessoa@example.com"},
+        headers={"X-Forwarded-For": "192.0.2.1", "Origin": ORIGEM_DO_SITE},
     )
     assert resposta.status_code == 429
     assert resposta.json() == {"erro": "limite_de_inscricoes"}
     assert 1 <= int(resposta.headers["Retry-After"]) <= 60
     assert resposta.headers["cache-control"] == "no-store"
+    assert resposta.headers["access-control-allow-origin"] == ORIGEM_DO_SITE
+    assert resposta.headers["access-control-expose-headers"] == "Retry-After"
 
 
 def test_inscricoes_concorrentes_nao_duplicam_cadastro(ambiente):
@@ -311,11 +316,25 @@ def test_validacao_nao_consulta_dns(ambiente, monkeypatch):
     assert resposta.status_code == 200
 
 
-def test_api_nao_habilita_cors_para_inscricao(ambiente):
-    resposta = ambiente["cliente"].post(
-        ROTA, json={"email": "pessoa@example.com"}, headers={"Origin": "https://site.example.com"}
+@pytest.mark.parametrize(
+    "origem, status", [(ORIGEM_DO_SITE, 200), ("https://outro.example.com", 400)]
+)
+def test_preflight_da_inscricao_so_aceita_origem_do_site(origem, status):
+    resposta = TestClient(app).options(
+        ROTA,
+        headers={
+            "Origin": origem,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "Content-Type",
+        },
     )
-    assert "access-control-allow-origin" not in resposta.headers
+    assert resposta.status_code == status
+    if status == 200:
+        assert resposta.headers["access-control-allow-origin"] == ORIGEM_DO_SITE
+        assert set(resposta.headers["access-control-allow-methods"].split(", ")) == {"GET", "POST"}
+        assert "Content-Type" in resposta.headers["access-control-allow-headers"].split(", ")
+    else:
+        assert "access-control-allow-origin" not in resposta.headers
 
 
 def test_openapi_fecha_as_tres_situacoes_e_nao_exige_corpo_na_saida():

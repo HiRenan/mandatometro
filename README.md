@@ -193,26 +193,28 @@ TEST_DATABASE_URL=postgresql+psycopg://mandatometro:troque-esta-senha@localhost:
 
 Sem a variável, o pytest pula os testes de banco e diz o motivo. No CI, que sobe o próprio banco, eles falham.
 
-**Newsletter.** Depois das migrations, a API recebe `POST /newsletter/inscricoes` com JSON contendo só `email`. O servidor do site chama essa rota: a API não habilita CORS. Uma inscrição nova ou repetida recebe o mesmo contrato, sem revelar se o endereço já estava na lista:
+**Newsletter.** Depois das migrations, envie `POST /newsletter/inscricoes` com JSON contendo só `email`. A API libera o CORS só para `APP_BASE_URL`, conforme o [ADR 0001](docs/adr/0001-stack.md). Aceita GET e POST com `Content-Type` e expõe `Retry-After` ao navegador. A fatia da tela define como chamar a rota. Uma inscrição nova ou repetida recebe as mesmas respostas, sem revelar se o endereço já estava na lista:
 
 | HTTP | Corpo | Significado |
 | --- | --- | --- |
-| 200 | `{"situacao":"edicao_enviada"}` | Inscrição gravada e envio da última edição publicada aceito pelo Resend; não é confirmação de entrega na caixa postal. |
+| 200 | `{"situacao":"edicao_enviada"}` | Inscrição gravada. O Resend aceitou o envio da última edição publicada, sem confirmar a entrega na caixa postal. |
 | 200 | `{"situacao":"aguardando_edicao"}` | Inscrição gravada, sem edição publicada para enviar. |
-| 200 | `{"situacao":"envio_indisponivel"}` | Inscrição gravada, mas o envio não foi confirmado; a pessoa pode tentar novamente. |
-| 422 | `{"erro":"dados_invalidos"}` | Corpo ou e-mail inválido; a resposta não repete dados recebidos. |
-| 429 | `{"erro":"limite_de_inscricoes"}` | Cota global esgotada; `Retry-After` informa quantos segundos esperar. |
+| 200 | `{"situacao":"envio_indisponivel"}` | Inscrição gravada, mas o envio não foi confirmado. A pessoa pode tentar novamente. |
+| 422 | `{"erro":"dados_invalidos"}` | Corpo ou e-mail inválido. A resposta não repete os dados recebidos. |
+| 429 | `{"erro":"limite_de_inscricoes"}` | Cota global esgotada. `Retry-After` informa quantos segundos esperar. |
 | 503 | `{"erro":"servico_indisponivel"}` | Gravação não confirmada no banco. |
 
-O limite padrão é **30 tentativas por minuto fixo**, ajustável por `NEWSLETTER_LIMITE_POR_MINUTO`. A contagem fica no PostgreSQL, sem IP nem e-mail; inclui repetidas, inválidas e tentativas cujo envio falhou. A rota de saída fica fora dessa cota. As janelas antigas são limpas nas chamadas seguintes.
+O limite padrão é **30 tentativas por minuto fixo**. Para mudá-lo, defina `NEWSLETTER_LIMITE_POR_MINUTO`. A contagem fica no PostgreSQL, sem IP nem e-mail. Inclui tentativas repetidas, inválidas e cujo envio falhou. A saída fica fora dessa cota. As chamadas seguintes limpam as janelas antigas.
 
-Para o envio real, configure `RESEND_API_KEY`, `RESEND_FROM` e os endereços públicos **HTTPS** `APP_BASE_URL` (site) e `API_URL` (API). O remetente de exemplo só envia para o dono da conta; troque-o por um endereço escolhido do domínio verificado `mandatometro.com.br`. Precisa existir uma edição `publicada`, com seus itens e fontes oficiais. Sem chave ou com configuração de envio inválida, a inscrição continua gravada e a API responde `envio_indisponivel`; sem edição, responde `aguardando_edicao`.
+Para enviar de verdade, configure `RESEND_API_KEY`, `RESEND_FROM` e os endereços públicos **HTTPS** `APP_BASE_URL` (site) e `API_URL` (API). O remetente de exemplo só envia para o dono da conta. Troque-o por um endereço do domínio verificado `mandatometro.com.br`. Prepare uma edição `publicada`, com seus itens e fontes oficiais. Sem chave ou com configuração de envio inválida, a inscrição continua gravada e a API responde `envio_indisponivel`. Sem edição, responde `aguardando_edicao`.
 
-O envio faz até três tentativas dentro de **8 segundos no total**, com timeout e backoff. Usa a mesma chave por inscrito/edição, sem e-mail nela; a [idempotência do Resend dura 24 horas](https://resend.com/docs/dashboard/emails/idempotency-keys). Depois dessa janela, outra inscrição pode reenviar a edição. Não há fila de recuperação automática. A [cota do plano Free é de 100 e-mails por dia e 3.000 por mês](https://resend.com/pricing), compartilhada com os outros envios da conta; a #39 precisa considerar isso no envio dominical.
+O envio faz até três tentativas dentro de **8 segundos no total**, com tempo limite e espera entre elas. Usa a mesma chave para cada par de inscrito e edição, sem e-mail nela. A [idempotência do Resend dura 24 horas](https://resend.com/docs/dashboard/emails/idempotency-keys). Depois desse prazo, outra inscrição pode reenviar a edição. Não há fila para tentar de novo automaticamente. A [cota do plano Free é de 100 e-mails por dia e 3.000 por mês](https://resend.com/pricing), compartilhada com os outros envios da conta. Considere essa cota no envio dominical da #39.
 
-`POST /newsletter/saida/{codigo_saida}` apaga a inscrição e responde 200 vazio, inclusive para código desconhecido ou já removido; não lê nem exige corpo. O programa de e-mail usa essa rota com os cabeçalhos da RFC 8058. `GET` e `HEAD` só redirecionam para `/newsletter/sair?codigo=...` no site; a página deve aguardar a confirmação no botão antes do POST, para leitores automáticos não cancelarem a inscrição. Essa tela será integrada na próxima fatia da #21.
+`POST /newsletter/saida/{codigo_saida}` apaga a inscrição e responde 200 vazio, inclusive para código desconhecido ou já removido. Não lê nem exige corpo. O programa de e-mail usa essa rota com os cabeçalhos da RFC 8058. GET e HEAD só redirecionam para `/newsletter/sair?codigo=...` no site. Na página, espere a confirmação no botão antes do POST, para leitores automáticos não cancelarem a inscrição. A tela vem em outro PR da #21.
 
-Os testes da newsletter usam o banco de teste e um transporte HTTP simulado, sem chave nem e-mail real. Em `apps/backend`, com `TEST_DATABASE_URL` explícito, rode `uv run pytest tests/test_inscricao.py tests/test_limite_inscricao.py tests/test_email.py tests/test_resend.py`. O comando de produção do Docker desliga o access log do Uvicorn (`--no-access-log`), que incluiria IP e código de saída; faça o mesmo ao subir a API diretamente em produção e configure os logs da hospedagem para não registrar corpo, cabeçalhos ou URLs de saída. O log do `pnpm dev` permanece ligado para dados fictícios. Os logs da aplicação não guardam e-mail nem código de saída, e os erros da newsletter são sanitizados.
+Os testes da newsletter usam o banco de teste e chamadas HTTP simuladas, sem chave nem e-mail real. Em `apps/backend`, com `TEST_DATABASE_URL` explícito, rode `uv run pytest tests/test_inscricao.py tests/test_limite_inscricao.py tests/test_email.py tests/test_resend.py`.
+
+Na produção, desligue o access log do Uvicorn com `--no-access-log`, como faz o Dockerfile. Esse log incluiria IP e código de saída. Não registre corpo, cabeçalhos ou URLs de saída nos logs da hospedagem. O log do `pnpm dev` fica ligado: use só dados fictícios. Os logs da aplicação não guardam e-mail nem código de saída. Os erros da newsletter não repetem dados recebidos.
 
 **No ar,** o site fica na Vercel, que monta a pasta `apps/web` a cada push, com a configuração de `apps/web/vercel.json`:
 

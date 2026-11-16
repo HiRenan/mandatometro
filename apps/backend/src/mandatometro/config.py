@@ -17,8 +17,9 @@ class Config(BaseSettings):
     database_url: str = (
         "postgresql+psycopg://mandatometro:troque-esta-senha@localhost:5433/mandatometro"
     )
-    # Endereços públicos usados no corpo e no cabeçalho de saída do e-mail.
+    # A API libera o CORS para este endereço; o e-mail usa no link para sair.
     app_base_url: str = "http://localhost:3001"
+    # Endereço da API visto pelo navegador e usado no cabeçalho List-Unsubscribe.
     api_url: str = "http://localhost:8000"
     resend_api_key: SecretStr | None = None
     resend_from: str | None = None
