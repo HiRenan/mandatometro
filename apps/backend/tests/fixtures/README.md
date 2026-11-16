@@ -41,7 +41,7 @@ O histórico `senador-4525-mandatos.json` segue a mesma regra em todos os exerc�
 
 Na votação secreta 7081, os dois códigos de ausência foram trocados por `XXX`, e suas descrições, por `Motivo fictício`. A mesma troca vale para qualquer código que não esteja na lista de votos/presenças conhecidos, para não guardar um motivo pessoal ainda não classificado. O teste confere os códigos permitidos nessa fixture e o marcador de cada motivo. A resposta permanece inteira, com 81 registros, incluindo 77 `Votou`; nenhum deles vira voto individual no banco por ser uma votação secreta.
 
-Nenhum outro arquivo desta pasta traz campo pessoal. Ao gravar uma fixture nova de `/deputados/{id}`, da lista de senadores ou dos mandatos, faça a mesma troca. Ausências nos votos também precisam de sanitização: nunca grave uma licença real ligada ao parlamentar. Os testes do conector que exercitam ausências e códigos desconhecidos usam pessoas inventadas.
+Nenhum outro arquivo desta pasta traz CPF, título de eleitor, data de nascimento ou motivo de afastamento. Como a fonte publica, os arquivos trazem e-mail e telefone de gabinete, foto, nome completo e sexo de deputados e senadores, e o `camara/deputado-178843.json` traz também a cidade e a UF de nascimento e a escolaridade. Ao gravar uma fixture nova de `/deputados/{id}`, da lista de senadores ou dos mandatos, faça a mesma troca. Ausências nos votos também precisam de sanitização: nunca grave uma licença real ligada ao parlamentar. Os testes do conector que exercitam ausências e códigos desconhecidos usam pessoas inventadas.
 
 ## Por que estes casos
 

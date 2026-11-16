@@ -386,3 +386,16 @@ class Inscrito(Base):
         unique=True, server_default=text("gen_random_uuid()")
     )
     inscrito_em: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class LimiteInscricao(Base):
+    """Cota global por minuto: sem identificar quem tentou se inscrever."""
+
+    __tablename__ = "limite_inscricao"
+    __table_args__ = (
+        CheckConstraint("quantidade > 0", name="quantidade_positiva"),
+        CheckConstraint("janela = date_trunc('minute', janela)", name="janela_minuto"),
+    )
+
+    janela: Mapped[datetime] = mapped_column(primary_key=True)
+    quantidade: Mapped[int]
