@@ -2,7 +2,7 @@ import unicodedata
 
 import pytest
 
-from mandatometro.ia.privacidade import assunto_pessoal, identificacao
+from mandatometro.ia.privacidade import TERMO_PESSOAL, assunto_pessoal, identificacao, normalizar
 
 
 @pytest.mark.parametrize("forma", ["original", "maiusculas", "sem_acento", "ambas"])
@@ -134,6 +134,10 @@ def test_assunto_pessoal_exige_ligacao_com_parlamentar(texto, siglas, esperado, 
         "interne",
         "internem",
         "internei",
+        "internam",
+        "interna-se",
+        "internou-se",
+        "internar-se",
         "hospitalizado",
         "hospitalizadas",
         "hospitalizou",
@@ -145,12 +149,38 @@ def test_assunto_pessoal_exige_ligacao_com_parlamentar(texto, siglas, esperado, 
         "adoecer",
         "adoecendo",
         "adoeça",
+        "adoentado",
+        "adoentada",
+        "adoentou",
+        "adoentar",
+        "adoentando",
+        "adoentam",
+        "adoentaram",
+        "adoentava",
+        "adoentará",
+        "adoentaria",
+        "adoentasse",
+        "adoente",
+        "convalescente",
+        "convalescença",
+        "convalescer",
+        "convalescendo",
+        "convalesço",
+        "convalesça",
+        "convalesceu",
+        "convalesceram",
+        "convalescia",
+        "convalescerá",
+        "convalesceria",
+        "convalescesse",
         "doente",
         "doentes",
         "enfermo",
         "cirurgias",
         "tratamentos médicos",
         "atestados médicos",
+        "atendimento médico",
+        "atendimentos médicos",
     ],
 )
 def test_flexoes_das_familias_com_ligacao(termo):
@@ -218,9 +248,14 @@ def test_ponto_so_separa_apos_cinco_letras(palavra, esperado):
         "O parlamentar propõe ampliar o acesso à internet.",
         "O parlamentar propõe valorizar a enfermagem.",
         "O parlamentar discute uma operação de crédito.",
+        "O parlamentar propõe melhorar a segurança interna.",
+        "O parlamentar propõe regras de organização interna.",
+        "O parlamentar propõe alterar as normas internas.",
+        "O parlamentar propõe uma auditoria interna.",
     ],
 )
 def test_palavras_proximas_dos_radicais_nao_sao_termos_de_saude(texto):
+    assert not TERMO_PESSOAL.search(normalizar(texto))
     assert not assunto_pessoal(texto, [])
 
 

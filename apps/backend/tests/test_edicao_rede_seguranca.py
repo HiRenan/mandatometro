@@ -30,6 +30,9 @@ AVISO = (
         "Institui a política nacional de saúde mental.",
         "Prevê apoio a quem se internou.",
         "Amplia o apoio a quem adoeceu.",
+        "Amplia o apoio a pessoas adoentadas.",
+        "Amplia o apoio a pessoas convalescentes.",
+        "Amplia os atendimentos médicos à população.",
         "A Câmara dos Deputados aprova o programa de saúde pública.",
     ],
 )

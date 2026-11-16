@@ -10,11 +10,13 @@ PARTIDO_UF = re.compile(
     r"(?:ac|al|am|ap|ba|ce|df|es|go|ma|mg|ms|mt|pa|pb|pe|pi|pr|rj|rn|ro|rr|rs|sc|se|sp|to)\b"
 )
 TERMO_PESSOAL = re.compile(
-    r"\b(?:licenc\w*|afast\w*|saude|doenc\w*|doentes?|adoec\w*|enferm(?:idades?|[oa]s?)|"
-    # As terminações de internar evitam interno, internacional, internet e internauta.
-    r"intern(?:a(?:r\w*|s|mos|is|m|va\w*|ste\w*|sse\w*|ndo|d[oa]s?|c(?:ao|oes))?|"
+    r"\b(?:licenc\w*|afast\w*|saude|doenc\w*|doentes?|adoec\w*|adoent\w*|convalesc\w*|"
+    r"enferm(?:idades?|[oa]s?)|"
+    # Exclui os adjetivos interna/internas, mas mantém interna-se e as demais flexões.
+    # As terminações também evitam interno, internacional, internet e internauta.
+    r"intern(?:a(?:r\w*|mos|is|m|va\w*|ste\w*|sse\w*|ndo|d[oa]s?|c(?:ao|oes)|-se)|"
     r"e(?:i|s|mos|is|m)?|ou)|hospitaliz\w*|cirurg(?:ias?|ic[oa]s?)|"
-    r"(?:tratamentos?|atestados?)\s+medic[oa]s?)\b"
+    r"(?:tratamentos?|atestados?|atendimentos?)\s+medic[oa]s?)\b"
 )
 LICENCA_OU_AFASTAMENTO = re.compile(r"\b(?:licenc|afast)\w*\b")
 PALAVRA_PARLAMENTAR = re.compile(
