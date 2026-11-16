@@ -129,3 +129,34 @@ def test_revisao_nao_empresta_sigla_nem_palavra_do_titulo_a_explicacao(abrir, da
     arquivo["itens"][0]["titulo"] = "Emenda do parlamentar"
     arquivo["itens"][0]["explicacao"] = ["Amplia a licença ambiental."]
     assert revisar(abrir, edicao_id, arquivo)["situacao"] == "revisao_salva"
+
+
+@pytest.mark.parametrize("sigla", ["REQ", "RQS"])
+@pytest.mark.parametrize("campo", ["descricao", "ementa"])
+@pytest.mark.parametrize(
+    "texto",
+    [
+        "Requer a convocação do Ministro da Saúde para prestar informações.",
+        "Requer a realização de sessão de debates sobre a saúde pública.",
+        "Requer urgência para o Projeto de Lei nº 123, de 2026, que amplia a licença-paternidade.",
+    ],
+    ids=["convocacao", "debates", "proposicao_por_extenso"],
+)
+def test_requerimento_publico_chega_a_redacao_exportacao_e_revisao(
+    abrir, dados, sigla, campo, texto
+):
+    dados(100, sigla=sigla, **{campo: texto})
+    falso = Falso()
+    resultado = gerar(abrir, INICIO, FIM, redator=falso)
+    assert resultado["assunto_pessoal"] == 0
+    assert resultado["itens"] == 1
+    assert len(falso.entradas) == 1
+    assert texto in json.dumps(falso.entradas, ensure_ascii=False)
+    edicao_id = resultado["edicao_id"]
+    arquivo = pronto(exportar(abrir, edicao_id))
+    assert texto in json.dumps(arquivo, ensure_ascii=False)
+    arquivo["titulo"] = texto
+    arquivo["itens"][0]["titulo"] = texto
+    arquivo["itens"][0]["explicacao"] = [texto]
+    assert revisar(abrir, edicao_id, arquivo)["situacao"] == "revisao_salva"
+    assert exportar(abrir, edicao_id)["itens"][0]["explicacao"] == [texto]

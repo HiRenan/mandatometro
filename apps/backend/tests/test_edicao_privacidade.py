@@ -83,6 +83,13 @@ from mandatometro.ia.privacidade import assunto_pessoal, identificacao
             True,
             id="empate_privacidade",
         ),
+        pytest.param(
+            "Rejeitada a emenda do Dep. Pessoa Inventada, "
+            "que alterava as regras do licenciamento ambiental.",
+            (),
+            True,
+            id="empate_emenda_com_nome_proximo",
+        ),
     ],
 )
 def test_assunto_pessoal_exige_ligacao_com_parlamentar(texto, siglas, esperado, forma):
@@ -191,3 +198,49 @@ def test_nome_isolado_nao_identifica_e_guarda_do_redator_continua_larga():
     texto = "Licença ambiental na Câmara dos Deputados."
     assert not assunto_pessoal(texto, [])
     assert identificacao(texto, [])
+
+
+@pytest.mark.parametrize("siglas", [(), ("REQ",), ("RQS",)])
+@pytest.mark.parametrize(
+    "texto",
+    [
+        "Requer a convocação do Ministro da Saúde para prestar informações.",
+        "Requer a realização de sessão de debates sobre a saúde pública.",
+    ],
+    ids=["convocacao", "debates"],
+)
+def test_saude_sozinha_nao_e_pedido_de_licenca(texto, siglas):
+    assert not assunto_pessoal(texto, [], siglas=siglas)
+
+
+@pytest.mark.parametrize("sinal", ["senador", "Pessoa Inventada", "ABC-SC"])
+def test_saude_com_ligacao_pessoal_continua_saindo_no_requerimento(sinal):
+    assert assunto_pessoal(f"Requer informações sobre a saúde de {sinal}.", ["Pessoa Inventada"])
+
+
+@pytest.mark.parametrize(
+    "tipo",
+    [
+        "Projeto de Lei",
+        "Projeto de Lei Complementar",
+        "Proposta de Emenda à Constituição",
+        "Medida Provisória",
+        "Projeto de Decreto Legislativo",
+        "Projeto de Resolução",
+        "Projeto de Lei de Conversão",
+    ],
+)
+@pytest.mark.parametrize(
+    "numero",
+    ["nº 123, de 2026", "123, de 2026", "n 123, de 2026", "n. 123/2026", "nº 1.234, de 2026"],
+)
+def test_requerimento_cita_proposicao_por_extenso(tipo, numero):
+    texto = f"Requer urgência para o {tipo} {numero}, que amplia a licença-paternidade."
+    assert not assunto_pessoal(texto, [], siglas=["REQ"])
+
+
+def test_extenso_precisa_de_numero_e_nao_anula_ligacao_pessoal():
+    assert assunto_pessoal("Requer licença para discutir um Projeto de Lei.", [])
+    assert assunto_pessoal(
+        "Requer licença do senador conforme o Projeto de Lei nº 123, de 2026.", []
+    )

@@ -13,11 +13,15 @@ TERMO_PESSOAL = re.compile(
     r"\b(?:licenc\w*|afast\w*|saude|doenc\w*|enfermidades?|internac\w*|"
     r"internad[oa]s?|hospitaliz\w*|cirurgias?|(?:tratamentos?|atestados?)\s+medic[oa]s?)\b"
 )
+LICENCA_OU_AFASTAMENTO = re.compile(r"\b(?:licenc|afast)\w*\b")
 PALAVRA_PARLAMENTAR = re.compile(
     r"\b(?:parlamentar(?:es)?|deputad[oa]s?|senador(?:a|es|as)?|dep|sen|suplentes?|mandatos?)\b"
 )
 PROPOSICAO_CITADA = re.compile(
-    r"\b(?:pl[a-z]{0,2}|pec|mpv?|pd[clsn]|pr[csn])\s*(?:n(?:umero)?[.\s°o]*)?\d"
+    r"\b(?:pl[a-z]{0,2}|pec|mpv?|pd[clsn]|pr[csn]|"
+    r"projeto\s+de\s+(?:lei(?:\s+(?:complementar|de\s+conversao))?|"
+    r"decreto\s+legislativo|resolucao)|proposta\s+de\s+emenda\s+a\s+constituicao|"
+    r"medida\s+provisoria)\s*(?:n(?:umero)?[.\s°o]*)?\d"
 )
 DISTANCIA_PESSOAL = 6
 
@@ -47,7 +51,11 @@ def assunto_pessoal(texto: str, nomes: Iterable[str], *, siglas: Iterable[str] =
     requerimento = any(normalizar(s).startswith(("req", "rq")) for s in siglas) or re.match(
         r"\s*(?:requer|requerimento)\b", texto
     )
-    if requerimento and not PROPOSICAO_CITADA.search(texto):
+    if (
+        requerimento
+        and LICENCA_OU_AFASTAMENTO.search(texto)
+        and not PROPOSICAO_CITADA.search(texto)
+    ):
         return True
 
     # O nome da Casa não identifica parlamentar. Mantém a contagem de três palavras,

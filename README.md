@@ -221,7 +221,7 @@ uv sync --frozen
 $env:DATABASE_URL = 'COLE_A_URL_AUTORIZADA_PELO_TIME'
 ```
 
-Prepare uma pasta **fora do repositório**, por exemplo `C:\Users\renan\Documents\mandatometro-revisoes`. Adapte o nome do usuário e crie a pasta pelo explorador de arquivos se ela ainda não existir. O JSON contém descrições e trechos oficiais para consulta: ele e a prévia ficam fora de commits e logs. Os comandos seguintes usam essa pasta e são executados no mesmo terminal, em `apps/backend`.
+Prepare uma pasta **fora do repositório**, por exemplo `$HOME\Documents\mandatometro-revisoes`. No PowerShell, `$HOME` é sua pasta de usuário; crie a pasta de revisões pelo explorador de arquivos se ela ainda não existir. O JSON contém descrições e trechos oficiais para consulta: ele e a prévia ficam fora de commits e logs. Os comandos seguintes usam essa pasta e são executados no mesmo terminal, em `apps/backend`.
 
 **Rotina de toda semana.** Uma pessoa opera por vez.
 
@@ -234,7 +234,7 @@ Prepare uma pasta **fora do repositório**, por exemplo `C:\Users\renan\Document
 2. Exporte para a pasta externa preparada acima. Escolha um nome novo por edição ou rodada de revisão; a exportação recusa sobrescrever arquivos.
 
    ```powershell
-   uv run mandatometro edicao exportar 1 --arquivo C:\Users\renan\Documents\mandatometro-revisoes\edicao-2026-11-15.json
+   uv run mandatometro edicao exportar 1 --arquivo "$HOME\Documents\mandatometro-revisoes\edicao-2026-11-15.json"
    ```
 
 3. Abra o JSON no editor e salve em UTF-8. Confira os fatos e as fontes de cada item, substitua a redação pendente e confirme a revisão e o artigo escolhido. A `explicacao` é uma lista de parágrafos. Confirme a cobertura uma única vez, depois de ler os resumos das duas coletas e conhecer suas lacunas: o banco não certifica a cobertura de todo o Congresso.
@@ -263,7 +263,7 @@ Prepare uma pasta **fora do repositório**, por exemplo `C:\Users\renan\Document
 4. Importe a revisão. O comando valida o arquivo e salva as confirmações. Se houver erro, corrija o campo indicado e repita; o rascunho anterior fica preservado. Se a revisão já foi salva, exporte um arquivo novo antes de fazer outros ajustes.
 
    ```powershell
-   uv run mandatometro edicao revisar 1 --arquivo C:\Users\renan\Documents\mandatometro-revisoes\edicao-2026-11-15.json
+   uv run mandatometro edicao revisar 1 --arquivo "$HOME\Documents\mandatometro-revisoes\edicao-2026-11-15.json"
    ```
 
 5. Leia a prévia completa, com fatos, fontes e link da trilha, no formato de texto do e-mail. Não redirecione essa saída para o log do job. A prévia admite `APP_BASE_URL` local; envio real exige HTTPS.
@@ -278,7 +278,7 @@ Prepare uma pasta **fora do repositório**, por exemplo `C:\Users\renan\Document
    uv run mandatometro edicao publicar 1
    ```
 
-A seleção agrupa votações pelas proposições ligadas na fonte, unindo os grupos que se conectam, dentro da mesma Casa. Primeiro vêm os grupos com placar registrado; depois, os demais. Em cada parte, a ordem é data mais recente, Casa e menor id externo da proposição principal. O teto padrão é oito grupos, ajustável por `--teto N`. O resumo lista ids e quantidades de votações sem proposição, sem página pública e cortadas pelo teto. Licença, afastamento ou saúde, com suas flexões, só excluem o ato quando ligados a parlamentar na mesma frase (até seis palavras entre termo e sinal), ou em requerimento sem citação de outra proposição numerada. O nome da Casa não conta como ligação; políticas públicas sobre esses temas ficam. Por privacidade, a regra geral de licença das próprias parlamentares também sai. Essas exclusões mostram **só a quantidade**, sem ids. Não se deduz o vínculo pelo prefixo do id da votação.
+A seleção agrupa votações pelas proposições ligadas na fonte, unindo os grupos que se conectam, dentro da mesma Casa. Primeiro vêm os grupos com placar registrado; depois, os demais. Em cada parte, a ordem é data mais recente, Casa e menor id externo da proposição principal. O teto padrão é oito grupos, ajustável por `--teto N`. O resumo lista ids e quantidades de votações sem proposição, sem página pública e cortadas pelo teto. Licença, afastamento ou saúde, com suas flexões, excluem o ato quando ligados a parlamentar na mesma frase (até seis palavras entre termo e sinal). Requerimento sem essa ligação só sai por licença ou afastamento, sem citação de outra proposição numerada, por sigla ou por extenso; saúde sozinha não basta. O nome da Casa não conta como ligação. Por privacidade, a regra geral de licença das próprias parlamentares também sai. Essas exclusões mostram **só a quantidade**, sem ids. Não se deduz o vínculo pelo prefixo do id da votação.
 
 O item aponta para a fonte da votação mais recente do grupo (desempate pelo id externo numérico); sem página pública nessa fonte, usa a ficha de uma proposição ligada àquela votação. Sem nenhuma dessas páginas, a votação sai. Todas as referências usadas ficam preservadas, com data da coleta e trecho quando disponível. O placar conta Sim, Não, Abstenções e Obstruções por votação, com Presidência à parte; ausência e valores não classificados ficam de fora. Sem placar gravado, o texto informa a indisponibilidade, sem concluir que foi votação secreta ou simbólica nem mostrar zero. O resultado `outro` informa que o resultado não está classificado. Aprovação de requerimento, recurso ou destaque não significa aprovação da proposta.
 
