@@ -7,10 +7,14 @@ from typing import Protocol
 from pydantic import ValidationError
 
 from mandatometro.ia.esquemas import Redacao
-from mandatometro.ia.privacidade import identificacao
+from mandatometro.ia.privacidade import TERMO_PESSOAL, identificacao, normalizar
 from mandatometro.ia.selecao import ItemBase
 
 PENDENTE = "Redação pendente: explique o ato votado e o que a proposta prevê."
+AVISO_TERMO_PESSOAL = (
+    "O texto oficial fala de licença, afastamento ou saúde. Confira se é de uma pessoa; "
+    "se for, exclua o item com excluir: true."
+)
 REGRAS = (
     "Escreva título e explicação em parágrafos curtos, em português brasileiro simples. "
     "Seja neutro e apartidário, sem adjetivar pessoas ou organizações. "
@@ -48,7 +52,18 @@ def _codigo(item: ItemBase, motivo: str) -> TextoGerado:
     return TextoGerado(titulo, PENDENTE, "codigo", motivo)
 
 
+def requer_conferencia_pessoal(item: ItemBase) -> bool:
+    # Inclui a ementa de todo vínculo, mesmo o requerimento fora das matérias principais.
+    return any(
+        TERMO_PESSOAL.search(normalizar(texto))
+        for votacao in item.votacoes
+        for texto in [votacao.descricao, *(p.ementa or "" for p in votacao.proposicoes)]
+    )
+
+
 def redigir(item: ItemBase, nomes: list[str], redator: Redator | None) -> TextoGerado:
+    if requer_conferencia_pessoal(item):
+        return _codigo(item, "termo_pessoal")
     textos = [v.descricao for v in item.votacoes] + [p.ementa or "" for p in item.proposicoes]
     if any(identificacao(texto, nomes) for texto in textos):
         return _codigo(item, "texto_retido")

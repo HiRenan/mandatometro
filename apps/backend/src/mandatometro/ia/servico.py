@@ -18,7 +18,13 @@ from mandatometro.db.modelos import Edicao, Fonte, ItemEdicao
 from mandatometro.ia.artigos import CATALOGO, sugerir
 from mandatometro.ia.esquemas import Estrito, Fatos, Id
 from mandatometro.ia.privacidade import assunto_pessoal, identificacao, normalizar
-from mandatometro.ia.redacao import PENDENTE, Redator, redigir
+from mandatometro.ia.redacao import (
+    AVISO_TERMO_PESSOAL,
+    PENDENTE,
+    Redator,
+    redigir,
+    requer_conferencia_pessoal,
+)
 from mandatometro.ia.selecao import ItemBase, selecionar
 
 AbrirSessao = Callable[[], Session]
@@ -188,6 +194,9 @@ def gerar(
         versao = _hash(anterior) if anterior else None
         selecao = selecionar(sessao, inicio, fim, teto=teto)
     resumo = asdict(selecao.resumo)
+    resumo["itens_com_termo_pessoal"] = sum(
+        requer_conferencia_pessoal(item) for item in selecao.itens
+    )
     for campo in ("sem_proposicao", "sem_pagina_publica", "cortadas_pelo_teto"):
         resumo[f"quantidade_{campo}"] = len(resumo[campo])
     if not selecao.itens:
@@ -278,6 +287,11 @@ def _arquivo(sessao: Session, edicao: Edicao, bases: dict[int, ItemBase]) -> dic
                     for i in fatos.fontes
                 ],
                 "contexto": {
+                    **(
+                        {"avisos": [AVISO_TERMO_PESSOAL]}
+                        if requer_conferencia_pessoal(base)
+                        else {}
+                    ),
                     "proposicoes": [
                         {
                             "id": p.id,
@@ -411,6 +425,8 @@ def revisar(abrir: AbrirSessao, edicao_id: int, dados: dict) -> dict:
                 if not revisao.motivo_exclusao.strip():
                     raise ErroEdicao(f"Item {numero}: preencha o motivo da exclusão.")
                 continue
+            if requer_conferencia_pessoal(base):
+                avisos.append(f"Confira o item {numero}: {AVISO_TERMO_PESSOAL}")
             numeros = _numeros_permitidos(base, edicao)
             numeros_edicao.update(numeros)
             texto = "\n\n".join(p.strip() for p in revisao.explicacao)

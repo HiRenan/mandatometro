@@ -47,8 +47,8 @@ def test_politica_publica_nao_e_assunto_pessoal(abrir, dados, ementa):
     resultado = gerar(abrir, INICIO, FIM, redator=falso)
     assert resultado["assunto_pessoal"] == 0
     assert resultado["itens"] == 1
-    assert len(falso.entradas) == 1
-    assert ementa in json.dumps(falso.entradas, ensure_ascii=False)
+    assert falso.entradas == []
+    assert resultado["itens_com_termo_pessoal"] == 1
     edicao_id = resultado["edicao_id"]
     arquivo = pronto(exportar(abrir, edicao_id))
     assert arquivo["itens"][0]["contexto"]["proposicoes"][0]["ementa"] == ementa
@@ -150,8 +150,8 @@ def test_requerimento_publico_chega_a_redacao_exportacao_e_revisao(
     resultado = gerar(abrir, INICIO, FIM, redator=falso)
     assert resultado["assunto_pessoal"] == 0
     assert resultado["itens"] == 1
-    assert len(falso.entradas) == 1
-    assert texto in json.dumps(falso.entradas, ensure_ascii=False)
+    assert falso.entradas == []
+    assert resultado["itens_com_termo_pessoal"] == 1
     edicao_id = resultado["edicao_id"]
     arquivo = pronto(exportar(abrir, edicao_id))
     assert texto in json.dumps(arquivo, ensure_ascii=False)

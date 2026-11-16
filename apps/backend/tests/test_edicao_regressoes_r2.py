@@ -58,7 +58,8 @@ def test_fluxo_da_fonte_ate_revisao(abrir, dados, texto, pessoal, sigla, campo):
         p["numero"] == 100 for item in arquivo["itens"] for p in item["contexto"]["proposicoes"]
     )
     assert presente is not pessoal
-    assert (texto in json.dumps(falso.entradas, ensure_ascii=False)) is not pessoal
+    assert texto not in json.dumps(falso.entradas, ensure_ascii=False)
+    assert len(falso.entradas) == 1  # Só o outro item, sem termos da família.
     assert resultado["assunto_pessoal"] == int(pessoal)
     if pessoal:
         assert "100-1" not in json.dumps(resultado)
