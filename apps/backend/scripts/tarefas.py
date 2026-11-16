@@ -84,7 +84,13 @@ def enviar() -> int:
         hoje = datetime.now(ZoneInfo("America/Sao_Paulo")).date()
         segunda = hoje - timedelta(days=hoje.weekday())
         argumentos += ["--publicada-desde", segunda.isoformat()]
-    return cli(argumentos) or 0
+    # O Actions é público: nem logs de bibliotecas podem expor dados do inscrito ou exceções.
+    anterior = logging.root.manager.disable
+    logging.disable(logging.CRITICAL)
+    try:
+        return cli(argumentos) or 0
+    finally:
+        logging.disable(anterior)
 
 
 def main(argv: list[str] | None = None) -> int:
