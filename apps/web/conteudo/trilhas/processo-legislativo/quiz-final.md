@@ -32,17 +32,23 @@ perguntas:
         url: https://www2.camara.leg.br/atividade-legislativa/legislacao/regimento-interno-da-camara-dos-deputados
         consultadoEm: 2026-11-16
   - artigo: onde-o-projeto-comeca
-    enunciado: O presidente da República apresenta um projeto de lei. Por qual Casa ele começa?
+    enunciado: O presidente da República apresenta um projeto de lei para mudar uma regra de trânsito. Por qual Casa ele começa?
     opcoes:
       - texto: Pela Câmara dos Deputados.
         certa: true
       - texto: Pelo Senado Federal.
       - texto: Por uma sessão conjunta das duas Casas.
       - texto: Pela Casa que o presidente escolher.
-    explicacao: "Pela Constituição, os projetos do presidente da República, do Supremo Tribunal Federal e dos tribunais superiores começam na Câmara dos Deputados (art. 64). Depois, o projeto segue para o Senado, que faz a revisão."
+    explicacao: "Pela Constituição, os projetos do presidente da República, do Supremo Tribunal Federal e dos tribunais superiores começam na Câmara dos Deputados (art. 64). Depois, o projeto segue para o Senado, que faz a revisão. A exceção são os projetos do orçamento, que o presidente também envia ao Congresso: eles passam por uma comissão mista, de deputados e senadores (art. 166), e são votados em sessão conjunta das duas Casas (Regimento Comum, art. 1º)."
     fontes:
       - titulo: Constituição Federal, art. 64
         url: https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art64
+        consultadoEm: 2026-11-16
+      - titulo: Constituição Federal, art. 166
+        url: https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art166
+        consultadoEm: 2026-11-16
+      - titulo: Regimento Comum do Congresso Nacional, art. 1º, texto compilado pelo Senado
+        url: https://www25.senado.leg.br/documents/59501/97171143/RCCN.pdf/933b504d-a653-4df5-9329-d4f38c42f64f
         consultadoEm: 2026-11-16
       - titulo: Câmara dos Deputados, Entenda o processo legislativo
         url: https://www.camara.leg.br/entenda-o-processo-legislativo/
