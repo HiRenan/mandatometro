@@ -1,0 +1,29 @@
+{
+  "dados": [
+    {
+      "id": 178843,
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/deputados/178843",
+      "nome": "Marx Beltrão",
+      "siglaPartido": "UNIÃO",
+      "uriPartido": "https://dadosabertos.camara.leg.br/api/v2/partidos/38009",
+      "siglaUf": "AL",
+      "idLegislatura": 57,
+      "urlFoto": "https://www.camara.leg.br/internet/deputado/bandep/178843.jpg",
+      "email": "parlamentar@example.com"
+    }
+  ],
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://dadosabertos.camara.leg.br/api/v2/deputados?id=178843&itens=2"
+    },
+    {
+      "rel": "first",
+      "href": "https://dadosabertos.camara.leg.br/api/v2/deputados?id=178843&pagina=1&itens=2"
+    },
+    {
+      "rel": "last",
+      "href": "https://dadosabertos.camara.leg.br/api/v2/deputados?id=178843&pagina=1&itens=2"
+    }
+  ]
+}

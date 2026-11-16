@@ -8,6 +8,8 @@ import argparse
 import json
 from pathlib import Path
 
+from mandatometro.coleta import camara
+
 
 def _openapi(args: argparse.Namespace) -> None:
     from mandatometro.api.app import app
@@ -31,6 +33,7 @@ def main(argv: list[str] | None = None) -> int:
     coleta = comandos.add_parser("coleta", help="coleta os dados oficiais do Congresso")
     casas = coleta.add_subparsers(dest="casa")
     casas.required = True
+    camara.registrar_comando(casas)
 
     args = parser.parse_args(argv)
     return args.rodar(args) or 0
