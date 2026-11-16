@@ -51,6 +51,7 @@ function Folha({
 	anterior,
 	proximo,
 	quiz,
+	quizFinal,
 }: ArtigoNaTrilha) {
 	const id = idDoArtigo(artigo);
 	const lidos = useArtigosLidos();
@@ -190,6 +191,16 @@ function Folha({
 							<ChamadaDoQuiz
 								trilha={trilha.slug}
 								quiz={quiz}
+								className="revelar"
+							/>
+						)}
+
+						{/* Só no último artigo: o quiz final vem depois dele. */}
+						{quizFinal && (
+							<ChamadaDoQuiz
+								trilha={trilha.slug}
+								quiz={quizFinal}
+								final
 								className="revelar"
 							/>
 						)}

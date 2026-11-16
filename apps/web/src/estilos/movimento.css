@@ -151,8 +151,33 @@
 		transition-delay: 200ms;
 	}
 
-	.chamada-azulejos .grande:nth-child(n + 6) {
+	/* A chamada do quiz final tem doze azulejos, e a fila vai até o último. */
+	.chamada-azulejos .grande:nth-child(6) {
 		transition-delay: 250ms;
+	}
+
+	.chamada-azulejos .grande:nth-child(7) {
+		transition-delay: 300ms;
+	}
+
+	.chamada-azulejos .grande:nth-child(8) {
+		transition-delay: 350ms;
+	}
+
+	.chamada-azulejos .grande:nth-child(9) {
+		transition-delay: 400ms;
+	}
+
+	.chamada-azulejos .grande:nth-child(10) {
+		transition-delay: 450ms;
+	}
+
+	.chamada-azulejos .grande:nth-child(11) {
+		transition-delay: 500ms;
+	}
+
+	.chamada-azulejos .grande:nth-child(n + 12) {
+		transition-delay: 550ms;
 	}
 
 	/*

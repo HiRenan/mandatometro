@@ -1412,7 +1412,11 @@
 		}
 	}
 
-	/* A chamada do quiz: uma folha com seis azulejos, um por pergunta. */
+	/*
+	 * A chamada do quiz: uma folha com um azulejo por pergunta, seis no quiz da
+	 * trilha e doze no quiz final. Na coluna ao lado do texto, eles vão em três
+	 * colunas, ou quatro com mais de seis (o --colunas, de lib/quiz.ts).
+	 */
 	.chamada-quiz {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
@@ -1465,7 +1469,7 @@
 		}
 
 		.chamada-azulejos {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
+			grid-template-columns: repeat(var(--colunas, 3), minmax(0, 1fr));
 		}
 	}
 

@@ -52,8 +52,10 @@
 	 * a migalha, o título, a tela da vez e, no pé, o andamento.
 	 *
 	 * O mosaico tem a largura da capa (--capa) e, nas perguntas, encolhe até o
-	 * canto de cima (--canto é a largura que sobra dele ali). As fileiras dele
-	 * (--fileiras) vêm do número de perguntas, três por fileira.
+	 * canto de cima (--canto é a largura que sobra dele ali). As colunas
+	 * (--colunas) e as fileiras (--fileiras) dele vêm do número de perguntas:
+	 * três por fileira, ou quatro com mais de seis, como as doze do quiz final
+	 * (o colunasDoMosaico, em lib/quiz.ts).
 	 */
 	.quiz {
 		--alto: clamp(0.75rem, 2vw, 1.5rem);
@@ -85,7 +87,7 @@
 		top: 0;
 		right: 0;
 		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-columns: repeat(var(--colunas, 3), minmax(0, 1fr));
 		gap: 2px;
 		width: var(--capa);
 		transform-origin: 100% 0;
@@ -757,13 +759,23 @@
 		}
 
 		.quiz:is([data-fase="pergunta"], [data-fase="resposta"]) .quiz-titulo {
-			min-height: calc(var(--canto) / 3 * var(--fileiras, 2) - 2rem);
+			min-height: calc(
+				var(--canto) /
+				var(--colunas, 3) *
+				var(--fileiras, 2) -
+				2rem
+			);
 		}
 
 		/* Na abertura e no fim, o mosaico fica inteiro embaixo da migalha, e o
 		   título desce para baixo dele. */
 		.quiz:is([data-fase="abertura"], [data-fase="fim"]) .quiz-titulo {
-			padding-top: calc(var(--capa) / 3 * var(--fileiras, 2) + 1rem);
+			padding-top: calc(
+				var(--capa) /
+				var(--colunas, 3) *
+				var(--fileiras, 2) +
+				1rem
+			);
 		}
 
 		/* O pé fica mais baixo, para tomar pouco da tela do celular. */
@@ -798,7 +810,8 @@
 		/*
 		 * O mosaico fica grande no meio do papel, à direita; respondida a pergunta,
 		 * ele se recolhe no canto de cima, e a folha da resposta toma o lugar. A
-		 * largura dá peças de pixel inteiro.
+		 * largura dá peças de pixel inteiro: tirados os vãos de 2 px, ela se
+		 * divide por 2 px em cada coluna.
 		 */
 		.quiz {
 			--capa: min(34vw, 30rem);
@@ -812,7 +825,11 @@
 		.mosaico {
 			top: calc(50svh - 3.25rem);
 			right: var(--margem);
-			width: calc(round(down, var(--capa) - 4px, 6px) + 4px);
+			--vaos: calc((var(--colunas, 3) - 1) * 2px);
+			width: calc(
+				round(down, var(--capa) - var(--vaos), var(--colunas, 3) * 2px) +
+				var(--vaos)
+			);
 			translate: 0 -50%;
 		}
 

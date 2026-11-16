@@ -964,6 +964,75 @@ describe("o quiz", () => {
 	});
 });
 
+describe("o quiz final", () => {
+	const QUIZ_FINAL = "processo-legislativo/quiz-final";
+
+	/** O quiz final, com o JavaScript já carregado: a abertura. */
+	async function mostrarOQuizFinal(
+		conteudo: ReactNode = (
+			<Quiz {...pagina} titulo="Quiz final" quiz={QUIZ_FINAL} />
+		),
+	) {
+		render(<RouterProvider router={criarRouter(conteudo)} />);
+		await screen.findByRole("heading", { level: 1, name: "Quiz final" });
+	}
+
+	it("tem o título dele e guarda as respostas à parte das do quiz da trilha", async () => {
+		await mostrarOQuizFinal();
+
+		comecar();
+		escolherEResponder("Pode, pela iniciativa popular.");
+
+		const guardado = JSON.parse(localStorage.getItem(CHAVE) ?? "{}");
+		expect(guardado[QUIZ_FINAL]).toEqual({
+			tentativas: [
+				{ respostas: { [INICIATIVA]: "Pode, pela iniciativa popular." } },
+			],
+		});
+		expect(guardado).not.toHaveProperty("processo-legislativo/quiz");
+	});
+
+	it("não conta as respostas do quiz da trilha", async () => {
+		guardarRespostas(AS_DUAS);
+		await mostrarOQuizFinal();
+
+		expect(botaoDeComecar().textContent?.trim()).toBe("Começar");
+		expect(
+			screen.queryByRole("button", { name: "Recomeçar o quiz" }),
+		).toBeNull();
+	});
+
+	// O mosaico tem a largura da capa (estilos/quiz.css): com doze perguntas, em
+	// três colunas, ele ficaria alto demais na primeira tela do celular.
+	it("com mais de seis perguntas, põe o mosaico em quatro colunas", async () => {
+		const doze = Array.from({ length: 12 }, (_, indice) => ({
+			...pagina.perguntas[indice % 2],
+			enunciado: `Pergunta de número ${indice + 1}?`,
+		}));
+		await mostrarOQuizFinal(
+			<Quiz
+				{...pagina}
+				perguntas={doze}
+				titulo="Quiz final"
+				quiz={QUIZ_FINAL}
+			/>,
+		);
+		const palco = document.querySelector<HTMLElement>("section.quiz");
+
+		expect(document.querySelectorAll(".quiz-cena .grande")).toHaveLength(12);
+		expect(palco?.style.getPropertyValue("--colunas")).toBe("4");
+		expect(palco?.style.getPropertyValue("--fileiras")).toBe("3");
+	});
+
+	it("com seis perguntas ou menos, deixa o mosaico em três colunas", async () => {
+		await mostrarOQuizFinal();
+		const palco = document.querySelector<HTMLElement>("section.quiz");
+
+		expect(palco?.style.getPropertyValue("--colunas")).toBe("3");
+		expect(palco?.style.getPropertyValue("--fileiras")).toBe("1");
+	});
+});
+
 describe("a chamada do quiz", () => {
 	it("diz quantas perguntas e de quais artigos, e leva à página do quiz", async () => {
 		render(
@@ -995,5 +1064,43 @@ describe("a chamada do quiz", () => {
 		const azulejos = chamada.querySelector(".chamada-azulejos");
 		expect(azulejos?.getAttribute("aria-hidden")).toBe("true");
 		expect(azulejos?.children).toHaveLength(6);
+	});
+
+	// Na página da trilha, as duas chamadas ficam uma embaixo da outra, e cada
+	// região tem o nome do próprio título.
+	it("chama para o quiz final, com o título dele, um azulejo por pergunta e o link para a página dele", async () => {
+		render(
+			<RouterProvider
+				router={criarRouter(
+					<>
+						<ChamadaDoQuiz
+							trilha="processo-legislativo"
+							quiz={{ perguntas: 6, artigos: [1, 2, 3] }}
+						/>
+						<ChamadaDoQuiz
+							trilha="processo-legislativo"
+							quiz={{ perguntas: 12, artigos: [1, 2, 3, 4, 5, 6] }}
+							final
+						/>
+					</>,
+				)}
+			/>,
+		);
+		const chamada = await screen.findByRole("region", { name: "Quiz final" });
+
+		expect(screen.getByRole("region", { name: "Quiz da trilha" })).toBeTruthy();
+		expect(
+			within(chamada).getByText(
+				"12 perguntas sobre os artigos 1 a 6, com a resposta certa, a explicação e a fonte oficial de cada uma.",
+			),
+		).toBeTruthy();
+		expect(
+			within(chamada)
+				.getByRole("link", { name: "Responder o quiz final" })
+				.getAttribute("href"),
+		).toBe("/trilhas/processo-legislativo/quiz-final");
+		const azulejos = chamada.querySelector<HTMLElement>(".chamada-azulejos");
+		expect(azulejos?.children).toHaveLength(12);
+		expect(azulejos?.style.getPropertyValue("--colunas")).toBe("4");
 	});
 });

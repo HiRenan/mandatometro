@@ -226,8 +226,9 @@ const quizSchema = z.strictObject({
 	perguntas,
 });
 
-// O quiz final: perguntas sobre a trilha toda, depois do último artigo. O site
-// ainda não o mostra (a tela é da #92), mas o leitor já confere as perguntas.
+// O quiz final: perguntas sobre a trilha toda, depois do último artigo. No
+// piloto, as mesmas perguntas medem quanto a pessoa acerta antes e depois de
+// ler a trilha (docs/medicao-do-piloto.md).
 const quizFinalSchema = z.strictObject({ perguntas });
 
 export type Fonte = z.output<typeof fonteSchema>;
@@ -265,10 +266,7 @@ export type Trilha = {
 	infografico?: Infografico;
 	/** As perguntas sobre os artigos lidos, quando a trilha tem um quiz.md. */
 	quiz?: Quiz;
-	/**
-	 * As perguntas sobre a trilha toda, quando ela tem um quiz-final.md. Nenhuma
-	 * página as leva ao navegador ainda: a tela do quiz final é da #92.
-	 */
+	/** As perguntas sobre a trilha toda, quando ela tem um quiz-final.md. */
 	quizFinal?: QuizFinal;
 };
 

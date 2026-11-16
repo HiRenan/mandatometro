@@ -27,7 +27,11 @@ import {
 	useArtigosLidos,
 } from "@/lib/progresso";
 import { contarRespondidas } from "@/lib/quiz";
-import { idDoQuiz, useRespostasDoQuiz } from "@/lib/respostas-do-quiz";
+import {
+	idDoQuiz,
+	idDoQuizFinal,
+	useRespostasDoQuiz,
+} from "@/lib/respostas-do-quiz";
 
 export const Route = createFileRoute("/trilhas/$trilha/")({
 	loader: ({ params }) => buscarTrilha({ data: { trilha: params.trilha } }),
@@ -40,11 +44,12 @@ export const Route = createFileRoute("/trilhas/$trilha/")({
 });
 
 // Os textos do botão de continuar: o da primeira visita, o de quem já leu algum
-// artigo da trilha e os da trilha terminada. Ela leva ao quiz e, com o quiz
-// respondido ou numa trilha sem quiz, às outras trilhas.
+// artigo da trilha e os da trilha terminada. Ela leva ao quiz, depois ao quiz
+// final e, com os dois respondidos ou numa trilha sem quiz, às outras trilhas.
 const COMECAR = "Começar pelo primeiro artigo";
 const continuarEm = (titulo: string) => `Continuar de onde parou: ${titulo}`;
 const RESPONDER_O_QUIZ = "Responder o quiz da trilha";
+const RESPONDER_O_QUIZ_FINAL = "Responder o quiz final";
 const VER_AS_TRILHAS = "Ver as outras trilhas";
 
 /**
@@ -68,6 +73,7 @@ function PaginaDaTrilha() {
 	const trilha = Route.useLoaderData();
 	const lidos = useArtigosLidos();
 	const respostas = useRespostasDoQuiz(idDoQuiz(trilha.slug));
+	const doQuizFinal = useRespostasDoQuiz(idDoQuizFinal(trilha.slug));
 	// As marcas que o "Recomeçar a trilha" apagou, para o "Desfazer". Valem até a
 	// pessoa sair da página.
 	const [apagadas, setApagadas] = useState<string[] | null>(null);
@@ -80,18 +86,24 @@ function PaginaDaTrilha() {
 		0,
 	);
 	// Com a trilha terminada, o botão leva ao quiz enquanto falta alguma resposta,
-	// contada como na página do quiz.
+	// contada como na página do quiz, e depois ao quiz final, do mesmo jeito.
 	const faltaOQuiz =
 		trilha.quiz !== undefined &&
 		contarRespondidas(trilha.quiz.perguntasSemACerta, respostas) <
 			trilha.quiz.perguntasSemACerta.length;
+	const faltaOQuizFinal =
+		trilha.quizFinal !== undefined &&
+		contarRespondidas(trilha.quizFinal.perguntasSemACerta, doQuizFinal) <
+			trilha.quizFinal.perguntasSemACerta.length;
 	// Os textos que o botão de continuar pode ter nesta trilha: o servidor manda
 	// o primeiro, e o navegador troca pelo do artigo em que a pessoa parou ou,
-	// com a trilha terminada, pelo do quiz ou o das outras trilhas.
+	// com a trilha terminada, pelo do quiz, o do quiz final ou o das outras
+	// trilhas.
 	const textosDoBotao = [
 		COMECAR,
 		...trilha.artigos.map((artigo) => continuarEm(artigo.titulo)),
 		...(trilha.quiz ? [RESPONDER_O_QUIZ] : []),
+		...(trilha.quizFinal ? [RESPONDER_O_QUIZ_FINAL] : []),
 		VER_AS_TRILHAS,
 	];
 	const progresso =
@@ -195,6 +207,14 @@ function PaginaDaTrilha() {
 								>
 									<ComSeta>{RESPONDER_O_QUIZ}</ComSeta>
 								</Link>
+							) : faltaOQuizFinal ? (
+								<Link
+									to="/trilhas/$trilha/quiz-final"
+									params={{ trilha: trilha.slug }}
+									className={BOTAO_CONTINUAR}
+								>
+									<ComSeta>{RESPONDER_O_QUIZ_FINAL}</ComSeta>
+								</Link>
 							) : (
 								<Link to="/trilhas" className={BOTAO_CONTINUAR}>
 									<ComSeta>{VER_AS_TRILHAS}</ComSeta>
@@ -272,6 +292,14 @@ function PaginaDaTrilha() {
 					<ChamadaDoQuiz
 						trilha={trilha.slug}
 						quiz={trilha.quiz}
+						className="revelar"
+					/>
+				)}
+				{trilha.quizFinal && (
+					<ChamadaDoQuiz
+						trilha={trilha.slug}
+						quiz={trilha.quizFinal}
+						final
 						className="revelar"
 					/>
 				)}

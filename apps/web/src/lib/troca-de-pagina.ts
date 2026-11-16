@@ -3,9 +3,10 @@
  * relógio em cada peça; quem volta vê o giro ao contrário. As páginas ficam em
  * ordem, como as folhas de um bloco: a inicial em cima, depois a lista das
  * trilhas, cada trilha e os artigos dela, com o quiz no lugar dele entre os
- * artigos. Aqui ficam o sentido de cada troca, que o router passa ao navegador
- * como tipo da View Transition (router.tsx), o clique feito durante a troca e a
- * troca que o navegador pula. O movimento fica em estilos/movimento.css.
+ * artigos e o quiz final depois do último. Aqui ficam o sentido de cada troca,
+ * que o router passa ao navegador como tipo da View Transition (router.tsx), o
+ * clique feito durante a troca e a troca que o navegador pula. O movimento fica
+ * em estilos/movimento.css.
  */
 
 export type Sentido = "avancar" | "voltar";
@@ -20,6 +21,9 @@ export type TrilhaAberta = {
 
 /** O fim do endereço do quiz de uma trilha: /trilhas/{trilha}/quiz. */
 const QUIZ = "quiz";
+
+/** O fim do endereço do quiz final, que vem depois do último artigo. */
+const QUIZ_FINAL = "quiz-final";
 
 /** O que o router diz de cada troca (o `locationChangeInfo` do TanStack Router). */
 export type Troca = {
@@ -49,9 +53,10 @@ function lugarNoBloco(caminho: string): Lugar {
 /**
  * Ir mais para dentro do bloco, ou para um artigo mais adiante na mesma trilha,
  * é avançar; o contrário é voltar. O quiz fica entre o artigo depois do qual
- * aparece e o seguinte: do quiz para o "Artigo anterior" é voltar. O botão
- * voltar do navegador segue a mesma regra: o que vale é o lugar da página no
- * bloco, e não a ordem da visita. Sem a ordem da trilha, duas páginas dela
+ * aparece e o seguinte: do quiz para o "Artigo anterior" é voltar. O quiz
+ * final fica depois do último artigo, e dele para qualquer artigo é voltar. O
+ * botão voltar do navegador segue a mesma regra: o que vale é o lugar da página
+ * no bloco, e não a ordem da visita. Sem a ordem da trilha, duas páginas dela
  * contam como avançar.
  */
 export function sentidoDaTroca(
@@ -74,6 +79,9 @@ export function sentidoDaTroca(
 		const doArtigo = (slug: string) =>
 			trilhaAberta.artigos.findIndex((artigo) => artigo.slug === slug);
 		const posicao = (slug: string) => {
+			if (slug === QUIZ_FINAL) {
+				return trilhaAberta.artigos.length - 0.5;
+			}
 			if (slug !== QUIZ) {
 				return doArtigo(slug);
 			}
@@ -124,9 +132,9 @@ export function tiposDaTroca(
 }
 
 /**
- * A trilha do artigo ou do quiz que está na tela, pelos dados que o router já
- * carregou para a página, para comparar a posição de duas páginas da trilha.
- * Fora de um artigo e do quiz, não há.
+ * A trilha do artigo, do quiz ou do quiz final que está na tela, pelos dados
+ * que o router já carregou para a página, para comparar a posição de duas
+ * páginas da trilha. Fora deles, não há.
  */
 export function trilhaDaPaginaAberta(
 	matches: ReadonlyArray<{ routeId: string; loaderData?: unknown }>,
@@ -134,9 +142,10 @@ export function trilhaDaPaginaAberta(
 	const daPagina = matches.find(
 		(match) =>
 			match.routeId === "/trilhas/$trilha/$artigo" ||
-			match.routeId === "/trilhas/$trilha/quiz",
+			match.routeId === "/trilhas/$trilha/quiz" ||
+			match.routeId === "/trilhas/$trilha/quiz-final",
 	);
-	// Os dois loaders devolvem a trilha como nas listas (lib/conteudo), com os
+	// Os três loaders devolvem a trilha como nas listas (lib/conteudo), com os
 	// artigos na ordem e o lugar do quiz.
 	return (daPagina?.loaderData as { trilha?: TrilhaAberta } | undefined)
 		?.trilha;

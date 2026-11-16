@@ -34,6 +34,11 @@ export function idDoQuiz(trilha: string): string {
 	return `${trilha}/quiz`;
 }
 
+/** O quiz final guarda as respostas à parte das do quiz da trilha. */
+export function idDoQuizFinal(trilha: string): string {
+	return `${trilha}/quiz-final`;
+}
+
 function lerBruto(): string | null {
 	if (emMemoria !== null) {
 		return emMemoria;

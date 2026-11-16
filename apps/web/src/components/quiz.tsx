@@ -19,6 +19,7 @@ import { movimentoReduzido, virar } from "@/lib/painel-vivo";
 import {
 	acertou,
 	avisoDaResposta,
+	colunasDoMosaico,
 	contarRespondidas,
 	FRASE_DO_RECOMECO,
 	fraseDoAndamento,
@@ -113,12 +114,24 @@ function Reservas({ frases }: { frases: readonly string[] }) {
 }
 
 /**
- * O quiz da trilha, a página inteira: o palco, com a abertura, as perguntas e
- * o fim, e, embaixo, o artigo anterior e o próximo. A resposta fica só no
- * navegador (lib/respostas-do-quiz.ts): responder não faz requisição nenhuma.
+ * O quiz da trilha ou o quiz final, a página inteira: o palco, com a abertura,
+ * as perguntas e o fim, e, embaixo, o artigo anterior e o próximo. A resposta
+ * fica só no navegador (lib/respostas-do-quiz.ts): responder não faz
+ * requisição nenhuma.
  */
-export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
-	const quiz = idDoQuiz(trilha.slug);
+export function Quiz({
+	trilha,
+	anterior,
+	proximo,
+	perguntas,
+	titulo = "Quiz da trilha",
+	quiz = idDoQuiz(trilha.slug),
+}: QuizNaPagina & {
+	/** O título da página: o do quiz da trilha ou o do quiz final. */
+	titulo?: string;
+	/** Onde o navegador guarda as respostas (lib/respostas-do-quiz.ts). */
+	quiz?: string;
+}) {
 	const respostas = useRespostasDoQuiz(quiz);
 	const hidratado = useHidratado();
 	const { aviso, avisar } = useAviso();
@@ -144,6 +157,7 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 	const foco = useRef<keyof typeof TITULOS>(undefined);
 
 	const total = perguntas.length;
+	const colunas = colunasDoMosaico(total);
 	const respondidas = contarRespondidas(perguntas, respostas);
 	const pergunta = perguntas[atual];
 	const respondida = opcaoRespondida(pergunta, respostas);
@@ -379,7 +393,12 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 				data-fase={naResposta ? "resposta" : tela}
 				data-saindo={saindo || undefined}
 				data-resultado={naResposta ? (certa ? "certa" : "errada") : undefined}
-				style={{ "--fileiras": Math.ceil(total / 3) } as CSSProperties}
+				style={
+					{
+						"--colunas": colunas,
+						"--fileiras": Math.ceil(total / colunas),
+					} as CSSProperties
+				}
 			>
 				<Caminho trilha={trilha} />
 				{/* O mosaico: um azulejo por pergunta, na ordem delas. É só desenho, e
@@ -405,13 +424,14 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 				</div>
 
 				{/* Na abertura, o título é gigante; nas outras telas, vira a etiqueta do
-				    alto (estilos/quiz.css). Com a letra grande, ele cresce até "TRILHA"
-				    encostar nas margens (o letra-com-teto do index.css). */}
+				    alto (estilos/quiz.css). Com a letra grande, ele cresce até "TRILHA",
+				    a palavra mais larga dos títulos dos quizzes, encostar nas margens
+				    (o letra-com-teto do index.css). */}
 				<h1
 					id="quiz-titulo"
 					className="quiz-titulo titulo-condensado letra-com-teto [--palavra:2.74]"
 				>
-					Quiz da trilha
+					{titulo}
 				</h1>
 
 				<div className="quiz-palco">

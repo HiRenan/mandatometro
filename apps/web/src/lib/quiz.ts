@@ -84,6 +84,15 @@ export function avisoDaResposta(
 		: `Pergunta ${numero}: você errou. A resposta certa é: ${pergunta.opcoes[pergunta.certa]}`;
 }
 
+/**
+ * As colunas do mosaico de um quiz, que tem um azulejo por pergunta: três até
+ * seis perguntas e quatro com mais, para o mosaico do quiz final, de doze, não
+ * ficar alto demais na primeira tela do celular.
+ */
+export function colunasDoMosaico(perguntas: number): number {
+	return perguntas > 6 ? 4 : 3;
+}
+
 /** "o artigo 1", "os artigos 2 e 3", "os artigos 1, 2 e 4", "os artigos 1 a 3". */
 function quaisArtigos(posicoes: readonly number[]): string {
 	const artigos = [...new Set(posicoes)].sort((a, b) => a - b);

@@ -5,6 +5,7 @@ export {
 	buscarArtigo,
 	buscarInicio,
 	buscarQuiz,
+	buscarQuizFinal,
 	buscarTrilha,
 	buscarTrilhas,
 } from "./paginas.functions";
@@ -13,6 +14,7 @@ export type {
 	ArtigoNaTrilha,
 	CaminhoNaInicial,
 	ChamadaDoQuiz,
+	ChamadaNaTrilha,
 	PaginaInicial,
 	PerguntaNaPagina,
 	PerguntaSemACerta,
