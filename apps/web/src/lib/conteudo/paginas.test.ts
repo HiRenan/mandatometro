@@ -125,6 +125,31 @@ describe("conteúdo das trilhas", () => {
 		).toEqual([undefined, undefined, chamada, undefined, undefined, undefined]);
 	});
 
+	it("tem o quiz final do processo legislativo, com duas perguntas de cada artigo, na ordem da trilha", () => {
+		const trilha = trilhaDe("processo-legislativo");
+		const posicoes = trilha.quizFinal?.perguntas.map(
+			(pergunta) =>
+				trilha.artigos.findIndex((artigo) => artigo.slug === pergunta.artigo) +
+				1,
+		);
+
+		expect(posicoes).toEqual([1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6]);
+	});
+
+	it("não repete no quiz final uma pergunta do quiz do meio", () => {
+		const trilha = trilhaDe("processo-legislativo");
+		const doMeio = new Set(
+			trilha.quiz?.perguntas.map((pergunta) => pergunta.enunciado),
+		);
+
+		expect(trilha.quizFinal?.perguntas.length).toBeGreaterThan(0);
+		expect(
+			trilha.quizFinal?.perguntas.filter((pergunta) =>
+				doMeio.has(pergunta.enunciado),
+			),
+		).toEqual([]);
+	});
+
 	it("não acha trilha nem artigo que não existe", () => {
 		const artigo = trilhas[0].artigos[0].slug;
 
@@ -152,6 +177,29 @@ describe("o que vai para o navegador", () => {
 		]) {
 			for (const outro of naLista.artigos) {
 				expect(outro).not.toHaveProperty("corpo");
+			}
+		}
+	});
+
+	it("não leva as perguntas do quiz final do processo legislativo a nenhuma página", () => {
+		const trilha = trilhaDe("processo-legislativo");
+		const enunciados =
+			trilha.quizFinal?.perguntas.map((pergunta) => pergunta.enunciado) ?? [];
+		const paginas = [
+			...listarTrilhas(trilhas),
+			inicio(trilhas),
+			acharTrilha(trilhas, trilha.slug),
+			...trilha.artigos.map((artigo) =>
+				acharArtigo(trilhas, trilha.slug, artigo.slug),
+			),
+			acharQuiz(trilhas, trilha.slug),
+		];
+
+		expect(enunciados).toHaveLength(12);
+		for (const pagina of paginas) {
+			const json = JSON.stringify(pagina);
+			for (const enunciado of enunciados) {
+				expect(json).not.toContain(enunciado);
 			}
 		}
 	});
