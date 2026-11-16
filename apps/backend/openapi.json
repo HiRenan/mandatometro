@@ -166,6 +166,96 @@
         }
       }
     },
+    "/piloto/tentativas": {
+      "post": {
+        "tags": [
+          "piloto"
+        ],
+        "summary": "Receber a primeira conclusão de uma etapa do piloto",
+        "description": "O mesmo código nas duas etapas permite parear resultados; códigos diferentes permitem apenas médias independentes. Reenvios não alteram a primeira conclusão. Novo e repetido recebem a mesma resposta, sem revelar acertos ou existência anterior.",
+        "operationId": "registrar_tentativa_piloto",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PedidoTentativaPiloto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoTentativaPiloto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Piloto desabilitado, sem gravação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPiloto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que 2 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPiloto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos, sem repetir a entrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPiloto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Cota global por minuto atingida.",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos para tentar novamente.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPiloto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Operação no banco não confirmada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPiloto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -208,6 +298,26 @@
         ],
         "title": "ErroNewsletter"
       },
+      "ErroPiloto": {
+        "properties": {
+          "erro": {
+            "type": "string",
+            "enum": [
+              "dados_invalidos",
+              "corpo_muito_grande",
+              "limite_de_tentativas",
+              "servico_indisponivel",
+              "piloto_encerrado"
+            ],
+            "title": "Erro"
+          }
+        },
+        "type": "object",
+        "required": [
+          "erro"
+        ],
+        "title": "ErroPiloto"
+      },
       "PedidoInscricao": {
         "properties": {
           "email": {
@@ -224,6 +334,44 @@
           "email"
         ],
         "title": "PedidoInscricao"
+      },
+      "PedidoTentativaPiloto": {
+        "properties": {
+          "participacao": {
+            "type": "string",
+            "format": "uuid4",
+            "title": "Participacao",
+            "description": "Código aleatório do piloto, sem relação com conta."
+          },
+          "versao_quiz": {
+            "type": "string",
+            "const": "processo-legislativo-final-v1",
+            "title": "Versao Quiz"
+          },
+          "etapa": {
+            "type": "string",
+            "enum": [
+              "antes",
+              "depois"
+            ],
+            "title": "Etapa"
+          },
+          "acertos": {
+            "type": "integer",
+            "maximum": 12.0,
+            "minimum": 0.0,
+            "title": "Acertos"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "participacao",
+          "versao_quiz",
+          "etapa",
+          "acertos"
+        ],
+        "title": "PedidoTentativaPiloto"
       },
       "ResultadoInscricao": {
         "properties": {
@@ -242,6 +390,20 @@
           "situacao"
         ],
         "title": "ResultadoInscricao"
+      },
+      "ResultadoTentativaPiloto": {
+        "properties": {
+          "situacao": {
+            "type": "string",
+            "const": "recebida",
+            "title": "Situacao"
+          }
+        },
+        "type": "object",
+        "required": [
+          "situacao"
+        ],
+        "title": "ResultadoTentativaPiloto"
       },
       "Saude": {
         "properties": {

@@ -15,6 +15,16 @@ export type ErroNewsletter = {
 };
 
 /**
+ * ErroPiloto
+ */
+export type ErroPiloto = {
+    /**
+     * Erro
+     */
+    erro: 'dados_invalidos' | 'corpo_muito_grande' | 'limite_de_tentativas' | 'servico_indisponivel' | 'piloto_encerrado';
+};
+
+/**
  * PedidoInscricao
  */
 export type PedidoInscricao = {
@@ -27,6 +37,30 @@ export type PedidoInscricao = {
 };
 
 /**
+ * PedidoTentativaPiloto
+ */
+export type PedidoTentativaPiloto = {
+    /**
+     * Participacao
+     *
+     * Código aleatório do piloto, sem relação com conta.
+     */
+    participacao: string;
+    /**
+     * Versao Quiz
+     */
+    versao_quiz: 'processo-legislativo-final-v1';
+    /**
+     * Etapa
+     */
+    etapa: 'antes' | 'depois';
+    /**
+     * Acertos
+     */
+    acertos: number;
+};
+
+/**
  * ResultadoInscricao
  */
 export type ResultadoInscricao = {
@@ -34,6 +68,16 @@ export type ResultadoInscricao = {
      * Situacao
      */
     situacao: 'edicao_enviada' | 'aguardando_edicao' | 'envio_indisponivel';
+};
+
+/**
+ * ResultadoTentativaPiloto
+ */
+export type ResultadoTentativaPiloto = {
+    /**
+     * Situacao
+     */
+    situacao: 'recebida';
 };
 
 /**
@@ -135,6 +179,47 @@ export type SairDaNewsletterResponses = {
      */
     200: unknown;
 };
+
+export type RegistrarTentativaPilotoData = {
+    body: PedidoTentativaPiloto;
+    path?: never;
+    query?: never;
+    url: '/piloto/tentativas';
+};
+
+export type RegistrarTentativaPilotoErrors = {
+    /**
+     * Piloto desabilitado, sem gravação.
+     */
+    410: ErroPiloto;
+    /**
+     * Corpo maior que 2 KiB.
+     */
+    413: ErroPiloto;
+    /**
+     * Dados inválidos, sem repetir a entrada.
+     */
+    422: ErroPiloto;
+    /**
+     * Cota global por minuto atingida.
+     */
+    429: ErroPiloto;
+    /**
+     * Operação no banco não confirmada.
+     */
+    503: ErroPiloto;
+};
+
+export type RegistrarTentativaPilotoError = RegistrarTentativaPilotoErrors[keyof RegistrarTentativaPilotoErrors];
+
+export type RegistrarTentativaPilotoResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResultadoTentativaPiloto;
+};
+
+export type RegistrarTentativaPilotoResponse = RegistrarTentativaPilotoResponses[keyof RegistrarTentativaPilotoResponses];
 
 export type HealthData = {
     body?: never;

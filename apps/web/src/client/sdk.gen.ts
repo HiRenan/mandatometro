@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AbrirSaidaData, AbrirSaidaErrors, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses } from './types.gen';
+import type { AbrirSaidaData, AbrirSaidaErrors, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -43,6 +43,20 @@ export const abrirSaida = <ThrowOnError extends boolean = false>(options: Option
  * POST idempotente, sem autenticação ou corpo obrigatório. Aceita RFC 8058 e a confirmação no site; o corpo é ignorado. Código desconhecido também recebe 200 vazio.
  */
 export const sairDaNewsletter = <ThrowOnError extends boolean = false>(options: Options<SairDaNewsletterData, ThrowOnError>): RequestResult<SairDaNewsletterResponses, SairDaNewsletterErrors, ThrowOnError> => (options.client ?? client).post<SairDaNewsletterResponses, SairDaNewsletterErrors, ThrowOnError>({ url: '/newsletter/saida/{codigo_saida}', ...options });
+
+/**
+ * Receber a primeira conclusão de uma etapa do piloto
+ *
+ * O mesmo código nas duas etapas permite parear resultados; códigos diferentes permitem apenas médias independentes. Reenvios não alteram a primeira conclusão. Novo e repetido recebem a mesma resposta, sem revelar acertos ou existência anterior.
+ */
+export const registrarTentativaPiloto = <ThrowOnError extends boolean = false>(options: Options<RegistrarTentativaPilotoData, ThrowOnError>): RequestResult<RegistrarTentativaPilotoResponses, RegistrarTentativaPilotoErrors, ThrowOnError> => (options.client ?? client).post<RegistrarTentativaPilotoResponses, RegistrarTentativaPilotoErrors, ThrowOnError>({
+    url: '/piloto/tentativas',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Health
