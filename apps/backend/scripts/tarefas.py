@@ -4,10 +4,13 @@ O preparo da migration usa só a biblioteca padrão, antes de instalar dependên
 A regra de coleta continua no CLI; este arquivo só adapta a execução ao Actions.
 """
 
+import json
 import logging
 import os
 import sys
+from datetime import datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 BACKEND = Path(__file__).resolve().parents[1]
 
@@ -57,19 +60,57 @@ def migrar() -> int:
     return 0
 
 
+def enviar() -> int:
+    from mandatometro.cli import main as cli
+
+    simular = os.environ.get("ENVIO_SIMULAR", "false")
+    if simular not in {"true", "false"}:
+        print(json.dumps({"argumentos_invalidos": 1}))
+        return 2
+    obrigatorias = ["DATABASE_URL"]
+    if simular == "false":
+        obrigatorias += ["RESEND_API_KEY", "RESEND_FROM", "APP_BASE_URL", "API_URL"]
+    if any(not os.environ.get(nome, "").strip() for nome in obrigatorias):
+        print(json.dumps({"configuracao_invalida": 1}))
+        return 2
+    argumentos = ["edicao", "enviar"]
+    if edicao := os.environ.get("ENVIO_EDICAO_ID"):
+        argumentos.append(edicao)
+    if limite := os.environ.get("ENVIO_LIMITE"):
+        argumentos += ["--limite", limite]
+    if simular == "true":
+        argumentos.append("--simular")
+    if os.environ.get("GITHUB_EVENT_NAME") == "schedule":
+        hoje = datetime.now(ZoneInfo("America/Sao_Paulo")).date()
+        segunda = hoje - timedelta(days=hoje.weekday())
+        argumentos += ["--publicada-desde", segunda.isoformat()]
+    # O Actions é público: nem logs de bibliotecas podem expor dados do inscrito ou exceções.
+    anterior = logging.root.manager.disable
+    logging.disable(logging.CRITICAL)
+    try:
+        return cli(argumentos) or 0
+    finally:
+        logging.disable(anterior)
+
+
 def main(argv: list[str] | None = None) -> int:
     argumentos = sys.argv[1:] if argv is None else argv
     try:
+        if argumentos == ["enviar"]:
+            return enviar()
         if argumentos == ["preparar-migration"]:
             return preparar_migration()
         if argumentos not in (["migrar"], ["coletar", "camara"], ["coletar", "senado"]):
-            print("::error::Tarefa inválida. Use migrar ou coletar camara/senado.")
+            print("::error::Tarefa inválida. Use migrar, enviar ou coletar camara/senado.")
             return 2
         if not os.environ.get("DATABASE_URL", "").strip():
             print("::error::Defina DATABASE_URL; a tarefa não usa o banco local por padrão.")
             return 2
         return migrar() if argumentos == ["migrar"] else coletar(argumentos[1])
     except Exception:
+        if argumentos == ["enviar"]:
+            print(json.dumps({"falhas_gerais": 1}))
+            return 1
         # Erros de configuração, driver ou Alembic podem carregar credenciais/SQL.
         print("::error::A tarefa falhou. Confira a configuração e o banco; detalhes omitidos.")
         return 1

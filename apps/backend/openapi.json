@@ -166,6 +166,135 @@
         }
       }
     },
+    "/edicoes": {
+      "get": {
+        "tags": [
+          "edicoes"
+        ],
+        "summary": "Listar as edições publicadas",
+        "operationId": "listar_edicoes",
+        "parameters": [
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limite"
+            }
+          },
+          {
+            "name": "deslocamento",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Deslocamento"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaEdicoes"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroEdicaoPublica"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroEdicaoPublica"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/edicoes/{id}": {
+      "get": {
+        "tags": [
+          "edicoes"
+        ],
+        "summary": "Ler uma edição publicada com fatos, fontes e artigos da trilha",
+        "operationId": "obter_edicao",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EdicaoPublica"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroEdicaoPublica"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroEdicaoPublica"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroEdicaoPublica"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/piloto/tentativas": {
       "post": {
         "tags": [
@@ -280,6 +409,86 @@
   },
   "components": {
     "schemas": {
+      "ArtigoDaEdicao": {
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "caminho": {
+            "type": "string",
+            "title": "Caminho"
+          }
+        },
+        "type": "object",
+        "required": [
+          "titulo",
+          "caminho"
+        ],
+        "title": "ArtigoDaEdicao"
+      },
+      "EdicaoPublica": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "inicio": {
+            "type": "string",
+            "format": "date",
+            "title": "Inicio"
+          },
+          "fim": {
+            "type": "string",
+            "format": "date",
+            "title": "Fim"
+          },
+          "publicada_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Publicada Em"
+          },
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/ItemPublico"
+            },
+            "type": "array",
+            "title": "Itens"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "titulo",
+          "inicio",
+          "fim",
+          "publicada_em",
+          "itens"
+        ],
+        "title": "EdicaoPublica"
+      },
+      "ErroEdicaoPublica": {
+        "properties": {
+          "erro": {
+            "type": "string",
+            "enum": [
+              "dados_invalidos",
+              "edicao_nao_encontrada",
+              "servico_indisponivel"
+            ],
+            "title": "Erro"
+          }
+        },
+        "type": "object",
+        "required": [
+          "erro"
+        ],
+        "title": "ErroEdicaoPublica"
+      },
       "ErroNewsletter": {
         "properties": {
           "erro": {
@@ -317,6 +526,137 @@
           "erro"
         ],
         "title": "ErroPiloto"
+      },
+      "FatosPublicos": {
+        "properties": {
+          "votacoes": {
+            "items": {
+              "$ref": "#/components/schemas/VotacaoPublica"
+            },
+            "type": "array",
+            "title": "Votacoes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "votacoes"
+        ],
+        "title": "FatosPublicos"
+      },
+      "FontePublica": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "coletado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Coletado Em"
+          },
+          "trecho": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trecho"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "coletado_em",
+          "trecho"
+        ],
+        "title": "FontePublica"
+      },
+      "ItemPublico": {
+        "properties": {
+          "ordem": {
+            "type": "integer",
+            "title": "Ordem"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "texto": {
+            "type": "string",
+            "title": "Texto"
+          },
+          "fatos": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FatosPublicos"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fontes": {
+            "items": {
+              "$ref": "#/components/schemas/FontePublica"
+            },
+            "type": "array",
+            "title": "Fontes"
+          },
+          "artigo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArtigoDaEdicao"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "ordem",
+          "titulo",
+          "texto",
+          "fatos",
+          "fontes",
+          "artigo"
+        ],
+        "title": "ItemPublico"
+      },
+      "ListaEdicoes": {
+        "properties": {
+          "edicoes": {
+            "items": {
+              "$ref": "#/components/schemas/ResumoEdicao"
+            },
+            "type": "array",
+            "title": "Edicoes"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limite": {
+            "type": "integer",
+            "title": "Limite"
+          },
+          "deslocamento": {
+            "type": "integer",
+            "title": "Deslocamento"
+          }
+        },
+        "type": "object",
+        "required": [
+          "edicoes",
+          "total",
+          "limite",
+          "deslocamento"
+        ],
+        "title": "ListaEdicoes"
       },
       "PedidoInscricao": {
         "properties": {
@@ -373,6 +713,39 @@
         ],
         "title": "PedidoTentativaPiloto"
       },
+      "PlacarPublico": {
+        "properties": {
+          "sim": {
+            "type": "integer",
+            "title": "Sim"
+          },
+          "nao": {
+            "type": "integer",
+            "title": "Nao"
+          },
+          "abstencao": {
+            "type": "integer",
+            "title": "Abstencao"
+          },
+          "obstrucao": {
+            "type": "integer",
+            "title": "Obstrucao"
+          },
+          "presidente": {
+            "type": "integer",
+            "title": "Presidente"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sim",
+          "nao",
+          "abstencao",
+          "obstrucao",
+          "presidente"
+        ],
+        "title": "PlacarPublico"
+      },
       "ResultadoInscricao": {
         "properties": {
           "situacao": {
@@ -405,6 +778,42 @@
         ],
         "title": "ResultadoTentativaPiloto"
       },
+      "ResumoEdicao": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "inicio": {
+            "type": "string",
+            "format": "date",
+            "title": "Inicio"
+          },
+          "fim": {
+            "type": "string",
+            "format": "date",
+            "title": "Fim"
+          },
+          "publicada_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Publicada Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "titulo",
+          "inicio",
+          "fim",
+          "publicada_em"
+        ],
+        "title": "ResumoEdicao"
+      },
       "Saude": {
         "properties": {
           "status": {
@@ -417,6 +826,49 @@
           "status"
         ],
         "title": "Saude"
+      },
+      "VotacaoPublica": {
+        "properties": {
+          "data": {
+            "type": "string",
+            "format": "date",
+            "title": "Data"
+          },
+          "resultado": {
+            "type": "string",
+            "enum": [
+              "aprovada",
+              "rejeitada",
+              "outro"
+            ],
+            "title": "Resultado"
+          },
+          "placar": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlacarPublico"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fontes": {
+            "items": {
+              "$ref": "#/components/schemas/FontePublica"
+            },
+            "type": "array",
+            "title": "Fontes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "resultado",
+          "placar",
+          "fontes"
+        ],
+        "title": "VotacaoPublica"
       }
     }
   }

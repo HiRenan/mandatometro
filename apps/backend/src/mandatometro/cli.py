@@ -6,8 +6,10 @@ rodam à mão ou agendados, gravando no banco que a API lê.
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
+from mandatometro.avisos.cli import ParserEnvio
 from mandatometro.coleta import camara
 from mandatometro.coleta.senado import registrar as registrar_senado
 from mandatometro.ia import cli as edicao
@@ -24,7 +26,9 @@ def _openapi(args: argparse.Namespace) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="mandatometro", description="Mandatômetro: backend.")
+    argumentos = sys.argv[1:] if argv is None else argv
+    tipo_parser = ParserEnvio if argumentos[:2] == ["edicao", "enviar"] else argparse.ArgumentParser
+    parser = tipo_parser(prog="mandatometro", description="Mandatômetro: backend.")
     comandos = parser.add_subparsers(dest="comando", required=True)
 
     openapi = comandos.add_parser(
@@ -41,5 +45,5 @@ def main(argv: list[str] | None = None) -> int:
     edicao.registrar_comando(comandos)
     registrar_piloto(comandos)
 
-    args = parser.parse_args(argv)
+    args = parser.parse_args(argumentos)
     return args.rodar(args) or 0

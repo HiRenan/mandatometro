@@ -4,6 +4,7 @@ import json
 import logging
 import runpy
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -131,3 +132,141 @@ def test_migration_usa_head_e_configuracao_do_projeto(tarefa, monkeypatch):
     configuracao, revisao = chamadas[0]
     assert revisao == "head"
     assert Path(configuracao.toml_file_name) == SCRIPT.parents[1] / "pyproject.toml"
+
+
+def test_envio_agendado_filtra_semana_no_fuso_de_brasilia(tarefa, monkeypatch):
+    from datetime import UTC, date, datetime
+
+    class Relogio:
+        @classmethod
+        def now(cls, fuso):
+            # Segunda em UTC ainda é domingo em Brasília.
+            return datetime(2026, 11, 23, 1, tzinfo=UTC).astimezone(fuso)
+
+    monkeypatch.setitem(tarefa.__globals__, "datetime", Relogio)
+
+    for nome in ("DATABASE_URL", "RESEND_API_KEY", "RESEND_FROM", "APP_BASE_URL", "API_URL"):
+        monkeypatch.setenv(nome, "ficticio")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "schedule")
+    recebidos = []
+    monkeypatch.setattr("mandatometro.cli.main", lambda args: recebidos.extend(args))
+    assert tarefa(["enviar"]) == 0
+    assert recebidos[:2] == ["edicao", "enviar"]
+    indice = recebidos.index("--publicada-desde")
+    segunda = date.fromisoformat(recebidos[indice + 1])
+    assert segunda == date(2026, 11, 16)
+    assert "--simular" not in recebidos
+
+
+def test_envio_manual_simulado_sem_chave_mantem_id_limite_e_saida(tarefa, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "ficticio")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
+    monkeypatch.setenv("ENVIO_EDICAO_ID", "7")
+    monkeypatch.setenv("ENVIO_LIMITE", "30")
+    monkeypatch.setenv("ENVIO_SIMULAR", "true")
+    monkeypatch.delenv("RESEND_API_KEY", raising=False)
+    recebidos = []
+
+    def cli(args):
+        recebidos.extend(args)
+        return 1
+
+    monkeypatch.setattr("mandatometro.cli.main", cli)
+    assert tarefa(["enviar"]) == 1
+    assert recebidos == ["edicao", "enviar", "7", "--limite", "30", "--simular"]
+
+
+def test_envio_real_sem_configuracao_falha_sem_abrir_banco(tarefa, monkeypatch, capsys):
+    monkeypatch.setenv("DATABASE_URL", "ficticio")
+    monkeypatch.setenv("ENVIO_SIMULAR", "false")
+    monkeypatch.delenv("RESEND_API_KEY", raising=False)
+    monkeypatch.setattr("mandatometro.cli.main", lambda _: pytest.fail("abriu banco"))
+    assert tarefa(["enviar"]) == 2
+    assert json.loads(capsys.readouterr().out) == {"configuracao_invalida": 1}
+
+
+@pytest.mark.parametrize("anterior", [logging.NOTSET, logging.ERROR])
+@pytest.mark.parametrize("resultado", ["concluido", "parcial", "excecao"])
+def test_envio_no_actions_mostra_so_json_e_restaura_logging(
+    tarefa, monkeypatch, capsys, caplog, anterior, resultado
+):
+    from mandatometro.avisos import cli
+
+    for nome in ("DATABASE_URL", "RESEND_API_KEY", "RESEND_FROM", "APP_BASE_URL", "API_URL"):
+        monkeypatch.setenv(nome, "ficticio")
+    monkeypatch.setenv("ENVIO_SIMULAR", "false")
+    monkeypatch.setattr(cli, "engine", lambda: None)
+    monkeypatch.setattr(
+        cli,
+        "config",
+        lambda: SimpleNamespace(
+            resend_api_key=None,
+            resend_from=None,
+            app_base_url="https://site.example.com",
+            api_url="https://api.example.com",
+        ),
+    )
+    resumo = {"edicao_id": 7, "aceitos_nesta_execucao": 1, "faltam": int(resultado == "parcial")}
+    codigo = int(resultado != "concluido")
+    privado = (
+        "pessoa@example.com codigo=398e2288-0bda-4e47-a7e5-b8fc41f4e962 "
+        "<p>Corpo ficticio da mensagem</p>"
+    )
+
+    async def enviar(*args, **kwargs):
+        # Mesmo uma biblioteca registrando conteúdo ou exceção não pode publicá-los no Actions.
+        logging.getLogger("httpx2").info('HTTP Request: POST https://api.resend.com/emails "200"')
+        for nome in ("sqlalchemy.engine.Engine", "psycopg", "mandatometro.avisos.resend"):
+            try:
+                raise RuntimeError(privado)
+            except RuntimeError:
+                logging.getLogger(nome).critical("Falha: %s", privado, exc_info=True)
+        if resultado == "excecao":
+            raise RuntimeError(privado)
+        return resumo, codigo
+
+    monkeypatch.setattr(cli, "enviar_edicao", enviar)
+    caplog.set_level(logging.INFO)
+    original = logging.root.manager.disable
+    logging.disable(anterior)
+    try:
+        assert tarefa(["enviar"]) == codigo
+        assert logging.root.manager.disable == anterior
+    finally:
+        logging.disable(original)
+    saida = capsys.readouterr()
+    assert len(saida.out.splitlines()) == 1
+    assert json.loads(saida.out) == ({"falhas_gerais": 1} if resultado == "excecao" else resumo)
+    assert saida.err == ""
+    assert caplog.records == []
+
+
+@pytest.mark.parametrize("falha_no_parser", [False, True])
+def test_envio_no_actions_restaura_logging_quando_cli_interrompe(
+    tarefa, monkeypatch, capsys, caplog, falha_no_parser
+):
+    monkeypatch.setenv("DATABASE_URL", "ficticio")
+    monkeypatch.setenv("ENVIO_SIMULAR", "true")
+    if falha_no_parser:
+        monkeypatch.setenv("ENVIO_EDICAO_ID", "pessoa@example.com")
+    else:
+
+        def falhar(_):
+            logging.getLogger("psycopg").error("pessoa@example.com excecao-ficticia")
+            raise RuntimeError("pessoa@example.com excecao-ficticia")
+
+        monkeypatch.setattr("mandatometro.cli.main", falhar)
+    anterior = logging.root.manager.disable
+    if falha_no_parser:
+        with pytest.raises(SystemExit) as erro:
+            tarefa(["enviar"])
+        assert erro.value.code == 2
+    else:
+        assert tarefa(["enviar"]) == 1
+    assert logging.root.manager.disable == anterior
+    saida = capsys.readouterr()
+    assert json.loads(saida.out) == {
+        "argumentos_invalidos" if falha_no_parser else "falhas_gerais": 1
+    }
+    assert saida.err == ""
+    assert caplog.records == []

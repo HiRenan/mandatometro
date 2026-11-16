@@ -1,0 +1,67 @@
+name: Enviar edição
+
+on:
+  schedule:
+    # Domingo, 10h37 de Brasília, depois da revisão e publicação humanas.
+    - cron: "37 13 * * 0"
+  workflow_dispatch:
+    inputs:
+      edicao_id:
+        description: "Edição publicada; vazio usa a mais recente"
+        required: false
+        type: string
+      simular:
+        description: "Somente conferir e contar, sem enviar"
+        default: true
+        type: boolean
+      limite:
+        description: "Máximo de destinatários tentados; vazio tenta todos os pendentes"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ (github.event_name == 'schedule' || github.ref == 'refs/heads/main') && 'banco-producao' || 'banco-desenvolvimento' }}
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  enviar:
+    if: >-
+      ${{ (github.event_name == 'schedule' && vars.ENVIOS_ATIVOS == 'true') ||
+          (github.event_name == 'workflow_dispatch' &&
+          (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ (github.event_name == 'schedule' || github.ref == 'refs/heads/main') && 'producao' || 'desenvolvimento' }}
+    defaults:
+      run:
+        working-directory: apps/backend
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      RESEND_FROM: ${{ vars.RESEND_FROM }}
+      APP_BASE_URL: ${{ vars.APP_BASE_URL }}
+      API_URL: ${{ vars.API_URL }}
+      ENVIO_EDICAO_ID: ${{ inputs.edicao_id }}
+      ENVIO_LIMITE: ${{ inputs.limite }}
+      ENVIO_SIMULAR: ${{ github.event_name == 'workflow_dispatch' && inputs.simular && 'true' || 'false' }}
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'schedule' && 'main' || github.sha }}
+          persist-credentials: false
+      - name: Registrar o código executado
+        run: git rev-parse HEAD
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.7"
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: apps/backend/uv.lock
+      - run: uv sync --locked --no-dev
+      - name: Enviar somente aos inscritos pendentes
+        run: uv run --no-sync python scripts/tarefas.py enviar

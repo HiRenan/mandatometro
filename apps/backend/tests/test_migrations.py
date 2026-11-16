@@ -149,3 +149,58 @@ def test_fatos_e_artigo_sao_opcionais_e_preservam_item_antigo(engine_de_teste, a
         with engine_de_teste.begin() as c:
             c.execute(text("delete from edicao where id=:id"), {"id": edicao})
             c.execute(text("delete from fonte where id=:id"), {"id": fonte})
+
+
+def test_ultima_edicao_preserva_inscrito_antigo_e_codigo_anterior(engine_de_teste, alembic):
+    alembic("downgrade", "0006")
+    with engine_de_teste.begin() as c:
+        antes = c.execute(
+            text(
+                "insert into inscrito (email) values ('migracao@example.com')"
+                " returning id, codigo_saida, inscrito_em"
+            )
+        ).one()
+    try:
+        alembic("upgrade", "head")
+        colunas = {c["name"]: c for c in inspect(engine_de_teste).get_columns("inscrito")}
+        assert colunas["ultima_edicao_enviada_id"]["nullable"]
+        with engine_de_teste.begin() as c:
+            depois = c.execute(
+                text(
+                    "select id, codigo_saida, inscrito_em, ultima_edicao_enviada_id"
+                    " from inscrito where id=:id"
+                ),
+                {"id": antes.id},
+            ).one()
+            assert tuple(depois) == (*antes, None)
+            # O INSERT do código anterior continua válido durante a troca de versões.
+            assert (
+                c.execute(
+                    text(
+                        "insert into inscrito (email) values ('versao-anterior@example.com')"
+                        " returning ultima_edicao_enviada_id"
+                    )
+                ).scalar_one()
+                is None
+            )
+        alembic("downgrade", "0006")
+        assert "ultima_edicao_enviada_id" not in {
+            c["name"] for c in inspect(engine_de_teste).get_columns("inscrito")
+        }
+        with engine_de_teste.connect() as c:
+            assert (
+                c.execute(
+                    text("select id, codigo_saida, inscrito_em from inscrito where id=:id"),
+                    {"id": antes.id},
+                ).one()
+                == antes
+            )
+    finally:
+        alembic("upgrade", "head")
+        with engine_de_teste.begin() as c:
+            c.execute(
+                text(
+                    "delete from inscrito where email in"
+                    " ('migracao@example.com', 'versao-anterior@example.com')"
+                )
+            )
