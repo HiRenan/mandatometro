@@ -2,7 +2,7 @@
 
 Respostas reais das APIs da Câmara e do Senado, gravadas para os testes de unidade rodarem offline, como o `AGENTS.md` pede. Os conectores (#10 e #11) leem estes arquivos em vez de chamar a rede.
 
-**Coletadas em:** 11/11/2026. O formato de cada campo está em [docs/dicionario-de-dados.md](../../../../docs/dicionario-de-dados.md).
+**Coletadas em:** 11/11/2026; os dois históricos de mandatos do Senado foram acrescentados em 16/11/2026. O formato de cada campo está em [docs/dicionario-de-dados.md](../../../../docs/dicionario-de-dados.md).
 
 ## De onde veio cada arquivo
 
@@ -18,6 +18,8 @@ Respostas reais das APIs da Câmara e do Senado, gravadas para os testes de unid
 | `senado/votacao-2026-11-03_2026-11-07.json` | `/votacao?dataInicio=2026-11-03&dataFim=2026-11-07` |
 | `senado/senador-lista-atual.json` | `/senador/lista/atual.json` — **motivos de afastamento trocados** |
 | `senado/processo-9006525.json` | `/processo/9006525` |
+| `senado/senador-5672-mandatos.json` | `/senador/5672/mandatos.json` — um mandato como objeto, sem causa de afastamento |
+| `senado/senador-4525-mandatos.json` | `/senador/4525/mandatos.json` — dois mandatos como lista, **todas as causas de afastamento trocadas** |
 
 Bases: `https://dadosabertos.camara.leg.br/api/v2` e `https://legis.senado.leg.br/dadosabertos`.
 
@@ -33,9 +35,9 @@ Em `senado/senador-lista-atual.json`, os 50 exercícios com motivo de afastament
 - `SiglaCausaAfastamento` virou `XXX`;
 - `DescricaoCausaAfastamento` virou `Motivo fictício`.
 
-Um teste em `tests/test_respostas_gravadas.py` confere essa troca: se a lista for gravada de novo sem ela, o CI falha.
+O histórico `senador-4525-mandatos.json` segue a mesma regra em todos os exercícios. Um teste em `tests/test_respostas_gravadas.py` percorre a lista e os históricos para conferir essa troca: se forem gravados de novo sem ela, o CI falha.
 
-Nenhum outro arquivo desta pasta traz campo pessoal. Ao gravar uma fixture nova de `/deputados/{id}` ou da lista de senadores, faça a mesma troca.
+Nenhum outro arquivo desta pasta traz campo pessoal. Ao gravar uma fixture nova de `/deputados/{id}`, da lista de senadores ou dos mandatos, faça a mesma troca. Ausências nos votos também precisam de sanitização: nunca grave uma licença real ligada ao parlamentar. Os testes do conector que exercitam ausências e códigos desconhecidos usam pessoas inventadas.
 
 ## Por que estes casos
 

@@ -1,0 +1,172 @@
+{
+  "MandatoParlamentar": {
+    "noNamespaceSchemaLocation": "https://legis.senado.leg.br/dadosabertos/dados/MandatoParlamentarv5.xsd",
+    "Metadados": {
+      "Versao": "16/11/2026 10:44:46",
+      "VersaoServico": "5",
+      "DataVersaoServico": "2021-09-09",
+      "DescricaoDataSet": "Retorna a relação dos Mandatos do Senador informado no parâmetro."
+    },
+    "Parlamentar": {
+      "Codigo": "4525",
+      "Nome": "Fernando Collor",
+      "Mandatos": {
+        "Mandato": [
+          {
+            "CodigoMandato": "511",
+            "UfParlamentar": "AL",
+            "PrimeiraLegislaturaDoMandato": {
+              "NumeroLegislatura": "55",
+              "DataInicio": "2015-02-01",
+              "DataFim": "2019-01-31"
+            },
+            "SegundaLegislaturaDoMandato": {
+              "NumeroLegislatura": "56",
+              "DataInicio": "2019-02-01",
+              "DataFim": "2023-01-31"
+            },
+            "DescricaoParticipacao": "Titular",
+            "Suplentes": {
+              "Suplente": [
+                {
+                  "DescricaoParticipacao": "1º Suplente",
+                  "CodigoParlamentar": "5561",
+                  "NomeParlamentar": "Renilde Bulhões"
+                },
+                {
+                  "DescricaoParticipacao": "2º Suplente",
+                  "CodigoParlamentar": "5563",
+                  "NomeParlamentar": "Severino Leão"
+                }
+              ]
+            },
+            "Exercicios": {
+              "Exercicio": [
+                {
+                  "CodigoExercicio": "2946",
+                  "DataInicio": "2019-08-01",
+                  "DataFim": "2023-01-31",
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
+                },
+                {
+                  "CodigoExercicio": "2756",
+                  "DataInicio": "2015-02-01",
+                  "DataFim": "2019-04-01",
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício",
+                  "DataLeitura": "2019-04-02"
+                }
+              ]
+            },
+            "Partidos": {
+              "Partido": [
+                {
+                  "CodigoPartido": "72",
+                  "Sigla": "PTB",
+                  "Nome": "Partido Trabalhista Brasileiro",
+                  "DataFiliacao": "2022-04-04"
+                },
+                {
+                  "CodigoPartido": "562",
+                  "Sigla": "PROS",
+                  "Nome": "Partido Republicano da Ordem Social",
+                  "DataFiliacao": "2019-02-01",
+                  "DataDesfiliacao": "2022-04-01"
+                },
+                {
+                  "CodigoPartido": "556",
+                  "Sigla": "PTC",
+                  "Nome": "Partido Trabalhista Cristão",
+                  "DataFiliacao": "2016-03-28",
+                  "DataDesfiliacao": "2019-01-31"
+                },
+                {
+                  "CodigoPartido": "72",
+                  "Sigla": "PTB",
+                  "Nome": "Partido Trabalhista Brasileiro",
+                  "DataFiliacao": "2007-02-06",
+                  "DataDesfiliacao": "2016-03-27"
+                }
+              ]
+            }
+          },
+          {
+            "CodigoMandato": "345",
+            "UfParlamentar": "AL",
+            "PrimeiraLegislaturaDoMandato": {
+              "NumeroLegislatura": "53",
+              "DataInicio": "2007-02-01",
+              "DataFim": "2011-01-31"
+            },
+            "SegundaLegislaturaDoMandato": {
+              "NumeroLegislatura": "54",
+              "DataInicio": "2011-02-01",
+              "DataFim": "2015-01-31"
+            },
+            "DescricaoParticipacao": "Titular",
+            "Suplentes": {
+              "Suplente": [
+                {
+                  "DescricaoParticipacao": "1º Suplente",
+                  "CodigoParlamentar": "4780",
+                  "NomeParlamentar": "Euclydes Mello"
+                },
+                {
+                  "DescricaoParticipacao": "2º Suplente",
+                  "CodigoParlamentar": "4815",
+                  "NomeParlamentar": "Ada Mello"
+                }
+              ]
+            },
+            "Exercicios": {
+              "Exercicio": [
+                {
+                  "CodigoExercicio": "2509",
+                  "DataInicio": "2009-01-11",
+                  "DataFim": "2015-01-31",
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício"
+                },
+                {
+                  "CodigoExercicio": "2487",
+                  "DataInicio": "2007-12-28",
+                  "DataFim": "2008-09-09",
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício",
+                  "DataLeitura": "2008-09-09"
+                },
+                {
+                  "CodigoExercicio": "2452",
+                  "DataInicio": "2007-02-01",
+                  "DataFim": "2007-08-29",
+                  "SiglaCausaAfastamento": "XXX",
+                  "DescricaoCausaAfastamento": "Motivo fictício",
+                  "DataLeitura": "2007-02-01"
+                }
+              ]
+            },
+            "Partidos": {
+              "Partido": [
+                {
+                  "CodigoPartido": "72",
+                  "Sigla": "PTB",
+                  "Nome": "Partido Trabalhista Brasileiro",
+                  "DataFiliacao": "2007-02-06",
+                  "DataDesfiliacao": "2016-03-27"
+                },
+                {
+                  "CodigoPartido": "154",
+                  "Sigla": "PRTB",
+                  "Nome": "Partido Renovador Trabalhista Brasileiro",
+                  "DataFiliacao": "2007-02-01",
+                  "DataDesfiliacao": "2007-02-05"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

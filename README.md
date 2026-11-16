@@ -189,6 +189,20 @@ TEST_DATABASE_URL=postgresql+psycopg://mandatometro:troque-esta-senha@localhost:
 
 Sem a variável, o pytest pula os testes de banco e diz o motivo. No CI, que sobe o próprio banco, eles falham.
 
+**Coleta do Senado**, em `apps/backend`, com o `DATABASE_URL` apontando explicitamente para o banco de coleta já migrado:
+
+```bash
+uv run mandatometro coleta senado --inicio 2026-11-09 --fim 2026-11-15
+uv run mandatometro coleta senado   # os sete dias completos anteriores, no fuso de Brasília
+```
+
+Informe as duas datas ou nenhuma. O comando coleta as votações nominais e secretas publicadas em `/votacao`, só das sessões do Senado, os votos individuais disponíveis e os senadores em exercício. As simbólicas e as sessões conjuntas do Congresso ficam de fora. Votações secretas ficam sem votos individuais; o modelo não guarda seus totais nem permite identificar com segurança a modalidade apenas pela ausência de votos.
+
+Repetir o período atualiza os registros sem duplicar parlamentar, mandato, matéria, votação ou voto; cada rodada cria novas fontes e preserva as antigas. A saída é uma linha JSON com contagens confirmadas, chamadas, tentativas extras, duração e falhas. Saída `0` indica execução completa, `1` indica coleta parcial e `2` indica datas inválidas. Falhas isoladas preservam as unidades anteriores e a coleta segue; três votações consecutivas com falha interrompem a execução. Se o histórico de um votante fora da lista atual falhar, seus votos ficam gravados, o mandato não é inventado e `falhas_parlamentares` conta o parlamentar uma vez.
+
+Um recurso apontado pela fonte que responda `404` ou `410` entra em `indisponiveis_na_fonte`, pelo caminho com seu id (por exemplo, `/processo/9006525`), sem causar saída `1` nem contar para as três falhas. Sem o processo, a votação é pulada; sem o histórico, os votos são preservados. As listagens principais continuam obrigatórias. Quem consumir o resumo deve conferir também essa lista: saída `0` não significa que a fonte publicou todos os detalhes.
+
+
 **No ar,** o site fica na Vercel, que monta a pasta `apps/web` a cada push, com a configuração de `apps/web/vercel.json`:
 
 - a `main` vai para https://mandatometro.com.br; a `develop`, para o endereço do time; e cada PR ganha uma prévia;

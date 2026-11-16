@@ -11,6 +11,7 @@ from collections import Counter
 from datetime import date, datetime
 from pathlib import Path
 
+import pytest
 from sqlalchemy import func, select
 
 from mandatometro.db.modelos import (
@@ -324,12 +325,15 @@ def _valores(dado, chave: str) -> list:
     return []
 
 
-def test_os_motivos_de_afastamento_dos_senadores_sao_ficticios():
+@pytest.mark.parametrize("caminho", sorted((FIXTURES / "senado").glob("senador-*.json")))
+def test_os_motivos_de_afastamento_dos_senadores_sao_ficticios(caminho):
     # Um motivo de afastamento pode ser de saúde: na lista gravada, todos levam o mesmo valor
     # fictício (README de tests/fixtures). Gravou a lista de novo? Refaça a troca.
-    lista = _ler("senado/senador-lista-atual.json")
+    lista = json.loads(caminho.read_text(encoding="utf-8"))
     siglas = _valores(lista, "SiglaCausaAfastamento")
     descricoes = _valores(lista, "DescricaoCausaAfastamento")
-    assert siglas and descricoes, "a lista gravada não tem os campos do motivo de afastamento"
-    assert set(siglas) == {"XXX"}
-    assert set(descricoes) == {"Motivo fictício"}
+    if caminho.name == "senador-lista-atual.json":
+        assert siglas and descricoes, "a lista gravada não tem os campos do motivo de afastamento"
+    assert len(siglas) == len(descricoes)
+    assert set(siglas) <= {"XXX"}
+    assert set(descricoes) <= {"Motivo fictício"}
