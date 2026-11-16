@@ -2,7 +2,7 @@
 
 O que cada API devolve, quais campos usamos e como os registros se ligam. É a referência do modelo de dados (#7) e dos conectores (#10 e #11).
 
-**Conferido em:** 11/11/2026, por chamada real a cada endpoint, e de novo em 16/11/2026, nas correções da revisão (#90). As respostas completas estão em [`apps/backend/tests/fixtures/`](../apps/backend/tests/fixtures/), e os testes offline leem de lá.
+**Conferido em:** 11/11/2026, por chamada real a cada endpoint, e de novo em 16/11/2026, nas correções da revisão (#90). As respostas completas estão em [`apps/backend/tests/fixtures/`](../apps/backend/tests/fixtures/), e os testes offline leem de lá. Faltam só a da lista de deputados e a do `mandatos.json`, que entram com a #10 e a #11.
 
 Bases, as duas sem chave de acesso:
 
@@ -15,7 +15,7 @@ O TSE entra depois do MVP, nas issues #12 e #13.
 
 Cada endpoint tem a URL que usamos, uma tabela de campos e um exemplo real recortado. Na coluna **Usamos**:
 
-- **sim** — vai para o banco e pode aparecer no site ou na newsletter;
+- **sim** — o conector usa o campo. O que fica no banco está em [Da API para os nomes do domínio](#da-api-para-os-nomes-do-domínio);
 - **chave** — id público da Câmara ou do Senado, que serve para casar os registros. Não é dado pessoal: pode ir a um log, como em "coletando a votação 2637478-26". A exceção é o aviso de código de voto desconhecido, que leva a votação, e não a pessoa nem o código (`AGENTS.md`, "Dados pessoais");
 - **só ligação, não exibir** — dado pessoal que serve só para ligar registros entre bases. No MVP, o conector não grava: a ligação por CPF só entra com o TSE, depois do MVP (#12 e #13). Quando entrar, fica no banco e nunca aparece na API, no site, nos logs nem nas respostas gravadas (ver [Campos pessoais](#campos-pessoais));
 - **não** — existe na resposta e não vamos usar agora.
@@ -39,7 +39,7 @@ As diferenças abaixo não são detalhe de implementação: elas mudam o desenho
 | Paginação | 100 itens por página, siga `links[rel=next]` | sem paginação nos endpoints que usamos |
 | Formato de data | `dataInicio=2026-11-03` | `dataInicio=2026-11-03` (**`20261103` devolve HTTP 400**) |
 | Quem aparece na lista de votos | **só quem votou** (429 de 513 deputados, no exemplo) | **todos os 81 senadores**, com o estado de cada um |
-| Totais de Sim/Não | não existem: conte os votos | os campos existem, mas **vêm `null`**: conte os votos |
+| Totais de Sim/Não | não existem: conte os votos | na votação aberta, **vêm `null`**: conte os votos. Na secreta, a lista traz `Votou`, sem Sim nem Não, e o placar só vem nos totais |
 | Resultado | `aprovacao`, inteiro `1`/`0` | `resultadoVotacao`, letra (`"A"` no exemplo) |
 | Orientação de bancada | `/votacoes/{id}/orientacoes` | não encontrada nos endpoints que usamos |
 
@@ -297,11 +297,11 @@ Devolve um **array JSON puro**, sem envelope. A semana de 03 a 07/11/2026 teve 4
 | `ementa` | texto | resumo da matéria | sim |
 | `descricaoVotacao` | texto | o que foi votado nesta votação | sim |
 | `dataSessao` | data | dia da sessão | sim |
-| `resultadoVotacao` | texto | letra; `"A"` nas quatro do exemplo | sim |
+| `resultadoVotacao` | texto | letra; `"A"` nas quatro do exemplo. Também vem `"R"`, de rejeitada: em 3 das 70 votações de 2026 até 15/11 | sim |
 | `votacaoSecreta` | texto | `"N"` ou `"S"` | sim |
-| `totalVotosSim` / `Nao` / `Abstencao` | inteiro | **vieram `null` nas quatro** | não |
+| `totalVotosSim` / `Nao` / `Abstencao` | inteiro | **vieram `null` nas quatro**, que eram abertas; na votação secreta, vêm preenchidos (ver abaixo) | não |
 | `votos[]` | lista | o estado de cada um dos 81 senadores | sim |
-| `codigoSessaoVotacao`, `sequencialVotacao` | inteiro | ids da votação, globais, crescentes e únicos: nas 7 votações de 14/10 a 03/11/2026, em três sessões, foram `7106` a `7112` e `4420` a `4426`. O `codigoSessaoVotacao` sozinho basta como id | chave |
+| `codigoSessaoVotacao`, `sequencialVotacao` | inteiro | ids da votação, globais e únicos: nas 7 votações de 14/10 a 03/11/2026, em três sessões, foram `7106` a `7112` e `4420` a `4426`. O `codigoSessaoVotacao` sozinho basta como id | chave |
 | `codigoSessao`, `sequencialSessao` | inteiro | a sessão e a ordem da votação dentro dela (`1`, `2`, `3`...) | não |
 | `informeLegislativo` | objeto | ata em texto livre; traz os totais em prosa | não |
 
@@ -341,9 +341,9 @@ Cada item de `votos[]`:
 
 Quatro coisas para o conector:
 
-- **Os totais vêm `null`.** Nas quatro votações do exemplo, `totalVotosSim`, `totalVotosNao` e `totalVotosAbstencao` estavam vazios, mesmo com os 81 votos presentes. **Conte a lista `votos`**, não confie nos campos de total. Os números aparecem em prosa dentro de `informeLegislativo.texto`, que não é campo estruturado.
+- **Os totais só vêm na votação secreta.** Na aberta (`votacaoSecreta` `"N"`), `totalVotosSim`, `totalVotosNao` e `totalVotosAbstencao` vêm `null`, mesmo com os 81 votos presentes: **conte a lista `votos`**. Na secreta (`votacaoSecreta` `"S"`), a lista traz `Votou`, sem Sim nem Não, para cada senador que votou, e o placar só vem nos totais. Das 70 votações de 2026 até 15/11, 40 foram secretas: nas 40, os totais vieram preenchidos, e a soma dos três deu o número de `Votou`. Nas 30 abertas, como nas quatro do exemplo, vieram `null`. Nas do exemplo, os números aparecem em prosa dentro de `informeLegislativo.texto`, que não é campo estruturado.
 - **`votos` traz os 81 senadores sempre,** inclusive quem não votou. É o estado de cada um, não a lista de quem votou — o oposto da Câmara.
-- **`siglaVotoParlamentar` vai muito além de Sim e Não.** Valores observados nas quatro votações: `Sim`, `Não`, `Abstenção`, `P-NRV`, `AP` e `Presidente (art. 51 RISF)`; em outubro de 2026, apareceu também o `LS`. É o que apareceu, e não a lista completa: o conector precisa aceitar um código novo sem quebrar. Contar só `Sim` e `Não` não fecha 81. O significado vem no `descricaoVotoParlamentar`: `P-NRV` é "Presente – Não registrou voto" (26 vezes na semana gravada), `AP` é "Atividade parlamentar" (4 vezes) e `LS` é "Licença saúde". O banco guarda o `P-NRV`, de quem estava presente, e não guarda o `AP` nem o `LS`: toda ausência entra como `nao_votou`, sem o código, e o motivo fica fora do banco e do log (`AGENTS.md`, "Dados pessoais").
+- **`siglaVotoParlamentar` vai muito além de Sim e Não.** Valores observados nas quatro votações: `Sim`, `Não`, `Abstenção`, `P-NRV`, `AP` e `Presidente (art. 51 RISF)`; em outubro de 2026, apareceu também o `LS`. É o que apareceu, e não a lista completa: o conector precisa aceitar um código novo sem quebrar. Contar só `Sim` e `Não` não fecha 81. O significado vem no `descricaoVotoParlamentar`: `P-NRV` é "Presente – Não registrou voto" (26 vezes na semana gravada), `AP` é "Atividade parlamentar" (4 vezes) e `LS` é "Licença saúde". O banco guarda o `P-NRV`, de quem estava presente, e nenhum código de ausência: o voto com um código de `CODIGOS_DE_AUSENCIA` (em `apps/backend/src/mandatometro/db/modelos.py`) entra como `nao_votou`, sem o código, e o voto com um código ainda desconhecido entra como `outro`, também sem o código. Nos dois casos, o motivo fica fora do banco e do log (`AGENTS.md`, "Dados pessoais").
 - **`identificacao` identifica a matéria, não a votação.** As quatro votações da semana do exemplo eram todas da PEC 18/2025. Para distinguir uma votação da outra, use o `codigoSessaoVotacao`, que é único.
 
 ### `/senador/lista/atual.json` e `/senador/{cod}/mandatos.json`
@@ -505,12 +505,12 @@ O `AGENTS.md` fixa os nomes do domínio em português e sem acento. Este é o ma
 | `voto.partido` | `votos[].deputado_.siglaPartido` | `votos[].siglaPartidoParlamentar` |
 | `voto.uf` | `votos[].deputado_.siglaUf` | `votos[].siglaUFParlamentar` |
 
-O partido e a UF ficam no voto, e não no mandato: são os do dia do voto, porque o partido muda dentro do mandato. O histórico de partidos do `/senador/{cod}/mandatos.json` não entra no banco.
+O partido fica no voto, e não no mandato: é o do dia do voto, porque muda dentro do mandato. A UF fica nos dois: a do mandato e a do dia do voto. O histórico de partidos do `/senador/{cod}/mandatos.json` não entra no banco.
 
 O `resultado` e o `voto.valor` têm domínios diferentes nas duas Casas, e o modelo traduz os dois para um conjunto nosso, com o `normalizar_resultado` e o `normalizar_voto` (decisões do Renan na #7, em 12/11/2026, com os ajustes da #97):
 
 - **`votacao.resultado`:** `aprovada`, `rejeitada` ou `outro`. O `1` e o `"A"` viram `aprovada`, o `0` vira `rejeitada`, e uma letra que ainda não apareceu vira `outro`. O `resultado_bruto` guarda o código como a Casa publicou.
-- **`voto.valor`:** `sim`, `nao`, `abstencao`, `obstrucao`, `presidente`, `nao_votou` ou `outro`. O `Artigo 17` e o `Presidente (art. 51 RISF)` viram `presidente`, e o `P-NRV` vira `nao_votou`. O `valor_bruto` guarda só os códigos de `CODIGOS_GRAVADOS`: a ausência do Senado (`AP`, `LS`) vira `nao_votou` sem o código, e um código desconhecido vira `outro`, também sem o código.
+- **`voto.valor`:** `sim`, `nao`, `abstencao`, `obstrucao`, `presidente`, `nao_votou` ou `outro`. O `Artigo 17` e o `Presidente (art. 51 RISF)` viram `presidente`, e o `P-NRV` vira `nao_votou`. O `valor_bruto` guarda só os códigos de `CODIGOS_GRAVADOS`: a ausência do Senado com código de `CODIGOS_DE_AUSENCIA` vira `nao_votou` sem o código, e um código desconhecido vira `outro`, também sem o código.
 
 ## Campos pessoais
 
