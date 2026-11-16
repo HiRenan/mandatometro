@@ -16,6 +16,7 @@ TABELAS_DO_MVP = {
     "edicao",
     "item_edicao",
     "inscrito",
+    "limite_inscricao",
 }
 
 

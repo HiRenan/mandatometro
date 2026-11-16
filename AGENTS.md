@@ -87,6 +87,15 @@ Endpoints, campos, chaves de ligação e exemplos reais de cada fonte estão em 
 - Os CSVs do TSE vêm em latin-1, separados por `;`, um por UF dentro de cada ZIP.
 - A mesma pessoa se liga entre eleições do TSE pelo CPF. Em 2024 o CPF vem vazio e em 2012 falta em parte das linhas: nesses anos, use o título de eleitor e confira a data de nascimento.
 
+## Newsletter: inscrição e saída
+
+- Libere o CORS só para `APP_BASE_URL`, conforme o [ADR 0001](docs/adr/0001-stack.md). Use GET e POST, aceite `Content-Type` e exponha `Retry-After`. A fatia da tela define como chamar a rota.
+- Depois de confirmar a inscrição no banco, responda 200 com `situacao`: `edicao_enviada`, `aguardando_edicao` ou `envio_indisponivel`. `edicao_enviada` significa que o Resend aceitou o envio, sem garantir a entrega. Trate o e-mail repetido pelo mesmo fluxo, sem revelar o cadastro anterior.
+- Conte as tentativas em `limite_inscricao`, só com `janela` e `quantidade`. Não guarde IP, e-mail ou hash de pessoa. Aplique a cota antes de validar o JSON, em transação própria. Deixe a saída fora dessa cota.
+- Apague a inscrição só com POST pelo `codigo_saida`. Ignore o corpo, inclusive o formulário da RFC 8058. GET e HEAD só abrem a confirmação no site. Não faça POST automático ao carregar essa página.
+- Não registre e-mail, corpo, código de saída ou exceção bruta. As mensagens de validação, SQL e Resend podem conter dados pessoais. Desligue o access log da API na produção. No desenvolvimento, use só dados fictícios.
+- Monte o e-mail em `avisos/email.py` e envie por `avisos/resend.py`. O envio tem até 8 segundos no total e idempotência por 24 horas. A #39 reutiliza esses módulos e define sua política de envio. Esta fatia não tem fila nem histórico de entrega. Use endereços públicos HTTPS em `APP_BASE_URL` e `API_URL` para os links de um envio real.
+
 ## Segredos
 
 As chaves (Firecrawl, Resend, Devin e LLM) ficam só no `.env` local, criado a partir do `.env.example`, e nos secrets da hospedagem. Código, issues, PRs e logs citam a chave pelo nome da variável. Variável nova entra no `.env.example` com valor vazio e um comentário.
