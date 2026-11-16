@@ -187,6 +187,10 @@ O resumo final é uma linha JSON com contagens confirmadas, chamadas HTTP (inclu
 
 A coleta é sequencial, usa timeout, backoff e o User-Agent do projeto, e consulta o `robots.txt`. Os testes usam respostas gravadas e o banco de teste, sem rede; a coleta real exige executar o comando. Ela roda em lote, fora das requisições do site.
 
+**Coleta e migrations na hospedagem.** O [passo a passo de ativação](docs/hospedagem.md) começa pelo desenvolvimento e depois passa à produção. O workflow **Coletar Congresso** roda às 03h17 de Brasília com o código da `main`, só depois de criar a variável de repositório `COLETAS_ATIVAS=true`. O botão **Run workflow** permite a primeira carga e a recuperação por datas: `develop` usa o banco de desenvolvimento, `main` usa o de produção. Cada Casa é tentada mesmo se a outra falhar.
+
+**Migrar banco** aplica `alembic upgrade head` automaticamente no push que muda `apps/backend/migrations/**`, no banco correspondente à branch. Sem o secret `DATABASE_URL_UNPOOLED`, o push avisa e pula; um disparo manual sem segredo falha. O botão **Run workflow** serve para a primeira carga num banco recém-criado e para recuperação. As duas tarefas compartilham uma fila por banco. A migration fica fora da função e do build; mudanças de esquema precisam ser compatíveis com o código antigo e o novo, pois o deploy não espera o Actions.
+
 **Coleta da Câmara.**
 
 ```bash
@@ -347,11 +351,13 @@ Na produção, desligue o access log do Uvicorn com `--no-access-log`, como faz 
 
 - a `main` vai para https://mandatometro.com.br; a `develop`, para o endereço do time; e cada PR ganha uma prévia;
 - o build roda no Node 24, pelo `engines` de `apps/web/package.json`;
-- o painel da Vercel não pede variáveis: o endereço do site (`APP_BASE_URL`) sai do ambiente da Vercel, com o domínio na `main` e o endereço da branch nas prévias, e as páginas fora da `main` pedem aos buscadores para não indexar (`X-Robots-Tag: noindex`);
-- até a API ter casa (#23), o `API_URL` fica vazio na Vercel: a página inicial sai sem a folha da newsletter, e a página de sair diz que a newsletter ainda não funciona naquele endereço;
+- o endereço do site (`APP_BASE_URL`) sai do ambiente da Vercel, com o domínio na `main` e o endereço da branch nas prévias, e as páginas fora da `main` pedem aos buscadores para não indexar (`X-Robots-Tag: noindex`);
+- o `API_URL` fica vazio por padrão. Depois de validar a API, cadastre-o no painel em Production e no Preview só da `develop`, seguindo [docs/hospedagem.md](docs/hospedagem.md), e faça novo build. PRs continuam sem newsletter;
 - um artigo mal formado ou a falta da pasta da trilha da página inicial derruba o deploy, com o arquivo e o problema no log, e o site no ar continua na versão anterior.
 
 Fora da Vercel, como no Docker, defina o `APP_BASE_URL` com o endereço do site antes do build: a prévia do link no WhatsApp e nas redes (`og:image`) leva o endereço completo da imagem, com ele na frente. Sem ele, vale o `http://localhost:3001`.
+
+**A API tem seu próprio projeto Vercel**, com raiz em `apps/backend`, preset FastAPI e região São Paulo. `app.py` exporta a aplicação existente; o `vercel.json` limita a chamada a 30 segundos. Na Vercel, `DATABASE_URL` é obrigatório e aponta para o pool do Neon; o SQLAlchemy usa `NullPool`, sem manter conexões ociosas na função. Fora dela, continua o pool local. Não conecte o banco ao projeto do site: a configuração resolvida do site é gravada em texto puro na função. O [guia de hospedagem](docs/hospedagem.md) cobre os dois bancos, os dois ambientes do GitHub, DNS, checagens e limites gratuitos.
 
 **Mudou o ícone ou a prévia do link?** Eles saem de `apps/web/imagens/icone.html` e `previa.html`. Rode `pnpm --filter web imagens`: o Edge ou o Chrome abre sem janela e grava o `favicon.ico`, o `apple-touch-icon.png` e o `previa.png` em `apps/web/public/` (`NAVEGADOR=<caminho>` escolhe outro navegador). Faça commit do HTML e das imagens. O mapa do fundo do site sai do `apps/web/imagens/mapa.mjs`: mude o roteiro e rode `pnpm --filter web mapa`, que grava o `apps/web/src/estilos/mapa.svg`.
 
