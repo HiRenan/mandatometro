@@ -2,8 +2,8 @@
 
 Não é o conector (#10 e #11): o teste só mostra que cada dado tem onde ficar, com as armadilhas que
 a revisão do dicionário de dados confirmou na API. As asserções usam ids, não nomes. O CPF e a data
-de nascimento do deputado, fictícios na resposta gravada, não entram no modelo. O último teste
-confere que os motivos de afastamento da lista de senadores gravada são fictícios.
+de nascimento do deputado, fictícios na resposta gravada, não entram no modelo. Os testes de
+privacidade conferem os motivos fictícios do Senado e a sanitização dos novos fixtures da Câmara.
 """
 
 import json
@@ -11,6 +11,7 @@ from collections import Counter
 from datetime import date, datetime
 from pathlib import Path
 
+import pytest
 from sqlalchemy import func, select
 
 from mandatometro.db.modelos import (
@@ -322,6 +323,25 @@ def _valores(dado, chave: str) -> list:
     if isinstance(dado, list):
         return [valor for filho in dado for valor in _valores(filho, chave)]
     return []
+
+
+@pytest.mark.parametrize(
+    "caminho",
+    [
+        "camara/deputados-atuais-pagina-curta.json",
+        "camara/votacao-2236186-60.json",
+        "camara/proposicao-2236186.json",
+    ],
+)
+@pytest.mark.parametrize(
+    "campo,permitidos",
+    [("cpf", ()), ("dataNascimento", ()), ("email", ("parlamentar@example.com",))],
+)
+def test_dados_pessoais_dos_novos_fixtures_da_camara(caminho, campo, permitidos):
+    # O README exige CPF/nascimento ausentes e somente este e-mail fictício, em qualquer nível.
+    # A asserção mostra só o arquivo e o campo; nunca o valor encontrado na resposta.
+    valores_validos = all(valor in permitidos for valor in _valores(_ler(caminho), campo))
+    assert valores_validos, f"Refaça a sanitização de {campo} em {caminho} conforme o README."
 
 
 def test_os_motivos_de_afastamento_dos_senadores_sao_ficticios():

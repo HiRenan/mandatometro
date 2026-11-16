@@ -173,6 +173,25 @@ pnpm --filter backend migrate   # aplica as migrations
 pnpm dev                        # site na porta 3001 e API na 8000
 ```
 
+**Coleta da Câmara.** Com as migrations aplicadas e `DATABASE_URL` apontando para o banco que deve receber os dados, rode em `apps/backend`:
+
+```bash
+uv run mandatometro coleta camara --inicio 2026-11-09 --fim 2026-11-15
+uv run mandatometro coleta camara   # os últimos sete dias completos, no fuso de Brasília
+```
+
+As datas incluem o primeiro e o último dia; informe as duas ou nenhuma. O comando divide consultas que atravessam a virada do ano, percorre todas as páginas e grava as votações do plenário, as proposições afetadas, os votos publicados e os deputados em exercício com seus mandatos. Consulta os detalhes dos deputados a cada execução para atualizar a condição do mandato. Quem aparece num voto antigo e não está em exercício hoje também ganha cadastro, a partir daquele voto, sem inferir a condição do mandato.
+
+Repetir o período atualiza os registros pelas mesmas chaves, inclusive votos corrigidos pela Câmara. As fontes são novas observações com URL, data da coleta e trecho quando aplicável; as anteriores permanecem, inclusive quando deixam de ser referenciadas. As fontes de proposição apontam para a ficha de tramitação e as de votação, para a página da sessão que apresenta o passo a passo daquela votação.
+
+O resumo final é uma linha JSON com as contagens confirmadas, o número de chamadas HTTP (incluindo robots e retries), as tentativas extras, a duração e as falhas. `parlamentares` e `mandatos` contam o cadastro atual processado mais os registros históricos criados; `proposicoes` conta as distintas processadas naquela execução, e `votacoes`/`votos`, as unidades confirmadas. O código de saída é:
+
+- **0:** coleta concluída para os registros disponíveis. Um 404/410 no detalhe ou nos votos de um id devolvido pela lista oficial entra em `indisponiveis_na_fonte`, sem contar como queda da API; o comando continua e não inventa a proposição a partir da lista;
+- **1:** coleta parcial ou interrompida. Uma votação que falha mantém a versão anterior e não impede as seguintes; os ids que falharam aparecem em `falhas_votacoes`. Falha no detalhe de deputado preserva a condição anterior ou deixa `None` quando é novo, e entra em `falhas_parlamentares`. Três falhas consecutivas interrompem a execução. Lista atual de deputados incompleta interrompe sem reconciliar o exercício;
+- **2:** argumentos inválidos, antes de acessar a rede ou o banco.
+
+A coleta é sequencial, usa timeout, backoff e o User-Agent do projeto, e consulta o `robots.txt`. Os testes do conector usam respostas gravadas e o banco de teste, sem rede; a coleta real é uma execução explícita do comando acima. Ela roda em lote, fora das requisições do site.
+
 **Checagens,** as mesmas do CI:
 
 ```bash

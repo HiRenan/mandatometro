@@ -1,0 +1,46 @@
+{
+  "dados": {
+    "id": 2236186,
+    "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2236186",
+    "siglaTipo": "PLP",
+    "codTipo": 140,
+    "numero": 281,
+    "ano": 2019,
+    "ementa": "Dispõe sobre os regimes de resolução das instituições autorizadas a funcionar pelo Banco Central do Brasil, pela Superintendência de Seguros Privados e pela Comissão de Valores Mobiliários.",
+    "dataApresentacao": "2019-12-23T17:10",
+    "uriOrgaoNumerador": "https://dadosabertos.camara.leg.br/api/v2/orgaos/4",
+    "statusProposicao": {
+      "dataHora": "2026-10-15T00:00",
+      "sequencia": 61,
+      "siglaOrgao": "CCP",
+      "uriOrgao": "https://dadosabertos.camara.leg.br/api/v2/orgaos/186",
+      "uriUltimoRelator": "https://dadosabertos.camara.leg.br/api/v2/deputados/160161",
+      "regime": "Urgência (Art. 155, RICD)",
+      "descricaoTramitacao": "Publicação de Proposição",
+      "codTipoTramitacao": "604",
+      "descricaoSituacao": "Aguardando Deliberação",
+      "codSituacao": 903,
+      "despacho": "Encaminhada à publicação. Parecer Proferido em Plenário, Emendas de Plenário e Parecer às Emendas de Plenário publicados em avulso e no DCD de 16/10/2026, Letra A.",
+      "url": null,
+      "ambito": "Regimental",
+      "apreciacao": "Proposição Sujeita à Apreciação do Plenário"
+    },
+    "uriAutores": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2236186/autores",
+    "descricaoTipo": "Projeto de Lei Complementar",
+    "ementaDetalhada": "",
+    "keywords": "Diretrizes, Regime de Resolução, Instituição financeira, Banco, entidade, Mercado financeiro, Bolsa de valores, Mercado de balcão, Seguradora, Sociedade de capitalização, Resseguradora, Entidade Aberta de Previdência Complementar (EAPC). _Autoridade de Resolução, Banco Central do Brasil (Bacen), Comissão de Valores Mobiliários (CVM), Superintendência de Seguros Privados (Susep). _Regime de Estabilização, Regime de Liquidação Compulsória, estabilidade financeira, Sistema Financeiro Nacional (SFN), Sistema de Pagamentos Brasileiro (SBP), Sistema Nacional de Seguros Privados, capitalização, resseguro, Previdência complementar. _Critério, criação, Fundo Garantidor de Crédito (FGC), Fundo de Resolução. _Alteração, Consolidação das Leis do Trabalho (CLT) (1943), critério, transmissão, obrigação trabalhista, contrato de trabalho, pessoa jurídica, Regime de Resolução. _Alteração, Lei da Reforma Bancária (1964), competência, Banco Central do Brasil (Bacen), critério, recolhimento compulsório, operação de redesconto. _Alteração, Código Tributário Nacional (1966), interrupção, prescrição, cobrança, crédito tributário, falência, Regime de Liquidação Compulsória. _Direito de preferência, crédito tributário, Regime de Resolução. _Alteração, Lei do Seguro Privado (1966), liquidação, Seguradora, Regime de Liquidação Compulsória. _Alteração, Decreto-lei, Sociedade de capitalização. _Alteração, Lei de Execução Fiscal (1980), cobrança judicial, dívida ativa, falência, Regime de Liquidação Compulsória. _Alteração, Lei do Colarinho Branco (1986), Crime contra o Sistema Financeiro Nacional, ausência, prestação de informação, liquidante, administrador, Regime de Estabilização. _Alteração, Lei do Ajuste Tributário (1996), liquidação extrajudicial, Regime de Liquidação Compulsória. _Alteração, Lei dos Planos de Saúde (1998), liquidação extrajudicial, operadora de plano de assistência à saúde, aplicação, Regime de Resolução. _Alteração, Lei do Sistema de Pagamentos Brasileiro (2001), câmara de compensação, prestador de serviço de compensação e liquidação. _Alteração, Lei da Previdência Complementar (2001), critério, intervenção, Entidade Fechada de Previdência Complementar (EFPC), liquidação extrajudicial, Regime de Resolução. _Alteração, lei federal, Banco Central do Brasil (Bacen), operação de redesconto, garantia, empréstimo, ativo financeiro, valores mobiliários. _Alteração, Lei do Consórcio  (2008), Regime de Liquidação Compulsória, Administradora de consórcio, inscrição, consórcio, Cadastro Nacional de Pessoa Jurídica (CNPJ).",
+    "uriPropPrincipal": null,
+    "uriPropAnterior": null,
+    "uriPropPosterior": null,
+    "urlInteiroTeor": "https://www.camara.leg.br/proposicoesWeb/prop_mostrarintegra?codteor=1851535",
+    "urnFinal": null,
+    "texto": null,
+    "justificativa": null
+  },
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2236186"
+    }
+  ]
+}

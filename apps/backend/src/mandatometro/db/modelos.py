@@ -239,8 +239,9 @@ class Votacao(Base):
     - resultado e resultado_bruto: saem de normalizar_resultado.
 
     Não há colunas de total: no Senado elas vêm null, e na Câmara não existem. O total se conta
-    pelos votos. Na Câmara, o /votos só traz quem votou, e só nas votações nominais: quem não
-    aparece não vira linha, e a conta "X dos 513 votaram" sai dos votos gravados.
+    pelos votos. Na Câmara, consulte /votos nas nominais e nas simbólicas, pois algumas simbólicas
+    também publicam registros. Quem não aparece não vira linha. A lista pode incluir a presidência
+    (Artigo 17): separe os valores normalizados ao contar votos e presença.
     """
 
     __tablename__ = "votacao"
