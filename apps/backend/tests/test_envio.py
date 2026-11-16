@@ -7,6 +7,7 @@ from uuid import UUID
 
 import httpx2
 import pytest
+from sqlalchemy.exc import OperationalError
 
 from mandatometro.avisos import envio
 from mandatometro.avisos.consulta import EdicaoCarregada
@@ -185,3 +186,25 @@ def test_ausencia_de_nova_edicao_nao_faz_http(rodada, monkeypatch):
     assert codigo == 0 and resumo["edicao_id"] is None
     assert not rodada["chamadas"]
     assert rodada["executar"](edicao_id=99)[1] == 1
+
+
+def test_edicao_com_fonte_invalida_nao_e_erro_de_argumentos(rodada):
+    rodada["inscritos"].add(1)
+    rodada["carregada"].fontes[1].url = "javascript:segredo-ficticio"
+    resumo, codigo = rodada["executar"]()
+    assert codigo == 1 and resumo["edicao_indisponivel"] == 1
+    assert not rodada["chamadas"] and not rodada["aceitos"]
+
+
+def test_falha_ao_buscar_proxima_pagina_preserva_resumo_parcial(rodada, monkeypatch, caplog):
+    rodada["inscritos"].update([1, 2])
+
+    def ids(*_):
+        yield 1
+        raise OperationalError("SQL", {}, Exception("pessoa@example.com"))
+
+    monkeypatch.setattr(envio, "_ids", ids)
+    resumo, codigo = rodada["executar"]()
+    assert codigo == 1 and resumo["falhas_gerais"] == 1
+    assert resumo["aceitos_nesta_execucao"] == 1 and resumo["faltam"] == 1
+    assert "pessoa@example.com" not in caplog.text

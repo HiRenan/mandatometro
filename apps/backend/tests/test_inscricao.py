@@ -27,7 +27,7 @@ def ambiente(engine_de_teste, monkeypatch):
 
     def limpar():
         with engine_de_teste.begin() as conexao:
-            for tabela in (ItemEdicao, Edicao, Inscrito, Fonte):
+            for tabela in (Inscrito, ItemEdicao, Edicao, Fonte):
                 conexao.execute(delete(tabela))
             conexao.execute(text("delete from limite_inscricao"))
 
@@ -113,9 +113,9 @@ def test_novo_e_repetido_tem_mesma_resposta_e_envio_idempotente(ambiente):
         antes.inscrito_em,
     )
     assert depois.email == "pessoa@example.com"
-    primeira, segunda = ambiente["chamadas"]
-    assert primeira.content == segunda.content
-    assert primeira.headers["Idempotency-Key"] == segunda.headers["Idempotency-Key"]
+    assert len(ambiente["chamadas"]) == 1
+    primeira = ambiente["chamadas"][0]
+    assert depois.ultima_edicao_enviada_id == ultima.id
     assert json.loads(primeira.content)["subject"] == ultima.titulo
     assert str(antes.codigo_saida) not in nova.text
     assert nova.headers["cache-control"] == "no-store"

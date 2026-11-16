@@ -88,7 +88,7 @@ def main(argv: list[str] | None = None) -> int:
         if argumentos == ["preparar-migration"]:
             return preparar_migration()
         if argumentos not in (["migrar"], ["coletar", "camara"], ["coletar", "senado"]):
-            print("::error::Tarefa inválida. Use migrar ou coletar camara/senado.")
+            print("::error::Tarefa inválida. Use migrar, enviar ou coletar camara/senado.")
             return 2
         if not os.environ.get("DATABASE_URL", "").strip():
             print("::error::Defina DATABASE_URL; a tarefa não usa o banco local por padrão.")

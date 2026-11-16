@@ -1,6 +1,7 @@
 """Leitura pública da fotografia editorial, sem expor o contrato interno de revisão."""
 
 from datetime import UTC, date, datetime, timedelta
+from os import environ
 
 import pytest
 from fastapi.testclient import TestClient
@@ -16,7 +17,8 @@ from mandatometro.ia.esquemas import Fatos, FatoVotacao, Placar
 
 
 @pytest.fixture
-def publicadas(engine_de_teste):
+def publicadas(engine_de_teste, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", environ["TEST_DATABASE_URL"])
     config.cache_clear()
     engine.cache_clear()
     criadas = []

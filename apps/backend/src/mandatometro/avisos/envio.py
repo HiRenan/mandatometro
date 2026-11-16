@@ -13,7 +13,12 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, aliased
 
 from mandatometro.avisos.consulta import EdicaoCarregada, carregar_edicao
-from mandatometro.avisos.email import MensagemInvalida, formatar_edicao, montar_email
+from mandatometro.avisos.email import (
+    MensagemInvalida,
+    formatar_edicao,
+    montar_email,
+    validar_enderecos_envio,
+)
 from mandatometro.avisos.resend import EnvioIndisponivel, Resend
 from mandatometro.db.modelos import Edicao, Inscrito
 
@@ -182,63 +187,59 @@ async def enviar_edicao(
     edicao = carregada.edicao
     resumo["edicao_id"] = edicao.id
     try:
-        if simular:
-            formatar_edicao(edicao, fontes=carregada.fontes, app_base_url=app_base_url, previa=True)
-        else:
+        if not simular:
             if not provedor.configurado:
                 resumo["configuracao_invalida"] = 1
                 return resumo, 2
-            # Só valida a mensagem; o código fictício nunca é usado num envio.
-            montar_email(
-                edicao,
-                UUID(int=0),
-                fontes=carregada.fontes,
-                app_base_url=app_base_url,
-                api_url=api_url,
-            )
+            validar_enderecos_envio(app_base_url, api_url)
     except MensagemInvalida:
         resumo["configuracao_invalida"] = 1
         return resumo, 2
+    try:
+        formatar_edicao(edicao, fontes=carregada.fontes, app_base_url=app_base_url, previa=simular)
+    except MensagemInvalida:
+        resumo["edicao_indisponivel"] = 1
+        return resumo, 1
     teto = await asyncio.to_thread(_teto, banco)
     total, pendentes = await asyncio.to_thread(_contar, banco, edicao, teto)
     resumo.update(inscritos=total, ja_atualizados=total - pendentes, faltam=pendentes)
     if simular:
         return resumo, 0
     tentados, ultimo_inicio = 0, None
-    for inscrito_id in _ids(banco, edicao, teto):
-        if limite is not None and tentados >= limite:
-            break
-        if ultimo_inicio is not None:
-            await dormir(max(0, 1 - (monotonic() - ultimo_inicio)))
-        ultimo_inicio = monotonic()
-        try:
-            resultado = await enviar_para_inscrito(
-                banco,
-                inscrito_id,
-                carregada,
-                provedor,
-                app_base_url=app_base_url,
-                api_url=api_url,
-            )
-            if resultado == "aceito":
-                resumo["aceitos_nesta_execucao"] += 1
-                tentados += 1
-            elif resultado == "removido":
-                resumo["removidos"] += 1
-        except EnvioIndisponivel as erro:
-            tentados += 1
-            campo = {
-                "geral": "falhas_gerais",
-                "individual": "recusados",
-                "concorrente": "concorrentes",
-                "transitoria": "falhas_transitorias",
-            }.get(erro.motivo, erro.motivo)
-            resumo[campo] += 1
-            if erro.motivo in {"geral", "cota_diaria", "cota_mensal"}:
+    try:
+        for inscrito_id in _ids(banco, edicao, teto):
+            if limite is not None and tentados >= limite:
                 break
-        except (SQLAlchemyError, MensagemInvalida):
-            resumo["falhas_gerais"] += 1
-            break
+            if ultimo_inicio is not None:
+                await dormir(max(0, 1 - (monotonic() - ultimo_inicio)))
+            ultimo_inicio = monotonic()
+            try:
+                resultado = await enviar_para_inscrito(
+                    banco,
+                    inscrito_id,
+                    carregada,
+                    provedor,
+                    app_base_url=app_base_url,
+                    api_url=api_url,
+                )
+                if resultado == "aceito":
+                    resumo["aceitos_nesta_execucao"] += 1
+                    tentados += 1
+                elif resultado == "removido":
+                    resumo["removidos"] += 1
+            except EnvioIndisponivel as erro:
+                tentados += 1
+                campo = {
+                    "geral": "falhas_gerais",
+                    "individual": "recusados",
+                    "concorrente": "concorrentes",
+                    "transitoria": "falhas_transitorias",
+                }.get(erro.motivo, erro.motivo)
+                resumo[campo] += 1
+                if erro.motivo in {"geral", "cota_diaria", "cota_mensal"}:
+                    break
+    except (SQLAlchemyError, MensagemInvalida):
+        resumo["falhas_gerais"] += 1
     try:
         _, resumo["faltam"] = await asyncio.to_thread(_contar, banco, edicao, teto)
     except SQLAlchemyError:

@@ -51,7 +51,7 @@ O banco guarda o que a coleta lê da Câmara e do Senado, o que a newsletter usa
 - **Fonte em tudo:** cada dado coletado e cada item da edição aponta para uma `fonte`, com o endereço e a data da coleta. Sem fonte, o banco não grava.
 - **O partido fica no voto,** porque muda dentro do mandato. Os totais das nominais se contam pelos votos. Nas secretas do Senado, a coleta guarda matéria, votação e resultado, sem votos individuais; o banco não guarda os totais nem a modalidade. Ausência de votos no banco não significa zero votos na sessão nem identifica, sozinha, uma votação secreta.
 - **Ausência sem motivo:** toda ausência reconhecida do Senado (`AP`, `LS`, `MIS`, `NCom`, `LAP` e `LP`, em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, para a licença saúde ficar igual às outras. O voto só guarda os códigos de voto e de presença da lista `CODIGOS_GRAVADOS`, e o banco recusa os demais. Um código ainda não classificado, como `NA`, entra como `outro`, sem o código, e o log não leva o código nem a pessoa: a coleta registra só a votação e quantos códigos desconhecidos vieram nela.
-- **Quem assina** deixa só o e-mail, a data e o código do link de sair. Sair apaga a linha.
+- **Quem assina** deixa o e-mail, a data e o código do link de sair; a última edição aceita permite retomar um envio. Sair apaga a linha e esse marcador.
 - **Medição do piloto:** cada conclusão guarda apenas código aleatório, versão do quiz, etapa e total de acertos. Não tem ligação com conta ou newsletter; não guarda turma, data nem hora da tentativa.
 
 ```mermaid
@@ -62,6 +62,7 @@ erDiagram
     votacao ||--o{ votacao_proposicao : "afeta"
     proposicao ||--o{ votacao_proposicao : "é afetada"
     edicao ||--o{ item_edicao : "tem"
+    edicao |o--o{ inscrito : "última aceita"
     fonte ||--o{ parlamentar : "comprova"
     fonte ||--o{ mandato : "comprova"
     fonte ||--o{ proposicao : "comprova"
@@ -150,6 +151,7 @@ erDiagram
         string email UK "em minúsculas"
         uuid codigo_saida UK "o link de sair"
         timestamptz inscrito_em
+        int ultima_edicao_enviada_id FK "opcional, sem histórico de entrega"
     }
     limite_inscricao {
         timestamptz janela PK "o minuto da cota global"
@@ -359,7 +361,28 @@ O limite padrão é **30 tentativas por minuto fixo**. Para mudá-lo, defina `NE
 
 Para enviar de verdade, configure `RESEND_API_KEY`, `RESEND_FROM` e os endereços públicos **HTTPS** `APP_BASE_URL` (site) e `API_URL` (API). O remetente de exemplo só envia para o dono da conta. Troque-o por um endereço do domínio verificado `mandatometro.com.br`. Prepare uma edição `publicada`, com seus itens e fontes oficiais. Sem chave ou com configuração de envio inválida, a inscrição continua gravada e a API responde `envio_indisponivel`. Sem edição, responde `aguardando_edicao`.
 
-O envio faz até três tentativas dentro de **8 segundos no total**, com tempo limite e espera entre elas. Usa a mesma chave para cada par de inscrito e edição, sem e-mail nela. A [idempotência do Resend dura 24 horas](https://resend.com/docs/dashboard/emails/idempotency-keys). Depois desse prazo, outra inscrição pode reenviar a edição. Não há fila para tentar de novo automaticamente. A [cota do plano Free é de 100 e-mails por dia e 3.000 por mês](https://resend.com/pricing), compartilhada com os outros envios da conta. Considere essa cota no envio dominical da #39.
+O envio faz até três tentativas dentro de **8 segundos no total**, com tempo limite e espera entre elas. Inscrição e comando usam a mesma chave por par de inscrito/edição, sem e-mail nela, e gravam em `inscrito.ultima_edicao_enviada_id` a última edição aceita. Esse marcador só avança pela ordem de publicação: uma reinscrição não manda novamente a edição já aceita, mesmo depois de 24 horas. A [idempotência do Resend dura 24 horas](https://resend.com/docs/dashboard/emails/idempotency-keys): se o processo cair entre o aceite e o commit e só retomar depois desse prazo, pode haver duplicação; este é o limite aceito para o piloto. Não há histórico de entrega por pessoa nem recuperação automática de bounces.
+
+**Envio da edição publicada.** Em `apps/backend`, com `DATABASE_URL` autorizado e migrations aplicadas, confira primeiro sem enviar nem gravar:
+
+```powershell
+uv run mandatometro edicao enviar --simular
+uv run mandatometro edicao enviar 1 --simular
+```
+
+Para o envio real, depois de configurar o Resend e os dois endereços HTTPS, use `uv run mandatometro edicao enviar 1`; sem o número, ele fixa a última publicada. `--limite 30` tenta até 30 destinatários; `--publicada-desde 2026-11-16` só aceita edição publicada desde meia-noite dessa data em Brasília. Uma edição anterior não é reenviada a quem já recebeu uma mais recente. O conteúdo, o assunto e os links são iguais aos da inscrição.
+
+O JSON mostra `edicao_id`, `aceitos_nesta_execucao`, `ja_atualizados` no início e `faltam` ao final, além das contagens de falhas, sem identificar pessoas. A rodada fixa o maior id de inscrição inicial: quem entra depois recebe pela inscrição e, se ela falhar, entra numa próxima rodada. Quem sai antes da verificação do destinatário é pulado; uma mensagem já aceita ou em voo pode chegar. Banco indisponível na contagem final omite `faltam` e sinaliza `contagem_indisponivel`, sem inventar um total.
+
+As saídas são **0** para conclusão, nada a enviar ou simulação válida; **1** para parcial, edição indisponível, cota ou falha operacional; **2** para argumentos/configuração inválidos. O envio é sequencial, com intervalo mínimo de um segundo entre destinatários. Recusa individual e 409 concorrente não param os outros; chave/domínio inválido ou cota esgotada param a rodada. Recusas não são gravadas: uma retomada tenta de novo, e o Resend aplica sua lista de supressão. Aceitação não confirma entrega na caixa postal.
+
+A [cota Free](https://resend.com/pricing) é de **100 e-mails/dia e 3.000/mês**, compartilhada com as inscrições e outros envios da conta. Com 30 inscritos e nenhum consumo anterior, cabem os 30; com 150, cabem até 100 e os restantes exigem outra rodada. As inscrições concorrentes podem diminuir esse saldo. A [cota diária reinicia à meia-noite UTC](https://resend.com/docs/api-reference/rate-limit), às 21h de Brasília; repetir o mesmo ID depois da renovação envia somente os pendentes. A cota mensal não se resolve no dia seguinte. Garantir todos no domingo acima de 100/dia exige decisão do Renan sobre o plano.
+
+No Actions, **Enviar edição** roda domingo às 10h37 de Brasília, somente com `ENVIOS_ATIVOS=true`, usando `main` e produção. `COLETAS_ATIVAS` continua controlando só a coleta. Sem edição publicada desde a segunda-feira corrente, não envia a edição anterior. **Run workflow** permite escolher ID/limite e começa com a simulação marcada; desmarque-a somente para enviar. O manual também recupera uma publicação atrasada ou uma rodada parcial. Configuração e ativação estão em [docs/hospedagem.md](docs/hospedagem.md).
+
+**Leitura pública das edições.** `GET /edicoes?limite=20&deslocamento=0` retorna `{edicoes, total, limite, deslocamento}` (limite de 1 a 100), da publicação mais recente para a mais antiga, com desempate por id decrescente. Cada resumo traz `id`, `titulo`, `inicio`, `fim` e `publicada_em`. `GET /edicoes/{id}` acrescenta os itens na ordem editorial, com `ordem`, `titulo`, `texto` puro, `fatos`, `fontes` e `artigo`.
+
+Nos fatos públicos, cada votação traz data, resultado, placar ou nulo e suas fontes, sem ids internos. Cada fonte traz `url`, `coletado_em` e `trecho` ou nulo; o artigo traz `titulo` e `caminho` do catálogo ou é nulo. Placar nulo significa indisponível, não zero nem modalidade; presidência fica separada. O legado continua com fatos/artigo nulos. Rascunho e inexistente respondem o mesmo 404; dados inválidos, 422; banco ou fotografia inválida, 503, sem conteúdo parcial. A API não devolve a origem do texto, pendências de revisão nem estado de envio, e não recalcula a edição com dados novos.
 
 `POST /newsletter/saida/{codigo_saida}` apaga a inscrição e responde 200 vazio, inclusive para código desconhecido ou já removido. Não lê nem exige corpo. O programa de e-mail usa essa rota com os cabeçalhos da RFC 8058. GET e HEAD só redirecionam para `/newsletter/sair?codigo=...` no site. Essa página só manda o POST no clique em "Confirmar a saída", para os leitores automáticos de links não cancelarem a inscrição. Ela não tem loader e fica fora dos buscadores, do Referer e do cache.
 
@@ -385,7 +408,7 @@ Fora da Vercel, como no Docker, defina o `APP_BASE_URL` com o endereço do site 
 
 **Mudou a API?** `pnpm generate:client` grava o `openapi.json` e gera de novo o cliente TypeScript. Faça commit dos dois.
 
-**Migration nova,** em `apps/backend`, com o próximo número: `uv run alembic revision --autogenerate --rev-id 0007 -m "cria a tabela orientacao"`. O autogenerate não vê mudança de CHECK nem de valor padrão: um valor novo num conjunto, como o do voto, pede essa parte da migration escrita à mão, e o teste de migrations acusa o que faltar. `uv run alembic check` diz se algum modelo mudou sem migration. Mudou uma tabela? Atualize o diagrama em "Modelo de dados": um teste confere.
+**Migration nova,** em `apps/backend`, com o próximo número: `uv run alembic revision --autogenerate --rev-id 0008 -m "cria a tabela orientacao"`. O autogenerate não vê mudança de CHECK nem de valor padrão: um valor novo num conjunto, como o do voto, pede essa parte da migration escrita à mão, e o teste de migrations acusa o que faltar. `uv run alembic check` diz se algum modelo mudou sem migration. Mudou uma tabela? Atualize o diagrama em "Modelo de dados": um teste confere.
 
 ## Time
 
