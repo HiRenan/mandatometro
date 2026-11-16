@@ -1,0 +1,56 @@
+name: Migrar banco
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "apps/backend/migrations/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.ref == 'refs/heads/main' && 'banco-producao' || 'banco-desenvolvimento' }}
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  migrar:
+    if: >-
+      ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+          (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ${{ github.ref == 'refs/heads/main' && 'producao' || 'desenvolvimento' }}
+    defaults:
+      run:
+        working-directory: apps/backend
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL_UNPOOLED }}
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      # Só biblioteca padrão: sem segredo, o push termina sem instalar ou migrar.
+      # O disparo manual sem segredo falha para não parecer que criou as tabelas.
+      - name: Conferir se o banco já foi configurado
+        id: banco
+        run: python3 scripts/tarefas.py preparar-migration
+      - name: Registrar o código executado
+        if: ${{ steps.banco.outputs.executar == 'true' }}
+        run: git rev-parse HEAD
+      - uses: astral-sh/setup-uv@v10.3.3
+        if: ${{ steps.banco.outputs.executar == 'true' }}
+        with:
+          version: "0.13.7"
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: apps/backend/uv.lock
+      - if: ${{ steps.banco.outputs.executar == 'true' }}
+        run: uv sync --locked --no-dev
+      - name: Aplicar as migrations
+        if: ${{ steps.banco.outputs.executar == 'true' }}
+        run: uv run --no-sync python scripts/tarefas.py migrar
