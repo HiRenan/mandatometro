@@ -34,7 +34,7 @@ PAGINA_MATERIA = "https://www25.senado.leg.br/web/atividade/materias/-/materia"
 
 
 class _RecursoIndisponivel(Exception):
-    """404/410 de recurso apontado pela fonte; já consta no resumo."""
+    """404/410 de recurso apontado pela fonte; o chamador registra a identificação segura."""
 
 
 def _objeto(dado: object) -> dict:
@@ -237,7 +237,6 @@ class _Coleta:
             if erro.status_http not in (404, 410):
                 raise
             self.indisponiveis.add(caminho)
-            self.resumo.indisponiveis_na_fonte.append(caminho)
             raise _RecursoIndisponivel from None
 
     def cadastrar_atuais(self) -> None:
@@ -295,7 +294,13 @@ class _Coleta:
         dados = _votacao(item, inicio, fim)
         processo = dados["id_processo"]
         if processo not in self.processos:
-            self.processos[processo] = self.obter_recurso(f"/processo/{processo}")
+            caminho = f"/processo/{processo}"
+            try:
+                self.processos[processo] = self.obter_recurso(caminho)
+            except _RecursoIndisponivel:
+                if caminho not in self.resumo.indisponiveis_na_fonte:
+                    self.resumo.indisponiveis_na_fonte.append(caminho)
+                raise
         resposta_processo = self.processos[processo]
         proposicao = _proposicao(resposta_processo, processo, dados["codigo_materia"])
         historicos = self.preparar_historicos(dados["votos"], dados["data"])
@@ -306,6 +311,7 @@ class _Coleta:
         parlamentares = dict(self.parlamentares)
         mandatos = set(self.mandatos)
         falhas = set()
+        indisponiveis = []
         with self.abrir_sessao() as s, s.begin():
 
             def fonte(chave, resposta, **campos):
@@ -352,7 +358,9 @@ class _Coleta:
                 if codigo in historicos:
                     mandato = historicos[codigo]
                     if mandato is None:
-                        if f"/senador/{codigo}/mandatos.json" not in self.indisponiveis:
+                        if f"/senador/{codigo}/mandatos.json" in self.indisponiveis:
+                            indisponiveis.append(f"mandatos:parlamentar_id={interno}")
+                        else:
                             falhas.add(codigo)
                     else:
                         fonte_h = fonte(("historico", codigo), self.historicos[codigo])
@@ -371,6 +379,10 @@ class _Coleta:
                     )
                 )
             sincronizar_votos(s, votacao, votos)
+        # Só expõe ids internos confirmados, nunca os de uma transação desfeita.
+        for recurso in indisponiveis:
+            if recurso not in self.resumo.indisponiveis_na_fonte:
+                self.resumo.indisponiveis_na_fonte.append(recurso)
         self.fontes = fontes
         self.parlamentares = parlamentares
         self.mandatos = mandatos

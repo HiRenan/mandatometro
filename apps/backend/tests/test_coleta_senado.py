@@ -11,6 +11,7 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from mandatometro.coleta.cli import mostrar_resumo
 from mandatometro.coleta.http import ClienteHttp
 from mandatometro.coleta.senado import coletar
 from mandatometro.db.modelos import Fonte, Mandato, Parlamentar, Proposicao, Votacao, Voto
@@ -452,17 +453,54 @@ def test_processo_indisponivel_pula_sem_falhar_nem_parar_na_terceira(
 
 
 @pytest.mark.parametrize("status", [404, 410])
-def test_historico_indisponivel_preserva_votos_sem_falhar(sessao, executar, respostas, status):
+@pytest.mark.parametrize(
+    "falhas,confirmadas", [((), 4), (("7109",), 3), (("7109", "7110", "7111"), 0)]
+)
+def test_historico_indisponivel_preserva_votos_e_so_identifica_parlamentar_confirmado(
+    sessao, executar, respostas, status, falhas, confirmadas, monkeypatch, capsys, caplog
+):
+    from sqlalchemy.exc import IntegrityError
+
+    from mandatometro.coleta import senado
+
     lista(respostas)[:] = [
         p for p in lista(respostas) if p["IdentificacaoParlamentar"]["CodigoParlamentar"] != "5672"
     ]
-    respostas["/senador/5672/mandatos.json"] = status
-    resumo, _ = executar()
-    assert resumo.completa
+    codigo = 990001
+    for votacao in respostas["/votacao"]:
+        for voto in votacao["votos"]:
+            if voto["codigoParlamentar"] == 5672:
+                voto.update(codigoParlamentar=codigo, nomeParlamentar="Pessoa ficticia")
+    caminho = f"/senador/{codigo}/mandatos.json"
+    respostas[caminho] = status
+    gravar = senado.sincronizar_votos
+
+    def falhar(sessao, votacao, votos):
+        if votacao.id_externo in falhas:
+            raise IntegrityError("SQL PRIVADO", {}, Exception("PESSOA E CODIGO PRIVADOS"))
+        return gravar(sessao, votacao, votos)
+
+    monkeypatch.setattr(senado, "sincronizar_votos", falhar)
+    resumo, requisicoes = executar()
+    assert resumo.completa == (not falhas)
     assert resumo.falhas_parlamentares == 0
-    assert resumo.indisponiveis_na_fonte == ["/senador/5672/mandatos.json"]
-    assert (resumo.votacoes, resumo.votos, resumo.mandatos) == (4, 324, 80)
-    assert total(sessao, Parlamentar) == 81
+    assert resumo.falhas_votacoes == list(falhas)
+    interno = sessao.scalar(
+        select(Parlamentar.id).where(Parlamentar.casa == "senado", Parlamentar.id_externo == codigo)
+    )
+    assert (interno is not None) == (confirmadas > 0)
+    assert resumo.indisponiveis_na_fonte == (
+        [f"mandatos:parlamentar_id={interno}"] if confirmadas else []
+    )
+    assert (resumo.votacoes, resumo.votos, resumo.mandatos) == (confirmadas, confirmadas * 81, 80)
+    assert total(sessao, Parlamentar) == (81 if confirmadas else 80)
+    assert sum(r.url.path.endswith(caminho) for r in requisicoes) == 1
+    mostrar_resumo(resumo)
+    saida = capsys.readouterr()
+    texto = saida.out + saida.err + caplog.text
+    assert str(codigo) not in texto
+    assert "Pessoa ficticia" not in texto
+    assert "PRIVADO" not in texto
 
 
 def test_404_na_listagem_principal_continua_sendo_falha(executar, respostas):

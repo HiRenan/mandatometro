@@ -198,7 +198,7 @@ O resumo final é uma linha JSON com contagens confirmadas, chamadas HTTP (inclu
 - **1:** coleta parcial ou interrompida. Uma votação que falha mantém a versão anterior e não impede as seguintes; seus ids aparecem em `falhas_votacoes`. Três votações consecutivas com falha interrompem a execução. Falhas no cadastro entram em `falhas_parlamentares`. As listagens principais são obrigatórias, e uma lista atual inválida não altera quem está em exercício;
 - **2:** argumentos inválidos, antes de acessar a rede ou o banco.
 
-A coleta é sequencial, usa timeout, backoff e o User-Agent do projeto, e consulta o `robots.txt`. Os testes usam respostas gravadas e o banco de teste, sem rede; a coleta real exige executar o comando. Ela roda em lote, fora das requisições do site.
+A coleta é sequencial, usa timeout, backoff e o User-Agent do projeto, e consulta o `robots.txt`. Os testes usam respostas gravadas e o banco de teste, sem rede; a coleta real exige executar o comando. Ela roda em lote, fora das requisições do site. No Actions, `scripts/tarefas.py` suprime os logs durante a coleta e imprime só o resumo; erros de configuração ou inesperados recebem uma mensagem fixa, sem detalhes da exceção.
 
 **Coleta e migrations na hospedagem.** O [passo a passo de ativação](docs/hospedagem.md) começa pelo desenvolvimento e depois passa à produção. O workflow **Coletar Congresso** roda às 03h17 de Brasília com o código da `main`, só depois de criar a variável de repositório `COLETAS_ATIVAS=true`. O botão **Run workflow** permite a primeira carga e a recuperação por datas: `develop` usa o banco de desenvolvimento, `main` usa o de produção. Cada Casa é tentada mesmo se a outra falhar.
 
@@ -226,7 +226,7 @@ uv run mandatometro coleta senado
 
 O comando divide períodos maiores em janelas de até 365 dias e coleta as votações nominais e secretas publicadas em `/votacao`, só das sessões do Senado, os votos individuais disponíveis e os senadores em exercício. As simbólicas e as sessões conjuntas do Congresso ficam de fora. Votações secretas ficam sem votos individuais; o modelo não guarda seus totais nem permite identificar com segurança a modalidade apenas pela ausência de votos.
 
-Se o histórico de um votante fora da lista atual falhar, seus votos ficam gravados, o mandato não é inventado e `falhas_parlamentares` conta o parlamentar uma vez. Recurso indisponível entra no resumo pelo caminho com seu id (por exemplo, `/processo/9006525`): sem o processo, a votação é pulada; sem o histórico, os votos são preservados.
+Se o histórico de um votante fora da lista atual falhar, seus votos ficam gravados, o mandato não é inventado e `falhas_parlamentares` conta o parlamentar uma vez. Processo indisponível entra no resumo pelo caminho com seu id (por exemplo, `/processo/9006525`), e a votação é pulada. Histórico indisponível preserva os votos e entra uma vez pelo tipo do recurso e pelo id interno do parlamentar (por exemplo, `mandatos:parlamentar_id=42`), somente após confirmar a gravação. O código público do senador fica fora da saída; para investigar, consulte `parlamentar.id_externo` pelo id interno informado.
 
 **Edição semanal.** O comando usa só as votações já coletadas. Não coleta, não envia e-mail e não publica ao gerar. Sem datas, usa os sete dias completos anteriores, como a coleta. O provedor ainda não tem adaptador: todos os itens começam com redação manual pendente. As variáveis `LLM_PROVIDER`, `LLM_MODEL` e `LLM_API_KEY` estão preparadas para essa integração futura; preenchê-las ainda não liga um provedor.
 
