@@ -138,6 +138,17 @@ def test_fatos_artigo_e_fontes_adicionais_sem_repetir_principal(edicao):
     )
     assert "Sim: 10" in mensagem.texto and "Não: 2" in mensagem.texto
     assert "Presidência: 1" in mensagem.texto
+    # Fontes distintas podem apontar para a mesma página pública (atos da mesma sessão).
+    outra.url_publica = item.fonte.url_publica
+    mensagem = montar_email(
+        edicao,
+        CODIGO,
+        app_base_url="https://mandatometro.example.com",
+        api_url="https://api.example.com",
+        fontes={20: outra},
+    )
+    assert mensagem.texto.count(item.fonte.url_publica) == 1
+    assert "Trecho fictício" in mensagem.texto and "Ementa fictícia" in mensagem.texto
 
 
 def test_artigo_fora_do_catalogo_nao_vira_link(edicao):

@@ -110,19 +110,27 @@ def formatar_edicao(
             ]
         )
         texto.extend([item.titulo, corpo])
-        for indice, fonte in enumerate(referencias):
+        por_pagina: dict[str, list[Fonte]] = {}
+        for fonte in referencias:
             if fonte is None or fonte.coletado_em is None:
                 raise MensagemInvalida("Item sem fonte completa.")
             url = _url(fonte.url_publica or fonte.url)
-            coleta = fonte.coletado_em.astimezone(UTC).strftime("%d/%m/%Y às %H:%M UTC")
+            por_pagina.setdefault(url, []).append(fonte)
+        for indice, (url, fontes_pagina) in enumerate(por_pagina.items()):
             rotulo = "Fonte oficial" if indice == 0 else "Outra referência oficial"
-            html.append(
-                f'<p><a href="{escape(url, quote=True)}">{rotulo}</a> · Coleta: {coleta}</p>'
-            )
-            texto.append(f"{rotulo}: {url}\nColeta: {coleta}")
-            if fonte.trecho:
-                html.append(f"<blockquote>{escape(fonte.trecho)}</blockquote>")
-                texto.append(f"Trecho da fonte: {fonte.trecho}")
+            for numero, fonte in enumerate(fontes_pagina):
+                coleta = fonte.coletado_em.astimezone(UTC).strftime("%d/%m/%Y às %H:%M UTC")
+                if numero == 0:
+                    html.append(
+                        f'<p><a href="{escape(url, quote=True)}">{rotulo}</a> · Coleta: {coleta}</p>'
+                    )
+                    texto.append(f"{rotulo}: {url}\nColeta: {coleta}")
+                else:
+                    html.append(f"<p>Outra coleta da mesma referência: {coleta}</p>")
+                    texto.append(f"Outra coleta da mesma referência: {coleta}")
+                if fonte.trecho:
+                    html.append(f"<blockquote>{escape(fonte.trecho)}</blockquote>")
+                    texto.append(f"Trecho da fonte: {fonte.trecho}")
         if item.artigo_caminho is not None:
             if item.artigo_caminho not in CATALOGO:
                 raise MensagemInvalida("Artigo fora do catálogo da trilha.")
