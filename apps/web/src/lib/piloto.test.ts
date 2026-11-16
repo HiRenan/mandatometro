@@ -184,7 +184,12 @@ describe("o piloto no navegador", () => {
 		piloto.concluirEtapa("depois", 9);
 		const depois = piloto.proximoPedido();
 
-		piloto.registrarResposta(depois as NonNullable<typeof depois>, "recebida");
+		expect(
+			piloto.registrarResposta(
+				depois as NonNullable<typeof depois>,
+				"recebida",
+			),
+		).toBe(true);
 
 		expect(guardado()).toEqual({
 			versao: "processo-legislativo-final-v1",
@@ -198,7 +203,9 @@ describe("o piloto no navegador", () => {
 		piloto.concluirEtapa("antes", 4);
 		const antes = piloto.proximoPedido();
 
-		piloto.registrarResposta(antes as NonNullable<typeof antes>, "encerrado");
+		expect(
+			piloto.registrarResposta(antes as NonNullable<typeof antes>, "encerrado"),
+		).toBe(true);
 
 		expect(guardado()).toEqual({
 			versao: "processo-legislativo-final-v1",
@@ -231,10 +238,12 @@ describe("o piloto no navegador", () => {
 		// Os mesmos acertos: só o código separa as duas pessoas.
 		piloto.concluirEtapa("antes", 4);
 
-		piloto.registrarResposta(
-			daPessoaAnterior as NonNullable<typeof daPessoaAnterior>,
-			"encerrado",
-		);
+		expect(
+			piloto.registrarResposta(
+				daPessoaAnterior as NonNullable<typeof daPessoaAnterior>,
+				"encerrado",
+			),
+		).toBe(false);
 
 		expect(piloto.lerPiloto()).toMatchObject({
 			fase: "participando",
@@ -247,10 +256,12 @@ describe("o piloto no navegador", () => {
 		piloto.concluirEtapa("antes", 4);
 		const pedido = piloto.proximoPedido();
 
-		piloto.registrarResposta(
-			{ ...(pedido as NonNullable<typeof pedido>), acertos: 5 },
-			"encerrado",
-		);
+		expect(
+			piloto.registrarResposta(
+				{ ...(pedido as NonNullable<typeof pedido>), acertos: 5 },
+				"encerrado",
+			),
+		).toBe(false);
 
 		expect(piloto.lerPiloto()).toMatchObject({
 			antes: { situacao: "pendente", acertos: 4 },

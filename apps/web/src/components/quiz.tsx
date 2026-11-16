@@ -171,8 +171,11 @@ export function Quiz({
 	 * total de acertos, que a tela não mostra.
 	 */
 	aoTerminar?: (acertos: number) => void;
-	/** Uma linha do piloto, embaixo do título, na abertura e no fim do quiz. */
-	linha?: ReactNode;
+	/**
+	 * Uma linha do piloto, embaixo do título, na abertura e no fim do quiz. Como
+	 * função, ela recebe as partes do quiz, como o aviso ao leitor de tela.
+	 */
+	linha?: ReactNode | ((partes: PartesDoQuiz) => ReactNode);
 	/** A abertura do piloto, no lugar da do quiz. */
 	abertura?: (partes: PartesDoQuiz) => ReactNode;
 	/** O fim do piloto, no lugar do do quiz, numa .quiz-fim com o título num h2. */
@@ -418,6 +421,7 @@ export function Quiz({
 					? { texto: "Recomeçar o quiz", fazer: recomecar }
 					: undefined;
 	const partes: PartesDoQuiz = { comecar, respondidas, hidratado, avisar };
+	const linhaNaTela = typeof linha === "function" ? linha(partes) : linha;
 	const recomeco = (
 		<p className="recomeco">
 			{acao && (
@@ -520,7 +524,7 @@ export function Quiz({
 								abertura(partes)
 							) : (
 								<>
-									{linha}
+									{linhaNaTela}
 									<p className="abertura">
 										Em cada pergunta, escolha uma opção e responda. Você vê se
 										acertou, a resposta certa, a explicação e a fonte oficial.
@@ -675,7 +679,7 @@ export function Quiz({
 										: fraseDoAndamento(respondidas, total)}
 								</span>
 							</h2>
-							{linha}
+							{linhaNaTela}
 							{recomeco}
 							<p className="quiz-fim-texto">
 								{artigos.length === 1

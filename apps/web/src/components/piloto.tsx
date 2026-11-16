@@ -1,7 +1,7 @@
 // biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { classes } from "@/lib/classes";
 import { semCliqueDuplo } from "@/lib/clique";
 import type { QuizNaPagina } from "@/lib/conteudo";
@@ -11,11 +11,19 @@ import {
 	comecarPiloto,
 	concluirEtapa,
 	etapaFeita,
+	type NomeDaEtapa,
 	type Piloto,
 	QUIZ_DO_ANTES,
 	TRILHA_DO_PILOTO,
 	usePiloto,
 } from "@/lib/piloto";
+import {
+	esquecerEnvio,
+	type SituacaoDoEnvio,
+	situacaoDoEnvio,
+	tentarDeNovo,
+	useEnvioDoPiloto,
+} from "@/lib/reenvio-do-piloto";
 import { idDoQuizFinal } from "@/lib/respostas-do-quiz";
 import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "./botao-continuar";
 import { LugarDoBotao } from "./lugar-do-botao";
@@ -53,6 +61,133 @@ const FIM_DO_ANTES =
 	"Agora leia a trilha: seis artigos curtos. No fim do último, o quiz final traz as mesmas perguntas, com a resposta certa, a explicação e a fonte de cada uma.";
 const SEGUNDA_ETAPA =
 	"Piloto, segunda etapa: são as mesmas 12 perguntas do começo. Vale a primeira resposta de cada uma. No fim, o site envia quantas você acertou, sem o seu nome.";
+
+/** A linha do envio de cada etapa, com o que a API respondeu. */
+const ENVIANDO = {
+	antes: "Enviando a primeira etapa…",
+	depois: "Enviando a segunda etapa…",
+} as const;
+const RECEBIDA = {
+	antes: "Recebemos a primeira etapa.",
+	depois: "Recebemos a segunda etapa. Obrigado por participar do piloto.",
+} as const;
+// O texto da Atena, de 16/11: o 410 vem antes de o piloto ligar e depois de ele
+// acabar, e a frase serve para os dois.
+const ENCERRADO_NO_ENVIO =
+	"O piloto não está recebendo respostas agora, e esta etapa não foi enviada. As perguntas continuam aqui para você aprender.";
+const FORA_DO_AR =
+	"Não conseguimos enviar agora. O site guarda a etapa neste navegador e tenta de novo daqui a pouco.";
+const SEM_CONEXAO =
+	"Sem conexão, a etapa não foi enviada. Ela fica guardada neste navegador e sai quando a internet voltar.";
+const RECUSADO =
+	"Não deu para enviar esta etapa, e o site não vai tentar de novo. As suas respostas continuam aqui.";
+
+function textoDoEnvio(etapa: NomeDaEtapa, situacao: SituacaoDoEnvio): string {
+	switch (situacao.tipo) {
+		case "enviando":
+			return ENVIANDO[etapa];
+		case "recebida":
+			return RECEBIDA[etapa];
+		case "encerrado":
+			return ENCERRADO_NO_ENVIO;
+		case "recusado":
+			return RECUSADO;
+		case "fora-do-ar":
+			return FORA_DO_AR;
+		case "sem-conexao":
+			return SEM_CONEXAO;
+		case "limite": {
+			const { segundos } = situacao;
+			const quando =
+				segundos === undefined
+					? "um minuto"
+					: segundos === 1
+						? "1 segundo"
+						: `${segundos} segundos`;
+			return `Muitos envios neste minuto. O site tenta de novo em ${quando}.`;
+		}
+	}
+}
+
+/**
+ * A linha do envio de uma etapa, embaixo do título, como a da folha da
+ * newsletter: "Enviando…" na letra pequena, a resposta numa frase e o erro em
+ * negrito. O leitor de tela ouve cada mudança pelo aviso do palco, e o foco não
+ * sai de onde está. Sem resposta da API, o "Tentar de novo" manda na hora.
+ * Depois da falha, ele fica no lugar, desligado, enquanto um pedido espera, o
+ * do botão ou o que o site manda sozinho: não pisca a cada tentativa nem perde
+ * o foco. Quando ele sai com o foco, o foco passa para a frase, logo acima.
+ */
+function LinhaDoEnvio({
+	etapa,
+	situacao,
+	avisar,
+}: {
+	etapa: NomeDaEtapa;
+	situacao: SituacaoDoEnvio;
+	avisar: (texto: string) => void;
+}) {
+	const texto = textoDoEnvio(etapa, situacao);
+	const frase = useRef<HTMLParagraphElement>(null);
+	const enviando = situacao.tipo === "enviando";
+	const semResposta =
+		situacao.tipo === "fora-do-ar" || situacao.tipo === "sem-conexao";
+	// Se o pedido que espera agora vem depois de uma falha. A resposta da API e
+	// o limite, que não tem "Tentar de novo", apagam a falha.
+	const [depoisDaFalha, setDepoisDaFalha] = useState(false);
+	if (semResposta && !depoisDaFalha) {
+		setDepoisDaFalha(true);
+	} else if (!semResposta && !enviando && depoisDaFalha) {
+		setDepoisDaFalha(false);
+	}
+
+	useEffect(() => {
+		avisar(texto);
+	}, [avisar, texto]);
+
+	// O botão sai quando a API responde: com o foco nele, o foco vai para a frase.
+	const guardarOFoco = useCallback((botao: HTMLButtonElement | null) => {
+		if (!botao) {
+			return;
+		}
+		return () => {
+			if (document.activeElement === botao) {
+				frase.current?.focus();
+			}
+		};
+	}, []);
+
+	return (
+		<div className="piloto-envio">
+			<p
+				ref={frase}
+				tabIndex={-1}
+				className={
+					enviando
+						? "rotulo piloto-enviando"
+						: situacao.tipo === "recebida"
+							? "piloto-linha"
+							: "ainda-nao"
+				}
+			>
+				{texto}
+			</p>
+			{/* Desligado, ele não manda outro pedido: o envio já não sai duas
+			    vezes ao mesmo tempo (lib/reenvio-do-piloto.ts). */}
+			{(semResposta || (enviando && depoisDaFalha)) && (
+				<button
+					ref={guardarOFoco}
+					type="button"
+					aria-disabled={enviando || undefined}
+					onClick={semCliqueDuplo(tentarDeNovo)}
+					className="acao-de-texto"
+				>
+					Tentar de novo
+				</button>
+			)}
+		</div>
+	);
+}
 
 /** Os textos do botão da abertura. O lugar dele guarda a altura do mais alto. */
 const TEXTOS_DO_BOTAO = ["Começar", "Continuar", "Ir para a trilha"] as const;
@@ -140,11 +275,21 @@ export function PaginaDoPiloto({
 	comApi: boolean;
 }) {
 	const piloto = usePiloto();
+	const envio = useEnvioDoPiloto(comApi);
 	// Se a pessoa acabou de apagar tudo: o "Pronto" fica no lugar do botão.
 	const [zerou, setZerou] = useState(false);
 	const pronto = useRef<HTMLSpanElement>(null);
 	const { trilha } = pagina;
 	const encerrado = piloto.fase === "encerrado";
+	const envioDoAntes = comApi
+		? situacaoDoEnvio("antes", piloto, envio)
+		: undefined;
+	// Na abertura, o envio do antes aparece enquanto ele não sai e, nesta visita,
+	// com a resposta da API. O piloto encerrado tem a frase própria.
+	const envioNaAbertura =
+		piloto.fase === "participando" &&
+		(piloto.antes.situacao === "pendente" ||
+			envio.desfechos.antes !== undefined);
 	const respondeOAntes =
 		comApi &&
 		(piloto.fase === "fora" ||
@@ -173,8 +318,11 @@ export function PaginaDoPiloto({
 			comecar();
 		}
 
+		// O envio desta visita é da pessoa anterior: um pedido dela que ainda
+		// espera a API não segura o da próxima.
 		function zerar() {
 			comecarComoOutraPessoa();
+			esquecerEnvio();
 			setZerou(true);
 			avisar(PRONTO);
 		}
@@ -193,10 +341,19 @@ export function PaginaDoPiloto({
 						<p key={nota}>{nota}</p>
 					))}
 				</div>
-				{estado && (
+				{estado ? (
 					<p className={estado === CONCLUIDO ? "piloto-situacao" : "ainda-nao"}>
 						{estado}
 					</p>
+				) : (
+					envioNaAbertura &&
+					envioDoAntes && (
+						<LinhaDoEnvio
+							etapa="antes"
+							situacao={envioDoAntes}
+							avisar={avisar}
+						/>
+					)
 				)}
 				{/* O botão só aparece depois que o JavaScript carrega: o servidor
 				    não sabe em que etapa a pessoa está. O lugar dele guarda a
@@ -263,7 +420,7 @@ export function PaginaDoPiloto({
 		);
 	}
 
-	function fim({ comecar }: PartesDoQuiz) {
+	function fim({ comecar, avisar }: PartesDoQuiz) {
 		return (
 			<div className="quiz-fim">
 				{/* Com a letra grande, o título cresce até "TERMINOU" encostar nas
@@ -275,6 +432,9 @@ export function PaginaDoPiloto({
 				>
 					Você terminou a primeira etapa.
 				</h2>
+				{envioDoAntes && (
+					<LinhaDoEnvio etapa="antes" situacao={envioDoAntes} avisar={avisar} />
+				)}
 				<p className="quiz-fim-texto">{FIM_DO_ANTES}</p>
 				<p className="quiz-fim-acoes">
 					<Link
@@ -327,9 +487,10 @@ export function PaginaDoPiloto({
 /**
  * O quiz final. Para quem fez o antes neste navegador, ele é o depois: uma
  * linha embaixo do título diz que é a segunda etapa, vale a primeira resposta
- * de cada pergunta, e a última resposta conclui a etapa. Com o antes pela
- * metade, a linha manda terminar o antes, e o quiz não mede nada. Para todo o
- * resto, é o quiz de sempre.
+ * de cada pergunta, e a última resposta conclui a etapa, que sai para a API.
+ * Depois, a linha diz como foi o envio. Com o antes pela metade, a linha manda
+ * terminar o antes, e o quiz não mede nada. Para todo o resto, é o quiz de
+ * sempre.
  */
 export function QuizFinal({
 	pagina,
@@ -340,18 +501,27 @@ export function QuizFinal({
 	comApi: boolean;
 }) {
 	const piloto = usePiloto();
+	const doPiloto = comApi && pagina.trilha.slug === TRILHA_DO_PILOTO;
+	// Daqui também sai o antes que ainda não foi enviado, antes do depois.
+	const envio = useEnvioDoPiloto(doPiloto);
 	const participando =
-		comApi &&
-		pagina.trilha.slug === TRILHA_DO_PILOTO &&
-		piloto.fase === "participando"
-			? piloto
-			: undefined;
+		doPiloto && piloto.fase === "participando" ? piloto : undefined;
 	const noDepois =
 		participando !== undefined &&
 		etapaFeita(participando.antes) &&
 		!etapaFeita(participando.depois);
 	const antesPelaMetade =
 		participando !== undefined && !etapaFeita(participando.antes);
+	const envioDoDepois = doPiloto
+		? situacaoDoEnvio("depois", piloto, envio)
+		: undefined;
+	// O envio do depois aparece enquanto ele não sai e, nesta visita, com a
+	// resposta da API. O 410 do antes, mandado daqui, também encerra o depois.
+	const comEnvio =
+		envioDoDepois !== undefined &&
+		(participando?.depois.situacao === "pendente" ||
+			envio.desfechos.depois !== undefined ||
+			envio.desfechos.antes === "encerrado");
 
 	const linha = noDepois ? (
 		<p className="piloto-linha">{SEGUNDA_ETAPA}</p>
@@ -360,6 +530,10 @@ export function QuizFinal({
 			Piloto: termine primeiro a primeira etapa,{" "}
 			<Link to="/piloto">na página do piloto</Link>.
 		</p>
+	) : comEnvio ? (
+		({ avisar }: PartesDoQuiz) => (
+			<LinhaDoEnvio etapa="depois" situacao={envioDoDepois} avisar={avisar} />
+		)
 	) : undefined;
 
 	// A chave zera o quiz quando a pessoa passa para o de outra trilha.

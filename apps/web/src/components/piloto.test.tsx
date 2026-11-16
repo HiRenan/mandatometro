@@ -18,10 +18,11 @@ import {
 	screen,
 	within,
 } from "@testing-library/react";
-import { hydrateRoot } from "react-dom/client";
+import { hydrateRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { acharQuizFinal, trilhas } from "@/lib/conteudo/paginas.server";
+import { enviarEtapa, type ResultadoDoEnvio } from "@/lib/envio-do-piloto";
 import {
 	comecarPiloto,
 	concluirEtapa,
@@ -31,14 +32,22 @@ import {
 	registrarResposta,
 } from "@/lib/piloto";
 import { marcarLido } from "@/lib/progresso";
+import { enviarPendentes, esquecerEnvio } from "@/lib/reenvio-do-piloto";
 import { lerRespostas, responder } from "@/lib/respostas-do-quiz";
 import { Route as RotaDoPiloto } from "@/routes/piloto";
 import { PaginaDoPiloto, QuizFinal } from "./piloto";
 
 // A rota do piloto lê do ENV, do varlock, se o site tem a API, e o ENV só
-// existe no site. Nenhum pedido sai nestes testes: o envio fica para o
-// envio-do-piloto.test.ts.
+// existe no site. Nenhum pedido sai nestes testes: o envio de verdade fica para
+// o envio-do-piloto.test.ts, e aqui cada envio responde o que o teste mandar.
+// Sem resposta combinada, ele fica esperando a API.
 vi.mock("@/env", () => ({ ENV: { API_URL: "https://api.exemplo.test" } }));
+vi.mock("@/lib/envio-do-piloto", async (original) => ({
+	...(await original<typeof import("@/lib/envio-do-piloto")>()),
+	enviarEtapa: vi.fn(),
+}));
+
+const enviar = vi.mocked(enviarEtapa);
 
 const TRILHA = "processo-legislativo";
 const PAGINA = acharQuizFinal(trilhas, TRILHA)!;
@@ -71,6 +80,16 @@ const SEGUNDA_ETAPA =
 	"Piloto, segunda etapa: são as mesmas 12 perguntas do começo. Vale a primeira resposta de cada uma. No fim, o site envia quantas você acertou, sem o seu nome.";
 const TERMINE_O_ANTES =
 	"Piloto: termine primeiro a primeira etapa, na página do piloto.";
+const ENCERRADO_NO_ENVIO =
+	"O piloto não está recebendo respostas agora, e esta etapa não foi enviada. As perguntas continuam aqui para você aprender.";
+const FORA_DO_AR =
+	"Não conseguimos enviar agora. O site guarda a etapa neste navegador e tenta de novo daqui a pouco.";
+const SEM_CONEXAO =
+	"Sem conexão, a etapa não foi enviada. Ela fica guardada neste navegador e sai quando a internet voltar.";
+const RECUSADO =
+	"Não deu para enviar esta etapa, e o site não vai tentar de novo. As suas respostas continuam aqui.";
+const UUID_V4 =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 /** Um site de mentira, com a página do piloto, o quiz final e os links deles. */
 function criarRouter(inicio: string, comApi: boolean) {
@@ -143,6 +162,9 @@ async function htmlDoServidor(inicio: string) {
 	return { html, daPagina, semJavaScript: blocos };
 }
 
+// As raízes hidratadas: o cleanup do Testing Library não as desmonta.
+const hidratadas: Root[] = [];
+
 /** Hidrata o HTML do servidor e devolve o palco, conferindo que não deu erro. */
 async function hidratar(inicio: string): Promise<HTMLElement> {
 	const router = criarRouter(inicio, true);
@@ -153,9 +175,11 @@ async function hidratar(inicio: string): Promise<HTMLElement> {
 	const erros = vi.fn();
 	const consoleErro = vi.spyOn(console, "error");
 	await act(async () => {
-		hydrateRoot(raiz, <RouterProvider router={router} />, {
-			onRecoverableError: erros,
-		});
+		hidratadas.push(
+			hydrateRoot(raiz, <RouterProvider router={router} />, {
+				onRecoverableError: erros,
+			}),
+		);
 	});
 	expect(erros).not.toHaveBeenCalled();
 	expect(consoleErro).not.toHaveBeenCalled();
@@ -249,16 +273,57 @@ function antesRecebido() {
 	registrarResposta(proximoPedido()!, "recebida");
 }
 
+/** Cada envio responde o próximo resultado da lista; o último se repete. */
+function respostasDaApi(...resultados: ResultadoDoEnvio[]) {
+	for (const resultado of resultados) {
+		enviar.mockResolvedValueOnce(resultado);
+	}
+	enviar.mockResolvedValue(resultados[resultados.length - 1]);
+}
+
+/** Um envio que só responde quando o teste mandar. */
+function respostaPresa() {
+	let responder: (resultado: ResultadoDoEnvio) => void = () => {};
+	enviar.mockReturnValueOnce(
+		new Promise((resolver) => {
+			responder = resolver;
+		}),
+	);
+	return async (resultado: ResultadoDoEnvio) => {
+		await act(async () => responder(resultado));
+	};
+}
+
+/** Deixa a resposta da API chegar à tela. */
+async function esperarAApi() {
+	await act(async () => {});
+}
+
+/** Começa e termina o antes, com as `certas` primeiras respostas certas. */
+function terminarOAntes(certas = 5) {
+	clicar("Começar");
+	for (const [indice] of PAGINA.perguntas.entries()) {
+		responderAPergunta(indice, indice < certas);
+	}
+}
+
 beforeEach(() => {
 	localStorage.clear();
+	enviar.mockReset();
+	enviar.mockReturnValue(new Promise(() => {}));
 	// O jsdom não rola a janela.
 	vi.spyOn(window, "scrollTo").mockImplementation(() => {});
 });
 
 afterEach(() => {
 	cleanup();
-	// O HTML hidratado fica fora do que o cleanup desmonta.
+	// O HTML hidratado fica fora do que o cleanup desmonta: sem desmontar, a
+	// página continua ouvindo o piloto e mandaria o envio do teste seguinte.
+	for (const raiz of hidratadas.splice(0)) {
+		act(() => raiz.unmount());
+	}
 	document.body.replaceChildren();
+	esquecerEnvio();
 	localStorage.clear();
 	vi.restoreAllMocks();
 });
@@ -569,6 +634,22 @@ describe("a página do piloto", () => {
 		expect(passos()[0]).toBe("Antes da trilha · Você está aqui");
 	});
 
+	it("depois do Começar como outra pessoa, o pedido da anterior que ainda espera a API não segura o da próxima", async () => {
+		comecarPiloto();
+		concluirEtapa("antes", 4);
+		await abrirOPiloto();
+		// O pedido dela espera a API: o envio destes testes não responde.
+		expect(enviar).toHaveBeenCalledTimes(1);
+
+		clicar("Começar como outra pessoa");
+		terminarOAntes(2);
+
+		expect(enviar).toHaveBeenCalledTimes(2);
+		const [[anterior], [proxima]] = enviar.mock.calls;
+		expect(proxima).toMatchObject({ etapa: "antes", acertos: 2 });
+		expect(proxima.participacao).not.toBe(anterior.participacao);
+	});
+
 	it("quando outra aba começa do zero, volta ao Começar", async () => {
 		antesRecebido();
 		await abrirOPiloto();
@@ -702,6 +783,276 @@ describe("o quiz final, no piloto", () => {
 				ignore: "[aria-hidden=true]",
 			}),
 		).toBeTruthy();
+	});
+});
+
+describe("o envio das etapas", () => {
+	it("no fim do antes, manda a etapa e diz, na tela e ao leitor de tela, que enviou e que recebemos, sem tirar o foco do título", async () => {
+		const responder = respostaPresa();
+		await abrirOPiloto();
+		terminarOAntes(5);
+
+		const titulo = screen.getByRole("heading", {
+			level: 2,
+			name: "Você terminou a primeira etapa.",
+		});
+		expect(naTela("Enviando a primeira etapa…")).toBeTruthy();
+		expect(aviso()).toBe("Enviando a primeira etapa…");
+		const [pedido] = enviar.mock.calls[0];
+		expect(pedido).toEqual({
+			participacao: expect.stringMatching(UUID_V4),
+			versao_quiz: "processo-legislativo-final-v1",
+			etapa: "antes",
+			acertos: 5,
+		});
+		expect(document.body.innerHTML).not.toContain(pedido.participacao);
+
+		await responder({ tipo: "recebida" });
+
+		expect(naTela("Recebemos a primeira etapa.")).toBeTruthy();
+		expect(aviso()).toBe("Recebemos a primeira etapa.");
+		expect(document.activeElement).toBe(titulo);
+		expect(lerPiloto()).toMatchObject({ antes: { situacao: "recebida" } });
+	});
+
+	it.each([
+		{ resultado: { tipo: "fora-do-ar" }, texto: FORA_DO_AR, tentar: true },
+		{ resultado: { tipo: "sem-conexao" }, texto: SEM_CONEXAO, tentar: true },
+		{
+			resultado: { tipo: "limite", segundos: 42 },
+			texto: "Muitos envios neste minuto. O site tenta de novo em 42 segundos.",
+			tentar: false,
+		},
+		{
+			resultado: { tipo: "limite", segundos: 1 },
+			texto: "Muitos envios neste minuto. O site tenta de novo em 1 segundo.",
+			tentar: false,
+		},
+		{
+			resultado: { tipo: "limite" },
+			texto: "Muitos envios neste minuto. O site tenta de novo em um minuto.",
+			tentar: false,
+		},
+		{ resultado: { tipo: "recusado" }, texto: RECUSADO, tentar: false },
+		{
+			resultado: { tipo: "encerrado" },
+			texto: ENCERRADO_NO_ENVIO,
+			tentar: false,
+		},
+	] satisfies {
+		resultado: ResultadoDoEnvio;
+		texto: string;
+		tentar: boolean;
+	}[])(
+		"com a resposta $resultado.tipo, diz o que houve com a etapa",
+		async ({ resultado, texto, tentar }) => {
+			respostasDaApi(resultado);
+			await abrirOPiloto();
+			terminarOAntes();
+			await esperarAApi();
+
+			expect(naTela(texto)).toBeTruthy();
+			expect(aviso()).toBe(texto);
+			expect(
+				screen.queryByRole("button", { name: "Tentar de novo" }) !== null,
+			).toBe(tentar);
+		},
+	);
+
+	it("com o piloto encerrado (410), a etapa sai do navegador e as respostas podem ser revistas", async () => {
+		respostasDaApi({ tipo: "encerrado" });
+		await abrirOPiloto();
+		terminarOAntes();
+		await esperarAApi();
+
+		expect(lerPiloto()).toEqual({ fase: "encerrado" });
+		expect(
+			screen.getByRole("button", { name: /^Rever as respostas/ }),
+		).toBeTruthy();
+	});
+
+	it("o Tentar de novo manda na hora e fica no lugar, desligado, enquanto espera; com a resposta, o foco fica na frase", async () => {
+		respostasDaApi({ tipo: "fora-do-ar" });
+		await abrirOPiloto();
+		terminarOAntes();
+		await esperarAApi();
+		const responder = respostaPresa();
+		const tentar = screen.getByRole("button", { name: "Tentar de novo" });
+		tentar.focus();
+
+		clicar("Tentar de novo");
+
+		expect(enviar).toHaveBeenCalledTimes(2);
+		expect(naTela("Enviando a primeira etapa…")).toBeTruthy();
+		expect(tentar.getAttribute("aria-disabled")).toBe("true");
+		expect(document.activeElement).toBe(tentar);
+		// Desligado, ele não manda outro pedido.
+		clicar("Tentar de novo");
+		expect(enviar).toHaveBeenCalledTimes(2);
+
+		await responder({ tipo: "recebida" });
+
+		expect(screen.queryByRole("button", { name: "Tentar de novo" })).toBeNull();
+		expect(document.activeElement?.textContent).toBe(
+			"Recebemos a primeira etapa.",
+		);
+	});
+
+	it("com outra falha depois do Tentar de novo, o botão volta a valer, com o foco nele", async () => {
+		respostasDaApi({ tipo: "fora-do-ar" });
+		await abrirOPiloto();
+		terminarOAntes();
+		await esperarAApi();
+		const tentar = screen.getByRole("button", { name: "Tentar de novo" });
+		tentar.focus();
+
+		clicar("Tentar de novo");
+		await esperarAApi();
+
+		expect(naTela(FORA_DO_AR)).toBeTruthy();
+		expect(tentar.getAttribute("aria-disabled")).toBeNull();
+		expect(document.activeElement).toBe(tentar);
+	});
+
+	it("quando o site manda de novo sozinho, o Tentar de novo fica no lugar, desligado e com o foco", async () => {
+		respostasDaApi({ tipo: "sem-conexao" });
+		await abrirOPiloto();
+		terminarOAntes();
+		await esperarAApi();
+		const responder = respostaPresa();
+		const tentar = screen.getByRole("button", { name: "Tentar de novo" });
+		tentar.focus();
+
+		// A internet voltou: o pedido sai sem o clique.
+		act(() => {
+			window.dispatchEvent(new Event("online"));
+		});
+
+		expect(enviar).toHaveBeenCalledTimes(2);
+		expect(naTela("Enviando a primeira etapa…")).toBeTruthy();
+		expect(tentar.isConnected).toBe(true);
+		expect(tentar.getAttribute("aria-disabled")).toBe("true");
+		expect(document.activeElement).toBe(tentar);
+
+		await responder({ tipo: "recebida" });
+
+		expect(screen.queryByRole("button", { name: "Tentar de novo" })).toBeNull();
+		expect(document.activeElement?.textContent).toBe(
+			"Recebemos a primeira etapa.",
+		);
+	});
+
+	it("no limite, o Tentar de novo sai e não volta quando o site manda de novo", async () => {
+		respostasDaApi({ tipo: "fora-do-ar" }, { tipo: "limite", segundos: 42 });
+		await abrirOPiloto();
+		terminarOAntes();
+		await esperarAApi();
+		clicar("Tentar de novo");
+		await esperarAApi();
+		expect(screen.queryByRole("button", { name: "Tentar de novo" })).toBeNull();
+
+		// Passados os 42 segundos, o relógio manda de novo.
+		respostaPresa();
+		act(() => {
+			void enviarPendentes();
+		});
+
+		expect(enviar).toHaveBeenCalledTimes(3);
+		expect(naTela("Enviando a primeira etapa…")).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Tentar de novo" })).toBeNull();
+	});
+
+	it("na volta à página do piloto, manda o antes que ficou e diz como foi", async () => {
+		comecarPiloto();
+		concluirEtapa("antes", 3);
+		respostasDaApi({ tipo: "recebida" });
+
+		await abrirOPiloto();
+		await esperarAApi();
+
+		expect(enviar).toHaveBeenCalledTimes(1);
+		expect(naTela("Recebemos a primeira etapa.")).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Ir para a trilha" })).toBeTruthy();
+	});
+
+	it("hidrata sem erro com o antes por mandar, e a linha do envio chega depois", async () => {
+		comecarPiloto();
+		concluirEtapa("antes", 3);
+
+		const palco = await hidratar("/piloto");
+
+		expect(
+			within(palco).getByText("Enviando a primeira etapa…", {
+				ignore: "[role=status], [aria-hidden=true]",
+			}),
+		).toBeTruthy();
+	});
+
+	it("no fim do quiz final, manda a segunda etapa e agradece quando a API recebe", async () => {
+		antesRecebido();
+		const responder = respostaPresa();
+		await abrirOQuizFinal();
+		clicar("Começar");
+		for (const [indice] of PAGINA.perguntas.entries()) {
+			responderAPergunta(indice, indice < 7);
+			clicar(/^(Próxima pergunta|Terminar)$/);
+		}
+
+		expect(naTela("Enviando a segunda etapa…")).toBeTruthy();
+		expect(enviar.mock.calls[0][0]).toMatchObject({
+			etapa: "depois",
+			acertos: 7,
+		});
+
+		await responder({ tipo: "recebida" });
+
+		expect(
+			naTela("Recebemos a segunda etapa. Obrigado por participar do piloto."),
+		).toBeTruthy();
+		expect(lerPiloto()).toEqual({ fase: "concluido" });
+	});
+
+	it("com o antes por mandar, o quiz final manda o antes primeiro e mostra só a segunda etapa", async () => {
+		comecarPiloto();
+		concluirEtapa("antes", 3);
+		respostasDaApi({ tipo: "recebida" });
+
+		await abrirOQuizFinal();
+		await esperarAApi();
+
+		expect(enviar.mock.calls.map(([pedido]) => pedido.etapa)).toEqual([
+			"antes",
+		]);
+		expect(naTela(SEGUNDA_ETAPA)).toBeTruthy();
+		foraDaTela("Recebemos a primeira etapa.");
+	});
+
+	it("o 410 do antes, mandado do quiz final, encerra também o depois", async () => {
+		comecarPiloto();
+		concluirEtapa("antes", 3);
+		respostasDaApi({ tipo: "encerrado" });
+
+		await abrirOQuizFinal();
+		await esperarAApi();
+
+		expect(naTela(ENCERRADO_NO_ENVIO)).toBeTruthy();
+		foraDaTela(SEGUNDA_ETAPA);
+		clicar("Começar");
+		responderAPergunta(0, false);
+		expect(travadas()).not.toContain(true);
+	});
+
+	it("sem a API, nada sai, nem da página do piloto nem do quiz final", async () => {
+		comecarPiloto();
+		concluirEtapa("antes", 3);
+
+		await abrirOPiloto({ comApi: false });
+		await esperarAApi();
+		cleanup();
+		await abrirOQuizFinal({ comApi: false });
+		await esperarAApi();
+
+		expect(enviar).not.toHaveBeenCalled();
 	});
 });
 

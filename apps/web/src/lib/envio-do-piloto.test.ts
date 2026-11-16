@@ -1,0 +1,118 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { PedidoTentativaPiloto } from "@/client";
+import { enviarEtapa, esperaDoReenvio } from "./envio-do-piloto";
+
+// O cliente da API lê o endereço dela ao ser importado, e o ENV do varlock só
+// existe no site. Aqui, a API é um endereço de mentira, e o fetch, simulado.
+vi.mock("@/env", () => ({ ENV: { API_URL: "https://api.exemplo.test" } }));
+
+const PEDIDO: PedidoTentativaPiloto = {
+	participacao: "b9d2fdc3-c198-433b-836d-b381de5a49d9",
+	versao_quiz: "processo-legislativo-final-v1",
+	etapa: "antes",
+	acertos: 7,
+};
+
+afterEach(() => {
+	vi.restoreAllMocks();
+	vi.unstubAllGlobals();
+});
+
+/** Simula a API: cada pedido recebe a resposta de `responder`, e o pedido fica guardado. */
+function api(responder: () => Response | Promise<Response>) {
+	const pedidos: Request[] = [];
+	const fetch = vi.fn(async (pedido: Request) => {
+		pedidos.push(pedido);
+		return responder();
+	});
+	vi.stubGlobal("fetch", fetch);
+	return { fetch, pedidos };
+}
+
+function json(status: number, corpo: unknown, cabecalhos = {}) {
+	return new Response(JSON.stringify(corpo), {
+		status,
+		headers: { "Content-Type": "application/json", ...cabecalhos },
+	});
+}
+
+describe("o envio de uma etapa do piloto", () => {
+	it("manda os quatro campos só no corpo de um POST, com o código fora do endereço", async () => {
+		const { pedidos } = api(() => json(200, { situacao: "recebida" }));
+
+		expect(await enviarEtapa(PEDIDO)).toEqual({ tipo: "recebida" });
+
+		expect(pedidos).toHaveLength(1);
+		expect(pedidos[0].method).toBe("POST");
+		expect(pedidos[0].url).toBe("https://api.exemplo.test/piloto/tentativas");
+		expect(await pedidos[0].json()).toEqual(PEDIDO);
+	});
+
+	it("com o piloto encerrado (410), diz que ele não recebe respostas", async () => {
+		api(() => json(410, { erro: "piloto_encerrado" }));
+
+		expect(await enviarEtapa(PEDIDO)).toEqual({ tipo: "encerrado" });
+	});
+
+	it("com o pedido recusado (413 ou 422), diz que não adianta repetir", async () => {
+		api(() => json(413, { erro: "corpo_muito_grande" }));
+		expect(await enviarEtapa(PEDIDO)).toEqual({ tipo: "recusado" });
+
+		api(() => json(422, { erro: "dados_invalidos" }));
+		expect(await enviarEtapa(PEDIDO)).toEqual({ tipo: "recusado" });
+	});
+
+	it("no limite de tentativas (429), traz os segundos do Retry-After", async () => {
+		api(() =>
+			json(429, { erro: "limite_de_tentativas" }, { "Retry-After": "42" }),
+		);
+		expect(await enviarEtapa(PEDIDO)).toEqual({ tipo: "limite", segundos: 42 });
+
+		api(() => json(429, { erro: "limite_de_tentativas" }));
+		expect(await enviarEtapa(PEDIDO)).toEqual({ tipo: "limite" });
+
+		api(() =>
+			json(429, { erro: "limite_de_tentativas" }, { "Retry-After": "amanhã" }),
+		);
+		expect(await enviarEtapa(PEDIDO)).toEqual({ tipo: "limite" });
+	});
+
+	it("com o serviço fora do ar ou outra resposta, diz que dá para repetir", async () => {
+		api(() => json(503, { erro: "servico_indisponivel" }));
+		expect(await enviarEtapa(PEDIDO)).toEqual({ tipo: "fora-do-ar" });
+
+		api(() => json(500, {}));
+		expect(await enviarEtapa(PEDIDO)).toEqual({ tipo: "fora-do-ar" });
+	});
+
+	it("sem internet, diz que não houve conexão, sem lançar erro nem escrever no console", async () => {
+		const consoleErro = vi.spyOn(console, "error");
+		api(() => Promise.reject(new TypeError("Failed to fetch")));
+
+		expect(await enviarEtapa(PEDIDO)).toEqual({ tipo: "sem-conexao" });
+		expect(consoleErro).not.toHaveBeenCalled();
+	});
+
+	it("com o tempo esgotado, diz que não houve conexão", async () => {
+		api(() => Promise.reject(new DOMException("tempo", "TimeoutError")));
+
+		expect(await enviarEtapa(PEDIDO)).toEqual({ tipo: "sem-conexao" });
+	});
+
+	it("espera a API por até 20 segundos", async () => {
+		const tempo = vi.spyOn(AbortSignal, "timeout");
+		api(() => json(200, { situacao: "recebida" }));
+
+		await enviarEtapa(PEDIDO);
+
+		expect(tempo).toHaveBeenCalledWith(20_000);
+	});
+});
+
+describe("a espera do reenvio", () => {
+	it("espera 5, 15, 30 e 60 segundos, e depois um minuto a cada vez", () => {
+		expect([0, 1, 2, 3, 4, 10].map(esperaDoReenvio)).toEqual([
+			5, 15, 30, 60, 60, 60,
+		]);
+	});
+});

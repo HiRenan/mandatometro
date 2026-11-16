@@ -279,22 +279,22 @@ export function proximoPedido(
  * Guarda o que a API respondeu ao pedido, se ele ainda é o que está guardado:
  * outra aba pode ter recebido a resposta antes, ou outra pessoa pode ter
  * começado do zero no meio do caminho. Recebido ou perdido o depois, o código
- * sai do navegador; com o piloto encerrado, também.
+ * sai do navegador; com o piloto encerrado, também. Devolve se guardou.
  */
 export function registrarResposta(
 	pedido: PedidoTentativaPiloto,
 	desfecho: Desfecho,
-): void {
+): boolean {
 	const piloto = lerPiloto();
 	if (
 		piloto.fase !== "participando" ||
 		piloto.participacao !== pedido.participacao
 	) {
-		return;
+		return false;
 	}
 	const etapa = piloto[pedido.etapa];
 	if (etapa.situacao !== "pendente" || etapa.acertos !== pedido.acertos) {
-		return;
+		return false;
 	}
 	if (desfecho === "encerrado") {
 		gravar({ fase: "encerrado" });
@@ -306,6 +306,7 @@ export function registrarResposta(
 			antes: { situacao: desfecho === "recebida" ? "recebida" : "perdida" },
 		});
 	}
+	return true;
 }
 
 /**
