@@ -86,8 +86,9 @@ def selecionar(sessao: Session, inicio: date, fim: date, *, teto: int = 8) -> Se
     resumo = ResumoSelecao(votacoes_no_banco=len(votacoes))
     elegiveis = []
     for v in votacoes:
+        siglas = [p.sigla for p in v.proposicoes]
         if any(
-            assunto_pessoal(t, nomes)
+            assunto_pessoal(t, nomes, siglas=siglas)
             for t in [v.descricao, *(p.ementa or "" for p in v.proposicoes)]
         ):
             resumo.assunto_pessoal += 1

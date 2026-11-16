@@ -417,7 +417,9 @@ def revisar(abrir: AbrirSessao, edicao_id: int, dados: dict) -> dict:
             _texto_valido(revisao.titulo, "título", f"Item {numero}", numeros)
             for p in revisao.explicacao:
                 _texto_valido(p, "explicação", f"Item {numero}", numeros)
-            if assunto_pessoal(revisao.titulo + " " + texto, nomes):
+            if any(
+                assunto_pessoal(t, nomes, siglas=()) for t in (revisao.titulo, *revisao.explicacao)
+            ):
                 raise ErroEdicao(
                     f"Item {numero}: a explicação trata de assunto pessoal fora da edição."
                 )
@@ -462,7 +464,7 @@ def revisar(abrir: AbrirSessao, edicao_id: int, dados: dict) -> dict:
         _texto_valido(arquivo.titulo, "título", "Edição", numeros_edicao)
         if "\n" in arquivo.titulo or "\t" in arquivo.titulo:
             raise ErroEdicao("Edição: o título precisa ficar em uma linha.")
-        if assunto_pessoal(arquivo.titulo, nomes):
+        if assunto_pessoal(arquivo.titulo, nomes, siglas=()):
             raise ErroEdicao("Edição: o título trata de assunto pessoal fora da edição.")
         if identificacao(arquivo.titulo, nomes):
             avisos.append("Confira o título da edição: o texto pode citar parlamentar ou partido.")
