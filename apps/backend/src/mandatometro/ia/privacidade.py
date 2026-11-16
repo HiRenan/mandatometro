@@ -10,8 +10,11 @@ PARTIDO_UF = re.compile(
     r"(?:ac|al|am|ap|ba|ce|df|es|go|ma|mg|ms|mt|pa|pb|pe|pi|pr|rj|rn|ro|rr|rs|sc|se|sp|to)\b"
 )
 TERMO_PESSOAL = re.compile(
-    r"\b(?:licenc\w*|afast\w*|saude|doenc\w*|enfermidades?|internac\w*|"
-    r"internad[oa]s?|hospitaliz\w*|cirurgias?|(?:tratamentos?|atestados?)\s+medic[oa]s?)\b"
+    r"\b(?:licenc\w*|afast\w*|saude|doenc\w*|doentes?|adoec\w*|enferm(?:idades?|[oa]s?)|"
+    # As terminações de internar evitam interno, internacional, internet e internauta.
+    r"intern(?:a(?:r\w*|s|mos|is|m|va\w*|ste\w*|sse\w*|ndo|d[oa]s?|c(?:ao|oes))?|"
+    r"e(?:i|s|mos|is|m)?|ou)|hospitaliz\w*|cirurg(?:ias?|ic[oa]s?)|"
+    r"(?:tratamentos?|atestados?)\s+medic[oa]s?)\b"
 )
 LICENCA_OU_AFASTAMENTO = re.compile(r"\b(?:licenc|afast)\w*\b")
 PALAVRA_PARLAMENTAR = re.compile(
@@ -19,9 +22,10 @@ PALAVRA_PARLAMENTAR = re.compile(
 )
 PROPOSICAO_CITADA = re.compile(
     r"\b(?:pl[a-z]{0,2}|pec|mpv?|pd[clsn]|pr[csn]|"
-    r"projeto\s+de\s+(?:lei(?:\s+(?:complementar|de\s+conversao))?|"
-    r"decreto\s+legislativo|resolucao)|proposta\s+de\s+emenda\s+a\s+constituicao|"
-    r"medida\s+provisoria)\s*(?:n(?:umero)?[.\s°o]*)?\d"
+    r"projetos?\s+de\s+(?:lei(?:\s+(?:complementar|de\s+conversao))?|"
+    r"decreto\s+legislativo|resolucao)|propostas?\s+de\s+emenda\s+a\s+constituicao|"
+    r"medidas?\s+provisorias?)(?:\s+(?:do\s+senado(?:\s+federal)?|"
+    r"da\s+camara(?:\s+dos\s+deputados)?))?\s*(?:n(?:umero)?[.\s°o]*)?\d"
 )
 DISTANCIA_PESSOAL = 6
 
@@ -45,7 +49,7 @@ def identificacao(texto: str, nomes: Iterable[str]) -> bool:
 
 def assunto_pessoal(texto: str, nomes: Iterable[str], *, siglas: Iterable[str] = ()) -> bool:
     """Termo pessoal ligado a parlamentar; siglas só vêm dos vínculos da fonte."""
-    texto = normalizar(texto)
+    texto = re.sub(r"\s+", " ", normalizar(texto))
     if not TERMO_PESSOAL.search(texto):
         return False
     requerimento = any(normalizar(s).startswith(("req", "rq")) for s in siglas) or re.match(
@@ -61,15 +65,15 @@ def assunto_pessoal(texto: str, nomes: Iterable[str], *, siglas: Iterable[str] =
     # O nome da Casa não identifica parlamentar. Mantém a contagem de três palavras,
     # sem mudar a guarda mais ampla de identificacao usada na entrada do redator.
     texto = re.sub(r"\bcamara\s+dos\s+deputados\b", "casa legislativa federal", texto)
-    # Abreviações não encerram a frase; quebras de linha encerram o contexto.
-    texto = re.sub(r"\b(dep|sen|art|arts)\.", r"\1", texto)
     sinais = [PALAVRA_PARLAMENTAR, PARTIDO_UF]
     sinais.extend(
         re.compile(r"(?<!\w)" + re.escape(normalizar(nome)) + r"(?!\w)")
         for nome in nomes
         if len(nome.split()) >= 2
     )
-    for frase in re.split(r"[.!?\r\n]+", texto):
+    # Ponto após palavra curta preserva a ligação, inclusive em abreviações.
+    # Cinco letras antes do ponto bastam; ! e ? sempre encerram a frase.
+    for frase in re.split(r"(?<=[a-z]{5})\.+|[!?]+", texto):
         termos = list(TERMO_PESSOAL.finditer(frase))
         if not termos:
             continue

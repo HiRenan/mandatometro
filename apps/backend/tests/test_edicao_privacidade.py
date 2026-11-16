@@ -123,8 +123,31 @@ def test_assunto_pessoal_exige_ligacao_com_parlamentar(texto, siglas, esperado, 
         "internações",
         "internado",
         "internada",
+        "internou",
+        "internaram",
+        "internar",
+        "internando",
+        "internava",
+        "internássemos",
+        "internaremos",
+        "internaria",
+        "interne",
+        "internem",
+        "internei",
         "hospitalizado",
         "hospitalizadas",
+        "hospitalizou",
+        "hospitalizaram",
+        "hospitalizar",
+        "hospitalizando",
+        "adoeceu",
+        "adoeceram",
+        "adoecer",
+        "adoecendo",
+        "adoeça",
+        "doente",
+        "doentes",
+        "enfermo",
         "cirurgias",
         "tratamentos médicos",
         "atestados médicos",
@@ -170,9 +193,35 @@ def test_ligacao_limitada_a_seis_palavras_intermediarias(sinal, distancia, esper
     assert assunto_pessoal(texto, ["Pessoa Inventada"]) is esperado
 
 
-@pytest.mark.parametrize("separador", [". ", "! ", "? ", "\n"])
+@pytest.mark.parametrize("separador", [". ", "! ", "? "])
 def test_ligacao_nao_atravessa_frase(separador):
     assert not assunto_pessoal("Licença ambiental" + separador + "Senador propõe emenda.", [])
+
+
+@pytest.mark.parametrize(
+    "separador", ["\n", "\r\n", " Sr. ", " Sra. ", " Dr. ", " Exmo. ", " nº. "]
+)
+def test_quebra_tipografica_e_ponto_apos_palavra_curta_preservam_ligacao(separador):
+    assert assunto_pessoal("Concede licença ao" + separador + "parlamentar.", [])
+
+
+@pytest.mark.parametrize("palavra,esperado", [("abcd", True), ("abcde", False)])
+def test_ponto_so_separa_apos_cinco_letras(palavra, esperado):
+    assert assunto_pessoal(f"Licença {palavra}. Parlamentar apresenta emenda.", []) is esperado
+
+
+@pytest.mark.parametrize(
+    "texto",
+    [
+        "O parlamentar propõe alterar o Regimento Interno.",
+        "O parlamentar participa de evento internacional.",
+        "O parlamentar propõe ampliar o acesso à internet.",
+        "O parlamentar propõe valorizar a enfermagem.",
+        "O parlamentar discute uma operação de crédito.",
+    ],
+)
+def test_palavras_proximas_dos_radicais_nao_sao_termos_de_saude(texto):
+    assert not assunto_pessoal(texto, [])
 
 
 @pytest.mark.parametrize("sigla", ["REQ", "REQV", "RQ", "RQS"])
@@ -244,3 +293,22 @@ def test_extenso_precisa_de_numero_e_nao_anula_ligacao_pessoal():
     assert assunto_pessoal(
         "Requer licença do senador conforme o Projeto de Lei nº 123, de 2026.", []
     )
+
+
+@pytest.mark.parametrize(
+    "tipo",
+    [
+        "Projetos de Lei",
+        "Projetos de Lei Complementar",
+        "Propostas de Emenda à Constituição",
+        "Medidas Provisórias",
+        "Projetos de Decreto Legislativo",
+        "Projetos de Resolução",
+        "Projetos de Lei de Conversão",
+    ],
+)
+@pytest.mark.parametrize("casa", ["", " do Senado", " da Câmara", " da Câmara dos Deputados"])
+def test_citacao_plural_com_casa_ainda_exige_numero(tipo, casa):
+    inicio = f"Requer urgência para os {tipo}{casa}"
+    assert not assunto_pessoal(f"{inicio} nº 100 e 123, sobre licença parental.", [])
+    assert assunto_pessoal(f"{inicio}, sobre licença parental.", [])
