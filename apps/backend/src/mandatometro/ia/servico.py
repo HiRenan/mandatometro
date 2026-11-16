@@ -419,7 +419,8 @@ def revisar(abrir: AbrirSessao, edicao_id: int, dados: dict) -> dict:
             for campo in ("fatos", "fontes", "contexto"):
                 if getattr(revisao, campo) != referencias[item.id][campo]:
                     raise ErroEdicao(
-                        f"Item {numero}: o campo {campo} é de consulta e não pode mudar."
+                        f"Item {numero}: o campo {campo} é de consulta e não pode mudar. "
+                        "Exporte o rascunho novamente e refaça os ajustes."
                     )
             if revisao.excluir:
                 if not revisao.motivo_exclusao.strip():
