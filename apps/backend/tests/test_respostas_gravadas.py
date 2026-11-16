@@ -344,6 +344,47 @@ def test_dados_pessoais_dos_novos_fixtures_da_camara(caminho, campo, permitidos)
     assert valores_validos, f"Refaça a sanitização de {campo} em {caminho} conforme o README."
 
 
+def _campos(dado) -> set[str]:
+    """Os nomes dos campos em todos os objetos e listas, sem seus valores."""
+    if isinstance(dado, dict):
+        return set(dado).union(*(_campos(filho) for filho in dado.values()))
+    if isinstance(dado, list):
+        return set().union(*(_campos(filho) for filho in dado))
+    return set()
+
+
+@pytest.mark.parametrize(
+    "fragmentos,exatos",
+    [
+        pytest.param(
+            (
+                "cpf",
+                "identidade",
+                "registrogeral",
+                "tituloeleitor",
+                "titulodeeleitor",
+                "nascimento",
+            ),
+            {"rg", "numerorg"},
+            id="identificacao",
+        ),
+        pytest.param(("email", "endereco", "telefone", "celular"), {"fax", "cep"}, id="contato"),
+        pytest.param(("afastamento", "ausencia"), set(), id="afastamento"),
+    ],
+)
+def test_processo_do_senado_nao_contem_campos_pessoais(fragmentos, exatos):
+    caminho = "senado/processo-9026396.json"
+    campos = {
+        campo.casefold().replace("_", "").replace("-", "") for campo in _campos(_ler(caminho))
+    }
+    # Mesmo um campo vazio exige revisão; o erro não imprime o payload nem dados pessoais.
+    campos_validos = all(
+        campo not in exatos and not any(fragmento in campo for fragmento in fragmentos)
+        for campo in campos
+    )
+    assert campos_validos, f"Refaça a sanitização dos campos de {caminho} conforme o README."
+
+
 @pytest.mark.parametrize("caminho", sorted((FIXTURES / "senado").glob("senador-*.json")))
 def test_os_motivos_de_afastamento_dos_senadores_sao_ficticios(caminho):
     # Um motivo de afastamento pode ser de saúde: na lista gravada, todos levam o mesmo valor
