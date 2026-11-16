@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from pydantic import BaseModel
 
+from mandatometro.api.edicoes import router as edicoes
 from mandatometro.api.newsletter import router as newsletter
 from mandatometro.config import config
 
@@ -22,6 +23,7 @@ app.add_middleware(
     expose_headers=["Retry-After"],
 )
 app.include_router(newsletter)
+app.include_router(edicoes)
 
 
 class Saude(BaseModel):

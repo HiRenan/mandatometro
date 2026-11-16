@@ -6,6 +6,7 @@ from pathlib import Path
 
 from sqlalchemy.exc import SQLAlchemyError
 
+from mandatometro.avisos.cli import registrar_comando as registrar_envio
 from mandatometro.coleta.cli import adicionar_argumentos_periodo, resolver_periodo
 from mandatometro.config import config
 from mandatometro.db import sessao as sessao_do_banco
@@ -83,6 +84,7 @@ def _rodar(args: argparse.Namespace) -> int:
 def registrar_comando(comandos: argparse._SubParsersAction) -> None:
     edicao = comandos.add_parser("edicao", help="prepara, revisa e publica o jornal legislativo")
     acoes = edicao.add_subparsers(dest="acao", required=True)
+    registrar_envio(acoes)
     rascunho = acoes.add_parser("rascunho", help="prepara os fatos e a redação pendente")
     adicionar_argumentos_periodo(rascunho)
     rascunho.add_argument("--teto", type=int, default=8, help="máximo de itens (padrão: 8)")

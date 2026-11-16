@@ -4,9 +4,12 @@ O preparo da migration usa só a biblioteca padrão, antes de instalar dependên
 A regra de coleta continua no CLI; este arquivo só adapta a execução ao Actions.
 """
 
+import json
 import os
 import sys
+from datetime import datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 BACKEND = Path(__file__).resolve().parents[1]
 
@@ -50,9 +53,38 @@ def migrar() -> int:
     return 0
 
 
+def enviar() -> int:
+    from mandatometro.cli import main as cli
+
+    simular = os.environ.get("ENVIO_SIMULAR", "false")
+    if simular not in {"true", "false"}:
+        print(json.dumps({"argumentos_invalidos": 1}))
+        return 2
+    obrigatorias = ["DATABASE_URL"]
+    if simular == "false":
+        obrigatorias += ["RESEND_API_KEY", "RESEND_FROM", "APP_BASE_URL", "API_URL"]
+    if any(not os.environ.get(nome, "").strip() for nome in obrigatorias):
+        print(json.dumps({"configuracao_invalida": 1}))
+        return 2
+    argumentos = ["edicao", "enviar"]
+    if edicao := os.environ.get("ENVIO_EDICAO_ID"):
+        argumentos.append(edicao)
+    if limite := os.environ.get("ENVIO_LIMITE"):
+        argumentos += ["--limite", limite]
+    if simular == "true":
+        argumentos.append("--simular")
+    if os.environ.get("GITHUB_EVENT_NAME") == "schedule":
+        hoje = datetime.now(ZoneInfo("America/Sao_Paulo")).date()
+        segunda = hoje - timedelta(days=hoje.weekday())
+        argumentos += ["--publicada-desde", segunda.isoformat()]
+    return cli(argumentos) or 0
+
+
 def main(argv: list[str] | None = None) -> int:
     argumentos = sys.argv[1:] if argv is None else argv
     try:
+        if argumentos == ["enviar"]:
+            return enviar()
         if argumentos == ["preparar-migration"]:
             return preparar_migration()
         if argumentos not in (["migrar"], ["coletar", "camara"], ["coletar", "senado"]):
@@ -63,6 +95,9 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         return migrar() if argumentos == ["migrar"] else coletar(argumentos[1])
     except Exception:
+        if argumentos == ["enviar"]:
+            print(json.dumps({"falhas_gerais": 1}))
+            return 1
         # Erros de configuração, driver ou Alembic podem carregar credenciais/SQL.
         print("::error::A tarefa falhou. Confira a configuração e o banco; detalhes omitidos.")
         return 1

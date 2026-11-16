@@ -51,7 +51,7 @@ def test_envio_completo_e_idempotente():
     assert len(chamadas) == 1
 
 
-@pytest.mark.parametrize("falha", ["timeout", "500", "429", "409"])
+@pytest.mark.parametrize("falha", ["timeout", "500", "429"])
 def test_repete_falhas_transitorias_com_mesma_chave_e_corpo(falha):
     chamadas, esperas = [], []
 
@@ -156,3 +156,29 @@ def test_orcamento_total_cancela_uma_chamada_presa(monkeypatch):
 def test_resposta_sem_id_nao_confirma_envio(corpo):
     with pytest.raises(EnvioIndisponivel):
         executar(lambda _: httpx2.Response(200, json=corpo))
+
+
+@pytest.mark.parametrize(
+    "status,nome,motivo",
+    [
+        (400, "validation_error", "individual"),
+        (401, "missing_api_key", "geral"),
+        (403, "validation_error", "geral"),
+        (409, "concurrent_idempotent_requests", "concorrente"),
+        (409, "invalid_idempotent_request", "individual"),
+        (429, "daily_quota_exceeded", "cota_diaria"),
+        (429, "monthly_quota_exceeded", "cota_mensal"),
+    ],
+)
+def test_categoria_segura_permite_continuar_ou_parar_rodada(status, nome, motivo):
+    chamadas = []
+
+    def handler(request):
+        chamadas.append(request)
+        return httpx2.Response(status, json={"name": nome, "message": "pessoa@example.com"})
+
+    with pytest.raises(EnvioIndisponivel) as erro:
+        executar(handler)
+    assert erro.value.motivo == motivo
+    assert len(chamadas) == 1
+    assert "pessoa@example.com" not in str(erro.value)

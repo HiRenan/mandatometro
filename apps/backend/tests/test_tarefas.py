@@ -101,3 +101,56 @@ def test_migration_usa_head_e_configuracao_do_projeto(tarefa, monkeypatch):
     configuracao, revisao = chamadas[0]
     assert revisao == "head"
     assert Path(configuracao.toml_file_name) == SCRIPT.parents[1] / "pyproject.toml"
+
+
+def test_envio_agendado_filtra_semana_no_fuso_de_brasilia(tarefa, monkeypatch):
+    from datetime import UTC, date, datetime
+
+    class Relogio:
+        @classmethod
+        def now(cls, fuso):
+            # Segunda em UTC ainda é domingo em Brasília.
+            return datetime(2026, 11, 23, 1, tzinfo=UTC).astimezone(fuso)
+
+    monkeypatch.setitem(tarefa.__globals__, "datetime", Relogio)
+
+    for nome in ("DATABASE_URL", "RESEND_API_KEY", "RESEND_FROM", "APP_BASE_URL", "API_URL"):
+        monkeypatch.setenv(nome, "ficticio")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "schedule")
+    recebidos = []
+    monkeypatch.setattr("mandatometro.cli.main", lambda args: recebidos.extend(args))
+    assert tarefa(["enviar"]) == 0
+    assert recebidos[:2] == ["edicao", "enviar"]
+    indice = recebidos.index("--publicada-desde")
+    segunda = date.fromisoformat(recebidos[indice + 1])
+    assert segunda == date(2026, 11, 16)
+    assert "--simular" not in recebidos
+
+
+def test_envio_manual_simulado_sem_chave_mantem_id_limite_e_saida(tarefa, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "ficticio")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
+    monkeypatch.setenv("ENVIO_EDICAO_ID", "7")
+    monkeypatch.setenv("ENVIO_LIMITE", "30")
+    monkeypatch.setenv("ENVIO_SIMULAR", "true")
+    monkeypatch.delenv("RESEND_API_KEY", raising=False)
+    recebidos = []
+
+    def cli(args):
+        recebidos.extend(args)
+        return 1
+
+    monkeypatch.setattr("mandatometro.cli.main", cli)
+    assert tarefa(["enviar"]) == 1
+    assert recebidos == ["edicao", "enviar", "7", "--limite", "30", "--simular"]
+
+
+def test_envio_real_sem_configuracao_falha_sem_abrir_banco(tarefa, monkeypatch, capsys):
+    import json
+
+    monkeypatch.setenv("DATABASE_URL", "ficticio")
+    monkeypatch.setenv("ENVIO_SIMULAR", "false")
+    monkeypatch.delenv("RESEND_API_KEY", raising=False)
+    monkeypatch.setattr("mandatometro.cli.main", lambda _: pytest.fail("abriu banco"))
+    assert tarefa(["enviar"]) == 2
+    assert json.loads(capsys.readouterr().out) == {"configuracao_invalida": 1}

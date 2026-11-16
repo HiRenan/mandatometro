@@ -1,3 +1,4 @@
+from datetime import date, datetime
 from typing import Literal
 from unicodedata import category
 
@@ -32,3 +33,65 @@ class ResultadoInscricao(BaseModel):
 
 class ErroNewsletter(BaseModel):
     erro: Literal["dados_invalidos", "limite_de_inscricoes", "servico_indisponivel"]
+
+
+class ErroEdicaoPublica(BaseModel):
+    erro: Literal["dados_invalidos", "edicao_nao_encontrada", "servico_indisponivel"]
+
+
+class ResumoEdicao(BaseModel):
+    id: int
+    titulo: str
+    inicio: date
+    fim: date
+    publicada_em: datetime
+
+
+class ListaEdicoes(BaseModel):
+    edicoes: list[ResumoEdicao]
+    total: int
+    limite: int
+    deslocamento: int
+
+
+class FontePublica(BaseModel):
+    url: str
+    coletado_em: datetime
+    trecho: str | None
+
+
+class PlacarPublico(BaseModel):
+    sim: int
+    nao: int
+    abstencao: int
+    obstrucao: int
+    presidente: int
+
+
+class VotacaoPublica(BaseModel):
+    data: date
+    resultado: Literal["aprovada", "rejeitada", "outro"]
+    placar: PlacarPublico | None
+    fontes: list[FontePublica]
+
+
+class FatosPublicos(BaseModel):
+    votacoes: list[VotacaoPublica]
+
+
+class ArtigoDaEdicao(BaseModel):
+    titulo: str
+    caminho: str
+
+
+class ItemPublico(BaseModel):
+    ordem: int
+    titulo: str
+    texto: str
+    fatos: FatosPublicos | None
+    fontes: list[FontePublica]
+    artigo: ArtigoDaEdicao | None
+
+
+class EdicaoPublica(ResumoEdicao):
+    itens: list[ItemPublico]

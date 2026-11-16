@@ -8,6 +8,7 @@ from email.utils import parsedate_to_datetime
 from math import isfinite
 from random import uniform
 from time import monotonic
+from typing import Literal
 from uuid import UUID
 
 import httpx2
@@ -16,11 +17,15 @@ from mandatometro.avisos.email import Mensagem
 
 ORCAMENTO_ENVIO = 8.0
 MAX_TENTATIVAS = 3
+MotivoFalha = Literal[
+    "individual", "geral", "transitoria", "concorrente", "cota_diaria", "cota_mensal"
+]
 
 
 class EnvioIndisponivel(Exception):
-    def __init__(self):
+    def __init__(self, motivo: MotivoFalha = "transitoria"):
         super().__init__("Não foi possível confirmar o envio.")
+        self.motivo = motivo
 
 
 def _json(resposta: httpx2.Response) -> dict:
@@ -59,9 +64,13 @@ class Resend:
         self._transporte = transporte
         self._dormir = dormir
 
+    @property
+    def configurado(self) -> bool:
+        return bool(self._chave and self._remetente)
+
     async def enviar(self, destinatario: str, mensagem: Mensagem, idempotencia: str) -> None:
-        if not self._chave or not self._remetente:
-            raise EnvioIndisponivel
+        if not self.configurado:
+            raise EnvioIndisponivel("geral")
         prazo = monotonic() + ORCAMENTO_ENVIO
         try:
             async with asyncio.timeout(ORCAMENTO_ENVIO):
@@ -98,15 +107,17 @@ class Resend:
                                     raise EnvioIndisponivel from None
                                 return
                             status, nome = resposta.status_code, dados.get("name")
-                            transitorio = (
-                                500 <= status < 600
-                                or status == 409
-                                and nome == "concurrent_idempotent_requests"
-                                or status == 429
-                                and nome not in ("daily_quota_exceeded", "monthly_quota_exceeded")
-                            )
+                            if status in (401, 403):
+                                raise EnvioIndisponivel("geral")
+                            if status == 409 and nome == "concurrent_idempotent_requests":
+                                raise EnvioIndisponivel("concorrente")
+                            if status == 429 and nome == "daily_quota_exceeded":
+                                raise EnvioIndisponivel("cota_diaria")
+                            if status == 429 and nome == "monthly_quota_exceeded":
+                                raise EnvioIndisponivel("cota_mensal")
+                            transitorio = 500 <= status < 600 or status == 429
                             if not transitorio:
-                                raise EnvioIndisponivel
+                                raise EnvioIndisponivel("individual")
                         if tentativa == MAX_TENTATIVAS - 1:
                             raise EnvioIndisponivel
                         espera = _espera(resposta, tentativa)
