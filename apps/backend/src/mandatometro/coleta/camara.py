@@ -241,30 +241,35 @@ class _Coleta:
         ids: dict[str, None] = {}
         paginas = []
         while inicio <= fim:
-            limite = min(fim, date(inicio.year, 12, 31))
-            trecho = _paginas(
-                self.http,
-                "/votacoes",
-                {
-                    "idOrgao": 180,
-                    "dataInicio": inicio.isoformat(),
-                    "dataFim": limite.isoformat(),
-                    "itens": 100,
-                    "ordem": "ASC",
-                    "ordenarPor": "dataHoraRegistro",
-                },
-            )
+            fim_do_ano = date(inicio.year, 12, 31)
+            limite = min(fim, fim_do_ano)
+            limite_consulta = limite
+            params = {
+                "idOrgao": 180,
+                "dataInicio": inicio.isoformat(),
+                "itens": 100,
+                "ordem": "ASC",
+                "ordenarPor": "dataHoraRegistro",
+            }
+            # dataFim corta à meia-noite: pedir o dia seguinte inclui o último dia inteiro.
+            # Sem dataFim a API vai até o fim do mesmo ano, incluindo 31/12.
+            if limite < fim_do_ano:
+                limite_consulta = limite + timedelta(days=1)
+                params["dataFim"] = limite_consulta.isoformat()
+            trecho = _paginas(self.http, "/votacoes", params)
             for pagina in trecho:
                 for item in pagina.dados["dados"]:
                     item = _objeto(item)
                     identificador = _texto(item["id"])
+                    dia = date.fromisoformat(item["data"])
                     if (
                         not re.fullmatch(r"\d+-\d+", identificador)
                         or item["siglaOrgao"] != "PLEN"
-                        or not inicio <= date.fromisoformat(item["data"]) <= limite
+                        or not inicio <= dia <= limite_consulta
                     ):
                         raise ErroColeta("Votação fora do período ou do plenário consultado.")
-                    ids[identificador] = None
+                    if dia <= limite:
+                        ids[identificador] = None
             paginas.extend(trecho)
             if limite == fim:
                 break

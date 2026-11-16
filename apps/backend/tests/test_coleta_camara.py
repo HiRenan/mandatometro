@@ -226,24 +226,60 @@ def test_codigo_desconhecido_nao_vaza_codigo_ou_pessoa(sessao, roteiro, caplog):
     )
 
 
-def test_paginacao_e_divisao_na_virada_do_ano(sessao, roteiro):
-    periodos = []
-    paginas = []
+@pytest.mark.parametrize("inicio", [date(2026, 10, 13), date(2026, 10, 14)])
+def test_inclui_o_ultimo_dia_e_exclui_a_meia_noite_seguinte(sessao, roteiro, inicio):
+    nominal = roteiro["/votacoes/2236186-60"]["dados"]
+    seguinte = dict(
+        nominal, id="9999999-1", data="2026-10-15", dataHoraRegistro="2026-10-15T00:00:00"
+    )
 
     def interceptar(req):
         if req.url.path.endswith("/votacoes"):
-            periodos.append((req.url.params["dataInicio"], req.url.params["dataFim"]))
+            inicio_api = req.url.params["dataInicio"] + "T00:00:00"
+            fim_api = req.url.params["dataFim"] + "T00:00:00"
+            itens = [
+                v for v in (nominal, seguinte) if inicio_api <= v["dataHoraRegistro"] <= fim_api
+            ]
+            return httpx2.Response(200, json={"dados": itens, "links": []})
+
+    resumo, chamadas = executar(
+        sessao, roteiro, inicio=inicio, fim=date(2026, 10, 14), interceptar=interceptar
+    )
+    assert resumo.completa and (resumo.votacoes, resumo.votos) == (1, 429)
+    assert sessao.scalars(select(Votacao.data)).all() == [date(2026, 10, 14)]
+    assert not any("/votacoes/9999999-1" in chamada for chamada in chamadas)
+
+
+def test_paginacao_e_divisao_na_virada_do_ano(sessao, roteiro):
+    periodos = []
+    paginas = []
+    itens = []
+    for identificador, dia in (("2637478-26", "2025-12-31"), ("2236186-60", "2026-01-02")):
+        item = roteiro[f"/votacoes/{identificador}"]["dados"]
+        item.update(data=dia, dataHoraRegistro=dia + "T12:00:00")
+        itens.append(item)
+
+    def interceptar(req):
+        if req.url.path.endswith("/votacoes"):
+            inicio_api = req.url.params["dataInicio"]
+            fim_api = req.url.params.get("dataFim")
+            periodos.append((inicio_api, fim_api))
             paginas.append(req.url.params.get("pagina", "1"))
             links = []
+            dados = []
             if "pagina" not in req.url.params:
                 links = [{"rel": "next", "href": str(req.url.copy_set_param("pagina", 2))}]
-            return httpx2.Response(200, json={"dados": [], "links": links})
+            else:
+                limite = fim_api or f"{int(inicio_api[:4]) + 1}-01-01"
+                dados = [v for v in itens if inicio_api <= v["dataHoraRegistro"] < limite]
+            return httpx2.Response(200, json={"dados": dados, "links": links})
 
     resumo, _ = executar(
         sessao, roteiro, inicio=date(2025, 12, 30), fim=date(2026, 1, 2), interceptar=interceptar
     )
-    assert resumo.completa and resumo.votacoes == 0
-    assert set(periodos) == {("2025-12-30", "2025-12-31"), ("2026-01-01", "2026-01-02")}
+    assert resumo.completa and resumo.votacoes == 2
+    assert set(sessao.scalars(select(Votacao.data))) == {date(2025, 12, 31), date(2026, 1, 2)}
+    assert set(periodos) == {("2025-12-30", None), ("2026-01-01", "2026-01-03")}
     assert paginas == ["1", "2", "1", "2"]
 
 
