@@ -275,7 +275,7 @@ Prepare uma pasta **fora do repositório**, por exemplo `$HOME\Documents\mandato
    }
    ```
 
-4. Importe a revisão. O comando valida o arquivo e salva as confirmações. Se houver erro, corrija o campo indicado e repita; o rascunho anterior fica preservado. Se a revisão já foi salva, exporte um arquivo novo antes de fazer outros ajustes.
+4. Importe a revisão. O comando valida o arquivo e salva as confirmações. Se houver erro, corrija o campo indicado e repita; o rascunho anterior fica preservado. Depois de uma atualização, um arquivo exportado antes pode ser recusado: exporte novamente e refaça os ajustes. Se a revisão já foi salva, exporte um arquivo novo antes de fazer outros ajustes.
 
    ```powershell
    uv run mandatometro edicao revisar 1 --arquivo "$HOME\Documents\mandatometro-revisoes\edicao-2026-11-15.json"

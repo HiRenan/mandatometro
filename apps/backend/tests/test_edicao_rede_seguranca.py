@@ -1,6 +1,7 @@
 """A rede retém termos para conferência humana, sem ampliar as exclusões."""
 
 import json
+import re
 from dataclasses import asdict
 
 import pytest
@@ -10,6 +11,7 @@ from test_edicao_revisao import pronto
 from test_edicao_selecao import FIM, INICIO
 from test_edicao_selecao import dados as dados
 
+from mandatometro.ia import redacao
 from mandatometro.ia.privacidade import TERMO_PESSOAL, assunto_pessoal, normalizar
 from mandatometro.ia.redacao import PENDENTE, redigir
 from mandatometro.ia.selecao import selecionar
@@ -138,6 +140,39 @@ def test_rede_conta_grupos_sem_alterar_ordem_teto_fatos_ou_fontes(abrir, sessao,
         for campo in ("proposicoes", "votacoes", "fontes"):
             assert fatos[campo] == item["fatos"][campo]
     assert "avisos" not in arquivo["itens"][1]["contexto"]
+
+
+@pytest.mark.parametrize("campo", ["descricao", "ementa"])
+def test_arquivo_anterior_a_lista_nova_orienta_reexportar_e_refazer_ajustes(
+    abrir, dados, campo, monkeypatch
+):
+    dados(100, **{campo: "O parlamentar está no hospital."})
+    edicao_id = gerar(abrir, INICIO, FIM, redator=Falso())["edicao_id"]
+    # Simula a exportação anterior à lista adicional, sem editar os campos de consulta.
+    with monkeypatch.context() as anterior:
+        anterior.setattr(redacao, "TERMO_ADICIONAL_DA_REDE", re.compile(r"(?!)"))
+        arquivo = exportar(abrir, edicao_id)
+    assert "avisos" not in arquivo["itens"][0]["contexto"]
+    atual = exportar(abrir, edicao_id)
+    assert atual["versao_rascunho"] == arquivo["versao_rascunho"]
+    assert atual["itens"][0]["contexto"]["avisos"] == [AVISO]
+
+    with pytest.raises(ErroEdicao) as erro:
+        revisar(abrir, edicao_id, pronto(arquivo))
+    assert str(erro.value) == (
+        "Item 1: o campo contexto é de consulta e não pode mudar. "
+        "Exporte o rascunho novamente e refaça os ajustes."
+    )
+    novo = exportar(abrir, edicao_id)
+    assert novo == atual
+    revisao = revisar(abrir, edicao_id, pronto(novo))
+    assert revisao["situacao"] == "revisao_salva"
+    assert revisao["pendencias"] == []
+    assert revisao["avisos"] == [f"Confira o item 1: {AVISO}"]
+    salvo = exportar(abrir, edicao_id)["itens"][0]
+    assert salvo["titulo"] == arquivo["itens"][0]["titulo"]
+    assert salvo["explicacao"] == arquivo["itens"][0]["explicacao"]
+    assert salvo["contexto"]["avisos"] == [AVISO]
 
 
 @pytest.mark.parametrize("campo", ["descricao", "ementa"])
