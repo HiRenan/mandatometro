@@ -122,7 +122,8 @@ def formatar_edicao(
                 coleta = fonte.coletado_em.astimezone(UTC).strftime("%d/%m/%Y às %H:%M UTC")
                 if numero == 0:
                     html.append(
-                        f'<p><a href="{escape(url, quote=True)}">{rotulo}</a> · Coleta: {coleta}</p>'
+                        f'<p><a href="{escape(url, quote=True)}">{rotulo}</a>'
+                        f" · Coleta: {coleta}</p>"
                     )
                     texto.append(f"{rotulo}: {url}\nColeta: {coleta}")
                 else:
