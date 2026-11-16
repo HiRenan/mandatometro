@@ -7,7 +7,12 @@ from typing import Protocol
 from pydantic import ValidationError
 
 from mandatometro.ia.esquemas import Redacao
-from mandatometro.ia.privacidade import TERMO_PESSOAL, identificacao, normalizar
+from mandatometro.ia.privacidade import (
+    TERMO_ADICIONAL_DA_REDE,
+    TERMO_PESSOAL,
+    identificacao,
+    normalizar,
+)
 from mandatometro.ia.selecao import ItemBase
 
 PENDENTE = "Redação pendente: explique o ato votado e o que a proposta prevê."
@@ -55,9 +60,10 @@ def _codigo(item: ItemBase, motivo: str) -> TextoGerado:
 def requer_conferencia_pessoal(item: ItemBase) -> bool:
     # Inclui a ementa de todo vínculo, mesmo o requerimento fora das matérias principais.
     return any(
-        TERMO_PESSOAL.search(normalizar(texto))
+        padrao.search(normalizar(texto))
         for votacao in item.votacoes
         for texto in [votacao.descricao, *(p.ementa or "" for p in votacao.proposicoes)]
+        for padrao in (TERMO_PESSOAL, TERMO_ADICIONAL_DA_REDE)
     )
 
 
