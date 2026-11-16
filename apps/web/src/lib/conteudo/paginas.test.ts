@@ -76,6 +76,19 @@ describe("conteúdo das trilhas", () => {
 		]);
 	});
 
+	it("liga cada passo do infográfico do processo legislativo aos artigos que o explicam", () => {
+		const passos =
+			acharTrilha(trilhas, "processo-legislativo")?.infografico?.passos ?? [];
+
+		expect(passos.map((passo) => passo.artigos)).toEqual([
+			["quem-pode-propor-uma-lei", "onde-o-projeto-comeca"],
+			["o-projeto-passa-pelas-comissoes"],
+			["o-plenario-vota-o-projeto"],
+			["onde-o-projeto-comeca"],
+			[],
+		]);
+	});
+
 	it("define o plenário com o glossário do Congresso Nacional", () => {
 		const plenario = acharTrilha(
 			trilhas,
@@ -109,7 +122,7 @@ describe("conteúdo das trilhas", () => {
 			trilha.artigos.map(
 				(artigo) => acharArtigo(trilhas, trilha.slug, artigo.slug)?.quiz,
 			),
-		).toEqual([undefined, undefined, chamada]);
+		).toEqual([undefined, undefined, chamada, undefined]);
 	});
 
 	it("não acha trilha nem artigo que não existe", () => {

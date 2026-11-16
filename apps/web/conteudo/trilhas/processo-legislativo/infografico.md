@@ -32,6 +32,8 @@ passos:
         consultadoEm: 2026-11-10
   - titulo: Plenário
     texto: O plenário é a reunião de todos os deputados, ou de todos os senadores. Ali, o projeto é discutido e votado. Ele é aprovado pela maioria dos votos, desde que mais da metade dos membros da Casa esteja presente (art. 47).
+    artigos:
+      - o-plenario-vota-o-projeto
     fontes:
       - titulo: Constituição Federal, art. 47
         url: https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art47
