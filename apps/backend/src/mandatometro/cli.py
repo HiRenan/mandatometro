@@ -29,7 +29,8 @@ def main(argv: list[str] | None = None) -> int:
     openapi.set_defaults(rodar=_openapi)
 
     coleta = comandos.add_parser("coleta", help="coleta os dados oficiais do Congresso")
-    coleta.add_subparsers(dest="casa", required=True)
+    casas = coleta.add_subparsers(dest="casa")
+    casas.required = True
 
     args = parser.parse_args(argv)
     return args.rodar(args) or 0

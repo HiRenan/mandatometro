@@ -30,7 +30,7 @@ class ResumoColeta:
     duracao_s: float = 0
     completa: bool = True
     falhas_votacoes: list[str] = field(default_factory=list)
-    falhas_deputados: int = 0
+    falhas_parlamentares: int = 0
     sem_proposicao: int = 0
     codigos_desconhecidos: int = 0
     erro: str | None = None
