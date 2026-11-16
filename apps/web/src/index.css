@@ -3,6 +3,7 @@
 @import "./estilos/azulejos.css";
 @import "./estilos/movimento.css";
 @import "./estilos/quiz.css";
+@import "./estilos/newsletter.css";
 
 @theme {
 	/*
@@ -280,13 +281,17 @@
 		color: var(--tinta);
 	}
 
-	.botao:disabled {
+	/* O desligado. Enquanto um envio espera a resposta, o botão fica com este
+	   desenho pelo aria-disabled, e não pelo disabled, que tirava o foco dele. */
+	.botao:disabled,
+	.botao[aria-disabled="true"] {
 		opacity: 0.35;
 		cursor: default;
 		translate: none;
 	}
 
-	.botao:disabled::after {
+	.botao:disabled::after,
+	.botao[aria-disabled="true"]::after {
 		display: none;
 	}
 
@@ -307,6 +312,33 @@
 			display: inline;
 			vertical-align: -0.2em;
 		}
+	}
+
+	/*
+	 * O campo de texto (DESIGN.md): o retângulo reto da folha, com o fio de tinta de
+	 * 2 px e a altura do botão. A letra tem 17 px: abaixo de 16 px, o iPhone aumenta
+	 * a tela quando o campo ganha o foco. O cursor e a seleção vêm do papel (o
+	 * globals.css); o preenchimento automático do navegador troca o azul dele pelo
+	 * papel mais escuro, e o texto continua de tinta.
+	 */
+	.campo {
+		width: 100%;
+		min-width: 0;
+		min-height: 3.25rem;
+		padding: 0.6rem 0.9rem;
+		border: 2px solid var(--tinta);
+		border-radius: 0;
+		background: var(--folha);
+		color: var(--tinta);
+		font-family: var(--font-sans);
+		font-size: 1.0625rem;
+		font-weight: 500;
+		line-height: 1.3;
+	}
+
+	.campo:is(:autofill, :-webkit-autofill) {
+		-webkit-text-fill-color: var(--tinta);
+		box-shadow: inset 0 0 0 3.25rem var(--papel-2);
 	}
 
 	/*

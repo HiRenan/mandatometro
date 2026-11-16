@@ -1,6 +1,7 @@
 import { fontes } from "@mandatometro/ui/lib/fontes";
 import { createFileRoute } from "@tanstack/react-router";
 import { PaginaInicial } from "@/components/pagina-inicial";
+import { ENV } from "@/env";
 import { buscarInicio } from "@/lib/conteudo";
 import { metaDaInicial, metaSemPagina, preloadDaFonte } from "@/lib/meta";
 
@@ -17,5 +18,10 @@ export const Route = createFileRoute("/")({
 });
 
 function Inicio() {
-	return <PaginaInicial pagina={Route.useLoaderData()} />;
+	return (
+		<PaginaInicial
+			pagina={Route.useLoaderData()}
+			newsletter={Boolean(ENV.API_URL)}
+		/>
+	);
 }

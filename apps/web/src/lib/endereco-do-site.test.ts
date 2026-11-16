@@ -5,7 +5,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-// O endereço do site (APP_BASE_URL), que vai na prévia do link, sai do
+// O endereço do site (APP_BASE_URL), que vai na prévia do link, e o da API
+// (API_URL), que o navegador chama na inscrição da newsletter, saem do
 // .env.schema conforme o ambiente da Vercel. O teste roda o varlock numa cópia
 // do schema, fora do repositório: assim não lê o .env de ninguém nem regrava o
 // src/env.ts.
@@ -13,8 +14,9 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 const RAIZ_DO_SITE = fileURLToPath(new URL("../..", import.meta.url));
 const VARLOCK = join(RAIZ_DO_SITE, "node_modules", "varlock", "bin", "cli.js");
 
-// As variáveis que mudam o endereço. Cada caso só tem as que ele define.
+// As variáveis que mudam os endereços. Cada caso só tem as que ele define.
 const VARIAVEIS_DO_ENDERECO = [
+	"API_URL",
 	"APP_BASE_URL",
 	"VERCEL",
 	"VERCEL_ENV",
@@ -34,8 +36,8 @@ afterAll(() => {
 	rmSync(pasta, { recursive: true, force: true });
 });
 
-/** O APP_BASE_URL que o varlock resolve com estas variáveis no ambiente. */
-function enderecoDoSite(variaveis: Record<string, string>): string {
+/** As variáveis que o varlock resolve com estas no ambiente. */
+function carregar(variaveis: Record<string, string>): Record<string, unknown> {
 	const ambiente: NodeJS.ProcessEnv = { ...process.env };
 	for (const nome of VARIAVEIS_DO_ENDERECO) {
 		delete ambiente[nome];
@@ -50,7 +52,17 @@ function enderecoDoSite(variaveis: Record<string, string>): string {
 			encoding: "utf8",
 		},
 	);
-	return JSON.parse(saida).APP_BASE_URL;
+	return JSON.parse(saida);
+}
+
+/** O APP_BASE_URL que o varlock resolve com estas variáveis no ambiente. */
+function enderecoDoSite(variaveis: Record<string, string>): unknown {
+	return carregar(variaveis).APP_BASE_URL;
+}
+
+/** O API_URL que o varlock resolve com estas variáveis no ambiente. */
+function enderecoDaApi(variaveis: Record<string, string>): unknown {
+	return carregar(variaveis).API_URL;
 }
 
 describe("o endereço do site", { timeout: 30_000 }, () => {
@@ -90,5 +102,44 @@ describe("o endereço do site", { timeout: 30_000 }, () => {
 				APP_BASE_URL: "https://teste.mandatometro.com.br",
 			}),
 		).toBe("https://teste.mandatometro.com.br");
+	});
+});
+
+describe("o endereço da API", { timeout: 30_000 }, () => {
+	it("fica no localhost fora da Vercel, como no pnpm dev", () => {
+		expect(enderecoDaApi({})).toBe("http://localhost:8000");
+	});
+
+	// Sem o endereço, o site não mostra a inscrição na newsletter: o navegador de
+	// quem visita chamaria o localhost dele mesmo. A API ainda não tem casa (#23).
+	it("fica vazio na produção e nas prévias da Vercel", () => {
+		expect(
+			enderecoDaApi({
+				VERCEL: "1",
+				VERCEL_ENV: "production",
+				VERCEL_BRANCH_URL: "mandatometro-git-main-time.vercel.app",
+			}),
+		).toBeFalsy();
+		expect(
+			enderecoDaApi({
+				VERCEL: "1",
+				VERCEL_ENV: "preview",
+				VERCEL_BRANCH_URL: "mandatometro-git-develop-time.vercel.app",
+			}),
+		).toBeFalsy();
+	});
+
+	it("respeita o API_URL dado no ambiente, como no Docker", () => {
+		expect(enderecoDaApi({ API_URL: "http://localhost:8013" })).toBe(
+			"http://localhost:8013",
+		);
+		expect(
+			enderecoDaApi({
+				VERCEL: "1",
+				VERCEL_ENV: "production",
+				VERCEL_BRANCH_URL: "mandatometro-git-main-time.vercel.app",
+				API_URL: "https://api.mandatometro.com.br",
+			}),
+		).toBe("https://api.mandatometro.com.br");
 	});
 });
