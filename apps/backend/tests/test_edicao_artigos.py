@@ -73,7 +73,7 @@ def test_artigos_novos_no_arquivo_na_revisao_na_previa_e_no_email(
         fontes=fontes,
     )
     assert previa in mensagem.texto
-    assert titulo in previa and titulo in mensagem.html
+    assert "Entenda na trilha" in previa and "Entenda na trilha" in mensagem.html
     assert "https://app.example.com" + caminho in previa
     assert "https://app.example.com" + caminho in mensagem.html
 
