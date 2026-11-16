@@ -87,6 +87,11 @@ typography:
     lineHeight: 1.02
     letterSpacing: "-0.005em"
     fontVariation: "'wdth' 72"
+  field:
+    fontFamily: "Archivo Variable, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.0625rem"
+    fontWeight: 500
+    lineHeight: 1.3
 rounded:
   none: "0px"
 spacing:
@@ -174,6 +179,18 @@ components:
   folha-da-resposta:
     backgroundColor: "{colors.folha}"
     textColor: "{colors.tinta}"
+    rounded: "{rounded.none}"
+  campo:
+    backgroundColor: "{colors.folha}"
+    textColor: "{colors.tinta}"
+    typography: "{typography.field}"
+    rounded: "{rounded.none}"
+    height: "52px"
+    padding: "9.6px 14.4px"
+  folha-da-newsletter:
+    backgroundColor: "{colors.folha}"
+    textColor: "{colors.tinta}"
+    typography: "{typography.headline}"
     rounded: "{rounded.none}"
 ---
 
@@ -266,7 +283,7 @@ A Courier Prime entrou na #89 só para a frase do cartaz e o lema: `@fontsource/
 
 ### Hierarchy
 - **Numeral** (900, largura 62%, altura de linha 0.78): o número da folha, na cor da fita da posição, com contorno de tinta, pintado antes do miolo: `max(3px, 0.05em)` nos grandes e 2 px nos pequenos (o da aba do passo a passo, o de "Nesta trilha", o das faixas do anterior e do próximo e o das miniaturas). O do artigo lido tem o miolo em Papel 2 e o contorno em tinta suave. Na folha da trilha, de 5.5rem a 11.5rem; no passo da página inicial, 7rem no celular e até 17rem; no alto do artigo, de 5rem a 9rem; no 404, de 7rem a 17rem; em "Nesta trilha" e nas faixas do anterior e do próximo, 2.75rem; nas miniaturas, 1.75rem.
-- **Headline** (`titulo-condensado`: 900, largura 62%, altura 0.86, maiúsculas): o título da página. Na página inicial, de 3.25rem a 8rem; nas páginas de dentro (a trilha, Trilhas, o 404 e a de erro), de 3.5rem a 11rem; no artigo, de 2.75rem a 6rem, com no máximo 10 em de largura. Também "O caminho de um projeto de lei" na página inicial (2.75rem a 6.5rem), o título de cada passo dela (2.25rem a 3.75rem) e "Quiz da trilha" na chamada (2.5rem a 5.5rem). No quiz, "Quiz da trilha" na abertura (4rem a 12.5rem), o título do fim (3.25rem a 7.5rem) e o resultado da resposta (2.25rem a 3.5rem).
+- **Headline** (`titulo-condensado`: 900, largura 62%, altura 0.86, maiúsculas): o título da página. Na página inicial, de 3.25rem a 8rem; nas páginas de dentro (a trilha, Trilhas, o 404, a de erro e a de sair da newsletter), de 3.5rem a 11rem; no artigo, de 2.75rem a 6rem, com no máximo 10 em de largura. Também "O caminho de um projeto de lei" na página inicial (2.75rem a 6.5rem), o título de cada passo dela (2.25rem a 3.75rem), "Quiz da trilha" na chamada (2.5rem a 5.5rem) e "O jornal legislativo" na folha da newsletter (2.5rem a 5.5rem). No quiz, "Quiz da trilha" na abertura (4rem a 12.5rem), o título do fim (3.25rem a 7.5rem) e o resultado da resposta (2.25rem a 3.5rem).
 - **Enunciado** (Archivo 800, largura 72%, altura 1.02, em minúsculas): a pergunta do quiz, de 1.75rem a 2.75rem, e 1.375rem abaixo de 22rem. É o único título em minúsculas: lê-se como frase.
 - **Title** (`titulo-de-folha`: 900, largura 62%, altura 0.92, maiúsculas): o título de cada folha de uma lista. O do artigo na trilha, de 1.875rem a 3.5rem; o da trilha em Trilhas, de 2.25rem a 4.5rem; o do anterior e do próximo, de 1.5rem a 2.5rem.
 - **Subtitle** (`subtitulo-condensado`: 900, largura 68%, altura 0.95, maiúsculas): os intertítulos do texto (1.75rem a 2.5rem), "Fontes oficiais" (1.5rem) e o título do caminho na trilha (1.875rem a 2.75rem).
@@ -274,7 +291,7 @@ A Courier Prime entrou na #89 só para a frase do cartaz e o lema: `@fontsource/
 - **Máquina** (Courier Prime 400, em minúsculas): a segunda linha do título da página inicial ("um passo de cada vez.", a 0.4 em do título, com a tira riscada embaixo) e o lema, a 0.9375rem, no cabeçalho e no rodapé. Só isso.
 - **Lead** (Literata 500, altura 1.45): o resumo do artigo, de 1.25rem a 1.4375rem. A abertura dos cartazes é Literata 400, de 1.0625rem a 1.25rem, com altura 1.5 e até 34rem de largura.
 - **Body** (Literata 400, altura 1.68): o texto do artigo, de 1.0625rem a 1.1875rem, com até 39rem de largura. Os resumos das folhas e os textos dos passos ficam em 1.0625rem, com altura 1.5 a 1.6.
-- **Label** (`rotulo`: Archivo 650, 0.8125rem, maiúsculas, 0.08em entre as letras): a faixa de informações, a frase do progresso, a migalha, "Artigo 2 de 6 artigos", a etiqueta de estado. Os nomes dos links e das ações seguem a mesma ideia, um pouco maiores: o botão (800, 1rem), a ação em texto (700, 0.875rem), os links dos artigos de um passo (750, 0.9375rem).
+- **Label** (`rotulo`: Archivo 650, 0.8125rem, maiúsculas, 0.08em entre as letras): a faixa de informações, a frase do progresso, a migalha, "Artigo 2 de 6 artigos", a etiqueta de estado, o rótulo "Seu e-mail" e, em tinta suave, "Enviando a inscrição…" e "Confirmando a saída…". Os nomes dos links e das ações seguem a mesma ideia, um pouco maiores: o botão (800, 1rem), a ação em texto (700, 0.875rem), os links dos artigos de um passo (750, 0.9375rem).
 
 ### O teto da letra grande
 Com a letra do navegador grande, no celular, o título cresce com a letra até a palavra mais comprida dele encostar nas margens, e para aí. O tamanho é `min(o tamanho normal, (100vw − as margens − o recuo) ÷ a largura da palavra)`: a classe `letra-com-teto`, com o tamanho no `--letra`, a largura da palavra no `--palavra` (em em) e o recuo no `--recuo`. O Renan escolheu o teto em 11/11/2026 ("Teto (Recomendado)") e, na #76, o teto pela palavra mais larga do conteúdo ("Teto menor (Recomendado)"): o título diminui só o bastante para a palavra caber inteira, e nada se parte.
@@ -295,9 +312,11 @@ Com a letra do navegador grande, no celular, o título cresce com a letra até a
 | O resultado da resposta, no quiz | ACERTOU. | 3.79 |
 | Página não encontrada | ENCONTRADA | 5.15 |
 | A página não carregou | CARREGOU | 4.15 |
+| A folha da newsletter | LEGISLATIVO | 4.94 |
+| Sair da newsletter (e "Você saiu da newsletter.") | NEWSLETTER. | 5.25 |
 | O nome do site (largura 68%) | MANDATÔMETRO | 7.08 |
 
-- **O recuo** é o que fica entre a caixa do título e as margens da página: o respiro e os fios da folha, a coluna do número e a do azulejo. Quando a folha divide a página com uma coluna ao lado (o caminho, na trilha; "Nesta trilha", no artigo), o contêiner diz quanto ela toma no `--recuo-de-fora`, e os títulos de dentro somam.
+- **O recuo** é o que fica entre a caixa do título e as margens da página: o respiro e os fios da folha, a coluna do número e a do azulejo. Quando a folha divide a página com uma coluna ao lado (o caminho, na trilha; "Nesta trilha", no artigo), o contêiner diz quanto ela toma no `--recuo-de-fora`, e os títulos de dentro somam. Na folha da newsletter, a partir de 768 px, o recuo do título soma também a coluna dos azulejos (15.25rem) e o vão (3rem).
 - **Na lista das trilhas:**
   - de 640 a 1407 px, o recuo do título é o do azulejo ao lado;
   - a partir de 1408 px, o título divide a cabeça com a coluna da descrição, e o recuo soma também os 42rem dela e o vão entre as duas;
@@ -317,7 +336,7 @@ A página usa a largura toda da tela, com as margens do `--margem`: 20 px no cel
 
 - **Os cartazes** abrem as páginas. A partir de 992 px, o cartaz da página inicial tem pelo menos a altura da primeira tela, e o das páginas de dentro, também, com o limite de 44rem. O título e o pé ficam embaixo, e o que vem antes do título (a migalha), no alto.
 - **O painel de azulejos** fica à direita do cartaz, nos 30% da largura, de cima a baixo, a partir de 992 px. Abaixo disso, é uma faixa de duas fileiras no alto, de borda a borda: 6 azulejos por fileira no celular e 10 a partir de 640 px.
-- **Página inicial:** o cartaz e, depois de um fio de tinta, o caminho de um projeto de lei, passo a passo. Abaixo de 768 px, o "para quem" vem depois do botão, para o botão caber na primeira tela do celular. O HTML tem o "para quem" duas vezes, e o CSS mostra um de cada vez: o leitor de tela e o Tab seguem a ordem da tela em cada largura, o que o `order` do CSS não faria. O Renan escolheu essa ordem em 10/11/2026.
+- **Página inicial:** o cartaz e, depois de um fio de tinta, o caminho de um projeto de lei, passo a passo. Abaixo de 768 px, o "para quem" vem depois do botão, para o botão caber na primeira tela do celular. O HTML tem o "para quem" duas vezes, e o CSS mostra um de cada vez: o leitor de tela e o Tab seguem a ordem da tela em cada largura, o que o `order` do CSS não faria. O Renan escolheu essa ordem em 10/11/2026. Onde o build do site tem o `API_URL`, a folha da newsletter vem depois do caminho, antes do rodapé.
 - **Trilha:** o cartaz e as folhas dos artigos, uma embaixo da outra, e depois a chamada do quiz e o caminho. A partir de 1400 px, o caminho fica numa coluna de 24rem à direita das folhas. A ordem do HTML é a mesma em todas as larguras.
 - **Lista das trilhas:** o cartaz e uma folha por trilha.
   - **A partir de 1024 px:** a folha tem a cabeça em cima (o azulejo, o título, a descrição, o rótulo e o progresso) e, embaixo, as folhas dos artigos em colunas que terminam juntas.
@@ -402,21 +421,29 @@ Tudo é reto: raio zero (`--radius: 0`).
 - **Forma:** bloco reto de tinta, texto em papel, em maiúsculas espaçadas (800, 1rem), com pelo menos 52 px de altura e a seta à direita. O vazado, com o fundo transparente e o texto em tinta, acompanha o principal ("Voltar", no passo a passo, e "Rever as respostas", no fim do quiz).
 - **Hover:** o botão sobe 3 px, a tira das cinco fitas aparece embaixo dele, e a seta anda um pouco para a frente.
 - **Com a letra grande:** quando a tela tem menos de 20rem (a 360 px, com a letra acima de 18 px), a seta vem logo depois da última palavra, e o respiro dos lados fica em 18 px, que não cresce com a letra. Entre a palavra e a seta vai um espaço, e não uma margem: quando a seta desce sozinha, começa alinhada com o texto. Uma palavra maior que a linha se parte sem hífen (`overflow-wrap: anywhere`). O Renan escolheu, na #76, em 11/11/2026: "Seta no fim, respiro fixo (Recomendado)".
-- **Desligado:** fica apagado (35%), sem subir e sem a tira.
+- **Desligado:** fica apagado (35%), sem subir e sem a tira. Enquanto um envio espera a resposta (a inscrição e a saída da newsletter), o botão fica com esse desenho pelo `aria-disabled`, e não pelo `disabled`, que tirava o foco dele: o clique nele não envia o formulário.
 - **Alto contraste:** nas cores forçadas do Windows, o fundo some e a borda aparece na cor do texto: o botão continua com cara de botão.
-- **Onde:** é a única ação em bloco das páginas (`BOTAO_CONTINUAR`): na página inicial, na trilha, na chamada do quiz, no quiz, no passo a passo, no 404 e na página de erro. Os outros links e ações são sublinhados.
+- **Onde:** é a única ação em bloco das páginas (`BOTAO_CONTINUAR`): na página inicial, na trilha, na chamada do quiz, no quiz, no passo a passo, no 404, na página de erro, na folha da newsletter e na página de sair. Os outros links e ações são sublinhados.
 
 ### Links
 - Sublinhado de 2 px, afastado 0,2 em do texto, em tinta. Títulos que são links ficam sem sublinhado.
 - **Foco:** contorno de 3 px no azul do foco, afastado 3 px. Na folha de uma lista, o contorno vai na folha inteira.
-- **Depois de uma navegação:** o foco vai para o h1 da página nova ou, quando o endereço aponta para um trecho do conteúdo (`#caminho`, `#passo-plenario`), para esse trecho, já na tela. O título e o trecho não são controles e ficam sem o anel.
+- **Depois de uma navegação:** o foco vai para o h1 da página nova ou, quando o endereço aponta para um trecho do conteúdo (`#caminho`, `#passo-plenario`, `#newsletter`), para esse trecho, já na tela. O título e o trecho não são controles e ficam sem o anel.
 
 ### Ações em texto
-- **Quais:** "Desmarcar", embaixo de "Você leu este artigo."; "Recomeçar a trilha", embaixo da descrição da trilha, quando a pessoa já leu algum artigo dela; "Recomeçar o quiz", na abertura e no fim do quiz, quando ela já respondeu alguma pergunta; e "Desfazer". A mesma forma serve a links: "Ver o caminho na trilha", na página inicial, "Ir para o início", no 404, "Ver as trilhas", na página de erro, e "O código é aberto, no GitHub", no rodapé.
+- **Quais:** "Desmarcar", embaixo de "Você leu este artigo."; "Recomeçar a trilha", embaixo da descrição da trilha, quando a pessoa já leu algum artigo dela; "Recomeçar o quiz", na abertura e no fim do quiz, quando ela já respondeu alguma pergunta; e "Desfazer". A mesma forma serve a links: "Ver o caminho na trilha", na página inicial, "Ir para o início", no 404 e na página de sair da newsletter, "Inscrever-se de novo", também na de sair, "Ver as trilhas", na página de erro, e "O código é aberto, no GitHub", no rodapé.
 - **Forma:** um botão com cara de link (`.acao-de-texto`): Archivo 700 a 0.875rem, em maiúsculas espaçadas, com sublinhado de 2 px. No botão, um `::before` soma 13 px em cima e embaixo da caixa: a área de toque fica com 45 px de altura, sem mudar o espaço que o texto ocupa, e o anel de foco fica justo no texto.
 - **Nos links:** o link fica em linha e quebra como texto, e o padding faz a área (15 px em cima e embaixo da letra, 4 px dos lados, que a margem negativa devolve). O anel de foco contorna só o texto, que fica num `span`. Um link sem o `span` fica com o anel no próprio link; num navegador sem o `:has()`, o link com o `span` fica com dois anéis, e o foco continua visível.
 - **Depois da ação:** a frase de estado diz o que aconteceu ("Você desmarcou o artigo.", "Você recomeçou a trilha.", "Você recomeçou o quiz."), e o mesmo botão vira "Desfazer", no mesmo lugar, com o foco nele. Nenhum outro controle aparece onde o botão estava: o segundo clique de um clique duplo cai sempre no mesmo botão. O "Desfazer" vale até a pessoa sair da página. Não há caixa de confirmação.
 - **Leitor de tela:** o que aconteceu é anunciado por uma região `role="status"` escondida, que já vem vazia no HTML do servidor e se apaga depois de 7 s (`useAviso`).
+
+### Campo
+- **Forma:** uma caixa reta, com pelo menos 52 px de altura, fio de tinta de 2 px e fundo de folha (`.campo`, no `index.css`). O texto vai em Archivo 500, a 1.0625rem: com 16 px ou mais, o iPhone não aumenta a tela quando o campo recebe o foco. O rótulo fica à vista, em cima, em Label.
+- **Foco:** o contorno de 3 px no azul do foco, como nos links.
+- **Preenchido pelo navegador:** o texto continua em tinta, e o fundo fica no Papel 2, no lugar do azul ou do amarelo do navegador (`:autofill`).
+- **Erro:** quando o erro é do que a pessoa escreveu, o campo leva o `aria-invalid`, a mensagem fica ligada a ele pelo `aria-describedby`, e o foco volta para ele.
+- **Enquanto envia:** fica só de leitura (`readOnly`), com o texto à vista.
+- **Onde:** na folha da newsletter. O login (#109 a #112) pode usar a mesma peça.
 
 ### Azulejos
 - **O que são:** desenho. O painel, o azulejo grande e cada peça ficam fora do leitor de tela (`aria-hidden`), e nada do que a página diz depende deles. Nas cores forçadas do Windows, eles somem.
@@ -482,6 +509,19 @@ Tudo é reto: raio zero (`--radius: 0`).
 - Uma folha com "Quiz da trilha", a frase que diz quantas perguntas ele tem e de quais artigos, o botão "Responder o quiz" e um azulejo grande por pergunta. Os azulejos seguem a ordem das perguntas e não dizem nada sobre acertos. Quando o ponteiro passa, eles giram em fila.
 - **Onde:** na página da trilha e no fim do artigo depois do qual o quiz aparece.
 
+### Folha da newsletter (página inicial)
+- **Onde:** na página inicial, depois do caminho e antes do rodapé, só quando o build do site tem o `API_URL`. Sem ele, como na Vercel até a API ter casa (#23), a página inicial fica como antes, sem formulário e sem falar de newsletter. O título leva o `id="newsletter"`, o destino do "Inscrever-se de novo" da página de sair.
+- **Forma:** a folha clara com fio de tinta, como a chamada do quiz. Em cima, "O jornal legislativo" na letra do cartaz (2.5rem a 5.5rem), a faixa ("Todo domingo", "Câmara e Senado" e "Link oficial em cada item") e a abertura em Literata. Depois, o rótulo "Seu e-mail", o campo com o botão "Receber a newsletter" e a nota, em tinta suave: "O e-mail serve só para mandar a newsletter. Para sair, use o link no fim de cada edição.". O campo e o botão ficam lado a lado enquanto cabem; depois, o botão desce para a linha de baixo.
+- **Os azulejos:** seis azulejos grandes, nas cinco fitas. A partir de 768 px, ficam à direita, em duas fileiras de três; abaixo disso, numa fileira de seis, embaixo. Quando o ponteiro passa pela folha, eles giram em fila, como os da chamada do quiz. São desenho.
+- **O envio:** um formulário com uma função no `action`, do React 19, e o `noValidate`, para a mensagem ser a do site, e não a do navegador. A função não espera a API: ela confere o e-mail e dispara o pedido. Uma função que esperasse prenderia à espera dela as outras transições da página, como a troca de página do roteador, porque o React junta as ações pendentes. Enquanto o pedido espera, aparece "Enviando a inscrição…" embaixo, em Label e tinta suave. O botão fica desligado, com o foco, e o campo, só de leitura: o segundo clique e o Enter não mandam outro pedido.
+- **As mensagens** ficam embaixo do botão, em Archivo, e o leitor de tela ouve cada uma pela região `role="status"`. A mesma resposta, de novo, é anunciada de novo.
+  - **Feita** (600): "Inscrição realizada.", seguida do que houve com a última edição: "Enviamos para o seu e-mail a última edição publicada.", "A primeira edição ainda não saiu: ela chega no seu e-mail quando for publicada." ou "Não conseguimos confirmar o envio da última edição agora. Se ela não chegar, tente de novo mais tarde.". O campo esvazia. O e-mail novo e o repetido têm a mesma resposta.
+  - **Erro do e-mail** (700, com o fio vermelho do "Escolha uma opção" do quiz): "Escreva o seu e-mail para receber a newsletter." e "Confira o e-mail: falta alguma parte, como o @ ou o domínio.". O foco vai para o campo.
+  - **Erro do serviço** (700, sem cor, como o "Ainda não deu"): "Muitas inscrições neste minuto. Espere 42 segundos e tente de novo.", com os segundos do `Retry-After` da API, "Não conseguimos registrar a inscrição agora. Espere alguns minutos e tente de novo." e "Não deu para enviar a inscrição. Confira a internet e tente de novo.". O campo guarda o texto, e o foco fica no botão.
+- **O e-mail** só vai no corpo do POST: nunca na URL, no armazenamento do navegador ou no console.
+- **Sem JavaScript:** o formulário não envia nada, e o `<noscript>` diz "A inscrição precisa do JavaScript do navegador ligado.".
+- **As escolhas do Renan,** em 16/11/2026: a seção no fim da página inicial, a folha com azulejos e o formulário só onde o build tem o `API_URL`.
+
 ### Quiz
 - **Caráter:** um palco de papel com uma pergunta por vez: a abertura, a pergunta, a resposta e o fim. O Renan aprovou a pergunta por tela no plano, em 12/11/2026. A lógica é a de antes (`lib/quiz.ts` e `lib/respostas-do-quiz.ts`): sem placar, sem total de acertos, sem nota e sem ranking.
 - **O palco:** a migalha, o título, a tela da vez e, no pé, o andamento. Embaixo dele ficam as faixas do anterior e do próximo, como no artigo.
@@ -523,6 +563,18 @@ Tudo é reto: raio zero (`--radius: 0`).
 - **Tentar de novo:** pede a página de novo, sem recarregar (`router.invalidate()`). Enquanto o pedido não volta, o carregando aparece na hora, no lugar da página de erro, com o foco na frase (veja "Carregando"). Se der certo, a página pedida abre do alto, com o foco no título, ou no trecho do endereço (#caminho), como numa navegação: o router devolveria a rolagem que a página de erro tinha, e, com a letra grande, a página chegava rolada, sem o título na tela. Se falhar de novo, aparece "Ainda não deu. Confira a internet ou espere um pouco e tente de novo.", o foco volta ao botão e a frase é anunciada pela região `role="status"`. A página de erro volta parada, sem a chegada: ela já estava na tela antes do carregando.
 - **O aviso é da visita:** o "Ainda não deu" vale só para a tentativa feita ali. Quem sai da página de erro e volta, inclusive pelo voltar do navegador, encontra a página sem o aviso, e o leitor de tela não o anuncia de novo.
 - **Título da aba:** "Erro ao carregar a página · Mandatômetro". A tela não mostra a mensagem técnica nem a pilha do erro.
+
+### Página de sair da newsletter
+- **Endereço:** `/newsletter/sair?codigo=`. O link do fim de cada edição abre a API, e o GET dela, que não apaga nada, manda o navegador para cá.
+- **Forma:** o cartaz das páginas de dentro, como o 404: o painel de azulejos, o título "Sair da newsletter", a frase "Com o botão, o seu e-mail sai da lista e as edições de domingo param de chegar. Antes dele, nada muda." e as ações: o botão "Confirmar a saída" e "Ir para o início".
+- **Só o botão apaga:** programas de e-mail e antivírus abrem os links sozinhos. A página não tem loader e não pede nada ao abrir, nem quando o roteador adianta a página.
+- **Enquanto confirma:** "Confirmando a saída…" fica embaixo das ações, em Label e tinta suave, com o botão desligado e o foco nele.
+- **Depois da saída:** o título vira "Você saiu da newsletter." e a frase, "O seu e-mail não está mais na lista, e as próximas edições não vão chegar.". O "Inscrever-se de novo" fica no lugar do botão, com o foco, e leva à folha da newsletter (`/#newsletter`); o segundo clique de um clique duplo não o segue (o `detail` do clique). O código já usado dá a mesma tela, porque a API responde igual.
+- **Os erros:** "Não conseguimos confirmar a saída agora. Espere alguns minutos e tente de novo." e "Não deu para confirmar a saída. Confira a internet e tente de novo.", em negrito e sem cor, como o "Ainda não deu". O botão continua, para tentar de novo.
+- **O link incompleto** (sem o código, com o código mal formado ou com o código que a API recusa): "Este link está incompleto. Abra de novo o link de saída que vem no fim de cada e-mail da newsletter.", sem o botão. Quando a API recusa o código, o foco vai para "Ir para o início".
+- **Sem a API** (o build sem o `API_URL`): "A newsletter ainda não funciona neste endereço do site.", sem o botão.
+- **Sem JavaScript:** o botão não envia nada, e o `<noscript>` diz "Para confirmar a saída, o navegador precisa do JavaScript ligado. Sem ele, use a opção de cancelar a inscrição do seu programa de e-mail.".
+- **O código fica fora dos buscadores, do Referer e do cache:** o `noindex`, o `no-referrer` e o `Cache-Control: no-store`, no `<head>` e nos cabeçalhos da resposta. Título da aba: "Sair da newsletter · Mandatômetro".
 
 ### Carregando
 - **Quando aparece:** quando a página pedida demora. Numa navegação, se ela levar mais de 1 s; no "Tentar de novo" da página de erro, na hora. Quando aparece, fica pelo menos 0,5 s, para não piscar (`TEMPOS_DO_CARREGANDO`, em `components/carregando.tsx`, que o `router.tsx` passa ao router).
