@@ -86,6 +86,13 @@ Endpoints, campos, chaves de ligação e exemplos reais de cada fonte estão em 
 - Os CSVs do TSE vêm em latin-1, separados por `;`, um por UF dentro de cada ZIP.
 - A mesma pessoa se liga entre eleições do TSE pelo CPF. Em 2024 o CPF vem vazio e em 2012 falta em parte das linhas: nesses anos, use o título de eleitor e confira a data de nascimento.
 
+## Newsletter: inscrição e saída
+
+- O formulário chama a API pelo servidor do site (`createServerFn`); a API não configura CORS. Depois de confirmar a inscrição no banco, responde sempre 200 com `situacao`: `edicao_enviada` (aceito pelo Resend, sem garantir entrega), `aguardando_edicao` ou `envio_indisponivel`. E-mail repetido segue o mesmo fluxo e não revela cadastro anterior.
+- A cota global usa `limite_inscricao`, apenas `janela` e `quantidade`: nada de IP, e-mail ou hash de pessoa. Vale antes de validar o JSON e usa transação própria; a saída não consome essa cota.
+- Sair só apaga com POST pelo `codigo_saida`. O corpo é ignorado, inclusive o formulário da RFC 8058; GET/HEAD só abrem a confirmação no site. Não faça POST automático ao carregar essa página. Não registrar e-mail, corpo, token de saída ou exceção bruta: as mensagens de validação, SQL e Resend podem carregar dados pessoais. O access log da API fica desligado na produção; no dev, só use dados fictícios.
+- `avisos/email.py` centraliza a montagem; `avisos/resend.py`, o envio com até 8 segundos totais e idempotência por 24 horas. A #39 reutiliza esses módulos, mas precisa de sua própria política de envio: não há fila nem histórico de entrega nesta fatia. APP_BASE_URL e API_URL precisam ser públicos e HTTPS para montar os links de um envio real.
+
 ## Segredos
 
 As chaves (Firecrawl, Resend, Devin e LLM) ficam só no `.env` local, criado a partir do `.env.example`, e nos secrets da hospedagem. Código, issues, PRs e logs citam a chave pelo nome da variável. Variável nova entra no `.env.example` com valor vazio e um comentário.
