@@ -91,3 +91,78 @@ def test_rascunho_nao_vira_email(edicao):
     edicao.estado = "rascunho"
     with pytest.raises(MensagemInvalida):
         montar(edicao)
+
+
+def test_fatos_artigo_e_fontes_adicionais_sem_repetir_principal(edicao):
+    from mandatometro.ia.esquemas import Fatos, FatoVotacao, Placar
+
+    item = edicao.itens[0]
+    item.fonte.id = 10
+    outra = Fonte(
+        id=20,
+        url="https://dadosabertos.camara.leg.br/api/v2/proposicoes/20",
+        url_publica="https://www.camara.leg.br/proposicoesWeb/fichadetramitacao?idProposicao=20",
+        coletado_em=item.fonte.coletado_em,
+        trecho="Ementa fictícia <&>.",
+    )
+    item.fatos = Fatos(
+        proposicoes=[20],
+        votacoes=[
+            FatoVotacao(
+                id=30,
+                data=date(2026, 11, 10),
+                resultado="aprovada",
+                placar=Placar(sim=10, nao=2, presidente=1),
+                fontes=[10],
+            )
+        ],
+        fontes=[10, 20],
+        pendencias=[],
+    ).model_dump(mode="json")
+    item.artigo_caminho = "/trilhas/processo-legislativo/onde-o-projeto-comeca"
+    edicao.itens = [item]
+    mensagem = montar_email(
+        edicao,
+        CODIGO,
+        app_base_url="https://mandatometro.example.com",
+        api_url="https://api.example.com",
+        fontes={20: outra},
+    )
+    assert mensagem.html.count(">Fonte oficial</a>") == 1
+    assert outra.url_publica in mensagem.html
+    assert "&lt;&amp;&gt;" in mensagem.html
+    assert "Entenda na trilha" in mensagem.html
+    assert (
+        "https://mandatometro.example.com/trilhas/processo-legislativo/onde-o-projeto-comeca"
+        in mensagem.texto
+    )
+    assert "Sim: 10" in mensagem.texto and "Não: 2" in mensagem.texto
+    assert "Presidência: 1" in mensagem.texto
+
+
+def test_artigo_fora_do_catalogo_nao_vira_link(edicao):
+    edicao.itens[0].artigo_caminho = "//exemplo.com/fora"
+    with pytest.raises(MensagemInvalida):
+        montar(edicao)
+
+
+def test_sem_placar_nao_inventa_modalidade_e_resultado_outro_nao_vira_aprovacao(edicao):
+    from mandatometro.ia.esquemas import Fatos, FatoVotacao
+
+    item = edicao.itens[0]
+    item.fonte.id = 10
+    edicao.itens = [item]
+    item.fatos = Fatos(
+        proposicoes=[20],
+        votacoes=[
+            FatoVotacao(id=30, data=date(2026, 11, 10), resultado="outro", placar=None, fontes=[10])
+        ],
+        fontes=[10],
+    ).model_dump(mode="json")
+    texto = montar(edicao).texto
+    assert "O resultado desta votação não está classificado nos dados usados." in texto
+    assert "O placar não está disponível nos dados usados." in texto
+    assert all(palavra not in texto for palavra in ("secreta", "simbólica", "Sim: 0", "aprovada"))
+    item.fatos["fontes"].append(999)
+    with pytest.raises(MensagemInvalida):
+        montar(edicao)
