@@ -2,7 +2,7 @@
 
 Respostas reais das APIs da Câmara e do Senado, gravadas para os testes de unidade rodarem offline, como o `AGENTS.md` pede. Os conectores (#10 e #11) leem estes arquivos em vez de chamar a rede.
 
-**Coletadas em:** 11/11/2026; os dois históricos de mandatos, a votação secreta 7081 e seu processo foram acrescentados em 16/11/2026. O formato de cada campo está em [docs/dicionario-de-dados.md](../../../../docs/dicionario-de-dados.md).
+**Coletadas em:** 11/11/2026; os três acréscimos da Câmara indicados abaixo, os dois históricos de mandatos do Senado, a votação secreta 7081 e seu processo foram acrescentados em 16/11/2026. O formato de cada campo está em [docs/dicionario-de-dados.md](../../../../docs/dicionario-de-dados.md).
 
 ## De onde veio cada arquivo
 
@@ -15,6 +15,9 @@ Respostas reais das APIs da Câmara e do Senado, gravadas para os testes de unid
 | `camara/votacao-2236186-60-orientacoes.json` | `/votacoes/2236186-60/orientacoes` |
 | `camara/proposicao-2637478.json` | `/proposicoes/2637478` |
 | `camara/deputado-178843.json` | `/deputados/178843` — **campos pessoais trocados** |
+| `camara/deputados-atuais-pagina-curta.json` | `/deputados?id=178843&itens=2` — 16/11, página curta com um deputado e e-mail fictício |
+| `camara/votacao-2236186-60.json` | `/votacoes/2236186-60` — 16/11, detalhe da votação nominal já gravada |
+| `camara/proposicao-2236186.json` | `/proposicoes/2236186` — 16/11, proposição daquela votação nominal |
 | `senado/votacao-2026-11-03_2026-11-07.json` | `/votacao?dataInicio=2026-11-03&dataFim=2026-11-07` |
 | `senado/senador-lista-atual.json` | `/senador/lista/atual.json` — **motivos de afastamento trocados** |
 | `senado/processo-9006525.json` | `/processo/9006525` |
@@ -31,6 +34,8 @@ O `AGENTS.md` manda trocar CPF, título de eleitor e motivo de afastamento por v
 
 - `cpf` virou `00000000000`;
 - `dataNascimento` virou `1970-01-01`.
+
+Na página curta de deputados acrescentada em 16/11, o `email` foi substituído por `parlamentar@example.com`. Ela não traz CPF nem data de nascimento. Os testes do conector simulam as páginas seguintes em memória, sem gravar os 513 cadastros. Os dois outros acréscimos não contêm cadastro pessoal.
 
 Em `senado/senador-lista-atual.json`, os 50 exercícios com motivo de afastamento ficaram com o mesmo valor fictício, porque um motivo pode ser de saúde, e só os de saúde trocados se destacariam:
 

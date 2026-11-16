@@ -8,6 +8,7 @@ import argparse
 import json
 from pathlib import Path
 
+from mandatometro.coleta import camara
 from mandatometro.coleta.senado import registrar as registrar_senado
 
 
@@ -33,6 +34,7 @@ def main(argv: list[str] | None = None) -> int:
     coleta = comandos.add_parser("coleta", help="coleta os dados oficiais do Congresso")
     casas = coleta.add_subparsers(dest="casa")
     casas.required = True
+    camara.registrar_comando(casas)
     registrar_senado(casas)
 
     args = parser.parse_args(argv)

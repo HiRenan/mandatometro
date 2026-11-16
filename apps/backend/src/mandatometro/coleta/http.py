@@ -60,6 +60,7 @@ class ClienteHttp:
         self._tentativas = tentativas
         self._intervalo = intervalo
         self._ultimo_inicio: float | None = None
+        self._adiado_ate = 0.0
         self._robots: RobotFileParser | None = None
         self._robots_em: float = 0
         self.chamadas = 0
@@ -87,6 +88,12 @@ class ClienteHttp:
         return url
 
     def _pausar(self) -> None:
+        espera_da_fonte = self._adiado_ate - time.monotonic()
+        if espera_da_fonte > 60:
+            raise ErroColeta("A fonte ainda exige espera superior a 60 segundos; tente mais tarde.")
+        if espera_da_fonte > 0:
+            time.sleep(espera_da_fonte)
+        self._adiado_ate = 0
         intervalo = self._intervalo
         if self._robots:
             intervalo = max(intervalo, self._robots.crawl_delay("mandatometro") or 0)
@@ -113,6 +120,7 @@ class ClienteHttp:
                 except (TypeError, ValueError, OverflowError):
                     adicional = 0
             espera = max(espera, adicional)
+            self._adiado_ate = max(self._adiado_ate, time.monotonic() + max(0, adicional))
         if espera > 60:
             raise ErroColeta("A fonte solicitou espera superior a 60 segundos; tente mais tarde.")
         return espera
@@ -139,8 +147,9 @@ class ClienteHttp:
             else:
                 if resposta.status_code not in (408, 429) and resposta.status_code < 500:
                     return resposta
+            espera = self._espera(resposta, tentativa)
             if tentativa + 1 < self._tentativas:
-                time.sleep(self._espera(resposta, tentativa))
+                time.sleep(espera)
         raise ErroColeta("Falha transitória na fonte após esgotar as tentativas.")
 
     def _obter(self, url: str, *, robots: bool = False) -> httpx2.Response:

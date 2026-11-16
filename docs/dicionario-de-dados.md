@@ -2,7 +2,7 @@
 
 O que cada API devolve, quais campos usamos e como os registros se ligam. É a referência do modelo de dados (#7) e dos conectores (#10 e #11).
 
-**Conferido em:** 11/11/2026, por chamada real a cada endpoint, e de novo em 16/11/2026, nas correções da revisão (#90) e na coleta do Senado (#11). As respostas completas estão em [`apps/backend/tests/fixtures/`](../apps/backend/tests/fixtures/), e os testes offline leem de lá. Os históricos `mandatos.json` e uma votação secreta entraram com a #11; a lista de deputados entra com a #10.
+**Conferido em:** 11/11/2026, por chamada real a cada endpoint, e de novo em 16/11/2026, nas correções da revisão (#90) e na coleta do Senado (#11). As respostas completas estão em [`apps/backend/tests/fixtures/`](../apps/backend/tests/fixtures/), e os testes offline leem de lá. Os históricos `mandatos.json` e uma votação secreta entraram com a #11; uma amostra da lista de deputados entrou com a #10.
 
 Bases, as duas sem chave de acesso:
 
@@ -80,6 +80,8 @@ Três avisos sobre essas chaves:
 
 `idOrgao=180` é o Plenário. A semana de 03 a 07/11/2026 teve 27 votações.
 
+**Período:** a [documentação oficial](https://dadosabertos.camara.leg.br/api/v2/api-docs) exige que `dataInicio` e `dataFim`, quando enviados juntos, pertençam ao mesmo ano. A coleta divide intervalos maiores por ano. `dataFim` corta à meia-noite: em 16/11/2026, consultar de 14/10 a 14/10 retornou zero votações; até 15/10 retornou as cinco de 14/10. Para incluir o último dia inteiro, o conector pede o dia seguinte e filtra pela data solicitada. Se o trecho termina em 31/12, omite `dataFim`: só `dataInicio` consulta até o fim daquele ano, segundo a documentação.
+
 | Campo | Tipo | O que é | Usamos |
 |---|---|---|---|
 | `id` | texto | id da votação, no formato `{idProposicao}-{sequencial}`; a proposição do prefixo pode ser um requerimento (ver o aviso 1, em "Chaves de ligação") | chave |
@@ -104,6 +106,8 @@ Três avisos sobre essas chaves:
 ```
 
 **Pegadinha:** `proposicaoObjeto` vem `null` na maioria das votações. Nas urgências e nos recursos, ele traz o requerimento ou o recurso votado, e não a matéria. A matéria só aparece no detalhe, em `proposicoesAfetadas`.
+
+**Id listado com detalhe indisponível:** em 16/11/2026, a consulta de 09–15/11 retornou 187 ids, dos quais 29 responderam 404 tanto em `/votacoes/{id}` quanto em `/votacoes/{id}/votos`. Todos estavam datados de 10/11; por exemplo, `2155928-29` e `2420059-20`. O conector separa 404/410 nesses dois recursos em `indisponiveis_na_fonte` e continua, sem tratar o caso como queda da API e sem gravar uma votação só com a listagem. Outras falhas tornam a execução parcial; três consecutivas interrompem.
 
 ### `/votacoes/{id}` — a proposição que foi votada
 
@@ -171,7 +175,7 @@ Três avisos sobre essas chaves:
 
 Três coisas para o conector:
 
-- **Só existe em votação nominal, e elas são raras:** 2 em 66 votações do plenário entre 01/10 e 07/11/2026. Nas outras, a resposta é **HTTP 200 com `"dados": []`**, não 404. Lista vazia não é erro.
+- **Há registros nas votações nominais e em algumas simbólicas**, conforme a [documentação oficial](https://dadosabertos.camara.leg.br/api/v2/api-docs). Consulte o `/votos` de todas as votações, sem deduzir a modalidade pelo tamanho da lista. **HTTP 200 com `"dados": []`** é uma resposta válida, sem votos publicados; 404/410 é indisponibilidade, como descrito acima.
 - **Só aparece quem votou.** O exemplo tem 429 votos, de 513 deputados. Ausência não vem como registro.
 - **`tipoVoto` tem um terceiro valor:** `Artigo 17`, uma vez no exemplo, que é o voto do presidente da sessão pelo art. 17 do Regimento Interno. Não trate o campo como booleano.
 

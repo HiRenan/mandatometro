@@ -245,8 +245,9 @@ class Votacao(Base):
     Não há colunas de total nem de modalidade. No Senado, os totais vêm null nas nominais: conte
     os votos. Nas secretas, a API traz o placar nos totais e Votou na lista; a coleta guarda somente
     matéria, votação e resultado, sem votos individuais. Lista vazia no banco não prova segredo.
-    Na Câmara, o /votos só traz quem votou, e só nas votações nominais: quem não
-    aparece não vira linha, e a conta "X dos 513 votaram" sai dos votos gravados.
+    Na Câmara, não há totais na API: consulte /votos nas nominais e nas simbólicas, pois algumas
+    simbólicas também publicam registros. Quem não aparece não vira linha. A lista pode incluir
+    a presidência (Artigo 17): separe os valores normalizados ao contar votos e presença.
     """
 
     __tablename__ = "votacao"

@@ -11,9 +11,9 @@ from mandatometro.coleta.http import ClienteHttp, ErroColeta
 BASE = "https://dadosabertos.camara.leg.br/api/v2"
 
 
-def cliente(handler):
+def cliente(handler, **opcoes):
     return ClienteHttp(
-        BASE, cliente=httpx2.Client(transport=httpx2.MockTransport(handler)), intervalo=0
+        BASE, cliente=httpx2.Client(transport=httpx2.MockTransport(handler)), intervalo=0, **opcoes
     )
 
 
@@ -98,9 +98,18 @@ def test_robots_5xx_esgota_tentativas_sem_acessar_api(monkeypatch):
     assert "privado" not in str(erro.value)
 
 
-def test_retry_after_e_limite_de_espera(monkeypatch):
+@pytest.mark.parametrize("limite_tentativas", [2, 3])
+def test_retry_after_e_limite_de_espera(monkeypatch, limite_tentativas):
     pausas = []
-    monkeypatch.setattr("mandatometro.coleta.http.time.sleep", pausas.append)
+    agora = 0
+
+    def esperar(segundos):
+        nonlocal agora
+        pausas.append(segundos)
+        agora += segundos
+
+    monkeypatch.setattr("mandatometro.coleta.http.time.sleep", esperar)
+    monkeypatch.setattr("mandatometro.coleta.http.time.monotonic", lambda: agora)
     tentativas = 0
 
     def atender(req):
@@ -112,8 +121,12 @@ def test_retry_after_e_limite_de_espera(monkeypatch):
             return httpx2.Response(429, headers={"Retry-After": "5"})
         return httpx2.Response(429, headers={"Retry-After": "120"})
 
+    http = cliente(atender, tentativas=limite_tentativas)
     with pytest.raises(ErroColeta, match="espera"):
-        cliente(atender).obter_json("/votos")
+        http.obter_json("/votos")
+    # Pular a unidade não autoriza consultar outro recurso antes do Retry-After.
+    with pytest.raises(ErroColeta, match="espera"):
+        http.obter_json("/outra-votacao")
     assert pausas == [5]
     assert tentativas == 2
 
