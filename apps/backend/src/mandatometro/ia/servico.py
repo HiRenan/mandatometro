@@ -189,6 +189,7 @@ def gerar(
     refazer: bool = False,
     redator: Redator | None = None,
 ) -> dict:
+    redacao = {"textos_do_modelo": 0, "textos_do_codigo": 0, "motivos_texto_do_codigo": {}}
     with abrir() as sessao:
         anterior = _periodo(sessao, inicio, fim)
         if anterior and (anterior.estado == "publicada" or not refazer):
@@ -197,6 +198,7 @@ def gerar(
                 if anterior.estado == "publicada"
                 else "rascunho_existente",
                 "edicao_id": anterior.id,
+                **redacao,
             }
         versao = _hash(anterior) if anterior else None
         selecao = selecionar(sessao, inicio, fim, teto=teto)
@@ -211,6 +213,7 @@ def gerar(
             "situacao": "sem_votacoes_no_banco"
             if not resumo["votacoes_no_banco"]
             else "sem_itens_elegiveis",
+            **redacao,
             **resumo,
         }
     # Nenhuma transação ou conexão do banco fica aberta durante a chamada ao redator.
@@ -230,7 +233,7 @@ def gerar(
     with abrir() as sessao, sessao.begin():
         edicao = _periodo(sessao, inicio, fim)
         if edicao and edicao.estado == "publicada":
-            return {"situacao": "ja_publicada", "edicao_id": edicao.id}
+            return {"situacao": "ja_publicada", "edicao_id": edicao.id, **redacao}
         if (edicao is not None and _hash(edicao) != versao) or (
             edicao is None and versao is not None
         ):
@@ -261,7 +264,8 @@ def gerar(
         "situacao": "rascunho_refeito" if versao else "rascunho_criado",
         "edicao_id": edicao_id,
         "itens": len(preparados),
-        "textos_do_codigo": sum(motivos.values()),
+        "textos_do_modelo": len(preparados) - motivos.total(),
+        "textos_do_codigo": motivos.total(),
         "motivos_texto_do_codigo": dict(motivos),
         **resumo,
     }
