@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 // verdade é no navegador, com a barra de rolagem do Windows à vista.
 
 const index = readFileSync(new URL("../index.css", import.meta.url), "utf8");
+const edicoes = readFileSync(new URL("./edicoes.css", import.meta.url), "utf8");
 
 /** O corpo da regra de um seletor, com os espaços juntos, como numa linha só. */
 function regra(css: string, seletor: string): string {
@@ -45,6 +46,15 @@ describe("o teto dos títulos que vêm da API", () => {
 		// min-width quando a palavra é mais larga que ele.
 		expect(regra(index, ".letra-com-teto.teto-pela-caixa")).toContain(
 			"min-width: calc(var(--palavra) * 1em);",
+		);
+	});
+});
+
+describe("o texto de cada item", () => {
+	it("guarda a quebra simples de linha, como o <br> do e-mail", () => {
+		// Os parágrafos herdam o white-space da caixa do texto.
+		expect(regra(edicoes, ".item-da-edicao > .texto")).toContain(
+			"white-space: pre-line;",
 		);
 	});
 });

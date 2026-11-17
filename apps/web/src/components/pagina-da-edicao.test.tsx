@@ -227,6 +227,24 @@ describe("a página de uma edição", () => {
 		expect(item(2).textContent).toContain("<img src=x onerror=alert(1)>");
 	});
 
+	it("a quebra simples de linha fica dentro do parágrafo, como no e-mail", async () => {
+		// O e-mail troca cada quebra por um <br>. Aqui, ela fica no texto, e o CSS
+		// a mostra (o white-space do estilos/edicoes.test.ts).
+		await abrir(
+			edicao((exemplo) => {
+				exemplo.itens[1].texto =
+					"Primeira linha\nsegunda linha do mesmo parágrafo.\n\nOutro parágrafo.";
+			}),
+		);
+
+		expect(
+			Array.from(item(2).querySelectorAll(".texto > p"), (p) => p.textContent),
+		).toEqual([
+			"Primeira linha\nsegunda linha do mesmo parágrafo.",
+			"Outro parágrafo.",
+		]);
+	});
+
 	it("o teto do título e o dos títulos dos itens se medem pela folha, a caixa deles", async () => {
 		const titulo = await abrir(edicao());
 		const folha = document.querySelector("article.artigo-folha");

@@ -169,8 +169,15 @@
 		margin-top: 0.75rem;
 	}
 
+	/*
+	 * A linha em branco separa os parágrafos do texto do item (o paragrafos, em
+	 * lib/edicoes/conteudo-da-edicao.ts), e a quebra simples fica na tela, dentro
+	 * do parágrafo, como o <br> do e-mail (o formatar_edicao do backend): os
+	 * parágrafos herdam o white-space.
+	 */
 	.item-da-edicao > .texto {
 		margin-top: 1rem;
+		white-space: pre-line;
 	}
 
 	/*
