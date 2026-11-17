@@ -9,6 +9,7 @@ import {
 import { Aviso, useAviso } from "./aviso";
 import { Painel } from "./azulejo";
 import { BOTAO_CONTINUAR } from "./botao-continuar";
+import { Reservas } from "./reservas";
 
 /** Onde a saída está: antes do botão, esperando a API ou o que ela respondeu. */
 type Estado = "pronta" | "esperando" | ResultadoDaSaida["tipo"];
@@ -16,6 +17,7 @@ type Estado = "pronta" | "esperando" | ResultadoDaSaida["tipo"];
 const CONFIRMANDO = "Confirmando a saída…";
 const INCOMPLETO =
 	"Este link está incompleto. Abra de novo o link de saída que vem no fim de cada e-mail da newsletter.";
+const SAIR = "Sair da newsletter";
 const SAIU = "Você saiu da newsletter.";
 const FORA_DA_LISTA =
 	"O seu e-mail não está mais na lista, e as próximas edições não vão chegar.";
@@ -57,6 +59,8 @@ export function PaginaDeSair({
 	const incompleto = estado === "link-invalido" || !codigoValido(codigo);
 	const comBotao = comApi && !incompleto && !saiu;
 	const esperando = estado === "esperando";
+	// Só com a API e o código bem formado a saída pode acontecer e o título mudar.
+	const tituloPodeMudar = comApi && codigoValido(codigo);
 
 	// O botão some depois da saída e do código recusado: o foco vai para o que
 	// fica no lugar dele.
@@ -113,9 +117,17 @@ export function PaginaDeSair({
 				sozinho
 			/>
 			{/* Com a letra grande, o título cresce até "NEWSLETTER." encostar nas
-			    margens (o letra-com-teto do index.css). */}
-			<h1 className="titulo-condensado letra-com-teto [--palavra:5.25]">
-				{saiu ? SAIU : "Sair da newsletter"}
+			    margens (o letra-com-teto do index.css). Enquanto pode mudar, ele
+			    guarda a altura do mais alto dos dois: a 768 px, "Sair da
+			    newsletter" cabe numa linha, e "Você saiu da newsletter." quebra em
+			    duas. Assim, as ações não descem com a saída, e o "Inscrever-se de
+			    novo" nasce no lugar do botão. O título da vez fica embaixo, apoiado
+			    no fio, como em todo cartaz. */}
+			<h1 className="titulo-condensado letra-com-teto grid [--palavra:5.25]">
+				{tituloPodeMudar && <Reservas frases={[SAIR, SAIU]} />}
+				<span className="col-start-1 row-start-1 self-end">
+					{saiu ? SAIU : SAIR}
+				</span>
 			</h1>
 			<div className="cartaz-pe">
 				<p className="abertura">{abertura}</p>

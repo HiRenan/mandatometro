@@ -215,10 +215,17 @@ describe("a inscrição", () => {
 		expect(aviso()).toBe(CONFIRA);
 	});
 
-	it("o e-mail recusado pela API depois do recusado pela folha também leva o foco ao campo", async () => {
+	it("o e-mail recusado pela API depois do recusado pela folha: enquanto o pedido espera, o campo fica sem o erro, e depois o foco volta a ele", async () => {
 		const { campo, botao } = await enviar("pessoa@");
 		expect(document.activeElement).toBe(campo);
-		responder({ tipo: "email-invalido" });
+		expect(campo.getAttribute("aria-invalid")).toBe("true");
+		let soltar: (resultado: ResultadoDaInscricao) => void = () => {};
+		pedir.mockImplementation(
+			() =>
+				new Promise((resolver) => {
+					soltar = resolver;
+				}),
+		);
 
 		fireEvent.change(campo, { target: { value: "pessoa@example.test" } });
 		botao.focus();
@@ -226,8 +233,20 @@ describe("a inscrição", () => {
 			fireEvent.click(botao);
 		});
 
+		// A mensagem do erro sai da página durante o envio: o campo não fica marcado
+		// como inválido nem aponta para ela.
+		expect(talvezNaTela(CONFIRA)).toBeNull();
+		expect(campo.hasAttribute("aria-invalid")).toBe(false);
+		expect(campo.hasAttribute("aria-describedby")).toBe(false);
+
+		await act(async () => {
+			soltar({ tipo: "email-invalido" });
+		});
+
 		expect(pedir).toHaveBeenCalledTimes(1);
+		const erro = naTela(CONFIRA);
 		expect(campo.getAttribute("aria-invalid")).toBe("true");
+		expect(campo.getAttribute("aria-describedby")).toBe(erro.id);
 		expect(document.activeElement).toBe(campo);
 	});
 

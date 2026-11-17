@@ -28,7 +28,8 @@ import { idDoQuizFinal } from "@/lib/respostas-do-quiz";
 import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "./botao-continuar";
 import { LugarDoBotao } from "./lugar-do-botao";
 import { MarcaDeLido } from "./marca-de-lido";
-import { type PartesDoQuiz, Quiz, Reservas } from "./quiz";
+import { type PartesDoQuiz, Quiz } from "./quiz";
+import { Reservas } from "./reservas";
 
 /*
  * O piloto na tela (docs/medicao-do-piloto.md): a página /piloto, com o antes,
