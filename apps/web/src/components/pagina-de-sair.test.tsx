@@ -225,6 +225,68 @@ describe("a página de sair", () => {
 		expect(router.state.location.hash).toBe("newsletter");
 	});
 
+	it.each([
+		["antes do clique", () => mostrar()],
+		[
+			"enquanto confirma",
+			async () => {
+				sair.mockReturnValue(new Promise(() => {}));
+				const router = await mostrar();
+				await confirmar();
+				return router;
+			},
+		],
+		[
+			"depois da saída",
+			async () => {
+				sair.mockResolvedValue({ tipo: "saiu" });
+				const router = await mostrar();
+				await confirmar();
+				return router;
+			},
+		],
+		[
+			"com a API fora do ar",
+			async () => {
+				sair.mockResolvedValue({ tipo: "fora-do-ar" });
+				const router = await mostrar();
+				await confirmar();
+				return router;
+			},
+		],
+		[
+			// O "Ir para o início" recebe o foco quando o botão some, e o segundo
+			// clique de um clique duplo no botão cairia nele.
+			"com o código que a API recusa",
+			async () => {
+				sair.mockResolvedValue({ tipo: "link-invalido" });
+				const router = await mostrar();
+				await confirmar();
+				return router;
+			},
+		],
+		["sem a API", () => mostrar({ comApi: false })],
+		["com o link incompleto", () => mostrar({ codigo: "abc" })],
+	])(
+		"%s, o segundo clique de um clique duplo não segue o “Ir para o início”",
+		async (_, preparar) => {
+			const router = await preparar();
+			const inicio = screen.getByRole("link", { name: "Ir para o início" });
+
+			await act(async () => {
+				fireEvent.click(inicio, { detail: 2 });
+			});
+			expect(router.state.location.pathname).toBe("/newsletter/sair");
+
+			// Um clique novo, de propósito, leva ao início.
+			await act(async () => {
+				fireEvent.click(inicio, { detail: 1 });
+			});
+			await screen.findByRole("heading", { level: 1, name: "Início" });
+			expect(router.state.location.pathname).toBe("/");
+		},
+	);
+
 	it("o título guarda a altura do mais alto dos dois desde o HTML do servidor: as ações não descem quando ele muda", async () => {
 		const titulo = await tituloDoServidor({ codigo: CODIGO, comApi: true });
 		const reservas = [...titulo.querySelectorAll("[aria-hidden='true']")];

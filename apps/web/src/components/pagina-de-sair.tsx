@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
 import { sementeDe } from "@/lib/azulejos";
 import {
 	codigoValido,
@@ -27,6 +27,18 @@ const ERROS: Partial<Record<Estado, string>> = {
 	"sem-conexao":
 		"Não deu para confirmar a saída. Confira a internet e tente de novo.",
 };
+
+/**
+ * O segundo clique de um clique duplo não segue os links da página (o detail,
+ * como no lib/clique.ts): depois da saída, o "Inscrever-se de novo" surge onde
+ * estava o botão, e, com o código recusado, o foco vai para o "Ir para o
+ * início". Um clique novo, de propósito, segue o link.
+ */
+function semSegundoClique(evento: MouseEvent) {
+	if (evento.detail > 1) {
+		evento.preventDefault();
+	}
+}
 
 /**
  * A página para sair da newsletter, aberta pelo link do fim de cada edição: o
@@ -153,18 +165,11 @@ export function PaginaDeSair({
 						)}
 						{saiu && (
 							<li>
-								{/* Ele surge onde estava o botão: o segundo clique de um
-								    clique duplo não o segue (o detail, como no
-								    lib/clique.ts). */}
 								<Link
 									ref={deNovo}
 									to="/"
 									hash="newsletter"
-									onClick={(evento) => {
-										if (evento.detail > 1) {
-											evento.preventDefault();
-										}
-									}}
+									onClick={semSegundoClique}
 									className="acao-de-texto"
 								>
 									<span>Inscrever-se de novo</span>
@@ -172,7 +177,12 @@ export function PaginaDeSair({
 							</li>
 						)}
 						<li>
-							<Link ref={inicio} to="/" className="acao-de-texto">
+							<Link
+								ref={inicio}
+								to="/"
+								onClick={semSegundoClique}
+								className="acao-de-texto"
+							>
 								<span>Ir para o início</span>
 							</Link>
 						</li>
