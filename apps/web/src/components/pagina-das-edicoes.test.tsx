@@ -88,33 +88,37 @@ function paginacao() {
 }
 
 describe("a lista das edições", () => {
-	it("mostra cada edição, da mais nova para a mais antiga, com o link, o período e a data", async () => {
+	it("mostra cada edição, da mais nova para a mais antiga, com o link, a semana e a data", async () => {
 		await abrir(lista(3));
 		const [primeira, segunda] = edicoesNaLista();
+		/** A semana que o dia grande diz ao leitor de tela, antes do título. */
+		const semana = (folha: HTMLElement) =>
+			folha.querySelector(".dia-da-edicao .sr-only")?.textContent;
 
 		expect(edicoesNaLista()).toHaveLength(3);
 		const link = within(primeira).getByRole("link", {
 			name: "Jornal legislativo — semana 3",
 		});
 		expect(link.getAttribute("href")).toBe("/edicoes/3");
-		expect(primeira.textContent).toContain(
-			"O que o Congresso votou de 9 a 15 de novembro de 2026.",
+		expect(semana(primeira)).toBe("Semana de 9 a 15 de novembro de 2026");
+		expect(primeira.textContent?.indexOf("Semana de")).toBeLessThan(
+			primeira.textContent?.indexOf("Jornal legislativo") ?? -1,
 		);
 		expect(primeira.textContent).toContain(
 			"Publicada em 16 de novembro de 2026",
 		);
+		// O período não se repete na folha numa frase pronta.
+		expect(primeira.textContent).not.toContain("O que o Congresso votou");
 		expect(within(segunda).getByRole("link").getAttribute("href")).toBe(
 			"/edicoes/2",
 		);
-		expect(segunda.textContent).toContain(
-			"O que o Congresso votou de 2 a 8 de novembro de 2026.",
-		);
+		expect(semana(segunda)).toBe("Semana de 2 a 8 de novembro de 2026");
 	});
 
 	it("o dia e o mês, como na folhinha, ficam fora do leitor de tela, e a cor é a da semana", async () => {
 		await abrir(lista(3));
 		const [primeira, segunda] = edicoesNaLista();
-		const dia = primeira.querySelector(".dia-da-edicao");
+		const dia = primeira.querySelector(".dia-da-edicao > [aria-hidden]");
 
 		expect(dia?.getAttribute("aria-hidden")).toBe("true");
 		expect(dia?.textContent).toBe("15nov");

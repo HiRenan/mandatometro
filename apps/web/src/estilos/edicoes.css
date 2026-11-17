@@ -108,6 +108,21 @@
 	}
 
 	/*
+	 * Nada fica entre o caminho e o título, e o título começaria ao lado do
+	 * azulejo do canto: o lugar do caminho vai até o fim do azulejo, e o título
+	 * começa embaixo dele. O azulejo fica a clamp(1.25rem, 4vw, 3rem) do alto da
+	 * folha, e o texto, a clamp(1.75rem, 4vw, 3rem) (o .do-artigo e o
+	 * .artigo-folha, no index.css).
+	 */
+	.pagina-da-edicao .artigo-folha > .migalhas {
+		min-height: calc(
+			var(--selo) +
+			clamp(1.25rem, 4vw, 3rem) -
+			clamp(1.75rem, 4vw, 3rem)
+		);
+	}
+
+	/*
 	 * "Nesta edição": abaixo de 1200 px, dentro da folha, depois do lide; daí
 	 * para cima, na coluna ao lado, que para na tela durante a rolagem, como o
 	 * "Nesta trilha". Uma cópia fica escondida em cada largura, e o leitor de

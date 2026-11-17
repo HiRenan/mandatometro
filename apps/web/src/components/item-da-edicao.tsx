@@ -24,6 +24,9 @@ const RESULTADOS: Record<VotacaoPublica["resultado"], string> = {
  * texto, o quadro de cada votação, as fontes e, quando há, o artigo da trilha que
  * explica o assunto. O `id` leva o índice "Nesta edição" até o item. O texto vem
  * da API e vai sempre como texto.
+ *
+ * O item não sobe com a rolagem (o revelar), como o texto do artigo: o índice
+ * leva até ele, e o navegador calcularia o lugar com o item ainda deslocado.
  */
 export function ItemDaEdicao({ item }: { item: ItemPublico }) {
 	const id = `item-${item.ordem}`;
@@ -32,7 +35,7 @@ export function ItemDaEdicao({ item }: { item: ItemPublico }) {
 		<section
 			id={id}
 			aria-labelledby={`${id}-titulo`}
-			className={classes("item-da-edicao revelar", classeDaFita(item.ordem))}
+			className={classes("item-da-edicao", classeDaFita(item.ordem))}
 		>
 			<span aria-hidden="true" className="numeral">
 				{item.ordem}

@@ -83,7 +83,7 @@ function definicoes(elemento: HTMLElement): [string, string][] {
 }
 
 describe("a página de uma edição", () => {
-	it("mostra o título com o teto, a semana, a publicação e os itens na ordem", async () => {
+	it("mostra o título com o teto, a faixa com a semana e a publicação, e os itens na ordem", async () => {
 		// A API manda os itens fora da ordem: a página segue o `ordem` de cada um.
 		const titulo = await abrir(
 			edicao((exemplo) => {
@@ -94,12 +94,14 @@ describe("a página de uma edição", () => {
 		expect(titulo.style.getPropertyValue("--palavra")).toBe(
 			String(tetoDoTitulo(TITULO, "titulo-condensado")),
 		);
-		expect(document.body.textContent).toContain(
-			"Semana de 9 a 15 de novembro de 2026",
-		);
 		const faixa = document.querySelector(".artigo-folha > .faixa");
-		expect(faixa?.textContent).toContain("Publicada em 16 de novembro de 2026");
-		expect(faixa?.textContent).toContain("3 itens");
+		expect(
+			Array.from(faixa?.children ?? [], (parte) => parte.textContent),
+		).toEqual([
+			"9 a 15 de novembro de 2026",
+			"Publicada em 16 de novembro",
+			"3 itens",
+		]);
 		expect(
 			Array.from(
 				document.querySelectorAll("section.item-da-edicao h2"),
@@ -122,14 +124,9 @@ describe("a página de uma edição", () => {
 		expect(
 			folha?.querySelector(".do-artigo")?.getAttribute("aria-hidden"),
 		).toBe("true");
-		expect(
-			folha
-				?.querySelector(".sobretitulo .numeral")
-				?.getAttribute("aria-hidden"),
-		).toBe("true");
 	});
 
-	it("o caminho leva à lista das edições", async () => {
+	it("o caminho leva à lista das edições, sem repetir o período", async () => {
 		await abrir(edicao());
 		const caminho = screen.getByRole("navigation", { name: "Caminho" });
 
@@ -138,7 +135,51 @@ describe("a página de uma edição", () => {
 				.getByRole("link", { name: "Edições" })
 				.getAttribute("href"),
 		).toBe("/edicoes");
-		expect(caminho.textContent).toContain("9 a 15 de novembro");
+		// O título padrão já traz o período, e a faixa o diz com o ano.
+		expect(caminho.textContent).toBe("Edições");
+	});
+
+	it("nada fica acima do título além do caminho", async () => {
+		const titulo = await abrir(edicao());
+
+		expect(titulo.previousElementSibling?.matches("nav.migalhas")).toBe(true);
+		expect(document.querySelector(".artigo-folha .sobretitulo")).toBeNull();
+	});
+
+	it("com outro título, sem o período, a faixa ainda diz a semana, com o ano", async () => {
+		const outro = "Câmara e Senado votam o orçamento";
+		await abrir(
+			edicao((exemplo) => {
+				exemplo.titulo = outro;
+			}),
+			outro,
+		);
+
+		expect(
+			document.querySelector(".artigo-folha > .faixa")?.firstElementChild
+				?.textContent,
+		).toBe("9 a 15 de novembro de 2026");
+	});
+
+	it("publicada em outro ano, a faixa diz o ano da publicação", async () => {
+		await abrir(
+			edicao((exemplo) => {
+				exemplo.inicio = "2026-12-21";
+				exemplo.fim = "2026-12-27";
+				// 1h30 de 2/1 no UTC ainda é 1º de janeiro em Brasília.
+				exemplo.publicada_em = "2027-01-02T01:30:00Z";
+			}),
+		);
+
+		expect(
+			Array.from(
+				document.querySelector(".artigo-folha > .faixa")?.children ?? [],
+				(parte) => parte.textContent,
+			).slice(0, 2),
+		).toEqual([
+			"21 a 27 de dezembro de 2026",
+			"Publicada em 1º de janeiro de 2027",
+		]);
 	});
 
 	it("o texto de cada item vira parágrafos, sempre como texto", async () => {
@@ -330,6 +371,11 @@ describe("o índice e a ordem dos títulos", () => {
 		}
 		const ids = Array.from(document.querySelectorAll("[id]"), (el) => el.id);
 		expect(new Set(ids).size).toBe(ids.length);
+		// O item não sobe com a rolagem: com o revelar, o navegador calcula o lugar
+		// do #item-N com o item ainda deslocado, e o alto dele fica fora da tela.
+		for (const item of document.querySelectorAll("section.item-da-edicao")) {
+			expect(item.classList.contains("revelar")).toBe(false);
+		}
 	});
 
 	it("o h1, os h2 do índice e dos itens e os h3 dentro de cada item", async () => {

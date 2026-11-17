@@ -8,8 +8,8 @@ import type { EdicaoDaPagina } from "@/lib/edicoes";
 import {
 	classeDaFita,
 	dataEmBrasilia,
-	diaEMes,
 	formatarData,
+	formatarDia,
 	formatarPeriodo,
 	plural,
 	posicaoDaSemana,
@@ -22,7 +22,9 @@ import { EdicoesIndisponiveis } from "./pagina-das-edicoes";
 /**
  * A página de uma edição publicada, em /edicoes/7: a folha de leitura da página
  * do artigo, com a cor da semana (a mesma da lista), o título que a API manda, o
- * índice "Nesta edição" e os itens na ordem. Sem a API, o cartaz diz que as
+ * índice "Nesta edição" e os itens na ordem. Nada fica acima do título além do
+ * caminho: a semana, com o ano, vai na faixa embaixo dele, porque o revisor pode
+ * trocar o título padrão, que já traz o período. Sem a API, o cartaz diz que as
  * edições não aparecem neste endereço.
  */
 export function PaginaDaEdicao({ pagina }: { pagina: EdicaoDaPagina }) {
@@ -35,6 +37,12 @@ export function PaginaDaEdicao({ pagina }: { pagina: EdicaoDaPagina }) {
 function FolhaDaEdicao({ edicao }: { edicao: EdicaoPublica }) {
 	const semana = posicaoDaSemana(edicao.fim);
 	const itens = edicao.itens.toSorted((um, outro) => um.ordem - outro.ordem);
+	// O período, na faixa, já diz o ano: a publicação só leva o dela quando é outro.
+	const publicada = dataEmBrasilia(edicao.publicada_em);
+	const publicacao =
+		publicada.slice(0, 4) === edicao.fim.slice(0, 4)
+			? formatarDia(publicada)
+			: formatarData(publicada);
 	return (
 		<div className="pagina-da-edicao">
 			<div className="parede">
@@ -49,6 +57,9 @@ function FolhaDaEdicao({ edicao }: { edicao: EdicaoPublica }) {
 							pecas={azulejoDaPosicao(semana)}
 							className="do-artigo"
 						/>
+						{/* Como na página do artigo, o caminho leva às páginas de cima, e o
+						    lugar dele vai até o fim do azulejo do canto: o título começa
+						    embaixo do azulejo (estilos/edicoes.css). */}
 						<nav aria-label="Caminho" className="migalhas rotulo">
 							<ol>
 								<li>
@@ -56,22 +67,8 @@ function FolhaDaEdicao({ edicao }: { edicao: EdicaoPublica }) {
 										Edições
 									</Link>
 								</li>
-								<li aria-hidden="true">/</li>
-								<li>
-									<span aria-current="page">
-										{formatarPeriodo(edicao.inicio, edicao.fim, { ano: false })}
-									</span>
-								</li>
 							</ol>
 						</nav>
-						<p className="sobretitulo">
-							<span aria-hidden="true" className="numeral">
-								{diaEMes(edicao.fim).dia}
-							</span>
-							<span className="rotulo">
-								Semana de {formatarPeriodo(edicao.inicio, edicao.fim)}
-							</span>
-						</p>
 						{/* O título vem da API: o teto da letra grande sai da régua, com a
 						    palavra mais larga dele (lib/conteudo/regua.ts). */}
 						<h1
@@ -80,12 +77,11 @@ function FolhaDaEdicao({ edicao }: { edicao: EdicaoPublica }) {
 						>
 							{edicao.titulo}
 						</h1>
+						{/* A fonte oficial de cada item fica no lide, logo abaixo. */}
 						<p className="faixa rotulo">
-							<span>
-								Publicada em {formatarData(dataEmBrasilia(edicao.publicada_em))}
-							</span>
+							<span>{formatarPeriodo(edicao.inicio, edicao.fim)}</span>
+							<span>Publicada em {publicacao}</span>
 							<span>{plural(itens.length, "item", "itens")}</span>
-							<span>Fonte oficial em cada item</span>
 						</p>
 						<p className="lide">
 							O que o Congresso votou na semana, em linguagem simples. Cada item

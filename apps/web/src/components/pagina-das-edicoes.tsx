@@ -154,17 +154,25 @@ function CartazDasEdicoes({
  * lugar do número, como na folhinha, e o mês embaixo. A cor é a da semana no
  * calendário (o posicaoDaSemana), igual na página da edição: muda de uma semana
  * para a outra, e ninguém escolhe. O título vem da API e leva o teto calculado.
+ *
+ * O período não se repete na folha: o título padrão já traz ele, e o dia grande
+ * mostra o fim da semana. Para o leitor de tela, o dia grande diz a semana inteira,
+ * com o ano, antes do título, mesmo quando o revisor troca o título.
  */
 function EdicaoNaLista({ edicao }: { edicao: ResumoEdicao }) {
 	const semana = posicaoDaSemana(edicao.fim);
 	const { dia, mes } = diaEMes(edicao.fim);
 	return (
 		<li className={classes("linha revelar", classeDaFita(semana))}>
-			{/* O dia e o mês são desenho: o texto da folha diz o período. */}
-			<span aria-hidden="true" className="numeral dia-da-edicao">
-				{dia}
-				<span className="mes-da-edicao rotulo">{mes}</span>
-			</span>
+			<p className="numeral dia-da-edicao">
+				<span aria-hidden="true">
+					{dia}
+					<span className="mes-da-edicao rotulo">{mes}</span>
+				</span>
+				<span className="sr-only">
+					Semana de {formatarPeriodo(edicao.inicio, edicao.fim)}
+				</span>
+			</p>
 			<div className="linha-texto">
 				{/* A folha inteira leva à edição: a área do link cobre a folha. */}
 				<h2
@@ -175,7 +183,6 @@ function EdicaoNaLista({ edicao }: { edicao: ResumoEdicao }) {
 						{edicao.titulo}
 					</Link>
 				</h2>
-				<p>{`O que o Congresso votou de ${formatarPeriodo(edicao.inicio, edicao.fim)}.`}</p>
 				<p className="rotulo">
 					Publicada em {formatarData(dataEmBrasilia(edicao.publicada_em))}
 				</p>

@@ -6,6 +6,7 @@ import {
 	dominio,
 	fitaDaPosicao,
 	formatarData,
+	formatarDia,
 	formatarPeriodo,
 	fraseDoProgresso,
 	idDoPasso,
@@ -139,23 +140,9 @@ describe("formatarPeriodo", () => {
 		);
 	});
 
-	it("sem o ano, como no caminho da página da edição, menos na virada do ano", () => {
-		const semAno = { ano: false };
-		expect(formatarPeriodo("2026-11-09", "2026-11-15", semAno)).toBe(
-			"9 a 15 de novembro",
-		);
-		expect(formatarPeriodo("2026-11-30", "2026-12-06", semAno)).toBe(
-			"30 de novembro a 6 de dezembro",
-		);
-		expect(formatarPeriodo("2026-11-26", "2026-12-01", semAno)).toBe(
-			"26 de novembro a 1º de dezembro",
-		);
-		expect(formatarPeriodo("2026-11-15", "2026-11-15", semAno)).toBe(
-			"15 de novembro",
-		);
-		expect(formatarPeriodo("2026-12-28", "2027-01-03", semAno)).toBe(
-			"28 de dezembro de 2026 a 3 de janeiro de 2027",
-		);
+	it("o dia sem o ano, para quando o texto ao lado já diz o ano", () => {
+		expect(formatarDia("2026-11-16")).toBe("16 de novembro");
+		expect(formatarDia("2026-12-01")).toBe("1º de dezembro");
 	});
 });
 

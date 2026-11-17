@@ -18,11 +18,14 @@ const MESES = [
  * para o servidor e o navegador escreverem igual na hidratação.
  */
 export function formatarData(data: string): string {
-	return `${diaPorExtenso(data)} de ${Number(data.split("-")[0])}`;
+	return `${formatarDia(data)} de ${Number(data.split("-")[0])}`;
 }
 
-/** "2026-11-09" vira "9 de novembro", sem o ano. */
-function diaPorExtenso(data: string): string {
+/**
+ * "2026-11-09" vira "9 de novembro", sem o ano: para quando o texto ao lado já
+ * diz o ano, como a publicação na faixa da edição, ao lado do período.
+ */
+export function formatarDia(data: string): string {
 	const [, mes, dia] = data.split("-").map(Number);
 	return `${dia === 1 ? "1º" : dia} de ${MESES[mes - 1]}`;
 }
@@ -30,21 +33,15 @@ function diaPorExtenso(data: string): string {
 /**
  * O período de uma edição, do primeiro ao último dia: "9 a 15 de novembro de
  * 2026", "30 de novembro a 6 de dezembro de 2026" ou, na virada do ano, as duas
- * datas inteiras. Um dia só é a data. Sem o `ano`, como no caminho da página da
- * edição, o fim fica sem ele ("9 a 15 de novembro"), menos na virada do ano. À
- * mão, como o formatarData.
+ * datas inteiras. Um dia só é a data. À mão, como o formatarData.
  */
-export function formatarPeriodo(
-	inicio: string,
-	fim: string,
-	{ ano = true }: { ano?: boolean } = {},
-): string {
+export function formatarPeriodo(inicio: string, fim: string): string {
 	const [anoDoInicio, mesDoInicio, diaDoInicio] = inicio.split("-").map(Number);
 	const [anoDoFim, mesDoFim] = fim.split("-").map(Number);
 	if (anoDoInicio !== anoDoFim) {
 		return `${formatarData(inicio)} a ${formatarData(fim)}`;
 	}
-	const ultimo = ano ? formatarData(fim) : diaPorExtenso(fim);
+	const ultimo = formatarData(fim);
 	if (inicio === fim) {
 		return ultimo;
 	}
