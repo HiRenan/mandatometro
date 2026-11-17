@@ -18,29 +18,41 @@ const MESES = [
  * para o servidor e o navegador escreverem igual na hidratação.
  */
 export function formatarData(data: string): string {
-	const [ano, mes, dia] = data.split("-").map(Number);
-	return `${dia === 1 ? "1º" : dia} de ${MESES[mes - 1]} de ${ano}`;
+	return `${diaPorExtenso(data)} de ${Number(data.split("-")[0])}`;
+}
+
+/** "2026-11-09" vira "9 de novembro", sem o ano. */
+function diaPorExtenso(data: string): string {
+	const [, mes, dia] = data.split("-").map(Number);
+	return `${dia === 1 ? "1º" : dia} de ${MESES[mes - 1]}`;
 }
 
 /**
  * O período de uma edição, do primeiro ao último dia: "9 a 15 de novembro de
  * 2026", "30 de novembro a 6 de dezembro de 2026" ou, na virada do ano, as duas
- * datas inteiras. Um dia só é a data. À mão, como o formatarData.
+ * datas inteiras. Um dia só é a data. Sem o `ano`, como no caminho da página da
+ * edição, o fim fica sem ele ("9 a 15 de novembro"), menos na virada do ano. À
+ * mão, como o formatarData.
  */
-export function formatarPeriodo(inicio: string, fim: string): string {
-	if (inicio === fim) {
-		return formatarData(fim);
-	}
+export function formatarPeriodo(
+	inicio: string,
+	fim: string,
+	{ ano = true }: { ano?: boolean } = {},
+): string {
 	const [anoDoInicio, mesDoInicio, diaDoInicio] = inicio.split("-").map(Number);
 	const [anoDoFim, mesDoFim] = fim.split("-").map(Number);
-	const primeiro = diaDoInicio === 1 ? "1º" : String(diaDoInicio);
 	if (anoDoInicio !== anoDoFim) {
 		return `${formatarData(inicio)} a ${formatarData(fim)}`;
 	}
-	if (mesDoInicio !== mesDoFim) {
-		return `${primeiro} de ${MESES[mesDoInicio - 1]} a ${formatarData(fim)}`;
+	const ultimo = ano ? formatarData(fim) : diaPorExtenso(fim);
+	if (inicio === fim) {
+		return ultimo;
 	}
-	return `${primeiro} a ${formatarData(fim)}`;
+	const primeiro = diaDoInicio === 1 ? "1º" : String(diaDoInicio);
+	if (mesDoInicio !== mesDoFim) {
+		return `${primeiro} de ${MESES[mesDoInicio - 1]} a ${ultimo}`;
+	}
+	return `${primeiro} a ${ultimo}`;
 }
 
 /** Três horas, em milissegundos: Brasília fica no UTC−3 o ano todo desde 2019. */
