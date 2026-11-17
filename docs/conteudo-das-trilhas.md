@@ -10,7 +10,7 @@ apps/web/conteudo/trilhas/
     trilha.md                      título, descrição e ordem da trilha
     infografico.md                 o caminho da trilha num infográfico (opcional)
     quiz.md                        as perguntas do quiz da trilha (opcional)
-    quiz-final.md                  as perguntas do quiz final, que o site ainda não mostra (opcional)
+    quiz-final.md                  as perguntas do quiz final, no fim da trilha (opcional)
     quem-pode-propor-uma-lei.md    um arquivo por artigo
     onde-o-projeto-comeca.md
 ```
@@ -181,7 +181,9 @@ perguntas:
 
 ## O quiz final: `quiz-final.md`
 
-Perguntas de múltipla escolha sobre a trilha toda, para depois do último artigo. É opcional. **O site ainda não mostra o quiz final:** a tela e a medição do piloto são da #92. Até lá, o teste e o `pnpm build` já conferem as perguntas, e nenhuma página as leva ao navegador.
+Perguntas de múltipla escolha sobre a trilha toda, para depois do último artigo. É opcional. O site mostra o quiz final em `/trilhas/<trilha>/quiz-final`, com a chamada na página da trilha e no fim do último artigo, e guarda as respostas à parte das do quiz da trilha.
+
+**O quiz final do processo legislativo também mede o piloto.** A medição do piloto (#40) usa as 12 perguntas dele, antes e depois da trilha, na versão `processo-legislativo-final-v1`, e o teste `apps/web/src/lib/piloto-versao.test.ts` prende o enunciado, as opções e a resposta certa de cada uma. Mudou um deles, o teste falha: ou o arquivo volta ao que era, ou a mudança pede uma versão nova, combinada entre o conteúdo, a API e a tela ([docs/medicao-do-piloto.md](medicao-do-piloto.md)). A explicação e as fontes mudam sem versão nova.
 
 O formato é o do `quiz.md`, sem o `depoisDe`: só o cabeçalho, com as `perguntas`. Um quiz final de uma pergunta só ficaria assim:
 
@@ -258,7 +260,7 @@ Essa medida fica só no teste: ela não derruba o build nem o deploy.
 
   O CI roda o mesmo teste, então um artigo com problema não passa no PR.
 - **`pnpm build`** confere a pasta antes de montar o site e para com a mesma lista. Por isso um artigo com problema também derruba o deploy na Vercel e a imagem do Docker, e o site no ar continua na versão anterior.
-- **`pnpm dev`** sobe o site em http://localhost:3001, e o artigo aparece em `/trilhas/<trilha>/<artigo>`. O infográfico aparece em `/trilhas/<trilha>`, e o quiz, em `/trilhas/<trilha>/quiz`. O quiz final ainda não aparece. Um arquivo novo ou mudado aparece ao recarregar a página, sem reiniciar o `pnpm dev`.
+- **`pnpm dev`** sobe o site em http://localhost:3001, e o artigo aparece em `/trilhas/<trilha>/<artigo>`. O infográfico aparece em `/trilhas/<trilha>`, o quiz, em `/trilhas/<trilha>/quiz`, e o quiz final, em `/trilhas/<trilha>/quiz-final`. Um arquivo novo ou mudado aparece ao recarregar a página, sem reiniciar o `pnpm dev`.
 
 ## Como o site lê os arquivos
 
