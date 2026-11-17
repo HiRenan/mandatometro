@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import {
 	type EstiloDeTitulo,
 	LARGURAS_DAS_LETRAS,
@@ -53,4 +54,16 @@ export function tetoDoTitulo(titulo: string, estilo: EstiloDeTitulo): number {
 		return 1;
 	}
 	return Math.ceil(Math.max(...larguras) * FOLGA * 100) / 100;
+}
+
+/**
+ * O `style` de um título que vem de fora do código, com o tetoDoTitulo no
+ * --palavra, que o letra-com-teto lê. A conta é a mesma no servidor e no
+ * navegador, e o título não muda de tamanho na hidratação.
+ */
+export function estiloDoTeto(
+	titulo: string,
+	estilo: EstiloDeTitulo,
+): CSSProperties {
+	return { "--palavra": String(tetoDoTitulo(titulo, estilo)) } as CSSProperties;
 }

@@ -1,13 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
 	classeDaFita,
+	dataEmBrasilia,
+	diaEMes,
 	dominio,
 	fitaDaPosicao,
 	formatarData,
+	formatarPeriodo,
 	fraseDoProgresso,
 	idDoPasso,
 	pedacosDoDominio,
 	plural,
+	posicaoDaSemana,
 	tamanhoDaTrilha,
 } from "./formatar";
 
@@ -101,5 +105,93 @@ describe("idDoPasso", () => {
 		expect(idDoPasso("Plenário")).toBe("passo-plenario");
 		expect(idDoPasso("A outra Casa")).toBe("passo-a-outra-casa");
 		expect(idDoPasso("Sanção ou veto")).toBe("passo-sancao-ou-veto");
+	});
+});
+
+describe("formatarPeriodo", () => {
+	it("no mesmo mês, escreve o mês e o ano uma vez", () => {
+		expect(formatarPeriodo("2026-11-09", "2026-11-15")).toBe(
+			"9 a 15 de novembro de 2026",
+		);
+	});
+
+	it("na virada do mês, escreve os dois meses", () => {
+		expect(formatarPeriodo("2026-11-30", "2026-12-06")).toBe(
+			"30 de novembro a 6 de dezembro de 2026",
+		);
+	});
+
+	it("na virada do ano, escreve os dois anos", () => {
+		expect(formatarPeriodo("2026-12-28", "2027-01-03")).toBe(
+			"28 de dezembro de 2026 a 3 de janeiro de 2027",
+		);
+	});
+
+	it("o primeiro dia do mês é 1º, e um dia só é a data", () => {
+		expect(formatarPeriodo("2026-12-01", "2026-12-07")).toBe(
+			"1º a 7 de dezembro de 2026",
+		);
+		expect(formatarPeriodo("2026-11-26", "2026-12-01")).toBe(
+			"26 de novembro a 1º de dezembro de 2026",
+		);
+		expect(formatarPeriodo("2026-11-15", "2026-11-15")).toBe(
+			"15 de novembro de 2026",
+		);
+	});
+});
+
+describe("dataEmBrasilia", () => {
+	it("dá o dia em Brasília, três horas antes do UTC, sem depender do fuso", () => {
+		expect(dataEmBrasilia("2026-11-14T01:30:00+00:00")).toBe("2026-11-13");
+		expect(dataEmBrasilia("2026-11-14T03:00:00Z")).toBe("2026-11-14");
+		expect(dataEmBrasilia("2026-11-13T22:30:00-03:00")).toBe("2026-11-13");
+		// O Python manda os microssegundos.
+		expect(dataEmBrasilia("2026-11-16T13:05:00.123456+00:00")).toBe(
+			"2026-11-16",
+		);
+	});
+
+	it("uma data que não é data fica com os dez primeiros caracteres", () => {
+		expect(dataEmBrasilia("2026-11-16 algo")).toBe("2026-11-16");
+	});
+});
+
+describe("diaEMes", () => {
+	it("dá o dia com dois algarismos e o mês abreviado, como na folhinha", () => {
+		expect(diaEMes("2026-11-15")).toEqual({ dia: "15", mes: "nov" });
+		expect(diaEMes("2026-03-08")).toEqual({ dia: "08", mes: "mar" });
+	});
+});
+
+describe("posicaoDaSemana", () => {
+	/** O dia, `dias` dias depois de `data`. */
+	function depois(data: string, dias: number): string {
+		const [ano, mes, dia] = data.split("-").map(Number);
+		return new Date(Date.UTC(ano, mes - 1, dia + dias))
+			.toISOString()
+			.slice(0, 10);
+	}
+
+	it("a semana de segunda a domingo tem uma posição só", () => {
+		const domingo = posicaoDaSemana("2026-11-15");
+		expect(posicaoDaSemana("2026-11-09")).toBe(domingo);
+		expect(posicaoDaSemana("2026-11-12")).toBe(domingo);
+	});
+
+	it("a segunda depois do domingo já é a semana seguinte", () => {
+		expect(posicaoDaSemana("2026-11-16")).toBe(
+			posicaoDaSemana("2026-11-15") + 1,
+		);
+		expect(posicaoDaSemana("2026-11-22")).toBe(
+			posicaoDaSemana("2026-11-15") + 1,
+		);
+	});
+
+	it("cinco semanas seguidas levam as cinco fitas", () => {
+		const fitas = [0, 1, 2, 3, 4].map((semana) =>
+			fitaDaPosicao(posicaoDaSemana(depois("2026-11-15", 7 * semana))),
+		);
+		expect(new Set(fitas).size).toBe(5);
+		expect(posicaoDaSemana("2026-11-15")).toBeGreaterThan(0);
 	});
 });

@@ -22,6 +22,7 @@ const listaDasTrilhas = codigo("routes/trilhas/index.tsx");
 const paginaDoArtigo = codigo("routes/trilhas/$trilha/$artigo.tsx");
 const passoAPasso = codigo("components/infografico-em-linha.tsx");
 const outrosArtigos = codigo("components/outros-artigos.tsx");
+const paginaDasEdicoes = codigo("components/pagina-das-edicoes.tsx");
 const css = codigo("index.css");
 
 // A régua (largura, palavras e a FOLGA) mora em regua.ts, que também dá o teto dos
@@ -113,6 +114,24 @@ const TETOS = {
 			"titulo-condensado",
 			"letra-com-teto",
 		]),
+	},
+	edicoes: {
+		lugar: "no título da lista das edições",
+		estilo: "titulo-condensado",
+		palavra: tetoNoCodigo(
+			paginaDasEdicoes,
+			"components/pagina-das-edicoes.tsx",
+			["titulo-condensado", "letra-com-teto"],
+		),
+	},
+	semEdicoes: {
+		lugar: "no título da lista sem edição",
+		estilo: "titulo-condensado",
+		palavra: tetoNoCodigo(
+			paginaDasEdicoes,
+			"components/pagina-das-edicoes.tsx",
+			["<h2", "titulo-condensado", "letra-com-teto"],
+		),
 	},
 	passo: {
 		lugar: "no título do passo, na página inicial",
@@ -240,5 +259,17 @@ describe("as palavras dos títulos", () => {
 			largas,
 			"Troque a palavra por uma mais curta, ou meça o teto de novo: veja docs/conteudo-das-trilhas.md",
 		).toEqual([]);
+	});
+
+	it("os títulos fixos das páginas das edições cabem no teto", () => {
+		// Os títulos das edições vêm da API e levam o teto calculado (regua.ts);
+		// estes ficam escritos no código, com o [--palavra:N] deles.
+		const arquivo = "components/pagina-das-edicoes.tsx";
+		expect([
+			...largasDe(arquivo, "Edições", [TETOS.edicoes]),
+			...largasDe(arquivo, "A primeira edição ainda não saiu", [
+				TETOS.semEdicoes,
+			]),
+		]).toEqual([]);
 	});
 });

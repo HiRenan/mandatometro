@@ -1,0 +1,99 @@
+/*
+ * As páginas das edições (DESIGN.md). A lista, em /edicoes, usa o cartaz das
+ * páginas de dentro e as folhas da página da trilha (o .linha do index.css):
+ * daqui, ela só leva o dia da edição no lugar do número, a folha da lista sem
+ * edição e os links das páginas vizinhas. As telas ficam em
+ * components/pagina-das-edicoes.tsx.
+ */
+@layer components {
+	/*
+	 * O dia da edição, como na folhinha: o último dia da semana, com dois
+	 * algarismos, na cor da semana (o --fita), e o mês embaixo, na letra da
+	 * etiqueta e em tinta. Dois algarismos cabem na coluna do número da folha,
+	 * de 320 px a 1920 px, com a letra um pouco menor que a do número da trilha.
+	 */
+	.linha > .numeral.dia-da-edicao {
+		font-size: clamp(4.5rem, 1.5rem + 8vw, 9rem);
+		font-variant-numeric: lining-nums tabular-nums;
+	}
+
+	.mes-da-edicao {
+		display: block;
+		margin-top: 0.5rem;
+		font-stretch: 100%;
+		color: var(--tinta);
+		-webkit-text-stroke: 0;
+	}
+
+	/*
+	 * A lista sem edição: a folha clara com fio de tinta, como a da newsletter,
+	 * com o título, o texto e o botão da inscrição.
+	 */
+	.sem-edicoes {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem;
+		justify-items: start;
+		padding: clamp(1.5rem, 4vw, 3rem) var(--respiro);
+		border: 2px solid var(--tinta);
+		background: var(--folha);
+	}
+
+	.sem-edicoes > h2 {
+		--letra: clamp(2.25rem, 1.4rem + 3.6vw, 4.5rem);
+		--recuo: calc(var(--recuo-de-fora, 0px) + 2 * var(--respiro) + 4px);
+	}
+
+	.sem-edicoes > p {
+		max-width: 34rem;
+		margin-bottom: 0.5rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.5;
+	}
+
+	/*
+	 * Os links das páginas vizinhas, embaixo das folhas, depois de um fio de
+	 * tinta. A página atual vem antes no HTML: no celular, fica em cima, e os
+	 * links descem um embaixo do outro; na tela larga, ela fica no meio, as
+	 * edições mais novas à esquerda e as mais antigas à direita.
+	 */
+	.paginas-das-edicoes {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		justify-items: start;
+		align-items: center;
+		margin-top: clamp(2rem, 5vw, 3rem);
+		padding-top: 1rem;
+		border-top: 2px solid var(--tinta);
+	}
+
+	.pagina-atual {
+		color: var(--tinta-suave);
+	}
+
+	@media (width >= 40rem) {
+		.paginas-das-edicoes {
+			grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+			column-gap: 1.5rem;
+		}
+
+		.paginas-das-edicoes > * {
+			grid-row: 1;
+		}
+
+		.pagina-atual {
+			grid-column: 2;
+		}
+
+		.mais-novas {
+			grid-column: 1;
+		}
+
+		.mais-antigas {
+			grid-column: 3;
+			justify-self: end;
+			text-align: right;
+		}
+	}
+}

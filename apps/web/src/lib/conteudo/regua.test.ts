@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FOLGA, largura, palavras, tetoDoTitulo } from "./regua";
+import { estiloDoTeto, FOLGA, largura, palavras, tetoDoTitulo } from "./regua";
 
 // O teto de um título que vem de fora do código, como o de uma edição, que a API
 // manda: o --palavra sai da régua na hora, e não de um [--palavra:N] escrito no
@@ -37,5 +37,13 @@ describe("o teto de um título que vem da API", () => {
 
 	it("um título sem palavra fica com o teto de uma letra larga", () => {
 		expect(tetoDoTitulo("   ", "titulo-condensado")).toBe(1);
+	});
+
+	it("vai no style do título, na variável que o letra-com-teto lê", () => {
+		const titulo = "Jornal legislativo — 09 a 15/11/2026";
+
+		expect(estiloDoTeto(titulo, "titulo-condensado")).toEqual({
+			"--palavra": String(tetoDoTitulo(titulo, "titulo-condensado")),
+		});
 	});
 });
