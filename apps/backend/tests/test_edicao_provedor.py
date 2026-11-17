@@ -3,9 +3,11 @@ import logging
 import os
 import subprocess
 import sys
+from unittest.mock import Mock
 
 import httpx2
 import pytest
+from opentelemetry import baggage, context, trace
 
 from mandatometro.config import Config
 from mandatometro.ia.provedor import abrir_redator
@@ -34,6 +36,13 @@ def mensagem(*blocos, motivo="end_turn"):
 
 def configuracao():
     return Config(_env_file=None, llm_provider="anthropic", llm_model=MODELO, llm_api_key=CHAVE)
+
+
+def test_provedor_so_com_espacos_mantem_redacao_manual_sem_cliente_http(monkeypatch):
+    conf = Config(_env_file=None, llm_provider="   ", llm_model=MODELO, llm_api_key=CHAVE)
+    monkeypatch.setattr(httpx2, "Client", lambda **kw: pytest.fail("Não deve abrir cliente HTTP."))
+    with abrir_redator(conf) as redator:
+        assert redator is None
 
 
 @pytest.mark.parametrize("construtor", ["httpx2.Client", "anthropic.Anthropic"])
@@ -147,6 +156,67 @@ assert (sdk.level, http.level, logging.root.handlers, logging.root.manager.disab
     processo = subprocess.run([sys.executable, "-c", programa], capture_output=True, timeout=60)
     assert processo.returncode == 0
     assert processo.stdout == processo.stderr == b""
+
+
+def test_telemetria_do_ambiente_nao_propaga_contexto_ativo(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_OPEN_TELEMETRY", "true")
+    monkeypatch.setenv("ANTHROPIC_OPEN_TELEMETRY_TRACES_CONTENT_MODE", "content")
+    monkeypatch.setenv("ANTHROPIC_OPEN_TELEMETRY_TRACES_MAX_CONTENT_BYTES", "128")
+    monkeypatch.setenv("ANTHROPIC_OPEN_TELEMETRY_PROPAGATION", "true")
+    obter_tracer = Mock(wraps=trace.get_tracer)
+    monkeypatch.setattr(trace, "get_tracer", obter_tracer)
+    cabecalhos_de_trace = []
+
+    def responder(pedido):
+        cabecalhos_de_trace.append(
+            {"traceparent", "tracestate", "baggage"}.intersection(pedido.headers)
+        )
+        return mensagem({"type": "text", "text": json.dumps(REDACAO)})
+
+    span = trace.NonRecordingSpan(
+        trace.SpanContext(
+            trace_id=1,
+            span_id=2,
+            is_remote=True,
+            trace_state=trace.TraceState([("teste", "local")]),
+        )
+    )
+    token = context.attach(trace.set_span_in_context(span, baggage.set_baggage("teste", "local")))
+    try:
+        with abrir_redator(configuracao(), transporte=httpx2.MockTransport(responder)) as redator:
+            assert redator.escrever(ENTRADA).conteudo == REDACAO
+    finally:
+        context.detach(token)
+    assert cabecalhos_de_trace == [set()]
+    obter_tracer.assert_not_called()
+
+
+def test_ignora_raciocinio_oculto_ao_ler_um_texto_valido():
+    def responder(pedido):
+        return mensagem(
+            {"type": "redacted_thinking", "data": "ficticio"},
+            {"type": "text", "text": json.dumps(REDACAO)},
+        )
+
+    with abrir_redator(configuracao(), transporte=httpx2.MockTransport(responder)) as redator:
+        assert redator.escrever(ENTRADA).conteudo == REDACAO
+
+
+def test_redirecionamento_307_da_erro_fixo_no_primeiro_pedido():
+    destinos = []
+
+    def responder(pedido):
+        destinos.append(pedido.url.host)
+        if len(destinos) == 1:
+            return httpx2.Response(307, headers={"Location": "https://alternativo.invalid/"})
+        return mensagem({"type": "text", "text": json.dumps(REDACAO)})
+
+    with (
+        abrir_redator(configuracao(), transporte=httpx2.MockTransport(responder)) as redator,
+        pytest.raises(RuntimeError, match=r"^Falha no serviço de redação\.$"),
+    ):
+        redator.escrever(ENTRADA)
+    assert destinos == ["api.anthropic.com"]
 
 
 @pytest.mark.parametrize(
