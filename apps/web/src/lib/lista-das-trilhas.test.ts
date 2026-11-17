@@ -236,9 +236,9 @@ describe("o recuo do título da trilha, em /trilhas", () => {
 
 	it("com a cabeça aberta, a partir de 1408 px, conta também a descrição", () => {
 		// Até uns 1500 px, é o teto que dá o tamanho do título. Ele mede a página
-		// pela moldura (o 100cqi), que não conta a barra de rolagem: o recuo não
-		// leva mais o 1rem a mais que compensava a barra, quando a conta era pelo
-		// 100vw (a #139).
+		// pelo 100cqi, que não conta a barra de rolagem: o recuo não leva mais o
+		// 1rem a mais que compensava a barra, quando a conta era pelo 100vw (a
+		// #139).
 		const recuo = valor(
 			corpo("(width >= 88rem)", ".trilha-da-lista .titulo-de-folha"),
 			"--recuo",

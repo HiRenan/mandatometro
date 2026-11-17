@@ -117,8 +117,8 @@
 	 * letra segue a configuração do navegador. O titulos.test.ts mede as palavras dos
 	 * títulos do conteúdo contra cada --palavra.
 	 *
-	 * A largura da página é a da caixa do teto (o 100cqi): a moldura do documento,
-	 * no __root.tsx, em volta do cabeçalho, do main e do rodapé. Ela não conta a
+	 * A largura da página vem da caixa do teto em volta do cabeçalho, do main e do
+	 * rodapé (a caixa da página, no __root.tsx), pelo 100cqi. Ela não conta a
 	 * barra de rolagem, que o 100vw conta (15 px no Edge e no Chrome do Windows):
 	 * numa janela de computador estreita, a palavra encostada no teto passava da
 	 * página e se partia (a #139). No celular e no Mac, a barra não toma espaço, e
@@ -135,7 +135,7 @@
 
 	/*
 	 * A caixa do teto: um contêiner da largura, que o 100cqi dos títulos mede. É a
-	 * moldura da página e, nos títulos que vêm da API (o da edição, o de cada item e
+	 * caixa da página e, nos títulos que vêm da API (o da edição, o de cada item e
 	 * o da edição na lista), a caixa em volta deles: a folha da edição e o texto da
 	 * folha na lista. Esses títulos medem só a caixa deles (o teto-pela-caixa), sem
 	 * margens nem recuo: pela página, a conta não via a folha parar de crescer (a
@@ -917,7 +917,7 @@
 
 	@media (width >= 62rem) {
 		/* O painel ocupa os 30% da direita, de cima a baixo, e o título para antes dele.
-		   Os 30% são da largura da página, que o teto mede pela moldura (o 100cqi). */
+		   Os 30% são da largura da página, que o teto mede pelo 100cqi. */
 		.cartaz {
 			padding-right: calc(30% + var(--margem));
 		}
@@ -1921,9 +1921,9 @@
 	 * telas bem largas, as duas colunas ficam iguais. O recuo do título conta a
 	 * coluna da direita com os 42rem dela: quando ela cresce, a do título já passou
 	 * de 42rem, e o título parou antes, no --letra (4,5rem × 5,66 = 25,5rem). Até
-	 * uns 1500 px, é o teto que dá o tamanho do título. Ele mede a página pela
-	 * moldura (o 100cqi), sem a barra de rolagem, e o título encosta na coluna com
-	 * a barra à vista ou sem ela.
+	 * uns 1500 px, é o teto que dá o tamanho do título. Ele mede a página pelo
+	 * 100cqi, sem a barra de rolagem, e o título encosta na coluna com a barra à
+	 * vista ou sem ela.
 	 */
 	@media (width >= 88rem) {
 		.trilha-cabeca-texto {
