@@ -46,4 +46,20 @@ describe("o CSS do cabeçalho com as edições", () => {
 		expect(css).not.toMatch(/\.topo-links\s*>\s*li:first-child/);
 		expect(css).not.toMatch(/\.topo-links\s+li:first-child/);
 	});
+
+	it("com a letra grande, Trilhas e Edições quebram a linha em vez de passar da página", () => {
+		// Numa janela de computador de 320 px, a barra de rolagem toma 15 px, e,
+		// com a letra a 200%, os dois links não cabem juntos nem na linha de baixo:
+		// sem a quebra, Edições passava 11 px da página, que rolava de lado
+		// (medido no navegador).
+		const quebra =
+			/\.topo-links\[data-com-edicoes\] \{\s*flex-wrap: wrap;\s*\}/;
+
+		expect(css).toMatch(quebra);
+		// Em toda largura, e não num @media: o espaço que falta depende da letra e
+		// da barra de rolagem, e não só da largura da tela.
+		expect(midias.some(({ corpo }) => quebra.test(corpo))).toBe(false);
+		// O cabeçalho sem a API fica como era.
+		expect(css).not.toMatch(/\.topo-links \{[^}]*flex-wrap/);
+	});
 });

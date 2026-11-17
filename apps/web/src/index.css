@@ -700,6 +700,18 @@
 		}
 	}
 
+	/*
+	 * Com a letra grande numa tela estreita, Trilhas e Edições podem não caber
+	 * juntos nem na linha de baixo: a 320 px, com a letra a 200%, eles pedem uns
+	 * 296 px. A lista quebra, e Edições desce para baixo de Trilhas, em vez de
+	 * passar da página (no computador, a barra de rolagem toma 15 px, e a página
+	 * rolava de lado) ou de entrar na margem (no celular). Onde os dois cabem,
+	 * nada muda.
+	 */
+	.topo-links[data-com-edicoes] {
+		flex-wrap: wrap;
+	}
+
 	/* ───── O cartaz ───── */
 
 	/*
