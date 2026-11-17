@@ -256,6 +256,8 @@ Prepare uma pasta **fora do repositório**, por exemplo `$HOME\Documents\mandato
 
 3. Abra o JSON no editor e salve em UTF-8. Confira os fatos e as fontes de cada item, substitua a redação pendente e confirme a revisão e o artigo escolhido. Se um item falar da licença, do afastamento ou da saúde de um parlamentar, exclua-o com `excluir: true` e preencha `motivo_exclusao`. O aviso em `contexto.avisos` indica esses termos no texto oficial: confira se tratam de uma pessoa ou de política pública antes de confirmar o item. A `explicacao` é uma lista de parágrafos. Confirme a cobertura uma única vez, depois de ler os resumos das duas coletas e conhecer suas lacunas: o banco não certifica a cobertura de todo o Congresso.
 
+   No Windows PowerShell 5.1, texto com acento passado por pipe a outro programa perde os acentos, e um arquivo lido e gravado pelo PowerShell pode trocar `ã` por `Ã£`, `É` por `Ã‰` ou `—` por `â€”`. Edite o JSON num editor ou num script que leia e grave em UTF-8. O `revisar` recusa acentos e pontuação quebrados nos títulos e na explicação dos itens mantidos, sem mudar o rascunho: confira o texto antes de importar de novo. A regra também recusa alguns finais válidos com `Ã` ou `Â` junto da pontuação, como `“IRMÃ”` e `AMANHÃ…`: nesses casos, use aspas retas ou três pontos.
+
    Este é um **recorte fictício dos campos editáveis**; mantenha os demais campos exportados, sem substituir o arquivo inteiro pelo exemplo:
 
    ```json

@@ -29,6 +29,13 @@ from mandatometro.ia.selecao import ItemBase, selecionar
 
 AbrirSessao = Callable[[], Session]
 
+# O Windows-1252 leva bytes de continuação a caracteres fora de U+0080–U+00BF.
+_CONTINUACOES_WINDOWS_1252 = bytes(range(0x80, 0xA0)).decode("cp1252", errors="ignore")
+# Limite aceito: também recusa palavra terminada em Ã/Â junto desses caracteres (AMANHÃ…).
+_ACENTO_QUEBRADO = re.compile(
+    rf"[ÃÂ][\u0080-\u00bf{re.escape(_CONTINUACOES_WINDOWS_1252)}]|â€|\ufffd"
+)
+
 
 class ErroEdicao(Exception):
     """Mensagem editorial segura, sem texto de fonte ou exceção de terceiros."""
@@ -375,6 +382,21 @@ def _numeros_permitidos(base: ItemBase, edicao: Edicao) -> set[str]:
     return _numeros(" ".join(dados))
 
 
+def _tem_acento_quebrado(texto: str) -> bool:
+    if _ACENTO_QUEBRADO.search(texto):
+        return True
+    for indice, caractere in enumerate(texto):
+        if caractere != "?":
+            continue
+        seguinte = texto[indice + 1 : indice + 2]
+        # Antes de uma letra, está no meio ou no começo de uma palavra.
+        if seguinte.isalpha():
+            return True
+        if (indice == 0 or texto[indice - 1].isspace()) and (not seguinte or seguinte.isspace()):
+            return True
+    return False
+
+
 def _texto_valido(texto: str, campo: str, prefixo: str, numeros: set[str]) -> None:
     if (
         not texto.strip()
@@ -383,6 +405,11 @@ def _texto_valido(texto: str, campo: str, prefixo: str, numeros: set[str]) -> No
     ):
         raise ErroEdicao(
             f"{prefixo}: confira o campo {campo}; use texto preenchido e sem controles."
+        )
+    if _tem_acento_quebrado(texto):
+        raise ErroEdicao(
+            f'{prefixo}: o campo {campo} tem acentos quebrados, como "?" ou "Ã£" '
+            "no lugar de uma letra. Confira os acentos e salve o arquivo em UTF-8."
         )
     if _numeros(texto) - numeros:
         raise ErroEdicao(f"{prefixo}: o campo {campo} tem número que não está nos fatos enviados.")
