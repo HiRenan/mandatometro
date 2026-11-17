@@ -5,6 +5,7 @@ description = "Backend do Mandatômetro: coleta, IA, e-mails e API."
 requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.20.1",
+    "anthropic>=2.10.0,<3",
     "email-validator>=2,<3",
     "fastapi>=0.162.0",
     "httpx2>=2.16.0",
