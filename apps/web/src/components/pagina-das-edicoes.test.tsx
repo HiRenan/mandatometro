@@ -145,6 +145,12 @@ describe("a lista das edições", () => {
 			),
 		);
 		expect(titulo.classList.contains("letra-com-teto")).toBe(true);
+		// O CSS mede o teto pela largura do texto da folha (o 100cqi), e não pela
+		// da tela, que conta a barra de rolagem do Windows: estilos/edicoes.test.ts.
+		expect(titulo.classList.contains("teto-pela-caixa")).toBe(true);
+		expect(titulo.parentElement?.closest(".caixa-do-teto")).toBe(
+			edicoesNaLista()[0].querySelector(".linha-texto"),
+		);
 	});
 
 	it("a faixa do cartaz conta as edições", async () => {

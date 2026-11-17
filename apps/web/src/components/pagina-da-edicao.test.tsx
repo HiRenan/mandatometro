@@ -226,6 +226,26 @@ describe("a página de uma edição", () => {
 		expect(item(2).querySelector("img")).toBeNull();
 		expect(item(2).textContent).toContain("<img src=x onerror=alert(1)>");
 	});
+
+	it("o teto do título e o dos títulos dos itens se medem pela folha, a caixa deles", async () => {
+		const titulo = await abrir(edicao());
+		const folha = document.querySelector("article.artigo-folha");
+		const titulos = [
+			titulo,
+			...document.querySelectorAll<HTMLElement>("section.item-da-edicao > h2"),
+		];
+
+		// O CSS mede o teto pela largura da folha (o 100cqi), e não pela da tela,
+		// que conta a barra de rolagem do Windows: estilos/edicoes.test.ts.
+		expect(folha?.classList.contains("caixa-do-teto")).toBe(true);
+		expect(titulos).toHaveLength(4);
+		for (const t of titulos) {
+			expect(t.classList.contains("teto-pela-caixa"), t.textContent ?? "").toBe(
+				true,
+			);
+			expect(t.parentElement?.closest(".caixa-do-teto")).toBe(folha);
+		}
+	});
 });
 
 describe("o quadro da votação", () => {

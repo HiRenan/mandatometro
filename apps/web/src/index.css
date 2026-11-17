@@ -126,6 +126,24 @@
 	}
 
 	/*
+	 * O teto dos títulos que vêm da API (o da edição, o de cada item e o da edição
+	 * na lista), medido pela caixa em volta deles: o caixa-do-teto é um contêiner,
+	 * e o 100cqi é a largura que o título tem de fato. Com o 100vw, a conta contava
+	 * a barra de rolagem do Windows (15 px) e não via a folha parar de crescer (a
+	 * edição, a partir de uns 1440 px): uma palavra comprida passava da caixa e se
+	 * partia. O min-width segura o max-width do título (10 em na edição, 14 em no
+	 * item) na largura da palavra mais larga, com a letra que o teto der.
+	 */
+	.caixa-do-teto {
+		container-type: inline-size;
+	}
+
+	.letra-com-teto.teto-pela-caixa {
+		min-width: calc(var(--palavra) * 1em);
+		font-size: min(var(--letra), calc(100cqi / var(--palavra)));
+	}
+
+	/*
 	 * O número, como o dia na folhinha: bem preto, estreito e grande. Ele leva a cor
 	 * da fita da posição (--fita), com contorno de tinta: o contorno pinta antes do
 	 * miolo, e sobra só por fora. Sem fita, é todo de tinta.

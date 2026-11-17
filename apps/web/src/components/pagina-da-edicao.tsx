@@ -49,8 +49,13 @@ function FolhaDaEdicao({ edicao }: { edicao: EdicaoPublica }) {
 				{/* Abaixo de 1200 px, uma coluna da largura da tela, com o índice dentro
 				    da folha; a partir daí, o índice fica na coluna ao lado. */}
 				<div className="artigo-grade">
+					{/* A folha é a caixa do teto dos títulos da API: o do alto e o de
+					    cada item medem a letra pela largura dela (o teto-pela-caixa). */}
 					<article
-						className={classes("folha artigo-folha", classeDaFita(semana))}
+						className={classes(
+							"folha artigo-folha caixa-do-teto",
+							classeDaFita(semana),
+						)}
 					>
 						{/* O azulejo da semana, o mesmo da folha da edição na lista. */}
 						<AzulejoGrande
@@ -72,7 +77,7 @@ function FolhaDaEdicao({ edicao }: { edicao: EdicaoPublica }) {
 						{/* O título vem da API: o teto da letra grande sai da régua, com a
 						    palavra mais larga dele (lib/conteudo/regua.ts). */}
 						<h1
-							className="titulo-condensado letra-com-teto"
+							className="titulo-condensado letra-com-teto teto-pela-caixa"
 							style={estiloDoTeto(edicao.titulo, "titulo-condensado")}
 						>
 							{edicao.titulo}

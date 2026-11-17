@@ -42,7 +42,7 @@ export function ItemDaEdicao({ item }: { item: ItemPublico }) {
 			</span>
 			<h2
 				id={`${id}-titulo`}
-				className="subtitulo-condensado letra-com-teto"
+				className="subtitulo-condensado letra-com-teto teto-pela-caixa"
 				style={estiloDoTeto(item.titulo, "subtitulo-condensado")}
 			>
 				{item.titulo}

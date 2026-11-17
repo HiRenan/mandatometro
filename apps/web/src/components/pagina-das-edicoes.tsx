@@ -173,10 +173,12 @@ function EdicaoNaLista({ edicao }: { edicao: ResumoEdicao }) {
 					Semana de {formatarPeriodo(edicao.inicio, edicao.fim)}
 				</span>
 			</p>
-			<div className="linha-texto">
+			{/* O texto da folha é a caixa do teto do título, que vem da API: a letra
+			    se mede pela largura dele (o teto-pela-caixa). */}
+			<div className="linha-texto caixa-do-teto">
 				{/* A folha inteira leva à edição: a área do link cobre a folha. */}
 				<h2
-					className="titulo-de-folha letra-com-teto"
+					className="titulo-de-folha letra-com-teto teto-pela-caixa"
 					style={estiloDoTeto(edicao.titulo, "titulo-condensado")}
 				>
 					<Link to="/edicoes/$id" params={{ id: String(edicao.id) }}>
