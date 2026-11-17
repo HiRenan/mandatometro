@@ -3,10 +3,10 @@
  * relógio em cada peça; quem volta vê o giro ao contrário. As páginas ficam em
  * ordem, como as folhas de um bloco: a inicial em cima, depois a lista das
  * trilhas, ao lado dela a página do piloto, cada trilha e os artigos dela, com
- * o quiz no lugar dele entre os artigos e o quiz final depois do último. Aqui ficam o sentido de cada troca,
- * que o router passa ao navegador como tipo da View Transition (router.tsx), o
- * clique feito durante a troca e a troca que o navegador pula. O movimento fica
- * em estilos/movimento.css.
+ * o quiz no lugar dele entre os artigos e o quiz final depois do último. Aqui
+ * ficam o sentido de cada troca, que o router passa ao navegador como tipo da
+ * View Transition (router.tsx), o clique feito durante a troca e a troca que o
+ * navegador pula. O movimento fica em estilos/movimento.css.
  */
 
 export type Sentido = "avancar" | "voltar";
