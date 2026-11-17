@@ -410,19 +410,18 @@ export function Quiz({
 
 	// O mesmo botão faz as duas coisas, e o foco fica nele quando uma vira a
 	// outra. Ele fica numa linha só dele, que não muda de lugar com o recomeço, e
-	// num clique duplo o segundo clique fica de fora (lib/clique.ts). Enquanto
-	// uma etapa do piloto mede as respostas, ele não aparece.
-	const acao =
-		etapa !== undefined
-			? undefined
-			: recomecou
-				? { texto: "Desfazer", fazer: desfazer }
-				: respondidas > 0
-					? { texto: "Recomeçar o quiz", fazer: recomecar }
-					: undefined;
+	// num clique duplo o segundo clique fica de fora (lib/clique.ts).
+	const acao = recomecou
+		? { texto: "Desfazer", fazer: desfazer }
+		: respondidas > 0
+			? { texto: "Recomeçar o quiz", fazer: recomecar }
+			: undefined;
 	const partes: PartesDoQuiz = { comecar, respondidas, hidratado, avisar };
 	const linhaNaTela = typeof linha === "function" ? linha(partes) : linha;
-	const recomeco = (
+	// Enquanto uma etapa do piloto mede as respostas, o botão não aparece, e a
+	// linha dele não guarda lugar: na abertura do depois, a linha vazia só
+	// empurrava o "Começar" para baixo da primeira tela do celular.
+	const recomeco = etapa === undefined && (
 		<p className="recomeco">
 			{acao && (
 				<button
@@ -469,12 +468,16 @@ export function Quiz({
 
 	return (
 		<div className="pagina-do-quiz">
+			{/* Com a linha do piloto, a abertura fica mais alta, e o pé dela não
+			    prende embaixo (estilos/quiz.css): no celular pequeno, ele cobria o
+			    "Começar". */}
 			<section
 				ref={palco}
 				aria-labelledby="quiz-titulo"
 				className="quiz"
 				data-fase={naResposta ? "resposta" : tela}
 				data-saindo={saindo || undefined}
+				data-linha={Boolean(linhaNaTela) || undefined}
 				data-resultado={naResposta ? (certa ? "certa" : "errada") : undefined}
 				style={
 					{

@@ -670,6 +670,12 @@ describe("o quiz final, no piloto", () => {
 
 		foraDaTela(SEGUNDA_ETAPA);
 		foraDaTela(TERMINE_O_ANTES);
+		// A abertura do público: o pé preso e a linha do "Recomeçar o quiz"
+		// guardada, como no quiz da trilha.
+		expect(document.querySelector(".quiz")?.hasAttribute("data-linha")).toBe(
+			false,
+		);
+		expect(document.querySelector(".quiz-abertura .recomeco")).not.toBeNull();
 		clicar("Começar");
 		responderAPergunta(0, false);
 		// Trocar de opção depois de responder ainda vale: nada mede este quiz.
@@ -709,6 +715,40 @@ describe("o quiz final, no piloto", () => {
 		expect(screen.getByRole("group", { name: /^Pergunta 1 de 12 / })).toBe(
 			document.querySelector("fieldset:disabled"),
 		);
+	});
+
+	// A linha do piloto deixa a abertura mais alta, e no celular pequeno o pé preso
+	// cobria o "Começar": o palco avisa o CSS (estilos/quiz.css), que deixa o pé
+	// solto na abertura. No depois, a abertura também não guarda a linha do
+	// "Recomeçar o quiz", que ali nunca aparece.
+	it("no depois, o palco marca a linha do piloto, e a abertura não guarda a linha do Recomeçar o quiz", async () => {
+		antesRecebido();
+		await abrirOQuizFinal();
+
+		expect(naTela(SEGUNDA_ETAPA)).toBeTruthy();
+		expect(document.querySelector(".quiz")?.hasAttribute("data-linha")).toBe(
+			true,
+		);
+		expect(document.querySelector(".quiz-abertura .recomeco")).toBeNull();
+	});
+
+	it("com o antes pela metade, o palco também marca a linha, e o Recomeçar o quiz continua com a linha dele", async () => {
+		comecarPiloto();
+		responder(
+			QUIZ_FINAL,
+			PAGINA.perguntas[0].enunciado,
+			PAGINA.perguntas[0].opcoes[0],
+		);
+		await abrirOQuizFinal();
+
+		expect(document.querySelector(".quiz")?.hasAttribute("data-linha")).toBe(
+			true,
+		);
+		expect(
+			screen
+				.getByRole("button", { name: "Recomeçar o quiz" })
+				.closest(".quiz-abertura .recomeco"),
+		).not.toBeNull();
 	});
 
 	it("no depois, o Recomeçar o quiz só aparece com a etapa concluída", async () => {

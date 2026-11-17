@@ -616,6 +616,16 @@
 			bottom: 0;
 		}
 
+		/*
+		 * Na abertura com a linha do piloto (no quiz final, o depois e o antes pela
+		 * metade), a abertura fica mais alta, e o pé preso cobria o "Começar" no
+		 * celular pequeno, como a 375 × 667. Ali o pé fica no lugar dele, depois do
+		 * botão, e volta a prender nas perguntas. Sem a linha, nada muda.
+		 */
+		.quiz[data-linha][data-fase="abertura"] .quiz-pe {
+			position: static;
+		}
+
 		/* O que recebe o foco, ou é levado para a tela, para acima do pé. */
 		html:has(.quiz-pe) {
 			scroll-padding-bottom: 5rem;
