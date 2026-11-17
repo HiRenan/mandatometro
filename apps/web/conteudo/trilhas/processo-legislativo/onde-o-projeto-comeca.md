@@ -36,7 +36,7 @@ O Congresso Nacional tem duas Casas: a Câmara dos Deputados e o Senado Federal.
 
 Pense num projeto apresentado por uma senadora. Ele começa no Senado, que vira a Casa iniciadora, e depois segue para a Câmara, que faz a revisão. Com o projeto de um deputado, o caminho é o inverso: começa na Câmara e é revisto no Senado.
 
-Foi esse o caminho do projeto sobre o Compromisso Nacional Criança Alfabetizada, que junta a União, os estados, o Distrito Federal e os municípios para alfabetizar as crianças. Ele foi apresentado em dezembro de 2024 pela Comissão de Educação e Cultura do Senado e, por isso, começou no Senado, que o aprovou em março de 2025. Em outubro, a Câmara, a Casa revisora, também aprovou, e o projeto virou a Lei 15.247, de 31 de outubro de 2025.
+Do Senado para a Câmara: foi esse o caminho do projeto sobre o Compromisso Nacional Criança Alfabetizada, que junta a União, os estados, o Distrito Federal e os municípios para alfabetizar as crianças. Ele foi apresentado em dezembro de 2024 pela Comissão de Educação e Cultura do Senado e, por isso, começou no Senado, que o aprovou em março de 2025. Em outubro, a Câmara, a Casa revisora, também aprovou, e o projeto virou a Lei 15.247, de 31 de outubro de 2025.
 
 ## Quando o começo é na Câmara
 
