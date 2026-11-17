@@ -28,7 +28,7 @@ export type ArtigoNaLista = Omit<Artigo, "corpo">;
 
 /**
  * A trilha nas listas e no artigo: sem o texto dos artigos, o infográfico e os
- * quizzes. O quiz final não vai a nenhuma página, porque a tela dele é da #92.
+ * quizzes. As perguntas de cada quiz vão inteiras só à página dele.
  */
 export type TrilhaNaLista = Omit<
 	Trilha,
@@ -60,10 +60,20 @@ export type ChamadaDoQuiz = {
  */
 export type PerguntaSemACerta = { enunciado: string; opcoes: string[] };
 
-/** A trilha na página dela, com o infográfico e a chamada do quiz, quando ela tem. */
+/** A chamada de um quiz na página da trilha, com as perguntas sem a certa. */
+export type ChamadaNaTrilha = ChamadaDoQuiz & {
+	perguntasSemACerta: PerguntaSemACerta[];
+};
+
+/**
+ * A trilha na página dela, com o infográfico e as chamadas do quiz e do quiz
+ * final, quando ela tem.
+ */
 export type TrilhaNaPagina = TrilhaNaLista & {
 	infografico?: Infografico;
-	quiz?: ChamadaDoQuiz & { perguntasSemACerta: PerguntaSemACerta[] };
+	quiz?: ChamadaNaTrilha;
+	/** O quiz final, depois do último artigo. */
+	quizFinal?: ChamadaNaTrilha;
 };
 
 /** Uma pergunta na página do quiz. As opções são só os textos, e a certa, a posição. */
@@ -75,12 +85,13 @@ export type PerguntaNaPagina = Omit<Pergunta, "artigo" | "opcoes"> & {
 };
 
 /**
- * A página do quiz. A resposta certa vai junto, porque ela aparece no HTML do
- * servidor: sem JavaScript, a pessoa abre a resposta de cada pergunta.
+ * A página do quiz e a do quiz final. A resposta certa vai junto, porque ela
+ * aparece no HTML do servidor: sem JavaScript, a pessoa abre a resposta de cada
+ * pergunta.
  */
 export type QuizNaPagina = {
 	trilha: TrilhaNaLista;
-	/** O artigo depois do qual o quiz aparece. */
+	/** O artigo depois do qual o quiz aparece: no quiz final, o último. */
 	anterior: ArtigoNaLista;
 	/** O artigo que vem depois dele na trilha, quando há. */
 	proximo?: ArtigoNaLista;
@@ -113,6 +124,8 @@ export type ArtigoNaTrilha = {
 	proximo?: ArtigoNaLista;
 	/** A chamada do quiz, só no artigo depois do qual ele aparece. */
 	quiz?: ChamadaDoQuiz;
+	/** A chamada do quiz final, só no último artigo. */
+	quizFinal?: ChamadaDoQuiz;
 };
 
 const opcoesDoMarkdown = {
@@ -178,17 +191,13 @@ function posicaoNaTrilha(trilha: Trilha, slug: string): number {
 	return trilha.artigos.findIndex((artigo) => artigo.slug === slug) + 1;
 }
 
-/** A chamada do quiz da trilha, quando ela tem um. */
-function chamadaDoQuiz(trilha: Trilha): ChamadaDoQuiz | undefined {
-	const { quiz } = trilha;
-	if (!quiz) {
-		return undefined;
-	}
-	const posicoes = quiz.perguntas.map((pergunta) =>
+/** A chamada de um quiz da trilha: quantas perguntas e de quais artigos. */
+function chamadaDe(trilha: Trilha, perguntas: Pergunta[]): ChamadaDoQuiz {
+	const posicoes = perguntas.map((pergunta) =>
 		posicaoNaTrilha(trilha, pergunta.artigo),
 	);
 	return {
-		perguntas: quiz.perguntas.length,
+		perguntas: perguntas.length,
 		artigos: [...new Set(posicoes)].sort((a, b) => a - b),
 	};
 }
@@ -196,6 +205,16 @@ function chamadaDoQuiz(trilha: Trilha): ChamadaDoQuiz | undefined {
 /** Uma pergunta do quiz como a página da trilha recebe, sem a certa. */
 function semACerta({ enunciado, opcoes }: Pergunta): PerguntaSemACerta {
 	return { enunciado, opcoes: opcoes.map((opcao) => opcao.texto) };
+}
+
+function chamadaNaTrilha(
+	trilha: Trilha,
+	perguntas: Pergunta[],
+): ChamadaNaTrilha {
+	return {
+		...chamadaDe(trilha, perguntas),
+		perguntasSemACerta: perguntas.map(semACerta),
+	};
 }
 
 export function acharTrilha(
@@ -206,18 +225,14 @@ export function acharTrilha(
 	if (!trilha) {
 		return undefined;
 	}
-	const { infografico, quiz } = trilha;
-	const chamada = chamadaDoQuiz(trilha);
+	const { infografico, quiz, quizFinal } = trilha;
 	return {
 		...trilhaNaLista(trilha),
 		...(infografico && { infografico }),
-		...(quiz &&
-			chamada && {
-				quiz: {
-					...chamada,
-					perguntasSemACerta: quiz.perguntas.map(semACerta),
-				},
-			}),
+		...(quiz && { quiz: chamadaNaTrilha(trilha, quiz.perguntas) }),
+		...(quizFinal && {
+			quizFinal: chamadaNaTrilha(trilha, quizFinal.perguntas),
+		}),
 	};
 }
 
@@ -236,7 +251,14 @@ export function acharArtigo(
 	const anterior = trilha.artigos[indice - 1];
 	const proximo = trilha.artigos[indice + 1];
 	const quiz =
-		trilha.quiz?.depoisDe === artigo.slug ? chamadaDoQuiz(trilha) : undefined;
+		trilha.quiz?.depoisDe === artigo.slug
+			? chamadaDe(trilha, trilha.quiz.perguntas)
+			: undefined;
+	// O quiz final vem depois do último artigo.
+	const quizFinal =
+		trilha.quizFinal && !proximo
+			? chamadaDe(trilha, trilha.quizFinal.perguntas)
+			: undefined;
 	return {
 		trilha: trilhaNaLista(trilha),
 		artigo: { ...naLista(artigo), html: corpoEmHtml(artigo.corpo) },
@@ -244,6 +266,7 @@ export function acharArtigo(
 		anterior: anterior && naLista(anterior),
 		proximo: proximo && naLista(proximo),
 		...(quiz && { quiz }),
+		...(quizFinal && { quizFinal }),
 	};
 }
 
@@ -263,18 +286,44 @@ export function acharQuiz(
 		trilha: trilhaNaLista(trilha),
 		anterior: naLista(trilha.artigos[depoisDe - 1]),
 		...(proximo && { proximo: naLista(proximo) }),
-		perguntas: trilha.quiz.perguntas.map(({ artigo, opcoes, ...pergunta }) => {
-			const posicao = posicaoNaTrilha(trilha, artigo);
-			return {
-				...pergunta,
-				artigo: {
-					slug: artigo,
-					titulo: trilha.artigos[posicao - 1].titulo,
-					posicao,
-				},
-				opcoes: opcoes.map((opcao) => opcao.texto),
-				certa: opcoes.findIndex((opcao) => opcao.certa),
-			};
-		}),
+		perguntas: perguntasNaPagina(trilha, trilha.quiz.perguntas),
 	};
+}
+
+/** O quiz final, depois do último artigo: não há próximo. */
+export function acharQuizFinal(
+	todas: Trilha[],
+	slug: string,
+): QuizNaPagina | undefined {
+	const trilha = todas.find((trilha) => trilha.slug === slug);
+	if (!trilha?.quizFinal) {
+		return undefined;
+	}
+	// O leitor (ler.ts) já conferiu que o artigo de cada pergunta existe na
+	// trilha: ela tem pelo menos um.
+	return {
+		trilha: trilhaNaLista(trilha),
+		anterior: naLista(trilha.artigos[trilha.artigos.length - 1]),
+		perguntas: perguntasNaPagina(trilha, trilha.quizFinal.perguntas),
+	};
+}
+
+/** As perguntas de um quiz na página dele, com a certa pela posição. */
+function perguntasNaPagina(
+	trilha: Trilha,
+	perguntas: Pergunta[],
+): PerguntaNaPagina[] {
+	return perguntas.map(({ artigo, opcoes, ...pergunta }) => {
+		const posicao = posicaoNaTrilha(trilha, artigo);
+		return {
+			...pergunta,
+			artigo: {
+				slug: artigo,
+				titulo: trilha.artigos[posicao - 1].titulo,
+				posicao,
+			},
+			opcoes: opcoes.map((opcao) => opcao.texto),
+			certa: opcoes.findIndex((opcao) => opcao.certa),
+		};
+	});
 }

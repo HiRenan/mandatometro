@@ -9,7 +9,11 @@ import {
 } from "@tanstack/react-router";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { acharArtigo, trilhas } from "@/lib/conteudo/paginas.server";
+import {
+	acharArtigo,
+	acharTrilha,
+	trilhas,
+} from "@/lib/conteudo/paginas.server";
 import { Route } from "@/routes/trilhas/$trilha/$artigo";
 
 const CHAVE = "mandatometro:artigos-lidos";
@@ -41,23 +45,52 @@ function naTela(texto: string): HTMLElement {
  * na árvore como no routeTree.gen.ts, e os dados vêm do paginas.server.ts, sem a
  * função do servidor.
  */
-function abrir() {
+function abrir(artigo = "onde-o-projeto-comeca") {
 	const raiz = createRootRoute({ component: () => <Outlet /> });
 	const pagina = Route.update({
 		id: "/trilhas/$trilha/$artigo",
 		path: "/trilhas/$trilha/$artigo",
 		getParentRoute: () => raiz,
-		loader: () =>
-			acharArtigo(trilhas, "processo-legislativo", "onde-o-projeto-comeca"),
+		loader: () => acharArtigo(trilhas, "processo-legislativo", artigo),
 	} as never);
 	const router = createRouter({
 		routeTree: raiz.addChildren([pagina]),
-		history: createMemoryHistory({ initialEntries: [`/trilhas/${ARTIGO}`] }),
+		history: createMemoryHistory({
+			initialEntries: [`/trilhas/processo-legislativo/${artigo}`],
+		}),
 	});
 	render(<RouterProvider router={router} />);
 }
 
 describe("página do artigo", () => {
+	// O quiz da trilha aparece depois do artigo 3, e o quiz final, depois do
+	// último: cada um chama no fim do artigo dele, depois das fontes.
+	it("no último artigo, chama para o quiz final, depois das fontes", async () => {
+		const ultimo = acharTrilha(trilhas, "processo-legislativo")?.artigos.at(-1);
+		abrir(ultimo?.slug);
+		const chamada = await screen.findByRole("region", { name: "Quiz final" });
+		const fontes = document.querySelector(".artigo-folha > .fontes");
+
+		expect(screen.queryByRole("region", { name: "Quiz da trilha" })).toBeNull();
+		expect(
+			fontes &&
+				fontes.compareDocumentPosition(chamada) &
+					Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+		expect(
+			screen
+				.getByRole("link", { name: "Responder o quiz final" })
+				.getAttribute("href"),
+		).toBe("/trilhas/processo-legislativo/quiz-final");
+	});
+
+	it("no artigo depois do qual o quiz aparece, chama só para o quiz da trilha", async () => {
+		abrir("o-projeto-passa-pelas-comissoes");
+		await screen.findByRole("region", { name: "Quiz da trilha" });
+
+		expect(screen.queryByRole("region", { name: "Quiz final" })).toBeNull();
+	});
+
 	it("num clique duplo no Desmarcar, fica desmarcado, e o Desfazer funciona com um clique depois", async () => {
 		abrir();
 		const botao = await screen.findByRole("button", { name: "Desmarcar" });

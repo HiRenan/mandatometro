@@ -335,7 +335,7 @@ TEST_DATABASE_URL=postgresql+psycopg://mandatometro:troque-esta-senha@localhost:
 
 Sem a variável, o pytest pula os testes de banco e diz o motivo. No CI, que sobe o próprio banco, eles falham.
 
-**Medição do piloto.** `POST /piloto/tentativas` recebe apenas código aleatório, versão, etapa e total de acertos. `PILOTO_ATIVO` começa desligado (HTTP 410); o Renan o liga após decidir a ligação entre etapas, os menores e a guarda, com a tela integrada. A cota própria é de 120 pedidos por minuto, ajustável por `PILOTO_LIMITE_POR_MINUTO`.
+**Medição do piloto.** No site, a página `/piloto`, fora do menu, faz a primeira etapa, antes da trilha, e o quiz final da trilha faz a segunda, para quem fez a primeira no mesmo navegador; sem o `API_URL` no build, nada é enviado. `POST /piloto/tentativas` recebe apenas código aleatório, versão, etapa e total de acertos. `PILOTO_ATIVO` começa desligado (HTTP 410), e o Renan o liga para a rodada do piloto. Para testar a página com a API desligada, use uma janela anônima: o 410 fica guardado no navegador até o "Começar como outra pessoa". A cota própria é de 120 pedidos por minuto, ajustável por `PILOTO_LIMITE_POR_MINUTO`.
 
 Em `apps/backend`, com as migrations aplicadas e `DATABASE_URL` explícito para o banco escolhido, o time lê o resultado agregado e, depois de encerrar a coleta em todas as instâncias, apaga a medição:
 

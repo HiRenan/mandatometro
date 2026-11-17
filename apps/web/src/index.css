@@ -406,6 +406,23 @@
 	}
 
 	/*
+	 * A ação desligada, como o "Tentar de novo" do piloto enquanto o pedido
+	 * espera: com o aria-disabled, e não o disabled, ela guarda o foco. Passa
+	 * para a tinta suave, que continua legível, em vez de ficar meio
+	 * transparente; nas cores forçadas, para a cor do desligado do sistema.
+	 */
+	.acao-de-texto[aria-disabled="true"] {
+		cursor: default;
+		color: var(--tinta-suave);
+	}
+
+	@media (forced-colors: active) {
+		.acao-de-texto[aria-disabled="true"] {
+			color: GrayText;
+		}
+	}
+
+	/*
 	 * As ações em texto que são links ("O código é aberto, no GitHub") ficam em
 	 * linha, como texto, e a caixa de um link em linha tem a altura da letra, e não a
 	 * da linha. No link, o padding faz a área: 15 px em cima e embaixo da letra, em
@@ -1412,7 +1429,11 @@
 		}
 	}
 
-	/* A chamada do quiz: uma folha com seis azulejos, um por pergunta. */
+	/*
+	 * A chamada do quiz: uma folha com um azulejo por pergunta, seis no quiz da
+	 * trilha e doze no quiz final. Na coluna ao lado do texto, eles vão em três
+	 * colunas, ou quatro com mais de seis (o --colunas, de lib/quiz.ts).
+	 */
 	.chamada-quiz {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
@@ -1421,6 +1442,15 @@
 		padding: clamp(1.5rem, 4vw, 3rem) var(--respiro);
 		border: 2px solid var(--tinta);
 		background: var(--folha);
+	}
+
+	/*
+	 * Na página da trilha, a chamada do quiz final vem logo depois da do quiz da
+	 * trilha: cada uma é uma folha, a 0,75rem da outra, como as folhas dos
+	 * artigos, e os fios não se somam numa barra.
+	 */
+	.chamada-quiz + .chamada-quiz {
+		margin-top: 0.75rem;
 	}
 
 	.chamada-texto {
@@ -1465,7 +1495,7 @@
 		}
 
 		.chamada-azulejos {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
+			grid-template-columns: repeat(var(--colunas, 3), minmax(0, 1fr));
 		}
 	}
 

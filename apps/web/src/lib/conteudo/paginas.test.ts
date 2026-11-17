@@ -3,6 +3,7 @@ import type { Artigo, Fonte, Trilha } from "./ler";
 import {
 	acharArtigo,
 	acharQuiz,
+	acharQuizFinal,
 	acharTrilha,
 	corpoEmHtml,
 	inicio,
@@ -136,6 +137,30 @@ describe("conteúdo das trilhas", () => {
 		expect(posicoes).toEqual([1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6]);
 	});
 
+	it("leva o quiz final do processo legislativo à página dele, depois do último artigo", () => {
+		const trilha = trilhaDe("processo-legislativo");
+		const quizFinal = acharQuizFinal(trilhas, "processo-legislativo");
+
+		expect(quizFinal?.anterior.slug).toBe(trilha.artigos.at(-1)?.slug);
+		expect(quizFinal).not.toHaveProperty("proximo");
+		expect(quizFinal?.perguntas).toHaveLength(12);
+		expect(
+			quizFinal?.perguntas.map((pergunta) => pergunta.artigo.posicao),
+		).toEqual([1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6]);
+	});
+
+	it("chama para o quiz final do processo legislativo só no último artigo e na página da trilha", () => {
+		const trilha = trilhaDe("processo-legislativo");
+		const chamada = { perguntas: 12, artigos: [1, 2, 3, 4, 5, 6] };
+
+		expect(acharTrilha(trilhas, trilha.slug)?.quizFinal).toMatchObject(chamada);
+		expect(
+			trilha.artigos.map(
+				(artigo) => acharArtigo(trilhas, trilha.slug, artigo.slug)?.quizFinal,
+			),
+		).toEqual([undefined, undefined, undefined, undefined, undefined, chamada]);
+	});
+
 	it("não repete no quiz final uma pergunta do quiz do meio", () => {
 		const trilha = trilhaDe("processo-legislativo");
 		const doMeio = new Set(
@@ -181,20 +206,32 @@ describe("o que vai para o navegador", () => {
 		}
 	});
 
-	it("não leva as perguntas do quiz final do processo legislativo a nenhuma página", () => {
+	// As perguntas do quiz final vão inteiras só à página dele. A página da trilha
+	// leva o enunciado e as opções, sem a certa, como no quiz do meio; as listas,
+	// a página inicial, os artigos e o quiz do meio não levam nada delas.
+	it("leva as perguntas do quiz final do processo legislativo só à página dele e, sem a certa, à da trilha", () => {
 		const trilha = trilhaDe("processo-legislativo");
 		const enunciados =
 			trilha.quizFinal?.perguntas.map((pergunta) => pergunta.enunciado) ?? [];
 		const paginas = [
 			...listarTrilhas(trilhas),
 			inicio(trilhas),
-			acharTrilha(trilhas, trilha.slug),
 			...trilha.artigos.map((artigo) =>
 				acharArtigo(trilhas, trilha.slug, artigo.slug),
 			),
 			acharQuiz(trilhas, trilha.slug),
 		];
 
+		expect(
+			acharQuizFinal(trilhas, trilha.slug)?.perguntas.map(
+				(pergunta) => pergunta.enunciado,
+			),
+		).toEqual(enunciados);
+		expect(
+			acharTrilha(trilhas, trilha.slug)?.quizFinal?.perguntasSemACerta.map(
+				(pergunta) => pergunta.enunciado,
+			),
+		).toEqual(enunciados);
 		expect(enunciados).toHaveLength(12);
 		for (const pagina of paginas) {
 			const json = JSON.stringify(pagina);
@@ -468,10 +505,13 @@ describe("o quiz da trilha", () => {
 		);
 	});
 
-	// O quiz final ainda não tem tela (é da #92): as perguntas dele ficam no
-	// servidor, e nenhuma página as leva ao navegador.
-	it("não leva o quiz final a nenhuma página", () => {
+	// O quiz final vem depois do último artigo. As perguntas dele vão inteiras só
+	// à página dele; a da trilha leva o enunciado e as opções, sem a certa, para
+	// o botão de continuar saber se falta resposta; o último artigo e a trilha
+	// levam a chamada; as listas, os outros artigos e o quiz do meio, nada.
+	describe("o quiz final", () => {
 		const soDoQuizFinal = "Uma pergunta que só existe no quiz final?";
+		const explicacao = "Uma explicação que só existe no quiz final.";
 		const comQuizFinal: Trilha = {
 			...comQuiz,
 			quizFinal: {
@@ -480,30 +520,99 @@ describe("o quiz da trilha", () => {
 						artigo: "terceiro",
 						enunciado: soDoQuizFinal,
 						opcoes: [
-							{ texto: "Uma opção certa.", certa: true },
 							{ texto: "Uma opção errada.", certa: false },
+							{ texto: "Uma opção certa.", certa: true },
 						],
-						explicacao: "Uma explicação.",
+						explicacao,
+						fontes: [constituicao],
+					},
+					{
+						artigo: "primeiro",
+						enunciado: "Outra pergunta do quiz final?",
+						opcoes: [
+							{ texto: "Outra opção certa.", certa: true },
+							{ texto: "Outra opção errada.", certa: false },
+						],
+						explicacao: "Outra explicação.",
 						fontes: [constituicao],
 					},
 				],
 			},
 		};
-		const todas = [comQuizFinal];
-		const paginas = [
-			...listarTrilhas(todas),
-			acharTrilha(todas, "com-quiz"),
-			...comQuizFinal.artigos.map((artigo) =>
-				acharArtigo(todas, "com-quiz", artigo.slug),
-			),
-			acharQuiz(todas, "com-quiz"),
-		];
+		const todas = [comQuizFinal, semQuiz];
 
-		for (const pagina of paginas) {
-			expect(pagina).toBeDefined();
-			expect(JSON.stringify(pagina)).not.toContain("quizFinal");
-			expect(JSON.stringify(pagina)).not.toContain(soDoQuizFinal);
-		}
+		it("leva à página dele as perguntas, com a certa pela posição, o último artigo e nenhum próximo", () => {
+			const quizFinal = acharQuizFinal(todas, "com-quiz");
+
+			expect(quizFinal?.trilha).toEqual(listarTrilhas([comQuizFinal])[0]);
+			expect(quizFinal?.anterior.slug).toBe("terceiro");
+			expect(quizFinal).not.toHaveProperty("proximo");
+			expect(quizFinal?.perguntas[0]).toEqual({
+				artigo: { slug: "terceiro", titulo: "Artigo terceiro", posicao: 3 },
+				enunciado: soDoQuizFinal,
+				opcoes: ["Uma opção errada.", "Uma opção certa."],
+				certa: 1,
+				explicacao,
+				fontes: [constituicao],
+			});
+			expect(quizFinal?.perguntas.map((pergunta) => pergunta.certa)).toEqual([
+				1, 0,
+			]);
+		});
+
+		it("chama para ele na página da trilha e no último artigo, com as perguntas e os artigos delas", () => {
+			const chamada = { perguntas: 2, artigos: [1, 3] };
+
+			expect(acharTrilha(todas, "com-quiz")?.quizFinal).toEqual({
+				...chamada,
+				perguntasSemACerta: [
+					{
+						enunciado: soDoQuizFinal,
+						opcoes: ["Uma opção errada.", "Uma opção certa."],
+					},
+					{
+						enunciado: "Outra pergunta do quiz final?",
+						opcoes: ["Outra opção certa.", "Outra opção errada."],
+					},
+				],
+			});
+			expect(acharArtigo(todas, "com-quiz", "terceiro")?.quizFinal).toEqual(
+				chamada,
+			);
+			for (const artigo of ["primeiro", "segundo"]) {
+				expect(acharArtigo(todas, "com-quiz", artigo)).not.toHaveProperty(
+					"quizFinal",
+				);
+			}
+		});
+
+		it("não leva a certa nem a explicação a outra página, nem as perguntas às listas, aos outros artigos e ao quiz do meio", () => {
+			const semAsPerguntas = [
+				...listarTrilhas(todas),
+				acharArtigo(todas, "com-quiz", "primeiro"),
+				acharArtigo(todas, "com-quiz", "segundo"),
+				acharArtigo(todas, "com-quiz", "terceiro"),
+				acharQuiz(todas, "com-quiz"),
+			];
+			const daTrilha = JSON.stringify(acharTrilha(todas, "com-quiz"));
+
+			for (const pagina of semAsPerguntas) {
+				expect(pagina).toBeDefined();
+				expect(JSON.stringify(pagina)).not.toContain(soDoQuizFinal);
+				expect(JSON.stringify(pagina)).not.toContain(explicacao);
+			}
+			expect(daTrilha).toContain(soDoQuizFinal);
+			expect(daTrilha).not.toContain(explicacao);
+			expect(daTrilha).not.toContain('"certa"');
+		});
+
+		it("não acha o quiz final de uma trilha sem ele ou que não existe", () => {
+			expect(acharQuizFinal(todas, "sem-quiz")).toBeUndefined();
+			expect(acharQuizFinal(exemplos, "com-quiz")).toBeUndefined();
+			expect(acharQuizFinal(todas, "nao-existe")).toBeUndefined();
+			expect(acharQuizFinal(todas, "constructor")).toBeUndefined();
+			expect(acharTrilha(exemplos, "com-quiz")).not.toHaveProperty("quizFinal");
+		});
 	});
 
 	it("não leva nada do quiz às trilhas sem quiz, às listas e à página inicial", () => {

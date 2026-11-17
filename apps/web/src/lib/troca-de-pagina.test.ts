@@ -127,9 +127,37 @@ describe("sentidoDaTroca", () => {
 		).toBe("avancar");
 	});
 
+	it("o quiz final fica depois do último artigo e do quiz", () => {
+		const comQuiz = { ...trilhaAberta, quizDepoisDe: "onde-o-projeto-comeca" };
+		const quizFinal = `${TRILHA}/quiz-final`;
+		const ultimo = `${TRILHA}/o-projeto-passa-pelas-comissoes`;
+		// O "Artigo anterior" do quiz final é o último da trilha.
+		expect(sentidoDaTroca(quizFinal, ultimo, trilhaAberta)).toBe("voltar");
+		expect(
+			sentidoDaTroca(quizFinal, `${TRILHA}/quem-pode-propor-uma-lei`, comQuiz),
+		).toBe("voltar");
+		expect(sentidoDaTroca(quizFinal, `${TRILHA}/quiz`, comQuiz)).toBe("voltar");
+		// A chamada do quiz final, no fim do último artigo.
+		expect(sentidoDaTroca(ultimo, quizFinal, trilhaAberta)).toBe("avancar");
+		expect(sentidoDaTroca(`${TRILHA}/quiz`, quizFinal, comQuiz)).toBe(
+			"avancar",
+		);
+	});
+
 	it("do quiz para a trilha é voltar, e da trilha para o quiz, avançar", () => {
 		expect(sentidoDaTroca(`${TRILHA}/quiz`, TRILHA)).toBe("voltar");
 		expect(sentidoDaTroca(TRILHA, `${TRILHA}/quiz`)).toBe("avancar");
+		expect(sentidoDaTroca(`${TRILHA}/quiz-final`, TRILHA)).toBe("voltar");
+		expect(sentidoDaTroca(TRILHA, `${TRILHA}/quiz-final`)).toBe("avancar");
+	});
+
+	it("a página do piloto fica no nível da lista das trilhas", () => {
+		expect(sentidoDaTroca("/", "/piloto")).toBe("avancar");
+		expect(
+			sentidoDaTroca("/piloto", `${TRILHA}/quem-pode-propor-uma-lei`),
+		).toBe("avancar");
+		expect(sentidoDaTroca(TRILHA, "/piloto")).toBe("voltar");
+		expect(sentidoDaTroca("/piloto", "/")).toBe("voltar");
 	});
 
 	it("a página não encontrada fica no fundo do bloco", () => {
@@ -218,6 +246,18 @@ describe("trilhaDaPaginaAberta", () => {
 				},
 			]),
 		).toBe(comQuiz);
+	});
+
+	it("pega a trilha dos dados do quiz final que está na tela", () => {
+		expect(
+			trilhaDaPaginaAberta([
+				{ routeId: "__root__", loaderData: undefined },
+				{
+					routeId: "/trilhas/$trilha/quiz-final",
+					loaderData: { trilha: trilhaAberta, perguntas: [] },
+				},
+			]),
+		).toBe(trilhaAberta);
 	});
 
 	it("fora de um artigo e do quiz, não há trilha aberta", () => {

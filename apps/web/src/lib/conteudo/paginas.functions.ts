@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import {
 	acharArtigo,
 	acharQuiz,
+	acharQuizFinal,
 	acharTrilha,
 	inicio,
 	listarTrilhas,
@@ -60,6 +61,18 @@ export const buscarQuiz = createServerFn({ method: "GET" })
 	.validator((dados: { trilha: string }) => ({ trilha: texto(dados?.trilha) }))
 	.handler(({ data }) => {
 		const quiz = acharQuiz(trilhas, data.trilha);
+		if (!quiz) {
+			throw notFound();
+		}
+		return quiz;
+	});
+
+// O quiz final e, no piloto, o antes (routes/piloto.tsx): como no quiz, só a
+// página vem do servidor.
+export const buscarQuizFinal = createServerFn({ method: "GET" })
+	.validator((dados: { trilha: string }) => ({ trilha: texto(dados?.trilha) }))
+	.handler(({ data }) => {
+		const quiz = acharQuizFinal(trilhas, data.trilha);
 		if (!quiz) {
 			throw notFound();
 		}
