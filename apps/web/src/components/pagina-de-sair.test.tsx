@@ -116,13 +116,30 @@ async function confirmar() {
 	return confirmacao;
 }
 
+/** O título da página no HTML do servidor, antes do JavaScript. */
+async function tituloDoServidor(props: {
+	codigo: string | undefined;
+	comApi: boolean;
+}) {
+	const router = createRouter({
+		routeTree: createRootRoute({
+			component: () => <PaginaDeSair {...props} />,
+		}),
+		history: createMemoryHistory({ initialEntries: ["/newsletter/sair"] }),
+	});
+	await router.load();
+	const raiz = document.createElement("div");
+	raiz.innerHTML = renderToString(<RouterProvider router={router} />);
+	return raiz.querySelector("h1") as HTMLHeadingElement;
+}
+
 describe("a página de sair", () => {
 	it("com o código, explica o que o botão faz, e abrir a página não chama a API", async () => {
 		await mostrar();
 
-		expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
-			"Sair da newsletter",
-		);
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Sair da newsletter" }),
+		).toBeTruthy();
 		expect(naTela(EXPLICA)).toBeTruthy();
 		expect(botao()?.getAttribute("type")).toBe("submit");
 		expect(
@@ -173,9 +190,12 @@ describe("a página de sair", () => {
 
 		await confirmar();
 
-		expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
-			"Você saiu da newsletter.",
-		);
+		expect(
+			screen.getByRole("heading", {
+				level: 1,
+				name: "Você saiu da newsletter.",
+			}),
+		).toBeTruthy();
 		expect(naTela(SAIU)).toBeTruthy();
 		expect(naTela(EXPLICA)).toBeNull();
 		expect(aviso()).toBe(`Você saiu da newsletter. ${SAIU}`);
@@ -203,6 +223,39 @@ describe("a página de sair", () => {
 		await screen.findByRole("heading", { level: 1, name: "Início" });
 		expect(router.state.location.pathname).toBe("/");
 		expect(router.state.location.hash).toBe("newsletter");
+	});
+
+	it("o título guarda a altura do mais alto dos dois desde o HTML do servidor: as ações não descem quando ele muda", async () => {
+		const titulo = await tituloDoServidor({ codigo: CODIGO, comApi: true });
+		const reservas = [...titulo.querySelectorAll("[aria-hidden='true']")];
+
+		// A 768 px, "Sair da newsletter" cabe numa linha, e "Você saiu da
+		// newsletter." quebra em duas. Com os dois na mesma célula da grade,
+		// invisíveis, o título já tem a altura do mais alto, e o "Inscrever-se de
+		// novo" nasce no lugar do botão.
+		expect(reservas.map((reserva) => reserva.textContent)).toEqual([
+			"Sair da newsletter",
+			"Você saiu da newsletter.",
+		]);
+		expect(
+			reservas.every(
+				(reserva) =>
+					reserva.parentElement === titulo &&
+					reserva.classList.contains("invisible"),
+			),
+		).toBe(true);
+		expect(
+			titulo.querySelector(":scope > :not([aria-hidden])")?.textContent,
+		).toBe("Sair da newsletter");
+	});
+
+	it.each([
+		["sem a API", { codigo: CODIGO, comApi: false }],
+		["com o link incompleto", { codigo: "abc", comApi: true }],
+	])("%s, o título não muda e não guarda lugar", async (_, props) => {
+		const titulo = await tituloDoServidor(props);
+
+		expect(titulo.textContent).toBe("Sair da newsletter");
 	});
 
 	it.each([
