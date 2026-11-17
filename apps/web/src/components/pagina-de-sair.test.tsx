@@ -384,7 +384,7 @@ describe("a página de sair", () => {
 		).toBe(lugar.nextElementSibling);
 	});
 
-	it("com o código que a API recusa, o pé continua guardando o lugar, e o “Ir para o início” fica onde estava", async () => {
+	it("com o código que a API recusa, o pé continua guardando o lugar, e o “Ir para o início” fica no lugar do botão", async () => {
 		sair.mockResolvedValue({ tipo: "link-invalido" });
 		await mostrar();
 		await confirmar();
@@ -392,14 +392,22 @@ describe("a página de sair", () => {
 		const abertura = document.querySelector(".abertura") as HTMLElement;
 		expect(reservasDe(abertura)).toEqual([EXPLICA, SAIU]);
 		expect(textoAVista(abertura)).toBe(INCOMPLETO);
-		// Sem o botão, o lugar dele fica vazio: o segundo clique de um clique
-		// duplo não cai em nada.
+		// A ação que sobra fica logo embaixo da frase, onde estava o botão, como o
+		// "Inscrever-se de novo" depois da saída.
 		const lugar = lugarDoBotao();
 		expect(reservasDe(lugar)).toEqual(["Confirmar a saída"]);
-		expect(lugar.querySelector("a, button, form")).toBeNull();
+		expect(lugar.querySelector("button, form")).toBeNull();
 		expect(
 			screen.getByRole("link", { name: "Ir para o início" }).closest("li"),
-		).toBe(lugar.nextElementSibling);
+		).toBe(lugar);
+		// O item de baixo guarda a altura dele, com uma cópia invisível, sem link
+		// e fora do leitor de tela: o espaço que sobra fica no fim do pé.
+		const seguinte = lugar.nextElementSibling as HTMLElement;
+		expect(seguinte.getAttribute("aria-hidden")).toBe("true");
+		expect(seguinte.classList.contains("invisible")).toBe(true);
+		expect(seguinte.textContent).toBe("Ir para o início");
+		expect(seguinte.querySelector(".acao-de-texto")).not.toBeNull();
+		expect(seguinte.querySelector("a")).toBeNull();
 	});
 
 	it.each([

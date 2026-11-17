@@ -34,8 +34,8 @@ const ERROS: Partial<Record<Estado, string>> = {
 /**
  * O segundo clique de um clique duplo não segue os links da página (o detail,
  * como no lib/clique.ts): depois da saída, o "Inscrever-se de novo" surge onde
- * estava o botão, e, com o código recusado, o foco vai para o "Ir para o
- * início". Um clique novo, de propósito, segue o link.
+ * estava o botão, e, com o código recusado, o "Ir para o início". Um clique
+ * novo, de propósito, segue o link.
  */
 function semSegundoClique(evento: MouseEvent) {
 	if (evento.detail > 1) {
@@ -54,7 +54,8 @@ function semSegundoClique(evento: MouseEvent) {
  * API: ela dispara o pedido, e a página mostra o "Confirmando" enquanto espera
  * (como na inscrição, components/inscricao-na-newsletter.tsx). Depois da saída,
  * o "Inscrever-se de novo" fica no lugar do botão, com o foco, e nada sai do
- * lugar: o título e o pé guardam a altura de antes.
+ * lugar: o título e o pé guardam a altura de antes. Com o código recusado, quem
+ * fica no lugar do botão é o "Ir para o início".
  */
 export function PaginaDeSair({
 	codigo,
@@ -78,10 +79,12 @@ export function PaginaDeSair({
 	// Só com a API e o código bem formado a saída pode acontecer e a tela mudar:
 	// só aí o título, a abertura e o lugar do botão guardam a altura de antes.
 	const telaPodeMudar = comApi && codigoValido(codigo);
+	// Com o código recusado, o "Ir para o início" é a ação que sobra e sobe para
+	// o lugar do botão. Só com o lugar guardado: sem ele, fica no item dele.
+	const recusado = telaPodeMudar && estado === "link-invalido";
 
-	// O botão some depois da saída e do código recusado: o foco vai para o
-	// "Inscrever-se de novo", que fica no lugar dele, ou para o "Ir para o
-	// início", a ação que sobra.
+	// O botão some depois da saída e do código recusado: o foco vai para o link
+	// que fica no lugar dele, o "Inscrever-se de novo" ou o "Ir para o início".
 	useEffect(() => {
 		if (estado === "saiu") {
 			deNovo.current?.focus();
@@ -124,6 +127,16 @@ export function PaginaDeSair({
 				? INCOMPLETO
 				: EXPLICA;
 	const erro = ERROS[estado];
+	const irParaOInicio = (
+		<Link
+			ref={inicio}
+			to="/"
+			onClick={semSegundoClique}
+			className="acao-de-texto"
+		>
+			<span>Ir para o início</span>
+		</Link>
+	);
 
 	return (
 		<section className="cartaz cartaz-medio">
@@ -154,7 +167,8 @@ export function PaginaDeSair({
 			    px acima do botão. A abertura guarda as duas frases, invisíveis, e
 			    a da vez fica no alto, junto do fio; o lugar do botão guarda uma
 			    cópia dele. Depois da saída, sobra um vão embaixo da frase, e nada
-			    sai do lugar. */}
+			    sai do lugar. Com o código recusado, o "Ir para o início" sobe
+			    para o lugar do botão, e o vão fica no fim do pé, no item dele. */}
 			<div className="cartaz-pe">
 				<p className="abertura grid">
 					{telaPodeMudar && <Reservas frases={[EXPLICA, FORA_DA_LISTA]} />}
@@ -204,18 +218,22 @@ export function PaginaDeSair({
 										</Link>
 									</div>
 								)}
+								{recusado && (
+									<div className="col-start-1 row-start-1">{irParaOInicio}</div>
+								)}
 							</li>
 						)}
-						<li>
-							<Link
-								ref={inicio}
-								to="/"
-								onClick={semSegundoClique}
-								className="acao-de-texto"
-							>
-								<span>Ir para o início</span>
-							</Link>
-						</li>
+						{recusado ? (
+							// O item do "Ir para o início" guarda a altura dele com
+							// uma cópia, invisível e fora do leitor de tela.
+							<li aria-hidden="true" className="invisible">
+								<span className="acao-de-texto">
+									<span>Ir para o início</span>
+								</span>
+							</li>
+						) : (
+							<li>{irParaOInicio}</li>
+						)}
 					</ul>
 					{esperando && (
 						<p className="rotulo saida-confirmando">{CONFIRMANDO}</p>
