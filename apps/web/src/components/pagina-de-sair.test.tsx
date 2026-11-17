@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { format } from "node:util";
 import {
 	createMemoryHistory,
 	createRootRoute,
@@ -43,6 +44,11 @@ let fetch: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
 	sair.mockReset();
+	// A janela do jsdom é a mesma para os testes do arquivo: cada um começa com o
+	// armazenamento vazio, na mesma URL e sem estado no histórico.
+	localStorage.clear();
+	sessionStorage.clear();
+	window.history.replaceState(null, "", "/");
 	// Nenhum pedido sai da página sem o clique: nem a API, nem outro endereço.
 	fetch = vi.fn();
 	vi.stubGlobal("fetch", fetch);
@@ -72,9 +78,14 @@ async function mostrar(opcoes: { codigo?: string; comApi?: boolean } = {}) {
 		path: "/newsletter/sair",
 		component: () => <PaginaDeSair codigo={codigo} comApi={comApi} />,
 	});
+	// A página abre como pelo link do e-mail, com o código no endereço.
+	const endereco =
+		codigo === undefined
+			? "/newsletter/sair"
+			: `/newsletter/sair?codigo=${encodeURIComponent(codigo)}`;
 	const router = createRouter({
 		routeTree: raiz.addChildren([inicio, pagina]),
-		history: createMemoryHistory({ initialEntries: ["/newsletter/sair"] }),
+		history: createMemoryHistory({ initialEntries: [endereco] }),
 	});
 	render(<RouterProvider router={router} />);
 	await screen.findByRole("heading", { level: 1 });
@@ -313,6 +324,51 @@ describe("a página de sair", () => {
 			"Para confirmar a saída, o navegador precisa do JavaScript ligado. Sem ele, use a opção de cancelar a inscrição do seu programa de e-mail.",
 		);
 		expect(raiz.querySelector("[role='status']")?.textContent).toBe("");
+	});
+});
+
+describe("o código de saída fica só no pedido", () => {
+	it("não vai para a URL, para o armazenamento do navegador, para os cookies nem para o console", async () => {
+		// Todos os métodos do console, e não só os do log.
+		const console_ = (Object.keys(console) as (keyof Console)[])
+			.filter((metodo) => typeof console[metodo] === "function")
+			.map((metodo) => vi.spyOn(console, metodo));
+		const janela = {
+			endereco: window.location.href,
+			estado: window.history.state,
+		};
+		const router = await mostrar();
+		const chegada = router.history.location;
+		const entradas = router.history.length;
+		// O código chega no endereço, pelo link do e-mail, e de lá não sai.
+		expect(chegada.href).toBe(`/newsletter/sair?codigo=${CODIGO}`);
+
+		// Uma saída sem resposta e outra que dá certo, como a pessoa faria.
+		sair.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+		await confirmar();
+		sair.mockResolvedValueOnce({ tipo: "saiu" });
+		await confirmar();
+
+		expect(sair.mock.calls).toEqual([[CODIGO], [CODIGO]]);
+		expect(naTela(SAIU)).toBeTruthy();
+		// A URL é a da chegada: nenhum parâmetro, trecho ou estado novo, nem no
+		// roteador nem na janela.
+		expect(router.history.location).toEqual(chegada);
+		expect(router.history.length).toBe(entradas);
+		expect(window.location.href).toBe(janela.endereco);
+		expect(window.history.state).toEqual(janela.estado);
+		expect(
+			`${window.location.href} ${JSON.stringify(window.history.state)}`,
+		).not.toContain(CODIGO);
+		expect(localStorage.length).toBe(0);
+		expect(sessionStorage.length).toBe(0);
+		expect(document.cookie).toBe("");
+		// O texto que o console escreveria com cada chamada.
+		for (const espiao of console_) {
+			for (const chamada of espiao.mock.calls) {
+				expect(format(...chamada)).not.toContain(CODIGO);
+			}
+		}
 	});
 });
 
