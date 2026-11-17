@@ -216,7 +216,7 @@ def gerar(
             **redacao,
             **resumo,
         }
-    # Nenhuma transação ou conexão do banco fica aberta durante a chamada ao redator.
+    # Durante a chamada ao redator, não há transação aberta nem conexão do banco em uso.
     preparados = []
     motivos = Counter()
     for base in selecao.itens:
