@@ -21,13 +21,16 @@ fontes:
   - titulo: Lei nº 15.172, de 22 de julho de 2025
     url: https://normas.leg.br/?urn=urn:lex:br:federal:lei:2025-07-22;15172
     consultadoEm: 2026-11-17
+  - titulo: Conselho Nacional de Justiça, a diferença entre comarca, vara, entrância e instância
+    url: https://www.cnj.jus.br/cnj-servico-saiba-a-diferenca-entre-comarca-vara-entrancia-e-instancia/
+    consultadoEm: 2026-11-17
 ---
 
 Uma lei começa como um projeto de lei: um texto que propõe uma regra nova, ou a mudança de uma regra que já existe, e explica por que ela é necessária.
 
 Pense numa deputada que quer mudar uma regra de trânsito. Ela escreve o projeto e o apresenta na Câmara dos Deputados. A partir daí, o texto passa a ser analisado e votado. Mas ela não é a única pessoa que pode dar esse primeiro passo.
 
-Em janeiro de 2025, por exemplo, quem deu esse passo foi um tribunal: o Superior Tribunal de Justiça apresentou à Câmara um projeto para criar oito varas da Justiça Federal em Santa Catarina. Aprovado pela Câmara e pelo Senado, o projeto virou a Lei 15.172, de 22 de julho de 2025.
+Em janeiro de 2025, por exemplo, quem deu esse passo foi um tribunal: o Superior Tribunal de Justiça apresentou à Câmara um projeto para criar em Santa Catarina oito varas da Justiça Federal, as repartições onde os juízes trabalham. Aprovado pela Câmara e pelo Senado, o projeto virou a Lei 15.172, de 22 de julho de 2025.
 
 ## Quem pode apresentar um projeto
 
