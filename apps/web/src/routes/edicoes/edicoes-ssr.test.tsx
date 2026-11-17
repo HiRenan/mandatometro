@@ -1,8 +1,7 @@
 import {
 	createRootRoute,
 	createRouter,
-	Outlet,
-	Scripts,
+	type RootRouteOptions,
 } from "@tanstack/react-router";
 import {
 	createRequestHandler,
@@ -12,7 +11,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NaoEncontrado } from "@/components/nao-encontrado";
 import { PaginaDeErro } from "@/components/pagina-de-erro";
 import { lerEdicao, lerEdicoes } from "@/lib/edicoes/edicoes.server";
-import { edicaoDeExemplo } from "@/lib/edicoes/exemplos-de-teste";
+import {
+	edicaoDeExemplo,
+	listaDeExemplo,
+} from "@/lib/edicoes/exemplos-de-teste";
+import { Route as RotaRaiz } from "@/routes/__root";
 import { Route as RotaDaEdicao } from "./$id";
 import { Route as RotaDaLista } from "./index";
 
@@ -54,18 +57,15 @@ const json = (status: number, corpo: unknown) =>
 		headers: { "Content-Type": "application/json" },
 	});
 
+/**
+ * O documento de verdade da rota raiz (routes/__root.tsx): o <html>, com o
+ * cabeçalho, o main e o rodapé. O options tem o tipo de uma rota qualquer.
+ */
+const Documento = (RotaRaiz.options as RootRouteOptions).shellComponent;
+
 /** O site com as duas rotas das edições, como no router.tsx. */
 function criarRouter() {
-	const raiz = createRootRoute({
-		component: () => (
-			<html lang="pt-BR">
-				<body>
-					<Outlet />
-					<Scripts />
-				</body>
-			</html>
-		),
-	});
+	const raiz = createRootRoute({ shellComponent: Documento });
 	const lista = RotaDaLista.update({
 		id: "/edicoes/",
 		path: "/edicoes/",
@@ -83,6 +83,11 @@ function criarRouter() {
 		defaultNotFoundComponent: NaoEncontrado,
 		defaultErrorComponent: PaginaDeErro,
 	});
+}
+
+/** Os links do cabeçalho, no HTML: a lista da navegação principal. */
+function linksDoCabecalho(html: string) {
+	return /<ul class="topo-links"[^>]*>(.*?)<\/ul>/s.exec(html)?.[1] ?? "";
 }
 
 /** Pede uma página ao servidor do roteador: o HTTP e o HTML. */
@@ -145,6 +150,19 @@ describe("o HTML das páginas das edições", () => {
 		// O trecho da fonte vai como texto: o <b> da fonte chega escapado.
 		expect(html).toContain("&lt;b&gt;emenda&lt;/b&gt;");
 		expect(html).not.toContain("<b>emenda</b>");
+	});
+
+	it("o cabeçalho leva às edições só onde o site tem o API_URL", async () => {
+		api(() => json(200, listaDeExemplo(3)));
+
+		const comApi = linksDoCabecalho((await pedir("/edicoes")).html);
+		ambiente.API_URL = "";
+		const semApi = linksDoCabecalho((await pedir("/edicoes")).html);
+
+		expect(comApi).toContain('href="/trilhas"');
+		expect(comApi).toContain('href="/edicoes"');
+		expect(semApi).toContain('href="/trilhas"');
+		expect(semApi).not.toContain("/edicoes");
 	});
 
 	it("sem o API_URL, a página diz que as edições não aparecem aqui, com 200", async () => {

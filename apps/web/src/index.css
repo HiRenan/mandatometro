@@ -643,6 +643,18 @@
 		}
 	}
 
+	/*
+	 * Com as edições, são três links (o data-com-edicoes, onde o site tem a API).
+	 * Abaixo de 32rem, eles não cabem na linha do nome, e o Início sai: o nome
+	 * leva ao início (o Renan, na #39). Com a letra grande, a linha ainda pode
+	 * quebrar, e os links descem, como antes.
+	 */
+	@media (width < 32rem) {
+		.topo-links[data-com-edicoes] > li:first-child {
+			display: none;
+		}
+	}
+
 	/* ───── O cartaz ───── */
 
 	/*

@@ -1,10 +1,13 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { NOME_DO_SITE } from "./nome-do-site";
 
-const links = [
+const LINKS = [
 	{ to: "/", label: "Início" },
 	{ to: "/trilhas", label: "Trilhas" },
 ] as const;
+
+/** As edições da newsletter, que só aparecem onde o site tem a API. */
+const EDICOES = { to: "/edicoes", label: "Edições" } as const;
 
 function estaNaSecao(caminho: string, secao: string): boolean {
 	return secao === "/"
@@ -17,11 +20,21 @@ function estaNaSecao(caminho: string, secao: string): boolean {
  * links, e a tira das cinco fitas embaixo. É o que separa o cabeçalho da página
  * clara (o Renan, na #89: "um header bem feito"). Abaixo de 864 px, ficam só o
  * nome e os links: o lema, que é largo, está no rodapé.
+ *
+ * Onde o site tem a API (o API_URL), as edições entram nos links. No celular, os
+ * três não cabem na linha do nome: o Início sai (o CSS, pelo data-com-edicoes), e
+ * o nome leva ao início (o Renan, na #39).
  */
-export default function Header() {
+export default function Header({
+	comEdicoes = false,
+}: {
+	/** Se o site tem o endereço da API e, com ele, as páginas das edições. */
+	comEdicoes?: boolean;
+}) {
 	const caminho = useRouterState({
 		select: (estado) => estado.location.pathname,
 	});
+	const links = comEdicoes ? [...LINKS, EDICOES] : LINKS;
 
 	return (
 		<header className="moldura">
@@ -42,7 +55,10 @@ export default function Header() {
 					<p className="marca-lema">o diário oficial político, simplificado</p>
 				</div>
 				<nav aria-label="Principal">
-					<ul className="topo-links">
+					<ul
+						className="topo-links"
+						data-com-edicoes={comEdicoes ? "" : undefined}
+					>
 						{links.map(({ to, label }) => (
 							<li key={to}>
 								{/* O traço marca a seção inteira (data-na-secao), mas o link só
