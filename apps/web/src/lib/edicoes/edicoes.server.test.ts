@@ -144,6 +144,15 @@ describe("a lista das edições", () => {
 		expect(isNotFound(await erroDe(lerEdicoes(3)))).toBe(true);
 	});
 
+	it("a página que a API recusa (422) dá a página não encontrada, sem registrar falha", async () => {
+		// O site confere o ?pagina antes de pedir, e o 422 fica como defesa, como
+		// na edição: um pedido que a API não aceita não é a API fora do ar.
+		api(() => json(422, { erro: "dados_invalidos" }));
+
+		expect(isNotFound(await erroDe(lerEdicoes(1)))).toBe(true);
+		expect(erros).not.toHaveBeenCalled();
+	});
+
 	it("a API fora do ar não leva a mensagem dela ao navegador nem ao log", async () => {
 		api(() => {
 			throw new TypeError(MENSAGEM_DA_FALHA);
