@@ -432,7 +432,7 @@
 		font-family: var(--font-sans);
 		font-size: min(
 			var(--letra),
-			calc((100vw - 2 * var(--margem) - var(--recuo)) / var(--palavra))
+			calc((100cqi - 2 * var(--margem) - var(--recuo)) / var(--palavra))
 		);
 		font-stretch: 62%;
 		font-weight: 900;
@@ -1028,7 +1028,7 @@
 		}
 
 		.quiz-fim h2 {
-			--recuo: calc((100vw - 2 * var(--margem)) * 0.42);
+			--recuo: calc((100cqi - 2 * var(--margem)) * 0.42);
 		}
 
 		.quiz-pergunta {
