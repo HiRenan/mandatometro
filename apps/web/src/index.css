@@ -655,6 +655,33 @@
 		}
 	}
 
+	/*
+	 * Mesmo sem o Início, Trilhas e Edições só cabiam na linha do nome a partir de
+	 * 375 px, com 1 px de folga. Abaixo de 26rem, com as edições, os dois links se
+	 * apertam: o respiro de cada um cai para 6 px, sem o vão entre eles, e o vão
+	 * mínimo entre o nome e os links fica em 12 px. Assim, a linha cabe a partir
+	 * de 355 px. O cabeçalho sem a API não muda.
+	 */
+	@media (width < 26rem) {
+		.topo-dentro:has(.topo-links[data-com-edicoes]) {
+			column-gap: 12px;
+		}
+
+		.topo-links[data-com-edicoes] {
+			gap: 0;
+			margin-right: -6px;
+		}
+
+		.topo-links[data-com-edicoes] a {
+			padding: 0 6px;
+		}
+
+		.topo-links[data-com-edicoes] a::after {
+			right: 6px;
+			left: 6px;
+		}
+	}
+
 	/* ───── O cartaz ───── */
 
 	/*

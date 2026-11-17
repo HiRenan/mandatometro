@@ -27,6 +27,21 @@ describe("o CSS do cabeçalho com as edições", () => {
 		expect(midia?.largura).toBeLessThanOrEqual(40);
 	});
 
+	it("no celular estreito, só com as edições, os links se apertam", () => {
+		const aperta =
+			/\.topo-links\[data-com-edicoes\] a \{\s*padding: 0 (\d+)px;\s*\}/;
+		const midia = midias.find(({ corpo }) => aperta.test(corpo));
+
+		expect(midia, "a regra que aperta os links").toBeDefined();
+		// Trilhas e Edições cabem na linha do nome a 360 px (medido no navegador),
+		// com menos respiro que os 10 px do celular (o (width < 48rem)).
+		expect(midia?.largura).toBeGreaterThanOrEqual(24);
+		expect(midia?.largura).toBeLessThan(30);
+		expect(Number(aperta.exec(midia?.corpo ?? "")?.[1])).toBeLessThan(10);
+		// O cabeçalho sem a API fica como era: nada ali vale sem a marca.
+		expect(midia?.corpo).not.toMatch(/(^|\})\s*\.topo-links( a)? \{/);
+	});
+
 	it("sem as edições, o Início fica em toda largura", () => {
 		expect(css).not.toMatch(/\.topo-links\s*>\s*li:first-child/);
 		expect(css).not.toMatch(/\.topo-links\s+li:first-child/);
