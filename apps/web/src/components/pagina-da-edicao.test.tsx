@@ -264,6 +264,31 @@ describe("a página de uma edição", () => {
 			expect(t.parentElement?.closest(".caixa-do-teto")).toBe(folha);
 		}
 	});
+
+	it("o teto do título de cada item sai da régua do subtítulo, a letra dele", async () => {
+		await abrir(edicao());
+		const titulos = [
+			...document.querySelectorAll<HTMLElement>("section.item-da-edicao > h2"),
+		];
+
+		// O título do item é um subtítulo condensado (largura 68%), mais largo que o
+		// título da página (62%). Com a régua do título, o --palavra ficaria pequeno
+		// demais, e a palavra mais larga passaria da folha com a letra grande.
+		expect(titulos).toHaveLength(3);
+		for (const t of titulos) {
+			const texto = t.textContent ?? "";
+			const doSubtitulo = tetoDoTitulo(texto, "subtitulo-condensado");
+
+			expect(t.classList.contains("subtitulo-condensado"), texto).toBe(true);
+			expect(t.style.getPropertyValue("--palavra"), texto).toBe(
+				String(doSubtitulo),
+			);
+			// A régua do título dá outro número: o teste pega a troca das réguas.
+			expect(doSubtitulo, texto).toBeGreaterThan(
+				tetoDoTitulo(texto, "titulo-condensado"),
+			);
+		}
+	});
 });
 
 describe("o quadro da votação", () => {
