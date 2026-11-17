@@ -76,3 +76,35 @@ describe("o pé do palco", () => {
 		);
 	});
 });
+
+// Os quadradinhos do andamento ficam numa fileira enquanto cabem. A 320 px, os
+// doze do quiz final quebravam em 11 e 1, e o de baixo ficava sozinho. A conta
+// usa as medidas do CSS: se o quadradinho ou o vão mudar, a tela de cada bloco
+// muda junto.
+describe("os quadradinhos do andamento", () => {
+	const lado = Number(
+		regra(".quiz-andamento li").match(/width: ([\d.]+)rem;/)?.[1],
+	);
+	const vao = Number(regra(".quiz-andamento").match(/gap: ([\d.]+)rem;/)?.[1]);
+	/** A largura de uma fileira de `n` quadradinhos, em rem. */
+	const fileira = (n: number) => n * lado + (n - 1) * vao;
+	/** As margens do celular, 20 px de cada lado, em rem, com a letra de `px`. */
+	const margens = (px: number) => 40 / px;
+	const rem = (valor: number) => `${Math.round(valor * 1000) / 1000}rem`;
+
+	it("onde os doze não cabem numa fileira, vão em duas de seis", () => {
+		const estreita = bloco(
+			`@media (width < ${rem(fileira(12) + margens(16))})`,
+		);
+
+		expect(estreita).toMatch(/grid-template-columns: repeat\(6, /);
+	});
+
+	it("com a letra acima de 200%, onde nem seis cabem, as fileiras ficam de três", () => {
+		const estreitissima = bloco(
+			`@media (width < ${rem(fileira(6) + margens(32))})`,
+		);
+
+		expect(estreitissima).toMatch(/grid-template-columns: repeat\(3, /);
+	});
+});

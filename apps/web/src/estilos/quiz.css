@@ -639,6 +639,27 @@
 		perspective: 20rem;
 	}
 
+	/*
+	 * Os quadradinhos ficam numa fileira enquanto cabem: os doze do quiz final pedem
+	 * 17.6rem (1.1rem cada um e os vãos de 0.4rem), e o celular tem 40 px de
+	 * margens. Abaixo de 20.1rem, como a 320 px, eles vão em fileiras de seis, e
+	 * nenhum fica sozinho embaixo (antes, a fileira quebrava em 11 e 1). Os seis do
+	 * quiz da trilha continuam numa fileira. A conta está no estilos/quiz.test.ts.
+	 */
+	@media (width < 20.1rem) {
+		.quiz-andamento {
+			display: grid;
+			grid-template-columns: repeat(6, 1.1rem);
+		}
+	}
+
+	/* Com a letra acima de 200%, nem seis cabem a 320 px: as fileiras ficam de três. */
+	@media (width < 9.85rem) {
+		.quiz-andamento {
+			grid-template-columns: repeat(3, 1.1rem);
+		}
+	}
+
 	/* O quadradinho vira e ganha a cor da posição dele quando a pergunta é
 	   respondida, com qualquer resposta. O contorno marca a pergunta da vez. */
 	.quiz-andamento li {
