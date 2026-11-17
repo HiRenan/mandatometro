@@ -36,6 +36,34 @@ def configuracao():
     return Config(_env_file=None, llm_provider="anthropic", llm_model=MODELO, llm_api_key=CHAVE)
 
 
+@pytest.mark.parametrize("construtor", ["httpx2.Client", "anthropic.Anthropic"])
+def test_falha_na_abertura_oculta_erro_e_restaura_ambiente(construtor, monkeypatch, caplog, capsys):
+    def falhar(**opcoes):
+        logging.getLogger(__name__).error("Falha privada")
+        raise ValueError("Falha privada " + CHAVE)
+
+    monkeypatch.setattr(construtor, falhar)
+    monkeypatch.setenv("ANTHROPIC_LOG", "debug")
+    monkeypatch.setenv("ANTHROPIC_CUSTOM_HEADERS", "X-Teste: ficticio")
+    transporte = httpx2.MockTransport(lambda p: pytest.fail("Não deve fazer pedido."))
+    anterior = logging.root.manager.disable
+    try:
+        logging.disable(logging.INFO)
+        with (
+            pytest.raises(RuntimeError, match=r"^Falha no serviço de redação\.$") as erro,
+            abrir_redator(configuracao(), transporte=transporte),
+        ):
+            pytest.fail("O redator não deveria abrir.")
+        assert logging.root.manager.disable == logging.INFO
+    finally:
+        logging.disable(anterior)
+    assert erro.value.__cause__ is None and erro.value.__context__ is None
+    assert os.environ["ANTHROPIC_LOG"] == "debug"
+    assert os.environ["ANTHROPIC_CUSTOM_HEADERS"] == "X-Teste: ficticio"
+    saida = capsys.readouterr()
+    assert saida.out == saida.err == caplog.text == ""
+
+
 def test_pedido_usa_so_configuracao_do_projeto_regras_fatos_e_esquema(monkeypatch, caplog, capsys):
     externos = {
         "ANTHROPIC_API_KEY": "chave-de-outra-ferramenta",
@@ -154,6 +182,10 @@ def test_apenas_end_turn_abre_o_texto(motivo):
         [],
         [{"type": "text", "text": "{"}],
         [{"type": "text", "text": "[]"}],
+        pytest.param(
+            [{"type": "desconhecido", "text": json.dumps(REDACAO)}], id="tipo-desconhecido"
+        ),
+        pytest.param([{"text": json.dumps(REDACAO)}], id="sem-tipo"),
         [{"type": "text", "text": json.dumps(REDACAO)}] * 2,
         [{"type": "thinking", "thinking": "Texto fictício.", "signature": "ficticia"}],
         [

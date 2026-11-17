@@ -10,7 +10,7 @@ from mandatometro.avisos.cli import registrar_comando as registrar_envio
 from mandatometro.coleta.cli import adicionar_argumentos_periodo, resolver_periodo
 from mandatometro.config import config
 from mandatometro.db import sessao as sessao_do_banco
-from mandatometro.ia.provedor import ConfiguracaoRedatorInvalida, abrir_redator
+from mandatometro.ia.provedor import ConfiguracaoRedatorInvalida, FalhaRedator, abrir_redator
 from mandatometro.ia.servico import ErroEdicao, exportar, gerar, mostrar, publicar, revisar
 
 LIMITE_ARQUIVO = 2 * 1024 * 1024
@@ -78,7 +78,7 @@ def _rodar(args: argparse.Namespace) -> int:
     except ConfiguracaoRedatorInvalida as erro:
         _json({"erro": str(erro)})
         return 2
-    except ErroEdicao as erro:
+    except (ErroEdicao, FalhaRedator) as erro:
         _json({"erro": str(erro)})
         return 1
     except FileExistsError:

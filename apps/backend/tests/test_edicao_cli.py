@@ -3,7 +3,7 @@ from pathlib import Path
 
 import httpx2
 import pytest
-from test_edicao_provedor import CHAVE, MODELO, REDACAO, mensagem
+from test_edicao_provedor import CHAVE, MODELO, REDACAO, configuracao, mensagem
 from test_edicao_revisao import abrir as abrir
 from test_edicao_revisao import pronto
 from test_edicao_selecao import FIM, INICIO
@@ -67,11 +67,12 @@ def test_cli_do_rascunho_a_publicacao_sem_rede(monkeypatch, abrir, dados, tmp_pa
     ("provedor", "modelo", "chave"),
     [
         ("servico-ficticio", MODELO, CHAVE),
+        ("anthropic", None, CHAVE),
         ("anthropic", " ", CHAVE),
         ("anthropic", MODELO, None),
         ("anthropic", MODELO, "   "),
     ],
-    ids=["provedor", "modelo-em-branco", "sem-chave", "chave-em-branco"],
+    ids=["provedor", "sem-modelo", "modelo-em-branco", "sem-chave", "chave-em-branco"],
 )
 def test_configuracao_invalida_da_saida_dois_antes_do_banco(
     monkeypatch, capsys, provedor, modelo, chave
@@ -83,6 +84,19 @@ def test_configuracao_invalida_da_saida_dois_antes_do_banco(
     saida = capsys.readouterr()
     assert saida.err == ""
     assert json.loads(saida.out) == {"erro": "Confira LLM_PROVIDER, LLM_MODEL e LLM_API_KEY."}
+
+
+def test_proxy_invalido_da_saida_um_com_erro_fixo(monkeypatch, capsys):
+    monkeypatch.setattr(cli, "config", configuracao)
+    monkeypatch.setattr(cli, "sessao_do_banco", lambda: pytest.fail("Não deve abrir banco."))
+    monkeypatch.setenv("HTTPS_PROXY", "ftp://proxy-ficticio.invalid")
+    monkeypatch.setenv("NO_PROXY", "")
+    monkeypatch.setenv("ANTHROPIC_LOG", "debug")
+    assert main(["edicao", "rascunho"]) == 1
+    saida = capsys.readouterr()
+    assert saida.err == ""
+    (linha,) = saida.out.splitlines()
+    assert json.loads(linha) == {"erro": "Falha no serviço de redação."}
 
 
 def test_cli_redige_itens_e_exige_revisao_antes_de_publicar(monkeypatch, capsys, abrir, dados):

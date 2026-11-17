@@ -4,7 +4,7 @@ import json
 import logging
 import os
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from typing import TYPE_CHECKING, get_args
 
 import httpx2
@@ -21,6 +21,11 @@ class ConfiguracaoRedatorInvalida(ValueError):
     pass
 
 
+class FalhaRedator(RuntimeError):
+    def __init__(self):
+        super().__init__("Falha no serviço de redação.")
+
+
 class RedatorAnthropic:
     def __init__(self, cliente: "Anthropic", modelo: str):
         from anthropic import transform_schema
@@ -30,7 +35,7 @@ class RedatorAnthropic:
         self._formato = {"type": "json_schema", "schema": transform_schema(Redacao)}
 
     def escrever(self, entrada: dict) -> RespostaRedator:
-        from anthropic.types import RedactedThinkingBlock, StopReason, TextBlock, ThinkingBlock
+        from anthropic.types import StopReason
 
         try:
             mensagem = self._cliente.messages.create(
@@ -57,15 +62,38 @@ class RedatorAnthropic:
                 (bloco_final,) = (
                     bloco
                     for bloco in mensagem.content
-                    if not isinstance(bloco, (ThinkingBlock, RedactedThinkingBlock))
+                    if bloco.type not in ("thinking", "redacted_thinking")
                 )
-                if not isinstance(bloco_final, TextBlock):
+                if bloco_final.type != "text":
                     return RespostaRedator({})
                 conteudo = json.loads(bloco_final.text)
             except (AttributeError, TypeError, ValueError, RecursionError):
                 return RespostaRedator({})
             return RespostaRedator(conteudo if isinstance(conteudo, dict) else {})
-        raise RuntimeError("Falha no serviço de redação.")
+        raise FalhaRedator()
+
+
+def _cliente_anthropic(http: httpx2.Client, chave: str) -> "Anthropic":
+    # O import configura o logging pelo ambiente. O construtor mescla os
+    # cabeçalhos do ambiente mesmo quando recebe default_headers explícito.
+    nivel_sdk = os.environ.pop("ANTHROPIC_LOG", None)
+    cabecalhos = os.environ.pop("ANTHROPIC_CUSTOM_HEADERS", None)
+    try:
+        from anthropic import Anthropic
+
+        return Anthropic(
+            api_key=chave,
+            base_url="https://api.anthropic.com",
+            http_client=http,
+            timeout=60.0,
+            max_retries=1,
+            open_telemetry={"traces": False, "propagation": False},
+        )
+    finally:
+        if cabecalhos is not None:
+            os.environ["ANTHROPIC_CUSTOM_HEADERS"] = cabecalhos
+        if nivel_sdk is not None:
+            os.environ["ANTHROPIC_LOG"] = nivel_sdk
 
 
 @contextmanager
@@ -81,30 +109,19 @@ def abrir_redator(
     if provedor != "anthropic" or not modelo or not chave:
         raise ConfiguracaoRedatorInvalida("Confira LLM_PROVIDER, LLM_MODEL e LLM_API_KEY.")
 
-    anterior = logging.root.manager.disable
-    logging.disable(max(anterior, logging.CRITICAL))
-    try:
-        with httpx2.Client(transport=transporte, follow_redirects=False) as http:
-            # O import configura o logging pelo ambiente. O construtor mescla os
-            # cabeçalhos do ambiente mesmo quando recebe default_headers explícito.
-            nivel_sdk = os.environ.pop("ANTHROPIC_LOG", None)
-            cabecalhos = os.environ.pop("ANTHROPIC_CUSTOM_HEADERS", None)
-            try:
-                from anthropic import Anthropic
-
-                cliente = Anthropic(
-                    api_key=chave,
-                    base_url="https://api.anthropic.com",
-                    http_client=http,
-                    timeout=60.0,
-                    max_retries=1,
-                    open_telemetry={"traces": False, "propagation": False},
-                )
-            finally:
-                if cabecalhos is not None:
-                    os.environ["ANTHROPIC_CUSTOM_HEADERS"] = cabecalhos
-                if nivel_sdk is not None:
-                    os.environ["ANTHROPIC_LOG"] = nivel_sdk
-            yield RedatorAnthropic(cliente, modelo)
-    finally:
-        logging.disable(anterior)
+    with ExitStack() as recursos:
+        anterior = logging.root.manager.disable
+        recursos.callback(logging.disable, anterior)
+        logging.disable(max(anterior, logging.CRITICAL))
+        try:
+            http = recursos.enter_context(
+                httpx2.Client(transport=transporte, follow_redirects=False)
+            )
+            redator = RedatorAnthropic(_cliente_anthropic(http, chave), modelo)
+        except Exception:
+            # A exceção de abertura pode conter credenciais. Descarte também a cadeia.
+            pass
+        else:
+            yield redator
+            return
+        raise FalhaRedator()
