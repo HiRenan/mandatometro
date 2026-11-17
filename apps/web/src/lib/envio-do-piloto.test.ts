@@ -1,3 +1,4 @@
+import { inspect } from "node:util";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PedidoTentativaPiloto } from "@/client";
 import {
@@ -51,6 +52,27 @@ describe("o envio de uma etapa do piloto", () => {
 		expect(pedidos[0].method).toBe("POST");
 		expect(pedidos[0].url).toBe("https://api.exemplo.test/piloto/tentativas");
 		expect(await pedidos[0].json()).toEqual(PEDIDO);
+	});
+
+	it("não escreve o código no console, com nenhuma resposta da API nem sem resposta", async () => {
+		const escritas = (["log", "info", "warn", "error", "debug"] as const).map(
+			(metodo) => vi.spyOn(console, metodo).mockImplementation(() => {}),
+		);
+
+		for (const status of [200, 410, 413, 422, 429, 503]) {
+			api(() => json(status, {}));
+			await enviarEtapa(PEDIDO);
+		}
+		api(() => Promise.reject(new TypeError("Failed to fetch")));
+		await enviarEtapa(PEDIDO);
+
+		// O inspect abre os objetos e os erros: o código dentro de um deles também
+		// aparece no texto.
+		const escrito = escritas
+			.flatMap((espiao) => espiao.mock.calls)
+			.map((argumentos) => inspect(argumentos, { depth: 10 }))
+			.join("\n");
+		expect(escrito).not.toContain(PEDIDO.participacao);
 	});
 
 	it("com o piloto encerrado (410), diz que ele não recebe respostas", async () => {

@@ -676,6 +676,25 @@ describe("o quiz final, no piloto", () => {
 		expect(travadas()).not.toContain(true);
 	});
 
+	// A página do piloto promete a quem tem menos de 18 anos que o quiz final não
+	// envia nada.
+	it("fora do piloto, as 12 respostas não mandam nada nem guardam o piloto", async () => {
+		enviar.mockResolvedValue({ tipo: "recebida" });
+		await abrirOQuizFinal();
+
+		clicar("Começar");
+		for (const [indice] of PAGINA.perguntas.entries()) {
+			responderAPergunta(indice, true);
+			await esperarAApi();
+			expect(enviar).not.toHaveBeenCalled();
+			expect(localStorage.getItem("mandatometro:piloto")).toBeNull();
+			clicar(/^(Próxima pergunta|Terminar)$/);
+		}
+
+		expect(naTela("Você terminou o quiz.")).toBeTruthy();
+		expect(enviar).not.toHaveBeenCalled();
+	});
+
 	it("com o antes feito, diz que é a segunda etapa e trava a primeira resposta de cada pergunta", async () => {
 		antesRecebido();
 		await abrirOQuizFinal();
