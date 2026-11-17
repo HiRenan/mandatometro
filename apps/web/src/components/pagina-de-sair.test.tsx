@@ -96,10 +96,13 @@ function botao() {
 	return screen.queryByRole("button", { name: "Confirmar a saída" });
 }
 
-/** O texto à vista: o aviso do leitor de tela repete o mesmo texto. */
+/**
+ * O texto à vista: o aviso do leitor de tela repete o mesmo texto, e as frases
+ * guardadas ficam escondidas.
+ */
 function naTela(texto: string) {
 	return screen.queryByText(texto, {
-		ignore: "[role='status'], script, style",
+		ignore: "[role='status'], [aria-hidden='true'], script, style",
 	});
 }
 
@@ -116,8 +119,8 @@ async function confirmar() {
 	return confirmacao;
 }
 
-/** O título da página no HTML do servidor, antes do JavaScript. */
-async function tituloDoServidor(props: {
+/** A página no HTML do servidor, antes do JavaScript. */
+async function paginaDoServidor(props: {
 	codigo: string | undefined;
 	comApi: boolean;
 }) {
@@ -130,7 +133,35 @@ async function tituloDoServidor(props: {
 	await router.load();
 	const raiz = document.createElement("div");
 	raiz.innerHTML = renderToString(<RouterProvider router={router} />);
-	return raiz.querySelector("h1") as HTMLHeadingElement;
+	return raiz;
+}
+
+async function tituloDoServidor(props: {
+	codigo: string | undefined;
+	comApi: boolean;
+}) {
+	return (await paginaDoServidor(props)).querySelector(
+		"h1",
+	) as HTMLHeadingElement;
+}
+
+/** As frases guardadas de um lugar: invisíveis, fora do leitor de tela. */
+function reservasDe(lugar: Element) {
+	const reservas = [...lugar.querySelectorAll(":scope > [aria-hidden='true']")];
+	expect(
+		reservas.every((reserva) => reserva.classList.contains("invisible")),
+	).toBe(true);
+	return reservas.map((reserva) => reserva.textContent);
+}
+
+/** O texto à vista de um lugar que guarda frases. */
+function textoAVista(lugar: Element) {
+	return lugar.querySelector(":scope > :not([aria-hidden])")?.textContent;
+}
+
+/** O primeiro item das ações: o lugar do botão "Confirmar a saída". */
+function lugarDoBotao(raiz: ParentNode = document) {
+	return raiz.querySelector(".acoes-da-pagina > li:first-child") as HTMLElement;
 }
 
 describe("a página de sair", () => {
@@ -311,14 +342,85 @@ describe("a página de sair", () => {
 		).toBe("Sair da newsletter");
 	});
 
-	it.each([
-		["sem a API", { codigo: CODIGO, comApi: false }],
-		["com o link incompleto", { codigo: "abc", comApi: true }],
-	])("%s, o título não muda e não guarda lugar", async (_, props) => {
-		const titulo = await tituloDoServidor(props);
+	it("o pé guarda a altura de antes da saída desde o HTML do servidor: a abertura e o lugar do botão", async () => {
+		const raiz = await paginaDoServidor({ codigo: CODIGO, comApi: true });
 
-		expect(titulo.textContent).toBe("Sair da newsletter");
+		// Com a letra grande, a frase da saída é mais curta, e os dois links
+		// cabem numa linha só: o pé encolhia, e o "Inscrever-se de novo" nascia
+		// longe do botão. A abertura guarda as duas frases, invisíveis, na
+		// mesma célula da grade; a de antes do botão fica à vista.
+		const abertura = raiz.querySelector(".abertura") as HTMLElement;
+		expect(reservasDe(abertura)).toEqual([EXPLICA, SAIU]);
+		expect(textoAVista(abertura)).toBe(EXPLICA);
+		// O lugar do botão guarda uma cópia dele, com o mesmo desenho, e o
+		// botão de verdade fica na mesma célula.
+		const lugar = lugarDoBotao(raiz);
+		expect(reservasDe(lugar)).toEqual(["Confirmar a saída"]);
+		expect(
+			lugar.querySelector(":scope > [aria-hidden='true'] > .botao"),
+		).not.toBeNull();
+		expect(lugar.querySelector(":scope > form > button")?.textContent).toBe(
+			"Confirmar a saída",
+		);
+		expect(lugar.nextElementSibling?.textContent).toBe("Ir para o início");
 	});
+
+	it("depois da saída, o pé fica com a altura de antes: a frase de antes continua guardada, e o “Inscrever-se de novo” fica no lugar do botão", async () => {
+		sair.mockResolvedValue({ tipo: "saiu" });
+		await mostrar();
+		await confirmar();
+
+		const abertura = document.querySelector(".abertura") as HTMLElement;
+		expect(reservasDe(abertura)).toEqual([EXPLICA, SAIU]);
+		expect(textoAVista(abertura)).toBe(SAIU);
+		const lugar = lugarDoBotao();
+		expect(reservasDe(lugar)).toEqual(["Confirmar a saída"]);
+		expect(
+			screen.getByRole("link", { name: "Inscrever-se de novo" }).closest("li"),
+		).toBe(lugar);
+		// O "Ir para o início" fica onde estava, no item seguinte.
+		expect(
+			screen.getByRole("link", { name: "Ir para o início" }).closest("li"),
+		).toBe(lugar.nextElementSibling);
+	});
+
+	it("com o código que a API recusa, o pé continua guardando o lugar, e o “Ir para o início” fica onde estava", async () => {
+		sair.mockResolvedValue({ tipo: "link-invalido" });
+		await mostrar();
+		await confirmar();
+
+		const abertura = document.querySelector(".abertura") as HTMLElement;
+		expect(reservasDe(abertura)).toEqual([EXPLICA, SAIU]);
+		expect(textoAVista(abertura)).toBe(INCOMPLETO);
+		// Sem o botão, o lugar dele fica vazio: o segundo clique de um clique
+		// duplo não cai em nada.
+		const lugar = lugarDoBotao();
+		expect(reservasDe(lugar)).toEqual(["Confirmar a saída"]);
+		expect(lugar.querySelector("a, button, form")).toBeNull();
+		expect(
+			screen.getByRole("link", { name: "Ir para o início" }).closest("li"),
+		).toBe(lugar.nextElementSibling);
+	});
+
+	it.each([
+		[
+			"sem a API",
+			{ codigo: CODIGO, comApi: false },
+			"A newsletter ainda não funciona neste endereço do site.",
+		],
+		["com o link incompleto", { codigo: "abc", comApi: true }, INCOMPLETO],
+	])(
+		"%s, o título e o pé não mudam e não guardam lugar",
+		async (_, props, abertura) => {
+			const raiz = await paginaDoServidor(props);
+
+			expect(raiz.querySelector("h1")?.textContent).toBe("Sair da newsletter");
+			expect(raiz.querySelector(".abertura")?.textContent).toBe(abertura);
+			expect(raiz.querySelector(".acoes-da-pagina")?.textContent).toBe(
+				"Ir para o início",
+			);
+		},
+	);
 
 	it.each([
 		[
