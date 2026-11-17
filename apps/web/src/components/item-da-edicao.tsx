@@ -131,10 +131,15 @@ function QuadroDaVotacao({ votacao }: { votacao: VotacaoPublica }) {
  * As fontes do item, agrupadas pelo endereço, como no e-mail: o primeiro é a
  * fonte oficial, os outros são outras referências, e cada um traz o site e o dia
  * da coleta, em Brasília. A mesma página coletada de novo aparece embaixo da
- * primeira coleta, e o trecho de cada coleta vem entre aspas, como texto. O nome
- * de cada link diz o item, para o leitor de tela não ouvir oito "Fonte oficial"
- * iguais. O espaço antes do trecho escondido fica fora dele: dentro, o nome do
- * link perderia o espaço em parte dos leitores.
+ * primeira coleta, e o trecho de cada coleta vem entre aspas, como texto.
+ *
+ * Cada link tem um nome só dele, para o leitor de tela: o nome diz o item, para
+ * a lista de links não ter oito "Fonte oficial" iguais, e, nas outras
+ * referências, o número na lista, o mesmo que a tela mostra ao lado ("Outra
+ * referência oficial 3 do item 1"). Sem o número, um item com três endereços
+ * teria duas "Outra referência oficial" para lugares diferentes. O espaço antes
+ * do trecho escondido fica fora dele: dentro, o nome do link perderia o espaço
+ * em parte dos leitores.
  */
 function FontesDoItem({
 	ordem,
@@ -152,6 +157,10 @@ function FontesDoItem({
 				{fontesPorEndereco(fontes).map(({ url, coletas }, indice) => {
 					const nome =
 						indice === 0 ? "Fonte oficial" : "Outra referência oficial";
+					const soParaOLeitor =
+						indice === 0
+							? `do item ${ordem}`
+							: `${indice + 1} do item ${ordem}`;
 					const endereco = enderecoSeguro(url);
 					const [primeira, ...outras] = coletas;
 					return (
@@ -163,7 +172,7 @@ function FontesDoItem({
 								<p>
 									{endereco ? (
 										<a href={endereco}>
-											{nome} <span className="sr-only">do item {ordem}</span>
+											{nome} <span className="sr-only">{soParaOLeitor}</span>
 										</a>
 									) : (
 										<strong>{nome}</strong>

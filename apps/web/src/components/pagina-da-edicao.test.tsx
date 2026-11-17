@@ -18,6 +18,7 @@ import {
 	FONTE_DA_PROPOSICAO,
 	FONTE_DA_VOTACAO,
 	FONTE_DE_EDICAO_ANTIGA,
+	FONTE_DO_SENADO,
 } from "@/lib/edicoes/exemplos-de-teste";
 import { classeDaFita, posicaoDaSemana } from "@/lib/formatar";
 import { Route } from "@/routes/edicoes/$id";
@@ -80,6 +81,32 @@ function definicoes(elemento: HTMLElement): [string, string][] {
 		termo.textContent ?? "",
 		termo.nextElementSibling?.textContent ?? "",
 	]);
+}
+
+/**
+ * Os links de um trecho da página, com o nome que o leitor de tela ouve e o
+ * destino. O nome sai da conta do Testing Library, a mesma do getByRole: o
+ * que fica escondido do leitor de tela (o aria-hidden) não entra, e o que é
+ * só dele (o sr-only) entra.
+ */
+function links(trecho: HTMLElement = document.body): [string, string][] {
+	const achados: [string, string][] = [];
+	within(trecho).queryAllByRole("link", {
+		name: (nome, link) => {
+			achados.push([nome, link.getAttribute("href") ?? ""]);
+			return true;
+		},
+	});
+	return achados;
+}
+
+/** O texto de um elemento como a tela mostra: sem o que é só do leitor de tela. */
+function textoAVista(elemento: HTMLElement): string {
+	const copia = elemento.cloneNode(true) as HTMLElement;
+	for (const escondido of copia.querySelectorAll(".sr-only")) {
+		escondido.remove();
+	}
+	return (copia.textContent ?? "").trim();
 }
 
 describe("a página de uma edição", () => {
@@ -277,13 +304,14 @@ describe("as fontes de cada item", () => {
 				name: "Fontes do item 1",
 			}),
 		).toBeTruthy();
-		const links = within(fontes).getAllByRole("link");
-
-		expect(
-			links.map((link) => [link.textContent, link.getAttribute("href")]),
-		).toEqual([
+		expect(links(fontes)).toEqual([
 			["Fonte oficial do item 1", FONTE_DA_VOTACAO.url],
-			["Outra referência oficial do item 1", FONTE_DA_PROPOSICAO.url],
+			["Outra referência oficial 2 do item 1", FONTE_DA_PROPOSICAO.url],
+		]);
+		// Na tela, o nome fica sem o item e sem o número, que a lista já mostra ao lado.
+		expect(within(fontes).getAllByRole("link").map(textoAVista)).toEqual([
+			"Fonte oficial",
+			"Outra referência oficial",
 		]);
 		// 1h30 de 12/11 em UTC é 11/11 em Brasília.
 		expect(fontes.textContent).toContain(
@@ -292,6 +320,39 @@ describe("as fontes de cada item", () => {
 		expect(fontes.textContent).toContain(
 			"Outra coleta da mesma referência, em 13 de novembro de 2026.",
 		);
+	});
+
+	it("com três endereços num item, cada link tem um nome só dele", async () => {
+		// Como nos itens 1 e 5 da edição 1: duas outras referências no mesmo item.
+		await abrir(
+			edicao((exemplo) => {
+				exemplo.itens[0].fontes.push(FONTE_DO_SENADO);
+			}),
+		);
+		const fontes = item(1).querySelector<HTMLElement>(".fontes-do-item");
+		if (!fontes) {
+			throw new Error("não achei as fontes do item 1");
+		}
+
+		// O número é o que a lista mostra ao lado de cada endereço.
+		expect(links(fontes)).toEqual([
+			["Fonte oficial do item 1", FONTE_DA_VOTACAO.url],
+			["Outra referência oficial 2 do item 1", FONTE_DA_PROPOSICAO.url],
+			["Outra referência oficial 3 do item 1", FONTE_DO_SENADO.url],
+		]);
+		// Na página inteira, o mesmo nome nunca leva a dois lugares. O mesmo nome
+		// para o mesmo lugar pode se repetir: o índice vem duas vezes no HTML (a
+		// tela mostra uma cópia de cada vez), e o "Entenda na trilha" de dois
+		// itens pode levar ao mesmo artigo.
+		const destinos = new Map<string, Set<string>>();
+		for (const [nome, destino] of links()) {
+			destinos.set(nome, (destinos.get(nome) ?? new Set()).add(destino));
+		}
+		expect(
+			[...destinos]
+				.filter(([, lugares]) => lugares.size > 1)
+				.map(([nome]) => nome),
+		).toEqual([]);
 	});
 
 	it("o trecho da fonte aparece como texto, entre aspas, sem virar HTML", async () => {
