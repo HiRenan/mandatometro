@@ -137,8 +137,13 @@ async function mostrar(dados: Dados = pagina, { newsletter = false } = {}) {
 		path: "/trilhas/$trilha/$artigo",
 		component: () => null,
 	});
+	const edicoes = createRoute({
+		getParentRoute: () => raiz,
+		path: "/edicoes",
+		component: () => null,
+	});
 	const router = createRouter({
-		routeTree: raiz.addChildren([inicio, trilha, artigoDaTrilha]),
+		routeTree: raiz.addChildren([inicio, trilha, artigoDaTrilha, edicoes]),
 		history: createMemoryHistory({ initialEntries: ["/"] }),
 	});
 	const { container } = render(<RouterProvider router={router} />);
@@ -471,8 +476,9 @@ describe("página inicial", () => {
 		const tela = await mostrar();
 
 		expect(tela.querySelector("form, input, select, textarea")).toBeNull();
+		expect(tela.querySelector('a[href^="/edicoes"]')).toBeNull();
 		expect(tela.textContent).not.toMatch(
-			/status da api|newsletter|inscri|quiz|em breve|em construção/i,
+			/status da api|newsletter|inscri|edições|quiz|em breve|em construção/i,
 		);
 	});
 
@@ -497,6 +503,17 @@ describe("página inicial", () => {
 		expect(tela.textContent).not.toMatch(
 			/status da api|quiz|em breve|em construção/i,
 		);
+	});
+
+	it("na folha da newsletter, depois da nota, o link leva às edições", async () => {
+		await mostrar(pagina, { newsletter: true });
+		const folha = screen.getByRole("region", { name: "O jornal legislativo" });
+		const link = within(folha).getByRole("link", { name: "Ler as edições" });
+		const nota = folha.querySelector(".newsletter-nota");
+
+		expect(link.getAttribute("href")).toBe("/edicoes");
+		expect(link.classList.contains("acao-de-texto")).toBe(true);
+		expect(nota && vemDepois(nota, link)).toBe(true);
 	});
 
 	it("com a letra grande, o título tem teto, dentro do cartaz", async () => {

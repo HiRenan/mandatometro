@@ -160,9 +160,32 @@ describe("sentidoDaTroca", () => {
 		expect(sentidoDaTroca("/piloto", "/")).toBe("voltar");
 	});
 
+	it("a lista das edições fica no nível da lista das trilhas, e cada edição, no de uma trilha", () => {
+		expect(sentidoDaTroca("/", "/edicoes")).toBe("avancar");
+		expect(sentidoDaTroca("/edicoes", "/edicoes/7")).toBe("avancar");
+		expect(sentidoDaTroca("/edicoes/7", "/edicoes")).toBe("voltar");
+		expect(sentidoDaTroca("/edicoes", "/")).toBe("voltar");
+		// "Entenda na trilha", no item da edição, e o caminho de volta.
+		expect(
+			sentidoDaTroca("/edicoes/7", `${TRILHA}/onde-o-projeto-comeca`),
+		).toBe("avancar");
+		expect(
+			sentidoDaTroca(`${TRILHA}/onde-o-projeto-comeca`, "/edicoes/7"),
+		).toBe("voltar");
+		// Pelo cabeçalho, de uma trilha para a lista das edições.
+		expect(sentidoDaTroca(TRILHA, "/edicoes")).toBe("voltar");
+		expect(sentidoDaTroca("/trilhas", "/edicoes/7")).toBe("avancar");
+	});
+
 	it("a página não encontrada fica no fundo do bloco", () => {
 		expect(sentidoDaTroca(TRILHA, "/pagina-que-nao-existe")).toBe("avancar");
 		expect(sentidoDaTroca("/pagina-que-nao-existe", "/")).toBe("voltar");
+		expect(
+			sentidoDaTroca(
+				"/edicoes/7/outra-coisa",
+				`${TRILHA}/onde-o-projeto-comeca`,
+			),
+		).toBe("voltar");
 	});
 });
 

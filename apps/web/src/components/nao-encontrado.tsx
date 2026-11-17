@@ -5,6 +5,26 @@ import { BOTAO_CONTINUAR } from "./botao-continuar";
 
 /** A página de não encontrado, para trilha, artigo ou endereço que não existe. */
 export function NaoEncontrado() {
+	return <PaginaNaoEncontrada para="/trilhas" texto="Ver as trilhas" />;
+}
+
+/**
+ * A página de não encontrado das edições: a edição que não existe, o rascunho,
+ * o endereço que não pode ser de uma edição e a página da lista depois da
+ * última. Ela leva de volta à lista.
+ */
+export function EdicaoNaoEncontrada() {
+	return <PaginaNaoEncontrada para="/edicoes" texto="Ver as edições" />;
+}
+
+/** O cartaz do 404, com a ação principal de cada lugar do site e o início. */
+function PaginaNaoEncontrada({
+	para,
+	texto,
+}: {
+	para: "/trilhas" | "/edicoes";
+	texto: string;
+}) {
 	return (
 		<section className="cartaz cartaz-medio">
 			<Painel
@@ -34,11 +54,11 @@ export function NaoEncontrado() {
 					<li>
 						{/* Exato: num endereço como /trilhas/x, o link não é a página atual. */}
 						<Link
-							to="/trilhas"
+							to={para}
 							activeOptions={{ exact: true }}
 							className={BOTAO_CONTINUAR}
 						>
-							Ver as trilhas
+							{texto}
 						</Link>
 					</li>
 					<li>

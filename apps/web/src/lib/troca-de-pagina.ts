@@ -2,11 +2,12 @@
  * A troca de página: a página nova aparece azulejo por azulejo, num giro de
  * relógio em cada peça; quem volta vê o giro ao contrário. As páginas ficam em
  * ordem, como as folhas de um bloco: a inicial em cima, depois a lista das
- * trilhas, ao lado dela a página do piloto, cada trilha e os artigos dela, com
- * o quiz no lugar dele entre os artigos e o quiz final depois do último. Aqui
- * ficam o sentido de cada troca, que o router passa ao navegador como tipo da
- * View Transition (router.tsx), o clique feito durante a troca e a troca que o
- * navegador pula. O movimento fica em estilos/movimento.css.
+ * trilhas, ao lado dela a página do piloto e a lista das edições, cada trilha e
+ * cada edição, e os artigos da trilha, com o quiz no lugar dele entre os
+ * artigos e o quiz final depois do último. Aqui ficam o sentido de cada troca,
+ * que o router passa ao navegador como tipo da View Transition (router.tsx), o
+ * clique feito durante a troca e a troca que o navegador pula. O movimento fica
+ * em estilos/movimento.css.
  */
 
 export type Sentido = "avancar" | "voltar";
@@ -28,6 +29,9 @@ const QUIZ_FINAL = "quiz-final";
 /** A página do piloto, que vem antes da trilha dele: fica com a lista. */
 const PILOTO = "piloto";
 
+/** O começo do endereço das edições da newsletter: /edicoes e /edicoes/{id}. */
+const EDICOES = "edicoes";
+
 /** O que o router diz de cada troca (o `locationChangeInfo` do TanStack Router). */
 export type Troca = {
 	fromLocation?: { pathname: string };
@@ -38,9 +42,10 @@ export type Troca = {
 type Lugar = { fundura: number; trilha?: string; artigo?: string };
 
 /**
- * Onde a página fica no bloco: a inicial em cima, depois a lista das trilhas e
- * a do piloto, cada trilha e os artigos dela. Um endereço que não é de
- * nenhuma, como o da página não encontrada, fica no fundo.
+ * Onde a página fica no bloco: a inicial em cima, depois a lista das trilhas, a
+ * do piloto e a das edições, cada trilha e cada edição, e os artigos da trilha.
+ * Um endereço que não é de nenhuma, como o da página não encontrada, fica no
+ * fundo.
  */
 function lugarNoBloco(caminho: string): Lugar {
 	const partes = caminho.split("/").filter(Boolean);
@@ -49,6 +54,11 @@ function lugarNoBloco(caminho: string): Lugar {
 	}
 	if (partes.length === 1 && partes[0] === PILOTO) {
 		return { fundura: 1 };
+	}
+	// A lista das edições e cada edição, sem trilha: de uma edição para outra é
+	// avançar, como entre duas trilhas.
+	if (partes[0] === EDICOES && partes.length <= 2) {
+		return { fundura: partes.length };
 	}
 	if (partes[0] !== "trilhas" || partes.length > 3) {
 		return { fundura: 4 };

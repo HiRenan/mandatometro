@@ -1,0 +1,321 @@
+/*
+ * As páginas das edições (DESIGN.md). A lista, em /edicoes, usa o cartaz das
+ * páginas de dentro e as folhas da página da trilha (o .linha do index.css):
+ * daqui, ela só leva o dia da edição no lugar do número, a folha da lista sem
+ * edição e os links das páginas vizinhas. A página de cada edição, em
+ * /edicoes/7, usa a folha de leitura do artigo: daqui, ela leva o índice nos
+ * dois lugares, os itens, o quadro de cada votação, as fontes de cada item e o
+ * fim da folha. As telas ficam em components/pagina-das-edicoes.tsx,
+ * pagina-da-edicao.tsx e item-da-edicao.tsx.
+ */
+@layer components {
+	/*
+	 * O dia da edição, como na folhinha: o último dia da semana, com dois
+	 * algarismos, na cor da semana (o --fita), e o mês embaixo, na letra da
+	 * etiqueta e em tinta. Dois algarismos cabem na coluna do número da folha,
+	 * de 320 px a 1920 px, com a letra um pouco menor que a do número da trilha.
+	 */
+	.linha > .numeral.dia-da-edicao {
+		font-size: clamp(4.5rem, 1.5rem + 8vw, 9rem);
+		font-variant-numeric: lining-nums tabular-nums;
+	}
+
+	.mes-da-edicao {
+		display: block;
+		margin-top: 0.5rem;
+		font-stretch: 100%;
+		color: var(--tinta);
+		-webkit-text-stroke: 0;
+	}
+
+	/*
+	 * A lista sem edição: a folha clara com fio de tinta, como a da newsletter,
+	 * com o título, o texto e o botão da inscrição.
+	 */
+	.sem-edicoes {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem;
+		justify-items: start;
+		padding: clamp(1.5rem, 4vw, 3rem) var(--respiro);
+		border: 2px solid var(--tinta);
+		background: var(--folha);
+	}
+
+	.sem-edicoes > h2 {
+		--letra: clamp(2.25rem, 1.4rem + 3.6vw, 4.5rem);
+		--recuo: calc(var(--recuo-de-fora, 0px) + 2 * var(--respiro) + 4px);
+	}
+
+	.sem-edicoes > p {
+		max-width: 34rem;
+		margin-bottom: 0.5rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.5;
+	}
+
+	/*
+	 * Os links das páginas vizinhas, embaixo das folhas, depois de um fio de
+	 * tinta. A página atual vem antes no HTML: no celular, fica em cima, e os
+	 * links descem um embaixo do outro; na tela larga, ela fica no meio, as
+	 * edições mais novas à esquerda e as mais antigas à direita.
+	 */
+	.paginas-das-edicoes {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		justify-items: start;
+		align-items: center;
+		margin-top: clamp(2rem, 5vw, 3rem);
+		padding-top: 1rem;
+		border-top: 2px solid var(--tinta);
+	}
+
+	.pagina-atual {
+		color: var(--tinta-suave);
+	}
+
+	@media (width >= 40rem) {
+		.paginas-das-edicoes {
+			grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+			column-gap: 1.5rem;
+		}
+
+		.paginas-das-edicoes > * {
+			grid-row: 1;
+		}
+
+		.pagina-atual {
+			grid-column: 2;
+		}
+
+		.mais-novas {
+			grid-column: 1;
+		}
+
+		.mais-antigas {
+			grid-column: 3;
+			justify-self: end;
+			text-align: right;
+		}
+	}
+
+	/* ───── A página de uma edição ───── */
+
+	/* Sem o anterior e o próximo no pé, a folha da edição tem o respiro embaixo. */
+	.pagina-da-edicao .artigo-folha {
+		padding-bottom: clamp(1.75rem, 4vw, 3rem);
+	}
+
+	/*
+	 * Nada fica entre o caminho e o título, e o título começaria ao lado do
+	 * azulejo do canto: o lugar do caminho vai até o fim do azulejo, e o título
+	 * começa embaixo dele. O azulejo fica a clamp(1.25rem, 4vw, 3rem) do alto da
+	 * folha, e o texto, a clamp(1.75rem, 4vw, 3rem) (o .do-artigo e o
+	 * .artigo-folha, no index.css).
+	 */
+	.pagina-da-edicao .artigo-folha > .migalhas {
+		min-height: calc(
+			var(--selo) +
+			clamp(1.25rem, 4vw, 3rem) -
+			clamp(1.75rem, 4vw, 3rem)
+		);
+	}
+
+	/*
+	 * "Nesta edição": abaixo de 1200 px, dentro da folha, depois do lide; daí
+	 * para cima, na coluna ao lado, que para na tela durante a rolagem, como o
+	 * "Nesta trilha". Uma cópia fica escondida em cada largura, e o leitor de
+	 * tela só encontra a outra.
+	 */
+	.nesta-edicao-na-folha {
+		max-width: 39rem;
+		margin-top: clamp(1.75rem, 4vw, 2.5rem);
+	}
+
+	@media (width < 75rem) {
+		.pagina-da-edicao .ao-lado-do-artigo {
+			display: none;
+		}
+	}
+
+	@media (width >= 75rem) {
+		.nesta-edicao-na-folha {
+			display: none;
+		}
+	}
+
+	/*
+	 * Cada item: um fio de tinta em cima, o número na fita da posição e o
+	 * título, com o teto calculado da palavra mais larga dele (o style, que
+	 * vem da régua). O índice leva até o item, e o respiro de cima fica na
+	 * tela quando ele chega.
+	 */
+	.item-da-edicao {
+		margin-top: clamp(2.5rem, 6vw, 4rem);
+		padding-top: 1.5rem;
+		border-top: 2px solid var(--tinta);
+		scroll-margin-top: 1rem;
+	}
+
+	.item-da-edicao > .numeral {
+		font-size: clamp(3.5rem, 2.5rem + 4vw, 5.5rem);
+	}
+
+	.item-da-edicao > h2 {
+		--letra: clamp(1.875rem, 1.4rem + 2vw, 3rem);
+		--recuo: var(--recuo-de-fora);
+		max-width: 14em;
+		margin-top: 0.75rem;
+	}
+
+	/*
+	 * A linha em branco separa os parágrafos do texto do item (o paragrafos, em
+	 * lib/edicoes/conteudo-da-edicao.ts), e a quebra simples fica na tela, dentro
+	 * do parágrafo, como o <br> do e-mail (o formatar_edicao do backend): os
+	 * parágrafos herdam o white-space.
+	 */
+	.item-da-edicao > .texto {
+		margin-top: 1rem;
+		white-space: pre-line;
+	}
+
+	/*
+	 * O quadro de uma votação: a data, e embaixo, entre dois fios de tinta, o
+	 * resultado registrado, o placar e a Presidência, à parte. O placar fica
+	 * em duas colunas no celular, em quatro na tela larga e numa só com a letra
+	 * grande; o número vem em cima do nome, em algarismos da mesma largura, e
+	 * tudo em tinta.
+	 */
+	.votacao {
+		max-width: 39rem;
+		margin-top: 1.75rem;
+	}
+
+	.votacao > h3 {
+		margin-bottom: 0.6rem;
+	}
+
+	.votacao > dl {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1rem 1.5rem;
+		padding: 1rem 0;
+		border-block: 2px solid var(--tinta);
+	}
+
+	.votacao .resultado,
+	.votacao .presidencia {
+		display: flex;
+		flex-wrap: wrap;
+		grid-column: 1 / -1;
+		align-items: baseline;
+		gap: 0.2rem 0.75rem;
+	}
+
+	.votacao dt {
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		font-weight: 650;
+		line-height: 1.3;
+		letter-spacing: calc(0.08em * var(--espacado));
+		text-transform: var(--caixa-alta);
+		color: var(--tinta-suave);
+	}
+
+	.votacao .resultado dd {
+		font-family: var(--font-sans);
+		font-size: 1.125rem;
+		font-weight: 800;
+		line-height: 1.25;
+	}
+
+	.votacao .contagem {
+		display: flex;
+		flex-direction: column-reverse;
+		justify-content: flex-end;
+		gap: 0.3rem;
+	}
+
+	.votacao .contagem dd {
+		font-family: var(--font-sans);
+		font-size: clamp(2.5rem, 2rem + 2vw, 3.25rem);
+		font-stretch: 62%;
+		font-weight: 900;
+		line-height: 0.9;
+		font-variant-numeric: lining-nums tabular-nums;
+	}
+
+	.votacao .presidencia dd,
+	.sem-placar {
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.5;
+	}
+
+	.sem-placar {
+		padding: 1rem 0;
+		border-bottom: 2px solid var(--tinta);
+	}
+
+	@media (width >= 40rem) {
+		.votacao > dl {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
+	}
+
+	@media (width < 20rem) {
+		.votacao > dl {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+
+	/*
+	 * As fontes de cada item, na lista numerada das fontes do artigo: o nome do
+	 * link, o site e o dia da coleta; embaixo, a outra coleta da mesma página e
+	 * o trecho de cada uma, entre aspas, com um fio fino de tinta do lado.
+	 */
+	.fontes-do-item {
+		max-width: 39rem;
+		margin-top: 1.75rem;
+	}
+
+	.fontes-do-item > h3 {
+		margin-bottom: 0.75rem;
+	}
+
+	.fontes-do-item strong {
+		font-weight: 700;
+	}
+
+	.outra-coleta {
+		margin-top: 0.6rem;
+	}
+
+	.outra-coleta > p {
+		font-size: 0.875rem;
+		color: var(--tinta-suave);
+	}
+
+	.trecho-da-fonte {
+		margin-top: 0.6rem;
+		padding-left: 0.9rem;
+		border-left: 1px solid var(--tinta);
+	}
+
+	.lista-de-fontes .trecho-da-fonte > p {
+		font-size: 0.9375rem;
+		line-height: 1.5;
+	}
+
+	.na-trilha {
+		margin-top: 1.5rem;
+	}
+
+	/* O fim da folha: a lista das edições e a inscrição, depois de um fio grosso. */
+	.fim-da-edicao {
+		margin-top: clamp(2.5rem, 6vw, 4rem);
+		padding-top: 1.5rem;
+		border-top: 6px solid var(--tinta);
+	}
+}

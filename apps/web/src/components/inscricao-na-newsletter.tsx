@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { azulejoGrande } from "@/lib/azulejos";
 import { classes } from "@/lib/classes";
 import { plural } from "@/lib/formatar";
@@ -91,8 +91,18 @@ function mensagemDoEnvio(resultado: ResultadoDaInscricao): Mensagem {
  * pendentes). Enquanto o pedido espera, o botão fica com o desenho do desligado,
  * sem perder o foco (o aria-disabled, e não o disabled), e o campo fica só de
  * leitura.
+ *
+ * Depois da nota, vem o que a página manda: na inicial, o link das edições. A
+ * folha não fala com o roteador, e os testes dela a montam sozinha.
  */
-export function InscricaoNaNewsletter({ className }: { className?: string }) {
+export function InscricaoNaNewsletter({
+	className,
+	children,
+}: {
+	className?: string;
+	/** O que vem depois da nota, no fim do texto da folha. */
+	children?: ReactNode;
+}) {
 	const [email, setEmail] = useState("");
 	const [mensagem, setMensagem] = useState<Mensagem>();
 	const [esperando, setEsperando] = useState(false);
@@ -231,6 +241,7 @@ export function InscricaoNaNewsletter({ className }: { className?: string }) {
 					O e-mail serve só para mandar a newsletter. Para sair, use o link no
 					fim de cada edição.
 				</p>
+				{children}
 			</div>
 			<span aria-hidden="true" className="chamada-azulejos">
 				{Array.from({ length: 6 }, (_, posicao) => (

@@ -18,9 +18,9 @@ const FRASE = "um passo de cada vez.";
  * A página inicial: o cartaz, com o título gigante, o painel de azulejos, o que
  * é o Mandatômetro e para quem ele é, e o botão que começa ou continua a trilha;
  * depois, o caminho de um projeto de lei, passo a passo, e a folha da inscrição
- * na newsletter. A partir do lg, o painel fica à direita, de cima a baixo; antes
- * disso, é uma faixa de duas fileiras no alto. Abaixo do md, o "para quem" vem
- * depois do botão (`ParaQuem`).
+ * na newsletter, com o link das edições. A partir do lg, o painel fica à
+ * direita, de cima a baixo; antes disso, é uma faixa de duas fileiras no alto.
+ * Abaixo do md, o "para quem" vem depois do botão (`ParaQuem`).
  */
 export function PaginaInicial({
 	pagina,
@@ -119,7 +119,16 @@ export function PaginaInicial({
 				</div>
 			</section>
 			{caminho && <InfograficoEmLinha caminho={caminho} trilha={trilha} />}
-			{newsletter && <InscricaoNaNewsletter className="revelar" />}
+			{newsletter && (
+				<InscricaoNaNewsletter className="revelar">
+					{/* As edições aparecem onde a folha aparece: onde o site tem a API. */}
+					<p>
+						<Link to="/edicoes" className="acao-de-texto">
+							<span>Ler as edições</span>
+						</Link>
+					</p>
+				</InscricaoNaNewsletter>
+			)}
 		</>
 	);
 }
