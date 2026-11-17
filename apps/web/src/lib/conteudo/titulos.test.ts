@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
 	type EstiloDeTitulo,
 	LARGURAS_DAS_LETRAS,
-	PARES_MAIS_LARGOS,
 } from "./larguras-das-letras";
 import { trilhas } from "./paginas.server";
+import { FOLGA, largura, palavras } from "./regua";
 
 // Com a letra do navegador grande, cada título com teto (o letra-com-teto do
 // index.css) diminui até a palavra mais larga dele caber na tela do celular: o
@@ -24,36 +24,8 @@ const passoAPasso = codigo("components/infografico-em-linha.tsx");
 const outrosArtigos = codigo("components/outros-artigos.tsx");
 const css = codigo("index.css");
 
-/**
- * A folga do teto: a palavra mais larga, mais 0,5%, cabe no --palavra. É a folga
- * do nome do site (nome-do-site.ts), para o arredondamento do navegador não partir
- * a palavra.
- */
-const FOLGA = 1.005;
-
-/**
- * A largura de uma palavra, em em, pela soma das letras, mais o que cada par de letras
- * vizinhas passa da soma das duas no navegador (o kerning que afasta, como em "4–").
- * Os títulos vão em maiúsculas na tela (o text-transform do CSS), e a régua mede a
- * palavra como ela aparece.
- */
-function largura(palavra: string, estilo: EstiloDeTitulo): number {
-	const letras: Record<string, number> = LARGURAS_DAS_LETRAS[estilo];
-	const pares: Record<string, number> = PARES_MAIS_LARGOS[estilo];
-	const maisLarga = Math.max(...Object.values(letras));
-	let soma = 0;
-	let anterior = "";
-	for (const letra of palavra.normalize("NFC").toLocaleUpperCase("pt-BR")) {
-		soma += (letras[letra] ?? maisLarga) + (pares[anterior + letra] ?? 0);
-		anterior = letra;
-	}
-	return soma;
-}
-
-/** As palavras de um título, como a linha quebra: no espaço e depois do hífen. */
-function palavras(titulo: string): string[] {
-	return titulo.match(/[^\s‐‑-]+[‐‑-]?/g) ?? [];
-}
+// A régua (largura, palavras e a FOLGA) mora em regua.ts, que também dá o teto dos
+// títulos que vêm da API, como os das edições.
 
 /**
  * O --palavra de um título, lido da primeira linha do código que tem as classes
