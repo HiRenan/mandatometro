@@ -379,6 +379,17 @@ describe("a página de sair", () => {
 		expect(document.activeElement).toBe(
 			screen.getByRole("link", { name: "Ir para o início" }),
 		);
+		// O título não muda mais, e continua guardando o lugar (DESIGN.md):
+		// tirar as reservas na resposta faria a frase e as ações subirem.
+		const titulo = screen.getByRole("heading", {
+			level: 1,
+			name: "Sair da newsletter",
+		});
+		expect(
+			[...titulo.querySelectorAll(":scope > [aria-hidden='true']")].map(
+				(reserva) => reserva.textContent,
+			),
+		).toEqual(["Sair da newsletter", "Você saiu da newsletter."]);
 	});
 
 	it.each([
@@ -443,67 +454,76 @@ describe("a página de sair", () => {
 });
 
 describe("o código de saída fica só no pedido", () => {
-	it("não vai para a URL, para o armazenamento do navegador, para os cookies nem para o console, nem quando a página sai da tela", async () => {
-		// Todos os métodos do console, e não só os do log.
-		const console_ = (Object.keys(console) as (keyof Console)[])
-			.filter((metodo) => typeof console[metodo] === "function")
-			.map((metodo) => vi.spyOn(console, metodo));
-		const janela = {
-			endereco: window.location.href,
-			estado: window.history.state,
-		};
-		// O código chega no endereço, pelo link do e-mail, e de lá não sai. O
-		// "antes" do roteador é esse endereço, e não o que ele mostra depois de
-		// montar: o que a página gravasse ao abrir já estaria lá.
-		const chegada = `/newsletter/sair?codigo=${CODIGO}`;
-		const router = await mostrar();
+	it.each([
+		["Inscrever-se de novo", "/#newsletter"],
+		["Ir para o início", "/"],
+	])(
+		"não vai para a URL, para o armazenamento do navegador, para os cookies nem para o console, nem quando a página sai da tela pelo “%s”",
+		async (link, destino) => {
+			// Todos os métodos do console, e não só os do log.
+			const console_ = (Object.keys(console) as (keyof Console)[])
+				.filter((metodo) => typeof console[metodo] === "function")
+				.map((metodo) => vi.spyOn(console, metodo));
+			const janela = {
+				endereco: window.location.href,
+				estado: window.history.state,
+			};
+			// O código chega no endereço, pelo link do e-mail, e de lá não sai. O
+			// "antes" do roteador é esse endereço, e não o que ele mostra depois de
+			// montar: o que a página gravasse ao abrir já estaria lá.
+			const chegada = `/newsletter/sair?codigo=${CODIGO}`;
+			const router = await mostrar();
 
-		// Uma saída sem resposta e outra que dá certo, como a pessoa faria.
-		sair.mockRejectedValueOnce(new TypeError("Failed to fetch"));
-		await confirmar();
-		sair.mockResolvedValueOnce({ tipo: "saiu" });
-		await confirmar();
+			// Uma saída sem resposta e outra que dá certo, como a pessoa faria.
+			sair.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+			await confirmar();
+			sair.mockResolvedValueOnce({ tipo: "saiu" });
+			await confirmar();
 
-		expect(sair.mock.calls).toEqual([[CODIGO], [CODIGO]]);
-		expect(naTela(SAIU)).toBeTruthy();
-		// O roteador dos testes é de memória: o endereço e o estado dele não
-		// chegam à janela, e cada um se confere à parte. Ele continua na entrada
-		// da chegada, sem parâmetro, trecho ou estado novo com o código.
-		expect(router.history.location.href).toBe(chegada);
-		expect(router.history.length).toBe(1);
-		expect(JSON.stringify(router.history.location.state)).not.toContain(CODIGO);
-
-		// A pessoa sai pelo "Inscrever-se de novo", com um clique simples, e
-		// depois o site inteiro sai da tela: o que a página gravasse ao sair
-		// também conta. O link leva à inscrição sem o código.
-		await act(async () => {
-			fireEvent.click(
-				screen.getByRole("link", { name: "Inscrever-se de novo" }),
-				{ detail: 1 },
+			expect(sair.mock.calls).toEqual([[CODIGO], [CODIGO]]);
+			expect(naTela(SAIU)).toBeTruthy();
+			// O roteador dos testes é de memória: o endereço e o estado dele não
+			// chegam à janela, e cada um se confere à parte. Ele continua na entrada
+			// da chegada, sem parâmetro, trecho ou estado novo com o código.
+			expect(router.history.location.href).toBe(chegada);
+			expect(router.history.length).toBe(1);
+			expect(JSON.stringify(router.history.location.state)).not.toContain(
+				CODIGO,
 			);
-		});
-		await screen.findByRole("heading", { level: 1, name: "Início" });
-		expect(router.history.location.href).toBe("/#newsletter");
-		expect(JSON.stringify(router.history.location.state)).not.toContain(CODIGO);
-		cleanup();
 
-		// Com a página já fora da tela: a janela, o armazenamento, os cookies e
-		// o console.
-		expect(window.location.href).toBe(janela.endereco);
-		expect(window.history.state).toEqual(janela.estado);
-		expect(
-			`${window.location.href} ${JSON.stringify(window.history.state)}`,
-		).not.toContain(CODIGO);
-		expect(localStorage.length).toBe(0);
-		expect(sessionStorage.length).toBe(0);
-		expect(document.cookie).toBe("");
-		// O texto que o console escreveria com cada chamada.
-		for (const espiao of console_) {
-			for (const chamada of espiao.mock.calls) {
-				expect(format(...chamada)).not.toContain(CODIGO);
+			// A pessoa sai por um dos dois links, com um clique simples, e depois o
+			// site inteiro sai da tela: o que a página gravasse ao sair também conta.
+			// Os dois links levam à página inicial sem o código.
+			await act(async () => {
+				fireEvent.click(screen.getByRole("link", { name: link }), {
+					detail: 1,
+				});
+			});
+			await screen.findByRole("heading", { level: 1, name: "Início" });
+			expect(router.history.location.href).toBe(destino);
+			expect(JSON.stringify(router.history.location.state)).not.toContain(
+				CODIGO,
+			);
+			cleanup();
+
+			// Com a página já fora da tela: a janela, o armazenamento, os cookies e
+			// o console.
+			expect(window.location.href).toBe(janela.endereco);
+			expect(window.history.state).toEqual(janela.estado);
+			expect(
+				`${window.location.href} ${JSON.stringify(window.history.state)}`,
+			).not.toContain(CODIGO);
+			expect(localStorage.length).toBe(0);
+			expect(sessionStorage.length).toBe(0);
+			expect(document.cookie).toBe("");
+			// O texto que o console escreveria com cada chamada.
+			for (const espiao of console_) {
+				for (const chamada of espiao.mock.calls) {
+					expect(format(...chamada)).not.toContain(CODIGO);
+				}
 			}
-		}
-	});
+		},
+	);
 });
 
 describe("a rota da página de sair", () => {
