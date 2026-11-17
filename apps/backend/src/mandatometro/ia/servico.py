@@ -29,6 +29,13 @@ from mandatometro.ia.selecao import ItemBase, selecionar
 
 AbrirSessao = Callable[[], Session]
 
+# O Windows-1252 leva bytes de continuação a caracteres fora de U+0080–U+00BF.
+_CONTINUACOES_WINDOWS_1252 = bytes(range(0x80, 0xA0)).decode("cp1252", errors="ignore")
+# Limite aceito: também recusa palavra terminada em Ã/Â junto desses caracteres (AMANHÃ…).
+_ACENTO_QUEBRADO = re.compile(
+    rf"[ÃÂ][\u0080-\u00bf{re.escape(_CONTINUACOES_WINDOWS_1252)}]|â€|\ufffd"
+)
+
 
 class ErroEdicao(Exception):
     """Mensagem editorial segura, sem texto de fonte ou exceção de terceiros."""
@@ -376,7 +383,7 @@ def _numeros_permitidos(base: ItemBase, edicao: Edicao) -> set[str]:
 
 
 def _tem_acento_quebrado(texto: str) -> bool:
-    if "\ufffd" in texto or re.search(r"[ÃÂ][\u0080-\u00bf]", texto):
+    if _ACENTO_QUEBRADO.search(texto):
         return True
     for indice, caractere in enumerate(texto):
         if caractere != "?":

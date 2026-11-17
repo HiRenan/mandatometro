@@ -62,6 +62,15 @@ def test_arquivo_invalido_nao_repete_conteudo(monkeypatch, tmp_path, capsys):
 
 
 @pytest.mark.parametrize(
+    ("quebrado", "corrigido"),
+    [
+        ("A gest?o fictícia organiza o serviço.", "A gestão fictícia organiza o serviço."),
+        ("Ã‰ regra fictícia do serviço.", "É regra fictícia do serviço."),
+        ("Congresso â€” resumo fictício.", "Congresso — resumo fictício."),
+    ],
+    ids=["interrogacao", "maiuscula", "pontuacao"],
+)
+@pytest.mark.parametrize(
     ("campo", "prefixo", "nome_campo"),
     [
         ("edicao", "Edição", "título"),
@@ -70,7 +79,7 @@ def test_arquivo_invalido_nao_repete_conteudo(monkeypatch, tmp_path, capsys):
     ],
 )
 def test_revisar_recusa_acento_quebrado_sem_alterar_banco(
-    monkeypatch, abrir, dados, tmp_path, capsys, campo, prefixo, nome_campo
+    monkeypatch, abrir, dados, tmp_path, capsys, campo, prefixo, nome_campo, quebrado, corrigido
 ):
     dados(10)
     dados(20)
@@ -84,7 +93,7 @@ def test_revisar_recusa_acento_quebrado_sem_alterar_banco(
         alvo, chave = arquivo["itens"][1], "titulo"
     else:
         alvo, chave = arquivo["itens"][1]["explicacao"], 1
-    alvo[chave] = "A gest?o fictícia organiza o serviço."
+    alvo[chave] = quebrado
     caminho = tmp_path / "revisao.json"
     caminho.write_text(json.dumps(arquivo, ensure_ascii=False), encoding="utf-8")
 
@@ -99,7 +108,6 @@ def test_revisar_recusa_acento_quebrado_sem_alterar_banco(
     }
     assert exportar(abrir, edicao_id) == antes
 
-    corrigido = "A gestão fictícia organiza o serviço."
     alvo[chave] = corrigido
     caminho.write_text(json.dumps(arquivo, ensure_ascii=False), encoding="utf-8")
     assert main(["edicao", "revisar", str(edicao_id), "--arquivo", str(caminho)]) == 0

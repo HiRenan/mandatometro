@@ -28,6 +28,10 @@ from mandatometro.ia.servico import _tem_acento_quebrado
         "Ã\u00bf",
         "Â\u0080",
         "Â\u00bf",
+        "NÃƒO",
+        "Ã‰ regra do projeto.",
+        "A EXPLICAÃ‡ÃƒO ORGANIZA A IDEIA.",
+        "Congresso â€” resumo fictício.",
     ],
 )
 def test_detecta_acento_quebrado(texto):
@@ -50,6 +54,9 @@ def test_detecta_acento_quebrado(texto):
         "NÃO",
         "SÃO",
         "ÂNGULO",
+        "É regra do projeto.",
+        "A EXPLICAÇÃO ORGANIZA A IDEIA.",
+        "Congresso — resumo fictício.",
         "Texto fictício com ação, época, órgão e ângulo.",
         "Ã",
         "Â",
@@ -60,3 +67,17 @@ def test_detecta_acento_quebrado(texto):
 )
 def test_aceita_pergunta_e_acentos_validos(texto):
     assert not _tem_acento_quebrado(texto)
+
+
+@pytest.mark.parametrize("caractere", "àáâãçéêíóôõúüÀÁÂÃÇÉÊÍÓÔÕÚÜ—–“”‘’…•")
+def test_acentos_e_pontuacao_lidos_como_windows_1252(caractere):
+    original = f"Um exemplo com x{caractere}x."
+    # O .NET preserva o ponto de código dos cinco bytes indefinidos no Windows-1252.
+    indefinidos = {0x81, 0x8D, 0x8F, 0x90, 0x9D}
+    quebrado = "".join(
+        chr(byte) if byte in indefinidos else bytes([byte]).decode("cp1252")
+        for byte in original.encode("utf-8")
+    )
+
+    assert not _tem_acento_quebrado(original)
+    assert _tem_acento_quebrado(quebrado)
