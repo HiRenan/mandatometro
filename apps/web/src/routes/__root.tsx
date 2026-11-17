@@ -97,8 +97,10 @@ function Documento({ children }: { children: ReactNode }) {
 			<body>
 				{/* O main estica: numa página curta, o rodapé fica no fim da tela. A
 				    coluna tem a largura da tela: com a letra grande, uma palavra
-				    comprida não alarga a página. */}
-				<div className="grid min-h-svh grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr_auto]">
+				    comprida não alarga a página. A moldura é a caixa do teto dos
+				    títulos (o caixa-do-teto, no index.css): ela mede a página sem a
+				    barra de rolagem, que o 100vw conta. */}
+				<div className="caixa-do-teto grid min-h-svh grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr_auto]">
 					<Header comEdicoes={Boolean(ENV.API_URL)} />
 					<main id="conteudo" tabIndex={-1} className="focus:outline-none">
 						{children}

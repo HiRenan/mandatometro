@@ -234,17 +234,18 @@ describe("o recuo do título da trilha, em /trilhas", () => {
 		expect(computador).toEqual([]);
 	});
 
-	it("com a cabeça aberta, a partir de 1408 px, conta também a descrição e a barra de rolagem", () => {
-		// Até uns 1500 px, é o teto que dá o tamanho do título, e ele mede a página
-		// pelo 100vw, que conta a barra de rolagem: 15 px no Windows, menos que o
-		// 1rem a mais (16 px). Sem ele, CONSTITUIÇÃO passava 12 px da coluna.
+	it("com a cabeça aberta, a partir de 1408 px, conta também a descrição", () => {
+		// Até uns 1500 px, é o teto que dá o tamanho do título. Ele mede a página
+		// pela moldura (o 100cqi), que não conta a barra de rolagem: o recuo não
+		// leva mais o 1rem a mais que compensava a barra, quando a conta era pelo
+		// 100vw (a #139).
 		const recuo = valor(
 			corpo("(width >= 88rem)", ".trilha-da-lista .titulo-de-folha"),
 			"--recuo",
 		);
 
 		expect(recuo).toBe(
-			`calc(4 * var(--respiro) + 4px + ${azulejo + descricao}rem + 1rem)`,
+			`calc(4 * var(--respiro) + 4px + ${azulejo + descricao}rem)`,
 		);
 	});
 

@@ -116,21 +116,30 @@
 	 * caixa do título até as margens da página. Não é vw puro: até a tela acabar, a
 	 * letra segue a configuração do navegador. O titulos.test.ts mede as palavras dos
 	 * títulos do conteúdo contra cada --palavra.
+	 *
+	 * A largura da página é a da caixa do teto (o 100cqi): a moldura do documento,
+	 * no __root.tsx, em volta do cabeçalho, do main e do rodapé. Ela não conta a
+	 * barra de rolagem, que o 100vw conta (15 px no Edge e no Chrome do Windows):
+	 * numa janela de computador estreita, a palavra encostada no teto passava da
+	 * página e se partia (a #139). No celular e no Mac, a barra não toma espaço, e
+	 * as duas contas dão o mesmo. Os recuos que dependem da largura da página
+	 * também a medem pelo 100cqi.
 	 */
 	.letra-com-teto,
 	.texto h2 {
 		font-size: min(
 			var(--letra),
-			calc((100vw - 2 * var(--margem) - var(--recuo, 0px)) / var(--palavra))
+			calc((100cqi - 2 * var(--margem) - var(--recuo, 0px)) / var(--palavra))
 		);
 	}
 
 	/*
-	 * O teto dos títulos que vêm da API (o da edição, o de cada item e o da edição
-	 * na lista), medido pela caixa em volta deles: o caixa-do-teto é um contêiner,
-	 * e o 100cqi é a largura que o título tem de fato. Com o 100vw, a conta contava
-	 * a barra de rolagem do Windows (15 px) e não via a folha parar de crescer (a
-	 * edição, a partir de uns 1440 px): uma palavra comprida passava da caixa e se
+	 * A caixa do teto: um contêiner da largura, que o 100cqi dos títulos mede. É a
+	 * moldura da página e, nos títulos que vêm da API (o da edição, o de cada item e
+	 * o da edição na lista), a caixa em volta deles: a folha da edição e o texto da
+	 * folha na lista. Esses títulos medem só a caixa deles (o teto-pela-caixa), sem
+	 * margens nem recuo: pela página, a conta não via a folha parar de crescer (a
+	 * edição, a partir de uns 1440 px), e uma palavra comprida passava da caixa e se
 	 * partia. O min-width segura o max-width do título (10 em na edição, 14 em no
 	 * item) na largura da palavra mais larga, com a letra que o teto der.
 	 */
@@ -907,13 +916,14 @@
 	}
 
 	@media (width >= 62rem) {
-		/* O painel ocupa os 30% da direita, de cima a baixo, e o título para antes dele. */
+		/* O painel ocupa os 30% da direita, de cima a baixo, e o título para antes dele.
+		   Os 30% são da largura da página, que o teto mede pela moldura (o 100cqi). */
 		.cartaz {
 			padding-right: calc(30% + var(--margem));
 		}
 
 		.cartaz h1 {
-			--recuo: 30vw;
+			--recuo: 30cqi;
 		}
 
 		.mural {
@@ -1911,9 +1921,9 @@
 	 * telas bem largas, as duas colunas ficam iguais. O recuo do título conta a
 	 * coluna da direita com os 42rem dela: quando ela cresce, a do título já passou
 	 * de 42rem, e o título parou antes, no --letra (4,5rem × 5,66 = 25,5rem). Até
-	 * uns 1500 px, é o teto que dá o tamanho do título, e ele mede a página pelo
-	 * 100vw, que conta a barra de rolagem (15 px no Windows): o recuo leva 1rem a
-	 * mais por ela, e o título cabe na coluna com a barra à vista ou sem ela.
+	 * uns 1500 px, é o teto que dá o tamanho do título. Ele mede a página pela
+	 * moldura (o 100cqi), sem a barra de rolagem, e o título encosta na coluna com
+	 * a barra à vista ou sem ela.
 	 */
 	@media (width >= 88rem) {
 		.trilha-cabeca-texto {
@@ -1941,7 +1951,7 @@
 		}
 
 		.trilha-da-lista .titulo-de-folha {
-			--recuo: calc(4 * var(--respiro) + 4px + 49.5rem + 1rem);
+			--recuo: calc(4 * var(--respiro) + 4px + 49.5rem);
 		}
 	}
 
@@ -2471,7 +2481,7 @@
 		/* Lado a lado, cada faixa tem metade da folha: a outra metade entra no recuo. */
 		.outros-artigos.dois strong {
 			--recuo: calc(
-				(100vw - 2 * var(--margem) + var(--recuo-de-fora)) /
+				(100cqi - 2 * var(--margem) + var(--recuo-de-fora)) /
 				2 +
 				var(--respiro-da-folha)
 			);
