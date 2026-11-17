@@ -1,0 +1,62 @@
+import pytest
+
+from mandatometro.ia.servico import _tem_acento_quebrado
+
+
+@pytest.mark.parametrize(
+    "texto",
+    [
+        "gest?o",
+        "aç?o",
+        "a?érea",
+        "?poca",
+        "Uma ?poca fictícia.",
+        "Uma\n?poca fictícia.",
+        "Uma\t?poca fictícia.",
+        'A palavra "?poca".',
+        "Uma (?poca) fictícia.",
+        "ela ? a autora",
+        "? a autora",
+        "ela ?",
+        "?",
+        "ela\n?\na autora",
+        "ela\t?\ta autora",
+        "gest\ufffdo",
+        "gestÃ£o",
+        "espaçoÂ\u00a0fictício",
+        "Ã\u0080",
+        "Ã\u00bf",
+        "Â\u0080",
+        "Â\u00bf",
+    ],
+)
+def test_detecta_acento_quebrado(texto):
+    assert _tem_acento_quebrado(texto)
+
+
+@pytest.mark.parametrize(
+    "texto",
+    [
+        "Quem lê?",
+        "Quem lê? Outra frase.",
+        "Quem lê?\nOutra frase.",
+        "Quem lê?\tOutra frase.",
+        '"Quem lê?"',
+        "“Quem lê?”",
+        "(Quem lê?)",
+        "Quem lê?!",
+        "Quem lê?; outra frase.",
+        "Quem lê? — outra frase.",
+        "NÃO",
+        "SÃO",
+        "ÂNGULO",
+        "Texto fictício com ação, época, órgão e ângulo.",
+        "Ã",
+        "Â",
+        "Ã\u007f Â\u007f",
+        "ÃÀ ÂÀ",
+        "",
+    ],
+)
+def test_aceita_pergunta_e_acentos_validos(texto):
+    assert not _tem_acento_quebrado(texto)

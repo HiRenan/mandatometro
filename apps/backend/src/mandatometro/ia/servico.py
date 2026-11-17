@@ -375,6 +375,21 @@ def _numeros_permitidos(base: ItemBase, edicao: Edicao) -> set[str]:
     return _numeros(" ".join(dados))
 
 
+def _tem_acento_quebrado(texto: str) -> bool:
+    if "\ufffd" in texto or re.search(r"[ÃÂ][\u0080-\u00bf]", texto):
+        return True
+    for indice, caractere in enumerate(texto):
+        if caractere != "?":
+            continue
+        seguinte = texto[indice + 1 : indice + 2]
+        # Antes de uma letra, está no meio ou no começo de uma palavra.
+        if seguinte.isalpha():
+            return True
+        if (indice == 0 or texto[indice - 1].isspace()) and (not seguinte or seguinte.isspace()):
+            return True
+    return False
+
+
 def _texto_valido(texto: str, campo: str, prefixo: str, numeros: set[str]) -> None:
     if (
         not texto.strip()
@@ -383,6 +398,11 @@ def _texto_valido(texto: str, campo: str, prefixo: str, numeros: set[str]) -> No
     ):
         raise ErroEdicao(
             f"{prefixo}: confira o campo {campo}; use texto preenchido e sem controles."
+        )
+    if _tem_acento_quebrado(texto):
+        raise ErroEdicao(
+            f'{prefixo}: o campo {campo} tem acentos quebrados, como "?" ou "Ã£" '
+            "no lugar de uma letra. Confira os acentos e salve o arquivo em UTF-8."
         )
     if _numeros(texto) - numeros:
         raise ErroEdicao(f"{prefixo}: o campo {campo} tem número que não está nos fatos enviados.")

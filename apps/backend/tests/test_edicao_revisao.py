@@ -134,6 +134,24 @@ def test_exclusao_exige_motivo_e_nao_pode_esvaziar_edicao(abrir, dados):
         revisar(abrir, edicao_id, arquivo)
 
 
+def test_item_excluido_pode_ter_acentos_quebrados(abrir, dados):
+    dados(10)
+    dados(20)
+    edicao_id = gerar(abrir, INICIO, FIM)["edicao_id"]
+    arquivo = pronto(exportar(abrir, edicao_id))
+    excluido = arquivo["itens"][0]
+    excluido["excluir"] = True
+    excluido["motivo_exclusao"] = "Recorte editorial desta edição."
+    excluido["titulo"] = "A gest?o fictícia"
+    excluido["explicacao"] = ["?poca de gestÃ£o fictícia.", "O servi\ufffdo ? fictício."]
+
+    assert revisar(abrir, edicao_id, arquivo)["itens"] == 1
+    salvo = exportar(abrir, edicao_id)
+    assert len(salvo["itens"]) == 1
+    assert salvo["itens"][0]["titulo"] == arquivo["itens"][1]["titulo"]
+    assert salvo["itens"][0]["fatos"]["votacoes"] == arquivo["itens"][1]["fatos"]["votacoes"]
+
+
 def test_nome_na_saida_avisa_sem_bloquear_e_sem_repetir_nome(abrir, dados):
     dados(10, valores=("sim",))
     edicao_id = gerar(abrir, INICIO, FIM)["edicao_id"]
