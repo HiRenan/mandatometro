@@ -36,7 +36,7 @@ export function PaginaDaEdicao({ pagina }: { pagina: EdicaoDaPagina }) {
 
 function FolhaDaEdicao({ edicao }: { edicao: EdicaoPublica }) {
 	const semana = posicaoDaSemana(edicao.fim);
-	const itens = edicao.itens.toSorted((um, outro) => um.ordem - outro.ordem);
+	const itens = [...edicao.itens].sort((um, outro) => um.ordem - outro.ordem);
 	// O período, na faixa, já diz o ano: a publicação só leva o dela quando é outro.
 	const publicada = dataEmBrasilia(edicao.publicada_em);
 	const publicacao =
