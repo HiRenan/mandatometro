@@ -60,6 +60,11 @@ def _url(url: str, *, base: bool = False, previa: bool = False) -> str:
     return url.rstrip("/") if base else url
 
 
+def validar_enderecos_envio(app_base_url: str, api_url: str) -> None:
+    _url(app_base_url, base=True)
+    _url(api_url, base=True)
+
+
 def formatar_edicao(
     edicao: Edicao,
     *,

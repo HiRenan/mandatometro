@@ -18,6 +18,10 @@ TERMO_PESSOAL = re.compile(
     r"e(?:i|s|mos|is|m)?|ou)|hospitaliz\w*|cirurg(?:ias?|ic[oa]s?)|"
     r"(?:tratamentos?|atestados?|atendimentos?)\s+medic[oa]s?)\b"
 )
+# Só retêm para revisão: também aparecem em políticas públicas que devem continuar elegíveis.
+TERMO_ADICIONAL_DA_REDE = re.compile(
+    r"\b(?:hospital|hospitais|hospitalar(?:es)?|medic[oa]s?|operad[oa]s?)\b"
+)
 LICENCA_OU_AFASTAMENTO = re.compile(r"\b(?:licenc|afast)\w*\b")
 PALAVRA_PARLAMENTAR = re.compile(
     r"\b(?:parlamentar(?:es)?|deputad[oa]s?|senador(?:a|es|as)?|dep|sen|suplentes?|mandatos?)\b"

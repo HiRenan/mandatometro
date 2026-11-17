@@ -368,7 +368,7 @@ class ItemEdicao(Base):
 
 
 class Inscrito(Base):
-    """Quem assina a newsletter: só o e-mail, a data da inscrição e o código do link de sair.
+    """Quem assina: e-mail, data, código de saída e última edição aceita pelo provedor.
 
     - email: único e em minúsculas. A inscrição (#21) converte antes de gravar; o banco recusa
       maiúscula, para "Pessoa@" e "pessoa@" não virarem duas inscrições.
@@ -392,6 +392,8 @@ class Inscrito(Base):
         unique=True, server_default=text("gen_random_uuid()")
     )
     inscrito_em: Mapped[datetime] = mapped_column(server_default=func.now())
+    # Só avança pela ordem de publicação; não é histórico nem confirmação de entrega.
+    ultima_edicao_enviada_id: Mapped[int | None] = mapped_column(ForeignKey("edicao.id"))
 
 
 class LimiteInscricao(Base):

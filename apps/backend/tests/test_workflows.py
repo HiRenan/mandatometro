@@ -40,7 +40,11 @@ def avaliar(expressao, evento, branch, **variaveis):
             "github": SimpleNamespace(
                 event_name=evento, ref=f"refs/heads/{branch}", sha="commit-do-disparo"
             ),
-            "vars": SimpleNamespace(COLETAS_ATIVAS=variaveis.get("COLETAS_ATIVAS", "")),
+            "vars": SimpleNamespace(
+                COLETAS_ATIVAS=variaveis.get("COLETAS_ATIVAS", ""),
+                ENVIOS_ATIVOS=variaveis.get("ENVIOS_ATIVOS", ""),
+            ),
+            "inputs": SimpleNamespace(simular=variaveis.get("simular", False)),
         },
     )
 
@@ -106,9 +110,61 @@ def test_push_de_migration_e_manual_usam_mesmo_banco_e_fila(branch, ambiente):
         assert passo["if"] == "${{ steps.banco.outputs.executar == 'true' }}"
 
 
-@pytest.mark.parametrize("nome", ["coleta.yml", "migrar.yml"])
+@pytest.mark.parametrize("nome", ["coleta.yml", "migrar.yml", "enviar-edicao.yml"])
 def test_fila_nao_cancela_migration_pendente_ao_chegar_coleta(nome):
     workflow = ler(nome)
     assert workflow["permissions"] == {"contents": "read"}
     assert workflow["concurrency"]["cancel-in-progress"] == "false"
     assert workflow["concurrency"]["queue"] == "max"
+
+
+@pytest.mark.parametrize(
+    "evento,branch,envios,coletas,esperado,ambiente",
+    [
+        ("schedule", "develop", "", "true", False, "producao"),
+        ("schedule", "develop", "false", "true", False, "producao"),
+        ("schedule", "develop", "true", "false", True, "producao"),
+        ("workflow_dispatch", "main", "", "", True, "producao"),
+        ("workflow_dispatch", "develop", "", "", True, "desenvolvimento"),
+        ("workflow_dispatch", "feat/teste", "true", "true", False, "desenvolvimento"),
+        ("pull_request", "main", "true", "true", False, "producao"),
+    ],
+)
+def test_envio_tem_chave_propria_e_destino_por_evento(
+    evento, branch, envios, coletas, esperado, ambiente
+):
+    workflow = ler("enviar-edicao.yml")
+    job = workflow["jobs"]["enviar"]
+    assert workflow["on"]["schedule"] == [{"cron": "37 13 * * 0"}]
+    assert (
+        avaliar(job["if"], evento, branch, ENVIOS_ATIVOS=envios, COLETAS_ATIVAS=coletas) == esperado
+    )
+    assert avaliar(job["environment"], evento, branch) == ambiente
+    assert avaliar(workflow["concurrency"]["group"], evento, branch) == f"banco-{ambiente}"
+    checkout = job["steps"][0]
+    assert avaliar(checkout["with"]["ref"], evento, branch) == (
+        "main" if evento == "schedule" else "commit-do-disparo"
+    )
+    assert job["env"]["DATABASE_URL"] == "${{ secrets.DATABASE_URL }}"
+    assert job["env"]["RESEND_API_KEY"] == "${{ secrets.RESEND_API_KEY }}"
+    assert job["steps"][-1]["run"] == "uv run --no-sync python scripts/tarefas.py enviar"
+
+
+def test_envio_manual_inicia_em_simulacao():
+    simular = ler("enviar-edicao.yml")["on"]["workflow_dispatch"]["inputs"]["simular"]
+    assert simular["type"] == "boolean"
+    assert simular["default"] == "true"
+
+
+@pytest.mark.parametrize(
+    "evento,simular,esperado",
+    [
+        ("workflow_dispatch", True, "true"),
+        ("workflow_dispatch", False, "false"),
+        ("schedule", False, "false"),
+        ("schedule", True, "false"),
+    ],
+)
+def test_envio_simula_so_no_manual_marcado(evento, simular, esperado):
+    expressao = ler("enviar-edicao.yml")["jobs"]["enviar"]["env"]["ENVIO_SIMULAR"]
+    assert avaliar(expressao, evento, "develop", simular=simular) == esperado

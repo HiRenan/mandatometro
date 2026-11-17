@@ -93,7 +93,7 @@ async def inscrever_newsletter(pedido: PedidoInscricao) -> ResultadoInscricao:
         conf.resend_from,
     )
     situacao = await enviar_ultima_edicao(
-        preparada, envio, app_base_url=conf.app_base_url, api_url=conf.api_url
+        preparada, envio, banco=engine(), app_base_url=conf.app_base_url, api_url=conf.api_url
     )
     return ResultadoInscricao(situacao=situacao)
 

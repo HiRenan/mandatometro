@@ -351,7 +351,13 @@ def test_apagar_a_edicao_apaga_os_itens(sessao):
 
 def test_o_inscrito_guarda_so_o_minimo():
     # A inscrição pede só o e-mail (AGENTS.md). Coluna nova aqui é dado pessoal novo: decida antes.
-    assert set(Inscrito.__table__.columns.keys()) == {"id", "email", "codigo_saida", "inscrito_em"}
+    assert set(Inscrito.__table__.columns.keys()) == {
+        "id",
+        "email",
+        "codigo_saida",
+        "inscrito_em",
+        "ultima_edicao_enviada_id",
+    }
 
 
 def test_o_email_nao_se_repete(sessao):

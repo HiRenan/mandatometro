@@ -51,7 +51,7 @@ O banco guarda o que a coleta lê da Câmara e do Senado, o que a newsletter usa
 - **Fonte em tudo:** cada dado coletado e cada item da edição aponta para uma `fonte`, com o endereço e a data da coleta. Sem fonte, o banco não grava.
 - **O partido fica no voto,** porque muda dentro do mandato. Os totais das nominais se contam pelos votos. Nas secretas do Senado, a coleta guarda matéria, votação e resultado, sem votos individuais; o banco não guarda os totais nem a modalidade. Ausência de votos no banco não significa zero votos na sessão nem identifica, sozinha, uma votação secreta.
 - **Ausência sem motivo:** toda ausência reconhecida do Senado (`AP`, `LS`, `MIS`, `NCom`, `LAP` e `LP`, em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, para a licença saúde ficar igual às outras. O voto só guarda os códigos de voto e de presença da lista `CODIGOS_GRAVADOS`, e o banco recusa os demais. Um código ainda não classificado, como `NA`, entra como `outro`, sem o código, e o log não leva o código nem a pessoa: a coleta registra só a votação e quantos códigos desconhecidos vieram nela.
-- **Quem assina** deixa só o e-mail, a data e o código do link de sair. Sair apaga a linha.
+- **Quem assina** deixa o e-mail, a data e o código do link de sair; a última edição aceita permite retomar um envio. Sair apaga a linha e esse marcador.
 - **Medição do piloto:** cada conclusão guarda apenas código aleatório, versão do quiz, etapa e total de acertos. Não tem ligação com conta ou newsletter; não guarda turma, data nem hora da tentativa.
 
 ```mermaid
@@ -62,6 +62,7 @@ erDiagram
     votacao ||--o{ votacao_proposicao : "afeta"
     proposicao ||--o{ votacao_proposicao : "é afetada"
     edicao ||--o{ item_edicao : "tem"
+    edicao |o--o{ inscrito : "última aceita"
     fonte ||--o{ parlamentar : "comprova"
     fonte ||--o{ mandato : "comprova"
     fonte ||--o{ proposicao : "comprova"
@@ -150,6 +151,7 @@ erDiagram
         string email UK "em minúsculas"
         uuid codigo_saida UK "o link de sair"
         timestamptz inscrito_em
+        int ultima_edicao_enviada_id FK "opcional, sem histórico de entrega"
     }
     limite_inscricao {
         timestamptz janela PK "o minuto da cota global"
@@ -275,7 +277,7 @@ Prepare uma pasta **fora do repositório**, por exemplo `$HOME\Documents\mandato
    }
    ```
 
-4. Importe a revisão. O comando valida o arquivo e salva as confirmações. Se houver erro, corrija o campo indicado e repita; o rascunho anterior fica preservado. Se a revisão já foi salva, exporte um arquivo novo antes de fazer outros ajustes.
+4. Importe a revisão. O comando valida o arquivo e salva as confirmações. Se houver erro, corrija o campo indicado e repita; o rascunho anterior fica preservado. Depois de uma atualização, um arquivo exportado antes pode ser recusado: exporte novamente e refaça os ajustes. Se a revisão já foi salva, exporte um arquivo novo antes de fazer outros ajustes.
 
    ```powershell
    uv run mandatometro edicao revisar 1 --arquivo "$HOME\Documents\mandatometro-revisoes\edicao-2026-11-15.json"
@@ -297,7 +299,7 @@ A seleção agrupa votações pelas proposições ligadas na fonte, unindo os gr
 
 Licença, afastamento ou saúde, incluindo as flexões de internar, hospitalizar, adoecer, adoentar e convalescer, além de atendimento médico, excluem o ato quando ligados a parlamentar na mesma frase, com até seis palavras entre termo e sinal. Os adjetivos `interna` e `internas` ficam fora dos termos; `interna-se` continua reconhecido. Quebra de linha vale como espaço; ponto só encerra a frase após palavra de cinco letras ou mais, enquanto `!` e `?` sempre encerram. Requerimento sem essa ligação só sai por licença ou afastamento e sem outra proposição numerada, citada por sigla ou por extenso, inclusive no plural e com o nome da Casa. Artigo de regimento ou lei não é proposição citada; saúde sozinha não basta. O nome da Casa não conta como ligação. Por privacidade, saem também a regra geral de licença das próprias parlamentares e a emenda sobre licenciamento ambiental com nome de parlamentar próximo do termo. Essas exclusões mostram **só a quantidade**, sem ids.
 
-Se o item continua elegível e qualquer descrição ou ementa ligada tem termo dessa família, ele recebe redação pendente com motivo `termo_pessoal`, sem chamada ao redator. A ordem e o teto continuam iguais. O resumo conta esses itens em `itens_com_termo_pessoal`; o arquivo exportado e o `revisar` avisam item por item para conferir se há assunto pessoal e, se houver, usar `excluir: true`. A publicação exige a confirmação de cada item, inclusive os avisados.
+A rede de segurança usa a lista do filtro e uma lista adicional própria: hospital, hospitais, hospitalar, hospitalares; médico, médica, médicos, médicas; operado, operada, operados, operadas. Operação não entra. A lista mais larga pede conferência sem excluir políticas públicas sobre hospitais e programas de saúde. Se o item continua elegível e qualquer descrição ou ementa ligada tem termo de uma dessas listas, ele recebe redação pendente com motivo `termo_pessoal`, sem chamada ao redator. A ordem e o teto continuam iguais. O resumo conta esses itens em `itens_com_termo_pessoal`; o arquivo exportado e o `revisar` avisam item por item para conferir se há assunto pessoal e, se houver, usar `excluir: true`. A publicação exige a confirmação de cada item, inclusive os avisados.
 
 O item aponta para a fonte da votação mais recente do grupo (desempate pelo id externo numérico); sem página pública nessa fonte, usa a ficha de uma proposição ligada àquela votação. Sem nenhuma dessas páginas, a votação sai. Todas as referências usadas ficam preservadas, com data da coleta e trecho quando disponível. O placar conta Sim, Não, Abstenções e Obstruções por votação, com Presidência à parte; ausência e valores não classificados ficam de fora. Sem placar gravado, o texto informa a indisponibilidade, sem concluir que foi votação secreta ou simbólica nem mostrar zero. O resultado `outro` informa que o resultado não está classificado. Aprovação de requerimento, recurso ou destaque não significa aprovação da proposta.
 
@@ -359,7 +361,32 @@ O limite padrão é **30 tentativas por minuto fixo**. Para mudá-lo, defina `NE
 
 Para enviar de verdade, configure `RESEND_API_KEY`, `RESEND_FROM` e os endereços públicos **HTTPS** `APP_BASE_URL` (site) e `API_URL` (API). O remetente de exemplo só envia para o dono da conta. Troque-o por um endereço do domínio verificado `mandatometro.com.br`. Prepare uma edição `publicada`, com seus itens e fontes oficiais. Sem chave ou com configuração de envio inválida, a inscrição continua gravada e a API responde `envio_indisponivel`. Sem edição, responde `aguardando_edicao`.
 
-O envio faz até três tentativas dentro de **8 segundos no total**, com tempo limite e espera entre elas. Usa a mesma chave para cada par de inscrito e edição, sem e-mail nela. A [idempotência do Resend dura 24 horas](https://resend.com/docs/dashboard/emails/idempotency-keys). Depois desse prazo, outra inscrição pode reenviar a edição. Não há fila para tentar de novo automaticamente. A [cota do plano Free é de 100 e-mails por dia e 3.000 por mês](https://resend.com/pricing), compartilhada com os outros envios da conta. Considere essa cota no envio dominical da #39.
+O envio faz até três tentativas dentro de **8 segundos no total**, com tempo limite e espera entre elas. Inscrição e comando usam a mesma chave por par de inscrito/edição, sem e-mail nela, e gravam em `inscrito.ultima_edicao_enviada_id` a última edição aceita. Esse marcador só avança pela ordem de publicação: uma reinscrição não manda novamente a edição já aceita, mesmo depois de 24 horas. A [idempotência do Resend dura 24 horas](https://resend.com/docs/dashboard/emails/idempotency-keys): se o processo cair entre o aceite e o commit e só retomar depois desse prazo, pode haver duplicação; este é o limite aceito para o piloto. Não há histórico de entrega por pessoa nem recuperação automática de bounces.
+
+**Envio da edição publicada.** Em `apps/backend`, com `DATABASE_URL` autorizado e migrations aplicadas, confira primeiro sem enviar nem gravar:
+
+```powershell
+uv run mandatometro edicao enviar --simular
+uv run mandatometro edicao enviar 1 --simular
+```
+
+Para o envio real, depois de configurar o Resend e os dois endereços HTTPS, use `uv run mandatometro edicao enviar 1`; sem o número, ele fixa a última publicada. `--limite 30` tenta até 30 destinatários; `--publicada-desde 2026-11-16` só aceita edição publicada desde meia-noite dessa data em Brasília. Uma edição anterior não é reenviada a quem já recebeu uma mais recente. O conteúdo, o assunto e os links são iguais aos da inscrição.
+
+O JSON mostra `edicao_id`, `aceitos_nesta_execucao`, `ja_atualizados` no início e `faltam` ao final, além das contagens de falhas, sem identificar pessoas. A rodada fixa o maior id de inscrição inicial: quem entra depois recebe pela inscrição e, se ela falhar, entra numa próxima rodada. Quem sai antes da verificação do destinatário é pulado; uma mensagem já aceita ou em voo pode chegar. Banco indisponível na contagem final omite `faltam` e sinaliza `contagem_indisponivel`, sem inventar um total.
+
+Como os registros do Actions são públicos, `scripts/tarefas.py` suprime o logging durante o envio, inclusive o das bibliotecas HTTP e de banco. Só sai o resumo JSON; a configuração anterior do logging é restaurada ao terminar, também em falha.
+
+As saídas são **0** para conclusão, nada a enviar ou simulação válida; **1** para parcial, edição indisponível, cota ou falha operacional; **2** para argumentos/configuração inválidos. O envio é sequencial, com intervalo mínimo de um segundo entre destinatários. Chave inválida, inclusive mal formada, domínio inválido, campo obrigatório ausente ou cota esgotada param a rodada na primeira falha.
+
+Uma ou duas recusas individuais e o 409 concorrente deixam os demais seguir. **Três recusas seguidas param a rodada**, como sinal de erro na chave ou no remetente: confira `RESEND_API_KEY` e `RESEND_FROM` e rode de novo pelo mesmo ID. Um resultado que não seja recusa individual zera essa contagem. Os pendentes ficam para a retomada; recusas não são gravadas, e o Resend aplica sua lista de supressão. Aceitação não confirma entrega na caixa postal.
+
+A [cota Free](https://resend.com/pricing) é de **100 e-mails/dia e 3.000/mês**, compartilhada com as inscrições e outros envios da conta. Com 30 inscritos e nenhum consumo anterior, cabem os 30; com 150, cabem até 100 e os restantes exigem outra rodada. As inscrições concorrentes podem diminuir esse saldo. A [cota diária reinicia à meia-noite UTC](https://resend.com/docs/api-reference/rate-limit), às 21h de Brasília; repetir o mesmo ID depois da renovação envia somente os pendentes. A cota mensal não se resolve no dia seguinte. Garantir todos no domingo acima de 100/dia exige decisão do Renan sobre o plano.
+
+No Actions, **Enviar edição** roda domingo às 10h37 de Brasília, somente com `ENVIOS_ATIVOS=true`, usando `main` e produção. `COLETAS_ATIVAS` continua controlando só a coleta. Sem edição publicada desde a segunda-feira corrente, não envia a edição anterior. **Run workflow** permite escolher ID/limite e começa com a simulação marcada; desmarque-a somente para enviar. O manual também recupera uma publicação atrasada ou uma rodada parcial. Configuração e ativação estão em [docs/hospedagem.md](docs/hospedagem.md).
+
+**Leitura pública das edições.** `GET /edicoes?limite=20&deslocamento=0` retorna `{edicoes, total, limite, deslocamento}` (limite de 1 a 100), da publicação mais recente para a mais antiga, com desempate por id decrescente. Cada resumo traz `id`, `titulo`, `inicio`, `fim` e `publicada_em`. `GET /edicoes/{id}` acrescenta os itens na ordem editorial, com `ordem`, `titulo`, `texto` puro, `fatos`, `fontes` e `artigo`.
+
+Nos fatos públicos, cada votação traz data, resultado, placar ou nulo e suas fontes, sem ids internos. Cada fonte traz `url`, `coletado_em` e `trecho` ou nulo; o artigo traz `titulo` e `caminho` do catálogo ou é nulo. Placar nulo significa indisponível, não zero nem modalidade; presidência fica separada. O legado continua com fatos/artigo nulos. Rascunho e inexistente respondem o mesmo 404; dados inválidos, 422; banco ou fotografia inválida, 503, sem conteúdo parcial. A API não devolve a origem do texto, pendências de revisão nem estado de envio, e não recalcula a edição com dados novos.
 
 `POST /newsletter/saida/{codigo_saida}` apaga a inscrição e responde 200 vazio, inclusive para código desconhecido ou já removido. Não lê nem exige corpo. O programa de e-mail usa essa rota com os cabeçalhos da RFC 8058. GET e HEAD só redirecionam para `/newsletter/sair?codigo=...` no site. Essa página só manda o POST no clique em "Confirmar a saída", para os leitores automáticos de links não cancelarem a inscrição. Ela não tem loader e fica fora dos buscadores, do Referer e do cache.
 
@@ -385,7 +412,7 @@ Fora da Vercel, como no Docker, defina o `APP_BASE_URL` com o endereço do site 
 
 **Mudou a API?** `pnpm generate:client` grava o `openapi.json` e gera de novo o cliente TypeScript. Faça commit dos dois.
 
-**Migration nova,** em `apps/backend`, com o próximo número: `uv run alembic revision --autogenerate --rev-id 0007 -m "cria a tabela orientacao"`. O autogenerate não vê mudança de CHECK nem de valor padrão: um valor novo num conjunto, como o do voto, pede essa parte da migration escrita à mão, e o teste de migrations acusa o que faltar. `uv run alembic check` diz se algum modelo mudou sem migration. Mudou uma tabela? Atualize o diagrama em "Modelo de dados": um teste confere.
+**Migration nova,** em `apps/backend`, com o próximo número: `uv run alembic revision --autogenerate --rev-id 0008 -m "cria a tabela orientacao"`. O autogenerate não vê mudança de CHECK nem de valor padrão: um valor novo num conjunto, como o do voto, pede essa parte da migration escrita à mão, e o teste de migrations acusa o que faltar. `uv run alembic check` diz se algum modelo mudou sem migration. Mudou uma tabela? Atualize o diagrama em "Modelo de dados": um teste confere.
 
 ## Time
 

@@ -3,8 +3,8 @@
 import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { abrirSaida, health, inscreverNewsletter, type Options, registrarTentativaPiloto, sairDaNewsletter } from '../sdk.gen';
-import type { AbrirSaidaData, AbrirSaidaError, HealthData, HealthResponse, InscreverNewsletterData, InscreverNewsletterError, InscreverNewsletterResponse, RegistrarTentativaPilotoData, RegistrarTentativaPilotoError, RegistrarTentativaPilotoResponse, SairDaNewsletterData, SairDaNewsletterError } from '../types.gen';
+import { abrirSaida, health, inscreverNewsletter, listarEdicoes, obterEdicao, type Options, registrarTentativaPiloto, sairDaNewsletter } from '../sdk.gen';
+import type { AbrirSaidaData, AbrirSaidaError, HealthData, HealthResponse, InscreverNewsletterData, InscreverNewsletterError, InscreverNewsletterResponse, ListarEdicoesData, ListarEdicoesError, ListarEdicoesResponse, ObterEdicaoData, ObterEdicaoError, ObterEdicaoResponse, RegistrarTentativaPilotoData, RegistrarTentativaPilotoError, RegistrarTentativaPilotoResponse, SairDaNewsletterData, SairDaNewsletterError } from '../types.gen';
 
 /**
  * Receber a inscrição e enviar a última edição publicada
@@ -94,6 +94,42 @@ export const sairDaNewsletterMutation = (options?: Partial<Options<SairDaNewslet
     };
     return mutationOptions;
 };
+
+export const listarEdicoesQueryKey = (options?: Options<ListarEdicoesData>) => createQueryKey('listarEdicoes', options);
+
+/**
+ * Listar as edições publicadas
+ */
+export const listarEdicoesOptions = (options?: Options<ListarEdicoesData>) => queryOptions<ListarEdicoesResponse, ListarEdicoesError, ListarEdicoesResponse, ReturnType<typeof listarEdicoesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listarEdicoes({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listarEdicoesQueryKey(options)
+});
+
+export const obterEdicaoQueryKey = (options: Options<ObterEdicaoData>) => createQueryKey('obterEdicao', options);
+
+/**
+ * Ler uma edição publicada com fatos, fontes e artigos da trilha
+ */
+export const obterEdicaoOptions = (options: Options<ObterEdicaoData>) => queryOptions<ObterEdicaoResponse, ObterEdicaoError, ObterEdicaoResponse, ReturnType<typeof obterEdicaoQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await obterEdicao({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: obterEdicaoQueryKey(options)
+});
 
 /**
  * Receber a primeira conclusão de uma etapa do piloto
