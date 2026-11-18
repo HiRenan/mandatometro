@@ -1,6 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { type MouseEvent, useEffect, useRef, useState } from "react";
+import {
+	type KeyboardEvent,
+	type MouseEvent,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { sementeDe } from "@/lib/azulejos";
+import { classes } from "@/lib/classes";
 import {
 	codigoValido,
 	pedirSaida,
@@ -24,12 +31,25 @@ const EXPLICA =
 	"Com o botão, o seu e-mail sai da lista e as edições de domingo param de chegar. Antes dele, nada muda.";
 const FORA_DA_LISTA =
 	"O seu e-mail não está mais na lista, e as próximas edições não vão chegar.";
+const FORA_DO_AR =
+	"Não conseguimos confirmar a saída agora. Espere alguns minutos e tente de novo.";
+const SEM_CONEXAO =
+	"Não deu para confirmar a saída. Confira a internet e tente de novo.";
 const ERROS: Partial<Record<Estado, string>> = {
-	"fora-do-ar":
-		"Não conseguimos confirmar a saída agora. Espere alguns minutos e tente de novo.",
-	"sem-conexao":
-		"Não deu para confirmar a saída. Confira a internet e tente de novo.",
+	"fora-do-ar": FORA_DO_AR,
+	"sem-conexao": SEM_CONEXAO,
 };
+
+/**
+ * Meio segundo, o tempo do clique duplo do Windows. É a guarda do Enter no link
+ * que nasce no lugar do botão e o tempo mínimo da espera na tela quando o erro
+ * volta na nova tentativa.
+ */
+const MEIO_SEGUNDO = 500;
+
+function esperar(ms: number) {
+	return new Promise<void>((pronto) => setTimeout(pronto, ms));
+}
 
 /**
  * O segundo clique de um clique duplo e o terceiro de um clique triplo não
@@ -56,7 +76,9 @@ function semSegundoClique(evento: MouseEvent) {
  * (como na inscrição, components/inscricao-na-newsletter.tsx). Depois da saída,
  * o "Inscrever-se de novo" fica no lugar do botão, com o foco, e nada sai do
  * lugar: o título e o pé guardam a altura de antes. Com o código recusado, quem
- * fica no lugar do botão é o "Ir para o início".
+ * fica no lugar do botão é o "Ir para o início". O erro fica no lugar da frase
+ * de abertura, e a linha da espera tem o lugar dela: entre o clique e a
+ * resposta, o botão também não sai de baixo do ponteiro.
  */
 export function PaginaDeSair({
 	codigo,
@@ -72,6 +94,9 @@ export function PaginaDeSair({
 	const enviando = useRef(false);
 	const deNovo = useRef<HTMLAnchorElement>(null);
 	const inicio = useRef<HTMLAnchorElement>(null);
+	// O link que nasceu no lugar do botão, no primeiro meio segundo (semPressa e
+	// semEnterApressado).
+	const recemNascido = useRef(false);
 
 	const saiu = estado === "saiu";
 	const incompleto = estado === "link-invalido" || !codigoValido(codigo);
@@ -86,13 +111,47 @@ export function PaginaDeSair({
 
 	// O botão some depois da saída e do código recusado: o foco vai para o link
 	// que fica no lugar dele, o "Inscrever-se de novo" ou o "Ir para o início".
+	// O meio segundo da guarda do Enter conta daqui, da troca.
 	useEffect(() => {
-		if (estado === "saiu") {
-			deNovo.current?.focus();
-		} else if (estado === "link-invalido") {
-			inicio.current?.focus();
+		if (estado !== "saiu" && estado !== "link-invalido") {
+			return;
 		}
+		(estado === "saiu" ? deNovo : inicio).current?.focus();
+		recemNascido.current = true;
+		const relogio = setTimeout(() => {
+			recemNascido.current = false;
+		}, MEIO_SEGUNDO);
+		return () => clearTimeout(relogio);
 	}, [estado]);
+
+	/**
+	 * O link que nasce no lugar do botão também não segue o Enter no primeiro
+	 * meio segundo depois da troca: o segundo Enter de quem apertou duas vezes no
+	 * botão caía no link novo, que já tem o foco. No Chromium, o Enter clica no
+	 * link com o detail 0, e quem segura é o clique; no Firefox, o clique do
+	 * Enter vem com o detail 1, como o do mouse, e quem segura é o keydown
+	 * (semEnterApressado). O tempo conta da troca, e não do foco: quem sai do
+	 * link e volta depois segue com o Enter. A guarda só impede seguir o link.
+	 */
+	function semPressa(evento: MouseEvent) {
+		if (evento.detail > 1 || (evento.detail === 0 && recemNascido.current)) {
+			evento.preventDefault();
+		}
+	}
+
+	/**
+	 * A guarda do teclado no link que nasce no lugar do botão: o Enter no
+	 * primeiro meio segundo depois da troca (no Firefox, o clique do Enter vem
+	 * com o detail 1, e a guarda do clique, em semPressa, não o reconhece) e a
+	 * repetição do Enter segurado. No Firefox, cada repetição ativa o link (no
+	 * Chromium, não), e quem segurava o Enter no botão saía da página assim que
+	 * o meio segundo acabava. Depois do meio segundo, um Enter novo segue o link.
+	 */
+	function semEnterApressado(evento: KeyboardEvent) {
+		if (evento.key === "Enter" && (evento.repeat || recemNascido.current)) {
+			evento.preventDefault();
+		}
+	}
 
 	function confirmar() {
 		if (enviando.current || !codigoValido(codigo)) {
@@ -102,6 +161,11 @@ export function PaginaDeSair({
 	}
 
 	async function enviar(codigoDaSaida: string) {
+		// Na nova tentativa depois de um erro, o mesmo erro pode voltar na hora (a
+		// rede caída): a página voltava a ele no mesmo quadro, e nada mostrava que
+		// a tentativa aconteceu. A espera fica pelo menos meio segundo na tela,
+		// com a explicação, a linha da espera e o aviso, que lê o erro de novo.
+		const espera = ERROS[estado] ? esperar(MEIO_SEGUNDO) : undefined;
 		enviando.current = true;
 		setEstado("esperando");
 		// O aviso muda a cada envio: a mesma resposta, de novo, é lida de novo.
@@ -109,6 +173,9 @@ export function PaginaDeSair({
 		const resultado = await pedirSaida(codigoDaSaida).catch(
 			(): ResultadoDaSaida => ({ tipo: "sem-conexao" }),
 		);
+		if (espera && ERROS[resultado.tipo]) {
+			await espera;
+		}
 		enviando.current = false;
 		setEstado(resultado.tipo);
 		avisar(
@@ -132,7 +199,8 @@ export function PaginaDeSair({
 		<Link
 			ref={inicio}
 			to="/"
-			onClick={semSegundoClique}
+			onClick={recusado ? semPressa : semSegundoClique}
+			onKeyDown={recusado ? semEnterApressado : undefined}
 			className="acao-de-texto"
 		>
 			<span>Ir para o início</span>
@@ -173,11 +241,26 @@ export function PaginaDeSair({
 			    A grade da abertura fica num div em volta do parágrafo: o Chromium
 			    tira da árvore de acessibilidade um <p> em grade, e quem anda pelos
 			    parágrafos pulava a frase. As guardadas quebram as linhas como ela,
-			    com o text-pretty que o <p> já tem. */}
+			    com o text-pretty que o <p> já tem.
+			    O erro fica no lugar da frase, em negrito, e a abertura guarda os
+			    dois, com o desenho deles: embaixo das ações, com duas colunas, ele
+			    empurrava o botão até 65 px para cima, e o "Ir para o início" ficava
+			    embaixo do ponteiro. A explicação é sempre a mais alta das frases, e
+			    o erro entra sem mexer em nada. */}
 			<div className="cartaz-pe">
 				<div className="abertura grid text-pretty">
 					{telaPodeMudar && <Reservas frases={[EXPLICA, FORA_DA_LISTA]} />}
-					<p className="col-start-1 row-start-1">{abertura}</p>
+					{telaPodeMudar && (
+						<Reservas
+							frases={[FORA_DO_AR, SEM_CONEXAO]}
+							className="ainda-nao"
+						/>
+					)}
+					<p
+						className={classes("col-start-1 row-start-1", erro && "ainda-nao")}
+					>
+						{erro ?? abertura}
+					</p>
 				</div>
 				<div className="cartaz-acao">
 					<ul className="acoes-da-pagina">
@@ -216,7 +299,8 @@ export function PaginaDeSair({
 											ref={deNovo}
 											to="/"
 											hash="newsletter"
-											onClick={semSegundoClique}
+											onClick={semPressa}
+											onKeyDown={semEnterApressado}
 											className="acao-de-texto"
 										>
 											<span>Inscrever-se de novo</span>
@@ -245,10 +329,6 @@ export function PaginaDeSair({
 							<li>{irParaOInicio}</li>
 						)}
 					</ul>
-					{esperando && (
-						<p className="rotulo saida-confirmando">{CONFIRMANDO}</p>
-					)}
-					{erro && <p className="ainda-nao">{erro}</p>}
 					{comBotao && (
 						<noscript>
 							<p className="ainda-nao">
@@ -257,6 +337,18 @@ export function PaginaDeSair({
 								programa de e-mail.
 							</p>
 						</noscript>
+					)}
+					{/* A linha da espera tem o lugar guardado no fim das ações, desde o
+					    HTML do servidor, enquanto a tela pode mudar: ela não empurra
+					    nada quando aparece nem deixa buraco quando sai. Fica depois
+					    do noscript: sem o JavaScript, o vão é o fim do pé. */}
+					{telaPodeMudar && (
+						<div className="rotulo saida-confirmando grid">
+							<Reservas frases={[CONFIRMANDO]} />
+							{esperando && (
+								<p className="col-start-1 row-start-1">{CONFIRMANDO}</p>
+							)}
+						</div>
 					)}
 				</div>
 			</div>

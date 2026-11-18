@@ -1,3 +1,5 @@
+import { classes } from "@/lib/classes";
+
 /**
  * As frases que uma linha pode mostrar, uma sobre a outra e invisíveis: a linha
  * já tem o tamanho da maior desde o HTML do servidor, e nada sai do lugar
@@ -10,12 +12,22 @@
  * elemento em volta leva o text-pretty dos parágrafos, para as frases guardadas
  * quebrarem as linhas como a da vez.
  */
-export function Reservas({ frases }: { frases: readonly string[] }) {
+export function Reservas({
+	frases,
+	className,
+}: {
+	frases: readonly string[];
+	/**
+	 * O desenho das frases, quando ele não é o do lugar: na abertura da página de
+	 * sair, os erros guardados vão em negrito, como o erro à vista.
+	 */
+	className?: string;
+}) {
 	return frases.map((frase) => (
 		<span
 			key={frase}
 			aria-hidden="true"
-			className="invisible col-start-1 row-start-1"
+			className={classes("invisible col-start-1 row-start-1", className)}
 		>
 			{frase}
 		</span>
