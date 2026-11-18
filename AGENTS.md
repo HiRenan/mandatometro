@@ -73,6 +73,7 @@ O desenho inteiro está no [DESIGN.md](DESIGN.md). O que mais pega quem mexe num
 - **Fundo:** o papel tem o grão e o mapa da trilha, numa camada fixa atrás da página (o `body::before`, em `estilos/fundo.css`). Uma peça com fundo próprio cobre o mapa: deixe sem fundo o que fica direto no papel, e use `var(--papel) var(--grao)` no que precisa cobrir a página, como o pé do quiz e as faixas do anterior e do próximo. O mapa sobe um décimo da rolagem, num trecho fixo (`animation-range: 0 600vh`): assim, ele não salta quando a página muda de altura.
 - **Classes montadas:** junte os nomes com `classes()`, de `lib/classes.ts`. Num texto montado com `${}`, a ordenação de classes do Biome mexe nos espaços.
 - **Parágrafo sem grade:** um `<p>` com `display: grid` ou `flex` sai da árvore de acessibilidade do Chromium, e quem anda de parágrafo em parágrafo pula a frase (medido pelo CDP na #152). As frases guardadas (`Reservas`) ficam num elemento em volta do `<p>`, que é a frase da vez.
+- **O Enter num link:** no Chromium, o clique que ele dispara vem com o `detail` 0; no Firefox, com 1, como o do mouse, e cada repetição do Enter segurado clica de novo: uma guarda contra o segundo clique num link olha também o `keydown` (medido na #153).
 
 ## Fontes de dados
 
