@@ -376,7 +376,7 @@ O navegador só sabe o que a pessoa leu quando a página termina de carregar. O 
 - a linha do progresso, acima do botão, na página inicial e na trilha;
 - a linha do "Recomeçar a trilha", embaixo da descrição da trilha;
 - a etiqueta "Lido" ou "Continue daqui", que fica fora do fluxo, no respiro de cima de cada folha;
-- o aviso de lido, no fim do artigo (4.5rem), com o azulejo e as palavras lado a lado. Quando o aviso tem menos de 14.5rem de largura, como com a letra a 200% numa tela de 360 ou 390 px, as palavras descem para baixo do azulejo e passam do lugar guardado: o aviso cresce de 144 para 257 px, e as fontes descem 113 px. No momento do visto, o que desce está abaixo da tela. Um lugar desse tamanho deixaria 57 px vazios embaixo do aviso com a letra normal;
+- o aviso de lido, no fim do artigo (4.5rem), com o azulejo e as palavras lado a lado. Quando o aviso tem menos de 14.5rem de largura, como com a letra a 200% numa tela de 360 ou 390 px, as palavras descem para baixo do azulejo e passam do lugar guardado: o aviso cresce de 144 para 257 px, e as fontes descem 113 px. No momento do visto, o que desce está abaixo da tela, mas o azulejo, que ficava no meio do lugar guardado, sobe 16 px, para o alto do aviso. Um lugar desse tamanho deixaria 57 px vazios embaixo do aviso com a letra normal;
 - o passo a passo da página inicial, que a partir de 768 px tem sempre a altura do passo mais alto;
 - no quiz, a linha do "Recomeçar o quiz" (menos no depois do piloto, veja abaixo) e o lugar do botão de começar, na abertura, e a frase do andamento, no pé do palco, que guarda a altura da frase mais comprida. O mosaico da abertura vem sempre com cor: não muda quando o navegador descobre as respostas guardadas;
 - o lugar do botão de continuar, na trilha;
