@@ -1640,10 +1640,18 @@
 		rotate: 45deg;
 	}
 
+	/*
+	 * O título do passo é uma etiqueta: em maiúsculas espaçadas e, com a letra
+	 * grande, como escrito. Ele tem o teto (a #148): a letra de 1rem diminui até a
+	 * palavra mais comprida caber ao lado do azulejo e do "+", e o --palavra, no
+	 * infografico.tsx, tem um número para cada jeito. O recuo é o que fica na linha
+	 * do título: o azulejo, os dois vãos e o "+".
+	 */
 	.sanfona h3 {
+		--letra: 1rem;
+		--recuo: calc(var(--recuo-de-fora, 0px) + 2.5rem + 2 * 0.9rem + 1.25rem);
 		min-width: 0;
 		font-family: var(--font-sans);
-		font-size: 1rem;
 		font-weight: 750;
 		line-height: 1.15;
 		letter-spacing: calc(0.05em * var(--espacado));
@@ -1672,6 +1680,11 @@
 			display: none;
 		}
 
+		/* Sem o azulejo, a linha do título fica com um vão só e o "+". */
+		.sanfona h3 {
+			--recuo: calc(var(--recuo-de-fora, 0px) + 0.9rem + 1.25rem);
+		}
+
 		.sanfona-texto {
 			padding-left: 0;
 		}
@@ -1695,7 +1708,10 @@
 			padding-right: 1.5rem;
 		}
 
+		/* O caminho fica na coluna de 24 rem, depois do vão de 1,5 rem: o resto da
+		   página sai da largura do título de cada passo, no teto da letra. */
 		.pagina-da-trilha.com-caminho > .ao-lado {
+			--recuo-de-fora: calc(100cqi - var(--margem) - 22.5rem);
 			padding: clamp(1.5rem, 4vw, 3rem) var(--margem) 4rem 1.5rem;
 		}
 	}

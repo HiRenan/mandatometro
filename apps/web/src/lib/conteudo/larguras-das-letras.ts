@@ -6,7 +6,7 @@
  * Os títulos são escritos em maiúsculas pelo CSS (text-transform: uppercase), e a
  * tabela deles tem só as maiúsculas: a régua passa a palavra para maiúsculas antes de
  * somar. A exceção é o título do passo da sanfona com a letra grande, que fica como
- * escrito: a tabela dele tem também as minúsculas.
+ * escrito: a tabela dele tem também as minúsculas (o COMO_APARECE, abaixo).
  *
  * Medida no navegador do Orca (Chromium 150), com a fonte do site (Archivo Variable),
  * em 13/11/2026: cada letra sozinha num span com o estilo do título, a 200 px de letra,
@@ -467,6 +467,23 @@ export const LARGURAS_DAS_LETRAS = {
 } satisfies Record<string, Record<string, number>>;
 
 export type EstiloDeTitulo = keyof typeof LARGURAS_DAS_LETRAS;
+
+/**
+ * Como a tela mostra cada estilo, e como a tabela dele foi medida: em maiúsculas (o
+ * text-transform) ou como escrito, e o espaço entre as letras, em em, que já está na
+ * largura de cada letra. A régua passa a palavra para maiúsculas só nos estilos em
+ * maiúsculas. O titulos.test.ts confere os dois do título do passo da sanfona com a
+ * regra dele no index.css, de cada lado dos 22rem.
+ */
+export const COMO_APARECE = {
+	"titulo-condensado": { caixa: "alta", espaco: 0 },
+	"subtitulo-condensado": { caixa: "alta", espaco: 0 },
+	"titulo-da-sanfona": { caixa: "alta", espaco: 0.05 },
+	"titulo-da-sanfona-letra-grande": { caixa: "como-escrito", espaco: 0 },
+} satisfies Record<
+	EstiloDeTitulo,
+	{ caixa: "alta" | "como-escrito"; espaco: number }
+>;
 
 /**
  * Os pares de letras que o navegador deixa mais largos que a soma das duas: o kerning

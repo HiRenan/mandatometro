@@ -179,7 +179,10 @@ export function Infografico({
 									pecas={azulejoGrande(indice, indice % 5)}
 									className="pequeno"
 								/>
-								<h3 id={idDoPasso(passo.titulo)} className="scroll-mt-8">
+								<h3
+									id={idDoPasso(passo.titulo)}
+									className="letra-com-teto letra-grande:[--palavra:6.95] scroll-mt-8 [--palavra:9.33]"
+								>
 									{passo.titulo}
 								</h3>
 							</summary>
