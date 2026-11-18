@@ -492,10 +492,11 @@ export function Quiz({
 					</div>
 				</div>
 
-				{/* Na abertura, o título é gigante; nas outras telas, vira a etiqueta do
-				    alto (estilos/quiz.css). Com a letra grande, ele cresce até "TRILHA",
-				    a palavra mais larga dos títulos dos quizzes, encostar nas margens
-				    (o letra-com-teto do index.css). */}
+				{/* Na abertura, o título é gigante. Nas outras telas, ele sai da vista
+				    e fica para o leitor de tela, com o nome do palco (estilos/quiz.css),
+				    e quem vê lê o nome do quiz no pé. Com a letra grande, ele cresce até
+				    "TRILHA", a palavra mais larga dos títulos dos quizzes, encostar nas
+				    margens (o letra-com-teto do index.css). */}
 				<h1
 					id="quiz-titulo"
 					className="quiz-titulo titulo-condensado letra-com-teto [--palavra:2.74]"

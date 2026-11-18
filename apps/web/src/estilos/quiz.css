@@ -101,8 +101,11 @@
 	}
 
 	/*
-	 * O título da página. Na abertura, é a letra gigante do cartaz, no pé do palco;
-	 * nas outras telas, a etiqueta do alto.
+	 * O título da página. Na abertura, é a letra gigante do cartaz, no pé do palco.
+	 * Nas outras telas, ele sai da vista, e quem vê lê o nome do quiz no pé, com o
+	 * andamento: antes, ele virava uma etiqueta acima da contagem e do título do
+	 * fim (a #136). O h1 continua no HTML, e o leitor de tela fica com ele, o nome
+	 * do palco e a mesma ordem dos títulos.
 	 */
 	.quiz[data-fase="abertura"] .quiz-titulo {
 		--letra: clamp(4rem, 1.5rem + 11vw, 12.5rem);
@@ -112,13 +115,15 @@
 	}
 
 	.quiz:not([data-fase="abertura"]) .quiz-titulo {
-		font-size: 0.875rem;
-		font-stretch: 100%;
-		font-weight: 700;
-		line-height: 1.2;
-		letter-spacing: calc(0.1em * var(--espacado));
-		text-transform: var(--caixa-alta);
-		color: var(--tinta-suave);
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+		border: 0;
 	}
 
 	.quiz-palco {
@@ -920,37 +925,44 @@
 
 	@media (width < 62rem) {
 		/*
-		 * Nas perguntas, o mosaico se recolhe no canto, embaixo da migalha. As duas
-		 * etiquetas que ficam ao lado dele param antes, e a de cima guarda a altura
-		 * dele: nenhum texto passa por cima de um azulejo, com quantas fileiras o
-		 * mosaico tiver.
+		 * Nas perguntas, o mosaico se recolhe no canto, embaixo da migalha. A
+		 * contagem, ao lado dele, para antes, e o palco guarda a altura dele: o
+		 * enunciado começa embaixo, e nenhum texto passa por cima de um azulejo, com
+		 * quantas fileiras o mosaico tiver. A contagem fica onde ficava quando o
+		 * título, ainda etiqueta, guardava essa altura (a #136).
 		 */
 		.quiz:is([data-fase="pergunta"], [data-fase="resposta"]) .mosaico {
 			transform: scale(0.44);
 		}
 
-		.quiz:is([data-fase="pergunta"], [data-fase="resposta"])
-			:is(.quiz-titulo, .quiz-contagem) {
+		.quiz:is([data-fase="pergunta"], [data-fase="resposta"]) .quiz-contagem {
 			max-width: calc(100% - var(--canto) - 0.75rem);
 		}
 
-		.quiz:is([data-fase="pergunta"], [data-fase="resposta"]) .quiz-titulo {
-			min-height: calc(
-				var(--canto) /
-				var(--colunas, 3) *
-				var(--fileiras, 2) -
-				2rem
+		.quiz:is([data-fase="pergunta"], [data-fase="resposta"]) .quiz-palco {
+			padding-top: max(
+				1.25rem,
+				calc(var(--canto) / var(--colunas, 3) * var(--fileiras, 2) - 0.75rem)
 			);
 		}
 
-		/* Na abertura e no fim, o mosaico fica inteiro embaixo da migalha, e o
-		   título desce para baixo dele. */
-		.quiz:is([data-fase="abertura"], [data-fase="fim"]) .quiz-titulo {
+		/* Na abertura e no fim, o mosaico fica inteiro embaixo da migalha: na
+		   abertura, o título desce para baixo dele, e, no fim, o palco. */
+		.quiz[data-fase="abertura"] .quiz-titulo {
 			padding-top: calc(
 				var(--capa) /
 				var(--colunas, 3) *
 				var(--fileiras, 2) +
 				1rem
+			);
+		}
+
+		.quiz[data-fase="fim"] .quiz-palco {
+			padding-top: calc(
+				var(--capa) /
+				var(--colunas, 3) *
+				var(--fileiras, 2) +
+				2.25rem
 			);
 		}
 

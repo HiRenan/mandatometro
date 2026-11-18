@@ -108,3 +108,56 @@ describe("os quadradinhos do andamento", () => {
 		expect(estreitissima).toMatch(/grid-template-columns: repeat\(3, /);
 	});
 });
+
+// O título do palco ("Quiz da trilha", "Quiz final" ou "Antes da trilha"). Fora
+// da abertura, ele virava uma etiqueta pequena acima da contagem e do título do
+// fim, e etiqueta acima de título não entra no site (a #136). Ele continua no
+// HTML, com o nome do palco e a ordem dos títulos para o leitor de tela, mas sai
+// da vista: quem vê lê o nome do quiz no pé, com o andamento.
+describe("o título do palco fora da abertura", () => {
+	it("sai da vista, sem virar etiqueta", () => {
+		const fora = regra('.quiz:not([data-fase="abertura"]) .quiz-titulo');
+
+		for (const declaracao of [
+			"position: absolute;",
+			"width: 1px;",
+			"height: 1px;",
+			"overflow: hidden;",
+			"clip-path: inset(50%);",
+			"white-space: nowrap;",
+		]) {
+			expect(fora).toContain(declaracao);
+		}
+		expect(fora).not.toMatch(/font-size|text-transform|letter-spacing|color:/);
+	});
+
+	it("abaixo de 62rem, o palco guarda o lugar do mosaico, e o título só guarda lugar na abertura", () => {
+		// Sem os comentários, que também falam dos seletores.
+		const celular = bloco("@media (width < 62rem)").replace(
+			/\/\*[\s\S]*?\*\//g,
+			"",
+		);
+
+		// Na pergunta e na resposta, a altura do mosaico no canto: a contagem para
+		// antes dele, e o enunciado começa embaixo.
+		expect(celular).toMatch(
+			/\.quiz:is\(\[data-fase="pergunta"\], \[data-fase="resposta"\]\) \.quiz-palco \{\s*padding-top: [^;]*var\(--canto\)/,
+		);
+		expect(celular).toMatch(
+			/\.quiz:is\(\[data-fase="pergunta"\], \[data-fase="resposta"\]\) \.quiz-contagem \{\s*max-width: calc\(100% - var\(--canto\)/,
+		);
+		// No fim, a altura do mosaico inteiro.
+		expect(celular).toMatch(
+			/\.quiz\[data-fase="fim"\] \.quiz-palco \{\s*padding-top: [^;]*var\(--capa\)/,
+		);
+		// O título só guarda lugar onde fica à vista: na abertura, embaixo do
+		// mosaico inteiro.
+		const doTitulo = [
+			...celular.matchAll(/([^{}]*\.quiz-titulo[^{}]*)\{/g),
+		].map(([, seletor]) => seletor.trim());
+		expect(doTitulo).toEqual(['.quiz[data-fase="abertura"] .quiz-titulo']);
+		expect(celular).toMatch(
+			/\.quiz\[data-fase="abertura"\] \.quiz-titulo \{\s*padding-top: [^;]*var\(--capa\)/,
+		);
+	});
+});
