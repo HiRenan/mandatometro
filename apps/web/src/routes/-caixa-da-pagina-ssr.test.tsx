@@ -12,6 +12,7 @@ import {
 	createRequestHandler,
 	defaultRenderHandler,
 } from "@tanstack/react-router/ssr/server";
+import ts from "typescript";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NaoEncontrado } from "@/components/nao-encontrado";
 import { PaginaDeErro } from "@/components/pagina-de-erro";
@@ -413,19 +414,96 @@ const PAGINAS: Pagina[] = [
 	},
 ];
 
-/**
- * O id de uma rota, no texto do arquivo dela: o do createFileRoute("…"), em
- * que o gerador de rotas do TanStack escreve o id que dá à rota, ou o do
- * createLazyFileRoute, de um .lazy.tsx, que repete o da rota dele. A busca fica
- * presa ao = de quem recebe a rota, como no export const Route =
- * createFileRoute("…") que o gerador escreve: um comentário com outro
- * createFileRoute não engana a guarda, e as outras formas que o gerador aceita
- * (o Route com o tipo escrito e a rota com outro nome, exportada como Route)
- * contam. Um arquivo sem ele (o __root.tsx, um .functions.ts ou um teste sem o
- * "-") não é rota.
- */
-function idDaRota(texto: string) {
-	return texto.match(/=\s*create(?:Lazy)?FileRoute\(\s*(["'`])(.*?)\1/)?.[2];
+/** O gerador aceita tanto export const Route como export { Tela as Route }. */
+function inicializadorDaRota(modulo: ts.SourceFile) {
+	const nomesLocais = new Set<string>();
+	for (const declaracao of modulo.statements.filter(ts.isExportDeclaration)) {
+		const nomes = declaracao.exportClause;
+		if (
+			declaracao.moduleSpecifier ||
+			declaracao.isTypeOnly ||
+			!nomes ||
+			!ts.isNamedExports(nomes)
+		) {
+			continue;
+		}
+		for (const nome of nomes.elements) {
+			if (!nome.isTypeOnly && nome.name.text === "Route") {
+				nomesLocais.add((nome.propertyName ?? nome.name).text);
+			}
+		}
+	}
+	for (const declaracao of modulo.statements.filter(ts.isVariableStatement)) {
+		const exportada = declaracao.modifiers?.some(
+			(modificador) => modificador.kind === ts.SyntaxKind.ExportKeyword,
+		);
+		const rota = declaracao.declarationList.declarations.find(
+			({ name }) =>
+				ts.isIdentifier(name) &&
+				(nomesLocais.has(name.text) || (exportada && name.text === "Route")),
+		);
+		if (rota) return rota.initializer;
+	}
+}
+
+function declaraPagina(opcoes?: ts.Expression): boolean {
+	if (!opcoes) return false;
+	if (
+		ts.isParenthesizedExpression(opcoes) ||
+		ts.isAssertionExpression(opcoes) ||
+		ts.isSatisfiesExpression(opcoes) ||
+		ts.isNonNullExpression(opcoes)
+	) {
+		return declaraPagina(opcoes.expression);
+	}
+	return (
+		ts.isObjectLiteralExpression(opcoes) &&
+		opcoes.properties.some(({ name }) => {
+			if (!name) return false;
+			if (ts.isComputedPropertyName(name)) {
+				return (
+					ts.isStringLiteralLike(name.expression) &&
+					name.expression.text === "component"
+				);
+			}
+			return (
+				(ts.isIdentifier(name) || ts.isStringLiteral(name)) &&
+				name.text === "component"
+			);
+		})
+	);
+}
+
+/** O TanStack escreve o mesmo id na chamada da rota e na do arquivo lazy. */
+function lerRota(texto: string, arquivo = "rota.tsx") {
+	const chamada = inicializadorDaRota(
+		ts.createSourceFile(arquivo, texto, ts.ScriptTarget.Latest),
+	);
+	if (!chamada || !ts.isCallExpression(chamada)) return;
+	const fabrica = chamada.expression;
+	if (
+		!ts.isCallExpression(fabrica) ||
+		!ts.isIdentifier(fabrica.expression) ||
+		!["createFileRoute", "createLazyFileRoute"].includes(
+			fabrica.expression.text,
+		)
+	) {
+		return;
+	}
+	const [id] = fabrica.arguments;
+	if (id && ts.isStringLiteralLike(id)) {
+		return { id: id.text, comPagina: declaraPagina(chamada.arguments[0]) };
+	}
+}
+
+function paginasSemEndereco(
+	declaradas: { id: string; comPagina: boolean }[],
+	abertas: Set<string>,
+) {
+	const faltam = declaradas.filter(
+		({ id, comPagina }) => comPagina && !abertas.has(id),
+	);
+	return [...new Set(faltam.map(({ id }) => id))].sort();
 }
 
 /**
@@ -576,6 +654,7 @@ describe("a caixa da página", () => {
 	});
 
 	it("o id de uma rota é o do createFileRoute dela, que o gerador do TanStack escreve", () => {
+		const idDaRota = (texto: string) => lerRota(texto)?.id;
 		// O id não vem do nome do arquivo: o gerador põe o conta/route.tsx na
 		// /conta, o noticias.$id.tsx na /noticias/$id e o .lazy.tsx na rota dele.
 		expect(
@@ -610,6 +689,125 @@ describe("a caixa da página", () => {
 		expect(
 			idDaRota("export const acao = createServerFn().handler(() => 1);"),
 		).toBeUndefined();
+	});
+
+	it.each([
+		[
+			"atribuição comentada",
+			'// const Route = createFileRoute("/piloto")({});\nexport const Route = createFileRoute("/sobre")({});',
+		],
+		[
+			"anotação antes da chamada",
+			'export const Route = /* @__PURE__ */ createFileRoute("/sobre")({});',
+		],
+		[
+			"outra rota no mesmo arquivo",
+			'const Exemplo = createFileRoute("/piloto")({ component: Piloto });\nconst Sobre = createFileRoute("/sobre")({});\nexport { Sobre as Route };',
+		],
+	])("lê a rota exportada mesmo com %s", (_, texto) => {
+		expect(lerRota(texto)).toEqual({ id: "/sobre", comPagina: false });
+	});
+
+	it.each([
+		[
+			"GET com component no id",
+			'export const Route = createFileRoute("/api/component-status")({ server: { handlers: { GET: () => new Response("ok") } } });',
+			false,
+		],
+		[
+			"saída com comentário",
+			'// Esta rota não tem component.\nexport const Route = createFileRoute("/sair")({ loader: () => { throw redirect({ to: "/" }); } });',
+			false,
+		],
+		[
+			"resposta com a string component",
+			'export const Route = createFileRoute("/api/sessao")({ server: { handlers: { GET: () => new Response("component") } } });',
+			false,
+		],
+		[
+			"nome importado",
+			'import { component } from "./-contrato";\nexport const Route = createFileRoute("/api/sessao")({ server: { handlers: { GET: () => new Response(component) } } });',
+			false,
+		],
+		[
+			"propriedade dentro do loader",
+			'export const Route = createFileRoute("/dados")({ loader: () => ({ component: "valor" }) });',
+			false,
+		],
+		[
+			"saída por redirecionamento",
+			'export const Route = createFileRoute("/sair")({ loader: () => { throw redirect({ to: "/" }); } });',
+			false,
+		],
+		[
+			"GET de sessão",
+			'export const Route = createFileRoute("/api/sessao")({ server: { handlers: { GET: () => new Response("ok") } } });',
+			false,
+		],
+		[
+			"índice que redireciona",
+			'export const Route = createFileRoute("/conta/")({ beforeLoad: () => { throw redirect({ to: "/conta/perfil" }); } });',
+			false,
+		],
+		[
+			"só pendingComponent",
+			'export const Route = createFileRoute("/sair")({ pendingComponent: Espera });',
+			false,
+		],
+		[
+			"só errorComponent",
+			'export const Route = createFileRoute("/sair")({ errorComponent: Erro });',
+			false,
+		],
+		[
+			"só notFoundComponent",
+			'export const Route = createFileRoute("/sair")({ notFoundComponent: Ausente });',
+			false,
+		],
+		[
+			"opção de página",
+			'export const Route = createFileRoute("/sobre")({ component: Sobre });',
+			true,
+		],
+		[
+			"opção abreviada",
+			'export const Route = createFileRoute("/sobre")({ component });',
+			true,
+		],
+		[
+			"nome da opção entre aspas",
+			'export const Route = createFileRoute("/sobre")({ "component": Sobre });',
+			true,
+		],
+		[
+			"chave literal entre colchetes",
+			'export const Route = createFileRoute("/sobre")({ ["component"]: Sobre });',
+			true,
+		],
+		[
+			"objeto de opções com tipo",
+			'export const Route = createFileRoute("/sobre")(({ component: Sobre } satisfies Opcoes));',
+			true,
+		],
+		[
+			"opção no .lazy.tsx",
+			'export const Route = createLazyFileRoute("/ajuda")({ component: Ajuda });',
+			true,
+		],
+	])("reconhece a opção de página da rota (%s)", (_, texto, comPagina) => {
+		expect(lerRota(texto)?.comPagina).toBe(comPagina);
+	});
+
+	it("um endereço cobre a página mesmo quando só o arquivo lazy declara o component", () => {
+		const declaradas = [
+			'export const Route = createFileRoute("/ajuda")({});',
+			'export const Route = createLazyFileRoute("/ajuda")({ component: Ajuda });',
+			'export const Route = createFileRoute("/sair")({ loader: () => { throw redirect({ to: "/" }); } });',
+		]
+			.map((texto) => lerRota(texto))
+			.filter((rota) => rota !== undefined);
+		expect(paginasSemEndereco(declaradas, new Set())).toEqual(["/ajuda"]);
+		expect(paginasSemEndereco(declaradas, new Set(["/ajuda"]))).toEqual([]);
 	});
 
 	it("a mãe de uma rota é a de id mais comprido que começa o dela, como no gerador do TanStack", () => {
@@ -649,28 +847,21 @@ describe("a caixa da página", () => {
 		// As rotas que o gerador de rotas do TanStack lê: os .ts e os .tsx de
 		// src/routes com o createFileRoute, fora o que começa com "-" (o arquivo
 		// ou a pasta), como este teste. O id de cada uma é o do createFileRoute,
-		// e não o nome do arquivo (o idDaRota). Assim, uma rota nova não fica sem
+		// e não o nome do arquivo. Assim, uma rota nova não fica sem
 		// a conferência do contêiner, nem a página de um layout sem ele em volta.
 		const pasta = join(src, "routes");
-		const textos = readdirSync(pasta, { recursive: true, encoding: "utf8" })
+		const declaradas = readdirSync(pasta, { recursive: true, encoding: "utf8" })
 			.map((arquivo) => arquivo.replaceAll("\\", "/"))
 			.filter(
 				(arquivo) =>
 					/\.tsx?$/.test(arquivo) &&
 					!arquivo.split("/").some((parte) => parte.startsWith("-")),
 			)
-			.map((arquivo) => readFileSync(join(pasta, arquivo), "utf8"));
-		const arquivos = [
-			...new Set(textos.map(idDaRota).filter((id) => id !== undefined)),
-		].sort();
-		// As rotas com página: o component no arquivo dela ou no .lazy.tsx dela,
-		// que tem o mesmo id. A rota sem página (o índice que só redireciona, a
-		// rota do servidor) não abre pelo QUE_ABREM. Fica sem essa conferência a
-		// página sem a palavra component no arquivo, com as opções vindas de outro
-		// arquivo.
-		const comPagina = new Set(
-			textos.filter((texto) => /\bcomponent\b/.test(texto)).map(idDaRota),
-		);
+			.map((arquivo) =>
+				lerRota(readFileSync(join(pasta, arquivo), "utf8"), arquivo),
+			)
+			.filter((rota) => rota !== undefined);
+		const arquivos = [...new Set(declaradas.map(({ id }) => id))].sort();
 		const router = criarRouter();
 		const rotas: Record<string, AnyRoute> = router.routesById;
 		const montadas = Object.keys(rotas)
@@ -698,7 +889,7 @@ describe("a caixa da página", () => {
 			"Cada rota entra no criarRouter deste teste dentro da mãe que tem no site: a página de um layout vai no addChildren dele, com o dentroDe",
 		).toEqual([]);
 		expect(
-			montadas.filter((id) => comPagina.has(id) && !abertas.has(id)),
+			paginasSemEndereco(declaradas, abertas),
 			"Cada rota com página abre por um endereço do QUE_ABREM deste teste: ponha nele um da rota que falta",
 		).toEqual([]);
 	});
