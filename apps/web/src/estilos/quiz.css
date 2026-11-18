@@ -110,7 +110,7 @@
 	.quiz[data-fase="abertura"] .quiz-titulo {
 		--letra: clamp(4rem, 1.5rem + 11vw, 12.5rem);
 		margin-top: auto;
-		line-height: 0.82;
+		line-height: 0.86;
 		animation: sobe 0.8s var(--ease-suave) both;
 	}
 
