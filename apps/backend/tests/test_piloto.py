@@ -3,6 +3,7 @@
 import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
+from functools import partial
 from uuid import uuid4
 
 import pytest
@@ -195,6 +196,9 @@ def test_http_real_reenvio_e_invalido_gastam_cota_sem_duplicar(banco, monkeypatc
     monkeypatch.setenv("PILOTO_ATIVO", "true")
     monkeypatch.setenv("PILOTO_LIMITE_POR_MINUTO", "3")
     monkeypatch.setattr(api_piloto, "engine", lambda: banco)
+    monkeypatch.setattr(
+        api_piloto, "consumir_cota", partial(consumir_cota, agora=datetime.now(UTC))
+    )
     config.cache_clear()
     corpo = {
         "participacao": str(uuid4()),
