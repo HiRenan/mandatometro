@@ -718,8 +718,8 @@
 	/*
 	 * A linha do pé: fora da abertura, o nome do quiz, em Label, e a frase do
 	 * andamento, na mesma linha de base (a #136). Os dois andam juntos ao lado dos
-	 * quadradinhos ou embaixo deles. Onde não cabem lado a lado, como o "Antes da
-	 * trilha" a 320 px, a frase desce inteira, sem virar uma coluna estreita.
+	 * quadradinhos ou embaixo deles. Onde não cabem lado a lado, como com a letra a
+	 * 200% a 320 e a 360 px, a frase desce inteira, sem virar uma coluna estreita.
 	 */
 	.quiz-pe-linha {
 		display: flex;
