@@ -225,7 +225,7 @@ perguntas:
 
 ## Palavras compridas nos títulos
 
-Muita gente aumenta a letra do navegador no celular, até 200%. Com a letra grande, cada título diminui só o bastante para a palavra mais larga dele caber na tela inteira, sem se partir no meio. Os títulos aparecem em maiúsculas no site, e a medida é a da palavra em maiúsculas. Esse limite foi medido com os títulos de hoje:
+Muita gente aumenta a letra do navegador no celular, até 200%. Com a letra grande, cada título diminui só o bastante para a palavra mais larga dele caber na tela inteira, sem se partir no meio. Os títulos aparecem em maiúsculas no site, e a medida é a da palavra em maiúsculas. A exceção é o título de cada passo na sanfona da página da trilha: com a letra grande, ele aparece como foi escrito, e o teste mede a palavra dos dois jeitos. Esse limite foi medido com os títulos de hoje:
 
 | Onde | A palavra mais larga hoje |
 |---|---|
@@ -233,7 +233,9 @@ Muita gente aumenta a letra do navegador no celular, até 200%. Com a letra gran
 | O título do artigo (o `titulo:` do artigo) | "fundamentais?" |
 | O intertítulo (cada `##` do texto) | "constitucionalidade" |
 | O título do infográfico (o `titulo:` do `infografico.md`) | "caminho" |
-| O título de cada passo do infográfico | "Apresentação" |
+| O título de cada passo do infográfico, na página inicial | "Apresentação" |
+| O título de cada passo, na sanfona da página da trilha | "Apresentação" |
+| O mesmo título da sanfona com a letra grande, como foi escrito | "Apresentação" |
 
 Uma palavra mais larga que a da tabela não cabe nem no título menor e se parte no meio com a letra grande. A pontuação colada conta: "fundamentais?" é mais larga que "fundamentais". O que conta é a largura, e não o número de letras: "Participação" tem as mesmas 12 letras de "Constituição" e, mesmo assim, passa do limite do título da trilha, por pouco.
 
