@@ -103,6 +103,7 @@ export function FormularioConta({ modo }: { modo: Modo }) {
 	const [mensagem, setMensagem] = useState("");
 	const [erros, setErros] = useState<Record<string, string>>({});
 	const [tentouEnviar, setTentouEnviar] = useState(false);
+	const [loginRecusado, setLoginRecusado] = useState(false);
 	const [ocupado, setOcupado] = useState(false);
 	const [concluido, setConcluido] = useState(false);
 	const [interativo, setInterativo] = useState(false);
@@ -121,6 +122,7 @@ export function FormularioConta({ modo }: { modo: Modo }) {
 	async function enviar(evento: FormEvent<HTMLFormElement>) {
 		evento.preventDefault();
 		if (ocupado) return;
+		setLoginRecusado(false);
 		const form = evento.currentTarget;
 		const dados = new FormData(form);
 		const valor = (nome: string) => String(dados.get(nome) ?? "");
@@ -205,9 +207,10 @@ export function FormularioConta({ modo }: { modo: Modo }) {
 			if (!resposta?.ok) {
 				if (resposta?.status === 429)
 					setMensagem("Muitas tentativas. Aguarde um minuto.");
-				else if (modo === "login" && resposta?.status === 401)
+				else if (modo === "login" && resposta?.status === 401) {
+					setLoginRecusado(true);
 					setMensagem("Confira o e-mail, a senha e a confirmação do cadastro.");
-				else if (modo === "excluir" && resposta?.status === 401)
+				} else if (modo === "excluir" && resposta?.status === 401)
 					setMensagem("Entre novamente e confira sua senha.");
 				else if (
 					["confirmar", "redefinir"].includes(modo) &&
@@ -423,7 +426,7 @@ export function FormularioConta({ modo }: { modo: Modo }) {
 			)}
 			<p role="status">{mensagem}</p>
 			{((cadastro && concluido) ||
-				modo === "login" ||
+				(modo === "login" && loginRecusado) ||
 				(modo === "confirmar" && !concluido)) && (
 				<a className="acao-de-texto" href="/cadastro/reenvio">
 					Solicitar outro e-mail de confirmação
@@ -439,7 +442,7 @@ export function FormularioConta({ modo }: { modo: Modo }) {
 					Criar conta
 				</a>
 			)}
-			{(cadastro || modo === "login") && (
+			{modo === "login" && (
 				<a className="acao-de-texto" href="/cadastro/recuperar">
 					Esqueci minha senha
 				</a>
