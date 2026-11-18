@@ -2437,6 +2437,10 @@
 		background-color: var(--papel-2);
 	}
 
+	.outros-artigos a:focus-visible {
+		outline-offset: -6px;
+	}
+
 	.outros-artigos-cabeca {
 		display: flex;
 		align-items: center;
