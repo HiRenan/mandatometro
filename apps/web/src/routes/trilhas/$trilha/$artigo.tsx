@@ -4,6 +4,7 @@ import { Aviso, useAviso } from "@/components/aviso";
 import { AzulejoGrande } from "@/components/azulejo";
 import { Caminho } from "@/components/caminho";
 import { ChamadaDoQuiz } from "@/components/chamada-do-quiz";
+import { FaixaDeInformacoes } from "@/components/faixa-de-informacoes";
 import { Fontes } from "@/components/fontes";
 import { MarcaDeLido } from "@/components/marca-de-lido";
 import { NestaTrilha } from "@/components/nesta-trilha";
@@ -125,27 +126,27 @@ function Folha({
 							className="do-artigo"
 						/>
 						<Caminho trilha={trilha} />
-						<p className="sobretitulo">
+						<div className="sobretitulo">
 							<span aria-hidden="true" className="numeral">
 								{posicao}
 							</span>
-							<span className="rotulo">
+							<p className="rotulo">
 								Artigo {posicao}{" "}
 								<span className="de-tantos">
 									de {plural(total, "artigo", "artigos")}
 								</span>
-							</span>
-						</p>
+							</p>
+						</div>
 						{/* Com a letra grande, o título cresce até "FUNDAMENTAIS?", a palavra
 						    mais larga dos títulos dos artigos, encostar nas bordas da folha
 						    (o letra-com-teto do index.css). */}
 						<h1 className="titulo-condensado letra-com-teto [--palavra:6.34]">
 							{artigo.titulo}
 						</h1>
-						<p className="faixa rotulo">
+						<FaixaDeInformacoes>
 							<span>Leitura de {artigo.minutos} min</span>
 							<span>{fontes}</span>
-						</p>
+						</FaixaDeInformacoes>
 						<p className="lide">{artigo.resumo}</p>
 						<TextoDoArtigo html={artigo.html} />
 

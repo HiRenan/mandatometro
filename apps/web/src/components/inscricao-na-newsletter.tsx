@@ -12,6 +12,7 @@ import {
 import { Aviso, useAviso } from "./aviso";
 import { AzulejoGrande } from "./azulejo";
 import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "./botao-continuar";
+import { FaixaDeInformacoes } from "./faixa-de-informacoes";
 
 /**
  * O que a folha diz depois do envio. O erro do e-mail fica no campo, com o fio
@@ -169,11 +170,11 @@ export function InscricaoNaNewsletter({
 				>
 					O jornal legislativo
 				</h2>
-				<p className="faixa rotulo">
+				<FaixaDeInformacoes>
 					<span>Todo domingo</span>
 					<span>Câmara e Senado</span>
 					<span>Link oficial em cada item</span>
-				</p>
+				</FaixaDeInformacoes>
 				<p className="newsletter-abertura">
 					O que o Congresso votou na semana, explicado em linguagem simples.
 					Quem se inscreve recebe na hora a última edição publicada.
