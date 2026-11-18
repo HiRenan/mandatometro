@@ -40,6 +40,13 @@ const INCOMPLETO =
 	"Este link está incompleto. Abra de novo o link de saída que vem no fim de cada e-mail da newsletter.";
 const SAIU =
 	"O seu e-mail não está mais na lista, e as próximas edições não vão chegar.";
+const FORA_DO_AR =
+	"Não conseguimos confirmar a saída agora. Espere alguns minutos e tente de novo.";
+const SEM_CONEXAO =
+	"Não deu para confirmar a saída. Confira a internet e tente de novo.";
+const CONFIRMANDO = "Confirmando a saída…";
+/** As frases que a abertura guarda: a de antes e a de depois da saída, e os dois erros. */
+const FRASES_DA_ABERTURA = [EXPLICA, SAIU, FORA_DO_AR, SEM_CONEXAO];
 
 let fetch: ReturnType<typeof vi.fn>;
 
@@ -59,6 +66,7 @@ beforeEach(() => {
 
 afterEach(() => {
 	cleanup();
+	vi.useRealTimers();
 	vi.unstubAllGlobals();
 	vi.restoreAllMocks();
 });
@@ -160,6 +168,27 @@ function textoAVista(lugar: Element) {
 	return lugar.querySelector(":scope > :not([aria-hidden])")?.textContent;
 }
 
+/** O lugar da linha "Confirmando a saída…", no fim das ações. */
+function lugarDaEspera(raiz: ParentNode = document) {
+	return raiz.querySelector(
+		".cartaz-acao > .saida-confirmando",
+	) as HTMLElement | null;
+}
+
+/**
+ * Só os relógios do setTimeout ficam de mentira: o React e o roteador seguem
+ * com os de verdade.
+ */
+function relogioDeMentira() {
+	vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+}
+
+async function passar(ms: number) {
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(ms);
+	});
+}
+
 /** O primeiro item das ações: o lugar do botão "Confirmar a saída". */
 function lugarDoBotao(raiz: ParentNode = document) {
 	return raiz.querySelector(".acoes-da-pagina > li:first-child") as HTMLElement;
@@ -223,8 +252,16 @@ describe("a página de sair", () => {
 		const confirmacao = await confirmar();
 
 		expect(sair.mock.calls).toEqual([[CODIGO]]);
-		expect(naTela("Confirmando a saída…")).toBeTruthy();
-		expect(aviso()).toBe("Confirmando a saída…");
+		expect(naTela(CONFIRMANDO)).toBeTruthy();
+		expect(aviso()).toBe(CONFIRMANDO);
+		// A linha nasce no lugar guardado para ela, no fim das ações, em
+		// parágrafo comum: a página não cresce quando ela aparece.
+		const espera = lugarDaEspera() as HTMLElement;
+		expect(reservasDe(espera)).toEqual([CONFIRMANDO]);
+		expect(paragrafoDe(CONFIRMANDO).parentElement).toBe(espera);
+		expect(celula(paragrafoDe(CONFIRMANDO))).toEqual(
+			celula(espera.querySelector(":scope > [aria-hidden='true']")),
+		);
 		expect(confirmacao.getAttribute("aria-disabled")).toBe("true");
 		expect(document.activeElement).toBe(confirmacao);
 		// O clique no botão com o aria-disabled nem chega a enviar o formulário.
@@ -399,8 +436,15 @@ describe("a página de sair", () => {
 		// longe do botão. A abertura guarda as duas frases, invisíveis, na
 		// mesma célula da grade; a de antes do botão fica à vista.
 		const abertura = raiz.querySelector(".abertura") as HTMLElement;
-		expect(reservasDe(abertura)).toEqual([EXPLICA, SAIU]);
+		expect(reservasDe(abertura)).toEqual(FRASES_DA_ABERTURA);
 		expect(textoAVista(abertura)).toBe(EXPLICA);
+		// Os erros também ficam guardados, com o desenho deles, em negrito: o
+		// erro entra no lugar da frase com a altura que ela já tem.
+		expect(
+			[...abertura.querySelectorAll(":scope > [aria-hidden='true']")].map(
+				(copia) => copia.classList.contains("ainda-nao"),
+			),
+		).toEqual([false, false, true, true]);
 		// O lugar do botão guarda uma cópia dele, com o mesmo desenho, e o
 		// botão de verdade fica na mesma célula.
 		const lugar = lugarDoBotao(raiz);
@@ -412,6 +456,13 @@ describe("a página de sair", () => {
 			"Confirmar a saída",
 		);
 		expect(lugar.nextElementSibling?.textContent).toBe("Ir para o início");
+		// A linha da espera também tem o lugar guardado, vazio, no fim das ações:
+		// com duas colunas, o que entrava embaixo delas empurrava o botão para
+		// cima, e numa coluna a página crescia.
+		const espera = lugarDaEspera(raiz) as HTMLElement;
+		expect(reservasDe(espera)).toEqual([CONFIRMANDO]);
+		expect(textoAVista(espera)).toBeUndefined();
+		expect(espera.parentElement?.lastElementChild).toBe(espera);
 	});
 
 	it("depois da saída, o pé fica com a altura de antes: a frase de antes continua guardada, e o “Inscrever-se de novo” fica no lugar do botão", async () => {
@@ -420,7 +471,7 @@ describe("a página de sair", () => {
 		await confirmar();
 
 		const abertura = document.querySelector(".abertura") as HTMLElement;
-		expect(reservasDe(abertura)).toEqual([EXPLICA, SAIU]);
+		expect(reservasDe(abertura)).toEqual(FRASES_DA_ABERTURA);
 		expect(textoAVista(abertura)).toBe(SAIU);
 		const lugar = lugarDoBotao();
 		expect(reservasDe(lugar)).toEqual(["Confirmar a saída"]);
@@ -494,13 +545,23 @@ describe("a página de sair", () => {
 			SAIU,
 		],
 		[
+			// O erro fica no lugar da frase, e continua um parágrafo comum.
 			"com a API fora do ar",
 			async () => {
 				sair.mockResolvedValue({ tipo: "fora-do-ar" });
 				await mostrar();
 				await confirmar();
 			},
-			EXPLICA,
+			FORA_DO_AR,
+		],
+		[
+			"com a rede caída",
+			async () => {
+				sair.mockResolvedValue({ tipo: "sem-conexao" });
+				await mostrar();
+				await confirmar();
+			},
+			SEM_CONEXAO,
 		],
 		[
 			"com o código que a API recusa",
@@ -534,7 +595,7 @@ describe("a página de sair", () => {
 		const abertura = raiz.querySelector(".abertura") as HTMLElement;
 
 		expect(paragrafoDe(EXPLICA, raiz).parentElement).toBe(abertura);
-		expect(reservasDe(abertura)).toEqual([EXPLICA, SAIU]);
+		expect(reservasDe(abertura)).toEqual(FRASES_DA_ABERTURA);
 	});
 
 	it("com o código que a API recusa, o pé continua guardando o lugar, e o “Ir para o início” fica no lugar do botão", async () => {
@@ -543,7 +604,7 @@ describe("a página de sair", () => {
 		await confirmar();
 
 		const abertura = document.querySelector(".abertura") as HTMLElement;
-		expect(reservasDe(abertura)).toEqual([EXPLICA, SAIU]);
+		expect(reservasDe(abertura)).toEqual(FRASES_DA_ABERTURA);
 		expect(textoAVista(abertura)).toBe(INCOMPLETO);
 		// A ação que sobra fica logo embaixo da frase, onde estava o botão, como o
 		// "Inscrever-se de novo" depois da saída.
@@ -610,32 +671,50 @@ describe("a página de sair", () => {
 			expect(raiz.querySelector(".acoes-da-pagina")?.textContent).toBe(
 				"Ir para o início",
 			);
+			// Sem o botão, não há espera: as ações não ganham um vão no fim.
+			expect(raiz.querySelector(".cartaz-acao")?.textContent).toBe(
+				"Ir para o início",
+			);
+			expect(lugarDaEspera(raiz)).toBeNull();
 		},
 	);
 
 	it.each([
-		[
-			"fora-do-ar",
-			"Não conseguimos confirmar a saída agora. Espere alguns minutos e tente de novo.",
-		],
-		[
-			"sem-conexao",
-			"Não deu para confirmar a saída. Confira a internet e tente de novo.",
-		],
+		["fora-do-ar", FORA_DO_AR],
+		["sem-conexao", SEM_CONEXAO],
 	] as const)(
-		"com %s, diz o que fazer e deixa o botão para tentar de novo",
+		"com %s, o erro fica no lugar da frase, em negrito, e o botão fica onde estava, para tentar de novo",
 		async (tipo, texto) => {
 			sair.mockResolvedValue({ tipo });
 			await mostrar();
 
 			const confirmacao = await confirmar();
 
-			expect(naTela(texto)).toBeTruthy();
+			// O erro fica na abertura, no lugar da explicação, e não embaixo das
+			// ações: com duas colunas, o que entrava embaixo delas empurrava o
+			// botão para cima, e o "Ir para o início" ficava embaixo do ponteiro.
+			const abertura = document.querySelector(".abertura") as HTMLElement;
+			expect(textoAVista(abertura)).toBe(texto);
+			expect(paragrafoDe(texto).classList.contains("ainda-nao")).toBe(true);
+			expect(naTela(EXPLICA)).toBeNull();
+			expect(document.querySelector(".cartaz-acao")?.textContent).not.toContain(
+				texto,
+			);
+			// O leitor de tela lê o erro uma vez, pelo aviso: a frase da abertura
+			// não é uma região viva.
 			expect(aviso()).toBe(texto);
-			expect(naTela(EXPLICA)).toBeTruthy();
+			expect(screen.getAllByRole("status")).toHaveLength(1);
+			expect(
+				paragrafoDe(texto).closest(
+					"[aria-live], [role='status'], [role='alert']",
+				),
+			).toBeNull();
+			// O botão é o mesmo elemento, com o foco, e o pé guarda as mesmas frases.
 			expect(botao()).toBe(confirmacao);
 			expect(confirmacao.hasAttribute("aria-disabled")).toBe(false);
 			expect(document.activeElement).toBe(confirmacao);
+			expect(reservasDe(abertura)).toEqual(FRASES_DA_ABERTURA);
+			expect(reservasDe(lugarDaEspera() as HTMLElement)).toEqual([CONFIRMANDO]);
 
 			sair.mockResolvedValue({ tipo: "saiu" });
 			await confirmar();
@@ -644,6 +723,225 @@ describe("a página de sair", () => {
 			expect(naTela(SAIU)).toBeTruthy();
 		},
 	);
+
+	it("na nova tentativa, a página volta à espera: a explicação no lugar do erro e a linha da espera", async () => {
+		sair.mockResolvedValue({ tipo: "fora-do-ar" });
+		await mostrar();
+		const confirmacao = await confirmar();
+
+		sair.mockReturnValue(new Promise(() => {}));
+		await confirmar();
+
+		expect(sair).toHaveBeenCalledTimes(2);
+		expect(
+			textoAVista(document.querySelector(".abertura") as HTMLElement),
+		).toBe(EXPLICA);
+		expect(naTela(FORA_DO_AR)).toBeNull();
+		expect(textoAVista(lugarDaEspera() as HTMLElement)).toBe(CONFIRMANDO);
+		expect(aviso()).toBe(CONFIRMANDO);
+		expect(botao()).toBe(confirmacao);
+		expect(confirmacao.getAttribute("aria-disabled")).toBe("true");
+		expect(document.activeElement).toBe(confirmacao);
+	});
+
+	it("na nova tentativa, o erro que volta na hora só aparece com a espera meio segundo na tela, e o aviso lê de novo", async () => {
+		sair.mockResolvedValue({ tipo: "sem-conexao" });
+		await mostrar();
+		const confirmacao = await confirmar();
+		const abertura = document.querySelector(".abertura") as HTMLElement;
+		expect(textoAVista(abertura)).toBe(SEM_CONEXAO);
+
+		// A rede continua caída, e o pedido falha na hora: sem a espera, o mesmo
+		// erro voltaria no mesmo quadro, e nada mostraria que a tentativa
+		// aconteceu.
+		relogioDeMentira();
+		await confirmar();
+
+		expect(textoAVista(abertura)).toBe(EXPLICA);
+		expect(textoAVista(lugarDaEspera() as HTMLElement)).toBe(CONFIRMANDO);
+		expect(aviso()).toBe(CONFIRMANDO);
+		expect(confirmacao.getAttribute("aria-disabled")).toBe("true");
+		// Um clique durante o meio segundo cai no botão à espera e não manda outro
+		// pedido: o envio só fica livre quando o erro aparece.
+		await passar(200);
+		await confirmar();
+		expect(sair).toHaveBeenCalledTimes(2);
+		await passar(299);
+		expect(textoAVista(abertura)).toBe(EXPLICA);
+		expect(aviso()).toBe(CONFIRMANDO);
+
+		await passar(1);
+		expect(textoAVista(abertura)).toBe(SEM_CONEXAO);
+		expect(textoAVista(lugarDaEspera() as HTMLElement)).toBeUndefined();
+		expect(aviso()).toBe(SEM_CONEXAO);
+		expect(botao()).toBe(confirmacao);
+		expect(confirmacao.hasAttribute("aria-disabled")).toBe(false);
+		expect(document.activeElement).toBe(confirmacao);
+		expect(sair).toHaveBeenCalledTimes(2);
+	});
+
+	it("na nova tentativa, o erro que leva mais de meio segundo aparece assim que chega", async () => {
+		sair.mockResolvedValue({ tipo: "fora-do-ar" });
+		await mostrar();
+		await confirmar();
+		const abertura = document.querySelector(".abertura") as HTMLElement;
+
+		let soltar: (resultado: ResultadoDaSaida) => void = () => {};
+		sair.mockImplementation(
+			() =>
+				new Promise((resolver) => {
+					soltar = resolver;
+				}),
+		);
+		relogioDeMentira();
+		await confirmar();
+		await passar(600);
+		expect(textoAVista(abertura)).toBe(EXPLICA);
+
+		await act(async () => {
+			soltar({ tipo: "fora-do-ar" });
+		});
+		expect(textoAVista(abertura)).toBe(FORA_DO_AR);
+	});
+
+	it.each([
+		["depois da saída", "saiu"],
+		["com o código que a API recusa", "link-invalido"],
+		["com a API fora do ar", "fora-do-ar"],
+		["com a rede caída", "sem-conexao"],
+	] as const)(
+		"%s, a linha da espera continua guardada, vazia, no fim das ações",
+		async (_, tipo) => {
+			sair.mockResolvedValue({ tipo });
+			await mostrar();
+			await confirmar();
+
+			const espera = lugarDaEspera() as HTMLElement;
+			expect(reservasDe(espera)).toEqual([CONFIRMANDO]);
+			expect(textoAVista(espera)).toBeUndefined();
+			expect(espera.parentElement?.lastElementChild).toBe(espera);
+		},
+	);
+
+	it.each([
+		["Inscrever-se de novo", "saiu", "newsletter"],
+		["Ir para o início", "link-invalido", ""],
+	] as const)(
+		"o Enter logo depois de o “%s” nascer no lugar do botão não segue o link; meio segundo depois da troca, segue",
+		async (nome, tipo, trecho) => {
+			sair.mockResolvedValue({ tipo });
+			const router = await mostrar();
+			relogioDeMentira();
+			await confirmar();
+			const link = screen.getByRole("link", { name: nome });
+			expect(document.activeElement).toBe(link);
+
+			// Quem apertou o Enter duas vezes no botão manda o segundo para o link
+			// que acabou de nascer. No Chromium, o Enter clica no link com o
+			// detail 0; no Firefox, o clique do Enter num link vem com o detail 1,
+			// como o do mouse, e quem segura é o keydown do Enter.
+			for (const ms of [0, 499]) {
+				await passar(ms);
+				expect(fireEvent.keyDown(link, { key: "Enter" })).toBe(false);
+				// O Tab sai do link na hora: a guarda é só do Enter.
+				expect(fireEvent.keyDown(link, { key: "Tab" })).toBe(true);
+				await act(async () => {
+					fireEvent.click(link, { detail: 0 });
+				});
+				expect(router.state.location.pathname).toBe("/newsletter/sair");
+			}
+			// A guarda só impede seguir o link: não manda pedido nem tira o foco.
+			expect(sair).toHaveBeenCalledTimes(1);
+			expect(document.activeElement).toBe(link);
+
+			await passar(1);
+			expect(fireEvent.keyDown(link, { key: "Enter" })).toBe(true);
+			vi.useRealTimers();
+			await act(async () => {
+				fireEvent.click(link, { detail: 0 });
+			});
+			await screen.findByRole("heading", { level: 1, name: "Início" });
+			expect(router.state.location.pathname).toBe("/");
+			expect(router.state.location.hash).toBe(trecho);
+		},
+	);
+
+	it("o meio segundo do Enter conta da troca, e não do foco: quem sai do link e volta segue com o Enter", async () => {
+		sair.mockResolvedValue({ tipo: "saiu" });
+		const router = await mostrar();
+		relogioDeMentira();
+		await confirmar();
+		const deNovo = screen.getByRole("link", { name: "Inscrever-se de novo" });
+
+		await passar(400);
+		act(() => {
+			screen.getByRole("link", { name: "Ir para o início" }).focus();
+		});
+		act(() => {
+			deNovo.focus();
+		});
+		await passar(100);
+		expect(fireEvent.keyDown(deNovo, { key: "Enter" })).toBe(true);
+		vi.useRealTimers();
+		await act(async () => {
+			fireEvent.click(deNovo, { detail: 0 });
+		});
+		await screen.findByRole("heading", { level: 1, name: "Início" });
+		expect(router.state.location.hash).toBe("newsletter");
+	});
+
+	it("depois da saída, o Enter no “Ir para o início”, que não nasceu no lugar do botão, segue na hora", async () => {
+		sair.mockResolvedValue({ tipo: "saiu" });
+		const router = await mostrar();
+		await confirmar();
+		const inicio = screen.getByRole("link", { name: "Ir para o início" });
+
+		expect(fireEvent.keyDown(inicio, { key: "Enter" })).toBe(true);
+		await act(async () => {
+			fireEvent.click(inicio, { detail: 0 });
+		});
+		await screen.findByRole("heading", { level: 1, name: "Início" });
+		expect(router.state.location.pathname).toBe("/");
+	});
+
+	it.each([
+		["Inscrever-se de novo", "saiu"],
+		["Ir para o início", "link-invalido"],
+	] as const)(
+		"o Enter segurado não segue o “%s” que nasce no lugar do botão, nem depois do meio segundo",
+		async (nome, tipo) => {
+			sair.mockResolvedValue({ tipo });
+			await mostrar();
+			relogioDeMentira();
+			await confirmar();
+			await passar(600);
+			const link = screen.getByRole("link", { name: nome });
+
+			// No Firefox, cada repetição do Enter segurado (o keydown com o repeat)
+			// ativa o link, e quem segurou o Enter no botão saía da página depois da
+			// guarda. A repetição não ativa o link; um Enter novo e as outras teclas
+			// seguem como sempre.
+			expect(fireEvent.keyDown(link, { key: "Enter", repeat: true })).toBe(
+				false,
+			);
+			expect(fireEvent.keyDown(link, { key: "Enter" })).toBe(true);
+			expect(fireEvent.keyDown(link, { key: "Tab", repeat: true })).toBe(true);
+			expect(document.activeElement).toBe(link);
+		},
+	);
+
+	it("depois da saída, o Enter segurado no “Ir para o início”, que não nasceu no lugar do botão, fica como no navegador", async () => {
+		sair.mockResolvedValue({ tipo: "saiu" });
+		await mostrar();
+		await confirmar();
+
+		expect(
+			fireEvent.keyDown(
+				screen.getByRole("link", { name: "Ir para o início" }),
+				{ key: "Enter", repeat: true },
+			),
+		).toBe(true);
+	});
 
 	it("com o pedido que falha sem resposta, diz para conferir a internet e deixa o botão", async () => {
 		sair.mockRejectedValue(new TypeError("Failed to fetch"));
@@ -701,6 +999,8 @@ describe("a página de sair", () => {
 			expect(naTela(INCOMPLETO)).toBeTruthy();
 			expect(botao()).toBeNull();
 			expect(document.querySelector("form")).toBeNull();
+			// Sem o botão, não há espera, nem o lugar dela.
+			expect(lugarDaEspera()).toBeNull();
 			expect(sair).not.toHaveBeenCalled();
 			expect(fetch).not.toHaveBeenCalled();
 		},
