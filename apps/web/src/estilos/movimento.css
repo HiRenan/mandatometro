@@ -304,8 +304,9 @@
  *
  * O cabeçalho, quando aparece na tela nas duas páginas, vai numa foto à parte,
  * por cima, e não sai do lugar. Quando uma delas está rolada para baixo dele (a
- * de antes, ou a nova, que volta rolada pelo navegador), ele fica na foto da
- * página dele, e o de antes é coberto pelos azulejos junto com ela.
+ * de antes, ou a nova, que volta rolada pelo navegador ou abre no trecho de um
+ * link, como o /#newsletter), ele fica na foto da página dele, e o de antes é
+ * coberto pelos azulejos junto com ela.
  */
 @property --vt {
 	syntax: "<angle>";
@@ -392,8 +393,9 @@ html:active-view-transition-type(folha)::view-transition-new(moldura) {
 
 /*
  * Menos movimento: nada vira, tomba nem sobe, e as peças aparecem no lugar. A
- * página troca num esmaecer curto, nos dois sentidos, e o cabeçalho vai direto
- * para o lugar. A barra da leitura sai.
+ * página troca num esmaecer curto, nos dois sentidos, e o cabeçalho, quando
+ * aparece nas duas páginas, vai direto para o lugar; senão, esmaece com a
+ * página de antes. A barra da leitura sai.
  */
 @media (prefers-reduced-motion: reduce) {
 	*,
