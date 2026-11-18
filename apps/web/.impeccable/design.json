@@ -288,6 +288,11 @@
         "purpose": "O mapa do fundo sobe um décimo do que a página rola, até 60vh, nas seis primeiras telas de rolagem, e depois fica parado: anda mais devagar que a página e só se mexe quando a pessoa rola. O trecho é um comprimento fixo, e não o progresso da página inteira: o mapa não salta quando a página muda de altura com a pessoa parada. Fica dentro de @supports: sem a animação de rolagem, e com o movimento reduzido, o mapa fica parado atrás da página. O décimo vale em todas as páginas: o Renan decidiu manter assim em 14/11/2026, na #101 (Manter como está)."
       },
       {
+        "name": "enche",
+        "value": "linear both; animation-timeline: --leitura; animation-range: cover 0% cover 100%",
+        "purpose": "A barra de leitura do artigo, a tira das cinco fitas no alto da tela, enche com a rolagem do texto, pela view-timeline dele: começa a encher quando o começo do texto passa de uma linha a 60% da altura da tela (view-timeline-inset: 60% 40%), e fica cheia quando o fim dele passa. Fica embaixo do cabeçalho, que a cobre enquanto está na tela, e fora do leitor de tela, sem receber o ponteiro. Fica dentro de @supports: sem a animação de rolagem, e com o movimento reduzido, a barra não aparece."
+      },
+      {
         "name": "opcao-tomba",
         "value": "0.6s cubic-bezier(0.2, 0.8, 0.3, 1.25) both, com 80 ms entre uma opção e a outra",
         "purpose": "No quiz, as opções tombam no lugar, uma a uma. Depois da resposta, elas viram com o estado (opcao-vira, 0.6s), e a folha da resposta tomba, presa pela borda de cima (folha-tomba, 0.65s). A tela que sai sobe um pouco e some em 0,4 s antes de a seguinte entrar."
