@@ -68,14 +68,15 @@ def test_retry_after_arredonda_para_cima(banco):
 
 
 def test_relogio_do_banco_e_cota_independente_da_newsletter(banco):
+    consulta = select(LimiteInscricao)
     with banco.connect() as conexao:
-        anterior = conexao.execute(select(LimiteInscricao)).all()
+        anterior = set(conexao.execute(consulta))
     consumir_cota(banco, 120)
     with banco.connect() as conexao:
         from sqlalchemy import func
 
         assert conexao.scalar(select(LimitePiloto.janela == func.date_trunc("minute", func.now())))
-        assert conexao.execute(select(LimiteInscricao)).all() == anterior
+        assert set(conexao.execute(consulta)) == anterior
 
 
 @pytest.mark.parametrize("segundo,quantidade", [(0, 0), (0, -1), (1, 1)])

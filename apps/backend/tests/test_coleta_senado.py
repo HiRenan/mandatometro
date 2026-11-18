@@ -248,7 +248,8 @@ def test_historico_ambiguo_nao_inventa_mandato(sessao, executar, respostas):
 @pytest.mark.parametrize("lista_ruim", [[], None, [{"IdentificacaoParlamentar": {}}]])
 def test_lista_atual_invalida_nao_desativa_nem_apaga_dados(sessao, executar, respostas, lista_ruim):
     executar()
-    original = list(sessao.execute(select(Mandato.id, Mandato.em_exercicio, Mandato.fonte_id)))
+    consulta = select(Mandato.id, Mandato.em_exercicio, Mandato.fonte_id)
+    original = set(sessao.execute(consulta))
     respostas["/senador/lista/atual.json"]["ListaParlamentarEmExercicio"]["Parlamentares"][
         "Parlamentar"
     ] = lista_ruim
@@ -256,9 +257,7 @@ def test_lista_atual_invalida_nao_desativa_nem_apaga_dados(sessao, executar, res
     assert not resumo.completa
     assert resumo.votacoes == 0
     assert len(requisicoes) == 2
-    assert (
-        list(sessao.execute(select(Mandato.id, Mandato.em_exercicio, Mandato.fonte_id))) == original
-    )
+    assert set(sessao.execute(consulta)) == original
 
 
 def test_periodo_vazio_e_sessao_conjunta_nao_criam_ausencias(sessao, executar, respostas):
