@@ -7,6 +7,7 @@ import { colunasDoMosaico } from "../lib/quiz";
 // errada. Este teste lê o CSS, porque a regra é de cor e o jsdom não desenha.
 
 const css = readFileSync(new URL("./quiz.css", import.meta.url), "utf8");
+const indexCss = readFileSync(new URL("../index.css", import.meta.url), "utf8");
 
 /** O corpo da primeira regra de um seletor, no quiz.css ou num trecho de CSS. */
 function regra(seletor: string, onde = css): string {
@@ -17,22 +18,49 @@ function regra(seletor: string, onde = css): string {
 	return onde.slice(comeco, onde.indexOf("}", comeco));
 }
 
-/** Um bloco inteiro, como um @media, com as regras de dentro. */
+/** Todos os blocos com essa cabeça, como os @media de uma largura, com as regras de dentro. */
+function blocos(cabeca: string): string[] {
+	const achados: string[] = [];
+	for (
+		let comeco = css.indexOf(`${cabeca} {`);
+		comeco >= 0;
+		comeco = css.indexOf(`${cabeca} {`, comeco + 1)
+	) {
+		let fundo = 0;
+		let fim = -1;
+		for (let i = css.indexOf("{", comeco); i < css.length && fim < 0; i++) {
+			if (css[i] === "{") {
+				fundo++;
+			} else if (css[i] === "}" && --fundo === 0) {
+				fim = i + 1;
+			}
+		}
+		if (fim < 0) {
+			throw new Error(`o bloco ${cabeca} não fecha`);
+		}
+		achados.push(css.slice(comeco, fim));
+	}
+	return achados;
+}
+
+/** O primeiro bloco com essa cabeça. */
 function bloco(cabeca: string): string {
-	const comeco = css.indexOf(`${cabeca} {`);
-	if (comeco < 0) {
+	const [primeiro] = blocos(cabeca);
+	if (primeiro === undefined) {
 		throw new Error(`o quiz.css não tem o bloco ${cabeca}`);
 	}
-	let fundo = 0;
-	for (let i = css.indexOf("{", comeco); i < css.length; i++) {
-		if (css[i] === "{") {
-			fundo++;
-		} else if (css[i] === "}" && --fundo === 0) {
-			return css.slice(comeco, i + 1);
-		}
-	}
-	throw new Error(`o bloco ${cabeca} não fecha`);
+	return primeiro;
 }
+
+/** O valor de uma declaração no corpo de uma regra, sem o ponto e vírgula. */
+function declaracao(corpo: string, propriedade: string): string | undefined {
+	return new RegExp(`(?:^|[\\s;{])${propriedade}:\\s*([^;]+);`).exec(
+		corpo,
+	)?.[1];
+}
+
+const semComentarios = (texto: string) =>
+	texto.replace(/\/\*[\s\S]*?\*\//g, "");
 
 describe("o fio da opção do quiz", () => {
 	it("antes da resposta, só leva a rosa, a amarela e a azul", () => {
@@ -85,6 +113,147 @@ describe("o pé do palco", () => {
 
 		expect(linha).toContain("display: flex;");
 		expect(linha).toContain("flex-wrap: wrap;");
+	});
+});
+
+// O separador entre o nome do quiz e a frase do andamento (a #162). Abaixo de
+// 22rem, a etiqueta sai das maiúsculas, e o nome ficava com quase a mesma letra
+// da frase, lado a lado: "Quiz final Você respondeu 1 de 12." se lia como uma
+// frase só (a revisão do PR #151). O Renan escolheu, em 18/11/2026, o
+// quadradinho da faixa de informações. O jsdom não desenha o ::before: este
+// teste lê as regras, e o components/quiz.test.tsx confere o seletor dele em
+// cada tela do quiz.
+describe("o separador entre o nome do quiz e a frase do andamento", () => {
+	const letraGrande = blocos("@media (width < 22rem)");
+
+	/** As regras que desenham na linha do pé, com um ::before ou um ::after. */
+	function desenhosDoPe(trecho: string): string[] {
+		return [...semComentarios(trecho).matchAll(/([^{}]+)\{[^{}]*\}/g)]
+			.map(([, seletor = ""]) => seletor.trim())
+			.filter(
+				(seletor) =>
+					/::(before|after)/.test(seletor) &&
+					/\.quiz-(pe|nome|andamento-texto)\b/.test(seletor),
+			);
+	}
+
+	/** O corpo da regra do separador, nos blocos da letra grande. */
+	function separador(): string {
+		const [seletor] = letraGrande.flatMap(desenhosDoPe);
+		if (seletor === undefined) {
+			throw new Error("a letra grande não tem o separador do pé");
+		}
+		return regra(seletor, letraGrande.map(semComentarios).join("\n"));
+	}
+
+	/** O vão entre o nome e a frase, o lado do quadradinho e a letra da frase. */
+	function medidas() {
+		const lado = declaracao(separador(), "width") ?? "";
+		return {
+			lado,
+			vao: Number(
+				/--vao-do-nome: ([\d.]+)rem;/.exec(regra(".quiz-pe-linha"))?.[1],
+			),
+			// O lado em rem: o em do quadradinho é a letra da frase.
+			ladoEmRem:
+				Number.parseFloat(lado) *
+				Number(
+					/font-size: ([\d.]+)rem;/.exec(
+						regra(".quiz-pe .quiz-andamento-texto"),
+					)?.[1],
+				),
+		};
+	}
+
+	it("só aparece abaixo de 22rem, antes da frase: acima, o nome em maiúsculas já se separa dela", () => {
+		let foraDaLetraGrande = css;
+		for (const trecho of letraGrande) {
+			foraDaLetraGrande = foraDaLetraGrande.replace(trecho, "");
+		}
+
+		expect(desenhosDoPe(foraDaLetraGrande)).toEqual([]);
+		const dentro = letraGrande.flatMap(desenhosDoPe);
+		expect(dentro).toHaveLength(1);
+		expect(dentro[0]).toMatch(/\.quiz-andamento-texto > p\S*::before$/);
+	});
+
+	// Com o content: "" só, o Chromium punha o quadradinho na árvore de
+	// acessibilidade, como um genérico vazio antes da frase (medido pelo CDP). O
+	// texto alternativo vazio, depois da barra, o tira de lá.
+	it("é desenho: o quadradinho da faixa de informações, fora da árvore de acessibilidade e sem cor de fita", () => {
+		const faixa = regra(".faixa > span:not(:last-child)::after", indexCss);
+		const corpo = separador();
+
+		expect(declaracao(corpo, "content")).toBe('"" / ""');
+		for (const propriedade of [
+			"display",
+			"width",
+			"height",
+			"vertical-align",
+			"background",
+		]) {
+			expect(declaracao(corpo, propriedade), propriedade).toBe(
+				declaracao(faixa, propriedade),
+			);
+		}
+		expect(corpo).not.toMatch(/--fita|var\(--c\)/);
+	});
+
+	// A linha do pé quebra como antes: o quadradinho não toma lugar nela. A
+	// margem da esquerda devolve o lado dele. O navegador guarda as medidas em
+	// 1/64 de px, e o mesmo valor com o sinal trocado arredonda igual: a soma dá
+	// zero, e a frase não sai do lugar. Com margens feitas de metades do vão, a
+	// soma sobrava 1/64 de px, e a frase andava (medido pelo CDP). O left, que
+	// não mexe na linha, o leva para trás metade do vão menos o lado: o meio dele
+	// fica no meio do vão entre o nome e a frase.
+	it("fica no meio do vão entre o nome e a frase, sem tomar lugar na linha", () => {
+		const corpo = separador();
+		const { lado, vao, ladoEmRem } = medidas();
+
+		expect(regra(".quiz-pe-linha")).toMatch(
+			/gap: [\d.]+rem var\(--vao-do-nome\);/,
+		);
+		expect(
+			[...corpo.matchAll(/(?:^|[\s;{])(margin[\w-]*):/g)].map(
+				([, nome]) => nome,
+			),
+		).toEqual(["margin-left"]);
+		expect(declaracao(corpo, "margin-left")).toBe(`-${lado}`);
+		expect(declaracao(corpo, "position")).toBe("relative");
+		expect(declaracao(corpo, "left")).toBe(
+			`calc((var(--vao-do-nome) - ${lado}) / -2)`,
+		);
+		// O quadradinho, na letra da frase, cabe no vão, com papel dos dois lados.
+		expect(ladoEmRem).toBeLessThan(vao);
+	});
+
+	// Quando a frase desce para a linha de baixo, o separador fica antes da
+	// beirada da linha do pé, e ela corta o que passa de lado. O hidden faria da
+	// linha uma caixa de rolagem, que o flex encolhe abaixo da palavra mais
+	// comprida: a linha do pé mudaria de lugar ao lado dos quadradinhos. O recuo
+	// da esquerda, devolvido pela margem, põe a beirada do corte antes do texto,
+	// sem mexer nele: a tinta do A de "Antes da trilha" passa da beirada, e o
+	// corte rente tirava um pixel dela (medido nas fotos). O overflow-clip-margin
+	// não serve: o Chromium não o aplica com o corte só na horizontal. O recuo é
+	// menor que a distância do quadradinho até o texto, metade do vão menos o
+	// lado, e o quadradinho some inteiro.
+	it("quando a frase desce para a linha de baixo, a linha do pé corta o separador", () => {
+		const linhas = letraGrande
+			.map(semComentarios)
+			.filter((trecho) => trecho.includes(".quiz-pe-linha {"))
+			.map((trecho) => regra(".quiz-pe-linha", trecho));
+		const { vao, ladoEmRem } = medidas();
+
+		expect(linhas).toHaveLength(1);
+		const corte = linhas[0] ?? "";
+		expect(declaracao(corte, "overflow-x")).toBe("clip");
+		expect(corte).not.toMatch(/overflow(-y)?:/);
+		const recuo = /^([\d.]+)rem$/.exec(
+			declaracao(corte, "padding-left") ?? "",
+		)?.[1];
+		expect(declaracao(corte, "margin-left")).toBe(`-${recuo}rem`);
+		expect(Number(recuo)).toBeGreaterThan(0);
+		expect(Number(recuo)).toBeLessThan((vao - ladoEmRem) / 2);
 	});
 });
 
@@ -215,10 +384,6 @@ describe("o título do palco fora da abertura", () => {
 // a migalha, o palco, o mosaico ou a folha mudarem, a folga muda junto.
 describe("a folha da resposta e o mosaico do canto, a partir de 62rem", () => {
 	const computador = bloco("@media (width >= 62rem)");
-	const indexCss = readFileSync(
-		new URL("../index.css", import.meta.url),
-		"utf8",
-	);
 
 	/** Os números que o padrão pega numa regra. */
 	function numeros(corpo: string, padrao: RegExp): number[] {
@@ -274,7 +439,8 @@ describe("a folha da resposta e o mosaico do canto, a partir de 62rem", () => {
 	// cada três ou quatro perguntas (o colunasDoMosaico e o quiz.tsx). O meio
 	// dele fica a 50svh − 3.25rem do alto da seção; na resposta, o translateY
 	// desfaz essa conta e põe o alto dele a 1rem do alto da seção, e a escala
-	// parte desse canto (o transform-origin).
+	// parte desse canto (o transform-origin). O primeiro teste confere esse
+	// lugar com as quatro regras que o fazem.
 	const [vao = 0] = numeros(regra(".mosaico"), /gap: (\d+)px;/);
 	const [capaNaTela = 0, capaMaior = 0] = numeros(
 		regra(".quiz", computador),
@@ -318,6 +484,74 @@ describe("a folha da resposta e o mosaico do canto, a partir de 62rem", () => {
 	// piloto usam a mesma tela da resposta.
 	const TRILHA = 6;
 	const FINAL = 12;
+
+	// A conta da folga lê da regra da resposta só o 1rem e a escala, e o lugar do
+	// mosaico recolhido sai também de três números de outras regras: o top e o
+	// translate do mosaico grande, que o translateY da resposta desfaz, e o
+	// transform-origin, que faz a escala partir do canto de cima (no celular
+	// também). Se um deles muda sozinho, a conta da folga não muda, e a tela,
+	// sim (a revisão do PR #151): com o mosaico grande 1rem mais baixo, a folha
+	// cobre a base do recolhido no quiz final; com a escala a partir do canto de
+	// baixo, ele cai para dentro da folha.
+	it("na resposta, o alto do mosaico recolhido fica a 1rem do alto da seção, em qualquer tela e com qualquer letra", () => {
+		const grande = regra(".mosaico", computador);
+		const [meioDaTela = 0, acimaDoMeio = 0] = numeros(
+			grande,
+			/top: calc\(([\d.]+)svh - ([\d.]+)rem\);/,
+		);
+		const [subida = 0] = numeros(grande, /translate: 0 (-?[\d.]+)%;/);
+		const [desfazTela = 0, desfazRem = 0, desfazSubida = 0, alto = 0] = numeros(
+			regra('.quiz[data-fase="resposta"] .mosaico', computador),
+			/translateY\(calc\((-?[\d.]+)svh \+ ([\d.]+)rem \+ ([\d.]+)% \+ ([\d.]+)rem\)\)/,
+		);
+		const origem = /transform-origin: \S+ (\S+);/.exec(regra(".mosaico"))?.[1];
+
+		/** De onde a escala parte, em px do alto do mosaico. */
+		function pontoFixo(altura: number): number {
+			const nomes: Record<string, number> = { top: 0, center: 0.5, bottom: 1 };
+			if (origem === undefined) {
+				throw new Error("o .mosaico não tem o transform-origin");
+			}
+			if (origem in nomes) {
+				return (nomes[origem] ?? 0) * altura;
+			}
+			if (origem.endsWith("%")) {
+				return (Number.parseFloat(origem) / 100) * altura;
+			}
+			if (origem === "0" || origem.endsWith("px")) {
+				return Number.parseFloat(origem);
+			}
+			throw new Error(`não sei ler o transform-origin ${origem}`);
+		}
+
+		const fora: string[] = [];
+		for (const tela of [600, 768, 900, 1080, 1440]) {
+			for (const rem of [16, 20, 32]) {
+				for (const altura of [120, 260, 480]) {
+					const svh = tela / 100;
+					// O top, o translate e o translateY da resposta, sem a escala.
+					const semEscala =
+						meioDaTela * svh -
+						acimaDoMeio * rem +
+						(subida / 100) * altura +
+						desfazTela * svh +
+						desfazRem * rem +
+						(desfazSubida / 100) * altura +
+						alto * rem;
+					// Com a escala, o alto anda na direção do ponto fixo.
+					const pontoDoAlto = pontoFixo(altura);
+					const comEscala = semEscala + pontoDoAlto - escala * pontoDoAlto;
+					if (Math.abs(comEscala - canto * rem) > 0.01) {
+						fora.push(
+							`tela de ${tela} px, letra de ${rem} px, mosaico de ${altura} px: o alto fica a ${comEscala.toFixed(1)} px, e não a ${(canto * rem).toFixed(1)} px`,
+						);
+					}
+				}
+			}
+		}
+
+		expect(fora).toEqual([]);
+	});
 
 	it("com a letra a 100%, a folha fica tão longe do mosaico quanto antes da #136", () => {
 		// A folga da develop, com a etiqueta, medida pelo Argos no navegador.
