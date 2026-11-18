@@ -221,13 +221,17 @@
 	}
 
 	.faixa > span:not(:last-child)::after {
-		content: "";
+		content: "" / "";
 		display: inline-block;
 		width: 0.3em;
 		height: 0.3em;
 		margin: 0 0.8em;
 		vertical-align: 0.2em;
 		background: currentColor;
+
+		@media (forced-colors: active) {
+			background: CanvasText;
+		}
 	}
 
 	/* O texto corrido das telas: a serifa de leitura. */
