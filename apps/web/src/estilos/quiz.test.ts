@@ -7,6 +7,7 @@ import { colunasDoMosaico } from "../lib/quiz";
 // errada. Este teste lê o CSS, porque a regra é de cor e o jsdom não desenha.
 
 const css = readFileSync(new URL("./quiz.css", import.meta.url), "utf8");
+const indexCss = readFileSync(new URL("../index.css", import.meta.url), "utf8");
 
 /** O corpo da primeira regra de um seletor, no quiz.css ou num trecho de CSS. */
 function regra(seletor: string, onde = css): string {
@@ -215,10 +216,6 @@ describe("o título do palco fora da abertura", () => {
 // a migalha, o palco, o mosaico ou a folha mudarem, a folga muda junto.
 describe("a folha da resposta e o mosaico do canto, a partir de 62rem", () => {
 	const computador = bloco("@media (width >= 62rem)");
-	const indexCss = readFileSync(
-		new URL("../index.css", import.meta.url),
-		"utf8",
-	);
 
 	/** Os números que o padrão pega numa regra. */
 	function numeros(corpo: string, padrao: RegExp): number[] {
@@ -274,7 +271,8 @@ describe("a folha da resposta e o mosaico do canto, a partir de 62rem", () => {
 	// cada três ou quatro perguntas (o colunasDoMosaico e o quiz.tsx). O meio
 	// dele fica a 50svh − 3.25rem do alto da seção; na resposta, o translateY
 	// desfaz essa conta e põe o alto dele a 1rem do alto da seção, e a escala
-	// parte desse canto (o transform-origin).
+	// parte desse canto (o transform-origin). O primeiro teste confere esse
+	// lugar com as quatro regras que o fazem.
 	const [vao = 0] = numeros(regra(".mosaico"), /gap: (\d+)px;/);
 	const [capaNaTela = 0, capaMaior = 0] = numeros(
 		regra(".quiz", computador),
@@ -318,6 +316,74 @@ describe("a folha da resposta e o mosaico do canto, a partir de 62rem", () => {
 	// piloto usam a mesma tela da resposta.
 	const TRILHA = 6;
 	const FINAL = 12;
+
+	// A conta da folga lê da regra da resposta só o 1rem e a escala, e o lugar do
+	// mosaico recolhido sai também de três números de outras regras: o top e o
+	// translate do mosaico grande, que o translateY da resposta desfaz, e o
+	// transform-origin, que faz a escala partir do canto de cima (no celular
+	// também). Se um deles muda sozinho, a conta da folga não muda, e a tela,
+	// sim (a revisão do PR #151): com o mosaico grande 1rem mais baixo, a folha
+	// cobre a base do recolhido no quiz final; com a escala a partir do canto de
+	// baixo, ele cai para dentro da folha.
+	it("na resposta, o alto do mosaico recolhido fica a 1rem do alto da seção, em qualquer tela e com qualquer letra", () => {
+		const grande = regra(".mosaico", computador);
+		const [meioDaTela = 0, acimaDoMeio = 0] = numeros(
+			grande,
+			/top: calc\(([\d.]+)svh - ([\d.]+)rem\);/,
+		);
+		const [subida = 0] = numeros(grande, /translate: 0 (-?[\d.]+)%;/);
+		const [desfazTela = 0, desfazRem = 0, desfazSubida = 0, alto = 0] = numeros(
+			regra('.quiz[data-fase="resposta"] .mosaico', computador),
+			/translateY\(calc\((-?[\d.]+)svh \+ ([\d.]+)rem \+ ([\d.]+)% \+ ([\d.]+)rem\)\)/,
+		);
+		const origem = /transform-origin: \S+ (\S+);/.exec(regra(".mosaico"))?.[1];
+
+		/** De onde a escala parte, em px do alto do mosaico. */
+		function pontoFixo(altura: number): number {
+			const nomes: Record<string, number> = { top: 0, center: 0.5, bottom: 1 };
+			if (origem === undefined) {
+				throw new Error("o .mosaico não tem o transform-origin");
+			}
+			if (origem in nomes) {
+				return (nomes[origem] ?? 0) * altura;
+			}
+			if (origem.endsWith("%")) {
+				return (Number.parseFloat(origem) / 100) * altura;
+			}
+			if (origem === "0" || origem.endsWith("px")) {
+				return Number.parseFloat(origem);
+			}
+			throw new Error(`não sei ler o transform-origin ${origem}`);
+		}
+
+		const fora: string[] = [];
+		for (const tela of [600, 768, 900, 1080, 1440]) {
+			for (const rem of [16, 20, 32]) {
+				for (const altura of [120, 260, 480]) {
+					const svh = tela / 100;
+					// O top, o translate e o translateY da resposta, sem a escala.
+					const semEscala =
+						meioDaTela * svh -
+						acimaDoMeio * rem +
+						(subida / 100) * altura +
+						desfazTela * svh +
+						desfazRem * rem +
+						(desfazSubida / 100) * altura +
+						alto * rem;
+					// Com a escala, o alto anda na direção do ponto fixo.
+					const pontoDoAlto = pontoFixo(altura);
+					const comEscala = semEscala + pontoDoAlto - escala * pontoDoAlto;
+					if (Math.abs(comEscala - canto * rem) > 0.01) {
+						fora.push(
+							`tela de ${tela} px, letra de ${rem} px, mosaico de ${altura} px: o alto fica a ${comEscala.toFixed(1)} px, e não a ${(canto * rem).toFixed(1)} px`,
+						);
+					}
+				}
+			}
+		}
+
+		expect(fora).toEqual([]);
+	});
 
 	it("com a letra a 100%, a folha fica tão longe do mosaico quanto antes da #136", () => {
 		// A folga da develop, com a etiqueta, medida pelo Argos no navegador.
