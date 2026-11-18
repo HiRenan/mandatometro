@@ -3,6 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+	type AnyRoute,
 	createRootRoute,
 	createRouter,
 	type RootRouteOptions,
@@ -96,7 +97,9 @@ const css = [
  * Cada regra de um CSS sem outra dentro: o seletor e as declarações. O @utility
  * do Tailwind faz a classe com o nome dele, e o seletor lido ("@utility nome"),
  * que o matches recusa, vira o dessa classe. Ela conta só sozinha, sem variante
- * na frente nem o ! de importante.
+ * na frente nem o ! de importante. Não são lidos o @utility funcional (o
+ * caixa-*, com o --value(), que faz uma classe para cada valor) nem o @utility
+ * com outra regra dentro.
  */
 function lerRegras(texto: string) {
 	return [...texto.matchAll(/([^{};]+)\{([^{}]*)\}/g)].map(
@@ -120,21 +123,26 @@ const regras = lerRegras(css);
 const FAZ_CONTEINER =
 	/(?:^|[;\s])container(?:-type)?\s*:[^;]*(?:\bsize\b|\bvar\()/;
 
-/** Os seletores das regras do CSS que fazem um contêiner (o caixa-do-teto). */
+/**
+ * Os seletores das regras do CSS que fazem um contêiner (o caixa-do-teto). O
+ * @apply não é lido: o contêiner não vem por ele (o AGENTS.md).
+ */
 const CONTEINERES_DO_CSS = regras
 	.filter(({ corpo }) => FAZ_CONTEINER.test(corpo))
 	.map(({ seletor }) => seletor);
 
 /**
  * As classes do Tailwind que fazem um contêiner da largura: o @container e o
- * @container-size, com nome ou sem (o @container/folha), o de valor livre com o
- * size (o @container-[size]) e a propriedade livre ([container-type:size]),
- * com ou sem variante na frente (o md:@container conta em toda largura) e com o
- * ! de importante, na frente ou no fim. O valor numa variável pode ser um dos
- * dois, e conta: o @container-(--tipo) e o [container-type:var(--tipo)].
+ * @container-size, com nome ou sem (o @container/folha e o @container/[nome]),
+ * o de valor livre com o size (o @container-[size]) e a propriedade livre
+ * ([container-type:size]), com ou sem variante na frente (o md:@container conta
+ * em toda largura) e com o ! de importante, na frente ou no fim. No valor livre,
+ * o size pode vir logo depois do _, que o Tailwind troca por espaço (o
+ * [container-type:_size]). O valor numa variável pode ser um dos dois, e conta:
+ * o @container-(--tipo) e o [container-type:var(--tipo)].
  */
 const CONTEINER_DO_TAILWIND =
-	/(?:^|:)!?(?:@container(?:-size|-\[[^\]]*(?:\bsize|var\()[^\]]*\]|-\([^)]*\))?(?:\/[\w-]+)?|\[container(?:-type)?:[^\]]*(?:\bsize|var\()[^\]]*\])!?$/;
+	/(?:^|:)!?(?:@container(?:-size|-\[[^\]]*(?:(?:\b|_)size|var\()[^\]]*\]|-\([^)]*\))?(?:\/(?:[\w-]+|\[[^\]]+\]))?|\[container(?:-type)?:[^\]]*(?:(?:\b|_)size|var\()[^\]]*\])!?$/;
 
 /**
  * Os títulos com teto: as regras do CSS em que a letra para na palavra mais
@@ -196,20 +204,47 @@ const Documento = (RotaRaiz.options as RootRouteOptions).shellComponent;
 /** O loader de uma página da trilha recebe o endereço dela. */
 type NaTrilha = { params: { trilha: string } };
 
-/** O site inteiro, como no router.tsx: cada página, a 404 e a página de erro. */
+/**
+ * O site inteiro, como no router.tsx: cada página, a 404 e a página de erro.
+ * Cada rota fica dentro da mãe que tem no site, como no routeTree.gen.ts. A
+ * página de um layout (um conta.tsx ou um _autenticado.tsx, com o <Outlet />)
+ * entra nas filhas dele, com o caminho a partir dele, e o teste vê o que o
+ * layout põe em volta da página:
+ *
+ * RotaDaConta.update(naRaiz("/conta")).addChildren([
+ * 	RotaDoPerfil.update(dentroDe(RotaDaConta, "/perfil")),
+ * ])
+ *
+ * O layout sem caminho (o _autenticado) leva só o id, sem o path, como no
+ * routeTree.gen.ts, e a página dele abre pelo caminho dela (o /painel):
+ *
+ * RotaAutenticada.update({
+ * 	id: "/_autenticado",
+ * 	getParentRoute: () => raiz,
+ * } as never).addChildren([
+ * 	RotaDoPainel.update(dentroDe(RotaAutenticada, "/painel")),
+ * ])
+ */
 function criarRouter() {
 	const raiz = createRootRoute({ shellComponent: Documento });
 	/**
-	 * As opções de uma rota no site de mentira: o caminho do routeTree.gen.ts e
-	 * o loader que lê direto do servidor, sem a função do servidor.
+	 * As opções de uma rota no site de mentira: a mãe, o caminho a partir dela,
+	 * como no routeTree.gen.ts, e o loader que lê direto do servidor, sem a
+	 * função do servidor.
 	 */
-	const naRaiz = (caminho: string, loader?: (contexto: never) => unknown) =>
+	const dentroDe = (
+		mae: AnyRoute,
+		caminho: string,
+		loader?: (contexto: never) => unknown,
+	) =>
 		({
 			id: caminho,
 			path: caminho,
-			getParentRoute: () => raiz,
+			getParentRoute: () => mae,
 			...(loader && { loader }),
 		}) as never;
+	const naRaiz = (caminho: string, loader?: (contexto: never) => unknown) =>
+		dentroDe(raiz, caminho, loader);
 	return createRouter({
 		routeTree: raiz.addChildren([
 			RotaInicial.update(naRaiz("/", () => inicio(trilhas))),
@@ -350,6 +385,27 @@ const PAGINAS: Pagina[] = [
 	},
 ];
 
+/**
+ * O id de uma rota, no texto do arquivo dela: o do createFileRoute("…"), em
+ * que o gerador de rotas do TanStack escreve o id que dá à rota, ou o do
+ * createLazyFileRoute, de um .lazy.tsx, que repete o da rota dele. Um arquivo
+ * sem ele (o __root.tsx, um .functions.ts ou um teste sem o "-") não é rota.
+ */
+function idDaRota(texto: string) {
+	return texto.match(/\bcreate(?:Lazy)?FileRoute\(\s*(["'`])(.*?)\1/)?.[2];
+}
+
+/**
+ * A mãe de uma rota no site, como o gerador de rotas do TanStack a acha: a de
+ * id mais comprido que começa o dela até uma barra (o layout /conta é a mãe do
+ * /conta/perfil). O id de índice acaba na barra (o /edicoes/) e não começa
+ * outro até uma barra: não é mãe. Sem mãe, a rota fica na raiz (o __root__).
+ */
+function maeNoSite(id: string, ids: string[]) {
+	const maes = ids.filter((mae) => id.startsWith(`${mae}/`));
+	return maes.sort((a, b) => b.length - a.length)[0] ?? "__root__";
+}
+
 describe("a caixa da página", () => {
 	it("é a caixa do teto do nome, no cabeçalho e no rodapé, e do título da página", async () => {
 		const { pagina } = await pedir("/pagina-que-nao-existe");
@@ -375,8 +431,10 @@ describe("a caixa da página", () => {
 			const titulos = [...pagina.querySelectorAll(TITULOS_COM_TETO)];
 
 			expect(http).toBe(status);
-			// O nome, no cabeçalho e no rodapé, e ao menos um título da página.
-			expect(titulos.length).toBeGreaterThanOrEqual(3);
+			expect(
+				titulos.length,
+				"A página precisa do nome no cabeçalho e no rodapé e de ao menos um título com o letra-com-teto",
+			).toBeGreaterThanOrEqual(3);
 			for (const titulo of titulos) {
 				const onde = titulo.textContent?.trim();
 				const conteiner = conteinerEmVolta(titulo);
@@ -426,6 +484,12 @@ describe("a caixa da página", () => {
 			'<div class="[container-type:inline-size]!"></div>',
 			'<div class="![container-type:inline-size]"></div>',
 			'<div class="[container-type:var(--tipo)]"></div>',
+			// O _, que o Tailwind troca por espaço, logo antes do size, e o nome
+			// entre colchetes.
+			'<div class="[container:folha_/_size]"></div>',
+			'<div class="[container-type:_size]"></div>',
+			'<div class="@container-[_size]"></div>',
+			'<div class="@container/[nome]"></div>',
 			'<div style="container-type: inline-size"></div>',
 			'<div style="color: red; container: folha / size"></div>',
 			'<div style="container-type: var(--tipo)"></div>',
@@ -470,39 +534,108 @@ describe("a caixa da página", () => {
 		).toBe(true);
 	});
 
-	it("cada rota de src/routes está no criarRouter e abre por um endereço do QUE_ABREM", () => {
-		// As rotas que o TanStack Router lê: os .tsx de src/routes, fora o
-		// __root.tsx e o que começa com "-", como este teste. O id de cada uma é o
-		// caminho do arquivo, e o do index acaba na barra. Assim, uma rota nova
-		// não fica sem a conferência do contêiner.
-		const arquivos = readdirSync(join(src, "routes"), {
-			recursive: true,
-			encoding: "utf8",
-		})
-			.map((arquivo) => arquivo.replaceAll("\\", "/"))
-			.filter(
-				(arquivo) =>
-					arquivo.endsWith(".tsx") &&
-					arquivo !== "__root.tsx" &&
-					!arquivo.split("/").some((parte) => parte.startsWith("-")),
-			)
-			.map(
-				(arquivo) => `/${arquivo.slice(0, -4).replace(/(^|\/)index$/, "$1")}`,
-			)
-			.sort();
+	it("o id de uma rota é o do createFileRoute dela, que o gerador do TanStack escreve", () => {
+		// O id não vem do nome do arquivo: o gerador põe o conta/route.tsx na
+		// /conta, o noticias.$id.tsx na /noticias/$id e o .lazy.tsx na rota dele.
+		expect(
+			idDaRota('export const Route = createFileRoute("/conta")({});'),
+		).toBe("/conta");
+		expect(
+			idDaRota("export const Route = createFileRoute('/noticias/$id')({});"),
+		).toBe("/noticias/$id");
+		expect(
+			idDaRota('export const Route = createLazyFileRoute("/ajuda")({});'),
+		).toBe("/ajuda");
+		// O __root.tsx e o arquivo que não é rota, como um .functions.ts.
+		expect(
+			idDaRota("export const Route = createRootRouteWithContext()({});"),
+		).toBeUndefined();
+		expect(
+			idDaRota("export const acao = createServerFn().handler(() => 1);"),
+		).toBeUndefined();
+	});
+
+	it("a mãe de uma rota é a de id mais comprido que começa o dela, como no gerador do TanStack", () => {
+		const ids = [
+			"/",
+			"/conta",
+			"/conta/",
+			"/conta/perfil",
+			"/conta/perfil/foto",
+			"/contas",
+			"/_autenticado",
+			"/_autenticado/painel",
+			"/edicoes/",
+			"/edicoes/$id",
+		];
+
+		expect(
+			Object.fromEntries(ids.map((id) => [id, maeNoSite(id, ids)])),
+		).toEqual({
+			"/": "__root__",
+			"/conta": "__root__",
+			// O índice e as páginas de um layout ficam dentro dele.
+			"/conta/": "/conta",
+			"/conta/perfil": "/conta",
+			"/conta/perfil/foto": "/conta/perfil",
+			// O /conta começa outro id só até uma barra.
+			"/contas": "__root__",
+			"/_autenticado": "__root__",
+			"/_autenticado/painel": "/_autenticado",
+			// O id de índice, que acaba na barra, não é mãe.
+			"/edicoes/": "__root__",
+			"/edicoes/$id": "__root__",
+		});
+	});
+
+	it("cada rota de src/routes está no criarRouter, dentro da mãe dela, e abre por um endereço do QUE_ABREM", () => {
+		// As rotas que o gerador de rotas do TanStack lê: os .ts e os .tsx de
+		// src/routes com o createFileRoute, fora o que começa com "-" (o arquivo
+		// ou a pasta), como este teste. O id de cada uma é o do createFileRoute,
+		// e não o nome do arquivo (o idDaRota). Assim, uma rota nova não fica sem
+		// a conferência do contêiner, nem a página de um layout sem ele em volta.
+		const pasta = join(src, "routes");
+		const arquivos = [
+			...new Set(
+				readdirSync(pasta, { recursive: true, encoding: "utf8" })
+					.map((arquivo) => arquivo.replaceAll("\\", "/"))
+					.filter(
+						(arquivo) =>
+							/\.tsx?$/.test(arquivo) &&
+							!arquivo.split("/").some((parte) => parte.startsWith("-")),
+					)
+					.map((arquivo) =>
+						idDaRota(readFileSync(join(pasta, arquivo), "utf8")),
+					)
+					.filter((id) => id !== undefined),
+			),
+		].sort();
 		const router = criarRouter();
-		const montadas = Object.keys(router.routesById)
+		const rotas: Record<string, AnyRoute> = router.routesById;
+		const montadas = Object.keys(rotas)
 			.filter((id) => id !== "__root__")
 			.sort();
-		// A rota que cada endereço do QUE_ABREM abre.
+		// As rotas que não estão dentro da mãe que têm no site, e onde elas vão.
+		const foraDaMae = montadas
+			.map((id) => ({ id, mae: maeNoSite(id, arquivos) }))
+			.filter(({ id, mae }) => rotas[id].parentRoute.id !== mae)
+			.map(({ id, mae }) => `${id} dentro de ${mae}`);
+		// As rotas que cada endereço do QUE_ABREM abre: a da página e o layout em
+		// volta dela.
 		const abertas = new Set(
-			QUE_ABREM.map((caminho) => router.getMatchedRoutes(caminho)[2]?.id),
+			QUE_ABREM.flatMap((caminho) =>
+				router.getMatchedRoutes(caminho)[0].map(({ id }) => id),
+			),
 		);
 
 		expect(
 			montadas,
-			"Cada arquivo de rota entra no criarRouter deste teste, com o caminho dele",
+			"Cada arquivo de rota entra no criarRouter deste teste, com o id do createFileRoute dele",
 		).toEqual(arquivos);
+		expect(
+			foraDaMae,
+			"Cada rota entra no criarRouter deste teste dentro da mãe que tem no site: a página de um layout vai no addChildren dele, com o dentroDe",
+		).toEqual([]);
 		expect(
 			montadas.filter((id) => !abertas.has(id)),
 			"Cada rota abre por um endereço do QUE_ABREM deste teste: ponha nele um da rota que falta",
