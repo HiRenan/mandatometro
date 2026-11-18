@@ -7,13 +7,13 @@ import { describe, expect, it } from "vitest";
 
 const css = readFileSync(new URL("./quiz.css", import.meta.url), "utf8");
 
-/** O corpo da primeira regra de um seletor. */
-function regra(seletor: string): string {
-	const comeco = css.indexOf(`${seletor} {`);
+/** O corpo da primeira regra de um seletor, no quiz.css ou num trecho de CSS. */
+function regra(seletor: string, onde = css): string {
+	const comeco = onde.indexOf(`${seletor} {`);
 	if (comeco < 0) {
-		throw new Error(`o quiz.css não tem a regra ${seletor}`);
+		throw new Error(`o CSS não tem a regra ${seletor}`);
 	}
-	return css.slice(comeco, css.indexOf("}", comeco));
+	return onde.slice(comeco, onde.indexOf("}", comeco));
 }
 
 /** Um bloco inteiro, como um @media, com as regras de dentro. */
@@ -75,6 +75,16 @@ describe("o pé do palco", () => {
 			/\.quiz\[data-linha\]\[data-fase="abertura"\] \.quiz-pe \{\s*position: static;/,
 		);
 	});
+
+	// A linha do nome do quiz e da frase do andamento (a #136). Sem o flex, o
+	// nome e a frase ficam em linhas separadas; sem o flex-wrap, a frase vira
+	// uma coluna estreita ao lado do nome, em vez de descer inteira.
+	it("leva o nome do quiz e a frase juntos, e a frase desce inteira onde não cabe", () => {
+		const linha = regra(".quiz-pe-linha");
+
+		expect(linha).toContain("display: flex;");
+		expect(linha).toContain("flex-wrap: wrap;");
+	});
 });
 
 // Os quadradinhos do andamento ficam numa fileira enquanto cabem. A 320 px, os
@@ -129,6 +139,40 @@ describe("o título do palco fora da abertura", () => {
 			expect(fora).toContain(declaracao);
 		}
 		expect(fora).not.toMatch(/font-size|text-transform|letter-spacing|color:/);
+	});
+
+	// O display: none e o visibility: hidden tirariam o h1 da árvore de
+	// acessibilidade, e o palco perderia o nome e o primeiro título. O jsdom não
+	// lê o quiz.css: os testes da tela não pegariam.
+	it("continua no leitor de tela: nenhuma regra dele tem display: none nem visibility: hidden", () => {
+		const doTitulo = [
+			...css.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/([^{}]+)\{([^{}]*)\}/g),
+		].filter(([, seletor = ""]) => seletor.includes(".quiz-titulo"));
+
+		expect(doTitulo.map(([, seletor = ""]) => seletor.trim())).toContain(
+			'.quiz:not([data-fase="abertura"]) .quiz-titulo',
+		);
+		for (const [, seletor = "", corpo = ""] of doTitulo) {
+			expect(corpo, seletor.trim()).not.toMatch(
+				/display:\s*none|visibility:\s*hidden/,
+			);
+		}
+	});
+
+	it("abaixo de 62rem, na pergunta, o palco guarda o maior entre o respiro dele e o canto do mosaico", () => {
+		// Com o min(), a reserva ficava no respiro de cima do palco, e a primeira
+		// linha do enunciado entrava num azulejo a 360 px (a revisão do Argos).
+		const respiro = /padding: ([\d.]+rem) /.exec(regra(".quiz-palco"))?.[1];
+		const reserva = regra(
+			'.quiz:is([data-fase="pergunta"], [data-fase="resposta"]) .quiz-palco',
+			bloco("@media (width < 62rem)"),
+		);
+		const [, primeiro, segundo] =
+			/padding-top: max\(\s*([^,]+),\s*([^;]+)\);/.exec(reserva) ?? [];
+
+		expect(respiro).toBeDefined();
+		expect(primeiro).toBe(respiro);
+		expect(segundo).toMatch(/^calc\(var\(--canto\)/);
 	});
 
 	it("abaixo de 62rem, o palco guarda o lugar do mosaico, e o título só guarda lugar na abertura", () => {
