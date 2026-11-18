@@ -714,6 +714,82 @@ describe("o quiz", () => {
 		]);
 	});
 
+	// Fora da abertura, o título do palco sai da vista (estilos/quiz.css), mas fica
+	// no HTML: em todas as telas, o leitor de tela tem o h1, o nome do palco e a
+	// mesma ordem dos títulos (a #136).
+	it("em todas as telas, o palco tem o nome do quiz e começa pelo título dele", async () => {
+		await mostrar();
+		/**
+		 * Os títulos do palco, na ordem do HTML: o nível e o texto, sem as frases
+		 * escondidas que guardam o tamanho do título do fim.
+		 */
+		const titulos = () =>
+			within(screen.getByRole("region", { name: "Quiz da trilha" }))
+				.getAllByRole("heading")
+				.map((titulo) => {
+					const visivel = titulo.cloneNode(true) as HTMLElement;
+					for (const escondida of visivel.querySelectorAll(
+						"[aria-hidden=true]",
+					)) {
+						escondida.remove();
+					}
+					return `${titulo.tagName} ${visivel.textContent}`;
+				});
+
+		expect(titulos()).toEqual(["H1 Quiz da trilha"]);
+
+		comecar();
+		expect(titulos()).toEqual(["H1 Quiz da trilha", `H2 ${INICIATIVA}`]);
+
+		escolherEResponder("Pode, pela iniciativa popular.");
+		expect(titulos()).toEqual(["H1 Quiz da trilha", `H2 ${INICIATIVA}`]);
+
+		seguir();
+		escolherEResponder("Pelo Senado Federal.");
+		seguir();
+		expect(titulos()).toEqual([
+			"H1 Quiz da trilha",
+			"H2 Você terminou o quiz.",
+		]);
+	});
+
+	// Quem vê lê o nome do quiz no pé, com o andamento, e não acima do título (a
+	// #136). A abertura já tem o título gigante, e o pé dela fica sem o nome. O
+	// leitor de tela já tem o h1, e o nome do pé fica fora dele.
+	it("fora da abertura, o pé diz qual é o quiz, antes da frase do andamento", async () => {
+		await mostrar();
+		const pe = () => {
+			const elemento = document.querySelector<HTMLElement>(".quiz-pe");
+			if (!elemento) {
+				throw new Error("o palco ficou sem o pé");
+			}
+			return elemento;
+		};
+		const nomeNoPe = () => within(pe()).queryByText("Quiz da trilha");
+
+		expect(nomeNoPe()).toBeNull();
+
+		comecar();
+		const nome = nomeNoPe();
+		expect(nome?.getAttribute("aria-hidden")).toBe("true");
+		// Na linha da frase do andamento, antes dela.
+		expect(nome?.nextElementSibling).toBe(
+			pe().querySelector(".quiz-andamento-texto"),
+		);
+
+		escolherEResponder("Pode, pela iniciativa popular.");
+		expect(naTela("Você respondeu 1 de 2.")).toBeTruthy();
+		expect(nomeNoPe()?.getAttribute("aria-hidden")).toBe("true");
+
+		seguir();
+		escolherEResponder("Pelo Senado Federal.");
+		seguir();
+		expect(
+			screen.getByRole("heading", { level: 2, name: "Você terminou o quiz." }),
+		).toBeTruthy();
+		expect(nomeNoPe()?.getAttribute("aria-hidden")).toBe("true");
+	});
+
 	it("na volta à página com o quiz pela metade, continua da primeira pergunta sem resposta", async () => {
 		guardarRespostas({ [INICIATIVA]: "Pode, pela iniciativa popular." });
 		await mostrar();
