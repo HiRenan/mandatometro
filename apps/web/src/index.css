@@ -461,15 +461,17 @@
 	 * As ações em texto que são links ("O código é aberto, no GitHub") ficam em
 	 * linha, como texto, e a caixa de um link em linha tem a altura da letra, e não a
 	 * da linha. No link, o padding faz a área: 15 px em cima e embaixo da letra, em
-	 * cada linha quando o link quebra, e 4 px no começo e no fim, que a margem negativa
-	 * devolve. O anel de foco contorna o texto (o span), e não a área, na cor do anel
-	 * do lugar: azul no papel e amarelo no cabeçalho. Um link sem o span fica com o
-	 * anel no próprio link. Num navegador sem o :has(), a regra que tira o anel do
-	 * link cai, e o link com o span fica com dois anéis: o foco continua visível.
+	 * cada linha quando o link quebra. Dos lados, a área é a do texto, sem padding:
+	 * com 4 px de cada lado, devolvidos por uma margem negativa, o Firefox quebrava o
+	 * link num item da largura do texto ("IR PARA O" numa linha e "INÍCIO" na outra),
+	 * porque conta a margem ao medir o item, e não ao decidir a quebra (#173). O anel
+	 * de foco contorna o texto (o span), e não a área, na cor do anel do lugar: azul
+	 * no papel e amarelo no cabeçalho. Um link sem o span fica com o anel no próprio
+	 * link. Num navegador sem o :has(), a regra que tira o anel do link cai, e o link
+	 * com o span fica com dois anéis: o foco continua visível.
 	 */
 	a.acao-de-texto {
-		margin-inline: -0.25rem;
-		padding: 0.9375rem 0.25rem;
+		padding-block: 0.9375rem;
 	}
 
 	a.acao-de-texto::before {
