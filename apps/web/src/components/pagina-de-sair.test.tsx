@@ -400,14 +400,43 @@ describe("a página de sair", () => {
 		expect(
 			screen.getByRole("link", { name: "Ir para o início" }).closest("li"),
 		).toBe(lugar);
-		// O item de baixo guarda a altura dele, com uma cópia invisível, sem link
-		// e fora do leitor de tela: o espaço que sobra fica no fim do pé.
+		// O item de baixo guarda a altura dele, com uma cópia invisível e fora do
+		// leitor de tela: o espaço que sobra fica no fim do pé.
 		const seguinte = lugar.nextElementSibling as HTMLElement;
 		expect(seguinte.getAttribute("aria-hidden")).toBe("true");
 		expect(seguinte.classList.contains("invisible")).toBe(true);
 		expect(seguinte.textContent).toBe("Ir para o início");
-		expect(seguinte.querySelector(".acao-de-texto")).not.toBeNull();
-		expect(seguinte.querySelector("a")).toBeNull();
+	});
+
+	it("com o código que a API recusa, a cópia do “Ir para o início” é o mesmo link, sem o endereço: quebra como ele, sem foco nem clique", async () => {
+		sair.mockResolvedValue({ tipo: "link-invalido" });
+		const router = await mostrar();
+		await confirmar();
+		const link = screen.getByRole("link", { name: "Ir para o início" });
+		const copia = lugarDoBotao().nextElementSibling?.firstElementChild as
+			| HTMLElement
+			| undefined;
+
+		// No Firefox, a 390 px, o link quebra em duas linhas, e um span com a
+		// mesma classe ficava numa: o item de baixo encolhia, e a página também
+		// (a revisão do PR #146). A cópia é o mesmo elemento, com a mesma classe
+		// e o mesmo texto, para ter a altura dele.
+		expect(copia?.tagName).toBe("A");
+		expect(copia?.className).toBe(link.className);
+		expect(copia?.innerHTML).toBe(link.innerHTML);
+		// Sem o href, ela não é link: nem o leitor de tela, que já não a vê pelo
+		// aria-hidden do item, a acharia como link.
+		expect(copia?.hasAttribute("href")).toBe(false);
+		expect(
+			screen.getAllByRole("link", { name: "Ir para o início", hidden: true }),
+		).toEqual([link]);
+		// Ela não recebe o foco, e o clique nela não leva a lugar nenhum.
+		copia?.focus();
+		expect(document.activeElement).toBe(link);
+		await act(async () => {
+			fireEvent.click(copia as HTMLElement, { detail: 1 });
+		});
+		expect(router.state.location.pathname).toBe("/newsletter/sair");
 	});
 
 	it.each([

@@ -225,11 +225,16 @@ export function PaginaDeSair({
 						)}
 						{recusado ? (
 							// O item do "Ir para o início" guarda a altura dele com
-							// uma cópia, invisível e fora do leitor de tela.
+							// uma cópia, invisível e fora do leitor de tela. A cópia é
+							// o mesmo link, sem o endereço: no Firefox, a 390 px, o
+							// link quebra em duas linhas, e um span ficava numa, com
+							// o pé mais baixo. Sem o href, ela não é link, não recebe
+							// o foco, e o invisible a tira do ponteiro.
 							<li aria-hidden="true" className="invisible">
-								<span className="acao-de-texto">
+								{/* biome-ignore lint/a11y/useValidAnchor: a cópia invisível do link só guarda a altura dele, fora do leitor de tela, do teclado e do ponteiro. */}
+								<a className="acao-de-texto">
 									<span>Ir para o início</span>
-								</span>
+								</a>
 							</li>
 						) : (
 							<li>{irParaOInicio}</li>
