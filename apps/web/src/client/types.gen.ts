@@ -239,6 +239,20 @@ export type ListaEdicoes = {
 };
 
 /**
+ * Login
+ */
+export type Login = {
+    /**
+     * Senha
+     */
+    senha: string;
+    /**
+     * Email
+     */
+    email: string;
+};
+
+/**
  * PedidoInscricao
  */
 export type PedidoInscricao = {
@@ -551,6 +565,96 @@ export type TermoContaResponses = {
 };
 
 export type TermoContaResponse = TermoContaResponses[keyof TermoContaResponses];
+
+export type EntrarContaData = {
+    body: Login;
+    path?: never;
+    query?: never;
+    url: '/contas/login';
+};
+
+export type EntrarContaErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErroConta;
+    /**
+     * Forbidden
+     */
+    403: ErroConta;
+    /**
+     * Conflict
+     */
+    409: ErroConta;
+    /**
+     * Unprocessable Content
+     */
+    422: ErroConta;
+    /**
+     * Too Many Requests
+     */
+    429: ErroConta;
+    /**
+     * Service Unavailable
+     */
+    503: ErroConta;
+};
+
+export type EntrarContaError = EntrarContaErrors[keyof EntrarContaErrors];
+
+export type EntrarContaResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type EntrarContaResponse = EntrarContaResponses[keyof EntrarContaResponses];
+
+export type SairContaData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/contas/logout';
+};
+
+export type SairContaErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErroConta;
+    /**
+     * Forbidden
+     */
+    403: ErroConta;
+    /**
+     * Conflict
+     */
+    409: ErroConta;
+    /**
+     * Unprocessable Content
+     */
+    422: ErroConta;
+    /**
+     * Too Many Requests
+     */
+    429: ErroConta;
+    /**
+     * Service Unavailable
+     */
+    503: ErroConta;
+};
+
+export type SairContaError = SairContaErrors[keyof SairContaErrors];
+
+export type SairContaResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type SairContaResponse = SairContaResponses[keyof SairContaResponses];
 
 export type CadastrarContaData = {
     body: Cadastro;

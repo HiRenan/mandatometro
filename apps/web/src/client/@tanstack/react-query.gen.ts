@@ -3,8 +3,8 @@
 import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { abrirSaida, cadastrarConta, confirmarConta, consultarPerfil, excluirConta, health, inscreverNewsletter, listarEdicoes, obterEdicao, type Options, recuperarConta, redefinirSenha, reenviarConfirmacao, registrarTentativaPiloto, sairDaNewsletter, termoConta } from '../sdk.gen';
-import type { AbrirSaidaData, AbrirSaidaError, CadastrarContaData, CadastrarContaError, CadastrarContaResponse, ConfirmarContaData, ConfirmarContaError, ConfirmarContaResponse, ConsultarPerfilData, ConsultarPerfilError, ConsultarPerfilResponse, ExcluirContaData, ExcluirContaError, ExcluirContaResponse, HealthData, HealthResponse, InscreverNewsletterData, InscreverNewsletterError, InscreverNewsletterResponse, ListarEdicoesData, ListarEdicoesError, ListarEdicoesResponse, ObterEdicaoData, ObterEdicaoError, ObterEdicaoResponse, RecuperarContaData, RecuperarContaError, RecuperarContaResponse, RedefinirSenhaData, RedefinirSenhaError, RedefinirSenhaResponse, ReenviarConfirmacaoData, ReenviarConfirmacaoError, ReenviarConfirmacaoResponse, RegistrarTentativaPilotoData, RegistrarTentativaPilotoError, RegistrarTentativaPilotoResponse, SairDaNewsletterData, SairDaNewsletterError, TermoContaData, TermoContaError, TermoContaResponse } from '../types.gen';
+import { abrirSaida, cadastrarConta, confirmarConta, consultarPerfil, entrarConta, excluirConta, health, inscreverNewsletter, listarEdicoes, obterEdicao, type Options, recuperarConta, redefinirSenha, reenviarConfirmacao, registrarTentativaPiloto, sairConta, sairDaNewsletter, termoConta } from '../sdk.gen';
+import type { AbrirSaidaData, AbrirSaidaError, CadastrarContaData, CadastrarContaError, CadastrarContaResponse, ConfirmarContaData, ConfirmarContaError, ConfirmarContaResponse, ConsultarPerfilData, ConsultarPerfilError, ConsultarPerfilResponse, EntrarContaData, EntrarContaError, EntrarContaResponse, ExcluirContaData, ExcluirContaError, ExcluirContaResponse, HealthData, HealthResponse, InscreverNewsletterData, InscreverNewsletterError, InscreverNewsletterResponse, ListarEdicoesData, ListarEdicoesError, ListarEdicoesResponse, ObterEdicaoData, ObterEdicaoError, ObterEdicaoResponse, RecuperarContaData, RecuperarContaError, RecuperarContaResponse, RedefinirSenhaData, RedefinirSenhaError, RedefinirSenhaResponse, ReenviarConfirmacaoData, ReenviarConfirmacaoError, ReenviarConfirmacaoResponse, RegistrarTentativaPilotoData, RegistrarTentativaPilotoError, RegistrarTentativaPilotoResponse, SairContaData, SairContaError, SairContaResponse, SairDaNewsletterData, SairDaNewsletterError, TermoContaData, TermoContaError, TermoContaResponse } from '../types.gen';
 
 /**
  * Receber a inscrição e enviar a última edição publicada
@@ -112,6 +112,40 @@ export const termoContaOptions = (options?: Options<TermoContaData>) => queryOpt
     },
     queryKey: termoContaQueryKey(options)
 });
+
+/**
+ * Entrar Conta
+ */
+export const entrarContaMutation = (options?: Partial<Options<EntrarContaData>>): UseMutationOptions<EntrarContaResponse, EntrarContaError, Options<EntrarContaData>> => {
+    const mutationOptions: UseMutationOptions<EntrarContaResponse, EntrarContaError, Options<EntrarContaData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await entrarConta({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Sair Conta
+ */
+export const sairContaMutation = (options?: Partial<Options<SairContaData>>): UseMutationOptions<SairContaResponse, SairContaError, Options<SairContaData>> => {
+    const mutationOptions: UseMutationOptions<SairContaResponse, SairContaError, Options<SairContaData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await sairConta({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 /**
  * Cadastrar Conta

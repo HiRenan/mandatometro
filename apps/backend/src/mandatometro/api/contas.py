@@ -1,4 +1,5 @@
-from datetime import date
+import secrets
+from datetime import date, timedelta
 from typing import Annotated, Literal
 from uuid import uuid4
 
@@ -67,6 +68,10 @@ class RotaConta(APIRoute):
                 resposta = await tratar(request)
             except RequestValidationError:
                 resposta = JSONResponse({"detail": "Confira os campos informados."}, 422)
+            except HTTPException as erro:
+                resposta = JSONResponse(
+                    {"detail": erro.detail}, erro.status_code, headers=erro.headers
+                )
             except SQLAlchemyError:
                 resposta = JSONResponse({"detail": "Serviço indisponível."}, 503)
             resposta.headers["Cache-Control"] = "no-store"
@@ -147,6 +152,76 @@ class Redefinicao(Codigo, SenhaNova):
 
 class Exclusao(BaseModel):
     senha: Annotated[str, Field(min_length=1, max_length=128)]
+
+
+class Login(Endereco, Exclusao):
+    pass
+
+
+VALIDADE_SESSAO = timedelta(days=7)
+# Mantém o custo de verificação da senha também para endereços desconhecidos.
+HASH_SEM_CONTA = senhas.hash(secrets.token_urlsafe(32))
+
+
+def validar_origem(request: Request) -> None:
+    if request.headers.get("origin") != config().app_base_url.rstrip("/"):
+        raise HTTPException(403, "Origem inválida.")
+
+
+@router.post("/login", status_code=204)
+def entrar_conta(pedido: Login, request: Request, response: Response) -> None:
+    validar_origem(request)
+    email = pedido.email.casefold()
+    limitar(email)
+    with sessao() as db, db.begin():
+        conta = db.scalar(select(Conta).where(Conta.email == email).with_for_update())
+        erro = "Confira o e-mail, a senha e a confirmação do cadastro."
+        try:
+            senhas.verify(conta.senha_hash if conta else HASH_SEM_CONTA, pedido.senha)
+        except VerifyMismatchError:
+            raise HTTPException(401, erro) from None
+        if not conta or not conta.confirmada_em:
+            raise HTTPException(401, erro)
+        token = secrets.token_urlsafe(32)
+        db.add(
+            CredencialConta(
+                resumo=resumo(token),
+                conta_id=conta.id,
+                finalidade="sessao",
+                expira=agora() + VALIDADE_SESSAO,
+            )
+        )
+    response.set_cookie(
+        "sessao_conta",
+        token,
+        max_age=int(VALIDADE_SESSAO.total_seconds()),
+        httponly=True,
+        secure=config().api_url.startswith("https://"),
+        samesite="lax",
+        path="/",
+    )
+
+
+@router.post("/logout", status_code=204)
+def sair_conta(
+    request: Request, response: Response, sessao_conta: Annotated[str | None, Cookie()] = None
+) -> None:
+    validar_origem(request)
+    if sessao_conta:
+        with sessao() as db, db.begin():
+            db.execute(
+                delete(CredencialConta).where(
+                    CredencialConta.resumo == resumo(sessao_conta),
+                    CredencialConta.finalidade == "sessao",
+                )
+            )
+    response.delete_cookie(
+        "sessao_conta",
+        path="/",
+        httponly=True,
+        secure=config().api_url.startswith("https://"),
+        samesite="lax",
+    )
 
 
 def limitar(email):
@@ -259,8 +334,7 @@ def excluir_conta(
     tarefas: BackgroundTasks,
     sessao_conta: Annotated[str | None, Cookie()] = None,
 ) -> None:
-    if request.headers.get("origin") != config().app_base_url.rstrip("/"):
-        raise HTTPException(403, "Origem inválida.")
+    validar_origem(request)
     if not sessao_conta:
         raise HTTPException(401, "Entre na sua conta.")
     with sessao() as db, db.begin():
