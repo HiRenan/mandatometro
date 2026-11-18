@@ -722,9 +722,10 @@
 	 * 200% a 320 e a 360 px, a frase desce inteira, sem virar uma coluna estreita.
 	 */
 	.quiz-pe-linha {
+		--vao-do-nome: 0.75rem;
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem 0.75rem;
+		gap: 0.25rem var(--vao-do-nome);
 		align-items: baseline;
 	}
 
@@ -1004,6 +1005,47 @@
 
 		.quiz-fim-lista a {
 			grid-template-columns: minmax(0, 1fr);
+		}
+
+		/*
+		 * Aqui a etiqueta sai das maiúsculas, e o nome do quiz fica com quase a
+		 * letra da frase do andamento: "Quiz final Você respondeu 1 de 12." se lia
+		 * como uma frase só. Entre os dois vai o quadradinho da faixa de
+		 * informações, que o Renan escolheu em 18/11/2026 (a #162).
+		 * - É desenho: o texto alternativo vazio do content (o / "") o tira da
+		 *   árvore de acessibilidade. No navegador que não lê o texto alternativo,
+		 *   a declaração cai, e o pé fica como antes, sem o quadradinho.
+		 * - Não toma lugar na linha, que quebra como antes: a margem da esquerda
+		 *   devolve a largura dele, com o mesmo arredondamento, e a frase não sai
+		 *   do lugar nem 1/64 de px. O left, que não mexe na linha, o leva ao meio
+		 *   do vão entre o nome e a frase.
+		 * - Com o nome sozinho (a frase vazia, na primeira pergunta e no fim), ele
+		 *   não aparece.
+		 * - Quando a frase desce para a linha de baixo, ele fica antes da beirada
+		 *   da linha, que o corta: o clip, e não o hidden, que faria da linha uma
+		 *   caixa de rolagem, que o flex encolhe. O recuo da esquerda, devolvido
+		 *   pela margem, põe a beirada do corte um pouco antes do texto, sem
+		 *   mexer nele: a tinta do A de "Antes da trilha", que passa da beirada,
+		 *   fica inteira, e o quadradinho, mais longe, some. O
+		 *   overflow-clip-margin faria isso, mas o Chromium não o aplica com o
+		 *   corte só na horizontal.
+		 */
+		.quiz-pe-linha {
+			overflow-x: clip;
+			padding-left: 0.125rem;
+			margin-left: -0.125rem;
+		}
+
+		.quiz-nome + .quiz-andamento-texto > p:not(:empty)::before {
+			content: "" / "";
+			position: relative;
+			left: calc((var(--vao-do-nome) - 0.3em) / -2);
+			display: inline-block;
+			width: 0.3em;
+			height: 0.3em;
+			margin-left: -0.3em;
+			vertical-align: 0.2em;
+			background: currentColor;
 		}
 	}
 
