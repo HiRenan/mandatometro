@@ -16,22 +16,12 @@ import { acharArtigo, trilhas } from "@/lib/conteudo/paginas.server";
 import { Route as RotaRaiz } from "@/routes/__root";
 import { Route as RotaDoArtigo } from "@/routes/trilhas/$trilha/$artigo";
 
-// A barra da leitura do artigo (o .leitura-barra, em
-// routes/trilhas/$trilha/$artigo.tsx): a tira das cinco fitas, no alto da tela,
-// que enche com a rolagem do texto. O index.css desenha a peça, e o
-// estilos/movimento.css liga a barra onde o navegador tem a animação de rolagem
-// e a desliga com o movimento reduzido. Até a #149, a regra do index.css que
-// escondia a barra vinha depois da que a ligava, na mesma camada, e vencia: a
-// barra nunca apareceu.
-//
-// Este teste junta o CSS do site na ordem do build e resolve a cascata da barra
-// em cada navegador, porque o jsdom não conhece as camadas nem o @supports. A
-// medida de verdade é no navegador.
-//
-// A cascata também sai para as duas peças que ligam a barra ao texto: o texto do
-// artigo, que é a linha do tempo, e a página do artigo, que deixa a barra ver
-// essa linha. A revisão do PR #160 achou três mudanças que deixavam o teste verde
-// e quebravam a barra no navegador (a #163).
+// A cascata da barra, da página e do texto usa o HTML que o servidor envia e o
+// index.css com seus imports de estilos/, na ordem do build. Classes, ids e
+// elementos que o JavaScript acrescenta depois ficam fora dessa fotografia.
+// A conta lê as propriedades pedidas e os atalhos de abrir. O globals.css, as
+// classes do Tailwind, outros atalhos e nomes de propriedade com escapes CSS
+// ficam fora. A medida da rolagem é no navegador.
 
 const src = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -84,22 +74,17 @@ async function documentoDoArtigo() {
 
 const documento = await documentoDoArtigo();
 
-type Peca = { nome: string; classe: string; elemento: Element };
+type Peca = { nome: string; elemento: Element };
 
 function pecaDoArtigo(classe: string, nome: string): Peca {
 	const elemento = documento.querySelector(classe);
 	if (!elemento) throw new Error(`Falta ${nome} (${classe}) no HTML do artigo`);
-	return { nome, classe, elemento };
+	return { nome, elemento };
 }
 
 const PAGINA = pecaDoArtigo(".pagina-do-artigo", "a página do artigo");
 const BARRA = pecaDoArtigo(".leitura-barra", "a barra");
 const TEXTO = pecaDoArtigo(".texto", "o texto do artigo");
-
-/** As animações do CSS, para achar o nome dentro do atalho `animation`. */
-const ANIMACOES = new Set(
-	[...css.matchAll(/@keyframes ([\w-]+)/g)].map(([, nome]) => nome),
-);
 
 /** Os preenchimentos da animação, para achar o dele dentro do atalho `animation`. */
 const PREENCHIMENTOS = new Set(["none", "forwards", "backwards", "both"]);
@@ -107,99 +92,139 @@ const PREENCHIMENTOS = new Set(["none", "forwards", "backwards", "both"]);
 /** Os eixos da linha do tempo, para achar o dela dentro do atalho `view-timeline`. */
 const EIXOS = new Set(["block", "inline", "x", "y"]);
 
-type Regra = { seletores: string[]; declaracoes: string[]; blocos: string[] };
+type Declaracao = [propriedade: string, valor: string, importante: boolean];
+type Regra = {
+	seletores: string[];
+	declaracoes: Declaracao[];
+	blocos: string[];
+};
 
-/** A lista de seletores, separada nas vírgulas de fora dos parênteses. */
+/** Mantém aspas, escapes e grupos de (...) e [...] inteiros, inclusive os aninhados. */
+function* trechosDoCss(texto: string) {
+	let nivel = 0;
+	let trecho = "";
+	for (const [parte] of texto.matchAll(
+		/\\.|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[\w\s.#:*>+~-]+|./gs,
+	)) {
+		trecho += parte;
+		if (parte === "(" || parte === "[") nivel++;
+		if (parte === ")" || parte === "]") nivel--;
+		if (nivel === 0) {
+			yield trecho;
+			trecho = "";
+		}
+	}
+	if (trecho) yield trecho;
+}
+
+/** Só a vírgula fora de uma condição separa os seletores da lista. */
 function separar(lista: string): string[] {
 	const seletores = [""];
-	let fundo = 0;
-	for (const letra of lista) {
-		if (letra === "," && fundo === 0) {
+	for (const trecho of trechosDoCss(lista)) {
+		if (trecho === ",") {
 			seletores.push("");
-			continue;
+		} else {
+			seletores[seletores.length - 1] += trecho;
 		}
-		if (letra === "(") fundo++;
-		if (letra === ")") fundo--;
-		seletores[seletores.length - 1] += letra;
 	}
-	return seletores.map((seletor) => seletor.trim().replace(/\s+/g, " "));
+	return seletores.map((seletor) => seletor.trim());
 }
 
 /** As regras de estilo, na ordem do CSS, com os blocos em volta de cada uma (@layer, @supports e @media). */
 function lerRegras(texto: string): Regra[] {
+	const animacoes = new Set(
+		[...texto.matchAll(/@keyframes ([\w-]+)/g)].map(([, nome = ""]) => nome),
+	);
 	const regras: Regra[] = [];
-	const pilha: { cabeca: string; declaracoes: string[] }[] = [];
+	const pilha: { cabeca: string; declaracoes: Declaracao[] }[] = [];
 	let trecho = "";
-	let aspas: string | null = null;
-	for (const letra of texto) {
-		if (aspas) {
-			trecho += letra;
-			if (letra === aspas) aspas = null;
-		} else if (letra === '"' || letra === "'") {
-			trecho += letra;
-			aspas = letra;
-		} else if (letra === "{") {
+	for (const parte of trechosDoCss(texto)) {
+		if (parte === "{") {
 			pilha.push({
 				cabeca: trecho.trim().replace(/\s+/g, " "),
 				declaracoes: [],
 			});
 			trecho = "";
-		} else if (letra === ";" || letra === "}") {
+		} else if (parte === ";" || parte === "}") {
 			// Fora de bloco, o ";" fecha um @import ou um @custom-variant.
-			if (pilha.length > 0 && trecho.trim()) {
-				pilha[pilha.length - 1]?.declaracoes.push(trecho.trim());
-			}
+			pilha.at(-1)?.declaracoes.push(...abrir(trecho.trim(), animacoes));
 			trecho = "";
-			const bloco = letra === "}" ? pilha.pop() : undefined;
+			if (parte === ";") continue;
+			const bloco = pilha.pop();
+			if (!bloco?.declaracoes.length) continue;
+			const blocos = pilha.map(({ cabeca }) => cabeca);
 			if (
-				bloco &&
-				!bloco.cabeca.startsWith("@") &&
-				!pilha.at(-1)?.cabeca.startsWith("@keyframes ")
+				(ehRegraDeEstilo(bloco.cabeca) || blocos.some(ehRegraDeEstilo)) &&
+				!blocos.at(-1)?.startsWith("@keyframes ")
 			) {
 				regras.push({
 					seletores: separar(bloco.cabeca),
 					declaracoes: bloco.declaracoes,
-					blocos: pilha.map(({ cabeca }) => cabeca),
+					blocos,
 				});
 			}
 		} else {
-			trecho += letra;
+			trecho += parte;
 		}
 	}
 	return regras;
+}
+
+function ehRegraDeEstilo(cabeca: string): boolean {
+	return !cabeca.startsWith("@");
 }
 
 const REGRAS = lerRegras(css);
 
 /** Se o seletor pega a peça. O que o teste não sabe avaliar falha, para não passar calado. */
 function pega(peca: Peca, seletor: string): boolean {
-	// Um pseudo-elemento, como o ::before ou uma foto da troca de página, tem estilo próprio.
-	if (/::[\w-]+(?:\([^()]*\))?$/.test(seletor)) return false;
 	try {
-		const corresponde = peca.elemento.matches(seletor);
-		// Tags, classes, ids e * têm especificidade conhecida. O matches recebe o
-		// seletor inteiro, com o espaço, o >, o + e o ~ entre as partes.
-		if (/^[\w.#*>+~ -]+$/.test(seletor)) return corresponde;
-		// Uma condição na peça (como .texto:hover) pode valer em outro estado.
-		const ultima = seletor.split(/[ >+~]+/).at(-1) ?? "";
-		if (!corresponde && !ultima.split(/(?=[.#:[])/).includes(peca.classe)) {
+		if (/^[\w.#*>+~ -]+$/.test(seletor)) return peca.elemento.matches(seletor);
+		// Um combinador dentro de :has() ou de um atributo faz parte da condição.
+		const semArgumentos = Array.from(trechosDoCss(seletor), (trecho) => {
+			if (trecho.startsWith("(") && trecho.endsWith(")")) return "()";
+			if (trecho.startsWith("[") && trecho.endsWith("]")) return "[]";
+			return trecho;
+		}).join("");
+		// O pseudo-elemento final tem estilo próprio, mesmo com :hover ou :only-child.
+		if (
+			/(?:::[\w-]+(?:\(\))?|:(?:before|after|first-line|first-letter))(?::[\w-]+(?:\(\))?)*$/i.test(
+				semArgumentos,
+			)
+		)
 			return false;
-		}
+		const semCondicoes = semArgumentos.replace(
+			/[^ >+~]+/g,
+			(parte) => parte.replace(/:[\w-]+(?:\(\))?|\[\]/g, "") || "*",
+		);
+		if (!peca.elemento.matches(semCondicoes)) return false;
 	} catch {
 		// O jsdom também recusa seletores que não conhece.
 	}
-	throw new Error(`o teste não sabe se o seletor ${seletor} pega ${peca.nome}`);
+	throw new Error(
+		`o teste não sabe se o seletor ${seletor} pega ${peca.nome}. Ensine o teste a avaliar esse seletor.`,
+	);
 }
 
 type Navegador = { rolagem: boolean; menosMovimento: boolean };
 
 /** Se o bloco vale no navegador. As camadas valem sempre. */
-function vale(bloco: string, navegador: Navegador): boolean {
+function vale(bloco: string, navegador: Navegador, seletor: string): boolean {
 	if (bloco.startsWith("@layer ")) return true;
-	if (bloco.startsWith("@supports ") && bloco.includes("animation-timeline")) {
+	if (
+		/^@supports (?:not )?\(animation-timeline: (?:scroll|view)\(\)\)$/.test(
+			bloco,
+		)
+	) {
 		return bloco.startsWith("@supports not ")
 			? !navegador.rolagem
 			: navegador.rolagem;
+	}
+	if (
+		bloco ===
+		"@supports (animation-timeline: scroll()) and (animation-range: 0 600vh)"
+	) {
+		return navegador.rolagem;
 	}
 	if (bloco === "@media (prefers-reduced-motion: reduce)") {
 		return navegador.menosMovimento;
@@ -207,18 +232,22 @@ function vale(bloco: string, navegador: Navegador): boolean {
 	if (bloco === "@media (prefers-reduced-motion: no-preference)") {
 		return !navegador.menosMovimento;
 	}
-	throw new Error(`o teste não sabe se o bloco ${bloco} vale no navegador`);
+	throw new Error(
+		`o teste não sabe se o bloco ${bloco} vale para ${seletor}. Ensine o teste a avaliar esse bloco.`,
+	);
 }
 
 /** A posição da camada na ordem, e a de quem fica fora de camada, depois de todas. */
-function camada(blocos: string[]): number {
+function camada(blocos: string[], seletor: string): number {
 	const nomes = blocos
 		.filter((bloco) => bloco.startsWith("@layer "))
 		.map((bloco) => bloco.slice("@layer ".length));
 	if (nomes.length === 0) return CAMADAS.length;
 	const [nome = ""] = nomes;
 	if (nomes.length > 1 || !CAMADAS.includes(nome)) {
-		throw new Error(`o teste não conhece a camada ${nomes.join(".")}`);
+		throw new Error(
+			`o teste não conhece a camada ${nomes.join(".")} de ${seletor}. Inclua a camada na ordem da cascata.`,
+		);
 	}
 	return CAMADAS.indexOf(nome);
 }
@@ -247,15 +276,21 @@ function compararEspecificidade(a: number[], b: number[]): number {
  * linha do tempo e o trecho dela, e o `view-timeline`, a janela dela (o inset).
  * O que vem antes do atalho se perde.
  */
-function abrir(declaracao: string): [string, string, boolean][] {
-	const achada = /^([\w-]+)\s*:\s*([\s\S]+?)\s*(!important)?$/.exec(declaracao);
+function abrir(
+	declaracao: string,
+	animacoes: ReadonlySet<string>,
+): Declaracao[] {
+	const achada = /^([\w-]+)\s*:\s*([\s\S]+?)\s*(!\s*important)?$/i.exec(
+		declaracao,
+	);
 	if (!achada) return [];
-	const [, propriedade = "", valor = "", importante] = achada;
+	const [, chave = "", valor = "", importante] = achada;
+	const propriedade = chave.startsWith("--") ? chave : chave.toLowerCase();
 	const peso = Boolean(importante);
-	const partes = valor.split(" ");
+	const partes = valor.split(/\s+/);
 	if (propriedade === "animation") {
 		const nome =
-			partes.find((parte) => parte === "none" || ANIMACOES.has(parte)) ??
+			partes.find((parte) => parte === "none" || animacoes.has(parte)) ??
 			"none";
 		const preenchimento =
 			partes.find((parte) => PREENCHIMENTOS.has(parte)) ?? "none";
@@ -306,34 +341,42 @@ function vence(a: Candidata, b: Candidata): boolean {
 function estilo(
 	peca: Peca,
 	navegador: Navegador,
+	regras = REGRAS,
 ): (propriedade: string) => string {
-	const vencedoras = new Map<string, Candidata>();
-	let ordem = 0;
-	for (const { seletores, declaracoes, blocos } of REGRAS) {
-		const daPeca = seletores.filter((seletor) => pega(peca, seletor));
-		if (daPeca.length === 0) continue;
-		if (!blocos.every((bloco) => vale(bloco, navegador))) continue;
-		const [maior = [0, 0, 0]] = daPeca
-			.map(especificidade)
-			.sort((a, b) => compararEspecificidade(b, a));
-		for (const declaracao of declaracoes) {
-			ordem++;
-			for (const [propriedade, valor, importante] of abrir(declaracao)) {
+	return (propriedade) => {
+		let vencedora: Candidata | undefined;
+		let ordem = 0;
+		for (const { seletores, declaracoes, blocos } of regras) {
+			const daPropriedade = declaracoes.filter(
+				([nome]) => nome === propriedade,
+			);
+			if (daPropriedade.length === 0) continue;
+			if (blocos.some(ehRegraDeEstilo)) {
+				const caminho = [...blocos, seletores.join(", ")].join(" → ");
+				throw new Error(
+					`Regra aninhada em ${caminho}. Escreva a regra por extenso.`,
+				);
+			}
+			const daPeca = seletores.filter((seletor) => pega(peca, seletor));
+			if (daPeca.length === 0) continue;
+			const seletor = daPeca.join(", ");
+			if (!blocos.every((bloco) => vale(bloco, navegador, seletor))) continue;
+			const [maior = [0, 0, 0]] = daPeca
+				.map(especificidade)
+				.sort((a, b) => compararEspecificidade(b, a));
+			for (const [, valor, importante] of daPropriedade) {
 				const candidata: Candidata = {
 					valor,
 					importante,
-					camada: camada(blocos),
+					camada: camada(blocos, seletor),
 					especificidade: maior,
-					ordem,
+					ordem: ordem++,
 				};
-				const atual = vencedoras.get(propriedade);
-				if (!atual || vence(candidata, atual)) {
-					vencedoras.set(propriedade, candidata);
-				}
+				if (!vencedora || vence(candidata, vencedora)) vencedora = candidata;
 			}
 		}
-	}
-	return (propriedade) => vencedoras.get(propriedade)?.valor ?? "(sem regra)";
+		return vencedora?.valor ?? "(sem regra)";
+	};
 }
 
 /** O valor de cada propriedade da barra no navegador. */
@@ -352,6 +395,103 @@ const zDoCabecalho = Number(
 const margemDoVisto = /rootMargin: "([^"]*)"/.exec(
 	readFileSync(join(src, "routes/trilhas/$trilha/$artigo.tsx"), "utf8"),
 )?.[1];
+
+describe("as regras que declaram a propriedade pedida", () => {
+	const navegador = { rolagem: true, menosMovimento: false };
+	function ler(
+		exemplo: string,
+		peca = TEXTO,
+		propriedade = "view-timeline-name",
+	) {
+		return estilo(peca, navegador, lerRegras(exemplo))(propriedade);
+	}
+
+	it.each([
+		".artigo-folha:has(> .lido[data-lido]) > .lide + div",
+		".artigo-folha:has(> .lido[data-lido]) > h1 ~ div",
+		".artigo-folha:hover > div",
+		'html:has(head > meta[name="theme-color"]) .lide + div',
+		'.artigo-folha > :is(:where(.fora, .outra), [data-rotulo="a,b"])',
+		':not(.fora) > .lide + [data-rotulo="a,b"]',
+	])("avisa sobre a condição em %s", (seletor) => {
+		expect(() => ler(`${seletor} { view-timeline: none; }`)).toThrow(
+			`o teste não sabe se o seletor ${seletor} pega o texto do artigo`,
+		);
+	});
+
+	it("confere também o escopo da página e o atalho da animação da barra", () => {
+		const pagina = "main:hover > div";
+		const barra = "main:hover > div > div";
+		expect(() =>
+			ler(`${pagina} { timeline-scope: none; }`, PAGINA, "timeline-scope"),
+		).toThrow(pagina);
+		expect(() =>
+			ler(`${barra} { animation: none; }`, BARRA, "animation-range"),
+		).toThrow(barra);
+	});
+
+	it.each([
+		"& > .lide + div",
+		"& > h1 ~ div",
+		"> .lide + div",
+		".texto",
+		"@media (prefers-reduced-motion: no-preference)",
+		"@supports (animation-timeline: view())",
+	])("pede a regra por extenso quando %s está dentro da folha", (interna) => {
+		const exemplo = `.artigo-folha { ${interna} { view-timeline-name: none; } }`;
+		expect(() => ler(exemplo)).toThrow(interna);
+		expect(() => ler(exemplo)).toThrow(/por extenso/);
+	});
+
+	it("preserva o lugar da parte vazia e descarta seletores de outras peças", () => {
+		const exemplo = `
+			.texto { view-timeline-name: --leitura; }
+			.nao-existe:hover > div, .artigo-folha > :hover .texto,
+			.texto::before:hover, .texto:after, html::view-transition-new(root):only-child {
+				view-timeline-name: none !important;
+			}
+		`;
+		expect(ler(exemplo)).toBe("--leitura");
+	});
+
+	it("lê a propriedade pedida mesmo quando a mesma folha tem outras regras condicionais ou aninhadas", () => {
+		const exemplo = `
+			.texto { view-timeline: --leitura block; }
+			.lide + .texto:hover { color: red; }
+			.artigo-folha:hover > div { color: red; }
+			.artigo-folha { & > div { color: red; } }
+		`;
+		expect(ler(exemplo)).toBe("--leitura");
+	});
+
+	it("nomeia o seletor e o bloco que o teste precisa aprender a avaliar", () => {
+		const exemplo =
+			"@media print { .lide + div { view-timeline-name: none; } }";
+		expect(() => ler(exemplo)).toThrow("@media print");
+		expect(() => ler(exemplo)).toThrow(".lide + div");
+	});
+
+	it("avisa quando o jsdom recusa o que sobra do seletor", () => {
+		const seletor = ".artigo-folha:hover > > div";
+		expect(() => ler(`${seletor} { view-timeline-name: none; }`)).toThrow(
+			seletor,
+		);
+	});
+
+	it("reconhece o nome da propriedade e o !important em maiúsculas", () => {
+		const exemplo = `
+			.texto { VIEW-TIMELINE: --leitura block ! IMPORTANT; }
+			.texto { view-timeline-name: none; }
+		`;
+		expect(ler(exemplo)).toBe("--leitura");
+	});
+
+	it("avisa se o @supports junta a rolagem a uma condição desconhecida", () => {
+		const bloco = "@supports (animation-timeline: view()) and (display: grid)";
+		const exemplo = `${bloco} { .texto { view-timeline-name: none; } }`;
+		expect(() => ler(exemplo)).toThrow(bloco);
+	});
+});
 
 describe("a barra da leitura do artigo", () => {
 	const comRolagem = barraNo({ rolagem: true, menosMovimento: false });
