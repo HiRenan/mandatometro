@@ -1,4 +1,10 @@
-import { type RefObject, useEffect, useRef, useSyncExternalStore } from "react";
+import {
+	type RefObject,
+	useEffect,
+	useRef,
+	useState,
+	useSyncExternalStore,
+} from "react";
 import { fitaDaPeca, type Peca, pecaSorteada, sorteio } from "./azulejos";
 
 /**
@@ -141,7 +147,9 @@ export function usePainelVivo(
 	trocar.current = trocarPeca;
 	// A preferência pode mudar com a página aberta. No servidor, nada vira.
 	const reduzido = useSyncExternalStore(assinar, movimentoReduzido, () => true);
-	// A onda da chegada é uma só, mesmo que o painel pare e volte a virar.
+	// Quando o painel para e volta a virar, o sorteio segue de onde parou, e a
+	// onda da chegada não se repete.
+	const [sorte] = useState(() => sorteio(99));
 	const chegou = useRef(false);
 
 	useEffect(() => {
@@ -149,7 +157,6 @@ export function usePainelVivo(
 		if (!elemento || reduzido) {
 			return;
 		}
-		const sorte = sorteio(99);
 		const desistir = new Set<() => void>();
 
 		const redesenhar = (indice: number, atraso = 0) => {
@@ -255,5 +262,5 @@ export function usePainelVivo(
 				desiste();
 			}
 		};
-	}, [painel, sozinho, ondaAoChegar, reduzido]);
+	}, [painel, sozinho, ondaAoChegar, reduzido, sorte]);
 }
