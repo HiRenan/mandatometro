@@ -710,7 +710,10 @@ export function Quiz({
 				    respondida, e a frase, sem contar acertos. A linha da frase guarda o
 				    tamanho da mais comprida desde o HTML do servidor: no celular com a
 				    letra grande, ela quebra em duas linhas. No fim, a frase já está no
-				    título da tela. */}
+				    título da tela.
+				    Fora da abertura, o nome do quiz vem antes da frase: é ali que quem
+				    vê descobre em que quiz está, e não numa etiqueta acima do título (a
+				    #136). O leitor de tela já tem o h1, e o nome fica fora dele. */}
 				<div className="quiz-pe">
 					<ol aria-hidden="true" className="quiz-andamento">
 						{perguntas.map((outra, indice) => (
@@ -727,12 +730,19 @@ export function Quiz({
 							/>
 						))}
 					</ol>
-					<p className="quiz-andamento-texto rotulo grid">
-						<Reservas frases={frasesDoAndamento(total)} />
-						<span className="col-start-1 row-start-1">
-							{tela === "fim" ? "" : andamento}
-						</span>
-					</p>
+					<div className="quiz-pe-linha">
+						{tela !== "abertura" && (
+							<span aria-hidden="true" className="quiz-nome rotulo">
+								{titulo}
+							</span>
+						)}
+						<p className="quiz-andamento-texto rotulo grid">
+							<Reservas frases={frasesDoAndamento(total)} />
+							<span className="col-start-1 row-start-1">
+								{tela === "fim" ? "" : andamento}
+							</span>
+						</p>
+					</div>
 				</div>
 				<Aviso texto={aviso} />
 			</section>
