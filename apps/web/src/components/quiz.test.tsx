@@ -461,6 +461,14 @@ describe("o quiz, no HTML do servidor", () => {
 });
 
 describe("o quiz", () => {
+	it("reúne as informações da abertura em um parágrafo", async () => {
+		await mostrar();
+		const faixa = screen
+			.getByText("Fonte oficial em cada resposta")
+			.closest("p:not(.faixa)");
+		expect(faixa?.textContent).toContain("2 perguntas");
+	});
+
 	it("abre com o Começar e o mosaico, um azulejo por pergunta, fora do leitor de tela", async () => {
 		await mostrar();
 
@@ -727,6 +735,12 @@ describe("o quiz", () => {
 		if (!fim) {
 			throw new Error("o título do fim saiu da tela do fim");
 		}
+		const voltar = within(fim).getByRole("link", {
+			name: "Voltar para Processo legislativo",
+		});
+		const acoes = voltar.closest(".quiz-fim-acoes");
+		expect(acoes?.tagName).toBe("DIV");
+		expect(acoes?.contains(botaoDeComecar())).toBe(true);
 		expect(
 			within(fim)
 				.getAllByRole("link")
@@ -796,11 +810,14 @@ describe("o quiz", () => {
 			return elemento;
 		};
 		const nomeNoPe = () => within(pe()).queryByText("Quiz da trilha");
+		const fraseNoPe = () => pe().querySelector(".quiz-andamento-texto > p");
 
 		expect(nomeNoPe()).toBeNull();
+		expect(fraseNoPe()).toBeNull();
 
 		comecar();
 		const nome = nomeNoPe();
+		expect(fraseNoPe()).toBeNull();
 		expect(nome?.getAttribute("aria-hidden")).toBe("true");
 		// Na linha da frase do andamento, antes dela.
 		expect(nome?.nextElementSibling).toBe(
@@ -809,6 +826,7 @@ describe("o quiz", () => {
 
 		escolherEResponder("Pode, pela iniciativa popular.");
 		expect(naTela("Você respondeu 1 de 2.")).toBeTruthy();
+		expect(fraseNoPe()?.textContent).toBe("Você respondeu 1 de 2.");
 		expect(nomeNoPe()?.getAttribute("aria-hidden")).toBe("true");
 
 		seguir();
@@ -818,6 +836,7 @@ describe("o quiz", () => {
 			screen.getByRole("heading", { level: 2, name: "Você terminou o quiz." }),
 		).toBeTruthy();
 		expect(nomeNoPe()?.getAttribute("aria-hidden")).toBe("true");
+		expect(fraseNoPe()).toBeNull();
 	});
 
 	// O separador entre o nome do quiz e a frase do andamento (a #162) é um
@@ -1052,6 +1071,7 @@ describe("o quiz", () => {
 		await mostrar();
 		const naAbertura = screen.getByRole("button", { name: "Recomeçar o quiz" });
 		const linha = naAbertura.closest(".recomeco");
+		expect(linha?.tagName).toBe("DIV");
 		expect(controlesDaLinha(naAbertura)).toEqual([naAbertura]);
 
 		fireEvent.click(naAbertura, { detail: 1 });

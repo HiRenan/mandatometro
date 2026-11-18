@@ -16,6 +16,7 @@ import {
 } from "@/lib/formatar";
 import { AzulejoGrande } from "./azulejo";
 import { BOTAO_CONTINUAR } from "./botao-continuar";
+import { FaixaDeInformacoes } from "./faixa-de-informacoes";
 import { ItemDaEdicao } from "./item-da-edicao";
 import { EdicoesIndisponiveis } from "./pagina-das-edicoes";
 
@@ -83,11 +84,11 @@ function FolhaDaEdicao({ edicao }: { edicao: EdicaoPublica }) {
 							{edicao.titulo}
 						</h1>
 						{/* A fonte oficial de cada item fica no lide, logo abaixo. */}
-						<p className="faixa rotulo">
+						<FaixaDeInformacoes>
 							<span>{formatarPeriodo(edicao.inicio, edicao.fim)}</span>
 							<span>Publicada em {publicacao}</span>
 							<span>{plural(itens.length, "item", "itens")}</span>
-						</p>
+						</FaixaDeInformacoes>
 						<p className="lide">
 							O que o Congresso votou na semana, em linguagem simples. Cada item
 							traz a fonte oficial e a data em que ela foi coletada.

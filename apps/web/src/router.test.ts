@@ -1,6 +1,14 @@
 // @vitest-environment jsdom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	onTestFinished,
+	vi,
+} from "vitest";
 import { getRouter } from "./router";
 
 type Router = ReturnType<typeof getRouter>;
@@ -87,10 +95,25 @@ function tiposDaTroca(router: Router) {
 }
 
 /** Um link para `caminho`, sem carregar a página: só o histórico muda. */
-async function abrir(router: Router, caminho: string) {
+function abrir(router: Router, caminho: string) {
 	router.history.push(caminho);
-	// O histórico do TanStack Router grava o endereço no navegador logo depois.
-	await new Promise((pronto) => setTimeout(pronto, 0));
+	router.history.flush();
+	return router.parseLocation(router.history.location);
+}
+
+/** A visita que o histórico do navegador devolve ao voltar. */
+async function voltar(router: Router) {
+	const voltou = new Promise<void>((pronto) => {
+		const parar = router.history.subscribe(({ action }) => {
+			if (action.type === "BACK") {
+				parar();
+				pronto();
+			}
+		});
+	});
+	router.history.back();
+	await voltou;
+	return router.parseLocation(router.history.location);
 }
 
 // A #164: na volta pelo navegador para uma página rolada, o cabeçalho da página
@@ -179,12 +202,10 @@ describe("o cabeçalho na troca de página", () => {
 	// A #172: o "Receber por e-mail" das edições leva à folha da newsletter, no fim
 	// da página inicial. O router abre a página no trecho, dentro da troca: com o
 	// nome, o cabeçalho de antes voava até o alto dela e deixava a faixa de papel.
-	it("num link para um trecho de outra página, como o /#newsletter, o cabeçalho fica sem o nome e vai com a página de antes", async () => {
+	it("num link para um trecho de outra página, como o /#newsletter, o cabeçalho fica sem o nome e vai com a página de antes", () => {
 		const router = getRouter();
-		await abrir(router, "/edicoes");
-		const edicoes = router.parseLocation(router.history.location);
-		await abrir(router, "/#newsletter");
-		const newsletter = router.parseLocation(router.history.location);
+		const edicoes = abrir(router, "/edicoes");
+		const newsletter = abrir(router, "/#newsletter");
 
 		expect(newsletter.hash).toBe("newsletter");
 		expect(tiposDaTroca(router)(troca(edicoes, newsletter))).toEqual([
@@ -193,34 +214,44 @@ describe("o cabeçalho na troca de página", () => {
 		]);
 	});
 
-	it("num link para um trecho da mesma página, não há troca", async () => {
+	it.each([
+		{
+			posicao: "no alto",
+			rolagem: 0,
+			tipos: ["folha", "voltar", "moldura-na-tela"],
+		},
+		{ posicao: "lá embaixo", rolagem: 2078, tipos: ["folha", "voltar"] },
+	])(
+		"na volta do navegador para /#newsletter, vale a rolagem de quem deixou a página $posicao",
+		async ({ rolagem, tipos }) => {
+			const router = getRouter();
+			onTestFinished(() => router.history.destroy());
+			const newsletter = abrir(router, "/#newsletter");
+			rolar(rolagem);
+			const trilhas = abrir(router, "/trilhas");
+			router.emit({ type: "onBeforeLoad", ...troca(newsletter, trilhas) });
+			rolar(0);
+
+			const destino = await voltar(router);
+			expect(destino.href).toBe("/#newsletter");
+			expect(tiposDaTroca(router)(troca(trilhas, destino))).toEqual(tipos);
+		},
+	);
+
+	it("num link para um trecho da mesma página, não há troca", () => {
 		const router = getRouter();
-		await abrir(router, "/edicoes/5");
-		const edicao = router.parseLocation(router.history.location);
-		await abrir(router, "/edicoes/5#item-2");
-		const item = router.parseLocation(router.history.location);
+		const edicao = abrir(router, "/edicoes/5");
+		const item = abrir(router, "/edicoes/5#item-2");
 
 		expect(tiposDaTroca(router)(troca(edicao, item))).toBe(false);
 	});
 
 	it("na volta do navegador sem a rolagem guardada, como depois de recarregar a página, o cabeçalho fica sem o nome", async () => {
 		const router = getRouter();
-		await abrir(router, TRILHA);
-		await abrir(router, ARTIGO);
-		const artigo = router.parseLocation(router.history.location);
+		abrir(router, TRILHA);
+		const artigo = abrir(router, ARTIGO);
 
-		const voltou = new Promise<void>((pronto) => {
-			const parar = router.history.subscribe(({ action }) => {
-				if (action.type === "BACK") {
-					parar();
-					pronto();
-				}
-			});
-		});
-		router.history.back();
-		await voltou;
-
-		const trilha = router.parseLocation(router.history.location);
+		const trilha = await voltar(router);
 		expect(trilha.pathname).toBe(TRILHA);
 		expect(tiposDaTroca(router)(troca(artigo, trilha))).toEqual([
 			"folha",

@@ -17,6 +17,9 @@ from mandatometro.db.modelos import AvisoConta, Conta, CredencialConta
 
 
 def test_ciclo_completo(engine_de_teste, monkeypatch):
+    instante = contas.agora()
+    monkeypatch.setattr(contas, "agora", lambda: instante)
+    monkeypatch.setattr(api, "agora", lambda: instante)
     sessoes = sessionmaker(engine_de_teste)
     monkeypatch.setattr(api, "sessao", sessoes)
     monkeypatch.setattr(contas, "sessao", sessoes)
@@ -132,6 +135,9 @@ def api_secret():
 
 
 def test_login_e_saida(engine_de_teste, monkeypatch):
+    instante = contas.agora()
+    monkeypatch.setattr(contas, "agora", lambda: instante)
+    monkeypatch.setattr(api, "agora", lambda: instante)
     sessoes = sessionmaker(engine_de_teste)
     monkeypatch.setattr(api, "sessao", sessoes)
     monkeypatch.setattr(contas, "sessao", sessoes)

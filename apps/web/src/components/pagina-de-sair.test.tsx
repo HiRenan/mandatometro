@@ -205,7 +205,8 @@ function celula(elemento: Element | null | undefined) {
  * O parágrafo de uma frase à vista: um <p> só com ela, em bloco. O Chromium tira
  * da árvore de acessibilidade um <p> em grade ou flex, e quem navega pelos
  * parágrafos pula a frase (a revisão do PR #146, pelo CDP). A grade que guarda
- * o lugar fica num elemento em volta dele.
+ * o lugar fica num elemento em volta dele. Este teste lê as classes do <p>.
+ * Uma regra do CSS pode pôr esse elemento em grade sem aparecer aqui.
  */
 function paragrafoDe(frase: string, raiz: HTMLElement = document.body) {
 	const paragrafo = within(raiz).getByText(frase, {
@@ -518,6 +519,7 @@ describe("a página de sair", () => {
 			const copia = lugar.querySelector(":scope > [aria-hidden='true']");
 			const peca = daVez();
 
+			expect(lugar.classList.contains("grid")).toBe(true);
 			expect(peca?.parentElement).toBe(lugar);
 			expect(celula(copia)).toEqual(["col-start-1", "row-start-1"]);
 			expect(celula(peca)).toEqual(celula(copia));

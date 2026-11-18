@@ -221,13 +221,17 @@
 	}
 
 	.faixa > span:not(:last-child)::after {
-		content: "";
+		content: "" / "";
 		display: inline-block;
 		width: 0.3em;
 		height: 0.3em;
 		margin: 0 0.8em;
 		vertical-align: 0.2em;
 		background: currentColor;
+
+		@media (forced-colors: active) {
+			background: CanvasText;
+		}
 	}
 
 	/* O texto corrido das telas: a serifa de leitura. */
@@ -1649,11 +1653,11 @@
 	}
 
 	/*
-	 * O título do passo é uma etiqueta: em maiúsculas espaçadas e, com a letra
-	 * grande, como escrito. Ele tem o teto (a #148): a letra de 1rem diminui até a
-	 * palavra mais comprida caber ao lado do azulejo e do "+", e o --palavra, no
-	 * infografico.tsx, tem um número para cada jeito. O recuo é o que fica na linha
-	 * do título: o azulejo, os dois vãos e o "+".
+	 * O título do passo é uma etiqueta em maiúsculas espaçadas. Abaixo de 22rem,
+	 * fica como escrito. A letra de 1rem diminui até a palavra mais larga caber na
+	 * linha do título, ao lado do "+". A partir de 22rem, o azulejo também ocupa
+	 * essa linha. O recuo conta essas peças e os vãos. O infografico.tsx traz um
+	 * --palavra para as maiúsculas e outro para o título como escrito (#148).
 	 */
 	.sanfona h3 {
 		--letra: 1rem;
@@ -2152,7 +2156,7 @@
 		line-height: 1.15;
 	}
 
-	.artigo-folha > .faixa {
+	.artigo-folha > p > .faixa {
 		margin-top: 1.5rem;
 		padding: 0.7rem 0;
 		border-block: 2px solid var(--tinta);
@@ -2435,6 +2439,10 @@
 
 	.outros-artigos a:hover {
 		background-color: var(--papel-2);
+	}
+
+	.outros-artigos a:focus-visible {
+		outline-offset: -6px;
 	}
 
 	.outros-artigos-cabeca {

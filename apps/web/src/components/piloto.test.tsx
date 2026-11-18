@@ -400,9 +400,9 @@ describe("a página do piloto", () => {
 			"O quiz final",
 		]);
 		expect(screen.getByRole("button", { name: "Começar" })).toBeTruthy();
-		expect(naTela("12 perguntas")).toBeTruthy();
-		expect(naTela("Duas etapas")).toBeTruthy();
-		expect(naTela("Sem nome e sem e-mail")).toBeTruthy();
+		const faixa = naTela("12 perguntas").closest("p:not(.faixa)");
+		expect(faixa?.contains(naTela("Duas etapas"))).toBe(true);
+		expect(faixa?.contains(naTela("Sem nome e sem e-mail"))).toBe(true);
 		expect(
 			screen.queryByRole("button", { name: "Recomeçar o quiz" }),
 		).toBeNull();
@@ -480,11 +480,11 @@ describe("a página do piloto", () => {
 			}),
 		).toBe(document.activeElement);
 		expect(naTela(FIM_DO_ANTES)).toBeTruthy();
-		expect(
-			screen
-				.getByRole("link", { name: "Começar a trilha" })
-				.getAttribute("href"),
-		).toBe(`/trilhas/${TRILHA}/quem-pode-propor-uma-lei`);
+		const link = screen.getByRole("link", { name: "Começar a trilha" });
+		expect(link.closest(".quiz-fim-acoes")?.tagName).toBe("DIV");
+		expect(link.getAttribute("href")).toBe(
+			`/trilhas/${TRILHA}/quem-pode-propor-uma-lei`,
+		);
 		expect(proximoPedido()).toMatchObject({ etapa: "antes", acertos: 5 });
 		expect(fim?.textContent).not.toMatch(/\d/);
 		expect(
@@ -629,9 +629,9 @@ describe("a página do piloto", () => {
 		const botao = screen.getByRole("button", {
 			name: "Começar como outra pessoa",
 		});
-		expect(botao.closest("p")?.previousElementSibling?.textContent).toBe(
-			OUTRA_PESSOA,
-		);
+		const linha = botao.closest(".piloto-recomeco");
+		expect(linha?.tagName).toBe("DIV");
+		expect(linha?.previousElementSibling?.textContent).toBe(OUTRA_PESSOA);
 		fireEvent.click(botao, { detail: 1 });
 
 		for (const chave of CHAVES) {
@@ -639,6 +639,7 @@ describe("a página do piloto", () => {
 		}
 		expect(lerPiloto()).toEqual({ fase: "fora" });
 		expect(document.activeElement?.textContent).toBe(PRONTO);
+		expect(linha?.contains(document.activeElement)).toBe(true);
 		expect(aviso()).toBe(PRONTO);
 		expect(
 			screen.queryByRole("button", { name: "Começar como outra pessoa" }),

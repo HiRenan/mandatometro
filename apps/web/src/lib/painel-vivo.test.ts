@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from "@testing-library/react";
+import { createElement, useRef } from "react";
+import { hydrateRoot, type Root } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import {
 	afterEach,
 	beforeEach,
@@ -32,6 +35,9 @@ function preferencia(reduzido: boolean) {
 	};
 	vi.stubGlobal("matchMedia", () => consulta);
 	return {
+		get totalDeOuvintes() {
+			return ouvintes.size;
+		},
 		mudarSemAviso(valor: boolean) {
 			consulta.matches = valor;
 		},
@@ -65,20 +71,8 @@ function animaNa(peca: Element) {
 	return { animate, feitas };
 }
 
-/**
- * Um painel de oito peças, todas à vista e com o painel na tela, vivo pelo
- * `usePainelVivo`. Com o `animado`, cada peça ganha o `animate` de mentira.
- */
-function montarPainel({
-	sozinho = false,
-	ondaAoChegar = false,
-	animado = false,
-} = {}) {
-	const pecas = painel(7, 8);
-	const elemento = document.createElement("div");
-	elemento.append(...pecas.map(() => document.createElement("span")));
-	document.body.append(elemento);
-	// O jsdom não mede nada: as peças ficam à vista, e o painel, na tela.
+/** Dá medidas às peças no jsdom e avisa o observador quando o painel entra na tela. */
+function simularPainelNaTela() {
 	vi.spyOn(HTMLElement.prototype, "offsetParent", "get").mockReturnValue(
 		document.body,
 	);
@@ -99,6 +93,22 @@ function montarPainel({
 			disconnect() {}
 		},
 	);
+}
+
+/**
+ * Um painel de oito peças, todas à vista e com o painel na tela, vivo pelo
+ * `usePainelVivo`. Com o `animado`, cada peça ganha o `animate` de mentira.
+ */
+function montarPainel({
+	sozinho = false,
+	ondaAoChegar = false,
+	animado = false,
+} = {}) {
+	const pecas = painel(7, 8);
+	const elemento = document.createElement("div");
+	elemento.append(...pecas.map(() => document.createElement("span")));
+	document.body.append(elemento);
+	simularPainelNaTela();
 	const animacoes = [...elemento.children].map((peca) =>
 		animado ? animaNa(peca) : undefined,
 	);
@@ -110,11 +120,21 @@ function montarPainel({
 	return { elemento, animacoes, trocar, desmontar: unmount };
 }
 
+function PainelComUmaPeca({ trocar }: { trocar: () => void }) {
+	const caixa = useRef<HTMLDivElement>(null);
+	usePainelVivo(caixa, painel(7, 1), trocar, { ondaAoChegar: true });
+	return createElement("div", { ref: caixa }, createElement("span"));
+}
+
 /** O ponteiro do mouse passa pela peça. */
 function passarPor(peca: Element) {
 	peca.dispatchEvent(
 		new PointerEvent("pointermove", { bubbles: true, pointerType: "mouse" }),
 	);
+}
+
+function clicarNa(peca: Element) {
+	peca.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 }
 
 /** O que um ouvinte lança: o jsdom não devolve o erro a quem disparou o evento. */
@@ -219,6 +239,46 @@ describe("virarPendente", () => {
 });
 
 describe("usePainelVivo", () => {
+	it("deixa de ouvir a preferência quando o painel sai da página", () => {
+		const movimento = preferencia(false);
+		const { desmontar } = montarPainel();
+		expect(movimento.totalDeOuvintes).toBe(1);
+
+		desmontar();
+
+		expect(movimento.totalDeOuvintes).toBe(0);
+	});
+
+	it("hidrata com movimento reduzido sem virar a peça nem ligar o clique ou o ponteiro", async () => {
+		const trocar = vi.fn();
+		const componente = createElement(PainelComUmaPeca, { trocar });
+		const raiz = document.createElement("div");
+		raiz.innerHTML = renderToString(componente);
+		document.body.append(raiz);
+		preferencia(true);
+		simularPainelNaTela();
+		const elemento = raiz.children[0];
+		const { animate } = animaNa(elemento.children[0]);
+		const ouvir = vi.spyOn(elemento, "addEventListener");
+
+		let hidratada: Root | undefined;
+		try {
+			await act(async () => {
+				hidratada = hydrateRoot(raiz, componente);
+			});
+			await vi.advanceTimersByTimeAsync(1000);
+
+			expect(raiz.firstElementChild).toBe(elemento);
+			const tipos = ouvir.mock.calls.map(([tipo]) => tipo);
+			expect.soft(tipos).not.toContain("click");
+			expect.soft(tipos).not.toContain("pointermove");
+			expect(animate).not.toHaveBeenCalled();
+			expect(trocar).not.toHaveBeenCalled();
+		} finally {
+			act(() => hidratada?.unmount());
+		}
+	});
+
 	it("num navegador sem o animate, a peça que o ponteiro toca troca no lugar, sem erro", () => {
 		preferencia(false);
 		const { elemento, trocar } = montarPainel();
@@ -228,6 +288,53 @@ describe("usePainelVivo", () => {
 		expect(erros).toEqual([]);
 		expect(trocar).toHaveBeenCalledTimes(1);
 		expect(trocar).toHaveBeenCalledWith(2, expect.any(Object));
+	});
+
+	it("o clique numa peça faz a onda trocar cada peça à vista", async () => {
+		preferencia(false);
+		const { elemento, animacoes, trocar } = montarPainel({ animado: true });
+		const recortada = elemento.children[7] as HTMLElement;
+		vi.spyOn(recortada, "offsetTop", "get").mockReturnValue(
+			elemento.clientHeight,
+		);
+
+		clicarNa(elemento.children[3]);
+		await vi.advanceTimersByTimeAsync(1000);
+		for (const animacao of animacoes) {
+			animacao?.feitas[0]?.terminar();
+		}
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(erros).toEqual([]);
+		const aVista = [0, 1, 2, 3, 4, 5, 6];
+		expect(trocar).toHaveBeenCalledTimes(aVista.length);
+		for (const indice of aVista) {
+			expect(trocar).toHaveBeenCalledWith(indice, expect.any(Object));
+		}
+	});
+
+	it("o clique não troca peças depois que a preferência liga com a página aberta", async () => {
+		const movimento = preferencia(false);
+		const { elemento, trocar } = montarPainel();
+
+		act(() => movimento.mudar(true));
+		clicarNa(elemento.children[3]);
+		await vi.advanceTimersByTimeAsync(1000);
+
+		expect(erros).toEqual([]);
+		expect(trocar).not.toHaveBeenCalled();
+	});
+
+	it("o clique não troca peças depois que o painel sai da página", async () => {
+		preferencia(false);
+		const { elemento, trocar, desmontar } = montarPainel();
+
+		desmontar();
+		clicarNa(elemento.children[3]);
+		await vi.advanceTimersByTimeAsync(1000);
+
+		expect(erros).toEqual([]);
+		expect(trocar).not.toHaveBeenCalled();
 	});
 
 	it("a preferência liga com o painel virando: antes do aviso do navegador, a virada troca a peça no lugar, sem erro", async () => {

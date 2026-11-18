@@ -18,36 +18,38 @@ web
 O Mandatômetro ensina como funciona a política brasileira, em linguagem simples e de forma interativa, a partir do que o Congresso vota (Renan, 09/11/2026). Ele tem duas partes:
 
 - **Trilhas:** artigos curtos com infográficos e, se der tempo, vídeos curtos, com um quiz de múltipla escolha no meio e outro no fim. A primeira, e a principal, é a do processo legislativo: como nasce uma lei.
-- **Newsletter semanal, o jornal legislativo:** todo domingo, o que o Congresso votou na semana, em linguagem simples e com o link oficial de cada item. Cada edição também fica no site. A edição vai ganhar uma segunda seção, com os destaques do Diário Oficial da União, para alcançar também o que o Executivo publica (ADR 0004); hoje só a seção do Congresso está no ar.
+- **Newsletter semanal, o jornal legislativo:** todo domingo, o que o Congresso votou na semana, em linguagem simples e com o link oficial de cada item. A inscrição pede só o e-mail e já manda a última edição publicada. Cada edição também fica no site. A edição vai ganhar uma segunda seção, com os destaques do Diário Oficial da União, para alcançar também o que o Executivo publica (ADR 0004); hoje só a seção do Congresso está no ar.
 
-O projeto concorre na trilha Acesso à educação do Hack Brasil 2026, com entrega em 30/11/2026: aprender é a função principal do site. O sucesso se mede no piloto, com cerca de 50 pessoas, pelo quanto elas acertam no quiz antes e depois da trilha.
+O projeto concorre na trilha Acesso à educação do Hack Brasil 2026. O regulamento (item 5.4) exige que o problema e o público estejam dentro dessa trilha. Aprender é a função principal do site. A entrega em 30/11/2026 pede repositório público, demo no ar e vídeo de até 3 minutos.
+
+O sucesso se mede no piloto, com cerca de 50 pessoas (uma turma do Senai e o Instagram), pelo quanto elas acertam no quiz antes e depois da trilha. O porquê do MVP está no [ADR 0002](docs/adr/0002-mvp.md); o do login opcional, no [ADR 0003](docs/adr/0003-login-opcional.md); e o do Diário Oficial na newsletter, no [ADR 0004](docs/adr/0004-newsletter-do-dou.md).
 
 ## Positioning
 
-A política explicada em linguagem simples e de forma interativa, a partir de casos reais e recentes do Congresso, com a fonte oficial em cada explicação: a lei, o regimento ou a página da Câmara, do Senado ou do TSE. As trilhas ensinam as regras, e a newsletter mostra a semana — hoje o Congresso, e, pelo ADR 0004, também o que sai no Diário Oficial. O lema: "o diário oficial político, simplificado".
+A política explicada em linguagem simples e de forma interativa, a partir de casos reais e recentes do Congresso. As trilhas ensinam as regras, e a newsletter mostra a semana — hoje o Congresso, e, pelo ADR 0004, também o que sai no Diário Oficial. O lema: "o diário oficial político, simplificado".
 
 ## Operating Context
 
-- **Conta opcional:** sem conta, o navegador guarda os artigos lidos, e o progresso fica nele. Com a conta, o progresso fica no perfil e passa de um aparelho para outro (ADR 0003).
-- **Os textos das trilhas ficam em Markdown no repositório.** Mudar um texto vira um PR, que também é a revisão do conteúdo.
-- **A edição da semana sai da coleta diária da Câmara e do Senado.** O LLM escreve o rascunho, e uma pessoa do time revisa antes de publicar. Os e-mails saem pelo Resend.
+- **Conta opcional:** o login, o cadastro com o termo de consentimento e o progresso no perfil entram no MVP (#109 a #112), mas nada pede conta. Sem ela, o navegador guarda os artigos lidos; com ela, o progresso fica no perfil e passa de um aparelho para outro.
+- **Cadastro:** os dados demográficos opcionais servem para entender o público. Confirmação e recuperação usam links com o token no fragmento e uma ação explícita na página. A exclusão exige sessão e senha atual e gera um comprovante via Resend. O contrato de sessão para a #109 está no [README, em "Cadastro de contas"](README.md#cadastro-de-contas).
+- **Dados:** Câmara e Senado, com deputados federais e senadores do Brasil todo e Santa Catarina como amostra para testar cada etapa primeiro.
+- **Textos das trilhas.** Cada mudança em Markdown vira um PR, que também é a revisão do conteúdo. O formato está no [guia de conteúdo das trilhas](docs/conteudo-das-trilhas.md).
+- **A edição da semana sai da coleta diária da Câmara e do Senado.** O [guia da newsletter](docs/newsletter.md) descreve a redação, a revisão e o envio.
 - **As páginas aparecem no Google e têm prévia de link no WhatsApp** (ADR 0001).
 
 ## Capabilities and Constraints
 
-- **MVP:** as trilhas (artigos, infográfico e quiz), a newsletter semanal com as edições no site, a inscrição só com o e-mail e a conta opcional, que guarda o progresso no perfil (ADR 0003).
+- **MVP:** as trilhas (artigos, infográfico e quiz), a newsletter semanal com as edições no site e a conta opcional.
 - **Depois do MVP:**
   - as páginas de cada parlamentar, com as promessas, os atos e o patrimônio declarado ao TSE;
   - o "fake ou fato";
   - o jogo das comissões.
 - **Sem pontos, ranking nem certificado.** O quiz mostra a resposta certa e a fonte, sem nota.
-- **Dados pessoais:**
-  - as trilhas não pedem nada;
-  - a newsletter pede só o e-mail, que fica no banco e nunca aparece no site, na API nem nos logs;
-  - a conta é opcional e pede nome completo, e-mail e senha, que servem só à conta e ficam no banco;
-  - as respostas do quiz não identificam quem respondeu.
-- **Fonte em tudo:** cada afirmação sobre um político ou uma votação leva o link oficial, a data da coleta e, quando vier de texto, o trecho literal. O que não tem fonte fica fora do site e da newsletter.
-- **Neutro e apartidário:** o texto descreve o que o dado mostra e deixa o julgamento para o leitor, com os mesmos critérios para todos os partidos e parlamentares. O quiz pergunta sobre fatos e regras e nunca dá nota a político ou partido.
+- O produto fala de pessoas reais. Estas regras valem para a interface, as trilhas, o quiz, a newsletter, a API e os prompts do LLM.
+- **Fonte em tudo:** cada afirmação sobre um político ou uma votação leva o link oficial, a data da coleta e, quando vier de texto, o trecho literal. O que não tem fonte fica fora do banco, do site e da newsletter.
+- **Neutro e apartidário:** o texto descreve o que o dado mostra e deixa o julgamento para o leitor, com os mesmos critérios para todos os partidos e parlamentares. Cada explicação leva a fonte oficial (lei, regimento ou página da Câmara, do Senado ou do TSE). O quiz pergunta sobre fatos e regras e nunca dá nota a político ou partido.
+- **Promessas e patrimônio (depois do MVP):** a ligação entre promessa e ato tem um destes status: `ato a favor`, `ato contra` ou `nenhum ato encontrado`. Deputado e senador não são obrigados a entregar proposta ao TSE (só prefeito, governador e presidente): sem promessa, escreva "Não encontramos promessas públicas nas fontes consultadas" e liste as fontes. O patrimônio se chama "patrimônio declarado ao TSE", vem corrigido pelo IPCA, com o aviso de que o valor declarado costuma ser o de compra, e aparece só nos anos em que a pessoa concorreu, em tom descritivo.
+- **Dados pessoais.** A coleta, a conta, a newsletter e o quiz seguem as regras de [dados pessoais](docs/dados-pessoais.md).
 - **Termos:** trilha, artigo, quiz, edição, inscrito, proposição, votação e parlamentar. O texto para o usuário é em pt-BR.
 
 ## Brand Commitments
