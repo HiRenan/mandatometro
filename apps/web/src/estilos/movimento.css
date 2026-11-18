@@ -226,6 +226,17 @@
 	}
 
 	/*
+	 * A barra da leitura (o desenho fica no index.css) começa desligada e só liga
+	 * no @supports logo abaixo, onde o navegador tem a animação de rolagem. As duas
+	 * regras ficam aqui, na mesma camada, uma depois da outra: até a #149, o
+	 * display: none ficava no index.css, que vem depois deste arquivo no CSS do
+	 * site, e vencia a regra que liga a barra.
+	 */
+	.leitura-barra {
+		display: none;
+	}
+
+	/*
 	 * O que entra na tela com a rolagem sobe e aparece, pela animação de rolagem do
 	 * CSS. Sem ela (e sem JavaScript), a peça já está no lugar: nada fica escondido
 	 * à espera de um script.
