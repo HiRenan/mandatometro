@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { consultarPerfil } from "@/client";
-import { ENV } from "@/env";
+import { useState } from "react";
+import { sairConta } from "@/client";
+import { usePerfil } from "@/lib/use-perfil";
 
 export const Route = createFileRoute("/perfil")({
 	head: () => ({
@@ -15,39 +15,51 @@ export const Route = createFileRoute("/perfil")({
 });
 
 function Perfil() {
-	const [nome, setNome] = useState("");
-	const [falhou, setFalhou] = useState(false);
-	useEffect(() => {
-		if (!ENV.API_URL) {
-			window.location.replace("/cadastro");
-			return;
+	const sessao = usePerfil("perfil");
+	const [saida, setSaida] = useState<"pronta" | "enviando" | "falhou">(
+		"pronta",
+	);
+	async function sair() {
+		setSaida("enviando");
+		try {
+			const { response } = await sairConta({
+				credentials: "include",
+				signal: AbortSignal.timeout(15000),
+			});
+			if (response?.ok) {
+				window.location.replace("/login");
+				return;
+			}
+			setSaida("falhou");
+		} catch {
+			setSaida("falhou");
 		}
-		const controle = new AbortController();
-		consultarPerfil({
-			credentials: "include",
-			cache: "no-store",
-			signal: AbortSignal.any([controle.signal, AbortSignal.timeout(15000)]),
-		}).then(({ data, response }) => {
-			if (controle.signal.aborted) return;
-			if (response?.status === 401) window.location.replace("/cadastro");
-			else if (data) setNome(data.nome);
-			else setFalhou(true);
-		});
-		return () => controle.abort();
-	}, []);
+	}
+
 	return (
 		<section className="px-margem-celular text-tinta mx-auto grid max-w-xl gap-6 py-12">
 			<h1 className="titulo-condensado letra-com-teto [--palavra:5]">
 				Meu perfil
 			</h1>
-			{nome ? (
+			{sessao.estado === "autenticada" ? (
 				<>
-					<p>{nome}</p>
+					<p>{sessao.nome}</p>
+					<button
+						type="button"
+						className="acao-de-texto"
+						disabled={saida === "enviando"}
+						onClick={sair}
+					>
+						Sair
+					</button>
+					{saida === "falhou" && (
+						<p role="alert">Não foi possível sair. Tente novamente.</p>
+					)}
 					<a href="/cadastro/excluir" className="acao-de-texto">
 						Excluir conta
 					</a>
 				</>
-			) : falhou ? (
+			) : sessao.estado === "indisponivel" ? (
 				<p role="alert">
 					Não foi possível consultar sua conta.{" "}
 					<a href="/perfil" className="underline">
