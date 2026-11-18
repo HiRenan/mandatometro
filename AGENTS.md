@@ -74,6 +74,7 @@ O desenho inteiro está no [DESIGN.md](DESIGN.md). O que mais pega quem mexe num
 - **Classes montadas:** junte os nomes com `classes()`, de `lib/classes.ts`. Num texto montado com `${}`, a ordenação de classes do Biome mexe nos espaços.
 - **Parágrafo sem grade:** um `<p>` com `display: grid` ou `flex` sai da árvore de acessibilidade do Chromium, e quem anda de parágrafo em parágrafo pula a frase (medido pelo CDP na #152). As frases guardadas (`Reservas`) ficam num elemento em volta do `<p>`, que é a frase da vez.
 - **O Enter num link:** no Chromium, o clique que ele dispara vem com o `detail` 0; no Firefox, com 1, como o do mouse, e cada repetição do Enter segurado clica de novo: uma guarda contra o segundo clique num link olha também o `keydown` (medido na #153).
+- **Link em linha sem padding dos lados:** num item da largura do texto, como o de uma fileira em flex, o Firefox conta a margem negativa de um elemento em linha ao medir o item, e não ao decidir a quebra: o link de texto, com 4 px de padding de cada lado devolvidos por uma margem negativa, quebrava com espaço de sobra (#173). O `a.acao-de-texto` faz a área de toque só com o padding de cima e de baixo, e o `estilos/acao-de-texto.test.ts` recusa o padding e a margem negativa dos lados nele e no que fica dentro dele.
 
 ## Fontes de dados
 
