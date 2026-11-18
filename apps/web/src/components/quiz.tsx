@@ -405,7 +405,7 @@ export function Quiz({
 	// linha dele não guarda lugar: na abertura do depois, a linha vazia só
 	// empurrava o "Começar" para baixo da primeira tela do celular.
 	const recomeco = etapa === undefined && (
-		<p className="recomeco">
+		<div className="recomeco text-pretty">
 			{acao && (
 				<button
 					type="button"
@@ -415,7 +415,7 @@ export function Quiz({
 					{acao.texto}
 				</button>
 			)}
-		</p>
+		</div>
 	);
 
 	// O botão que leva às perguntas, na abertura e no fim. Ele também deixa de
@@ -686,7 +686,7 @@ export function Quiz({
 									</li>
 								))}
 							</ul>
-							<p className="quiz-fim-acoes">
+							<div className="quiz-fim-acoes text-pretty">
 								<Link
 									to="/trilhas/$trilha"
 									params={{ trilha: trilha.slug }}
@@ -701,7 +701,7 @@ export function Quiz({
 									/>
 								</Link>
 								{comeco(true)}
-							</p>
+							</div>
 						</div>
 					)}
 				</div>

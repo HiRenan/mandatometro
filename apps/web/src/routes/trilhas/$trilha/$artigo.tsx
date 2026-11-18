@@ -125,17 +125,17 @@ function Folha({
 							className="do-artigo"
 						/>
 						<Caminho trilha={trilha} />
-						<p className="sobretitulo">
+						<div className="sobretitulo">
 							<span aria-hidden="true" className="numeral">
 								{posicao}
 							</span>
-							<span className="rotulo">
+							<p className="rotulo">
 								Artigo {posicao}{" "}
 								<span className="de-tantos">
 									de {plural(total, "artigo", "artigos")}
 								</span>
-							</span>
-						</p>
+							</p>
+						</div>
 						{/* Com a letra grande, o título cresce até "FUNDAMENTAIS?", a palavra
 						    mais larga dos títulos dos artigos, encostar nas bordas da folha
 						    (o letra-com-teto do index.css). */}
