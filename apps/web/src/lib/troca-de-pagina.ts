@@ -4,10 +4,10 @@
  * ordem, como as folhas de um bloco: a inicial em cima, depois a lista das
  * trilhas, ao lado dela a página do piloto e a lista das edições, cada trilha e
  * cada edição, e os artigos da trilha, com o quiz no lugar dele entre os
- * artigos e o quiz final depois do último. Aqui ficam o sentido de cada troca,
- * que o router passa ao navegador como tipo da View Transition (router.tsx), o
- * clique feito durante a troca e a troca que o navegador pula. O movimento fica
- * em estilos/movimento.css.
+ * artigos e o quiz final depois do último. Aqui ficam o sentido de cada troca e
+ * se o cabeçalho fica na tela, que o router passa ao navegador como tipos da
+ * View Transition (router.tsx), o clique feito durante a troca e a troca que o
+ * navegador pula. O movimento fica em estilos/movimento.css.
  */
 
 export type Sentido = "avancar" | "voltar";
@@ -118,8 +118,8 @@ export function sentidoDaTroca(
 
 /**
  * Os tipos da View Transition de uma troca: `folha`, o sentido e, quando o
- * cabeçalho está na tela, `moldura-na-tela`, para ele ficar parado enquanto a
- * página troca. Sem página de origem (a primeira carga) ou sem
+ * cabeçalho está na tela nas duas páginas, `moldura-na-tela`, para ele ficar
+ * parado enquanto a página troca. Sem página de origem (a primeira carga) ou sem
  * mudar de página (um link para um trecho da mesma página, como #caminho), não
  * há troca de folha, e o `false` diz ao router para não animar.
  */
@@ -167,10 +167,79 @@ export function trilhaDaPaginaAberta(
 		?.trilha;
 }
 
-/** Se o cabeçalho aparece na tela, nem que seja um pedaço. */
-export function molduraNaTela(): boolean {
+/**
+ * Se o cabeçalho aparece na tela nas duas páginas da troca, nem que seja um
+ * pedaço: na de antes, que está na tela, e na nova, que abre rolada
+ * `rolagemDaNova` (rolagemDasPaginas). O cabeçalho fica no alto de toda página.
+ * Quando não se sabe onde a nova abre (`null`), fica a dúvida, e a resposta é
+ * não: sem o nome, o cabeçalho vai com a página de antes, coberto pelos
+ * azulejos junto com ela, como na troca comum.
+ */
+export function molduraNaTela(rolagemDaNova: number | null = 0): boolean {
 	const moldura = document.querySelector("header.moldura");
-	return moldura ? moldura.getBoundingClientRect().bottom > 0 : false;
+	if (!moldura || rolagemDaNova === null) {
+		return false;
+	}
+	// O fundo do cabeçalho na tela: nesta página e na nova, rolada a mais ou a menos.
+	const embaixo = moldura.getBoundingClientRect().bottom;
+	return embaixo > 0 && embaixo + window.scrollY - rolagemDaNova > 0;
+}
+
+/** Uma página no histórico do navegador: o endereço e a chave da visita. */
+type Visita = { href: string; state: { __TSR_key?: string } };
+
+/** As mudanças do histórico que vêm do navegador: a volta, o avançar e o `go`. */
+const PELO_NAVEGADOR = new Set(["BACK", "FORWARD", "GO"]);
+
+/** A chave da visita, a mesma do `scrollRestoration` do router. */
+function chaveDaVisita(visita: Visita): string {
+	return visita.state.__TSR_key || visita.href;
+}
+
+/**
+ * Onde a página nova abre, para saber, antes de ela chegar, se o cabeçalho dela
+ * fica na tela. Num link, ela abre no alto. Na volta e no avançar do navegador,
+ * o router devolve a rolagem que ela tinha (o `scrollRestoration`), mas só
+ * depois de a troca fotografar a página de antes: com o nome, o cabeçalho de
+ * antes voava até o da nova, lá no alto, e deixava uma faixa de papel no lugar.
+ *
+ * Como o router, guarda a rolagem de cada página pela chave da visita no
+ * histórico, quando a pessoa sai dela (o `onBeforeLoad`), e anota as mudanças
+ * do histórico que vêm do navegador. A memória é a da página: depois de
+ * recarregar, ou na volta de outro site quando o navegador abre a página de
+ * novo, a volta para uma visita de antes chega sem a rolagem guardada, e aí não
+ * se sabe (`null`). Um link para um trecho de
+ * outra página, como /#newsletter, conta como no alto, embora ela abra no
+ * trecho: aí o cabeçalho de antes ainda voa.
+ */
+export function rolagemDasPaginas() {
+	const guardadas = new Map<string, number>();
+	let peloNavegador: string | undefined;
+	return {
+		/** Antes de a página nova carregar: guarda a rolagem da que sai. */
+		guardar({ fromLocation }: { fromLocation?: Visita }): void {
+			if (fromLocation) {
+				guardadas.set(chaveDaVisita(fromLocation), window.scrollY);
+			}
+		},
+		/** A cada mudança no histórico: anota a visita aonde o navegador foi. */
+		anotar({
+			location,
+			action,
+		}: {
+			location: Visita;
+			action: { type: string };
+		}): void {
+			peloNavegador = PELO_NAVEGADOR.has(action.type)
+				? chaveDaVisita(location)
+				: undefined;
+		},
+		/** Onde a página nova abre: a rolagem guardada, o alto, ou `null`. */
+		daPaginaNova({ toLocation }: { toLocation: Visita }): number | null {
+			const chave = chaveDaVisita(toLocation);
+			return guardadas.get(chave) ?? (chave === peloNavegador ? null : 0);
+		},
+	};
 }
 
 /**

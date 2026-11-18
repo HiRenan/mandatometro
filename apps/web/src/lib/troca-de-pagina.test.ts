@@ -5,6 +5,7 @@ import {
 	cliqueDuranteATroca,
 	foiTrocaPulada,
 	molduraNaTela,
+	rolagemDasPaginas,
 	semErroNaTrocaPulada,
 	sentidoDaTroca,
 	tiposDaTroca,
@@ -24,6 +25,11 @@ const trilhaAberta = {
 afterEach(() => {
 	document.body.innerHTML = "";
 });
+
+/** A rolagem da página, que o jsdom não muda sozinho. */
+function rolar(y: number) {
+	Object.defineProperty(window, "scrollY", { configurable: true, value: y });
+}
 
 describe("sentidoDaTroca", () => {
 	it("avança quando a página fica mais para dentro do bloco", () => {
@@ -315,6 +321,156 @@ describe("molduraNaTela", () => {
 		expect(molduraNaTela()).toBe(false);
 		document.body.innerHTML = `<footer class="moldura"></footer>`;
 		expect(molduraNaTela()).toBe(false);
+	});
+
+	describe("com a rolagem da página nova", () => {
+		afterEach(() => {
+			rolar(0);
+		});
+
+		/** A página de antes rolada `y` px: o cabeçalho, de 72 px, sobe junto. */
+		function paginaDeAntes(y: number) {
+			cabecalho(72 - y);
+			rolar(y);
+		}
+
+		// A #164: na volta pelo navegador, o artigo está no alto e a trilha volta
+		// rolada. O cabeçalho da trilha fica lá em cima, fora da tela: com o nome, o
+		// de antes voava até ele e deixava uma faixa de papel no lugar.
+		it("na volta para uma página rolada, é mentira: o cabeçalho dela fica fora da tela", () => {
+			paginaDeAntes(0);
+			expect(molduraNaTela(1592)).toBe(false);
+			expect(molduraNaTela(72)).toBe(false);
+		});
+
+		it("com a página nova no alto, ou só um pouco rolada, é verdade", () => {
+			paginaDeAntes(0);
+			expect(molduraNaTela(0)).toBe(true);
+			expect(molduraNaTela(40)).toBe(true);
+		});
+
+		it("conta o cabeçalho pelo lugar dele na página, também com a página de antes um pouco rolada", () => {
+			// Rolada 30 px, a página de antes mostra 42 px do cabeçalho; a nova, rolada
+			// 60 px, mostra 12.
+			paginaDeAntes(30);
+			expect(molduraNaTela(60)).toBe(true);
+			expect(molduraNaTela(72)).toBe(false);
+		});
+
+		it("quando não se sabe onde a página nova abre, é mentira: na dúvida, o cabeçalho fica sem o nome", () => {
+			paginaDeAntes(0);
+			expect(molduraNaTela(null)).toBe(false);
+		});
+	});
+});
+
+describe("rolagemDasPaginas", () => {
+	afterEach(() => {
+		rolar(0);
+	});
+
+	/** Uma visita a uma página: a chave dela no histórico separa duas visitas. */
+	const visita = (chave: string, caminho = TRILHA) => ({
+		href: caminho,
+		state: { __TSR_key: chave },
+	});
+	const ARTIGO = `${TRILHA}/o-plenario-vota-o-projeto`;
+
+	/**
+	 * O histórico avisa cada mudança: a volta (`BACK`), o avançar (`FORWARD`) e o
+	 * `GO` vêm do navegador; `PUSH` e `REPLACE`, de um link.
+	 */
+	function mudou(
+		rolagem: ReturnType<typeof rolagemDasPaginas>,
+		tipo: string,
+		para: ReturnType<typeof visita>,
+	) {
+		rolagem.anotar({ location: para, action: { type: tipo } });
+	}
+
+	it("na volta do navegador, a página chega com a rolagem que tinha quando a pessoa saiu", () => {
+		const rolagem = rolagemDasPaginas();
+		// A pessoa sai da trilha rolada para o artigo: o router avisa antes de
+		// carregar o artigo (o onBeforeLoad).
+		rolar(1592);
+		rolagem.guardar({ fromLocation: visita("trilha") });
+		mudou(rolagem, "PUSH", visita("artigo", ARTIGO));
+		rolar(0);
+
+		mudou(rolagem, "BACK", visita("trilha"));
+		expect(rolagem.daPaginaNova({ toLocation: visita("trilha") })).toBe(1592);
+	});
+
+	it("no avançar do navegador também", () => {
+		const rolagem = rolagemDasPaginas();
+		// Da trilha, no alto, para o artigo; lido até o meio, de volta para a trilha.
+		rolagem.guardar({ fromLocation: visita("trilha") });
+		mudou(rolagem, "PUSH", visita("artigo", ARTIGO));
+		rolar(900);
+		rolagem.guardar({ fromLocation: visita("artigo", ARTIGO) });
+		mudou(rolagem, "BACK", visita("trilha"));
+		rolar(0);
+
+		mudou(rolagem, "FORWARD", visita("artigo", ARTIGO));
+		expect(rolagem.daPaginaNova({ toLocation: visita("artigo", ARTIGO) })).toBe(
+			900,
+		);
+	});
+
+	it("num link, a página nova abre no alto", () => {
+		const rolagem = rolagemDasPaginas();
+		rolar(1592);
+		rolagem.guardar({ fromLocation: visita("trilha") });
+
+		mudou(rolagem, "PUSH", visita("artigo", ARTIGO));
+		expect(rolagem.daPaginaNova({ toLocation: visita("artigo", ARTIGO) })).toBe(
+			0,
+		);
+		mudou(rolagem, "REPLACE", visita("outro", ARTIGO));
+		expect(rolagem.daPaginaNova({ toLocation: visita("outro", ARTIGO) })).toBe(
+			0,
+		);
+	});
+
+	it("separa duas visitas à mesma página pela chave do histórico", () => {
+		const rolagem = rolagemDasPaginas();
+		rolar(1592);
+		rolagem.guardar({ fromLocation: visita("primeira") });
+		rolar(0);
+		rolagem.guardar({ fromLocation: visita("segunda") });
+
+		const volta = (chave: string) => {
+			mudou(rolagem, "BACK", visita(chave));
+			return rolagem.daPaginaNova({ toLocation: visita(chave) });
+		};
+		expect(volta("primeira")).toBe(1592);
+		expect(volta("segunda")).toBe(0);
+	});
+
+	// Depois de recarregar a página, ou na volta de outro site, a página começa
+	// de novo, sem nada guardado: a volta para uma visita de antes chega sem a
+	// rolagem dela.
+	it("na volta ou no avançar para uma visita sem a rolagem guardada, não se sabe", () => {
+		const rolagem = rolagemDasPaginas();
+		mudou(rolagem, "BACK", visita("trilha"));
+		expect(rolagem.daPaginaNova({ toLocation: visita("trilha") })).toBeNull();
+		mudou(rolagem, "FORWARD", visita("artigo", ARTIGO));
+		expect(
+			rolagem.daPaginaNova({ toLocation: visita("artigo", ARTIGO) }),
+		).toBeNull();
+		mudou(rolagem, "GO", visita("inicio", "/"));
+		expect(
+			rolagem.daPaginaNova({ toLocation: visita("inicio", "/") }),
+		).toBeNull();
+	});
+
+	it("na primeira carga, sem página de antes, não guarda nada", () => {
+		const rolagem = rolagemDasPaginas();
+		rolar(1592);
+		rolagem.guardar({});
+
+		mudou(rolagem, "PUSH", visita("trilha"));
+		expect(rolagem.daPaginaNova({ toLocation: visita("trilha") })).toBe(0);
 	});
 });
 
