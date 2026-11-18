@@ -139,7 +139,8 @@ def test_repetir_preserva_ids_fontes_e_corrige_remove_votos(sessao, executar, re
         id_fonte for id_fonte, dados in fontes_antes.items() if fontes_depois.get(id_fonte) != dados
     ]
     assert not fontes_divergentes
-    assert len(fontes_depois.keys() - fontes_antes.keys()) == 10
+    quantidade_novas = len(fontes_depois.keys() - fontes_antes.keys())
+    assert quantidade_novas == 10
     v = sessao.scalars(select(Votacao).where(Votacao.id_externo == "7109")).one()
     por_id = {voto.parlamentar.id_externo: voto.valor for voto in v.votos}
     assert removido not in por_id
@@ -249,7 +250,7 @@ def test_historico_ambiguo_nao_inventa_mandato(sessao, executar, respostas):
 def test_lista_atual_invalida_nao_desativa_nem_apaga_dados(sessao, executar, respostas, lista_ruim):
     executar()
     consulta = select(Mandato.id, Mandato.em_exercicio, Mandato.fonte_id)
-    original = set(sessao.execute(consulta))
+    mandatos_antes = set(sessao.execute(consulta))
     respostas["/senador/lista/atual.json"]["ListaParlamentarEmExercicio"]["Parlamentares"][
         "Parlamentar"
     ] = lista_ruim
@@ -257,7 +258,9 @@ def test_lista_atual_invalida_nao_desativa_nem_apaga_dados(sessao, executar, res
     assert not resumo.completa
     assert resumo.votacoes == 0
     assert len(requisicoes) == 2
-    assert set(sessao.execute(consulta)) == original
+    mandatos_depois = set(sessao.execute(consulta))
+    mandatos_divergentes = {mandato.id for mandato in mandatos_antes ^ mandatos_depois}
+    assert not mandatos_divergentes
 
 
 def test_periodo_vazio_e_sessao_conjunta_nao_criam_ausencias(sessao, executar, respostas):

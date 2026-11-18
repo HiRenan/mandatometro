@@ -39,6 +39,8 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# O traceback longo abre os argumentos do teste, e as respostas gravadas trazem nome e código de pessoa.
+addopts = "--tb=short"
 
 # A URL do banco vem do DATABASE_URL, lido em migrations/env.py. O alembic.ini só tem o logging.
 [tool.alembic]
