@@ -760,7 +760,12 @@ describe("a página de sair", () => {
 		expect(textoAVista(lugarDaEspera() as HTMLElement)).toBe(CONFIRMANDO);
 		expect(aviso()).toBe(CONFIRMANDO);
 		expect(confirmacao.getAttribute("aria-disabled")).toBe("true");
-		await passar(499);
+		// Um clique durante o meio segundo cai no botão à espera e não manda outro
+		// pedido: o envio só fica livre quando o erro aparece.
+		await passar(200);
+		await confirmar();
+		expect(sair).toHaveBeenCalledTimes(2);
+		await passar(299);
 		expect(textoAVista(abertura)).toBe(EXPLICA);
 		expect(aviso()).toBe(CONFIRMANDO);
 
