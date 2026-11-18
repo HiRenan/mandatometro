@@ -170,6 +170,14 @@ function reservasDoBotao(): (string | undefined)[] {
 }
 
 describe("página da trilha", () => {
+	it("reúne a contagem de artigos, a duração e a fonte em um parágrafo", async () => {
+		abrir([]);
+		const fonte = await screen.findByText("Fonte oficial em cada explicação");
+		const paragrafo = fonte.closest("p:not(.faixa)");
+		expect(paragrafo?.textContent).toMatch(/\d+ artigos?/);
+		expect(paragrafo?.textContent).toMatch(/\d+ min de leitura/);
+	});
+
 	// O servidor não sabe o que a pessoa leu nem o que ela respondeu, e manda
 	// "Começar pelo primeiro artigo". No celular, o botão fica em cima da lista dos
 	// artigos: se o lugar dele não guardasse a altura do texto mais alto, a lista
@@ -378,6 +386,7 @@ describe("página da trilha", () => {
 		expect(screen.getByText("Você terminou a trilha.")).toBeTruthy();
 		expect(controlesDaLinha(botao)).toEqual([botao]);
 		const linha = botao.closest(".recomeco");
+		expect(linha?.tagName).toBe("DIV");
 
 		fireEvent.click(botao, { detail: 1 });
 		fireEvent.click(botao, { detail: 2 });

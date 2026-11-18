@@ -121,7 +121,9 @@ describe("a página de uma edição", () => {
 		expect(titulo.style.getPropertyValue("--palavra")).toBe(
 			String(tetoDoTitulo(TITULO, "titulo-condensado")),
 		);
-		const faixa = document.querySelector(".artigo-folha > .faixa");
+		const faixa = document.querySelector(
+			".artigo-folha > p:not(.faixa) > .faixa",
+		);
 		expect(
 			Array.from(faixa?.children ?? [], (parte) => parte.textContent),
 		).toEqual([
@@ -183,7 +185,7 @@ describe("a página de uma edição", () => {
 		);
 
 		expect(
-			document.querySelector(".artigo-folha > .faixa")?.firstElementChild
+			document.querySelector(".artigo-folha .faixa")?.firstElementChild
 				?.textContent,
 		).toBe("9 a 15 de novembro de 2026");
 	});
@@ -200,7 +202,7 @@ describe("a página de uma edição", () => {
 
 		expect(
 			Array.from(
-				document.querySelector(".artigo-folha > .faixa")?.children ?? [],
+				document.querySelector(".artigo-folha .faixa")?.children ?? [],
 				(parte) => parte.textContent,
 			).slice(0, 2),
 		).toEqual([

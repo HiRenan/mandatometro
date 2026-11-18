@@ -156,9 +156,9 @@ describe("a lista das edições", () => {
 	it("a faixa do cartaz conta as edições", async () => {
 		await abrir(lista(3));
 
-		expect(document.querySelector(".cartaz .faixa")?.textContent).toContain(
-			"3 edições",
-		);
+		expect(
+			document.querySelector(".cartaz p:not(.faixa) > .faixa")?.textContent,
+		).toContain("3 edições");
 	});
 
 	it("com uma página só, não há paginação", async () => {
