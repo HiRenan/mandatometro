@@ -32,10 +32,11 @@ const ERROS: Partial<Record<Estado, string>> = {
 };
 
 /**
- * O segundo clique de um clique duplo não segue os links da página (o detail,
- * como no lib/clique.ts): depois da saída, o "Inscrever-se de novo" surge onde
- * estava o botão, e, com o código recusado, o "Ir para o início". Um clique
- * novo, de propósito, segue o link.
+ * O segundo clique de um clique duplo e o terceiro de um clique triplo não
+ * seguem os links da página (o detail acima de 1, como no lib/clique.ts):
+ * depois da saída, o "Inscrever-se de novo" surge onde estava o botão, e, com o
+ * código recusado, o "Ir para o início". Um clique novo, de propósito, segue o
+ * link.
  */
 function semSegundoClique(evento: MouseEvent) {
 	if (evento.detail > 1) {
@@ -168,12 +169,16 @@ export function PaginaDeSair({
 			    a da vez fica no alto, junto do fio; o lugar do botão guarda uma
 			    cópia dele. Depois da saída, sobra um vão embaixo da frase, e nada
 			    sai do lugar. Com o código recusado, o "Ir para o início" sobe
-			    para o lugar do botão, e o vão fica no fim do pé, no item dele. */}
+			    para o lugar do botão, e o vão fica no fim do pé, no item dele.
+			    A grade da abertura fica num div em volta do parágrafo: o Chromium
+			    tira da árvore de acessibilidade um <p> em grade, e quem anda pelos
+			    parágrafos pulava a frase. As guardadas quebram as linhas como ela,
+			    com o text-pretty que o <p> já tem. */}
 			<div className="cartaz-pe">
-				<p className="abertura grid">
+				<div className="abertura grid text-pretty">
 					{telaPodeMudar && <Reservas frases={[EXPLICA, FORA_DA_LISTA]} />}
-					<span className="col-start-1 row-start-1">{abertura}</span>
-				</p>
+					<p className="col-start-1 row-start-1">{abertura}</p>
+				</div>
 				<div className="cartaz-acao">
 					<ul className="acoes-da-pagina">
 						{telaPodeMudar && (
@@ -225,11 +230,16 @@ export function PaginaDeSair({
 						)}
 						{recusado ? (
 							// O item do "Ir para o início" guarda a altura dele com
-							// uma cópia, invisível e fora do leitor de tela.
+							// uma cópia, invisível e fora do leitor de tela. A cópia é
+							// o mesmo link, sem o endereço: no Firefox, a 390 px, o
+							// link quebra em duas linhas, e um span ficava numa, com
+							// o pé mais baixo. Sem o href, ela não é link, não recebe
+							// o foco, e o invisible a tira do ponteiro.
 							<li aria-hidden="true" className="invisible">
-								<span className="acao-de-texto">
+								{/* biome-ignore lint/a11y/useValidAnchor: a cópia invisível do link só guarda a altura dele, fora do leitor de tela, do teclado e do ponteiro. */}
+								<a className="acao-de-texto">
 									<span>Ir para o início</span>
-								</span>
+								</a>
 							</li>
 						) : (
 							<li>{irParaOInicio}</li>

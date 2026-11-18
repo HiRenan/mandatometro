@@ -15,6 +15,7 @@ import {
 	fireEvent,
 	render,
 	screen,
+	within,
 } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -162,6 +163,32 @@ function textoAVista(lugar: Element) {
 /** O primeiro item das ações: o lugar do botão "Confirmar a saída". */
 function lugarDoBotao(raiz: ParentNode = document) {
 	return raiz.querySelector(".acoes-da-pagina > li:first-child") as HTMLElement;
+}
+
+/** A célula da grade de um elemento: as classes de lugar do Tailwind. */
+function celula(elemento: Element | null | undefined) {
+	return [...(elemento?.classList ?? [])]
+		.filter((classe) => /^(col|row)-/.test(classe))
+		.sort();
+}
+
+/**
+ * O parágrafo de uma frase à vista: um <p> só com ela, em bloco. O Chromium tira
+ * da árvore de acessibilidade um <p> em grade ou flex, e quem navega pelos
+ * parágrafos pula a frase (a revisão do PR #146, pelo CDP). A grade que guarda
+ * o lugar fica num elemento em volta dele.
+ */
+function paragrafoDe(frase: string, raiz: HTMLElement = document.body) {
+	const paragrafo = within(raiz).getByText(frase, {
+		selector: "p",
+		ignore: "[role='status'], [aria-hidden='true'], script, style",
+	});
+	expect(
+		[...paragrafo.classList].filter((classe) =>
+			/^(inline-)?(grid|flex)$/.test(classe),
+		),
+	).toEqual([]);
+	return paragrafo;
 }
 
 describe("a página de sair", () => {
@@ -318,6 +345,28 @@ describe("a página de sair", () => {
 		},
 	);
 
+	it.each([
+		["Inscrever-se de novo", "saiu"],
+		["Ir para o início", "link-invalido"],
+	] as const)(
+		"o terceiro clique de um clique triplo no botão também não segue o “%s”, que surge no lugar dele",
+		async (nome, tipo) => {
+			sair.mockResolvedValue({ tipo });
+			const router = await mostrar();
+			await confirmar();
+			const link = screen.getByRole("link", { name: nome });
+
+			// O clique triplo manda o detail 1, no botão, e depois o 2 e o 3, que
+			// caem no link nascido embaixo do ponteiro.
+			for (const detail of [2, 3]) {
+				await act(async () => {
+					fireEvent.click(link, { detail });
+				});
+				expect(router.state.location.pathname).toBe("/newsletter/sair");
+			}
+		},
+	);
+
 	it("o título guarda a altura do mais alto dos dois desde o HTML do servidor: as ações não descem quando ele muda", async () => {
 		const titulo = await tituloDoServidor({ codigo: CODIGO, comApi: true });
 		const reservas = [...titulo.querySelectorAll("[aria-hidden='true']")];
@@ -384,6 +433,110 @@ describe("a página de sair", () => {
 		).toBe(lugar.nextElementSibling);
 	});
 
+	// O jsdom não desenha, e o CSS não sabe qual elemento leva a célula: ela está
+	// nas classes do Tailwind. Fora da célula da cópia, o link nasceria uma
+	// altura de botão abaixo do ponteiro (a revisão do PR #146).
+	it.each([
+		["antes do clique, o botão", () => mostrar(), () => botao()?.parentElement],
+		[
+			"depois da saída, o “Inscrever-se de novo”",
+			async () => {
+				sair.mockResolvedValue({ tipo: "saiu" });
+				await mostrar();
+				await confirmar();
+			},
+			() =>
+				screen.getByRole("link", { name: "Inscrever-se de novo" })
+					.parentElement,
+		],
+		[
+			"com o código que a API recusa, o “Ir para o início”",
+			async () => {
+				sair.mockResolvedValue({ tipo: "link-invalido" });
+				await mostrar();
+				await confirmar();
+			},
+			() =>
+				screen.getByRole("link", { name: "Ir para o início" }).parentElement,
+		],
+	])(
+		"%s fica na mesma célula da grade que a cópia do botão",
+		async (_, preparar, daVez) => {
+			await preparar();
+			const lugar = lugarDoBotao();
+			const copia = lugar.querySelector(":scope > [aria-hidden='true']");
+			const peca = daVez();
+
+			expect(peca?.parentElement).toBe(lugar);
+			expect(celula(copia)).toEqual(["col-start-1", "row-start-1"]);
+			expect(celula(peca)).toEqual(celula(copia));
+		},
+	);
+
+	it.each([
+		["antes do clique", () => mostrar(), EXPLICA],
+		[
+			"enquanto confirma",
+			async () => {
+				sair.mockReturnValue(new Promise(() => {}));
+				await mostrar();
+				await confirmar();
+			},
+			EXPLICA,
+		],
+		[
+			"depois da saída",
+			async () => {
+				sair.mockResolvedValue({ tipo: "saiu" });
+				await mostrar();
+				await confirmar();
+			},
+			SAIU,
+		],
+		[
+			"com a API fora do ar",
+			async () => {
+				sair.mockResolvedValue({ tipo: "fora-do-ar" });
+				await mostrar();
+				await confirmar();
+			},
+			EXPLICA,
+		],
+		[
+			"com o código que a API recusa",
+			async () => {
+				sair.mockResolvedValue({ tipo: "link-invalido" });
+				await mostrar();
+				await confirmar();
+			},
+			INCOMPLETO,
+		],
+		["com o link incompleto", () => mostrar({ codigo: "abc" }), INCOMPLETO],
+		[
+			"sem a API",
+			() => mostrar({ comApi: false }),
+			"A newsletter ainda não funciona neste endereço do site.",
+		],
+	])(
+		"%s, a frase de abertura é um parágrafo em bloco, só com ela",
+		async (_, preparar, frase) => {
+			await preparar();
+
+			// As frases guardadas continuam em volta dele, na grade da abertura.
+			expect(paragrafoDe(frase).parentElement).toBe(
+				document.querySelector(".abertura"),
+			);
+		},
+	);
+
+	it("no HTML do servidor, a frase de abertura já é um parágrafo em bloco, com as guardadas em volta", async () => {
+		const raiz = await paginaDoServidor({ codigo: CODIGO, comApi: true });
+		const abertura = raiz.querySelector(".abertura") as HTMLElement;
+
+		expect(paragrafoDe(EXPLICA, raiz).parentElement).toBe(abertura);
+		expect(reservasDe(abertura)).toEqual([EXPLICA, SAIU]);
+	});
+
 	it("com o código que a API recusa, o pé continua guardando o lugar, e o “Ir para o início” fica no lugar do botão", async () => {
 		sair.mockResolvedValue({ tipo: "link-invalido" });
 		await mostrar();
@@ -400,14 +553,43 @@ describe("a página de sair", () => {
 		expect(
 			screen.getByRole("link", { name: "Ir para o início" }).closest("li"),
 		).toBe(lugar);
-		// O item de baixo guarda a altura dele, com uma cópia invisível, sem link
-		// e fora do leitor de tela: o espaço que sobra fica no fim do pé.
+		// O item de baixo guarda a altura dele, com uma cópia invisível e fora do
+		// leitor de tela: o espaço que sobra fica no fim do pé.
 		const seguinte = lugar.nextElementSibling as HTMLElement;
 		expect(seguinte.getAttribute("aria-hidden")).toBe("true");
 		expect(seguinte.classList.contains("invisible")).toBe(true);
 		expect(seguinte.textContent).toBe("Ir para o início");
-		expect(seguinte.querySelector(".acao-de-texto")).not.toBeNull();
-		expect(seguinte.querySelector("a")).toBeNull();
+	});
+
+	it("com o código que a API recusa, a cópia do “Ir para o início” é o mesmo link, sem o endereço: quebra como ele, sem foco nem clique", async () => {
+		sair.mockResolvedValue({ tipo: "link-invalido" });
+		const router = await mostrar();
+		await confirmar();
+		const link = screen.getByRole("link", { name: "Ir para o início" });
+		const copia = lugarDoBotao().nextElementSibling?.firstElementChild as
+			| HTMLElement
+			| undefined;
+
+		// No Firefox, a 390 px, o link quebra em duas linhas, e um span com a
+		// mesma classe ficava numa: o item de baixo encolhia, e a página também
+		// (a revisão do PR #146). A cópia é o mesmo elemento, com a mesma classe
+		// e o mesmo texto, para ter a altura dele.
+		expect(copia?.tagName).toBe("A");
+		expect(copia?.className).toBe(link.className);
+		expect(copia?.innerHTML).toBe(link.innerHTML);
+		// Sem o href, ela não é link: nem o leitor de tela, que já não a vê pelo
+		// aria-hidden do item, a acharia como link.
+		expect(copia?.hasAttribute("href")).toBe(false);
+		expect(
+			screen.getAllByRole("link", { name: "Ir para o início", hidden: true }),
+		).toEqual([link]);
+		// Ela não recebe o foco, e o clique nela não leva a lugar nenhum.
+		copia?.focus();
+		expect(document.activeElement).toBe(link);
+		await act(async () => {
+			fireEvent.click(copia as HTMLElement, { detail: 1 });
+		});
+		expect(router.state.location.pathname).toBe("/newsletter/sair");
 	});
 
 	it.each([
