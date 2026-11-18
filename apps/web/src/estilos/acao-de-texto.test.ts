@@ -12,6 +12,7 @@ import { describe, expect, it } from "vitest";
 // outra). O mesmo vale para o que fica dentro do link, como o span do anel de
 // foco. Este teste lê o CSS, porque o jsdom não desenha; a medida de verdade é
 // no Firefox.
+// Deslocar com translate, left com position ou text-indent fica fora do teste.
 
 const estilos = new URL("./", import.meta.url);
 
@@ -121,7 +122,56 @@ function lado(
 }
 
 const ZERO = /^-?0(?:\.0+)?(?:px|r?em|%)?$/;
-const NEGATIVO = /^(?:-|calc\(\s*-)/;
+// Número literal seguido de porcentagem ou unidade de comprimento (absoluta,
+// relativa à fonte, ao viewport ou ao contêiner). O grupo guarda o coeficiente.
+const MEDIDA =
+	/^([+-]?(?:\d*\.)?\d+)(?:e[+-]?\d+)?(?:%|px|cm|mm|q|in|pt|pc|r?(?:em|ex|ch|cap|ic|lh)|(?:[sld]?v|cq)(?:w|h|i|b|min|max))$/i;
+
+function erroDaMargem(valor: string) {
+	if (ZERO.test(valor) || valor === "auto") {
+		return;
+	}
+	const coeficiente = MEDIDA.exec(valor)?.[1] ?? "";
+	if (/[1-9]/.test(coeficiente)) {
+		return coeficiente.startsWith("-") ? "margem negativa" : undefined;
+	}
+	return "o teste não sabe avaliar este valor. Escreva o número direto com a unidade.";
+}
+
+describe("o valor da margem dos lados", () => {
+	it.each(["0", "-0.00rem", "4px", "0.25rem", "1em", "10%", ".5ch", "auto"])(
+		"aceita %s",
+		(valor) => {
+			expect(erroDaMargem(valor)).toBeUndefined();
+		},
+	);
+
+	it.each(["-4px", "-0.25rem"])(
+		"identifica %s como margem negativa",
+		(valor) => {
+			expect(erroDaMargem(valor)).toBe("margem negativa");
+		},
+	);
+
+	it.each([
+		"calc(0px - 4px)",
+		"calc(-1 * 4px)",
+		"min(0px, -4px)",
+		"max(0px, 4px)",
+		"clamp(-4px, 1vw, 4px)",
+		"var(--recuo)",
+		"env(safe-area-inset-left)",
+		"outra(4px)",
+		"inherit",
+		"4",
+		"4s",
+		"0vw",
+	])("pede um número direto para %s", (valor) => {
+		expect(erroDaMargem(valor)).toMatch(
+			/o teste não sabe avaliar.*[Ee]screva o número direto/,
+		);
+	});
+});
 
 describe("o link de texto no Firefox", () => {
 	it("acha as regras do link: a de todos, a do rodapé e a do anel no texto", () => {
@@ -154,9 +204,10 @@ describe("o link de texto no Firefox", () => {
 					continue;
 				}
 				for (const v of lado(propriedade, valor, "dos lados")) {
-					expect(v, `${onde} { ${propriedade}: ${valor} }`).not.toMatch(
-						NEGATIVO,
-					);
+					const erro = erroDaMargem(v);
+					if (erro) {
+						expect.fail(`${onde} { ${propriedade}: ${valor} } (${v}): ${erro}`);
+					}
 				}
 			}
 		}
