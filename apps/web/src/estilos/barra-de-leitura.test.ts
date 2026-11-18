@@ -16,25 +16,38 @@ import { acharArtigo, trilhas } from "@/lib/conteudo/paginas.server";
 import { Route as RotaRaiz } from "@/routes/__root";
 import { Route as RotaDoArtigo } from "@/routes/trilhas/$trilha/$artigo";
 
-// A cascata da barra, da página e do texto usa o HTML que o servidor envia e o
-// index.css com seus imports de estilos/, na ordem do build. Classes, ids e
-// elementos que o JavaScript acrescenta depois ficam fora dessa fotografia.
-// A conta lê as propriedades pedidas e os atalhos de abrir. O globals.css, as
-// classes do Tailwind, outros atalhos e nomes de propriedade com escapes CSS
-// ficam fora. A medida da rolagem é no navegador.
+// A cascata da barra, da página e do texto lê o HTML do servidor e o index.css com os imports de estilos/.
+// A amostra é “Onde o projeto começa”. As variações de classe dos outros artigos ficam de fora.
+// Também ficam fora classes, ids e elementos criados pelo JavaScript, o globals.css e as classes do Tailwind.
+// A conta lê nomes de propriedade sem escapes e abre os atalhos animation e view-timeline.
+// Regras aninhadas, seletores com & ou escape e declarações sem seletor pedem conferência.
+// @keyframes, @font-face, @property, @page, @counter-style, @theme e @utility não estilizam as peças
+// por seletor. A medida da rolagem é no navegador.
 
 const src = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-/**
- * O CSS do site na ordem do build: o index.css, com cada arquivo de estilos/ no
- * lugar do @import dele, sem os comentários. O globals.css, com as cores, as
- * fontes e o Tailwind, fica de fora: ele não tem regra da barra.
- */
-const css = readFileSync(join(src, "index.css"), "utf8")
-	.replace(/@import "\.\/(estilos\/[\w-]+\.css)";/g, (_, arquivo: string) =>
-		readFileSync(join(src, arquivo), "utf8"),
-	)
-	.replace(/\/\*[\s\S]*?\*\//g, "");
+/** O index.css abre os imports de estilos/ na posição em que aparecem na cascata. */
+function lerCss(
+	texto: string,
+	lerArquivo?: (arquivo: string) => string,
+): string {
+	return Array.from(trechosDoCss(texto, [";", "{", "}"]), (trecho) => {
+		const importacao = trecho.trim();
+		if (!/^@import\b\s*(?:url\(\s*)?["']?\.\.?\//i.test(importacao))
+			return trecho;
+		const arquivo = /^@import\s*(["'])\.\/(estilos\/[\w-]+\.css)\1\s*;$/i.exec(
+			importacao,
+		)?.[2];
+		if (!arquivo || !lerArquivo) {
+			throw new Error(`Ensine o teste a abrir o import local ${importacao}`);
+		}
+		return lerCss(lerArquivo(arquivo));
+	}).join("");
+}
+
+const css = lerCss(readFileSync(join(src, "index.css"), "utf8"), (arquivo) =>
+	readFileSync(join(src, arquivo), "utf8"),
+);
 
 /**
  * A ordem das camadas, a que o Tailwind declara no começo do CSS (o
@@ -99,17 +112,18 @@ type Regra = {
 	blocos: string[];
 };
 
-/** Mantém aspas, escapes e grupos de (...) e [...] inteiros, inclusive os aninhados. */
-function* trechosDoCss(texto: string) {
+/** Pula comentários e mantém aspas, escapes e grupos inteiros, inclusive ao ler até um separador. */
+function* trechosDoCss(texto: string, separadores?: string[]) {
 	let nivel = 0;
 	let trecho = "";
 	for (const [parte] of texto.matchAll(
-		/\\.|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[\w\s.#:*>+~-]+|./gs,
+		/\\.|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\*.*?\*\/|[\w\s.#:*>+~-]+|./gs,
 	)) {
+		if (parte.startsWith("/*")) continue;
 		trecho += parte;
 		if (parte === "(" || parte === "[") nivel++;
 		if (parte === ")" || parte === "]") nivel--;
-		if (nivel === 0) {
+		if (nivel === 0 && (!separadores || separadores.includes(parte))) {
 			yield trecho;
 			trecho = "";
 		}
@@ -130,7 +144,10 @@ function separar(lista: string): string[] {
 	return seletores.map((seletor) => seletor.trim());
 }
 
-/** As regras de estilo, na ordem do CSS, com os blocos em volta de cada uma (@layer, @supports e @media). */
+const BLOCO_FORA_DA_CASCATA =
+	/^@(?:keyframes|font-face|property|page|counter-style|theme|utility)(?![\w-])/i;
+
+/** As declarações na ordem do CSS, com seus seletores e blocos. */
 function lerRegras(texto: string): Regra[] {
 	const animacoes = new Set(
 		[...texto.matchAll(/@keyframes ([\w-]+)/g)].map(([, nome = ""]) => nome),
@@ -153,16 +170,14 @@ function lerRegras(texto: string): Regra[] {
 			const bloco = pilha.pop();
 			if (!bloco?.declaracoes.length) continue;
 			const blocos = pilha.map(({ cabeca }) => cabeca);
-			if (
-				(ehRegraDeEstilo(bloco.cabeca) || blocos.some(ehRegraDeEstilo)) &&
-				!blocos.at(-1)?.startsWith("@keyframes ")
-			) {
-				regras.push({
-					seletores: separar(bloco.cabeca),
-					declaracoes: bloco.declaracoes,
-					blocos,
-				});
-			}
+			const deEstilo = ehRegraDeEstilo(bloco.cabeca);
+			if (!deEstilo) blocos.push(bloco.cabeca);
+			if (blocos.some((cabeca) => BLOCO_FORA_DA_CASCATA.test(cabeca))) continue;
+			regras.push({
+				seletores: deEstilo ? separar(bloco.cabeca) : [],
+				declaracoes: bloco.declaracoes,
+				blocos,
+			});
 		} else {
 			trecho += parte;
 		}
@@ -178,6 +193,8 @@ const REGRAS = lerRegras(css);
 
 /** Se o seletor pega a peça. O que o teste não sabe avaliar falha, para não passar calado. */
 function pega(peca: Peca, seletor: string): boolean {
+	const aviso = `o teste não sabe se o seletor ${seletor} pega ${peca.nome}. Ensine o teste a avaliar esse seletor.`;
+	if (seletor.includes("\\")) throw new Error(aviso);
 	try {
 		if (/^[\w.#*>+~ -]+$/.test(seletor)) return peca.elemento.matches(seletor);
 		// Um combinador dentro de :has() ou de um atributo faz parte da condição.
@@ -201,9 +218,7 @@ function pega(peca: Peca, seletor: string): boolean {
 	} catch {
 		// O jsdom também recusa seletores que não conhece.
 	}
-	throw new Error(
-		`o teste não sabe se o seletor ${seletor} pega ${peca.nome}. Ensine o teste a avaliar esse seletor.`,
-	);
+	throw new Error(aviso);
 }
 
 type Navegador = { rolagem: boolean; menosMovimento: boolean };
@@ -351,10 +366,16 @@ function estilo(
 				([nome]) => nome === propriedade,
 			);
 			if (daPropriedade.length === 0) continue;
-			if (blocos.some(ehRegraDeEstilo)) {
-				const caminho = [...blocos, seletores.join(", ")].join(" → ");
+			const seletorDaRegra = seletores.join(", ");
+			if (blocos.some(ehRegraDeEstilo) || seletorDaRegra.includes("&")) {
+				const caminho = [...blocos, seletorDaRegra].filter(Boolean).join(" → ");
 				throw new Error(
 					`Regra aninhada em ${caminho}. Escreva a regra por extenso.`,
+				);
+			}
+			if (seletores.length === 0) {
+				throw new Error(
+					`O bloco ${blocos.at(-1)} declara ${propriedade} sem seletor de estilo. Escreva a regra com seletor.`,
 				);
 			}
 			const daPeca = seletores.filter((seletor) => pega(peca, seletor));
@@ -406,6 +427,76 @@ describe("as regras que declaram a propriedade pedida", () => {
 		return estilo(peca, navegador, lerRegras(exemplo))(propriedade);
 	}
 
+	it.each(["'", '"'])("lê a folha no lugar do import entre %s", (aspas) => {
+		const fundo = '@import "./estilos/fundo.css";';
+		const edicoes = `@import ${aspas}./estilos/edicoes.css${aspas};`;
+		const folha = (arquivo: string) => {
+			const nome = arquivo === "estilos/edicoes.css" ? "--edicao" : "--fundo";
+			return `.texto { view-timeline-name: ${nome}; }`;
+		};
+		expect(ler(lerCss(fundo + edicoes, folha))).toBe("--edicao");
+		expect(ler(lerCss(edicoes + fundo, folha))).toBe("--fundo");
+	});
+
+	it.each([
+		"@import url(./outra.css);",
+		'@import "../outra.css" layer(components);',
+	])("nomeia o import local que sobrou na folha lida, %s", (pendente) => {
+		const indice = '@import "./estilos/edicoes.css";';
+		expect(() => lerCss(indice, () => pendente)).toThrow(pendente);
+	});
+
+	it("preserva os delimitadores de comentário entre aspas", () => {
+		const exemplo = `
+			.texto { --abre: "/*"; view-timeline-name: none !important; --fecha: "*/"; }
+			/* .texto { view-timeline-name: --comentario !important; } */
+		`;
+		expect(ler(lerCss(exemplo))).toBe("none");
+	});
+
+	it.each([
+		["& .texto", ""],
+		["& > body .texto", ""],
+		["& > .lide + div", "@scope (.artigo-folha)"],
+	])(
+		"pede a regra por extenso para %s sem regra de estilo pai",
+		(seletor, bloco) => {
+			const regra = `${seletor} { view-timeline-name: none; }`;
+			const exemplo = bloco ? `${bloco} { ${regra} }` : regra;
+			const caminho = [bloco, seletor].filter(Boolean).join(" → ");
+			expect(() => ler(exemplo)).toThrow(
+				`Regra aninhada em ${caminho}. Escreva a regra por extenso.`,
+			);
+		},
+	);
+
+	it("avisa quando o bloco declara a propriedade sem seletor de estilo", () => {
+		const bloco = "@scope (.texto)";
+		expect(() => ler(`${bloco} { view-timeline: none; }`)).toThrow(
+			`O bloco ${bloco} declara view-timeline-name sem seletor de estilo`,
+		);
+	});
+
+	it("ignora os blocos que não estilizam as peças por seletor", () => {
+		const exemplo = `
+			@keyframes muda { to { font-family: Arial; } }
+			@font-face { font-family: Arial; }
+			@property --fonte { syntax: "*"; inherits: false; initial-value: Arial; }
+			@page { font-family: Arial; }
+			@counter-style lista { system: cyclic; symbols: "*"; }
+			@theme { --font-base: Arial; }
+			@utility fonte { font-family: Arial; }
+		`;
+		for (const propriedade of [
+			"font-family",
+			"initial-value",
+			"symbols",
+			"--font-base",
+		]) {
+			expect(ler(exemplo, TEXTO, propriedade)).toBe("(sem regra)");
+		}
+	});
+
 	it.each([
 		".artigo-folha:has(> .lido[data-lido]) > .lide + div",
 		".artigo-folha:has(> .lido[data-lido]) > h1 ~ div",
@@ -413,6 +504,8 @@ describe("as regras que declaram a propriedade pedida", () => {
 		'html:has(head > meta[name="theme-color"]) .lide + div',
 		'.artigo-folha > :is(:where(.fora, .outra), [data-rotulo="a,b"])',
 		':not(.fora) > .lide + [data-rotulo="a,b"]',
+		":r\\6f ot .texto",
+		":r\\oot .texto",
 	])("avisa sobre a condição em %s", (seletor) => {
 		expect(() => ler(`${seletor} { view-timeline: none; }`)).toThrow(
 			`o teste não sabe se o seletor ${seletor} pega o texto do artigo`,
@@ -460,6 +553,9 @@ describe("as regras que declaram a propriedade pedida", () => {
 			.lide + .texto:hover { color: red; }
 			.artigo-folha:hover > div { color: red; }
 			.artigo-folha { & > div { color: red; } }
+			& > div { color: red; }
+			.t\\65 xto { color: red; }
+			@scope (.texto) { color: red; }
 		`;
 		expect(ler(exemplo)).toBe("--leitura");
 	});
