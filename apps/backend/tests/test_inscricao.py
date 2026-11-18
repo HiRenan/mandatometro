@@ -3,6 +3,7 @@
 import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, date, datetime, timedelta
+from functools import partial
 from uuid import uuid4
 
 import httpx2
@@ -12,7 +13,9 @@ from sqlalchemy import delete, event, func, select, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
+from mandatometro.api import newsletter as api_newsletter
 from mandatometro.api.app import app
+from mandatometro.avisos.limite import consumir_cota
 from mandatometro.config import config
 from mandatometro.db import engine
 from mandatometro.db.modelos import Edicao, Fonte, Inscrito, ItemEdicao
@@ -220,6 +223,9 @@ def test_validacao_nao_reflete_dados_nem_grava(ambiente, corpo, caplog):
 
 def test_limite_conta_json_invalido_e_repeticoes_sem_olhar_ip(ambiente, monkeypatch):
     monkeypatch.setenv("NEWSLETTER_LIMITE_POR_MINUTO", "2")
+    monkeypatch.setattr(
+        api_newsletter, "consumir_cota", partial(consumir_cota, agora=datetime.now(UTC))
+    )
     config.cache_clear()
     cliente = ambiente["cliente"]
     assert cliente.post(ROTA, content=b'{"email":').status_code == 422
