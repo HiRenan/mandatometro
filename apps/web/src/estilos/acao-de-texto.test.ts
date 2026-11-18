@@ -98,7 +98,9 @@ function lerRegrasDoLink(nome: string, css: string) {
 			continue;
 		}
 		const seletor = cabecalho.trim().replace(/\s+/g, " ");
-		const estiloDeFora = abertas.findLast((aberta) => !aberta.startsWith("@"));
+		const estiloDeFora = abertas
+			.filter((aberta) => !aberta.startsWith("@"))
+			.at(-1);
 		const inicioDoEscopo = /^@scope\s*\((.*?)\)\s*(?:to\s*\(|$)/i.exec(
 			seletor,
 		)?.[1];
