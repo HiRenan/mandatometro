@@ -1,5 +1,20 @@
+// @vitest-environment jsdom
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+	createRootRoute,
+	createRouter,
+	type RootRouteOptions,
+} from "@tanstack/react-router";
+import {
+	createRequestHandler,
+	defaultRenderHandler,
+} from "@tanstack/react-router/ssr/server";
+import { describe, expect, it, vi } from "vitest";
+import { acharArtigo, trilhas } from "@/lib/conteudo/paginas.server";
+import { Route as RotaRaiz } from "@/routes/__root";
+import { Route as RotaDoArtigo } from "@/routes/trilhas/$trilha/$artigo";
 
 // A barra da leitura do artigo (o .leitura-barra, em
 // routes/trilhas/$trilha/$artigo.tsx): a tira das cinco fitas, no alto da tela,
@@ -18,16 +33,16 @@ import { describe, expect, it } from "vitest";
 // essa linha. A revisão do PR #160 achou três mudanças que deixavam o teste verde
 // e quebravam a barra no navegador (a #163).
 
-const src = new URL("../", import.meta.url);
+const src = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 /**
  * O CSS do site na ordem do build: o index.css, com cada arquivo de estilos/ no
  * lugar do @import dele, sem os comentários. O globals.css, com as cores, as
  * fontes e o Tailwind, fica de fora: ele não tem regra da barra.
  */
-const css = readFileSync(new URL("index.css", src), "utf8")
+const css = readFileSync(join(src, "index.css"), "utf8")
 	.replace(/@import "\.\/(estilos\/[\w-]+\.css)";/g, (_, arquivo: string) =>
-		readFileSync(new URL(arquivo, src), "utf8"),
+		readFileSync(join(src, arquivo), "utf8"),
 	)
 	.replace(/\/\*[\s\S]*?\*\//g, "");
 
@@ -38,61 +53,48 @@ const css = readFileSync(new URL("index.css", src), "utf8")
  */
 const CAMADAS = ["theme", "base", "components", "utilities"];
 
-/**
- * O que pode vir antes da barra num seletor que a pega: a página do artigo e o
- * que fica em volta dela. A página e o texto do artigo também ficam aí dentro.
- */
-const EM_VOLTA = new Set([
-	"html",
-	"body",
-	".caixa-do-teto",
-	"main",
-	"#conteudo",
-	"div",
-	".pagina-do-artigo",
-]);
+vi.mock("@/env", () => ({ ENV: { API_URL: "" } }));
 
 /**
- * Uma peça do artigo, pela classe dela. Num seletor que pega a peça, a classe
- * fica na última parte, e o que vem antes fica em volta da peça. A classe numa
- * parte de antes é de uma peça de dentro dela, como em `.texto h2`.
+ * O documento de __root.tsx com a rota do artigo e o TextoDoArtigo. A ordem
+ * dos pais e dos irmãos vem do HTML que o roteador devolve em memória.
  */
-type Peca = {
-	nome: string;
-	classe: string;
-	emVolta: Set<string>;
-	/** O que fica em volta de outra peça com a mesma classe, como o texto de cada item da edição. */
-	deOutra?: Set<string>;
-};
+async function documentoDoArtigo() {
+	const raiz = createRootRoute({
+		shellComponent: (RotaRaiz.options as RootRouteOptions).shellComponent,
+	});
+	const caminho = "/trilhas/$trilha/$artigo";
+	const artigo = RotaDoArtigo.update({
+		id: caminho,
+		path: caminho,
+		getParentRoute: () => raiz,
+		loader: ({ params }: { params: { trilha: string; artigo: string } }) =>
+			acharArtigo(trilhas, params.trilha, params.artigo),
+	} as never);
+	const resposta = await createRequestHandler({
+		createRouter: () =>
+			createRouter({ routeTree: raiz.addChildren([artigo]), isServer: true }),
+		request: new Request(
+			"http://localhost/trilhas/processo-legislativo/onde-o-projeto-comeca",
+		),
+	})(defaultRenderHandler);
+	expect(resposta.status).toBe(200);
+	return new DOMParser().parseFromString(await resposta.text(), "text/html");
+}
 
-/** A barra (routes/trilhas/$trilha/$artigo.tsx). */
-const BARRA: Peca = {
-	nome: "a barra",
-	classe: ".leitura-barra",
-	emVolta: EM_VOLTA,
-};
+const documento = await documentoDoArtigo();
 
-/** A página do artigo, que tem em volta a barra e o texto. */
-const PAGINA: Peca = {
-	nome: "a página do artigo",
-	classe: ".pagina-do-artigo",
-	emVolta: EM_VOLTA,
-};
+type Peca = { nome: string; classe: string; elemento: Element };
 
-/** O texto do artigo (components/texto-do-artigo.tsx), dentro da folha. */
-const TEXTO: Peca = {
-	nome: "o texto do artigo",
-	classe: ".texto",
-	emVolta: new Set([
-		...EM_VOLTA,
-		".parede",
-		".artigo-grade",
-		"article",
-		".folha",
-		".artigo-folha",
-	]),
-	deOutra: new Set([".item-da-edicao"]),
-};
+function pecaDoArtigo(classe: string, nome: string): Peca {
+	const elemento = documento.querySelector(classe);
+	if (!elemento) throw new Error(`Falta ${nome} (${classe}) no HTML do artigo`);
+	return { nome, classe, elemento };
+}
+
+const PAGINA = pecaDoArtigo(".pagina-do-artigo", "a página do artigo");
+const BARRA = pecaDoArtigo(".leitura-barra", "a barra");
+const TEXTO = pecaDoArtigo(".texto", "o texto do artigo");
 
 /** As animações do CSS, para achar o nome dentro do atalho `animation`. */
 const ANIMACOES = new Set(
@@ -149,7 +151,11 @@ function lerRegras(texto: string): Regra[] {
 			}
 			trecho = "";
 			const bloco = letra === "}" ? pilha.pop() : undefined;
-			if (bloco && !bloco.cabeca.startsWith("@")) {
+			if (
+				bloco &&
+				!bloco.cabeca.startsWith("@") &&
+				!pilha.at(-1)?.cabeca.startsWith("@keyframes ")
+			) {
 				regras.push({
 					seletores: separar(bloco.cabeca),
 					declaracoes: bloco.declaracoes,
@@ -167,16 +173,20 @@ const REGRAS = lerRegras(css);
 
 /** Se o seletor pega a peça. O que o teste não sabe avaliar falha, para não passar calado. */
 function pega(peca: Peca, seletor: string): boolean {
-	// O * do movimento reduzido, que tira a animação de tudo.
-	if (seletor === "*") return true;
-	const partes = seletor.split(/ ?[>+~] ?| /);
-	const ultima = partes.pop() ?? "";
-	if (ultima === peca.classe || ultima === `div${peca.classe}`) {
-		if (partes.every((parte) => peca.emVolta.has(parte))) return true;
-		if (partes.some((parte) => peca.deOutra?.has(parte))) return false;
-	} else if (!ultima.split(/(?=[.#:[])/).includes(peca.classe)) {
-		// Sem a classe na última parte: o seletor pega outra coisa, ou uma peça de dentro desta.
-		return false;
+	// Um pseudo-elemento, como o ::before ou uma foto da troca de página, tem estilo próprio.
+	if (/::[\w-]+(?:\([^()]*\))?$/.test(seletor)) return false;
+	try {
+		const corresponde = peca.elemento.matches(seletor);
+		// Tags, classes, ids e * têm especificidade conhecida. O matches recebe o
+		// seletor inteiro, com o espaço, o >, o + e o ~ entre as partes.
+		if (/^[\w.#*>+~ -]+$/.test(seletor)) return corresponde;
+		// Uma condição na peça (como .texto:hover) pode valer em outro estado.
+		const ultima = seletor.split(/[ >+~]+/).at(-1) ?? "";
+		if (!corresponde && !ultima.split(/(?=[.#:[])/).includes(peca.classe)) {
+			return false;
+		}
+	} catch {
+		// O jsdom também recusa seletores que não conhece.
 	}
 	throw new Error(`o teste não sabe se o seletor ${seletor} pega ${peca.nome}`);
 }
@@ -218,7 +228,7 @@ function especificidade(seletor: string): number[] {
 	return [
 		(seletor.match(/#[\w-]+/g) ?? []).length,
 		(seletor.match(/\.[\w-]+/g) ?? []).length,
-		(seletor.match(/(?:^|[ >])[a-z][\w-]*/g) ?? []).length,
+		(seletor.match(/(?:^|[ >+~])[a-z][\w-]*/gi) ?? []).length,
 	];
 }
 
@@ -340,13 +350,36 @@ const zDoCabecalho = Number(
  * do IntersectionObserver põe acima do pé da tela.
  */
 const margemDoVisto = /rootMargin: "([^"]*)"/.exec(
-	readFileSync(new URL("routes/trilhas/$trilha/$artigo.tsx", src), "utf8"),
+	readFileSync(join(src, "routes/trilhas/$trilha/$artigo.tsx"), "utf8"),
 )?.[1];
 
 describe("a barra da leitura do artigo", () => {
 	const comRolagem = barraNo({ rolagem: true, menosMovimento: false });
 	const pagina = estilo(PAGINA, { rolagem: true, menosMovimento: false });
 	const texto = estilo(TEXTO, { rolagem: true, menosMovimento: false });
+
+	it("o texto descende da página e é filho direto da folha", () => {
+		expect(pega(TEXTO, ".pagina-do-artigo .texto")).toBe(true);
+		expect(pega(TEXTO, ".pagina-do-artigo > .texto")).toBe(false);
+		expect(pega(TEXTO, ".artigo-folha > .texto")).toBe(true);
+	});
+
+	it("o lide vem logo antes do texto e o título é um irmão mais distante", () => {
+		expect(pega(TEXTO, ".lide + .texto")).toBe(true);
+		expect(pega(TEXTO, "h1+.texto")).toBe(false);
+		expect(pega(TEXTO, "h1~.texto")).toBe(true);
+	});
+
+	it("conta as tags depois de + e ~ na especificidade, mesmo sem espaços", () => {
+		expect(especificidade("h1~p+DIV.texto")).toEqual([0, 1, 3]);
+	});
+
+	it("avisa quando a regra tem uma condição que a cascata do teste não avalia", () => {
+		const seletor = ".lide + .texto:hover";
+		expect(() => pega(TEXTO, seletor)).toThrow(
+			`o teste não sabe se o seletor ${seletor} pega o texto do artigo`,
+		);
+	});
 
 	it("aparece onde o navegador tem a animação de rolagem", () => {
 		expect(comRolagem("display")).toBe("block");
