@@ -1060,11 +1060,20 @@
 			grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
 		}
 
-		/* Ao lado das opções, a resposta certa já está marcada nelas. */
+		/*
+		 * A folha da resposta começa embaixo do mosaico recolhido no canto de cima.
+		 * A margem de cima dela soma ao vão de 1rem a linha da etiqueta que ficava
+		 * acima da contagem até a #136 (a letra de 0.875rem, com a altura de linha
+		 * de 1.2): sem essa linha, a folha subia e cobria a base do mosaico de três
+		 * fileiras do quiz final. Só a folha desce; a contagem e as opções, na
+		 * coluna da esquerda, ficam onde estão. O estilos/quiz.test.ts confere a
+		 * folga em todas as larguras do computador.
+		 */
 		.quiz-retorno {
-			margin-top: 1rem;
+			margin-top: calc(1rem + 0.875rem * 1.2);
 		}
 
+		/* Ao lado das opções, a resposta certa já está marcada nelas. */
 		.quiz-retorno .quiz-certa {
 			display: none;
 		}
