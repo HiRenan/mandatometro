@@ -18,13 +18,13 @@ web
 O Mandatômetro ensina como funciona a política brasileira, em linguagem simples e de forma interativa, a partir do que o Congresso vota (Renan, 09/11/2026). Ele tem duas partes:
 
 - **Trilhas:** artigos curtos com infográficos e, se der tempo, vídeos curtos, com um quiz de múltipla escolha no meio e outro no fim. A primeira, e a principal, é a do processo legislativo: como nasce uma lei.
-- **Newsletter semanal, o jornal legislativo:** todo domingo, o que o Congresso votou na semana, em linguagem simples e com o link oficial de cada item. Cada edição também fica no site.
+- **Newsletter semanal, o jornal legislativo:** todo domingo, o que o Congresso votou na semana, em linguagem simples e com o link oficial de cada item. Cada edição também fica no site. A edição vai ganhar uma segunda seção, com os destaques do Diário Oficial da União, para alcançar também o que o Executivo publica (ADR 0004); hoje só a seção do Congresso está no ar.
 
 O projeto concorre na trilha Acesso à educação do Hack Brasil 2026, com entrega em 30/11/2026: aprender é a função principal do site. O sucesso se mede no piloto, com cerca de 50 pessoas, pelo quanto elas acertam no quiz antes e depois da trilha.
 
 ## Positioning
 
-A política explicada em linguagem simples e de forma interativa, a partir de casos reais e recentes do Congresso, com a fonte oficial em cada explicação: a lei, o regimento ou a página da Câmara, do Senado ou do TSE. As trilhas ensinam as regras, e a newsletter mostra o Congresso da semana. O lema: "o diário oficial político, simplificado".
+A política explicada em linguagem simples e de forma interativa, a partir de casos reais e recentes do Congresso, com a fonte oficial em cada explicação: a lei, o regimento ou a página da Câmara, do Senado ou do TSE. As trilhas ensinam as regras, e a newsletter mostra a semana — hoje o Congresso, e, pelo ADR 0004, também o que sai no Diário Oficial. O lema: "o diário oficial político, simplificado".
 
 ## Operating Context
 

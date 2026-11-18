@@ -7,7 +7,7 @@ Contexto e convenções do Mandatômetro para agentes de código (Claude Code, C
 O Mandatômetro é um site que ensina como funciona a política brasileira, a partir do que o Congresso está votando. Público: eleitores, principalmente de 20 a 40 anos. Problema: falta aos eleitores conhecimento sobre o sistema político brasileiro. Lema: o diário oficial político, simplificado.
 
 - **Trilhas:** artigos curtos com infográficos, um quiz de múltipla escolha no meio e outro no fim. A primeira é a do processo legislativo.
-- **Newsletter semanal (o jornal legislativo):** todo domingo, o que o Congresso votou na semana, em linguagem simples. A inscrição pede só o e-mail e já manda a última edição, e cada edição também fica no site.
+- **Newsletter semanal (o jornal legislativo):** todo domingo, o que o Congresso votou na semana, em linguagem simples. A inscrição pede só o e-mail e já manda a última edição, e cada edição também fica no site. A edição vai ganhar uma segunda seção, com os destaques do Diário Oficial da União, e a revisão vai sair do CLI para um painel: é decisão do time, ainda em construção (#113 e #114), e o que o código faz hoje é só a seção do Congresso.
 - **Conta opcional:** o login, o cadastro com o termo de consentimento e o progresso no perfil entram no MVP (#109 a #112), mas nada pede conta. Sem ela, o navegador guarda os artigos lidos; com ela, o progresso fica no perfil e passa de um aparelho para outro.
 - **Cadastro:** os dados demográficos opcionais servem para entender o público. Confirmação e recuperação usam links com o token no fragmento e uma ação explícita na página. A exclusão exige sessão e senha atual e gera um comprovante via Resend. O contrato de sessão para a #109 está no README, em "Cadastro de contas".
 - **Fora do MVP:** pontos, ranking e certificado saíram. As páginas de cada parlamentar (promessas × atos e patrimônio declarado ao TSE), o "fake ou fato" e o jogo das comissões ficam no marco "Depois do MVP".
@@ -16,7 +16,7 @@ O Mandatômetro é um site que ensina como funciona a política brasileira, a pa
 - **Trilha do hackathon:** Acesso à educação. O regulamento (item 5.4) exige que o problema e o público estejam dentro da trilha, por isso aprender é a função principal do site.
 - **Prazo:** projeto do Hack Brasil 2026, com entrega em 30/11/2026 (repositório público, demo no ar e vídeo de até 3 minutos). Prefira a solução simples que chega na demo.
 
-O porquê do MVP está no [ADR 0002](docs/adr/0002-mvp.md), e o do login opcional, no [ADR 0003](docs/adr/0003-login-opcional.md).
+O porquê do MVP está no [ADR 0002](docs/adr/0002-mvp.md); o do login opcional, no [ADR 0003](docs/adr/0003-login-opcional.md); e o do Diário Oficial na newsletter, no [ADR 0004](docs/adr/0004-newsletter-do-dou.md).
 
 ## Ferramentas parceiras
 
@@ -24,7 +24,7 @@ O porquê do MVP está no [ADR 0002](docs/adr/0002-mvp.md), e o do login opciona
 - **Resend** manda todos os e-mails.
 - **Devin** pode pegar as issues com o label `devin`, com PR neste repositório.
 
-As APIs oficiais e os arquivos de dados abertos (Câmara, Senado e TSE) são lidos direto, por HTTP.
+As APIs oficiais e os arquivos de dados abertos (Câmara, Senado, TSE e, pelo INLABS, o Diário Oficial da União) são lidos direto, por HTTP.
 
 ## Arquitetura
 
@@ -83,6 +83,7 @@ Endpoints, campos, chaves de ligação e exemplos reais da Câmara e do Senado e
 
 - Toda chamada externa tem timeout e nova tentativa com backoff. A API da Câmara devolve 504 de vez em quando.
 - O User-Agent identifica o projeto (`mandatometro (Hack Brasil 2026)`), e a coleta respeita o robots.txt dos sites.
+- **O `in.gov.br` proíbe a raspagem:** em 18/11/2026, `https://www.in.gov.br/robots.txt` respondeu HTTP 200 com `User-agent: *` e `Disallow: /` — o site inteiro, para todos os agentes. A página de destaques do Diário Oficial não se lê, nem direto nem pelo Firecrawl, que faz a mesma requisição ao servidor do órgão. A fonte do DOU é o **INLABS** (`inlabs.in.gov.br`), o serviço de dados abertos da Imprensa Nacional, com cadastro gratuito e os XMLs das edições; ele não tem `robots.txt` (404, que a RFC 9309 trata como ausência de regras) e, em 18/11/2026, respondia com a página "Manutenção Programada". O porquê está no [ADR 0004](docs/adr/0004-newsletter-do-dou.md).
 - **Robots da coleta:** em 16/11/2026, `dadosabertos.camara.leg.br/robots.txt` respondeu HTTP 200 com HTML de página inexistente, sem regras, e `legis.senado.leg.br/robots.txt` respondeu 403. A base lê o arquivo uma vez por execução, usa `RobotFileParser.parse()` e segue a RFC 9309: aplica as regras legíveis; sem regras ou com 4xx no arquivo (exceto 408/429, transitórios), continua; falha de rede/5xx persistente interrompe. Um 403 no endpoint de dados continua sendo erro. `Crawl-delay`, `Request-rate` e `Retry-After` são respeitados.
 - As respostas da Câmara e do Senado são UTF-8, e nenhuma das duas declara o charset no `content-type` (as duas mandam `application/json`): decodifique explicitamente como UTF-8, ou os acentos embaralham no Windows.
 - **Na Câmara, `dataFim` corta à meia-noite:** em 16/11/2026, consultar de 14/10 a 14/10 devolveu zero votações; até 15/10 devolveu as cinco de 14/10. Para incluir o último dia inteiro, a coleta pede o dia seguinte e filtra pela data solicitada. Quando o trecho acaba em 31/12, omite `dataFim`: segundo a documentação oficial, só `dataInicio` cobre até o fim daquele ano, sem cruzar anos na consulta.
