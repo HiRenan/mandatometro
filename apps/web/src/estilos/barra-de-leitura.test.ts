@@ -334,6 +334,15 @@ const zDoCabecalho = Number(
 	/\.moldura \{[^}]*z-index: (\d+);/.exec(css)?.[1] ?? Number.NaN,
 );
 
+/**
+ * A margem do visto: o artigo conta como lido, e o "Você leu este artigo."
+ * aparece, quando o lido, logo depois do texto, passa da linha que o rootMargin
+ * do IntersectionObserver põe acima do pé da tela.
+ */
+const margemDoVisto = /rootMargin: "([^"]*)"/.exec(
+	readFileSync(new URL("routes/trilhas/$trilha/$artigo.tsx", src), "utf8"),
+)?.[1];
+
 describe("a barra da leitura do artigo", () => {
 	const comRolagem = barraNo({ rolagem: true, menosMovimento: false });
 	const pagina = estilo(PAGINA, { rolagem: true, menosMovimento: false });
@@ -366,6 +375,19 @@ describe("a barra da leitura do artigo", () => {
 		// O preenchimento both deixa a barra vazia antes do texto e cheia depois
 		// dele. Sem ele, ela esvazia quando o texto acaba.
 		expect(comRolagem("animation-fill-mode")).toBe("both");
+	});
+
+	it("começa na linha de 60% da tela e fica cheia na linha do visto, a 90%", () => {
+		// O visto aparece quando o lido, 2rem abaixo do texto, passa da linha a 10%
+		// do pé da tela.
+		expect(margemDoVisto).toBe("0px 0px -10% 0px");
+		// A janela da linha do tempo vai da linha a 60% da altura da tela à do
+		// visto, a 90%, e o texto é mais alto que ela. No trecho contain, a barra
+		// começa quando o alto do texto passa da linha de cima e fica cheia quando
+		// o fim dele passa da de baixo, um pouco antes de o lido passar e o visto
+		// aparecer.
+		expect(texto("view-timeline-inset")).toBe("60% 10%");
+		expect(comRolagem("animation-range")).toBe("contain");
 	});
 
 	it("não aparece onde o navegador não tem a animação de rolagem", () => {

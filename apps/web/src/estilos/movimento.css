@@ -253,22 +253,28 @@
 			animation-range: entry 0 entry 7rem;
 		}
 
-		/* A barra da leitura acompanha o texto do artigo: a linha da leitura fica a
-		   60% da altura da tela. */
+		/*
+		 * A barra da leitura acompanha o texto do artigo, numa janela que vai da
+		 * linha a 60% da altura da tela à linha a 90%, a do visto (o rootMargin de
+		 * −10%, em routes/trilhas/$trilha/$artigo.tsx). O texto é mais alto que a
+		 * janela: no trecho contain, a barra começa quando o alto do texto passa da
+		 * linha de 60% e fica cheia quando o fim dele passa da de 90%, um pouco
+		 * antes de o lido, 2rem abaixo do texto, chegar lá e o visto aparecer.
+		 */
 		.pagina-do-artigo {
 			timeline-scope: --leitura;
 		}
 
 		.pagina-do-artigo .texto {
 			view-timeline: --leitura block;
-			view-timeline-inset: 60% 40%;
+			view-timeline-inset: 60% 10%;
 		}
 
 		.leitura-barra {
 			display: block;
 			animation: enche linear both;
 			animation-timeline: --leitura;
-			animation-range: cover 0% cover 100%;
+			animation-range: contain;
 		}
 	}
 
