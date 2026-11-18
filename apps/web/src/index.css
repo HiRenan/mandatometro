@@ -2050,13 +2050,18 @@
 
 	/* ───── O artigo ───── */
 
-	/* A barra da leitura, no alto da tela: a tira das cinco fitas, que enche com o
-	   texto (estilos/movimento.css). Sem a animação de rolagem, ela não aparece. */
+	/*
+	 * A barra da leitura, no alto da tela: a tira das cinco fitas, que enche com o
+	 * texto. Quem liga e desliga é o estilos/movimento.css: ela só aparece onde o
+	 * navegador tem a animação de rolagem, e sai com o movimento reduzido. Fica
+	 * embaixo do cabeçalho (o z-index 5 da .moldura): enquanto o cabeçalho está na
+	 * tela, ele cobre a barra, com o "Pular para o conteúdo" dentro dele, e a barra
+	 * aparece quando ele sai, na rolagem.
+	 */
 	.leitura-barra {
 		position: fixed;
 		inset: 0 0 auto;
-		z-index: 20;
-		display: none;
+		z-index: 4;
 		height: 6px;
 		background: var(--tira);
 		transform: scaleX(0);

@@ -451,6 +451,19 @@ describe("a página do piloto", () => {
 		);
 	});
 
+	// Nas perguntas, o título do palco sai da vista, e o pé diz o nome do antes,
+	// que não se confunde com o quiz final, das mesmas 12 perguntas (a #136).
+	it("nas perguntas, o pé diz que é o antes da trilha", async () => {
+		await abrirOPiloto();
+		const nomeNoPe = () =>
+			document.querySelector(".quiz-pe .quiz-nome")?.textContent ?? null;
+		expect(nomeNoPe()).toBeNull();
+
+		clicar("Começar");
+
+		expect(nomeNoPe()).toBe("Antes da trilha");
+	});
+
 	it("na última pergunta, conclui a primeira etapa com os acertos e chama para a trilha, sem dizer o total", async () => {
 		await abrirOPiloto();
 		clicar("Começar");

@@ -492,10 +492,11 @@ export function Quiz({
 					</div>
 				</div>
 
-				{/* Na abertura, o título é gigante; nas outras telas, vira a etiqueta do
-				    alto (estilos/quiz.css). Com a letra grande, ele cresce até "TRILHA",
-				    a palavra mais larga dos títulos dos quizzes, encostar nas margens
-				    (o letra-com-teto do index.css). */}
+				{/* Na abertura, o título é gigante. Nas outras telas, ele sai da vista
+				    e fica para o leitor de tela, com o nome do palco (estilos/quiz.css),
+				    e quem vê lê o nome do quiz no pé. Com a letra grande, ele cresce até
+				    "TRILHA", a palavra mais larga dos títulos dos quizzes, encostar nas
+				    margens (o letra-com-teto do index.css). */}
 				<h1
 					id="quiz-titulo"
 					className="quiz-titulo titulo-condensado letra-com-teto [--palavra:2.74]"
@@ -709,7 +710,10 @@ export function Quiz({
 				    respondida, e a frase, sem contar acertos. A linha da frase guarda o
 				    tamanho da mais comprida desde o HTML do servidor: no celular com a
 				    letra grande, ela quebra em duas linhas. No fim, a frase já está no
-				    título da tela. */}
+				    título da tela.
+				    Fora da abertura, o nome do quiz vem antes da frase: é ali que quem
+				    vê descobre em que quiz está, e não numa etiqueta acima do título (a
+				    #136). O leitor de tela já tem o h1, e o nome fica fora dele. */}
 				<div className="quiz-pe">
 					<ol aria-hidden="true" className="quiz-andamento">
 						{perguntas.map((outra, indice) => (
@@ -726,12 +730,19 @@ export function Quiz({
 							/>
 						))}
 					</ol>
-					<p className="quiz-andamento-texto rotulo grid">
-						<Reservas frases={frasesDoAndamento(total)} />
-						<span className="col-start-1 row-start-1">
-							{tela === "fim" ? "" : andamento}
-						</span>
-					</p>
+					<div className="quiz-pe-linha">
+						{tela !== "abertura" && (
+							<span aria-hidden="true" className="quiz-nome rotulo">
+								{titulo}
+							</span>
+						)}
+						<p className="quiz-andamento-texto rotulo grid">
+							<Reservas frases={frasesDoAndamento(total)} />
+							<span className="col-start-1 row-start-1">
+								{tela === "fim" ? "" : andamento}
+							</span>
+						</p>
+					</div>
 				</div>
 				<Aviso texto={aviso} />
 			</section>
