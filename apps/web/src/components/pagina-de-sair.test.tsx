@@ -631,10 +631,11 @@ describe("a página de sair", () => {
 			| HTMLElement
 			| undefined;
 
-		// No Firefox, a 390 px, o link quebra em duas linhas, e um span com a
-		// mesma classe ficava numa: o item de baixo encolhia, e a página também
-		// (a revisão do PR #146). A cópia é o mesmo elemento, com a mesma classe
-		// e o mesmo texto, para ter a altura dele.
+		// Na #152, quando o Firefox ainda quebrava o link em duas linhas a 390
+		// px, um span com a mesma classe ficava numa: o item de baixo encolhia, e
+		// a página também (a revisão do PR #146). A cópia é o mesmo elemento, com
+		// a mesma classe e o mesmo texto, para seguir as regras dele e ter a
+		// altura dele.
 		expect(copia?.tagName).toBe("A");
 		expect(copia?.className).toBe(link.className);
 		expect(copia?.innerHTML).toBe(link.innerHTML);
