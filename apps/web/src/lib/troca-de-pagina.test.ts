@@ -349,6 +349,13 @@ describe("molduraNaTela", () => {
 			expect(molduraNaTela(40)).toBe(true);
 		});
 
+		it("com a página de antes rolada para baixo do cabeçalho e a nova no alto, é mentira: o de antes está fora da tela", () => {
+			// Rolada 100 px, a página de antes mostra o fundo do cabeçalho 28 px acima
+			// da tela; a nova, no alto, mostraria os 72.
+			paginaDeAntes(100);
+			expect(molduraNaTela(0)).toBe(false);
+		});
+
 		it("conta o cabeçalho pelo lugar dele na página, também com a página de antes um pouco rolada", () => {
 			// Rolada 30 px, a página de antes mostra 42 px do cabeçalho; a nova, rolada
 			// 60 px, mostra 12.
@@ -369,9 +376,13 @@ describe("rolagemDasPaginas", () => {
 		rolar(0);
 	});
 
-	/** Uma visita a uma página: a chave dela no histórico separa duas visitas. */
-	const visita = (chave: string, caminho = TRILHA) => ({
-		href: caminho,
+	/**
+	 * Uma visita a uma página: a chave dela no histórico separa duas visitas. O
+	 * trecho é o do endereço depois do #, que o router dá sem o #.
+	 */
+	const visita = (chave: string, caminho = TRILHA, trecho = "") => ({
+		href: trecho ? `${caminho}#${trecho}` : caminho,
+		hash: trecho,
 		state: { __TSR_key: chave },
 	});
 	const ARTIGO = `${TRILHA}/o-plenario-vota-o-projeto`;
@@ -430,6 +441,35 @@ describe("rolagemDasPaginas", () => {
 		expect(rolagem.daPaginaNova({ toLocation: visita("outro", ARTIGO) })).toBe(
 			0,
 		);
+	});
+
+	// A #172: o "Receber por e-mail" das edições leva a /#newsletter, e o router
+	// abre a página inicial no trecho, perto do fim, e não no alto.
+	it("num link para um trecho de outra página, não se sabe: o router abre a página no trecho", () => {
+		const rolagem = rolagemDasPaginas();
+		rolagem.guardar({ fromLocation: visita("edicoes", "/edicoes") });
+
+		const newsletter = visita("inicio", "/", "newsletter");
+		mudou(rolagem, "PUSH", newsletter);
+		expect(rolagem.daPaginaNova({ toLocation: newsletter })).toBeNull();
+	});
+
+	it("na volta e no avançar para uma página aberta num trecho, vale a rolagem guardada, como no router", () => {
+		const rolagem = rolagemDasPaginas();
+		const newsletter = (chave: string) => visita(chave, "/", "newsletter");
+		// Duas visitas ao início aberto no trecho: a pessoa sai de uma com a página
+		// ainda no trecho, e da outra depois de rolar de volta ao alto.
+		rolar(2078);
+		rolagem.guardar({ fromLocation: newsletter("no-trecho") });
+		rolar(0);
+		rolagem.guardar({ fromLocation: newsletter("no-alto") });
+
+		mudou(rolagem, "BACK", newsletter("no-trecho"));
+		expect(rolagem.daPaginaNova({ toLocation: newsletter("no-trecho") })).toBe(
+			2078,
+		);
+		mudou(rolagem, "FORWARD", newsletter("no-alto"));
+		expect(rolagem.daPaginaNova({ toLocation: newsletter("no-alto") })).toBe(0);
 	});
 
 	it("separa duas visitas à mesma página pela chave do histórico", () => {
