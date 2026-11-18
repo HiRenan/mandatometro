@@ -469,20 +469,38 @@ export const LARGURAS_DAS_LETRAS = {
 export type EstiloDeTitulo = keyof typeof LARGURAS_DAS_LETRAS;
 
 /**
- * Como a tela mostra cada estilo, e como a tabela dele foi medida: em maiúsculas (o
- * text-transform) ou como escrito, e o espaço entre as letras, em em, que já está na
- * largura de cada letra. A régua passa a palavra para maiúsculas só nos estilos em
- * maiúsculas. O titulos.test.ts confere os dois do título do passo da sanfona com a
- * regra dele no index.css, de cada lado dos 22rem.
+ * O peso e a largura da fonte usada para medir cada régua. A caixa diz se a régua
+ * passa a palavra para maiúsculas. O espaço, em em, já entra na medida de cada
+ * letra. No título do passo, a caixa e o espaço mudam abaixo de 22rem.
  */
 export const COMO_APARECE = {
-	"titulo-condensado": { caixa: "alta", espaco: 0 },
-	"subtitulo-condensado": { caixa: "alta", espaco: 0 },
-	"titulo-da-sanfona": { caixa: "alta", espaco: 0.05 },
-	"titulo-da-sanfona-letra-grande": { caixa: "como-escrito", espaco: 0 },
+	"titulo-condensado": { caixa: "alta", espaco: 0, peso: 900, largura: "62%" },
+	"subtitulo-condensado": {
+		caixa: "alta",
+		espaco: 0,
+		peso: 900,
+		largura: "68%",
+	},
+	"titulo-da-sanfona": {
+		caixa: "alta",
+		espaco: 0.05,
+		peso: 750,
+		largura: "100%",
+	},
+	"titulo-da-sanfona-letra-grande": {
+		caixa: "como-escrito",
+		espaco: 0,
+		peso: 750,
+		largura: "100%",
+	},
 } satisfies Record<
 	EstiloDeTitulo,
-	{ caixa: "alta" | "como-escrito"; espaco: number }
+	{
+		caixa: "alta" | "como-escrito";
+		espaco: number;
+		peso: number;
+		largura: `${number}%`;
+	}
 >;
 
 /**

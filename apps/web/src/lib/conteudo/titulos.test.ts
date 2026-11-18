@@ -226,6 +226,33 @@ describe("a régua das letras", () => {
 		);
 	});
 
+	it("usa o peso e a largura da fonte com que cada régua foi medida", () => {
+		const usos: [EstiloDeTitulo, string][] = [
+			["titulo-condensado", ".titulo-condensado"],
+			["titulo-condensado", ".titulo-de-folha"],
+			["subtitulo-condensado", ".subtitulo-condensado"],
+			["subtitulo-condensado", ".texto h2"],
+			["titulo-da-sanfona", ".sanfona h3"],
+			["titulo-da-sanfona-letra-grande", ".sanfona h3"],
+		];
+		for (const [estilo, seletor] of usos) {
+			const regras = doIndex.filter(
+				(r) => !r.media.length && r.seletores.includes(seletor),
+			);
+			const medida = COMO_APARECE[estilo];
+			expect(
+				ultimoValor(regras, "font-weight"),
+				`index.css ${seletor} precisa do font-weight medido para ${estilo}`,
+			).toBe(String(medida.peso));
+			// O passo usa a largura normal da fonte (100%).
+			const largura = ultimoValor(regras, "font-stretch") ?? "normal";
+			expect(
+				largura === "normal" ? "100%" : largura,
+				`index.css ${seletor} precisa do font-stretch medido para ${estilo}`,
+			).toBe(medida.largura);
+		}
+	});
+
 	it("mede como escrita a palavra do título que a letra grande deixa sem maiúsculas", () => {
 		// Abaixo de 22rem, o título do passo da sanfona fica como escrito, e as
 		// minúsculas são mais estreitas que as maiúsculas.
@@ -335,7 +362,12 @@ describe("as palavras dos títulos", () => {
 	});
 });
 
-type Regra = { seletores: string[]; media: string[]; corpo: string };
+type Regra = {
+	arquivo: string;
+	seletores: string[];
+	media: string[];
+	corpo: string;
+};
 
 /**
  * As regras de um CSS, sem os comentários e o texto entre aspas, cada uma com as
@@ -356,6 +388,7 @@ function regrasDoCss(arquivo: string): Regra[] {
 			const bloco = blocos.pop();
 			if (bloco && !bloco.cabeca.startsWith("@")) {
 				regras.push({
+					arquivo,
 					seletores: bloco.cabeca.split(",").map((s) => s.trim()),
 					media: blocos
 						.filter(({ cabeca }) => cabeca.startsWith("@media "))
@@ -375,15 +408,25 @@ function regrasDoCss(arquivo: string): Regra[] {
 	return regras;
 }
 
-/** O valor de uma propriedade no corpo de uma regra, numa linha só. */
+/** O último valor de uma propriedade no corpo de uma regra, numa linha só. */
 function valorNa(corpo: string, propriedade: string): string | undefined {
-	return new RegExp(`(?:^|;)\\s*${propriedade}\\s*:([^;]+)`)
-		.exec(corpo)?.[1]
+	const declaracao = new RegExp(`(?:^|;)\\s*${propriedade}\\s*:([^;]+)`, "g");
+	return [...corpo.matchAll(declaracao)]
+		.at(-1)?.[1]
 		?.replace(/\s+/g, " ")
 		.replace(/\( /g, "(")
 		.replace(/ \)/g, ")")
 		.trim();
 }
+
+function ultimoValor(regras: Regra[], propriedade: string): string | undefined {
+	return regras
+		.map((r) => valorNa(r.corpo, propriedade))
+		.filter((valor) => valor !== undefined)
+		.at(-1);
+}
+
+const doIndex = regrasDoCss("index.css");
 
 /** As partes de um valor separadas por espaço, sem partir o que está entre parênteses. */
 function partes(valor: string): string[] {
@@ -427,18 +470,24 @@ describe("o título do passo, na sanfona da trilha", () => {
 	const estilos = readdirSync(new URL("../../estilos/", import.meta.url))
 		.filter((nome) => nome.endsWith(".css"))
 		.map((nome) => `estilos/${nome}`);
-	const doSite = ["index.css", ...estilos].flatMap(regrasDoCss);
-	const doIndex = regrasDoCss("index.css");
-	const ehOTitulo = (seletor: string) =>
-		seletor.includes(".sanfona") && /(^|\s)h3$/.test(seletor);
-	const doTitulo = doSite.filter(({ seletores }) => seletores.some(ehOTitulo));
-	const linhaDoTitulo =
-		caminhoDaTrilha
-			.split("\n")
-			.find((l) => l.split(/[\s"'`]+/).includes("letra-com-teto")) ?? "";
+	const doSite = [
+		...regrasDoCss("../../../packages/ui/src/styles/globals.css"),
+		...doIndex,
+		...estilos.flatMap(regrasDoCss),
+	];
+	const classesDoTitulo =
+		/<h3\b[^>]*\bclassName="([^"]+)"/
+			.exec(caminhoDaTrilha)?.[1]
+			?.split(/\s+/) ?? [];
+	const seletoresDeClasse = classesDoTitulo.map(
+		(classe) => `.${classe.replace(/[^\w-]/g, "\\$&")}`,
+	);
+	const terminaNoTitulo = (seletor: string) =>
+		/(?:^|[\s>+~])h3$/i.test(seletor) ||
+		seletoresDeClasse.some((classe) => seletor.endsWith(classe));
 
-	/** O corpo da regra de um seletor no index.css, só nos @media da lista. */
-	function regra(seletor: string, media: string[] = []): string {
+	/** A regra de um seletor no index.css, só nos @media da lista. */
+	function regra(seletor: string, media: string[] = []): Regra {
 		const achada = doIndex.find(
 			(r) => r.seletores.includes(seletor) && r.media.join() === media.join(),
 		);
@@ -447,52 +496,93 @@ describe("o título do passo, na sanfona da trilha", () => {
 				`o index.css não tem ${seletor}${media.length ? ` em @media ${media.join(" e ")}` : " fora dos @media"}`,
 			);
 		}
-		return achada.corpo;
+		return achada;
 	}
+	const doTitulo = regra(".sanfona h3");
+	const doTeto = regra(".letra-com-teto");
 
 	/** Como o título aparece, lido do CSS: a caixa das letras e o espaço entre elas, em em. */
 	function comoApareceNoCss(letraGrande: boolean) {
 		const media = letraGrande ? [LETRA_GRANDE] : [];
 		const vale = (r: Regra) =>
 			r.media.length === 0 || r.media.join() === media.join();
-		const ultimo = (regras: Regra[], propriedade: string) =>
-			regras
-				.filter(vale)
-				.map((r) => valorNa(r.corpo, propriedade))
-				.filter((v) => v !== undefined)
-				.at(-1);
-		const raiz = doIndex.filter((r) => r.seletores.includes(":root"));
+		const raiz = doIndex.filter(
+			(r) => r.seletores.includes(":root") && vale(r),
+		);
 		const semVariaveis = (valor: string) =>
 			valor.replace(
 				/var\((--[\w-]+)\)/g,
-				(_, nome: string) => ultimo(raiz, nome) ?? "",
+				(_, nome: string) => ultimoValor(raiz, nome) ?? "",
 			);
-		const caixa = semVariaveis(ultimo(doTitulo, "text-transform") ?? "none");
-		const espaco = semVariaveis(ultimo(doTitulo, "letter-spacing") ?? "0");
+		const caixa = semVariaveis(
+			valorNa(doTitulo.corpo, "text-transform") ?? "none",
+		);
+		const espaco = semVariaveis(
+			valorNa(doTitulo.corpo, "letter-spacing") ?? "0",
+		);
 		return { caixa: CAIXAS[caixa] ?? caixa, espaco: espacoEmEm(espaco) };
 	}
 
 	it("fica em maiúsculas espaçadas, como a régua mede, a partir de 22rem", () => {
-		expect(comoApareceNoCss(false)).toEqual(COMO_APARECE["titulo-da-sanfona"]);
-	});
-
-	it("fica como escrito, sem o espaço, como a régua da letra grande mede, abaixo de 22rem", () => {
-		expect(comoApareceNoCss(true)).toEqual(
-			COMO_APARECE["titulo-da-sanfona-letra-grande"],
+		expect(COMO_APARECE["titulo-da-sanfona"]).toMatchObject(
+			comoApareceNoCss(false),
 		);
 	});
 
-	it("muda a caixa e o espaço só pelas variáveis das etiquetas, sem outra regra nem classe", () => {
-		// A caixa e o espaço do título vêm do --caixa-alta e do --espacado: uma regra
-		// num @media, uma variável trocada na sanfona ou uma classe do Tailwind no
-		// título mudariam o que a régua mede.
-		const daCaixa = /(?:^|;)\s*(?:text-transform|letter-spacing)\s*:/;
-		const dasVariaveis = /(?:^|;)\s*--(?:caixa-alta|espacado)\s*:/;
+	it("fica como escrito, sem o espaço, como a régua da letra grande mede, abaixo de 22rem", () => {
+		expect(COMO_APARECE["titulo-da-sanfona-letra-grande"]).toMatchObject(
+			comoApareceNoCss(true),
+		);
+	});
+
+	it("usa na variante letra-grande o mesmo limite de 22rem das etiquetas", () => {
+		const etiquetas = doIndex.find(
+			(r) =>
+				r.media.length &&
+				r.seletores.includes(":root") &&
+				valorNa(r.corpo, "--caixa-alta") !== undefined,
+		);
+		const variante =
+			/^\s*@custom-variant\s+letra-grande\s*\(\s*@media\s+(\([^()]+\))\s*\)\s*;/m
+				.exec(css.replace(/\/\*[\s\S]*?\*\//g, ""))?.[1]
+				?.replace(/\s+/g, " ");
+		expect(etiquetas?.media, "@media que muda --caixa-alta em :root").toEqual([
+			LETRA_GRANDE,
+		]);
 		expect(
-			doTitulo.filter(
-				({ media, corpo }) => media.length && daCaixa.test(corpo),
-			),
-		).toEqual([]);
+			variante,
+			"@custom-variant letra-grande precisa usar o mesmo @media das etiquetas em :root",
+		).toBe(etiquetas?.media[0]);
+	});
+
+	it("confere a caixa, o tamanho, o espaço, o peso e a largura nos seletores que terminam em h3 ou em classe do título do passo", () => {
+		for (const r of doSite) {
+			const seletor = r.seletores.find(terminaNoTitulo);
+			if (!seletor) continue;
+			const onde = [
+				r.arquivo,
+				...r.media.map((m) => `@media ${m}`),
+				seletor,
+			].join(" ");
+			for (const propriedade of [
+				"text-transform",
+				"font-size",
+				"letter-spacing",
+				"font-weight",
+				"font-stretch",
+			]) {
+				// O tamanho vem do teto. As outras quatro propriedades são do próprio h3.
+				if (r === (propriedade === "font-size" ? doTeto : doTitulo)) continue;
+				expect(
+					valorNa(r.corpo, propriedade),
+					`${onde} muda a letra do passo com ${propriedade}`,
+				).toBeUndefined();
+			}
+		}
+	});
+
+	it("preserva --caixa-alta e --espacado na sanfona e recusa classes de caixa ou de espaçamento no título", () => {
+		const dasVariaveis = /(?:^|;)\s*--(?:caixa-alta|espacado)\s*:/;
 		expect(
 			doSite.filter(
 				({ seletores, corpo }) =>
@@ -501,28 +591,27 @@ describe("o título do passo, na sanfona da trilha", () => {
 			),
 		).toEqual([]);
 		expect(
-			linhaDoTitulo
-				.split(/[\s"'`]+/)
-				.filter((classe) =>
-					/(?:^|:)(?:uppercase|lowercase|capitalize|normal-case|tracking-\S+)$/.test(
-						classe,
-					),
+			classesDoTitulo.filter((classe) =>
+				/(?:^|:)(?:uppercase|lowercase|capitalize|normal-case|tracking-\S+)$/.test(
+					classe,
 				),
+			),
 		).toEqual([]);
 	});
 
-	it("tem o teto: a letra de 1rem vem do --letra, sem um font-size que passe por cima dele", () => {
-		expect(linhaDoTitulo.split(/[\s"'`]+/)).toContain("letra-com-teto");
-		expect(valorNa(regra(".sanfona h3"), "--letra")).toBe("1rem");
+	it("usa o teto da página na letra de 1rem do passo", () => {
+		expect(classesDoTitulo).toContain("letra-com-teto");
+		expect(valorNa(doTitulo.corpo, "--letra")).toBe("1rem");
 		expect(
-			doTitulo.filter(({ corpo }) => valorNa(corpo, "font-size") !== undefined),
-		).toEqual([]);
+			valorNa(doTeto.corpo, "font-size"),
+			".letra-com-teto precisa do teto da palavra",
+		).toContain("var(--palavra)");
 	});
 
 	it("tira da largura o que fica na linha do título: o azulejo, os dois vãos e o +", () => {
-		const resumo = regra(".sanfona summary");
+		const resumo = regra(".sanfona summary").corpo;
 		const vao = valorNa(resumo, "gap");
-		const mais = valorNa(regra(".sanfona summary::after"), "width");
+		const mais = valorNa(regra(".sanfona summary::after").corpo, "width");
 		const azulejo = valorNa(
 			regrasDoCss("estilos/azulejos.css").find(({ seletores }) =>
 				seletores.includes(".grande.pequeno"),
@@ -536,14 +625,14 @@ describe("o título do passo, na sanfona da trilha", () => {
 			"1.25rem",
 			"2.5rem",
 		]);
-		expect(valorNa(regra(".sanfona h3"), "--recuo")).toBe(
+		expect(valorNa(doTitulo.corpo, "--recuo")).toBe(
 			`calc(var(--recuo-de-fora, 0px) + ${azulejo} + 2 * ${vao} + ${mais})`,
 		);
 		// Com a letra grande, o azulejo sai, e fica um vão só.
-		expect(valorNa(regra(".sanfona .grande", [LETRA_GRANDE]), "display")).toBe(
-			"none",
-		);
-		expect(valorNa(regra(".sanfona h3", [LETRA_GRANDE]), "--recuo")).toBe(
+		expect(
+			valorNa(regra(".sanfona .grande", [LETRA_GRANDE]).corpo, "display"),
+		).toBe("none");
+		expect(valorNa(regra(".sanfona h3", [LETRA_GRANDE]).corpo, "--recuo")).toBe(
 			`calc(var(--recuo-de-fora, 0px) + ${vao} + ${mais})`,
 		);
 	});
@@ -553,13 +642,13 @@ describe("o título do passo, na sanfona da trilha", () => {
 		// do lado dos artigos, e acaba na margem da página.
 		const coluna = /minmax\(0, ([\d.]+)rem\)$/.exec(
 			valorNa(
-				regra(".pagina-da-trilha.com-caminho", [AO_LADO]),
+				regra(".pagina-da-trilha.com-caminho", [AO_LADO]).corpo,
 				"grid-template-columns",
 			) ?? "",
 		)?.[1];
 		const caminho = regra(".pagina-da-trilha.com-caminho > .ao-lado", [
 			AO_LADO,
-		]);
+		]).corpo;
 		const [, direita, , esquerda] = partes(valorNa(caminho, "padding") ?? "");
 
 		expect([coluna, direita, esquerda]).toEqual([
