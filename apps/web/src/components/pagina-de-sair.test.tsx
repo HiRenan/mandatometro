@@ -96,10 +96,13 @@ function botao() {
 	return screen.queryByRole("button", { name: "Confirmar a saída" });
 }
 
-/** O texto à vista: o aviso do leitor de tela repete o mesmo texto. */
+/**
+ * O texto à vista: o aviso do leitor de tela repete o mesmo texto, e as frases
+ * guardadas ficam escondidas.
+ */
 function naTela(texto: string) {
 	return screen.queryByText(texto, {
-		ignore: "[role='status'], script, style",
+		ignore: "[role='status'], [aria-hidden='true'], script, style",
 	});
 }
 
@@ -116,8 +119,8 @@ async function confirmar() {
 	return confirmacao;
 }
 
-/** O título da página no HTML do servidor, antes do JavaScript. */
-async function tituloDoServidor(props: {
+/** A página no HTML do servidor, antes do JavaScript. */
+async function paginaDoServidor(props: {
 	codigo: string | undefined;
 	comApi: boolean;
 }) {
@@ -130,7 +133,35 @@ async function tituloDoServidor(props: {
 	await router.load();
 	const raiz = document.createElement("div");
 	raiz.innerHTML = renderToString(<RouterProvider router={router} />);
-	return raiz.querySelector("h1") as HTMLHeadingElement;
+	return raiz;
+}
+
+async function tituloDoServidor(props: {
+	codigo: string | undefined;
+	comApi: boolean;
+}) {
+	return (await paginaDoServidor(props)).querySelector(
+		"h1",
+	) as HTMLHeadingElement;
+}
+
+/** As frases guardadas de um lugar: invisíveis, fora do leitor de tela. */
+function reservasDe(lugar: Element) {
+	const reservas = [...lugar.querySelectorAll(":scope > [aria-hidden='true']")];
+	expect(
+		reservas.every((reserva) => reserva.classList.contains("invisible")),
+	).toBe(true);
+	return reservas.map((reserva) => reserva.textContent);
+}
+
+/** O texto à vista de um lugar que guarda frases. */
+function textoAVista(lugar: Element) {
+	return lugar.querySelector(":scope > :not([aria-hidden])")?.textContent;
+}
+
+/** O primeiro item das ações: o lugar do botão "Confirmar a saída". */
+function lugarDoBotao(raiz: ParentNode = document) {
+	return raiz.querySelector(".acoes-da-pagina > li:first-child") as HTMLElement;
 }
 
 describe("a página de sair", () => {
@@ -225,6 +256,68 @@ describe("a página de sair", () => {
 		expect(router.state.location.hash).toBe("newsletter");
 	});
 
+	it.each([
+		["antes do clique", () => mostrar()],
+		[
+			"enquanto confirma",
+			async () => {
+				sair.mockReturnValue(new Promise(() => {}));
+				const router = await mostrar();
+				await confirmar();
+				return router;
+			},
+		],
+		[
+			"depois da saída",
+			async () => {
+				sair.mockResolvedValue({ tipo: "saiu" });
+				const router = await mostrar();
+				await confirmar();
+				return router;
+			},
+		],
+		[
+			"com a API fora do ar",
+			async () => {
+				sair.mockResolvedValue({ tipo: "fora-do-ar" });
+				const router = await mostrar();
+				await confirmar();
+				return router;
+			},
+		],
+		[
+			// O "Ir para o início" recebe o foco quando o botão some, e o segundo
+			// clique de um clique duplo no botão cairia nele.
+			"com o código que a API recusa",
+			async () => {
+				sair.mockResolvedValue({ tipo: "link-invalido" });
+				const router = await mostrar();
+				await confirmar();
+				return router;
+			},
+		],
+		["sem a API", () => mostrar({ comApi: false })],
+		["com o link incompleto", () => mostrar({ codigo: "abc" })],
+	])(
+		"%s, o segundo clique de um clique duplo não segue o “Ir para o início”",
+		async (_, preparar) => {
+			const router = await preparar();
+			const inicio = screen.getByRole("link", { name: "Ir para o início" });
+
+			await act(async () => {
+				fireEvent.click(inicio, { detail: 2 });
+			});
+			expect(router.state.location.pathname).toBe("/newsletter/sair");
+
+			// Um clique novo, de propósito, leva ao início.
+			await act(async () => {
+				fireEvent.click(inicio, { detail: 1 });
+			});
+			await screen.findByRole("heading", { level: 1, name: "Início" });
+			expect(router.state.location.pathname).toBe("/");
+		},
+	);
+
 	it("o título guarda a altura do mais alto dos dois desde o HTML do servidor: as ações não descem quando ele muda", async () => {
 		const titulo = await tituloDoServidor({ codigo: CODIGO, comApi: true });
 		const reservas = [...titulo.querySelectorAll("[aria-hidden='true']")];
@@ -249,14 +342,93 @@ describe("a página de sair", () => {
 		).toBe("Sair da newsletter");
 	});
 
-	it.each([
-		["sem a API", { codigo: CODIGO, comApi: false }],
-		["com o link incompleto", { codigo: "abc", comApi: true }],
-	])("%s, o título não muda e não guarda lugar", async (_, props) => {
-		const titulo = await tituloDoServidor(props);
+	it("o pé guarda a altura de antes da saída desde o HTML do servidor: a abertura e o lugar do botão", async () => {
+		const raiz = await paginaDoServidor({ codigo: CODIGO, comApi: true });
 
-		expect(titulo.textContent).toBe("Sair da newsletter");
+		// Com a letra grande, a frase da saída é mais curta, e os dois links
+		// cabem numa linha só: o pé encolhia, e o "Inscrever-se de novo" nascia
+		// longe do botão. A abertura guarda as duas frases, invisíveis, na
+		// mesma célula da grade; a de antes do botão fica à vista.
+		const abertura = raiz.querySelector(".abertura") as HTMLElement;
+		expect(reservasDe(abertura)).toEqual([EXPLICA, SAIU]);
+		expect(textoAVista(abertura)).toBe(EXPLICA);
+		// O lugar do botão guarda uma cópia dele, com o mesmo desenho, e o
+		// botão de verdade fica na mesma célula.
+		const lugar = lugarDoBotao(raiz);
+		expect(reservasDe(lugar)).toEqual(["Confirmar a saída"]);
+		expect(
+			lugar.querySelector(":scope > [aria-hidden='true'] > .botao"),
+		).not.toBeNull();
+		expect(lugar.querySelector(":scope > form > button")?.textContent).toBe(
+			"Confirmar a saída",
+		);
+		expect(lugar.nextElementSibling?.textContent).toBe("Ir para o início");
 	});
+
+	it("depois da saída, o pé fica com a altura de antes: a frase de antes continua guardada, e o “Inscrever-se de novo” fica no lugar do botão", async () => {
+		sair.mockResolvedValue({ tipo: "saiu" });
+		await mostrar();
+		await confirmar();
+
+		const abertura = document.querySelector(".abertura") as HTMLElement;
+		expect(reservasDe(abertura)).toEqual([EXPLICA, SAIU]);
+		expect(textoAVista(abertura)).toBe(SAIU);
+		const lugar = lugarDoBotao();
+		expect(reservasDe(lugar)).toEqual(["Confirmar a saída"]);
+		expect(
+			screen.getByRole("link", { name: "Inscrever-se de novo" }).closest("li"),
+		).toBe(lugar);
+		// O "Ir para o início" fica onde estava, no item seguinte.
+		expect(
+			screen.getByRole("link", { name: "Ir para o início" }).closest("li"),
+		).toBe(lugar.nextElementSibling);
+	});
+
+	it("com o código que a API recusa, o pé continua guardando o lugar, e o “Ir para o início” fica no lugar do botão", async () => {
+		sair.mockResolvedValue({ tipo: "link-invalido" });
+		await mostrar();
+		await confirmar();
+
+		const abertura = document.querySelector(".abertura") as HTMLElement;
+		expect(reservasDe(abertura)).toEqual([EXPLICA, SAIU]);
+		expect(textoAVista(abertura)).toBe(INCOMPLETO);
+		// A ação que sobra fica logo embaixo da frase, onde estava o botão, como o
+		// "Inscrever-se de novo" depois da saída.
+		const lugar = lugarDoBotao();
+		expect(reservasDe(lugar)).toEqual(["Confirmar a saída"]);
+		expect(lugar.querySelector("button, form")).toBeNull();
+		expect(
+			screen.getByRole("link", { name: "Ir para o início" }).closest("li"),
+		).toBe(lugar);
+		// O item de baixo guarda a altura dele, com uma cópia invisível, sem link
+		// e fora do leitor de tela: o espaço que sobra fica no fim do pé.
+		const seguinte = lugar.nextElementSibling as HTMLElement;
+		expect(seguinte.getAttribute("aria-hidden")).toBe("true");
+		expect(seguinte.classList.contains("invisible")).toBe(true);
+		expect(seguinte.textContent).toBe("Ir para o início");
+		expect(seguinte.querySelector(".acao-de-texto")).not.toBeNull();
+		expect(seguinte.querySelector("a")).toBeNull();
+	});
+
+	it.each([
+		[
+			"sem a API",
+			{ codigo: CODIGO, comApi: false },
+			"A newsletter ainda não funciona neste endereço do site.",
+		],
+		["com o link incompleto", { codigo: "abc", comApi: true }, INCOMPLETO],
+	])(
+		"%s, o título e o pé não mudam e não guardam lugar",
+		async (_, props, abertura) => {
+			const raiz = await paginaDoServidor(props);
+
+			expect(raiz.querySelector("h1")?.textContent).toBe("Sair da newsletter");
+			expect(raiz.querySelector(".abertura")?.textContent).toBe(abertura);
+			expect(raiz.querySelector(".acoes-da-pagina")?.textContent).toBe(
+				"Ir para o início",
+			);
+		},
+	);
 
 	it.each([
 		[
@@ -317,6 +489,17 @@ describe("a página de sair", () => {
 		expect(document.activeElement).toBe(
 			screen.getByRole("link", { name: "Ir para o início" }),
 		);
+		// O título não muda mais, e continua guardando o lugar (DESIGN.md):
+		// tirar as reservas na resposta faria a frase e as ações subirem.
+		const titulo = screen.getByRole("heading", {
+			level: 1,
+			name: "Sair da newsletter",
+		});
+		expect(
+			[...titulo.querySelectorAll(":scope > [aria-hidden='true']")].map(
+				(reserva) => reserva.textContent,
+			),
+		).toEqual(["Sair da newsletter", "Você saiu da newsletter."]);
 	});
 
 	it.each([
@@ -381,67 +564,76 @@ describe("a página de sair", () => {
 });
 
 describe("o código de saída fica só no pedido", () => {
-	it("não vai para a URL, para o armazenamento do navegador, para os cookies nem para o console, nem quando a página sai da tela", async () => {
-		// Todos os métodos do console, e não só os do log.
-		const console_ = (Object.keys(console) as (keyof Console)[])
-			.filter((metodo) => typeof console[metodo] === "function")
-			.map((metodo) => vi.spyOn(console, metodo));
-		const janela = {
-			endereco: window.location.href,
-			estado: window.history.state,
-		};
-		// O código chega no endereço, pelo link do e-mail, e de lá não sai. O
-		// "antes" do roteador é esse endereço, e não o que ele mostra depois de
-		// montar: o que a página gravasse ao abrir já estaria lá.
-		const chegada = `/newsletter/sair?codigo=${CODIGO}`;
-		const router = await mostrar();
+	it.each([
+		["Inscrever-se de novo", "/#newsletter"],
+		["Ir para o início", "/"],
+	])(
+		"não vai para a URL, para o armazenamento do navegador, para os cookies nem para o console, nem quando a página sai da tela pelo “%s”",
+		async (link, destino) => {
+			// Todos os métodos do console, e não só os do log.
+			const console_ = (Object.keys(console) as (keyof Console)[])
+				.filter((metodo) => typeof console[metodo] === "function")
+				.map((metodo) => vi.spyOn(console, metodo));
+			const janela = {
+				endereco: window.location.href,
+				estado: window.history.state,
+			};
+			// O código chega no endereço, pelo link do e-mail, e de lá não sai. O
+			// "antes" do roteador é esse endereço, e não o que ele mostra depois de
+			// montar: o que a página gravasse ao abrir já estaria lá.
+			const chegada = `/newsletter/sair?codigo=${CODIGO}`;
+			const router = await mostrar();
 
-		// Uma saída sem resposta e outra que dá certo, como a pessoa faria.
-		sair.mockRejectedValueOnce(new TypeError("Failed to fetch"));
-		await confirmar();
-		sair.mockResolvedValueOnce({ tipo: "saiu" });
-		await confirmar();
+			// Uma saída sem resposta e outra que dá certo, como a pessoa faria.
+			sair.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+			await confirmar();
+			sair.mockResolvedValueOnce({ tipo: "saiu" });
+			await confirmar();
 
-		expect(sair.mock.calls).toEqual([[CODIGO], [CODIGO]]);
-		expect(naTela(SAIU)).toBeTruthy();
-		// O roteador dos testes é de memória: o endereço e o estado dele não
-		// chegam à janela, e cada um se confere à parte. Ele continua na entrada
-		// da chegada, sem parâmetro, trecho ou estado novo com o código.
-		expect(router.history.location.href).toBe(chegada);
-		expect(router.history.length).toBe(1);
-		expect(JSON.stringify(router.history.location.state)).not.toContain(CODIGO);
-
-		// A pessoa sai pelo "Inscrever-se de novo", com um clique simples, e
-		// depois o site inteiro sai da tela: o que a página gravasse ao sair
-		// também conta. O link leva à inscrição sem o código.
-		await act(async () => {
-			fireEvent.click(
-				screen.getByRole("link", { name: "Inscrever-se de novo" }),
-				{ detail: 1 },
+			expect(sair.mock.calls).toEqual([[CODIGO], [CODIGO]]);
+			expect(naTela(SAIU)).toBeTruthy();
+			// O roteador dos testes é de memória: o endereço e o estado dele não
+			// chegam à janela, e cada um se confere à parte. Ele continua na entrada
+			// da chegada, sem parâmetro, trecho ou estado novo com o código.
+			expect(router.history.location.href).toBe(chegada);
+			expect(router.history.length).toBe(1);
+			expect(JSON.stringify(router.history.location.state)).not.toContain(
+				CODIGO,
 			);
-		});
-		await screen.findByRole("heading", { level: 1, name: "Início" });
-		expect(router.history.location.href).toBe("/#newsletter");
-		expect(JSON.stringify(router.history.location.state)).not.toContain(CODIGO);
-		cleanup();
 
-		// Com a página já fora da tela: a janela, o armazenamento, os cookies e
-		// o console.
-		expect(window.location.href).toBe(janela.endereco);
-		expect(window.history.state).toEqual(janela.estado);
-		expect(
-			`${window.location.href} ${JSON.stringify(window.history.state)}`,
-		).not.toContain(CODIGO);
-		expect(localStorage.length).toBe(0);
-		expect(sessionStorage.length).toBe(0);
-		expect(document.cookie).toBe("");
-		// O texto que o console escreveria com cada chamada.
-		for (const espiao of console_) {
-			for (const chamada of espiao.mock.calls) {
-				expect(format(...chamada)).not.toContain(CODIGO);
+			// A pessoa sai por um dos dois links, com um clique simples, e depois o
+			// site inteiro sai da tela: o que a página gravasse ao sair também conta.
+			// Os dois links levam à página inicial sem o código.
+			await act(async () => {
+				fireEvent.click(screen.getByRole("link", { name: link }), {
+					detail: 1,
+				});
+			});
+			await screen.findByRole("heading", { level: 1, name: "Início" });
+			expect(router.history.location.href).toBe(destino);
+			expect(JSON.stringify(router.history.location.state)).not.toContain(
+				CODIGO,
+			);
+			cleanup();
+
+			// Com a página já fora da tela: a janela, o armazenamento, os cookies e
+			// o console.
+			expect(window.location.href).toBe(janela.endereco);
+			expect(window.history.state).toEqual(janela.estado);
+			expect(
+				`${window.location.href} ${JSON.stringify(window.history.state)}`,
+			).not.toContain(CODIGO);
+			expect(localStorage.length).toBe(0);
+			expect(sessionStorage.length).toBe(0);
+			expect(document.cookie).toBe("");
+			// O texto que o console escreveria com cada chamada.
+			for (const espiao of console_) {
+				for (const chamada of espiao.mock.calls) {
+					expect(format(...chamada)).not.toContain(CODIGO);
+				}
 			}
-		}
-	});
+		},
+	);
 });
 
 describe("a rota da página de sair", () => {
