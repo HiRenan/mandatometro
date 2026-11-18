@@ -78,6 +78,11 @@ def total(sessao, modelo):
     return sessao.scalar(select(func.count()).select_from(modelo))
 
 
+def fontes_por_id(sessao):
+    consulta = select(Fonte.id, Fonte.coletado_em, Fonte.trecho).order_by(Fonte.id)
+    return {f.id: (f.coletado_em, f.trecho) for f in sessao.execute(consulta)}
+
+
 def test_semana_real_usa_um_processo_sem_detalhes_dos_81_senadores(sessao, executar):
     resumo, requisicoes = executar()
     assert resumo.completa
@@ -116,7 +121,7 @@ def test_semana_real_usa_um_processo_sem_detalhes_dos_81_senadores(sessao, execu
 def test_repetir_preserva_ids_fontes_e_corrige_remove_votos(sessao, executar, respostas):
     executar()
     ids = set(sessao.execute(select(Votacao.id, Votacao.id_externo)))
-    fontes = list(sessao.execute(select(Fonte.id, Fonte.coletado_em, Fonte.trecho)))
+    fontes_antes = fontes_por_id(sessao)
     votos = respostas["/votacao"][0]["votos"]
     removido = votos.pop()["codigoParlamentar"]
     votos[0]["siglaVotoParlamentar"] = "Abstenção"
@@ -129,10 +134,12 @@ def test_repetir_preserva_ids_fontes_e_corrige_remove_votos(sessao, executar, re
     )
     assert (total(sessao, Votacao), total(sessao, Voto), total(sessao, Fonte)) == (4, 323, 20)
     assert set(sessao.execute(select(Votacao.id, Votacao.id_externo))) == ids
-    assert (
-        list(sessao.execute(select(Fonte.id, Fonte.coletado_em, Fonte.trecho)).fetchmany(10))
-        == fontes
-    )
+    fontes_depois = fontes_por_id(sessao)
+    fontes_divergentes = [
+        id_fonte for id_fonte, dados in fontes_antes.items() if fontes_depois.get(id_fonte) != dados
+    ]
+    assert not fontes_divergentes
+    assert len(fontes_depois.keys() - fontes_antes.keys()) == 10
     v = sessao.scalars(select(Votacao).where(Votacao.id_externo == "7109")).one()
     por_id = {voto.parlamentar.id_externo: voto.valor for voto in v.votos}
     assert removido not in por_id
