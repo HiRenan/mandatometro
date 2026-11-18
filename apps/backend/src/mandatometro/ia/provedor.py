@@ -50,9 +50,10 @@ class RedatorAnthropic:
         except json.JSONDecodeError:
             # Até o envelope HTTP 200 pode vir com JSON inválido.
             return RespostaRedator({})
+        except KeyboardInterrupt:
+            erro = KeyboardInterrupt()
         except Exception:
-            # Fora do except, a exceção pública também fica sem __context__ do SDK.
-            pass
+            erro = FalhaRedator()
         else:
             motivo = getattr(mensagem, "stop_reason", None)
             if motivo != "end_turn":
@@ -70,7 +71,8 @@ class RedatorAnthropic:
             except (AttributeError, TypeError, ValueError, RecursionError):
                 return RespostaRedator({})
             return RespostaRedator(conteudo if isinstance(conteudo, dict) else {})
-        raise FalhaRedator()
+        # Fora do except, a falha e a interrupção saem sem a cadeia privada do SDK.
+        raise erro
 
 
 def _cliente_anthropic(http: httpx2.Client, chave: str) -> "Anthropic":

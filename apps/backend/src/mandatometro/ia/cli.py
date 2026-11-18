@@ -92,6 +92,14 @@ def _rodar(args: argparse.Namespace) -> int:
     return 0
 
 
+def _rodar_rascunho(args: argparse.Namespace) -> int:
+    try:
+        return _rodar(args)
+    except KeyboardInterrupt:
+        _json({"erro": "Rascunho interrompido."})
+        return 130
+
+
 def registrar_comando(comandos: argparse._SubParsersAction) -> None:
     edicao = comandos.add_parser("edicao", help="prepara, revisa e publica o jornal legislativo")
     acoes = edicao.add_subparsers(dest="acao", required=True)
@@ -102,7 +110,7 @@ def registrar_comando(comandos: argparse._SubParsersAction) -> None:
     rascunho.add_argument(
         "--refazer", action="store_true", help="refaz o rascunho e descarta a revisão anterior"
     )
-    rascunho.set_defaults(rodar=_rodar)
+    rascunho.set_defaults(rodar=_rodar_rascunho)
     for acao, ajuda in (
         ("exportar", "grava um arquivo JSON para revisão"),
         ("revisar", "valida e salva a revisão do arquivo"),
