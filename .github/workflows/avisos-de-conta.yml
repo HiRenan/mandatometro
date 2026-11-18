@@ -1,0 +1,40 @@
+name: Retomar avisos de conta
+
+on:
+  schedule:
+    - cron: "3-58/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  entregar:
+    if: vars.AVISOS_CONTA_ATIVOS == 'true' && (github.event_name == 'schedule' || github.ref == 'refs/heads/main')
+    environment: producao
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: avisos-de-conta
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.7"
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: apps/backend/uv.lock
+      - run: uv sync --locked --no-dev
+      - run: uv run --no-sync python -m mandatometro.contas
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CONTA_CHAVE: ${{ secrets.CONTA_CHAVE }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM: ${{ vars.RESEND_FROM }}

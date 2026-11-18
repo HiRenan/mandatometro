@@ -205,6 +205,16 @@ erDiagram
 
 ## Como rodar
 
+### Cadastro de contas
+
+O workflow **Retomar avisos de conta** processa a fila de produção a cada cinco minutos quando a variável de repositório `AVISOS_CONTA_ATIVOS` vale `true` e os segredos do ambiente `producao` estão configurados.
+
+Aplique as migrations da API até a revisão atual antes de abrir `/cadastro`. Configure `CONTA_TERMO_VERSAO` e `CONTA_TERMO_URL` com a versão e o endereço do termo apresentado ao público. Em desenvolvimento, use uma versão identificada como teste. Para `CONTA_CHAVE`, gere uma chave privada com `uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` em `apps/backend`. Guarde-a nos segredos da API e do processo de entrega. O envio usa `RESEND_FROM`, `RESEND_API_KEY` e `APP_BASE_URL`.
+
+A API tenta entregar os avisos depois do commit. Para processar retentativas independentemente de novas requisições, execute periodicamente (a cada cinco minutos) `uv run python -m mandatometro.contas` em `apps/backend` com o mesmo banco e segredos. O destinatário e o link ficam criptografados na fila até o aceite do provedor ou o fim da validade.
+
+A integração do login (#109) emite o cookie opaco `sessao_conta` com `HttpOnly`, `Secure` em HTTPS, `SameSite=Lax` e caminho `/`. Deve verificar a senha Argon2id e a confirmação de e-mail sob lock da conta antes de gravar em `credencial_conta` o SHA-256 do segredo aleatório, finalidade `sessao` e validade. O perfil pode apontar para `/cadastro/excluir`. A #111 deve referenciar `conta.id` com exclusão em cascata.
+
 Precisa de [Node.js](https://nodejs.org/) 24, [pnpm](https://pnpm.io/) (ele mesmo troca para a versão do `packageManager`, no `package.json`), [uv](https://docs.astral.sh/uv/) (ele instala o Python 3.13) e [Docker](https://www.docker.com/).
 
 ```bash
