@@ -165,6 +165,13 @@ function lugarDoBotao(raiz: ParentNode = document) {
 	return raiz.querySelector(".acoes-da-pagina > li:first-child") as HTMLElement;
 }
 
+/** A célula da grade de um elemento: as classes de lugar do Tailwind. */
+function celula(elemento: Element | null | undefined) {
+	return [...(elemento?.classList ?? [])]
+		.filter((classe) => /^(col|row)-/.test(classe))
+		.sort();
+}
+
 /**
  * O parágrafo de uma frase à vista: um <p> só com ela, em bloco. O Chromium tira
  * da árvore de acessibilidade um <p> em grade ou flex, e quem navega pelos
@@ -338,6 +345,28 @@ describe("a página de sair", () => {
 		},
 	);
 
+	it.each([
+		["Inscrever-se de novo", "saiu"],
+		["Ir para o início", "link-invalido"],
+	] as const)(
+		"o terceiro clique de um clique triplo no botão também não segue o “%s”, que surge no lugar dele",
+		async (nome, tipo) => {
+			sair.mockResolvedValue({ tipo });
+			const router = await mostrar();
+			await confirmar();
+			const link = screen.getByRole("link", { name: nome });
+
+			// O clique triplo manda o detail 1, no botão, e depois o 2 e o 3, que
+			// caem no link nascido embaixo do ponteiro.
+			for (const detail of [2, 3]) {
+				await act(async () => {
+					fireEvent.click(link, { detail });
+				});
+				expect(router.state.location.pathname).toBe("/newsletter/sair");
+			}
+		},
+	);
+
 	it("o título guarda a altura do mais alto dos dois desde o HTML do servidor: as ações não descem quando ele muda", async () => {
 		const titulo = await tituloDoServidor({ codigo: CODIGO, comApi: true });
 		const reservas = [...titulo.querySelectorAll("[aria-hidden='true']")];
@@ -403,6 +432,46 @@ describe("a página de sair", () => {
 			screen.getByRole("link", { name: "Ir para o início" }).closest("li"),
 		).toBe(lugar.nextElementSibling);
 	});
+
+	// O jsdom não desenha, e o CSS não sabe qual elemento leva a célula: ela está
+	// nas classes do Tailwind. Fora da célula da cópia, o link nasceria uma
+	// altura de botão abaixo do ponteiro (a revisão do PR #146).
+	it.each([
+		["antes do clique, o botão", () => mostrar(), () => botao()?.parentElement],
+		[
+			"depois da saída, o “Inscrever-se de novo”",
+			async () => {
+				sair.mockResolvedValue({ tipo: "saiu" });
+				await mostrar();
+				await confirmar();
+			},
+			() =>
+				screen.getByRole("link", { name: "Inscrever-se de novo" })
+					.parentElement,
+		],
+		[
+			"com o código que a API recusa, o “Ir para o início”",
+			async () => {
+				sair.mockResolvedValue({ tipo: "link-invalido" });
+				await mostrar();
+				await confirmar();
+			},
+			() =>
+				screen.getByRole("link", { name: "Ir para o início" }).parentElement,
+		],
+	])(
+		"%s fica na mesma célula da grade que a cópia do botão",
+		async (_, preparar, daVez) => {
+			await preparar();
+			const lugar = lugarDoBotao();
+			const copia = lugar.querySelector(":scope > [aria-hidden='true']");
+			const peca = daVez();
+
+			expect(peca?.parentElement).toBe(lugar);
+			expect(celula(copia)).toEqual(["col-start-1", "row-start-1"]);
+			expect(celula(peca)).toEqual(celula(copia));
+		},
+	);
 
 	it.each([
 		["antes do clique", () => mostrar(), EXPLICA],

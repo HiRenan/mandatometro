@@ -32,10 +32,11 @@ const ERROS: Partial<Record<Estado, string>> = {
 };
 
 /**
- * O segundo clique de um clique duplo não segue os links da página (o detail,
- * como no lib/clique.ts): depois da saída, o "Inscrever-se de novo" surge onde
- * estava o botão, e, com o código recusado, o "Ir para o início". Um clique
- * novo, de propósito, segue o link.
+ * O segundo clique de um clique duplo e o terceiro de um clique triplo não
+ * seguem os links da página (o detail acima de 1, como no lib/clique.ts):
+ * depois da saída, o "Inscrever-se de novo" surge onde estava o botão, e, com o
+ * código recusado, o "Ir para o início". Um clique novo, de propósito, segue o
+ * link.
  */
 function semSegundoClique(evento: MouseEvent) {
 	if (evento.detail > 1) {
