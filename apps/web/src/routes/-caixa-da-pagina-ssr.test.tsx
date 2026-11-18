@@ -246,10 +246,9 @@ type NaTrilha = { params: { trilha: string } };
  *   têm o id diferente do path: no lugar do dentroDe, o update leva os dois do
  *   routeTree.gen.ts, com o getParentRoute da mãe.
  *
- * A rota sem página (sem o component, no arquivo dela e no .lazy.tsx), como o
- * índice que só redireciona e a rota do servidor, entra aqui e fica fora do
- * QUE_ABREM. A raiz leva o documento e o layout do __root.tsx, mas o
- * beforeLoad e o loader dele não rodam neste teste.
+ * O índice que só redireciona e a rota que só responde a GET entram aqui e
+ * ficam fora do QUE_ABREM. A raiz leva o documento e o layout do __root.tsx,
+ * mas o beforeLoad e o loader dele não rodam neste teste.
  */
 function criarRouter() {
 	const raiz = createRootRoute({
@@ -496,6 +495,13 @@ function lerRota(texto: string, arquivo = "rota.tsx") {
 	}
 }
 
+/**
+ * O component pode estar no objeto de opções da rota ou no do .lazy.tsx de
+ * mesmo id. Se a opção vier só de uma variável, como em
+ * createFileRoute("/sobre")(opcoes), de um spread ou de uma chave calculada
+ * em execução, a guarda confere a montagem e a rota mãe. Inclua o endereço
+ * em QUE_ABREM para conferir também o HTML dessa página.
+ */
 function paginasSemEndereco(
 	declaradas: { id: string; comPagina: boolean }[],
 	abertas: Set<string>,
