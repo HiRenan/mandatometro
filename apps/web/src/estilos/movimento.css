@@ -302,8 +302,10 @@
  * e depois da troca (View Transitions), e a máscara da foto nova é uma grade de
  * azulejos que se abre com o ângulo --vt.
  *
- * O cabeçalho, quando aparece na tela, vai numa foto à parte, por cima, e não
- * sai do lugar. Com a página rolada, ele vem com a página nova.
+ * O cabeçalho, quando aparece na tela nas duas páginas, vai numa foto à parte,
+ * por cima, e não sai do lugar. Quando uma delas está rolada para baixo dele (a
+ * de antes, ou a nova, que volta rolada pelo navegador), ele fica na foto da
+ * página dele, e o de antes é coberto pelos azulejos junto com ela.
  */
 @property --vt {
 	syntax: "<angle>";
