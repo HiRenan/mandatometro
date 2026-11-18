@@ -133,16 +133,21 @@ const CONTEINERES_DO_CSS = regras
 
 /**
  * As classes do Tailwind que fazem um contêiner da largura: o @container e o
- * @container-size, com nome ou sem (o @container/folha e o @container/[nome]),
- * o de valor livre com o size (o @container-[size]) e a propriedade livre
- * ([container-type:size]), com ou sem variante na frente (o md:@container conta
- * em toda largura) e com o ! de importante, na frente ou no fim. No valor livre,
- * o size pode vir logo depois do _, que o Tailwind troca por espaço (o
- * [container-type:_size]). O valor numa variável pode ser um dos dois, e conta:
- * o @container-(--tipo) e o [container-type:var(--tipo)].
+ * @container-size, com nome ou sem (o @container/folha, o @container/[nome] e o
+ * nome numa variável, o @container/(--nome)), o de valor livre com o size (o
+ * @container-[size]) e a propriedade livre ([container-type:size]), com ou sem
+ * variante na frente (o md:@container conta em toda largura) e com o ! de
+ * importante, na frente ou no fim. No valor livre, o size pode vir logo depois
+ * do _, que o Tailwind troca por espaço (o [container-type:_size]). O valor
+ * numa variável pode ser um dos dois, e conta: o @container-(--tipo) e o
+ * [container-type:var(--tipo)]. Dois limites, medidos com o Tailwind do
+ * repositório. O valor em maiúsculas, como o [container-type:_SIZE], faz
+ * contêiner e escapa: a flag i o pegaria, mas contaria também o @CONTAINER e o
+ * [CONTAINER-TYPE:size], que o Tailwind não gera. E o [container:folha_size]
+ * conta, mas não faz contêiner: são dois nomes, sem o tipo.
  */
 const CONTEINER_DO_TAILWIND =
-	/(?:^|:)!?(?:@container(?:-size|-\[[^\]]*(?:(?:\b|_)size|var\()[^\]]*\]|-\([^)]*\))?(?:\/(?:[\w-]+|\[[^\]]+\]))?|\[container(?:-type)?:[^\]]*(?:(?:\b|_)size|var\()[^\]]*\])!?$/;
+	/(?:^|:)!?(?:@container(?:-size|-\[[^\]]*(?:(?:\b|_)size|var\()[^\]]*\]|-\([^)]*\))?(?:\/(?:[\w-]+|\[[^\]]+\]|\([^)]+\)))?|\[container(?:-type)?:[^\]]*(?:(?:\b|_)size|var\()[^\]]*\])!?$/;
 
 /**
  * Os títulos com teto: as regras do CSS em que a letra para na palavra mais
@@ -198,8 +203,12 @@ function apiDasEdicoes(pedido: Request) {
 		: json(200, edicaoDeExemplo());
 }
 
-/** O documento de verdade da rota raiz: o <html>, com o cabeçalho, o main e o rodapé. */
-const Documento = (RotaRaiz.options as RootRouteOptions).shellComponent;
+/**
+ * A rota raiz de verdade: o documento (o <html>, com o cabeçalho, o main e o
+ * rodapé) e o layout em volta de todas as páginas, se o __root.tsx tiver um.
+ */
+const { shellComponent: Documento, component: LayoutDaRaiz } =
+	RotaRaiz.options as RootRouteOptions;
 
 /** O loader de uma página da trilha recebe o endereço dela. */
 type NaTrilha = { params: { trilha: string } };
@@ -224,9 +233,28 @@ type NaTrilha = { params: { trilha: string } };
  * } as never).addChildren([
  * 	RotaDoPainel.update(dentroDe(RotaAutenticada, "/painel")),
  * ])
+ *
+ * Alguns casos pedem mais na montagem:
+ * - o layout com o beforeLoad que manda para outro lugar quem não tem conta
+ *   leva o beforeLoad: undefined no update, ou um beforeLoad que devolve uma
+ *   conta inventada, se as páginas leem a conta do contexto;
+ * - a página que está só no .lazy.tsx leva o mesmo .lazy(() =>
+ *   import("@/routes/x.lazy").then((d) => d.Route)) do routeTree.gen.ts;
+ * - a página com ssr: false leva o ssr: true no update;
+ * - o grupo, como em (grupo)/x.tsx, e o sufixo _, como em conta_.editar.tsx,
+ *   têm o id diferente do path: no lugar do dentroDe, o update leva os dois do
+ *   routeTree.gen.ts, com o getParentRoute da mãe.
+ *
+ * A rota sem página (sem o component, no arquivo dela e no .lazy.tsx), como o
+ * índice que só redireciona e a rota do servidor, entra aqui e fica fora do
+ * QUE_ABREM. A raiz leva o documento e o layout do __root.tsx, mas o
+ * beforeLoad e o loader dele não rodam neste teste.
  */
 function criarRouter() {
-	const raiz = createRootRoute({ shellComponent: Documento });
+	const raiz = createRootRoute({
+		shellComponent: Documento,
+		component: LayoutDaRaiz,
+	});
 	/**
 	 * As opções de uma rota no site de mentira: a mãe, o caminho a partir dela,
 	 * como no routeTree.gen.ts, e o loader que lê direto do servidor, sem a
@@ -388,11 +416,16 @@ const PAGINAS: Pagina[] = [
 /**
  * O id de uma rota, no texto do arquivo dela: o do createFileRoute("…"), em
  * que o gerador de rotas do TanStack escreve o id que dá à rota, ou o do
- * createLazyFileRoute, de um .lazy.tsx, que repete o da rota dele. Um arquivo
- * sem ele (o __root.tsx, um .functions.ts ou um teste sem o "-") não é rota.
+ * createLazyFileRoute, de um .lazy.tsx, que repete o da rota dele. A busca fica
+ * presa ao Route =, como o gerador escreve (export const Route =
+ * createFileRoute("…")): um comentário com outro createFileRoute não engana a
+ * guarda. Um arquivo sem ele (o __root.tsx, um .functions.ts ou um teste sem o
+ * "-") não é rota.
  */
 function idDaRota(texto: string) {
-	return texto.match(/\bcreate(?:Lazy)?FileRoute\(\s*(["'`])(.*?)\1/)?.[2];
+	return texto.match(
+		/\bRoute\s*=\s*create(?:Lazy)?FileRoute\(\s*(["'`])(.*?)\1/,
+	)?.[2];
 }
 
 /**
@@ -419,7 +452,10 @@ describe("a caixa da página", () => {
 		]);
 		expect(caixa?.classList.contains("caixa-do-teto")).toBe(true);
 		for (const titulo of titulos) {
-			expect(conteinerEmVolta(titulo), titulo.textContent ?? "").toBe(caixa);
+			expect(
+				conteinerEmVolta(titulo),
+				`${titulo.textContent?.trim()}: há um contêiner de largura entre o título e a caixa da página`,
+			).toBe(caixa);
 		}
 	});
 
@@ -446,7 +482,10 @@ describe("a caixa da página", () => {
 					);
 					expect(conteiner, onde).not.toBe(caixa);
 				} else {
-					expect(conteiner, onde).toBe(caixa);
+					expect(
+						conteiner,
+						`${onde}: há um contêiner de largura entre o título e a caixa da página`,
+					).toBe(caixa);
 				}
 			}
 		},
@@ -490,6 +529,8 @@ describe("a caixa da página", () => {
 			'<div class="[container-type:_size]"></div>',
 			'<div class="@container-[_size]"></div>',
 			'<div class="@container/[nome]"></div>',
+			// O nome numa variável.
+			'<div class="@container/(--nome)"></div>',
 			'<div style="container-type: inline-size"></div>',
 			'<div style="color: red; container: folha / size"></div>',
 			'<div style="container-type: var(--tipo)"></div>',
@@ -546,6 +587,12 @@ describe("a caixa da página", () => {
 		expect(
 			idDaRota('export const Route = createLazyFileRoute("/ajuda")({});'),
 		).toBe("/ajuda");
+		// Um comentário com outro createFileRoute antes do de verdade.
+		expect(
+			idDaRota(
+				'// Antes era o createFileRoute("/piloto").\nexport const Route = createFileRoute("/sobre")({});',
+			),
+		).toBe("/sobre");
 		// O __root.tsx e o arquivo que não é rota, como um .functions.ts.
 		expect(
 			idDaRota("export const Route = createRootRouteWithContext()({});"),
@@ -588,28 +635,32 @@ describe("a caixa da página", () => {
 		});
 	});
 
-	it("cada rota de src/routes está no criarRouter, dentro da mãe dela, e abre por um endereço do QUE_ABREM", () => {
+	it("cada rota de src/routes está no criarRouter, dentro da mãe dela, e a que tem página abre por um endereço do QUE_ABREM", () => {
 		// As rotas que o gerador de rotas do TanStack lê: os .ts e os .tsx de
 		// src/routes com o createFileRoute, fora o que começa com "-" (o arquivo
 		// ou a pasta), como este teste. O id de cada uma é o do createFileRoute,
 		// e não o nome do arquivo (o idDaRota). Assim, uma rota nova não fica sem
 		// a conferência do contêiner, nem a página de um layout sem ele em volta.
 		const pasta = join(src, "routes");
+		const textos = readdirSync(pasta, { recursive: true, encoding: "utf8" })
+			.map((arquivo) => arquivo.replaceAll("\\", "/"))
+			.filter(
+				(arquivo) =>
+					/\.tsx?$/.test(arquivo) &&
+					!arquivo.split("/").some((parte) => parte.startsWith("-")),
+			)
+			.map((arquivo) => readFileSync(join(pasta, arquivo), "utf8"));
 		const arquivos = [
-			...new Set(
-				readdirSync(pasta, { recursive: true, encoding: "utf8" })
-					.map((arquivo) => arquivo.replaceAll("\\", "/"))
-					.filter(
-						(arquivo) =>
-							/\.tsx?$/.test(arquivo) &&
-							!arquivo.split("/").some((parte) => parte.startsWith("-")),
-					)
-					.map((arquivo) =>
-						idDaRota(readFileSync(join(pasta, arquivo), "utf8")),
-					)
-					.filter((id) => id !== undefined),
-			),
+			...new Set(textos.map(idDaRota).filter((id) => id !== undefined)),
 		].sort();
+		// As rotas com página: o component no arquivo dela ou no .lazy.tsx dela,
+		// que tem o mesmo id. A rota sem página (o índice que só redireciona, a
+		// rota do servidor) não abre pelo QUE_ABREM. Fica sem essa conferência a
+		// página sem a palavra component no arquivo, com as opções vindas de outro
+		// arquivo.
+		const comPagina = new Set(
+			textos.filter((texto) => /\bcomponent\b/.test(texto)).map(idDaRota),
+		);
 		const router = criarRouter();
 		const rotas: Record<string, AnyRoute> = router.routesById;
 		const montadas = Object.keys(rotas)
@@ -637,8 +688,8 @@ describe("a caixa da página", () => {
 			"Cada rota entra no criarRouter deste teste dentro da mãe que tem no site: a página de um layout vai no addChildren dele, com o dentroDe",
 		).toEqual([]);
 		expect(
-			montadas.filter((id) => !abertas.has(id)),
-			"Cada rota abre por um endereço do QUE_ABREM deste teste: ponha nele um da rota que falta",
+			montadas.filter((id) => comPagina.has(id) && !abertas.has(id)),
+			"Cada rota com página abre por um endereço do QUE_ABREM deste teste: ponha nele um da rota que falta",
 		).toEqual([]);
 	});
 });
