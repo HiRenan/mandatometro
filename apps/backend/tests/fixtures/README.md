@@ -1,6 +1,6 @@
 # Fixtures
 
-Respostas reais das APIs da Câmara e do Senado, gravadas para os testes de unidade rodarem offline, como o `AGENTS.md` pede. Os conectores (#10 e #11) leem estes arquivos em vez de chamar a rede.
+Respostas reais das APIs da Câmara e do Senado, gravadas para os [testes de unidade offline](../../../../AGENTS.md#tests). Os conectores (#10 e #11) leem estes arquivos em vez de chamar a rede.
 
 **Coletadas em:** 11/11/2026; os três acréscimos da Câmara indicados abaixo, os dois históricos de mandatos do Senado, a votação secreta 7081 e seu processo foram acrescentados em 16/11/2026. O formato de cada campo está em [docs/dicionario-de-dados.md](../../../../docs/dicionario-de-dados.md).
 
@@ -30,7 +30,7 @@ Bases: `https://dadosabertos.camara.leg.br/api/v2` e `https://legis.senado.leg.b
 
 ## Dados pessoais
 
-O `AGENTS.md` manda trocar CPF, título de eleitor e motivo de afastamento por valores fictícios nas fixtures. Em `camara/deputado-178843.json`:
+A troca por valores fictícios segue as regras de [dados pessoais](../../../../docs/dados-pessoais.md) e de [testes offline](../../../../AGENTS.md#tests). Em `camara/deputado-178843.json`:
 
 - `cpf` virou `00000000000`;
 - `dataNascimento` virou `1970-01-01`.

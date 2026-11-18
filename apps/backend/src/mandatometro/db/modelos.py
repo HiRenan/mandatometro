@@ -4,8 +4,9 @@
   voto. Os campos de cada API estão em docs/dicionario-de-dados.md.
 - A newsletter: a edição da semana, com os itens, que a IA rascunha e o time revisa (#22), e
   quem assina, que se inscreve pela #21 e recebe as edições pelo envio da #39.
-- Fonte em tudo (AGENTS.md): cada dado coletado e cada item da edição aponta para uma fonte, com
-  o endereço e a data da coleta. Sem fonte, o banco não grava.
+- Fonte em tudo (docs/dicionario-de-dados.md#fonte-dos-dados-coletados): cada dado coletado e cada
+  item da edição aponta para uma fonte, com o endereço e a data da coleta. Sem fonte, o banco
+  não grava.
 - Cada Casa tem os seus números: a chave de parlamentar, proposição e votação é a Casa com o id da
   Casa (casa, id_externo).
 - Os valores fixos são texto com CHECK, sem enum do PostgreSQL: um valor novo entra trocando o
@@ -390,7 +391,7 @@ class ItemEdicao(Base):
     """Uma notícia da edição, na ordem em que aparece, com a fonte obrigatória.
 
     A fonte é a da afirmação: a newsletter mostra a url_publica dela, quando houver, e a data da
-    coleta. Sem fonte, o item não grava (AGENTS.md: o que não tem fonte fica fora da newsletter).
+    coleta. Sem fonte, o item não grava (PRODUCT.md: o que não tem fonte fica fora da newsletter).
     """
 
     __tablename__ = "item_edicao"
@@ -422,8 +423,8 @@ class Inscrito(Base):
     codigo_saida, testado em tests/test_modelo.py). Tabela nova que aponte para o inscrito, como
     um registro de envios, apaga junto (ondelete CASCADE).
 
-    O e-mail é dado pessoal (AGENTS.md): só sai do banco para o envio, e a API, os logs e os
-    fixtures citam o inscrito pelo id.
+    O e-mail é dado pessoal (docs/dados-pessoais.md): só sai do banco para o envio. A API, os logs
+    e os fixtures citam o inscrito pelo id.
     """
 
     __tablename__ = "inscrito"
