@@ -9,26 +9,42 @@ fontes:
   - titulo: Constituição Federal, art. 65
     url: https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art65
     consultadoEm: 2026-11-09
-  - titulo: Regimento Comum do Congresso Nacional, arts. 10 e 142
-    url: https://normas.leg.br/?urn=urn:lex:br:congresso.nacional:regimento.interno:1970-08-11;1970
-    consultadoEm: 2026-11-09
-  - titulo: Câmara dos Deputados, Regimento Comum com o texto atualizado
-    url: https://www2.camara.leg.br/legin/fed/rescon/1970-1979/resolucao-1-11-agosto-1970-497934-republicacaoatualizada-171822-pl.html
-    consultadoEm: 2026-11-09
+  - titulo: Constituição Federal, art. 165
+    url: https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art165
+    consultadoEm: 2026-11-17
+  - titulo: Constituição Federal, art. 166
+    url: https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art166
+    consultadoEm: 2026-11-17
+  - titulo: Regimento Comum do Congresso Nacional, arts. 1º, 10, 89, 90 e 142, texto compilado pelo Senado
+    url: https://www25.senado.leg.br/documents/59501/97171143/RCCN.pdf/933b504d-a653-4df5-9329-d4f38c42f64f
+    consultadoEm: 2026-11-17
   - titulo: Câmara dos Deputados, Entenda o processo legislativo
     url: https://www.camara.leg.br/entenda-o-processo-legislativo/
     consultadoEm: 2026-11-09
+  - titulo: Senado Federal, tramitação do PL 4.937/2024 no Senado
+    url: https://www25.senado.leg.br/web/atividade/materias/-/materia/166815
+    consultadoEm: 2026-11-17
+  - titulo: Agência Câmara, notícia de 15/10/2025 sobre a aprovação do PL 4.937/2024
+    url: https://www.camara.leg.br/noticias/1212408-camara-aprova-projeto-que-torna-lei-o-compromisso-nacional-da-crianca-alfabetizada
+    consultadoEm: 2026-11-17
+  - titulo: Lei nº 15.247, de 31 de outubro de 2025
+    url: https://normas.leg.br/?urn=urn:lex:br:federal:lei:2025-10-31;15247
+    consultadoEm: 2026-11-17
 ---
 
 O Congresso Nacional tem duas Casas: a Câmara dos Deputados e o Senado Federal. Para virar lei, um projeto precisa ser aprovado nas duas. A primeira a analisar o projeto se chama Casa iniciadora; a segunda, Casa revisora.
 
 Pense num projeto apresentado por uma senadora. Ele começa no Senado, que vira a Casa iniciadora, e depois segue para a Câmara, que faz a revisão. Com o projeto de um deputado, o caminho é o inverso: começa na Câmara e é revisto no Senado.
 
+Do Senado para a Câmara: foi esse o caminho do projeto sobre o Compromisso Nacional Criança Alfabetizada, que junta a União, os estados, o Distrito Federal e os municípios para alfabetizar as crianças. Ele foi apresentado em dezembro de 2024 pela Comissão de Educação e Cultura do Senado e, por isso, começou no Senado, que o aprovou em março de 2025. Em outubro, a Câmara, a Casa revisora, também aprovou, e o projeto virou a Lei 15.247, de 31 de outubro de 2025.
+
 ## Quando o começo é na Câmara
 
 Em regra, o projeto começa na Câmara dos Deputados, a não ser que tenha sido apresentado por um senador ou por uma comissão do Senado. Nesses dois casos, ele começa no Senado.
 
 Em alguns casos, a regra está escrita na própria Constituição: os projetos do presidente da República, do Supremo Tribunal Federal e dos tribunais superiores começam na Câmara (art. 64). Os projetos de iniciativa popular também são apresentados à Câmara.
+
+Os projetos do orçamento, que o presidente também envia ao Congresso, seguem outro caminho: passam por uma comissão mista, de deputados e senadores, e são votados em sessão conjunta das duas Casas (arts. 165 e 166, e Regimento Comum do Congresso, arts. 1º, 89 e 90).
 
 ## Os projetos das comissões mistas
 

@@ -12,9 +12,23 @@ fontes:
   - titulo: Senado Federal, Glossário legislativo, Decisão terminativa
     url: https://www12.senado.leg.br/noticias/glossario-legislativo/decisao-terminativa
     consultadoEm: 2026-11-09
+  - titulo: Câmara dos Deputados, ficha de tramitação do PL 941/2024
+    url: https://www.camara.leg.br/proposicoesWeb/fichadetramitacao?idProposicao=2423153
+    consultadoEm: 2026-11-17
+  - titulo: Senado Federal, tramitação do PL 941/2024 no Senado
+    url: https://www25.senado.leg.br/web/atividade/materias/-/materia/168523
+    consultadoEm: 2026-11-17
+  - titulo: Agência Câmara, notícia de 10/12/2024 sobre a aprovação do PL 941/2024 na Comissão de Constituição e Justiça e de Cidadania
+    url: https://www.camara.leg.br/noticias/1119796-comissao-de-constituicao-e-justica-aprova-custodia-compartilhada-de-animal-de-estimacao-em-caso-de-separacao
+    consultadoEm: 2026-11-17
+  - titulo: Lei nº 15.392, de 16 de abril de 2026
+    url: https://normas.leg.br/?urn=urn:lex:br:federal:lei:2026-04-16;15392
+    consultadoEm: 2026-11-17
 ---
 
 Imagine todos os deputados lendo, juntos, cada projeto apresentado no ano. Não daria tempo. Por isso o trabalho é dividido: cada projeto é estudado primeiro por um grupo menor de parlamentares, a comissão, que cuida de um tema, como educação, saúde ou finanças.
+
+Foi o que aconteceu com o projeto sobre a custódia compartilhada dos animais de estimação quando um casamento ou uma união estável termina. Na Câmara, ele foi estudado por duas comissões: a de Meio Ambiente e Desenvolvimento Sustentável e a de Constituição e Justiça e de Cidadania, que mudou o texto. As duas aprovaram, e o projeto foi para o Senado sem uma votação no Plenário da Câmara. Lá, ele também foi aprovado e virou a Lei 15.392, de 16 de abril de 2026.
 
 A Constituição prevê comissões permanentes e temporárias na Câmara, no Senado e no Congresso (art. 58). Na formação de cada comissão, os partidos ou os blocos de partidos ocupam lugares em proporção ao tamanho que têm na Casa, tanto quanto possível (art. 58, § 1º).
 
