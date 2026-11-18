@@ -131,6 +131,69 @@ def api_secret():
     return SecretStr(Fernet.generate_key().decode())
 
 
+def test_login_e_saida(engine_de_teste, monkeypatch):
+    sessoes = sessionmaker(engine_de_teste)
+    monkeypatch.setattr(api, "sessao", sessoes)
+    monkeypatch.setattr(contas, "sessao", sessoes)
+    monkeypatch.setattr(config(), "conta_chave", api_secret())
+    monkeypatch.setattr(config(), "api_url", "https://api.example.org")
+    origem = {"Origin": config().app_base_url}
+    cliente = TestClient(app, base_url="https://api.example.org")
+    email = f"{uuid4().hex}@example.org"
+    senha = "Senha fictícia de teste"
+    pedido = {"email": email.upper(), "senha": senha}
+    id_conta = uuid4()
+    with sessoes.begin() as db:
+        db.add(
+            Conta(
+                id=id_conta,
+                email=email,
+                nome="Pessoa",
+                senha_hash=contas.senhas.hash(senha),
+                termo="teste",
+                aceite_em=contas.agora(),
+                criada_em=contas.agora(),
+            )
+        )
+    assert cliente.post("/contas/login", json=pedido).status_code == 403
+
+    def entrar(dados):
+        return cliente.post("/contas/login", json=dados, headers=origem)
+
+    pendente = entrar(pedido)
+    desconhecida = entrar({**pedido, "email": "desconhecida@example.org"})
+    with sessoes.begin() as db:
+        db.get(Conta, id_conta).confirmada_em = contas.agora()
+    incorreta = entrar({**pedido, "senha": "incorreta"})
+    for erro in (pendente, desconhecida, incorreta):
+        assert erro.status_code == 401 and erro.json() == pendente.json()
+        assert erro.headers["cache-control"] == "no-store"
+    resposta = entrar(pedido)
+    assert resposta.status_code == 204
+    cookie = resposta.headers["set-cookie"].lower()
+    for atributo in ("httponly", "secure", "samesite=lax", "path=/", "max-age=604800"):
+        assert atributo in cookie
+    token = cliente.cookies["sessao_conta"]
+    with sessoes.begin() as db:
+        credencial = db.get(CredencialConta, contas.resumo(token))
+        assert timedelta(days=6, hours=23) < credencial.expira - contas.agora() <= timedelta(days=7)
+        assert db.get(CredencialConta, token) is None
+    assert cliente.get("/contas/me").status_code == 200
+    assert cliente.post("/contas/logout").status_code == 403
+    for _ in range(2):
+        assert cliente.post("/contas/logout", headers=origem).status_code == 204
+    with sessoes.begin() as db:
+        assert db.get(CredencialConta, contas.resumo(token)) is None
+    assert cliente.get("/contas/me").status_code == 401
+    assert entrar(pedido).status_code == 204
+    with sessoes.begin() as db:
+        credencial = db.get(CredencialConta, contas.resumo(cliente.cookies["sessao_conta"]))
+        credencial.expira = contas.agora() - timedelta(seconds=1)
+    assert cliente.get("/contas/me").status_code == 401
+    assert entrar(pedido).status_code == 204
+    assert entrar(pedido).status_code == 429
+
+
 @pytest.mark.parametrize(
     "alteracao",
     [{"nascimento": "2999-01-01"}, {"aceite": False}, {"estado": "XX"}, {"nome": "   "}],

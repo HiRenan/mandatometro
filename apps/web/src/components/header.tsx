@@ -77,7 +77,9 @@ export default function Header({
 							<a
 								href="/perfil"
 								data-na-secao={
-									estaNaSecao(caminho, "/cadastro") || caminho === "/perfil"
+									estaNaSecao(caminho, "/cadastro") ||
+									caminho === "/perfil" ||
+									caminho === "/login"
 										? ""
 										: undefined
 								}

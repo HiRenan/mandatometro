@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AbrirSaidaData, AbrirSaidaErrors, CadastrarContaData, CadastrarContaErrors, CadastrarContaResponses, ConfirmarContaData, ConfirmarContaErrors, ConfirmarContaResponses, ConsultarPerfilData, ConsultarPerfilErrors, ConsultarPerfilResponses, ExcluirContaData, ExcluirContaErrors, ExcluirContaResponses, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, ListarEdicoesData, ListarEdicoesErrors, ListarEdicoesResponses, ObterEdicaoData, ObterEdicaoErrors, ObterEdicaoResponses, RecuperarContaData, RecuperarContaErrors, RecuperarContaResponses, RedefinirSenhaData, RedefinirSenhaErrors, RedefinirSenhaResponses, ReenviarConfirmacaoData, ReenviarConfirmacaoErrors, ReenviarConfirmacaoResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses, TermoContaData, TermoContaErrors, TermoContaResponses } from './types.gen';
+import type { AbrirSaidaData, AbrirSaidaErrors, CadastrarContaData, CadastrarContaErrors, CadastrarContaResponses, ConfirmarContaData, ConfirmarContaErrors, ConfirmarContaResponses, ConsultarPerfilData, ConsultarPerfilErrors, ConsultarPerfilResponses, EntrarContaData, EntrarContaErrors, EntrarContaResponses, ExcluirContaData, ExcluirContaErrors, ExcluirContaResponses, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, ListarEdicoesData, ListarEdicoesErrors, ListarEdicoesResponses, ObterEdicaoData, ObterEdicaoErrors, ObterEdicaoResponses, RecuperarContaData, RecuperarContaErrors, RecuperarContaResponses, RedefinirSenhaData, RedefinirSenhaErrors, RedefinirSenhaResponses, ReenviarConfirmacaoData, ReenviarConfirmacaoErrors, ReenviarConfirmacaoResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, SairContaData, SairContaErrors, SairContaResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses, TermoContaData, TermoContaErrors, TermoContaResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -48,6 +48,23 @@ export const sairDaNewsletter = <ThrowOnError extends boolean = false>(options: 
  * Termo Conta
  */
 export const termoConta = <ThrowOnError extends boolean = false>(options?: Options<TermoContaData, ThrowOnError>): RequestResult<TermoContaResponses, TermoContaErrors, ThrowOnError> => (options?.client ?? client).get<TermoContaResponses, TermoContaErrors, ThrowOnError>({ url: '/contas/termo', ...options });
+
+/**
+ * Entrar Conta
+ */
+export const entrarConta = <ThrowOnError extends boolean = false>(options: Options<EntrarContaData, ThrowOnError>): RequestResult<EntrarContaResponses, EntrarContaErrors, ThrowOnError> => (options.client ?? client).post<EntrarContaResponses, EntrarContaErrors, ThrowOnError>({
+    url: '/contas/login',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Sair Conta
+ */
+export const sairConta = <ThrowOnError extends boolean = false>(options?: Options<SairContaData, ThrowOnError>): RequestResult<SairContaResponses, SairContaErrors, ThrowOnError> => (options?.client ?? client).post<SairContaResponses, SairContaErrors, ThrowOnError>({ url: '/contas/logout', ...options });
 
 /**
  * Cadastrar Conta
