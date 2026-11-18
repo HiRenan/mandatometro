@@ -228,7 +228,7 @@ O comando divide períodos maiores em janelas de até 365 dias e coleta as vota�
 
 Se o histórico de um votante fora da lista atual falhar, seus votos ficam gravados, o mandato não é inventado e `falhas_parlamentares` conta o parlamentar uma vez. Processo indisponível entra no resumo pelo caminho com seu id (por exemplo, `/processo/9006525`), e a votação é pulada. Histórico indisponível preserva os votos e entra uma vez pelo tipo do recurso e pelo id interno do parlamentar (por exemplo, `mandatos:parlamentar_id=42`), somente após confirmar a gravação. O código público do senador fica fora da saída; para investigar, consulte `parlamentar.id_externo` pelo id interno informado.
 
-**Edição semanal.** O comando usa só as votações já coletadas. Não coleta, não envia e-mail e não publica ao gerar. Sem datas, usa os sete dias completos anteriores, como a coleta. O provedor ainda não tem adaptador: todos os itens começam com redação manual pendente. As variáveis `LLM_PROVIDER`, `LLM_MODEL` e `LLM_API_KEY` estão preparadas para essa integração futura; preenchê-las ainda não liga um provedor.
+**Edição semanal.** O comando `edicao rascunho` prepara a edição com as votações já coletadas. Sem datas, usa os sete dias completos anteriores. Uma pessoa do time revisa e publica a edição, inclusive quando o modelo escreveu o texto.
 
 **Preparação do ambiente.** Peça ao time a URL autorizada do banco com as migrations aplicadas e a coleta da semana, junto com os resumos das duas Casas. Confira servidor, porta e nome do banco antes de usar. Abra um terminal PowerShell na raiz do repositório pelo Orca, entre na pasta abaixo e substitua o valor de exemplo pela URL recebida. A variável vale nesse terminal; configure-a novamente se abrir outro.
 
@@ -237,6 +237,10 @@ Set-Location .\apps\backend
 uv sync --frozen
 $env:DATABASE_URL = 'COLE_A_URL_AUTORIZADA_PELO_TIME'
 ```
+
+**Redação com IA.** No `.env` local da raiz, defina `LLM_PROVIDER=anthropic`, `LLM_MODEL=claude-opus-5-5` e `LLM_API_KEY`. Crie a chave no Claude Console para um único workspace do time e guarde-a no computador de quem roda o rascunho. Para redigir à mão, deixe `LLM_PROVIDER` vazio ou só com espaços. Um provedor desconhecido ou uma configuração Anthropic sem modelo ou chave encerra o comando com saída 2 antes de abrir o banco. Uma falha ao abrir o cliente encerra o comando com saída 1 e uma mensagem fixa em JSON. [Chaves de API no Claude Console](https://platform.claude.com/settings/keys) · [Seleção de workspace](https://platform.claude.com/docs/en/manage-claude/authentication#select-a-workspace)
+
+O resumo do rascunho traz `textos_do_modelo`, `textos_do_codigo` (itens para redação manual) e `motivos_texto_do_codigo`, com a contagem por motivo. Um item filtrado, uma recusa, um corte ou uma resposta inválida segue para a pessoa que revisa. Em falha transitória, o SDK tenta mais uma vez. Durante a redação ou a espera, Ctrl+C cancela o rascunho com saída 130 e imprime apenas `{"erro": "Rascunho interrompido."}` em stdout. Os itens só são gravados ao final, então você pode repetir o comando depois. Repetir o comando para um rascunho existente dá contagens de redação zeradas.
 
 Prepare uma pasta **fora do repositório**, por exemplo `$HOME\Documents\mandatometro-revisoes`. No PowerShell, `$HOME` é sua pasta de usuário; crie a pasta de revisões pelo explorador de arquivos se ela ainda não existir. O JSON contém descrições e trechos oficiais para consulta: ele e a prévia ficam fora de commits e logs. Os comandos seguintes usam essa pasta e são executados no mesmo terminal, em `apps/backend`.
 
@@ -311,11 +315,11 @@ Escolha `artigo_caminho` entre os seis artigos do catálogo e marque `artigo_con
 
 Repetir o rascunho no mesmo período retorna a edição existente sem sobrescrever ajustes. `--refazer` recompõe **só um rascunho**, descarta a revisão anterior e invalida os arquivos exportados; use-o também se a coleta mudou os dados usados. Depois de salvar uma revisão, exporte outro arquivo para fazer novos ajustes. Edição publicada permanece intocada, inclusive ao repetir geração ou publicação. Mais de uma edição no período é erro a resolver. O fluxo prevê uma pessoa operando por vez, sem travas para execuções simultâneas.
 
-Sem votação no banco, retorna `sem_votacoes_no_banco`; se todas saírem da seleção, `sem_itens_elegiveis`. Não cria uma edição vazia nem afirma que o Congresso não votou. Saídas: **0** para operação concluída, inclusive redação pendente, repetição sem efeito e período sem itens; **1** para falha operacional ou revisão/publicação recusada; **2** para argumentos inválidos. Exceto a prévia e os erros de sintaxe do comando, a saída é JSON com ids, contagens e mensagens sem conteúdo de fonte ou exceção bruta. Erros de sintaxe, como `publicar --arquivo`, imprimem o texto de uso e o erro em stderr, com saída **2**, sem JSON.
+Sem votação no banco, retorna `sem_votacoes_no_banco`. Se todas saírem da seleção, retorna `sem_itens_elegiveis`. Não cria uma edição vazia nem afirma que o Congresso não votou. A saída é **0** para operação concluída, inclusive redação pendente, repetição sem efeito e período sem itens. Falha operacional ou revisão/publicação recusada dá **1**. Argumentos ou configuração do redator inválidos dão **2**. Ctrl+C no rascunho dá **130**. Exceto a prévia e os erros de sintaxe do comando, a saída é JSON com ids, contagens e mensagens sem conteúdo de fonte ou exceção bruta. Erros de sintaxe, como `publicar --arquivo`, imprimem o texto de uso e o erro em stderr, com saída **2**, sem JSON.
 
 O contrato para os consumidores da edição é `item_edicao.texto` como explicação em texto puro, `artigo_caminho` opcional e `fatos` JSONB versionado, também opcional para itens antigos. A versão 1 guarda ids de proposições/votações/fontes, data, resultado, placar agregado, origem (`codigo`, `modelo` ou `revisao`) e pendências. A confirmação única da cobertura é persistida pela presença ou ausência da pendência `cobertura` nos itens. Os fatos publicados não são recalculados após uma coleta. Para a #39, reutilize `formatar_edicao`/`montar_email` e carregue as fontes pelos ids de `fatos.fontes`, além da fonte principal; renderizar apenas `texto` perderia os blocos factuais. Itens antigos, sem os novos campos, mantêm a apresentação anterior.
 
-Os testes são offline, com redator falso e dados inventados: com `TEST_DATABASE_URL` explícito, rode `uv run pytest`. Não é necessário chave ou SDK de LLM.
+Com `TEST_DATABASE_URL` explícito, rode `uv run pytest`. Os testes do adaptador usam o SDK instalado pelo uv, transporte simulado e dados inventados. Funcionam offline.
 
 **Checagens,** as mesmas do CI:
 
