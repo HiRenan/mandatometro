@@ -10,6 +10,7 @@ from mandatometro.avisos.cli import registrar_comando as registrar_envio
 from mandatometro.coleta.cli import adicionar_argumentos_periodo, resolver_periodo
 from mandatometro.config import config
 from mandatometro.db import sessao as sessao_do_banco
+from mandatometro.ia.provedor import ConfiguracaoRedatorInvalida, FalhaRedator, abrir_redator
 from mandatometro.ia.servico import ErroEdicao, exportar, gerar, mostrar, publicar, revisar
 
 LIMITE_ARQUIVO = 2 * 1024 * 1024
@@ -47,8 +48,15 @@ def _rodar(args: argparse.Namespace) -> int:
         return 2
     try:
         if args.acao == "rascunho":
-            # O adaptador depende da escolha do provedor. Sem ele, a redação fica manual.
-            resumo = gerar(sessao_do_banco, inicio, fim, teto=args.teto, refazer=args.refazer)
+            with abrir_redator(config()) as redator:
+                resumo = gerar(
+                    sessao_do_banco,
+                    inicio,
+                    fim,
+                    teto=args.teto,
+                    refazer=args.refazer,
+                    redator=redator,
+                )
         elif args.acao == "exportar":
             dados = exportar(sessao_do_banco, args.id)
             with args.arquivo.open("x", encoding="utf-8", newline="\n") as arquivo:
@@ -67,7 +75,10 @@ def _rodar(args: argparse.Namespace) -> int:
         else:
             print(mostrar(sessao_do_banco, args.id, app_base_url=config().app_base_url))
             return 0
-    except ErroEdicao as erro:
+    except ConfiguracaoRedatorInvalida as erro:
+        _json({"erro": str(erro)})
+        return 2
+    except (ErroEdicao, FalhaRedator) as erro:
         _json({"erro": str(erro)})
         return 1
     except FileExistsError:
@@ -81,17 +92,25 @@ def _rodar(args: argparse.Namespace) -> int:
     return 0
 
 
+def _rodar_rascunho(args: argparse.Namespace) -> int:
+    try:
+        return _rodar(args)
+    except KeyboardInterrupt:
+        _json({"erro": "Rascunho interrompido."})
+        return 130
+
+
 def registrar_comando(comandos: argparse._SubParsersAction) -> None:
     edicao = comandos.add_parser("edicao", help="prepara, revisa e publica o jornal legislativo")
     acoes = edicao.add_subparsers(dest="acao", required=True)
     registrar_envio(acoes)
-    rascunho = acoes.add_parser("rascunho", help="prepara os fatos e a redação pendente")
+    rascunho = acoes.add_parser("rascunho", help="prepara os fatos e o texto para revisão")
     adicionar_argumentos_periodo(rascunho)
     rascunho.add_argument("--teto", type=int, default=8, help="máximo de itens (padrão: 8)")
     rascunho.add_argument(
         "--refazer", action="store_true", help="refaz o rascunho e descarta a revisão anterior"
     )
-    rascunho.set_defaults(rodar=_rodar)
+    rascunho.set_defaults(rodar=_rodar_rascunho)
     for acao, ajuda in (
         ("exportar", "grava um arquivo JSON para revisão"),
         ("revisar", "valida e salva a revisão do arquivo"),

@@ -39,7 +39,7 @@ class RespostaRedator:
 
 
 class Redator(Protocol):
-    """O adaptador síncrono implementará timeout/retry; o núcleo não repete chamadas."""
+    """O adaptador síncrono cuida do timeout e da repetição das falhas transitórias."""
 
     def escrever(self, entrada: dict) -> RespostaRedator: ...
 
