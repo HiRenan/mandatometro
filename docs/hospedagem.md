@@ -74,7 +74,7 @@ Sem o secret da URL direta, a migration no push mostra um aviso e pula antes de 
 
 As duas Casas rodam uma por vez, com até 30 minutos cada, e a segunda é tentada mesmo se a primeira falhar. Coleta, migration e envio compartilham a fila `banco-producao` ou `banco-desenvolvimento`. `cancel-in-progress: false` deixa terminar quem já começou, e `queue: max` preserva até 100 execuções pendentes. A ordem pelo horário do push pode variar. Falha ou cancelamento pede conferir o último sucesso e, se necessário, disparar a migration de reserva. O cron pode atrasar ou ser descartado; em repositório público, fica inativo após 60 dias sem atividade. [Concorrência](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency), [agendamento](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
 
-Para recuperar uma lacuna maior, preencha **inicio e fim juntos**, em `AAAA-MM-DD`, no disparo manual da coleta. Sem datas, valem os sete dias completos anteriores em Brasília. O deploy da Vercel não espera o Actions. Na hospedagem, siga as [convenções de migrations](../AGENTS.md#conventions).
+Para recuperar uma lacuna maior, preencha **inicio e fim juntos**, em `AAAA-MM-DD`, no disparo manual da coleta. Sem datas, valem os sete dias completos anteriores em Brasília. O deploy da Vercel não espera o Actions. Na hospedagem, siga as [convenções de migrations](../AGENTS.md#conventions). Não há migration na importação, no build ou na requisição da API.
 
 O rascunho da #22 tem lugar proposto no domingo às **06h37**, depois da coleta, e continua manual. O envio dominical está preparado para **10h37**, depois da revisão e publicação humanas; Renan confirma o horário antes de ativar. A rodada dura no máximo 30 minutos.
 
@@ -92,7 +92,7 @@ No Free, os 100 envios diários e 3.000 mensais são compartilhados com as inscr
 
 O [guia da newsletter](newsletter.md#newsletter-envio-e-leitura-pública) explica o estado de envio, as falhas, o resumo e o risco de duplicação na retomada. Mantenha logs do provedor fora do repositório.
 
-Não há webhook de entrega: devoluções, caixa cheia e reclamações posteriores à aceitação são acompanhadas por Renan no Resend, com a supressão automática do provedor. Em uma reversão de versão, desligue `ENVIOS_ATIVOS` antes; não remova a coluna enquanto existir código que a leia.
+Não há webhook de entrega nem recuperação automática de bounces. Devoluções, caixa cheia e reclamações posteriores à aceitação são acompanhadas por Renan no Resend, com a supressão automática do provedor. Em uma reversão de versão, desligue `ENVIOS_ATIVOS` antes; não remova a coluna enquanto existir código que a leia.
 
 ## Configuração e limites
 

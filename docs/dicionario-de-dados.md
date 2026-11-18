@@ -16,7 +16,7 @@ Os endpoints de depois do MVP seguem nas notas da #10 e da #11. O TSE entra depo
 Cada endpoint tem a URL que usamos, uma tabela de campos e um exemplo real recortado. Na coluna **Usamos**:
 
 - **sim** — o conector usa o campo. O que fica no banco está em [Da API para os nomes do domínio](#da-api-para-os-nomes-do-domínio);
-- **chave** — id público da Câmara ou do Senado, que serve para casar os registros. Processos e votações podem aparecer pelo id público no log, como em "coletando a votação 2637478-26". Para ids de pessoas e avisos de voto desconhecido, veja [dados pessoais](dados-pessoais.md);
+- **chave** — id público da Câmara ou do Senado, que serve para casar os registros. Ids públicos dos registros que não identificam pessoas, como processos, proposições e votações, podem aparecer no log, como em "coletando a votação 2637478-26". Para ids de pessoas e avisos de voto desconhecido, veja [dados pessoais](dados-pessoais.md);
 - **só ligação, não exibir** — dado pessoal que segue as regras de [ligação entre bases](dados-pessoais.md#parlamentares-e-candidatos);
 - **não** — existe na resposta e não vamos usar agora.
 
@@ -27,12 +27,16 @@ Cada endpoint tem a URL que usamos, uma tabela de campos e um exemplo real recor
 - **Robots da coleta:** em 16/11/2026, `dadosabertos.camara.leg.br/robots.txt` respondeu HTTP 200 com HTML de página inexistente, sem regras, e `legis.senado.leg.br/robots.txt` respondeu 403. A base lê o arquivo uma vez por execução, usa `RobotFileParser.parse()` e segue a RFC 9309: aplica as regras legíveis; sem regras ou com 4xx no arquivo (exceto 408/429, transitórios), continua; falha de rede/5xx persistente interrompe. Um 403 no endpoint de dados continua sendo erro. `Crawl-delay`, `Request-rate` e `Retry-After` são respeitados.
 - As respostas da Câmara e do Senado são UTF-8, e nenhuma das duas declara o charset no `content-type` (as duas mandam `application/json`): decodifique explicitamente como UTF-8, ou os acentos embaralham no Windows.
 - As chamadas de cada coleta rodam em sequência.
-- As regras de fonte estão no [PRODUCT.md](../PRODUCT.md#capabilities-and-constraints).
+- Veja a [regra de fonte dos dados coletados](#fonte-dos-dados-coletados).
+
+### Fonte dos dados coletados
+
+- **Toda informação guardada leva a fonte:** a URL e a data da coleta.
 
 ### Pegadinhas e saída da coleta
 
 - **Completude da paginação da Câmara:** as páginas precisam ser consecutivas desde a primeira, e o maior `last` anunciado continua valendo se uma página seguinte o omitir. Um salto ou fim antecipado torna a execução parcial (saída 1); a coleção incompleta não chega à gravação nem à reconciliação de exercício ou votos, preservando os dados anteriores da unidade.
-- **Saída das coletas:** histórico de mandatos indisponível (404/410) entra no resumo como `mandatos:parlamentar_id=<id interno>`, uma vez e só após confirmar a gravação; o caminho com o código público fica apenas no cache privado da execução. Processos do Senado e votações da Câmara podem manter seus ids públicos, pois não identificam pessoas. No Actions, `scripts/tarefas.py` suprime os logs durante a coleta e imprime só o resumo, com mensagens fixas para erros de configuração ou inesperados.
+- **Saída das coletas:** histórico de mandatos indisponível (404/410) entra no resumo como `mandatos:parlamentar_id=<id interno>`, uma vez e só após confirmar a gravação; o caminho com o código público fica apenas no cache privado da execução. Para investigar, consulte `parlamentar.id_externo` pelo id interno informado. Processos do Senado e votações da Câmara podem manter seus ids públicos, pois não identificam pessoas. No Actions, `scripts/tarefas.py` suprime os logs durante a coleta e imprime só o resumo, com mensagens fixas para erros de configuração ou inesperados.
 
 ## As duas APIs lado a lado
 

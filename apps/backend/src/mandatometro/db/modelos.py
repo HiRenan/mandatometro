@@ -4,8 +4,9 @@
   voto. Os campos de cada API estão em docs/dicionario-de-dados.md.
 - A newsletter: a edição da semana, com os itens, que a IA rascunha e o time revisa (#22), e
   quem assina, que se inscreve pela #21 e recebe as edições pelo envio da #39.
-- Fonte em tudo (PRODUCT.md): cada dado coletado e cada item da edição aponta para uma fonte, com
-  o endereço e a data da coleta. Sem fonte, o banco não grava.
+- Fonte em tudo (docs/dicionario-de-dados.md#fonte-dos-dados-coletados): cada dado coletado e cada
+  item da edição aponta para uma fonte, com o endereço e a data da coleta. Sem fonte, o banco
+  não grava.
 - Cada Casa tem os seus números: a chave de parlamentar, proposição e votação é a Casa com o id da
   Casa (casa, id_externo).
 - Os valores fixos são texto com CHECK, sem enum do PostgreSQL: um valor novo entra trocando o

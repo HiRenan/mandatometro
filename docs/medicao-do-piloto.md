@@ -68,7 +68,7 @@ A tela é da #92: `apps/web/src/lib/piloto.ts` guarda o piloto no navegador, `li
 
 ## Relatório para o time
 
-Em `apps/backend`, com `DATABASE_URL` explícito para o banco escolhido, executar:
+A leitura é só por CLI. Em `apps/backend`, com as migrations aplicadas e `DATABASE_URL` explícito para o banco escolhido, executar:
 
 ```text
 uv run mandatometro piloto resultado --versao processo-legislativo-final-v1
@@ -91,7 +91,7 @@ Qualquer pessoa pode inventar um total ou novos códigos; a cota não resolve fr
 
 1. Desligar `PILOTO_ATIVO` em todas as instâncias e reaplicar a configuração; confirmar 410 e esperar os pedidos já iniciados terminarem. O CLI deve usar a mesma configuração da hospedagem: desligar só no terminal não desliga os servidores.
 2. Salvar e revisar o relatório agregado, sem exportar linhas individuais.
-3. Executar no banco certo, com a URL na linha do comando:
+3. Executar no banco certo, com as migrations aplicadas e a URL na linha do comando:
 
    ```text
    uv run mandatometro piloto apagar --versao processo-legislativo-final-v1 --confirmar

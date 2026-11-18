@@ -77,7 +77,7 @@ Em regra, o projeto começa na Câmara dos Deputados, a não ser que...
 - **As seções começam com `##`.** O título do artigo vem do cabeçalho, então o texto não usa `#`.
 - Parágrafos, listas (`-` ou `1.`), negrito (`**assim**`) e links funcionam. HTML no meio do texto não é interpretado.
 - O tempo de leitura é calculado com 200 palavras por minuto, e o mínimo é 1 minuto.
-- **Texto para o leitor.** Siga as regras de fonte, tom e voz do [PRODUCT.md](../PRODUCT.md#capabilities-and-constraints) e as de [dados pessoais](dados-pessoais.md#trilhas-e-piloto).
+- **Texto para o leitor.** Siga as regras de [fonte e tom](../PRODUCT.md#capabilities-and-constraints), de [voz](../PRODUCT.md#brand-commitments) e de [dados pessoais](dados-pessoais.md#trilhas-e-piloto).
 - Quando o texto cita um artigo de lei, como "(art. 61)", essa lei entra nas fontes.
 
 ## O infográfico: `infografico.md`

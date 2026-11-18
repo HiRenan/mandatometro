@@ -10,7 +10,7 @@ No MVP, a coleta descarta `cpf` e `dataNascimento` de `/deputados/{id}`. O banco
 
 ## Ausências e afastamentos
 
-Motivo de ausência fica fora do banco, para a licença saúde não ser deduzida: toda ausência do Senado (AP, LS, MIS, NCom, LAP, LP e as que entrarem em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, igual às outras, e o motivo de afastamento do senador não é gravado. O voto só guarda os códigos de voto e de presença de `CODIGOS_GRAVADOS` em `valor_bruto`, o que o CHECK do banco garante, e um código novo entra como `outro`, sem o código. O log também não leva o código nem a pessoa, porque o log junto com o banco apontaria quem recebeu um código que pode ser de saúde: a coleta (#10 e #11) registra a votação e quantos códigos desconhecidos vieram nela, e quem for classificar o código o lê na fonte pública.
+Motivo de ausência fica fora do banco, para a licença saúde não ser deduzida: toda ausência do Senado (AP, LS, MIS, NCom, LAP, LP e as que entrarem em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, igual às outras, e o motivo de afastamento do senador não é gravado. O voto só guarda os códigos de voto e de presença de `CODIGOS_GRAVADOS` em `valor_bruto`, o que o CHECK do banco garante, e um código novo entra como `outro`, sem o código. O banco guarda `P-NRV`, de quem estava presente. O log também não leva o código nem a pessoa, porque o log junto com o banco apontaria quem recebeu um código que pode ser de saúde: a coleta (#10 e #11) registra a votação e quantos códigos desconhecidos vieram nela, e quem for classificar o código o lê na fonte pública.
 
 ## Inscrição e conta
 
@@ -20,4 +20,4 @@ A conta é opcional e pede nome completo, e-mail e senha. Os dados da conta, inc
 
 ## Trilhas e piloto
 
-As trilhas não pedem dados pessoais. As respostas do quiz não identificam quem respondeu. O piloto segue o [contrato de medição](medicao-do-piloto.md#conteúdo-e-dados).
+Nenhum dado pessoal entra no texto publicado das trilhas. As trilhas não pedem dados pessoais. As respostas do quiz não identificam quem respondeu. O piloto segue o [contrato de medição](medicao-do-piloto.md#conteúdo-e-dados).

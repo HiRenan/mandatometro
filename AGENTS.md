@@ -12,11 +12,11 @@ This file describes how coding agents (Claude Code, Codex, and Devin) work on Ma
 **Start simple.** Build the smallest solution that satisfies the request.
 
 - Cover the cases the project needs. Add an abstraction or a configuration option when there’s a concrete use for it.
-- Prefer the simple solution that makes it to the Hack Brasil demo. The deadline is November 30, 2026.
+- Prefer the simple solution that makes it to the Hack Brasil demo.
 
 **Make surgical changes.** Tie each changed line to the request.
 
-- Follow the style of the area you touch. Remove the imports, variables, and functions your change leaves unused.
+- Match local style and remove any imports, variables, and functions your change leaves unused.
 - Report relevant issues you find outside the scope and leave their fixes for the corresponding tasks.
 
 **Set a verifiable goal.** Define what needs to work and how to check it.
@@ -37,7 +37,7 @@ Mandatômetro teaches how Brazilian politics works through what Congress is voti
 - Keep server-only code in `*.server.ts`. Loaders reach it through `createServerFn` in `*.functions.ts`. Importing a server-only file in browser code fails the build.
 - A server function that calls the API logs one fixed line with a short reason and throws an error with a fixed message. The router puts the error’s `message` in the HTML and the function response. The original message can contain an internal address, SQL, or an email address, as seen in the review of PR #44. Follow the [editions server function](apps/web/src/lib/edicoes/edicoes.server.ts) and the [test for the 500 HTML](apps/web/src/routes/edicoes/-edicoes-ssr.test.tsx).
 - Declare site variables in varlock’s [`.env.schema`](apps/web/.env.schema). Variables marked `@public` go into the browser bundle.
-- The local Docker database listens on host port 5433 to avoid colliding with a PostgreSQL installation on port 5432.
+- Use the Compose host port for local PostgreSQL to avoid a conflict with an installation on port 5432.
 
 ## Conventions
 
@@ -72,7 +72,7 @@ Apply the [personal data rules](docs/dados-pessoais.md) before storing, exposing
 | Work on the site, including a screen, stylesheet, image, or test | [DESIGN.md](DESIGN.md) and [docs/codigo-do-site.md](docs/codigo-do-site.md) |
 | Write or check an article for a learning track | [docs/conteudo-das-trilhas.md](docs/conteudo-das-trilhas.md) |
 | Work on data collection, including calls to the Câmara, Senado, or TSE APIs | [docs/dicionario-de-dados.md](docs/dicionario-de-dados.md) |
-| Work on the newsletter | [docs/newsletter.md](docs/newsletter.md) |
+| Draft the newsletter, handle subscriptions, or send an edition | [docs/newsletter.md](docs/newsletter.md) |
 | Work on the pilot | [docs/medicao-do-piloto.md](docs/medicao-do-piloto.md) |
 | Work on hosting workflows, deployments, or variables | [docs/hospedagem.md](docs/hospedagem.md) |
 | Decide what belongs in the product | [PRODUCT.md](PRODUCT.md) and [docs/adr/](docs/adr/) |
