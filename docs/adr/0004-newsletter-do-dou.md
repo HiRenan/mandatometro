@@ -30,7 +30,7 @@ User-agent: *
 Disallow: /
 ```
 
-É um `Disallow: /` para todos os agentes, no site inteiro. O [`AGENTS.md`](../../AGENTS.md) manda que a coleta respeite o robots.txt dos sites e siga a RFC 9309, e isso vale igual para uma leitura feita pelo Firecrawl: a requisição que chega ao servidor do órgão é a mesma. Ler aquela página contrariaria a regra do próprio projeto.
+É um `Disallow: /` para todos os agentes, no site inteiro. O [dicionário de dados](../dicionario-de-dados.md#regras-que-valem-para-as-duas-apis) manda que a coleta respeite o robots.txt dos sites e siga a RFC 9309, e isso vale igual para uma leitura feita pelo Firecrawl: a requisição que chega ao servidor do órgão é a mesma. Ler aquela página contrariaria a regra do próprio projeto.
 
 O INLABS não tem `robots.txt` — responde 404, que a RFC 9309 e a base da coleta tratam como ausência de regras. É o caminho que a Imprensa Nacional publica para quem quer o DOU em lote.
 
@@ -38,13 +38,13 @@ Em 18/11/2026 o INLABS respondeu HTTP 200 com a página "Manutenção Programada
 
 ## Consequências
 
-- **A seleção deixa de ser só determinística.** Até aqui, `ia/selecao.py` escolhe e ordena por regra, e o `AGENTS.md` diz que "a redação nunca escolhe votos ou matérias" — o LLM só redige o que o código selecionou. Para o DOU, o modelo passa a ordenar por relevância e sugerir o que entra. **O contrapeso é a confirmação humana:** nada publica sem alguém aprovar item a item, e recusa, corte ou formato inválido deixam a seleção pendente. A seção das votações continua com a seleção determinística de hoje.
+- **A seleção deixa de ser só determinística.** Até aqui, [`ia/selecao.py`](../../apps/backend/src/mandatometro/ia/selecao.py) escolhe e ordena por regra, e sua docstring diz que "a redação nunca escolhe votos ou matérias" — o LLM só redige o que o código selecionou. Para o DOU, o modelo passa a ordenar por relevância e sugerir o que entra. **O contrapeso é a confirmação humana:** nada publica sem alguém aprovar item a item, e recusa, corte ou formato inválido deixam a seleção pendente. A seção das votações continua com a seleção determinística de hoje.
 - **O `fatos` precisa de uma versão nova.** Hoje `ia/esquemas.py` exige pelo menos uma proposição **e** uma votação por item, com `extra="forbid"`: um item de DOU é estruturalmente impossível. A #204 é a pedra angular — sem ela, nada do resto fecha. Item já gravado continua válido.
-- **O DOU traz dado pessoal de um jeito novo.** Nomeação, exoneração, aposentadoria e sanção vêm com nome, cargo e às vezes CPF. O filtro de `ia/privacidade.py` foi escrito para o vocabulário do Congresso (licença, afastamento, saúde) e não cobre isso (#206). Valem as regras de "Dados pessoais" do `AGENTS.md` e o item 6.9 do regulamento do hackathon, que proíbe a demo expor dado pessoal real de terceiro.
+- **O DOU traz dado pessoal de um jeito novo.** Nomeação, exoneração, aposentadoria e sanção vêm com nome, cargo e às vezes CPF. O filtro de `ia/privacidade.py` foi escrito para o vocabulário do Congresso (licença, afastamento, saúde) e não cobre isso (#206). Valem as regras de [dados pessoais](../dados-pessoais.md) e o item 6.9 do regulamento do hackathon, que proíbe a demo expor dado pessoal real de terceiro.
 - **O Firecrawl sai desta linha de trabalho.** Ele continua só na #9, para o inteiro teor das proposições. A decisão aqui é sobre a fonte do DOU, não sobre a ferramenta.
 - **O painel traz autenticação para a revisão.** A `Conta` não tem papel nenhum hoje, e a API só expõe edição publicada. O painel pede papel de administrador (#207), rotas autenticadas (#208) e uma tela atrás da guarda de sessão (#209). As regras de `ia/servico.py` continuam valendo: item com pendência não publica, venha o pedido do CLI ou da rota.
 - **A coleta ganha um caminho que não é JSON.** O `ClienteHttp` trava a base numa origem HTTPS, só faz GET e só decodifica JSON; o INLABS pede login com cookie e devolve XML em ZIP (#201). Timeout, backoff, `Retry-After` e robots continuam.
-- **O que o produto promete muda.** O `PRODUCT.md`, o `README.md` e o `AGENTS.md` diziam que a newsletter é o que o Congresso votou na semana. Passam a dizer que ela tem as duas seções, com a do DOU em construção (#113).
+- **O que o produto promete muda.** O `PRODUCT.md` e o `README.md` diziam que a newsletter é o que o Congresso votou na semana. Passam a dizer que ela tem as duas seções, com a do DOU em construção (#113).
 
 ## O que fica para depois
 

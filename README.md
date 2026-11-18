@@ -29,7 +29,7 @@ Só dados públicos, sempre com link para a origem:
 - Leis, regimentos e páginas oficiais da Câmara, do Senado e do TSE, para as trilhas
 - Depois do MVP: o [Portal de Dados Abertos do TSE](https://dadosabertos.tse.jus.br/) (candidaturas e bens declarados) e os sites de campanha
 
-As APIs oficiais e os arquivos de dados abertos (Câmara, Senado e TSE) são lidos direto, por HTTP.
+As APIs oficiais e os arquivos de dados abertos (Câmara, Senado, TSE e, pelo INLABS, o Diário Oficial da União) são lidos direto, por HTTP.
 
 ## Ferramentas parceiras
 
