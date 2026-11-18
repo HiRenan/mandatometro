@@ -17,6 +17,7 @@ import {
 } from "@/lib/formatar";
 import { AzulejoGrande, Painel } from "./azulejo";
 import { BOTAO_CONTINUAR } from "./botao-continuar";
+import { FaixaDeInformacoes } from "./faixa-de-informacoes";
 import { Palavras } from "./palavras";
 
 /**
@@ -35,11 +36,11 @@ export function PaginaDasEdicoes({ lista }: { lista: PaginaDaLista }) {
 		<>
 			<CartazDasEdicoes
 				faixa={
-					<p className="faixa rotulo">
+					<FaixaDeInformacoes>
 						{total > 0 && <span>{plural(total, "edição", "edições")}</span>}
 						<span>Todo domingo</span>
 						<span>Fonte oficial em cada item</span>
-					</p>
+					</FaixaDeInformacoes>
 				}
 			>
 				<p className="abertura">
