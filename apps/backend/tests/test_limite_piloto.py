@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 
 from mandatometro.db.modelos import LimiteInscricao, LimitePiloto
@@ -68,14 +68,18 @@ def test_retry_after_arredonda_para_cima(banco):
 
 
 def test_relogio_do_banco_e_cota_independente_da_newsletter(banco):
+    consulta = select(LimiteInscricao)
+    minuto_do_banco = select(func.date_trunc("minute", func.clock_timestamp()))
     with banco.connect() as conexao:
-        anterior = conexao.execute(select(LimiteInscricao)).all()
+        inscricoes_antes = set(conexao.execute(consulta))
+        inicio = conexao.scalar(minuto_do_banco)
     consumir_cota(banco, 120)
     with banco.connect() as conexao:
-        from sqlalchemy import func
-
-        assert conexao.scalar(select(LimitePiloto.janela == func.date_trunc("minute", func.now())))
-        assert conexao.execute(select(LimiteInscricao)).all() == anterior
+        fim = conexao.scalar(minuto_do_banco)
+        janela = conexao.scalars(select(LimitePiloto.janela)).one()
+        inscricoes_depois = set(conexao.execute(consulta))
+    assert inicio <= janela <= fim
+    assert inscricoes_depois == inscricoes_antes
 
 
 @pytest.mark.parametrize("segundo,quantidade", [(0, 0), (0, -1), (1, 1)])
