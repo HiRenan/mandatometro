@@ -8,6 +8,7 @@ import {
 	type Cadastro,
 	cadastrarConta,
 	confirmarConta,
+	entrarConta,
 	excluirConta,
 	recuperarConta,
 	redefinirSenha,
@@ -19,6 +20,7 @@ import { pedirInscricao } from "@/lib/newsletter";
 import { BOTAO_CONTINUAR } from "./botao-continuar";
 
 export const titulos = {
+	login: "Entrar na conta",
 	cadastro: "Criar conta",
 	confirmar: "Confirmar e-mail",
 	recuperar: "Recuperar senha",
@@ -27,7 +29,7 @@ export const titulos = {
 	excluir: "Excluir conta",
 };
 type Modo = keyof typeof titulos;
-const conclusoes: Record<Modo, string> = {
+const conclusoes: Record<Exclude<Modo, "login">, string> = {
 	cadastro: "Confira sua caixa de entrada para confirmar o cadastro.",
 	confirmar: "Seu e-mail foi confirmado.",
 	recuperar:
@@ -141,6 +143,15 @@ export function FormularioConta({ modo }: { modo: Modo }) {
 			const signal = AbortSignal.timeout(20000);
 			let resposta: Response | undefined;
 			switch (modo) {
+				case "login":
+					resposta = (
+						await entrarConta({
+							signal,
+							credentials: "include",
+							body: { email, senha },
+						})
+					).response;
+					break;
 				case "cadastro":
 					if (!termo) return;
 					resposta = (
@@ -194,6 +205,8 @@ export function FormularioConta({ modo }: { modo: Modo }) {
 			if (!resposta?.ok) {
 				if (resposta?.status === 429)
 					setMensagem("Muitas tentativas. Aguarde um minuto.");
+				else if (modo === "login" && resposta?.status === 401)
+					setMensagem("Confira o e-mail, a senha e a confirmação do cadastro.");
 				else if (modo === "excluir" && resposta?.status === 401)
 					setMensagem("Entre novamente e confira sua senha.");
 				else if (
@@ -209,6 +222,10 @@ export function FormularioConta({ modo }: { modo: Modo }) {
 					setMensagem(
 						"Não foi possível concluir. Confira os dados e tente novamente.",
 					);
+				return;
+			}
+			if (modo === "login") {
+				window.location.replace("/perfil");
 				return;
 			}
 			setConcluido(true);
@@ -255,13 +272,16 @@ export function FormularioConta({ modo }: { modo: Modo }) {
 							maxLength={160}
 						/>
 					)}
-					{(cadastro || modo === "reenvio" || modo === "recuperar") && (
+					{(cadastro ||
+						modo === "login" ||
+						modo === "reenvio" ||
+						modo === "recuperar") && (
 						<Campo
 							rotulo="E-mail"
 							name="email"
 							erro={erros.email}
 							type="email"
-							autoComplete="email"
+							autoComplete={modo === "login" ? "username" : "email"}
 							required
 						/>
 					)}
@@ -376,33 +396,35 @@ export function FormularioConta({ modo }: { modo: Modo }) {
 						</>
 					)}
 					{modo === "excluir" && (
-						<>
-							<p>
-								A exclusão é permanente. Sua conta e o progresso associado serão
-								apagados. Sua inscrição na newsletter é independente.
-							</p>
-							<Campo
-								rotulo="Senha atual"
-								erro={erros.senha}
-								type="password"
-								name="senha"
-								autoComplete="current-password"
-								required
-								maxLength={128}
-							/>
-						</>
+						<p>
+							A exclusão é permanente. Sua conta e o progresso associado serão
+							apagados. Sua inscrição na newsletter é independente.
+						</p>
+					)}
+					{(modo === "login" || modo === "excluir") && (
+						<Campo
+							rotulo={modo === "login" ? "Senha" : "Senha atual"}
+							erro={erros.senha}
+							type="password"
+							name="senha"
+							autoComplete="current-password"
+							required
+							maxLength={128}
+						/>
 					)}
 					<button
 						type="submit"
 						className={BOTAO_CONTINUAR}
 						disabled={!interativo || ocupado || (cadastro && !termo)}
 					>
-						{ocupado ? "Aguarde…" : titulos[modo]}
+						{ocupado ? "Aguarde…" : modo === "login" ? "Entrar" : titulos[modo]}
 					</button>
 				</form>
 			)}
 			<p role="status">{mensagem}</p>
-			{((cadastro && concluido) || (modo === "confirmar" && !concluido)) && (
+			{((cadastro && concluido) ||
+				modo === "login" ||
+				(modo === "confirmar" && !concluido)) && (
 				<a className="acao-de-texto" href="/cadastro/reenvio">
 					Solicitar outro e-mail de confirmação
 				</a>
@@ -412,7 +434,12 @@ export function FormularioConta({ modo }: { modo: Modo }) {
 					Solicitar outro link
 				</a>
 			)}
-			{cadastro && (
+			{modo === "login" && (
+				<a className="acao-de-texto" href="/cadastro">
+					Criar conta
+				</a>
+			)}
+			{(cadastro || modo === "login") && (
 				<a className="acao-de-texto" href="/cadastro/recuperar">
 					Esqueci minha senha
 				</a>

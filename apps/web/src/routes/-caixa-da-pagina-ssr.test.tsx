@@ -39,6 +39,7 @@ import { Route as ContaReenvio } from "@/routes/cadastro/reenvio";
 import { Route as RotaDaEdicao } from "@/routes/edicoes/$id";
 import { Route as RotaDasEdicoes } from "@/routes/edicoes/index";
 import { Route as RotaInicial } from "@/routes/index";
+import { Route as Login } from "@/routes/login";
 import { Route as RotaDeSair } from "@/routes/newsletter/sair";
 import { Route as Perfil } from "@/routes/perfil";
 import { Route as RotaDoPiloto } from "@/routes/piloto";
@@ -248,6 +249,7 @@ function criarRouter() {
 			),
 			ContaIndex.update(naRaiz("/cadastro/")),
 			Perfil.update(naRaiz("/perfil")),
+			Login.update(naRaiz("/login")),
 			ContaConfirmar.update(naRaiz("/cadastro/confirmar")),
 			ContaReenvio.update(naRaiz("/cadastro/reenvio")),
 			ContaExcluir.update(naRaiz("/cadastro/excluir")),
@@ -310,6 +312,7 @@ type Pagina = {
  * piloto, a saída da newsletter, a lista das edições e uma edição.
  */
 const QUE_ABREM = [
+	"/login",
 	"/perfil",
 	"/cadastro",
 	"/cadastro/confirmar",
