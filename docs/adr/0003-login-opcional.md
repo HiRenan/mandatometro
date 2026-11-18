@@ -24,11 +24,10 @@ Em 15/11/2026, o Renan confirmou o que o time tinha combinado: o login (#109), o
 - **O banco recebe mais do que as inscrições.** O [ADR 0001](0001-stack.md) diz que a API só lê o banco e recebe inscrições. Com a conta, o banco guarda também as contas e o progresso no perfil.
 - **Nada pede conta,** e o princípio "Simples de verdade" do [`PRODUCT.md`](../../PRODUCT.md) continua: sem barreira de entrada. O piloto (#40) não pede nome nem e-mail, e com o login opcional ele roda sem conta.
 
-## Em aberto
+## Decisões da #110
 
-Fica para o time decidir:
+Gênero, estado e nascimento são opcionais e servem para entender o público. O cadastro aceita todas as idades. A pessoa aceita a versão vigente do termo. Assinar a newsletter é uma escolha separada.
 
-- Para que servem os campos opcionais (gênero, estado e data de nascimento)? Sem uso definido, o mais simples é não pedir.
-- Como a pessoa apaga a conta e os dados dela?
-- O cadastro confirma o e-mail? Como a senha é recuperada?
-- Com a pessoa logada, as respostas do quiz continuam sem identificar quem respondeu? Hoje a regra é essa, e a medição do piloto (#92) conta com ela.
+O Resend envia os links de confirmação e recuperação. Abrir um link mostra a tela da operação. A pessoa confirma o e-mail ou define a nova senha no formulário. Redefinir a senha encerra as sessões.
+
+Para excluir a conta, a pessoa entra e confirma a senha atual. A exclusão remove as credenciais e o progresso associado e gera um comprovante por e-mail. A inscrição na newsletter é independente. O quiz continua anônimo.
