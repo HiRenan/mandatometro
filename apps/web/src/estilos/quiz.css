@@ -1046,6 +1046,10 @@
 			margin-left: -0.3em;
 			vertical-align: 0.2em;
 			background: currentColor;
+
+			@media (forced-colors: active) {
+				background: CanvasText;
+			}
 		}
 	}
 

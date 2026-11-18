@@ -19,26 +19,26 @@ function regra(seletor: string, onde = css): string {
 }
 
 /** Todos os blocos com essa cabeça, como os @media de uma largura, com as regras de dentro. */
-function blocos(cabeca: string): string[] {
+function blocos(cabeca: string, onde = css): string[] {
 	const achados: string[] = [];
 	for (
-		let comeco = css.indexOf(`${cabeca} {`);
+		let comeco = onde.indexOf(`${cabeca} {`);
 		comeco >= 0;
-		comeco = css.indexOf(`${cabeca} {`, comeco + 1)
+		comeco = onde.indexOf(`${cabeca} {`, comeco + 1)
 	) {
 		let fundo = 0;
 		let fim = -1;
-		for (let i = css.indexOf("{", comeco); i < css.length && fim < 0; i++) {
-			if (css[i] === "{") {
+		for (let i = onde.indexOf("{", comeco); i < onde.length && fim < 0; i++) {
+			if (onde[i] === "{") {
 				fundo++;
-			} else if (css[i] === "}" && --fundo === 0) {
+			} else if (onde[i] === "}" && --fundo === 0) {
 				fim = i + 1;
 			}
 		}
 		if (fim < 0) {
 			throw new Error(`o bloco ${cabeca} não fecha`);
 		}
-		achados.push(css.slice(comeco, fim));
+		achados.push(onde.slice(comeco, fim));
 	}
 	return achados;
 }
@@ -125,10 +125,11 @@ describe("o pé do palco", () => {
 // cada tela do quiz.
 describe("o separador entre o nome do quiz e a frase do andamento", () => {
 	const letraGrande = blocos("@media (width < 22rem)");
+	const quadradoDaFaixa = ".faixa > span:not(:last-child)::after";
 
 	/** As regras que desenham na linha do pé, com um ::before ou um ::after. */
 	function desenhosDoPe(trecho: string): string[] {
-		return [...semComentarios(trecho).matchAll(/([^{}]+)\{[^{}]*\}/g)]
+		return [...semComentarios(trecho).matchAll(/([^{}]+)\{/g)]
 			.map(([, seletor = ""]) => seletor.trim())
 			.filter(
 				(seletor) =>
@@ -181,9 +182,10 @@ describe("o separador entre o nome do quiz e a frase do andamento", () => {
 	// acessibilidade, como um genérico vazio antes da frase (medido pelo CDP). O
 	// texto alternativo vazio, depois da barra, o tira de lá.
 	it("é desenho: o quadradinho da faixa de informações, fora da árvore de acessibilidade e sem cor de fita", () => {
-		const faixa = regra(".faixa > span:not(:last-child)::after", indexCss);
+		const faixa = regra(quadradoDaFaixa, indexCss);
 		const corpo = separador();
 
+		expect(declaracao(faixa, "content")).toBe('"" / ""');
 		expect(declaracao(corpo, "content")).toBe('"" / ""');
 		for (const propriedade of [
 			"display",
@@ -198,6 +200,25 @@ describe("o separador entre o nome do quiz e a frase do andamento", () => {
 		}
 		expect(corpo).not.toMatch(/--fita|var\(--c\)/);
 	});
+
+	it.each([
+		["faixa", quadradoDaFaixa, indexCss],
+		[
+			"pé do quiz",
+			".quiz-nome + .quiz-andamento-texto > p:not(:empty)::before",
+			css,
+		],
+	])(
+		"o quadradinho da peça %s usa a cor do texto nas cores forçadas",
+		(_, seletor, folha) => {
+			const desenho = blocos(seletor, semComentarios(folha)).join("\n");
+			const cores = blocos("@media (forced-colors: active)", desenho);
+
+			expect(cores.map((regra) => declaracao(regra, "background"))).toContain(
+				"CanvasText",
+			);
+		},
+	);
 
 	// A linha do pé quebra como antes: o quadradinho não toma lugar nela. A
 	// margem da esquerda devolve o lado dele. O navegador guarda as medidas em
@@ -493,7 +514,7 @@ describe("a folha da resposta e o mosaico do canto, a partir de 62rem", () => {
 	// sim (a revisão do PR #151): com o mosaico grande 1rem mais baixo, a folha
 	// cobre a base do recolhido no quiz final; com a escala a partir do canto de
 	// baixo, ele cai para dentro da folha.
-	it("na resposta, o alto do mosaico recolhido fica a 1rem do alto da seção, em qualquer tela e com qualquer letra", () => {
+	it("na resposta, o mosaico fica preso à direita e a 1rem do alto da seção, em qualquer tela e com qualquer letra", () => {
 		const grande = regra(".mosaico", computador);
 		const [meioDaTela = 0, acimaDoMeio = 0] = numeros(
 			grande,
@@ -504,7 +525,10 @@ describe("a folha da resposta e o mosaico do canto, a partir de 62rem", () => {
 			regra('.quiz[data-fase="resposta"] .mosaico', computador),
 			/translateY\(calc\((-?[\d.]+)svh \+ ([\d.]+)rem \+ ([\d.]+)% \+ ([\d.]+)rem\)\)/,
 		);
-		const origem = /transform-origin: \S+ (\S+);/.exec(regra(".mosaico"))?.[1];
+		const [horizontal, origem] = (
+			declaracao(regra(".mosaico"), "transform-origin") ?? ""
+		).split(/\s+/);
+		expect(horizontal).toMatch(/^(100%|right)$/);
 
 		/** De onde a escala parte, em px do alto do mosaico. */
 		function pontoFixo(altura: number): number {
