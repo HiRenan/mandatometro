@@ -5,9 +5,10 @@
  * desmancharia o primeiro.
  *
  * O navegador conta os cliques no `detail`: 1 num clique ou num toque, 2 no
- * segundo clique de um clique duplo, e 0 no Enter e no espaço. O botão só age
- * até o 1: quem clica em "Desfazer" de propósito, depois de ler o botão, manda
- * um clique novo, com o `detail` 1.
+ * segundo clique de um clique duplo, e 0 no Enter e no espaço (num link, o
+ * Enter do Firefox vem com o 1). O botão só age até o 1: quem clica em
+ * "Desfazer" de propósito, depois de ler o botão, manda um clique novo, com o
+ * `detail` 1.
  */
 export function semCliqueDuplo(
 	fazer: () => void,
