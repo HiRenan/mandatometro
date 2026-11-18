@@ -63,6 +63,17 @@ function abrir(artigo = "onde-o-projeto-comeca") {
 }
 
 describe("página do artigo", () => {
+	it("reúne o tempo de leitura e as fontes em um parágrafo", async () => {
+		abrir();
+		const leitura = await screen.findByText(/^Leitura de \d+ min$/);
+		const paragrafo = leitura.closest("p:not(.faixa)");
+		expect(
+			paragrafo?.contains(
+				screen.getByText(/fontes? oficia(?:l|is), no fim do artigo$/),
+			),
+		).toBe(true);
+	});
+
 	it("reúne a posição e o total em um parágrafo no sobretítulo", async () => {
 		abrir();
 		const total = await screen.findByText("de 6 artigos");
