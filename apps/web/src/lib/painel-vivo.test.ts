@@ -311,6 +311,28 @@ describe("usePainelVivo", () => {
 		expect(animacoes[6]?.animate).toHaveBeenCalledTimes(1);
 	});
 
+	it("o sorteio segue de onde parou quando o painel volta a virar: as peças novas não repetem as de antes", () => {
+		const movimento = preferencia(false);
+		const { elemento, trocar } = montarPainel();
+		const passarPelasQuatro = () => {
+			const jaFeitas = trocar.mock.calls.length;
+			for (const indice of [0, 1, 2, 3]) {
+				passarPor(elemento.children[indice]);
+			}
+			return trocar.mock.calls.slice(jaFeitas).map(([, nova]) => nova);
+		};
+		const antes = passarPelasQuatro();
+
+		act(() => movimento.mudar(true));
+		act(() => movimento.mudar(false));
+		const depois = passarPelasQuatro();
+
+		expect(erros).toEqual([]);
+		expect(antes).toHaveLength(4);
+		expect(depois).toHaveLength(4);
+		expect(depois).not.toEqual(antes);
+	});
+
 	it("a onda da chegada é uma só, mesmo que a preferência ligue e desligue com o painel na tela", async () => {
 		const movimento = preferencia(false);
 		const { animacoes } = montarPainel({ ondaAoChegar: true, animado: true });
