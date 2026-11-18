@@ -252,6 +252,20 @@ Quando o teste falhar, há duas saídas:
 
 Essa medida fica só no teste: ela não derruba o build nem o deploy.
 
+## Acentos nos títulos curtos
+
+O título da trilha, o do infográfico e o de cada passo aparecem com as linhas bem juntas, como num cartaz. A cedilha, a vírgula, o ponto e vírgula, a perna do Q e os parênteses descem abaixo da linha, e o acento da maiúscula sobe acima dela: se a quebra puser uma letra que desce sobre um acento da linha de baixo, as duas se encostam. Por isso, nesses títulos, uma palavra com uma letra que desce não vem antes de outra com maiúscula acentuada ou com parênteses. "A Constituição" pode, porque a cedilha e o til estão na mesma palavra; "Ação é dever" não pode. O título do infográfico tem as linhas ainda mais juntas: nele, só a primeira palavra leva acento, e a cedilha, a vírgula e os parênteses só vão na última.
+
+Os títulos dos artigos e os intertítulos aceitam qualquer texto: as linhas deles são mais abertas.
+
+O `pnpm --filter web test` confere e falha com o arquivo e as duas palavras:
+
+```text
+conteudo/trilhas/direitos-e-deveres/trilha.md: em "Ação é dever", AÇÃO pode ficar sobre É
+```
+
+Quando o teste falhar, escreva o título de outro jeito, com a palavra acentuada antes ou com outra palavra no lugar. Se o título precisa ficar, quem cuida do site sobe a altura de linha do título no código e mede a tinta de novo, como na #158.
+
 ## Como conferir
 
 - **`pnpm --filter web test`** lê a pasta de conteúdo de verdade. Se algo estiver errado, o teste falha com a lista de problemas, cada um com o nome do arquivo:

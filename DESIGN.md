@@ -26,19 +26,19 @@ typography:
     fontFamily: "Archivo Variable, ui-sans-serif, system-ui, sans-serif"
     fontSize: "8rem"
     fontWeight: 900
-    lineHeight: 0.86
+    lineHeight: 0.95
     fontVariation: "'wdth' 62"
   title:
     fontFamily: "Archivo Variable, ui-sans-serif, system-ui, sans-serif"
     fontSize: "3.5rem"
     fontWeight: 900
-    lineHeight: 0.92
+    lineHeight: 1.15
     fontVariation: "'wdth' 62"
   subtitle:
     fontFamily: "Archivo Variable, ui-sans-serif, system-ui, sans-serif"
     fontSize: "2.5rem"
     fontWeight: 900
-    lineHeight: 0.95
+    lineHeight: 1.15
     fontVariation: "'wdth' 68"
   wordmark:
     fontFamily: "Archivo Variable, ui-sans-serif, system-ui, sans-serif"
@@ -283,10 +283,10 @@ A Courier Prime entrou na #89 só para a frase do cartaz e o lema: `@fontsource/
 
 ### Hierarchy
 - **Numeral** (900, largura 62%, altura de linha 0.78): o número da folha, na cor da fita da posição, com contorno de tinta, pintado antes do miolo: `max(3px, 0.05em)` nos grandes e 2 px nos pequenos (o da aba do passo a passo, o de "Nesta trilha" e "Nesta edição", o das faixas do anterior e do próximo e o das miniaturas). O do artigo lido tem o miolo em Papel 2 e o contorno em tinta suave. Na folha da trilha, de 5.5rem a 11.5rem; no passo da página inicial, 7rem no celular e até 17rem; no alto do artigo, de 5rem a 9rem; no 404, de 7rem a 17rem; o dia de cada edição, na lista das edições, de 4.5rem a 9rem, em algarismos da mesma largura; o número de cada item da edição, de 3.5rem a 5.5rem; em "Nesta trilha", "Nesta edição" e nas faixas do anterior e do próximo, 2.75rem; nas miniaturas, 1.75rem. Os números do placar da votação usam a mesma letra, de 2.5rem a 3.25rem, em tinta, sem fita e sem contorno.
-- **Headline** (`titulo-condensado`: 900, largura 62%, altura 0.86, maiúsculas): o título da página. Na página inicial, de 3.25rem a 8rem; nas páginas de dentro (a trilha, Trilhas, Edições, o 404, a de erro e a de sair da newsletter), de 3.5rem a 11rem; no artigo e na edição, de 2.75rem a 6rem, com no máximo 10 em de largura. Também "A primeira edição ainda não saiu", na lista das edições sem edição (2.25rem a 4.5rem), "O caminho de um projeto de lei" na página inicial (2.75rem a 6.5rem), o título de cada passo dela (2.25rem a 3.75rem), "Quiz da trilha" e "Quiz final" nas chamadas (2.5rem a 5.5rem) e "O jornal legislativo" na folha da newsletter (2.5rem a 5.5rem). No quiz, o título da abertura (4rem a 12.5rem): "Quiz da trilha", "Quiz final" e, na página do piloto, "Antes da trilha"; o título do fim (3.25rem a 7.5rem), também o "Você terminou a primeira etapa." do piloto; e o resultado da resposta (2.25rem a 3.5rem).
+- **Headline** (`titulo-condensado`: 900, largura 62%, altura 0.95, maiúsculas): o título da página. Na página inicial, de 3.25rem a 8rem; nas páginas de dentro (a trilha, Trilhas, Edições, o 404, a de erro e a de sair da newsletter), de 3.5rem a 11rem; no artigo e na edição, de 2.75rem a 6rem, com no máximo 10 em de largura e a altura 1.15 da leitura. Também "A primeira edição ainda não saiu", na lista das edições sem edição (2.25rem a 4.5rem), "O caminho de um projeto de lei" na página inicial (2.75rem a 6.5rem, altura 0.88), o título de cada passo dela (2.25rem a 3.75rem), "Quiz da trilha" e "Quiz final" nas chamadas (2.5rem a 5.5rem) e "O jornal legislativo" na folha da newsletter (2.5rem a 5.5rem). No quiz, o título da abertura (4rem a 12.5rem, altura 0.86): "Quiz da trilha", "Quiz final" e, na página do piloto, "Antes da trilha"; o título do fim (3.25rem a 7.5rem), também o "Você terminou a primeira etapa." do piloto; e o resultado da resposta (2.25rem a 3.5rem, altura 0.88).
 - **Enunciado** (Archivo 800, largura 72%, altura 1.02, em minúsculas): a pergunta do quiz, de 1.75rem a 2.75rem, e 1.375rem abaixo de 22rem. É o único título em minúsculas: lê-se como frase.
-- **Title** (`titulo-de-folha`: 900, largura 62%, altura 0.92, maiúsculas): o título de cada folha de uma lista. O do artigo na trilha e o da edição na lista das edições, de 1.875rem a 3.5rem; o da trilha em Trilhas, de 2.25rem a 4.5rem; o do anterior e do próximo, de 1.5rem a 2.5rem.
-- **Subtitle** (`subtitulo-condensado`: 900, largura 68%, altura 0.95, maiúsculas): os intertítulos do texto (1.75rem a 2.5rem), "Fontes oficiais" (1.5rem), o título do caminho na trilha (1.875rem a 2.75rem) e o título de cada item da edição (1.875rem a 3rem, com no máximo 14 em de largura).
+- **Title** (`titulo-de-folha`: 900, largura 62%, altura 1.15, maiúsculas): o título de cada folha de uma lista. O do artigo na trilha e o da edição na lista das edições, de 1.875rem a 3.5rem; o da trilha em Trilhas, de 2.25rem a 4.5rem; o do anterior e do próximo, de 1.5rem a 2.5rem.
+- **Subtitle** (`subtitulo-condensado`: 900, largura 68%, altura 1.15, maiúsculas): os intertítulos do texto (1.75rem a 2.5rem), "Fontes oficiais" (1.5rem, altura 1), o título do caminho na trilha (1.875rem a 2.75rem, altura 0.9) e o título de cada item da edição (1.875rem a 3rem, com no máximo 14 em de largura).
 - **Wordmark** (900, largura 68%, maiúsculas, 0.01em entre as letras): o nome Mandatômetro. No cabeçalho, 1.625rem (1.3125rem abaixo de 480 px); no rodapé, de 2.25rem a 4.5rem. É texto, não logo.
 - **Máquina** (Courier Prime 400, em minúsculas): a segunda linha do título da página inicial ("um passo de cada vez.", a 0.4 em do título, com a tira riscada embaixo) e o lema, a 0.9375rem, no cabeçalho e no rodapé. Só isso.
 - **Lead** (Literata 500, altura 1.45): o resumo do artigo, de 1.25rem a 1.4375rem. A abertura dos cartazes é Literata 400, de 1.0625rem a 1.25rem, com altura 1.5 e até 34rem de largura.
@@ -336,6 +336,8 @@ Com a letra do navegador grande, no celular, o título cresce com a letra até a
 
 ### Named Rules
 **A Regra das Três Letras.** O grotesco estreito para número, título e etiqueta; a serifa para o que se lê de verdade; a letra de máquina só para a frase do cartaz e o lema. Nenhuma quarta família, e a letra de máquina não vira estilo de texto.
+
+**A Regra das Duas Alturas.** O título tem a altura de linha do papel dele: 0.95 no cartaz, que é curto, e 1.15 na leitura, que aceita qualquer texto (a pergunta do artigo, a folha, o intertítulo e o que vem da API), porque o acento da maiúscula sobe a 0.885 em e a cedilha desce a 0.21 em: com menos, o acento encosta na linha de cima e, na leitura, a cedilha cai sobre o acento da linha de baixo (a #158; o `estilos/entrelinha.test.ts` confere cada título com a tinta da letra).
 
 **A Regra das Maiúsculas com Medida.** Os títulos grandes vão em maiúsculas sempre, com o teto; a exceção é o enunciado do quiz, que é uma frase. As etiquetas pequenas vão em maiúsculas espaçadas, mas voltam às minúsculas, sem o espaço entre as letras, quando a tela tem menos de 22rem (as variáveis `--caixa-alta` e `--espacado`): em maiúsculas, uma palavra comprida não cabe na linha. O título do passo da sanfona é uma delas e tem o teto, medido dos dois jeitos.
 
