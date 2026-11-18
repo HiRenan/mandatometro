@@ -134,7 +134,7 @@ const FAZ_CONTEINER =
 
 /**
  * Os seletores das regras do CSS que fazem um contêiner (o caixa-do-teto). O
- * @apply não é lido: o contêiner não vem por ele (o AGENTS.md).
+ * @apply não é lido: o contêiner não vem por ele (docs/codigo-do-site.md).
  */
 const CONTEINERES_DO_CSS = regras
 	.filter(({ corpo }) => FAZ_CONTEINER.test(corpo))

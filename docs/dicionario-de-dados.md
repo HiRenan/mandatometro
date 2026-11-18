@@ -9,24 +9,30 @@ Bases, as duas sem chave de acesso:
 - **Câmara:** `https://dadosabertos.camara.leg.br/api/v2`
 - **Senado:** `https://legis.senado.leg.br/dadosabertos`
 
-O TSE entra depois do MVP, nas issues #12 e #13.
+Os endpoints de depois do MVP seguem nas notas da #10 e da #11. O TSE entra depois do MVP, nas issues #12 e #13.
 
 ## Como ler este documento
 
 Cada endpoint tem a URL que usamos, uma tabela de campos e um exemplo real recortado. Na coluna **Usamos**:
 
 - **sim** — o conector usa o campo. O que fica no banco está em [Da API para os nomes do domínio](#da-api-para-os-nomes-do-domínio);
-- **chave** — id público da Câmara ou do Senado, que serve para casar os registros. Não é dado pessoal: pode ir a um log, como em "coletando a votação 2637478-26". A exceção é o aviso de código de voto desconhecido, que leva a votação, e não a pessoa nem o código (`AGENTS.md`, "Dados pessoais");
-- **só ligação, não exibir** — dado pessoal que serve só para ligar registros entre bases. No MVP, o conector não grava: a ligação por CPF só entra com o TSE, depois do MVP (#12 e #13). Quando entrar, fica no banco e nunca aparece na API, no site, nos logs nem nas respostas gravadas (ver [Campos pessoais](#campos-pessoais));
+- **chave** — id público da Câmara ou do Senado, que serve para casar os registros. Processos e votações podem aparecer pelo id público no log, como em "coletando a votação 2637478-26". Para ids de pessoas e avisos de voto desconhecido, veja [dados pessoais](dados-pessoais.md);
+- **só ligação, não exibir** — dado pessoal que segue as regras de [ligação entre bases](dados-pessoais.md#parlamentares-e-candidatos);
 - **não** — existe na resposta e não vamos usar agora.
 
 ## Regras que valem para as duas APIs
 
-- **Timeout e nova tentativa com backoff.** A API da Câmara devolve 504 de vez em quando.
-- **User-Agent identificando o projeto:** `mandatometro (Hack Brasil 2026)`. A coleta respeita o `robots.txt`.
-- **As respostas são UTF-8, e nenhuma das duas APIs declara o charset:** as duas mandam `content-type: application/json`, sem `charset`. Decodifique explicitamente como UTF-8: um cliente que confie no padrão do sistema embaralha os acentos no Windows.
-- **A coleta roda em lote, fora do caminho das requisições de usuário** (ver `AGENTS.md`).
-- **Toda informação guardada leva a fonte:** a URL e a data da coleta.
+- Toda chamada externa tem timeout e nova tentativa com backoff. A API da Câmara devolve 504 de vez em quando.
+- O User-Agent identifica o projeto (`mandatometro (Hack Brasil 2026)`), e a coleta respeita o robots.txt dos sites.
+- **Robots da coleta:** em 16/11/2026, `dadosabertos.camara.leg.br/robots.txt` respondeu HTTP 200 com HTML de página inexistente, sem regras, e `legis.senado.leg.br/robots.txt` respondeu 403. A base lê o arquivo uma vez por execução, usa `RobotFileParser.parse()` e segue a RFC 9309: aplica as regras legíveis; sem regras ou com 4xx no arquivo (exceto 408/429, transitórios), continua; falha de rede/5xx persistente interrompe. Um 403 no endpoint de dados continua sendo erro. `Crawl-delay`, `Request-rate` e `Retry-After` são respeitados.
+- As respostas da Câmara e do Senado são UTF-8, e nenhuma das duas declara o charset no `content-type` (as duas mandam `application/json`): decodifique explicitamente como UTF-8, ou os acentos embaralham no Windows.
+- As chamadas de cada coleta rodam em sequência.
+- As regras de fonte estão no [PRODUCT.md](../PRODUCT.md#capabilities-and-constraints).
+
+### Pegadinhas e saída da coleta
+
+- **Completude da paginação da Câmara:** as páginas precisam ser consecutivas desde a primeira, e o maior `last` anunciado continua valendo se uma página seguinte o omitir. Um salto ou fim antecipado torna a execução parcial (saída 1); a coleção incompleta não chega à gravação nem à reconciliação de exercício ou votos, preservando os dados anteriores da unidade.
+- **Saída das coletas:** histórico de mandatos indisponível (404/410) entra no resumo como `mandatos:parlamentar_id=<id interno>`, uma vez e só após confirmar a gravação; o caminho com o código público fica apenas no cache privado da execução. Processos do Senado e votações da Câmara podem manter seus ids públicos, pois não identificam pessoas. No Actions, `scripts/tarefas.py` suprime os logs durante a coleta e imprime só o resumo, com mensagens fixas para erros de configuração ou inesperados.
 
 ## As duas APIs lado a lado
 
@@ -107,7 +113,7 @@ Três avisos sobre essas chaves:
 
 **Pegadinha:** `proposicaoObjeto` vem `null` na maioria das votações. Nas urgências e nos recursos, ele traz o requerimento ou o recurso votado, e não a matéria. A matéria só aparece no detalhe, em `proposicoesAfetadas`.
 
-**Id listado com detalhe indisponível:** em 16/11/2026, a consulta de 09–15/11 retornou 187 ids, dos quais 29 responderam 404 tanto em `/votacoes/{id}` quanto em `/votacoes/{id}/votos`. Todos estavam datados de 10/11; por exemplo, `2155928-29` e `2420059-20`. O conector separa 404/410 nesses dois recursos em `indisponiveis_na_fonte` e continua, sem tratar o caso como queda da API e sem gravar uma votação só com a listagem. Outras falhas tornam a execução parcial; três consecutivas interrompem.
+**Id listado com detalhe indisponível:** em 16/11/2026, a consulta de 09–15/11 retornou 187 ids, dos quais 29 responderam 404 tanto em `/votacoes/{id}` quanto em `/votacoes/{id}/votos`. Todos estavam datados de 10/11, inclusive três ids consecutivos. Dois exemplos são `2155928-29` e `2420059-20`. O conector separa 404/410 nesses dois recursos em `indisponiveis_na_fonte` e continua, sem tratar o caso como queda da API e sem gravar uma votação só com a listagem. Outras falhas tornam a execução parcial (saída 1). Três consecutivas interrompem. Sem `idEvento`, a fonte da votação fica sem `url_publica`. A newsletter pode usar a ficha pública da proposição afetada, quando existir.
 
 ### `/votacoes/{id}` — a proposição que foi votada
 
@@ -177,7 +183,7 @@ Três coisas para o conector:
 
 - **Há registros nas votações nominais e em algumas simbólicas**, conforme a [documentação oficial](https://dadosabertos.camara.leg.br/api/v2/api-docs). Consulte o `/votos` de todas as votações, sem deduzir a modalidade pelo tamanho da lista. **HTTP 200 com `"dados": []`** é uma resposta válida, sem votos publicados; 404/410 é indisponibilidade, como descrito acima.
 - **Só aparece quem votou.** O exemplo tem 429 votos, de 513 deputados. Ausência não vem como registro.
-- **`tipoVoto` tem um terceiro valor:** `Artigo 17`, uma vez no exemplo, que é o voto do presidente da sessão pelo art. 17 do Regimento Interno. Não trate o campo como booleano.
+- **`tipoVoto` tem um terceiro valor:** `Artigo 17`, uma vez no exemplo, que é o voto do presidente da sessão pelo art. 17 do Regimento Interno. Nas três votações nominais de 14/10/2026, consultadas em 16/11, havia um registro `Artigo 17` além do `Total` citado na descrição de cada votação. O banco guarda esse registro como `presidente`. Conte os valores normalizados separadamente para não somar presidência ao placar de Sim/Não. Não trate o campo como booleano.
 
 ### `/votacoes/{id}/orientacoes` — como cada bancada orientou
 
@@ -349,12 +355,12 @@ Quatro coisas para o conector:
 
 - **Os totais só vêm na votação secreta.** Na aberta (`votacaoSecreta` `"N"`), `totalVotosSim`, `totalVotosNao` e `totalVotosAbstencao` vêm `null`, mesmo com os 81 votos presentes: **conte a lista `votos`**. Na secreta (`votacaoSecreta` `"S"`), a lista traz `Votou`, sem Sim nem Não, para cada senador que votou, e o placar só vem nos totais. Das 70 votações de 2026 até 15/11, 40 foram secretas: nas 40, os totais vieram preenchidos, e a soma dos três deu o número de `Votou`. Nas 30 abertas, como nas quatro do exemplo, vieram `null`. Nas do exemplo, os números aparecem em prosa dentro de `informeLegislativo.texto`, que não é campo estruturado.
 - **`votos` traz os 81 senadores nas respostas conferidas,** inclusive quem não votou. É o estado de cada um, não a lista de quem votou — o oposto da Câmara. O conector não exige exatamente 81 registros para aceitar uma resposta válida.
-- **`siglaVotoParlamentar` vai muito além de Sim e Não.** Valores observados nas quatro votações: `Sim`, `Não`, `Abstenção`, `P-NRV`, `AP` e `Presidente (art. 51 RISF)`; em outubro de 2026, apareceu também o `LS`. A consulta de 2026 até 15/11 trouxe também `MIS`, `NCom`, `LAP`, `LP` e `NA`. É o que apareceu, e não a lista completa: o conector aceita um código novo sem quebrar. Contar só `Sim` e `Não` não fecha 81. O significado vem em `descricaoVotoParlamentar`. O banco guarda `P-NRV`, de quem estava presente, e nenhum código de ausência: `AP`, `LS`, `MIS`, `NCom`, `LAP` e `LP` estão em `CODIGOS_DE_AUSENCIA` (em `apps/backend/src/mandatometro/db/modelos.py`) e entram como `nao_votou`, sem o código, ignorando diferenças de caixa e espaços. Um código ainda não classificado, como `NA`, entra como `outro`, também sem o código. Nos dois casos, o motivo fica fora do banco e do log (`AGENTS.md`, "Dados pessoais").
+- **`siglaVotoParlamentar` vai muito além de Sim e Não.** Valores observados nas quatro votações: `Sim`, `Não`, `Abstenção`, `P-NRV`, `AP` e `Presidente (art. 51 RISF)`; em outubro de 2026, apareceu também o `LS`. A consulta de 2026 até 15/11 trouxe também `MIS`, `NCom`, `LAP`, `LP` e `NA`. É o que apareceu, e não a lista completa: o conector aceita um código novo sem quebrar. Contar só `Sim` e `Não` não fecha 81. O significado vem em `descricaoVotoParlamentar`. O normalizador ignora diferenças de caixa e espaços. `P-NRV` indica presença e `NA` é um exemplo de código ainda não classificado. As regras para guardar o código e para o log estão em [Ausências e afastamentos](dados-pessoais.md#ausências-e-afastamentos).
 - **`identificacao` identifica a matéria, não a votação.** As quatro votações da semana do exemplo eram todas da PEC 18/2025. Para distinguir uma votação da outra, use o `codigoSessaoVotacao`, que é único.
 
 **Na votação secreta, o conector descarta toda a lista `votos`, inclusive `Votou`, presenças e ausências.** Grava matéria, votação, resultado e fontes, sem linhas de `voto` nem contagem de códigos desconhecidos. A fixture da votação 7081 contém 81 registros, dos quais 77 são `Votou`, e comprova esse comportamento. O modelo não tem colunas de total nem de modalidade: uma lista vazia no banco não prova segredo nem significa que houve zero votos. A #22 precisa considerar essa limitação ao escrever a newsletter.
 
-**Sanitização das respostas gravadas:** os quatro pares de código e descrição de ausência das nominais de 03–07/11/2026 e os dois da secreta 7081 foram substituídos pelo mesmo `XXX` / `Motivo fictício`. Os códigos de ausência descritos acima são observações da fonte; não permanecem nessas fixtures. O normalizador os testa com dados inventados, enquanto `XXX` continua desconhecido (`outro`, sem bruto).
+**Sanitização das respostas gravadas:** os códigos de ausência descritos acima são observações da fonte. Veja a [sanitização dos exemplos](../apps/backend/tests/fixtures/README.md#dados-pessoais).
 
 ### `/senador/lista/atual.json` e `/senador/{cod}/mandatos.json`
 
@@ -489,7 +495,7 @@ O `apelido` (`"PEC da Segurança Pública"`) é o campo mais útil para a newsle
 
 ## Da API para os nomes do domínio
 
-O `AGENTS.md` fixa os nomes do domínio em português e sem acento. Este é o mapa que o modelo da #7 segue, em `apps/backend/src/mandatometro/db/modelos.py`, conferido com ele em 16/11/2026. A chave de parlamentar, proposição e votação é a `casa` (`camara` ou `senado`) com o `id_externo`, e cada registro aponta para uma `fonte`: a `url` que a coleta leu, a `url_publica` que o leitor abre, quando houver, e a data da coleta (`coletado_em`).
+Este é o mapa que o modelo da #7 segue, em `apps/backend/src/mandatometro/db/modelos.py`, conferido com ele em 16/11/2026. A chave de parlamentar, proposição e votação é a `casa` (`camara` ou `senado`) com o `id_externo`, e cada registro aponta para uma `fonte`: a `url` que a coleta leu, a `url_publica` que o leitor abre, quando houver, e a data da coleta (`coletado_em`). [Convenções de nomes do domínio](../AGENTS.md#conventions).
 
 | Nosso nome | Câmara | Senado |
 |---|---|---|
@@ -520,16 +526,14 @@ O partido fica no voto, e não no mandato: é o do dia do voto, porque muda dent
 O `resultado` e o `voto.valor` têm domínios diferentes nas duas Casas, e o modelo traduz os dois para um conjunto nosso, com o `normalizar_resultado` e o `normalizar_voto` (decisões do Renan na #7, em 12/11/2026, com os ajustes da #97):
 
 - **`votacao.resultado`:** `aprovada`, `rejeitada` ou `outro`. O `1` e o `"A"` viram `aprovada`, o `0` e o `"R"` viram `rejeitada`, e um código ainda não classificado vira `outro`. O `resultado_bruto` guarda o código como a Casa publicou.
-- **`voto.valor`:** `sim`, `nao`, `abstencao`, `obstrucao`, `presidente`, `nao_votou` ou `outro`. O `Artigo 17` e o `Presidente (art. 51 RISF)` viram `presidente`, e o `P-NRV` vira `nao_votou`. O `valor_bruto` guarda só os códigos de `CODIGOS_GRAVADOS`: a ausência do Senado com código de `CODIGOS_DE_AUSENCIA` vira `nao_votou` sem o código, e um código desconhecido vira `outro`, também sem o código.
+- **`voto.valor`:** `sim`, `nao`, `abstencao`, `obstrucao`, `presidente`, `nao_votou` ou `outro`. O `Artigo 17` e o `Presidente (art. 51 RISF)` viram `presidente`, e o `P-NRV` vira `nao_votou`. O armazenamento do `valor_bruto` segue as regras de [ausências e afastamentos](dados-pessoais.md#ausências-e-afastamentos).
 
 ## Campos pessoais
 
-O `AGENTS.md` é explícito, e o regulamento do hackathon (item 6.9) proíbe a demo de expor dados pessoais reais de terceiros.
+As regras de uso, exposição e descarte estão em [dados pessoais](dados-pessoais.md).
 
-- **`cpf` e `dataNascimento`, de `/deputados/{id}`, ficam fora do banco no MVP:** o banco não tem coluna para eles, e o conector da Câmara descarta os dois. A ligação por CPF só entra com o TSE, depois do MVP (#12 e #13). Aí vale a regra do `AGENTS.md`: os dois servem só para ligar registros entre bases, ficam no banco e **não** aparecem na API, no site, nos logs nem nas fixtures.
+- **Câmara:** `/deputados/{id}` devolve `cpf` e `dataNascimento`. A [fixture da Câmara](../apps/backend/tests/fixtures/README.md#dados-pessoais) tem valores fictícios.
 - O Senado **não** devolve CPF nos endpoints que usamos. O `/senador/{cod}`, que não usamos, traz `DadosBasicosParlamentar.DataNascimento`, `Naturalidade`, `UfNaturalidade` e `EnderecoParlamentar`: quem gravar essa resposta troca a data de nascimento, como no `/deputados/{id}`.
-- Na API e no front, pessoas são identificadas **pelo id interno**.
-- Nas fixtures, os dois campos estão trocados por `00000000000` e `1970-01-01`.
 
 Nome, partido, UF e voto de parlamentar **não** são dados pessoais protegidos neste sentido: são atos públicos de agente público, e é justamente o que a newsletter mostra.
 
@@ -537,4 +541,6 @@ Nome, partido, UF e voto de parlamentar **não** são dados pessoais protegidos 
 
 - **Separar a votação de mérito das de rito.** Das 27 votações do plenário da Câmara na semana do exemplo, a maioria é procedimental ("Aprovada a Emenda de Redação", "Aprovada a Redação Final"), e as 4 do Senado eram todas da mesma PEC. A newsletter precisa de um critério para escolher o que contar. Fica para a #22, que monta a edição.
 - **As orientações de bancada,** depois do MVP (decisão do Renan na #7): o banco do MVP não tem tabela para elas.
-- **O TSE,** depois do MVP (#12 e #13). Os CSVs vêm em latin-1, separados por `;`, um por UF dentro de cada ZIP; `SQ_CANDIDATO` liga os arquivos dentro de uma eleição e o CPF liga eleições diferentes.
+- **O TSE,** depois do MVP (#12 e #13). `SQ_CANDIDATO` liga os arquivos dentro de uma eleição.
+- Os CSVs do TSE vêm em latin-1, separados por `;`, um por UF dentro de cada ZIP.
+- A mesma pessoa se liga entre eleições do TSE pelo CPF. Em 2024 o CPF vem vazio e em 2012 falta em parte das linhas: nesses anos, use o título de eleitor e confira a data de nascimento.
