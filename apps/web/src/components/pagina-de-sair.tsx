@@ -125,13 +125,12 @@ export function PaginaDeSair({
 	}, [estado]);
 
 	/**
-	 * O link que nasce no lugar do botão também não segue o Enter no primeiro
-	 * meio segundo depois da troca: o segundo Enter de quem apertou duas vezes no
-	 * botão caía no link novo, que já tem o foco. No Chromium, o Enter clica no
-	 * link com o detail 0, e quem segura é o clique; no Firefox, o clique do
-	 * Enter vem com o detail 1, como o do mouse, e quem segura é o keydown
-	 * (semEnterApressado). O tempo conta da troca, e não do foco: quem sai do
-	 * link e volta depois segue com o Enter. A guarda só impede seguir o link.
+	 * No primeiro meio segundo depois da troca, semPressa bloqueia o clique com
+	 * detail 0 que chega ao link novo sem keydown. No Chromium e no Firefox,
+	 * semEnterApressado segura o segundo Enter no keydown, antes que ele gere um
+	 * clique. No Firefox, o clique do Enter num link vem com detail 1, como o
+	 * do mouse. Quem sai do link e volta depois desse meio segundo segue com o
+	 * Enter.
 	 */
 	function semPressa(evento: MouseEvent) {
 		if (evento.detail > 1 || (evento.detail === 0 && recemNascido.current)) {
