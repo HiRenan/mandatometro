@@ -790,6 +790,76 @@ describe("o quiz", () => {
 		expect(nomeNoPe()?.getAttribute("aria-hidden")).toBe("true");
 	});
 
+	// A frase do andamento é um parágrafo só com ela, em bloco. O Chromium tira da
+	// árvore de acessibilidade um <p> em grade, e quem anda pelos parágrafos
+	// pulava a frase (a #152, pelo CDP): a grade que guarda a altura da frase
+	// mais comprida fica num elemento em volta dele, com as frases guardadas.
+	it.each([
+		[
+			"depois da primeira resposta",
+			async () => {
+				await mostrar();
+				comecar();
+				escolherEResponder("Pode, pela iniciativa popular.");
+			},
+			"Você respondeu 1 de 2.",
+		],
+		[
+			"depois da última resposta",
+			async () => {
+				await mostrar();
+				comecar();
+				escolherEResponder("Pode, pela iniciativa popular.");
+				seguir();
+				escolherEResponder("Pelo Senado Federal.");
+			},
+			"Você terminou o quiz.",
+		],
+		[
+			"na volta, com o quiz pela metade",
+			async () => {
+				guardarRespostas({ [INICIATIVA]: "Pode, pela iniciativa popular." });
+				await mostrar();
+			},
+			"Você respondeu 1 de 2.",
+		],
+		[
+			"depois de recomeçar",
+			async () => {
+				guardarRespostas(AS_DUAS);
+				await mostrar();
+				fireEvent.click(
+					screen.getByRole("button", { name: "Recomeçar o quiz" }),
+					{ detail: 1 },
+				);
+			},
+			"Você recomeçou o quiz.",
+		],
+	])(
+		"%s, a frase do andamento é um parágrafo em bloco, só com ela",
+		async (_, preparar, frase) => {
+			await preparar();
+			const pe = document.querySelector(".quiz-pe") as HTMLElement;
+			const paragrafo = within(pe).getByText(frase, {
+				selector: "p",
+				ignore: "[role=status], [aria-hidden=true], script, style",
+			});
+
+			expect(
+				[...paragrafo.classList].filter((classe) =>
+					/^(inline-)?(grid|flex)$/.test(classe),
+				),
+			).toEqual([]);
+			const linha = paragrafo.parentElement;
+			expect(linha?.classList.contains("quiz-andamento-texto")).toBe(true);
+			expect(
+				[...(linha?.children ?? [])]
+					.filter((filho) => filho.getAttribute("aria-hidden") === "true")
+					.map((reserva) => reserva.textContent),
+			).toEqual(frasesDoAndamento(2));
+		},
+	);
+
 	it("na volta à página com o quiz pela metade, continua da primeira pergunta sem resposta", async () => {
 		guardarRespostas({ [INICIATIVA]: "Pode, pela iniciativa popular." });
 		await mostrar();
