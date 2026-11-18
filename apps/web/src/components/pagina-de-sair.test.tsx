@@ -15,6 +15,7 @@ import {
 	fireEvent,
 	render,
 	screen,
+	within,
 } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -162,6 +163,25 @@ function textoAVista(lugar: Element) {
 /** O primeiro item das ações: o lugar do botão "Confirmar a saída". */
 function lugarDoBotao(raiz: ParentNode = document) {
 	return raiz.querySelector(".acoes-da-pagina > li:first-child") as HTMLElement;
+}
+
+/**
+ * O parágrafo de uma frase à vista: um <p> só com ela, em bloco. O Chromium tira
+ * da árvore de acessibilidade um <p> em grade ou flex, e quem navega pelos
+ * parágrafos pula a frase (a revisão do PR #146, pelo CDP). A grade que guarda
+ * o lugar fica num elemento em volta dele.
+ */
+function paragrafoDe(frase: string, raiz: HTMLElement = document.body) {
+	const paragrafo = within(raiz).getByText(frase, {
+		selector: "p",
+		ignore: "[role='status'], [aria-hidden='true'], script, style",
+	});
+	expect(
+		[...paragrafo.classList].filter((classe) =>
+			/^(inline-)?(grid|flex)$/.test(classe),
+		),
+	).toEqual([]);
+	return paragrafo;
 }
 
 describe("a página de sair", () => {
@@ -382,6 +402,70 @@ describe("a página de sair", () => {
 		expect(
 			screen.getByRole("link", { name: "Ir para o início" }).closest("li"),
 		).toBe(lugar.nextElementSibling);
+	});
+
+	it.each([
+		["antes do clique", () => mostrar(), EXPLICA],
+		[
+			"enquanto confirma",
+			async () => {
+				sair.mockReturnValue(new Promise(() => {}));
+				await mostrar();
+				await confirmar();
+			},
+			EXPLICA,
+		],
+		[
+			"depois da saída",
+			async () => {
+				sair.mockResolvedValue({ tipo: "saiu" });
+				await mostrar();
+				await confirmar();
+			},
+			SAIU,
+		],
+		[
+			"com a API fora do ar",
+			async () => {
+				sair.mockResolvedValue({ tipo: "fora-do-ar" });
+				await mostrar();
+				await confirmar();
+			},
+			EXPLICA,
+		],
+		[
+			"com o código que a API recusa",
+			async () => {
+				sair.mockResolvedValue({ tipo: "link-invalido" });
+				await mostrar();
+				await confirmar();
+			},
+			INCOMPLETO,
+		],
+		["com o link incompleto", () => mostrar({ codigo: "abc" }), INCOMPLETO],
+		[
+			"sem a API",
+			() => mostrar({ comApi: false }),
+			"A newsletter ainda não funciona neste endereço do site.",
+		],
+	])(
+		"%s, a frase de abertura é um parágrafo em bloco, só com ela",
+		async (_, preparar, frase) => {
+			await preparar();
+
+			// As frases guardadas continuam em volta dele, na grade da abertura.
+			expect(paragrafoDe(frase).parentElement).toBe(
+				document.querySelector(".abertura"),
+			);
+		},
+	);
+
+	it("no HTML do servidor, a frase de abertura já é um parágrafo em bloco, com as guardadas em volta", async () => {
+		const raiz = await paginaDoServidor({ codigo: CODIGO, comApi: true });
+		const abertura = raiz.querySelector(".abertura") as HTMLElement;
+
+		expect(paragrafoDe(EXPLICA, raiz).parentElement).toBe(abertura);
+		expect(reservasDe(abertura)).toEqual([EXPLICA, SAIU]);
 	});
 
 	it("com o código que a API recusa, o pé continua guardando o lugar, e o “Ir para o início” fica no lugar do botão", async () => {

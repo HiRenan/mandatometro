@@ -168,12 +168,16 @@ export function PaginaDeSair({
 			    a da vez fica no alto, junto do fio; o lugar do botão guarda uma
 			    cópia dele. Depois da saída, sobra um vão embaixo da frase, e nada
 			    sai do lugar. Com o código recusado, o "Ir para o início" sobe
-			    para o lugar do botão, e o vão fica no fim do pé, no item dele. */}
+			    para o lugar do botão, e o vão fica no fim do pé, no item dele.
+			    A grade da abertura fica num div em volta do parágrafo: o Chromium
+			    tira da árvore de acessibilidade um <p> em grade, e quem anda pelos
+			    parágrafos pulava a frase. As guardadas quebram as linhas como ela,
+			    com o text-pretty que o <p> já tem. */}
 			<div className="cartaz-pe">
-				<p className="abertura grid">
+				<div className="abertura grid text-pretty">
 					{telaPodeMudar && <Reservas frases={[EXPLICA, FORA_DA_LISTA]} />}
-					<span className="col-start-1 row-start-1">{abertura}</span>
-				</p>
+					<p className="col-start-1 row-start-1">{abertura}</p>
+				</div>
 				<div className="cartaz-acao">
 					<ul className="acoes-da-pagina">
 						{telaPodeMudar && (
