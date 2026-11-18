@@ -161,10 +161,10 @@ export function PaginaDeSair({
 	}
 
 	async function enviar(codigoDaSaida: string) {
-		// Na nova tentativa depois de um erro, o mesmo erro pode voltar na hora (a
-		// rede caída): a página voltava a ele no mesmo quadro, e nada mostrava que
-		// a tentativa aconteceu. A espera fica pelo menos meio segundo na tela,
-		// com a explicação, a linha da espera e o aviso, que lê o erro de novo.
+		// Na nova tentativa depois de um erro, um erro pode voltar na hora (a rede
+		// caída): a página voltava a ele no mesmo quadro, e nada mostrava que a
+		// tentativa aconteceu. A espera fica pelo menos meio segundo na tela, com
+		// a explicação, a linha da espera e o aviso, que lê o erro de novo.
 		const espera = ERROS[estado] ? esperar(MEIO_SEGUNDO) : undefined;
 		enviando.current = true;
 		setEstado("esperando");
