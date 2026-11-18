@@ -105,10 +105,12 @@ describe("a folha da newsletter", () => {
 		expect(folha.textContent).toContain(
 			"O que o Congresso votou na semana, explicado em linguagem simples. Quem se inscreve recebe na hora a última edição publicada.",
 		);
+		const faixa = folha.querySelector(".faixa");
+		const paragrafo = faixa?.closest("p");
+		expect(paragrafo?.classList.contains("faixa")).toBe(false);
+		expect(paragrafo?.getAttribute("role")).toBe("paragraph");
 		expect(
-			[...folha.querySelectorAll("p:not(.faixa) .faixa > span")].map(
-				(parte) => parte.textContent,
-			),
+			Array.from(faixa?.children ?? [], (parte) => parte.textContent),
 		).toEqual(["Todo domingo", "Câmara e Senado", "Link oficial em cada item"]);
 		expect(folha.textContent).toContain(
 			"O e-mail serve só para mandar a newsletter. Para sair, use o link no fim de cada edição.",
