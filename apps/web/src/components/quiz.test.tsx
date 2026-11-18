@@ -727,6 +727,12 @@ describe("o quiz", () => {
 		if (!fim) {
 			throw new Error("o título do fim saiu da tela do fim");
 		}
+		const voltar = within(fim).getByRole("link", {
+			name: "Voltar para Processo legislativo",
+		});
+		const acoes = voltar.closest(".quiz-fim-acoes");
+		expect(acoes?.tagName).toBe("DIV");
+		expect(acoes?.contains(botaoDeComecar())).toBe(true);
 		expect(
 			within(fim)
 				.getAllByRole("link")
@@ -1052,6 +1058,7 @@ describe("o quiz", () => {
 		await mostrar();
 		const naAbertura = screen.getByRole("button", { name: "Recomeçar o quiz" });
 		const linha = naAbertura.closest(".recomeco");
+		expect(linha?.tagName).toBe("DIV");
 		expect(controlesDaLinha(naAbertura)).toEqual([naAbertura]);
 
 		fireEvent.click(naAbertura, { detail: 1 });

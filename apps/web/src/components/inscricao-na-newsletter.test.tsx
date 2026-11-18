@@ -106,7 +106,7 @@ describe("a folha da newsletter", () => {
 			"O que o Congresso votou na semana, explicado em linguagem simples. Quem se inscreve recebe na hora a última edição publicada.",
 		);
 		expect(
-			[...folha.querySelectorAll(".faixa > span")].map(
+			[...folha.querySelectorAll("p:not(.faixa) .faixa > span")].map(
 				(parte) => parte.textContent,
 			),
 		).toEqual(["Todo domingo", "Câmara e Senado", "Link oficial em cada item"]);

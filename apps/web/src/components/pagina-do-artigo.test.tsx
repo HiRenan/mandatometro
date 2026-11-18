@@ -63,6 +63,14 @@ function abrir(artigo = "onde-o-projeto-comeca") {
 }
 
 describe("página do artigo", () => {
+	it("reúne a posição e o total em um parágrafo no sobretítulo", async () => {
+		abrir();
+		const total = await screen.findByText("de 6 artigos");
+		expect(total.closest("p:not(.sobretitulo)")?.textContent).toBe(
+			"Artigo 2 de 6 artigos",
+		);
+	});
+
 	// O quiz da trilha aparece depois do artigo 3, e o quiz final, depois do
 	// último: cada um chama no fim do artigo dele, depois das fontes.
 	it("no último artigo, chama para o quiz final, depois das fontes", async () => {
