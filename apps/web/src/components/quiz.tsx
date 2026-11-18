@@ -40,6 +40,7 @@ import { Aviso, useAviso } from "./aviso";
 import { AzulejoGrande } from "./azulejo";
 import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "./botao-continuar";
 import { Caminho } from "./caminho";
+import { FaixaDeInformacoes } from "./faixa-de-informacoes";
 import { ListaDeFontes } from "./fontes";
 import { LugarDoBotao } from "./lugar-do-botao";
 import { OutrosArtigos } from "./outros-artigos";
@@ -516,10 +517,10 @@ export function Quiz({
 										Em cada pergunta, escolha uma opção e responda. Você vê se
 										acertou, a resposta certa, a explicação e a fonte oficial.
 									</p>
-									<p className="faixa rotulo">
+									<FaixaDeInformacoes>
 										<span>{plural(total, "pergunta", "perguntas")}</span>
 										<span>Fonte oficial em cada resposta</span>
-									</p>
+									</FaixaDeInformacoes>
 									{recomeco}
 									{/* O "Começar" só funciona com JavaScript, e por isso só
 									    aparece depois que ele carrega. O lugar dele guarda, desde
@@ -742,9 +743,9 @@ export function Quiz({
 						)}
 						<div className="quiz-andamento-texto rotulo grid text-pretty">
 							<Reservas frases={frasesDoAndamento(total)} />
-							<p className="col-start-1 row-start-1">
-								{tela === "fim" ? "" : andamento}
-							</p>
+							{tela !== "fim" && andamento && (
+								<p className="col-start-1 row-start-1">{andamento}</p>
+							)}
 						</div>
 					</div>
 				</div>

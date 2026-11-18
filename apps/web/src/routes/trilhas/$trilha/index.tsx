@@ -7,6 +7,7 @@ import { AzulejoGrande, Painel } from "@/components/azulejo";
 import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "@/components/botao-continuar";
 import { Caminho } from "@/components/caminho";
 import { ChamadaDoQuiz } from "@/components/chamada-do-quiz";
+import { FaixaDeInformacoes } from "@/components/faixa-de-informacoes";
 import { Infografico } from "@/components/infografico";
 import { LugarDoBotao } from "@/components/lugar-do-botao";
 import { MarcaDeLido } from "@/components/marca-de-lido";
@@ -169,7 +170,7 @@ function PaginaDaTrilha() {
 					    continuar, que muda de texto, fica na outra coluna e, no celular,
 					    embaixo. Num clique duplo, o segundo clique fica de fora
 					    (lib/clique.ts) e, se passasse, cairia no mesmo botão. */}
-					<p className="recomeco">
+					<div className="recomeco text-pretty">
 						{acao && (
 							<button
 								type="button"
@@ -179,7 +180,7 @@ function PaginaDaTrilha() {
 								{acao.texto}
 							</button>
 						)}
-					</p>
+					</div>
 					<div className="cartaz-acao">
 						{/* A linha do progresso tem a altura reservada desde o HTML do
 						    servidor: quando o progresso aparece, depois da hidratação, o
@@ -223,11 +224,11 @@ function PaginaDaTrilha() {
 						</LugarDoBotao>
 					</div>
 				</div>
-				<p className="faixa rotulo">
+				<FaixaDeInformacoes>
 					<span>{plural(total, "artigo", "artigos")}</span>
 					<span>{minutos} min de leitura</span>
 					<span>Fonte oficial em cada explicação</span>
-				</p>
+				</FaixaDeInformacoes>
 				<Aviso texto={aviso} />
 			</section>
 

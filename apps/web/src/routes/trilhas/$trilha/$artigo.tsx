@@ -4,6 +4,7 @@ import { Aviso, useAviso } from "@/components/aviso";
 import { AzulejoGrande } from "@/components/azulejo";
 import { Caminho } from "@/components/caminho";
 import { ChamadaDoQuiz } from "@/components/chamada-do-quiz";
+import { FaixaDeInformacoes } from "@/components/faixa-de-informacoes";
 import { Fontes } from "@/components/fontes";
 import { MarcaDeLido } from "@/components/marca-de-lido";
 import { NestaTrilha } from "@/components/nesta-trilha";
@@ -142,10 +143,10 @@ function Folha({
 						<h1 className="titulo-condensado letra-com-teto [--palavra:6.34]">
 							{artigo.titulo}
 						</h1>
-						<p className="faixa rotulo">
+						<FaixaDeInformacoes>
 							<span>Leitura de {artigo.minutos} min</span>
 							<span>{fontes}</span>
-						</p>
+						</FaixaDeInformacoes>
 						<p className="lide">{artigo.resumo}</p>
 						<TextoDoArtigo html={artigo.html} />
 
