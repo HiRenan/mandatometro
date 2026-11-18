@@ -713,7 +713,11 @@ export function Quiz({
 				    título da tela.
 				    Fora da abertura, o nome do quiz vem antes da frase: é ali que quem
 				    vê descobre em que quiz está, e não numa etiqueta acima do título (a
-				    #136). O leitor de tela já tem o h1, e o nome fica fora dele. */}
+				    #136). O leitor de tela já tem o h1, e o nome fica fora dele.
+				    A grade da linha fica num div em volta do parágrafo da frase: o
+				    Chromium tira da árvore de acessibilidade um <p> em grade (a #152).
+				    As guardadas quebram as linhas como ela, com o text-pretty que o
+				    <p> já tem. */}
 				<div className="quiz-pe">
 					<ol aria-hidden="true" className="quiz-andamento">
 						{perguntas.map((outra, indice) => (
@@ -736,12 +740,12 @@ export function Quiz({
 								{titulo}
 							</span>
 						)}
-						<p className="quiz-andamento-texto rotulo grid">
+						<div className="quiz-andamento-texto rotulo grid text-pretty">
 							<Reservas frases={frasesDoAndamento(total)} />
-							<span className="col-start-1 row-start-1">
+							<p className="col-start-1 row-start-1">
 								{tela === "fim" ? "" : andamento}
-							</span>
-						</p>
+							</p>
+						</div>
 					</div>
 				</div>
 				<Aviso texto={aviso} />
