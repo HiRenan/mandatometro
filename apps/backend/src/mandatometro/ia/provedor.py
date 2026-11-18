@@ -95,7 +95,10 @@ def _cliente_anthropic(http: httpx2.Client, chave: str) -> "Anthropic":
             open_telemetry={"traces": False, "propagation": False},
         )
     finally:
-        os.environ.update(anteriores)
+        # No Windows, reatribuir "" apaga a entrada vazia do ambiente nativo.
+        for nome, valor in anteriores.items():
+            if os.environ.get(nome) != valor:
+                os.environ[nome] = valor
 
 
 @contextmanager
