@@ -257,6 +257,8 @@ async function pedir(
 
 /** Uma página pedida ao servidor: o endereço, o HTTP e a API em volta. */
 type Pagina = {
+	/** A página, no nome do teste. */
+	nome: string;
 	caminho: string;
 	status: number;
 	/** A API das edições, se não for a de exemplo. */
@@ -290,16 +292,32 @@ const QUE_ABREM = [
  * existem) e a página de erro (a API fora do ar).
  */
 const PAGINAS: Pagina[] = [
-	...QUE_ABREM.map((caminho) => ({ caminho, status: 200 })),
-	...QUE_ABREM.map((caminho) => ({ caminho, status: 200, semApi: true })),
-	{ caminho: "/edicoes", status: 200, api: () => json(200, listaDeExemplo(0)) },
-	{ caminho: "/pagina-que-nao-existe", status: 404 },
+	...QUE_ABREM.map((caminho) => ({ nome: caminho, caminho, status: 200 })),
+	...QUE_ABREM.map((caminho) => ({
+		nome: `${caminho}, sem a API`,
+		caminho,
+		status: 200,
+		semApi: true,
+	})),
 	{
+		nome: "/edicoes, sem edição",
+		caminho: "/edicoes",
+		status: 200,
+		api: () => json(200, listaDeExemplo(0)),
+	},
+	{
+		nome: "/pagina-que-nao-existe",
+		caminho: "/pagina-que-nao-existe",
+		status: 404,
+	},
+	{
+		nome: "/edicoes/9, que não existe",
 		caminho: "/edicoes/9",
 		status: 404,
 		api: () => json(404, { erro: "edicao_nao_encontrada" }),
 	},
 	{
+		nome: "/edicoes/8, com a API fora do ar",
 		caminho: "/edicoes/8",
 		status: 500,
 		api: () => {
@@ -325,24 +343,22 @@ describe("a caixa da página", () => {
 		}
 	});
 
-	it("é o contêiner mais perto de cada título com teto, em cada página; o do título que vem da API é a folha", async () => {
-		let pelaCaixa = 0;
-		for (const { caminho, status, ...em } of PAGINAS) {
-			const resposta = await pedir(caminho, em);
-			const caixa = resposta.pagina.getElementById("conteudo")?.parentElement;
-			const titulos = [...resposta.pagina.querySelectorAll(TITULOS_COM_TETO)];
-			const qual = em.semApi ? `${caminho} (sem a API)` : caminho;
+	it.each(PAGINAS)(
+		"é o contêiner mais perto de cada título com teto em $nome",
+		async ({ caminho, status, api, semApi }) => {
+			const { status: http, pagina } = await pedir(caminho, { api, semApi });
+			const caixa = pagina.getElementById("conteudo")?.parentElement;
+			const titulos = [...pagina.querySelectorAll(TITULOS_COM_TETO)];
 
-			expect(resposta.status, qual).toBe(status);
+			expect(http).toBe(status);
 			// O nome, no cabeçalho e no rodapé, e ao menos um título da página.
-			expect(titulos.length, qual).toBeGreaterThanOrEqual(3);
+			expect(titulos.length).toBeGreaterThanOrEqual(3);
 			for (const titulo of titulos) {
-				const onde = `${qual}: ${titulo.textContent?.trim()}`;
+				const onde = titulo.textContent?.trim();
 				const conteiner = conteinerEmVolta(titulo);
 				if (titulo.classList.contains("teto-pela-caixa")) {
-					// O título da edição, o de cada item e o da edição na lista medem a
-					// folha em volta deles, também uma caixa do teto.
-					pelaCaixa++;
+					// O título que vem da API mede a folha em volta dele, também uma
+					// caixa do teto.
 					expect(conteiner?.classList.contains("caixa-do-teto"), onde).toBe(
 						true,
 					);
@@ -351,8 +367,19 @@ describe("a caixa da página", () => {
 					expect(conteiner, onde).toBe(caixa);
 				}
 			}
+		},
+	);
+
+	it("o título que vem da API tem o teto pela folha, na lista e na edição", async () => {
+		// Assim, os testes de cada página passam pelos dois lados da conferência.
+		for (const caminho of ["/edicoes", "/edicoes/7"]) {
+			const { pagina } = await pedir(caminho);
+			const pelaCaixa = pagina.querySelectorAll(
+				".letra-com-teto.teto-pela-caixa",
+			);
+
+			expect(pelaCaixa.length, caminho).toBeGreaterThan(0);
 		}
-		expect(pelaCaixa).toBeGreaterThan(0);
 	});
 
 	it("o contêiner vem da regra do CSS, da classe do Tailwind ou do style", () => {
