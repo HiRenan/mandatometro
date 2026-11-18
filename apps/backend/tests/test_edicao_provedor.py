@@ -74,6 +74,43 @@ def test_falha_na_abertura_oculta_erro_e_restaura_ambiente(construtor, monkeypat
     assert saida.out == saida.err == caplog.text == ""
 
 
+@pytest.mark.parametrize(
+    "interromper_em", ["ANTHROPIC_LOG", "ANTHROPIC_CUSTOM_HEADERS", "construtor"]
+)
+@pytest.mark.parametrize(
+    ("nivel", "cabecalhos"),
+    [(None, None), ("", None), (None, ""), ("debug", "X-Teste: ficticio")],
+    ids=["nenhuma", "so-log", "so-cabecalhos", "ambas"],
+)
+def test_interrupcao_na_abertura_restaura_variaveis_do_sdk(
+    interromper_em, nivel, cabecalhos, monkeypatch
+):
+    if interromper_em == "construtor":
+        monkeypatch.setattr("anthropic.Anthropic", Mock(side_effect=KeyboardInterrupt))
+    else:
+        pop = os.environ.pop
+
+        def retirar(nome, *args):
+            valor = pop(nome, *args)
+            if nome == interromper_em:
+                raise KeyboardInterrupt
+            return valor
+
+        monkeypatch.setattr(os.environ, "pop", retirar)
+
+    for nome, valor in [("ANTHROPIC_LOG", nivel), ("ANTHROPIC_CUSTOM_HEADERS", cabecalhos)]:
+        if valor is None:
+            monkeypatch.delenv(nome, raising=False)
+        else:
+            monkeypatch.setenv(nome, valor)
+
+    transporte = httpx2.MockTransport(lambda p: pytest.fail("Não deve fazer pedido."))
+    with pytest.raises(KeyboardInterrupt), abrir_redator(configuracao(), transporte=transporte):
+        pytest.fail("O redator não deveria abrir.")
+    depois = (os.environ.get("ANTHROPIC_LOG"), os.environ.get("ANTHROPIC_CUSTOM_HEADERS"))
+    assert depois == (nivel, cabecalhos)
+
+
 def test_pedido_usa_so_configuracao_do_projeto_regras_fatos_e_esquema(monkeypatch, caplog, capsys):
     externos = {
         "ANTHROPIC_API_KEY": "chave-de-outra-ferramenta",
