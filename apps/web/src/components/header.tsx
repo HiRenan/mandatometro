@@ -34,7 +34,7 @@ export default function Header({
 	const caminho = useRouterState({
 		select: (estado) => estado.location.pathname,
 	});
-	const links = comEdicoes ? [...LINKS, EDICOES] : LINKS;
+	const links = comEdicoes ? [...LINKS, EDICOES] : [...LINKS];
 
 	return (
 		<header className="moldura">
@@ -73,6 +73,19 @@ export default function Header({
 								</Link>
 							</li>
 						))}
+						<li>
+							<a
+								href="/perfil"
+								data-na-secao={
+									estaNaSecao(caminho, "/cadastro") || caminho === "/perfil"
+										? ""
+										: undefined
+								}
+								aria-current={caminho === "/perfil" ? "page" : undefined}
+							>
+								Conta
+							</a>
+						</li>
 					</ul>
 				</nav>
 			</div>

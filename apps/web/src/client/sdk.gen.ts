@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AbrirSaidaData, AbrirSaidaErrors, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, ListarEdicoesData, ListarEdicoesErrors, ListarEdicoesResponses, ObterEdicaoData, ObterEdicaoErrors, ObterEdicaoResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses } from './types.gen';
+import type { AbrirSaidaData, AbrirSaidaErrors, CadastrarContaData, CadastrarContaErrors, CadastrarContaResponses, ConfirmarContaData, ConfirmarContaErrors, ConfirmarContaResponses, ConsultarPerfilData, ConsultarPerfilErrors, ConsultarPerfilResponses, ExcluirContaData, ExcluirContaErrors, ExcluirContaResponses, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, ListarEdicoesData, ListarEdicoesErrors, ListarEdicoesResponses, ObterEdicaoData, ObterEdicaoErrors, ObterEdicaoResponses, RecuperarContaData, RecuperarContaErrors, RecuperarContaResponses, RedefinirSenhaData, RedefinirSenhaErrors, RedefinirSenhaResponses, ReenviarConfirmacaoData, ReenviarConfirmacaoErrors, ReenviarConfirmacaoResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses, TermoContaData, TermoContaErrors, TermoContaResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -43,6 +43,88 @@ export const abrirSaida = <ThrowOnError extends boolean = false>(options: Option
  * POST idempotente, sem autenticação ou corpo obrigatório. Aceita RFC 8058 e a confirmação no site; o corpo é ignorado. Código desconhecido também recebe 200 vazio.
  */
 export const sairDaNewsletter = <ThrowOnError extends boolean = false>(options: Options<SairDaNewsletterData, ThrowOnError>): RequestResult<SairDaNewsletterResponses, SairDaNewsletterErrors, ThrowOnError> => (options.client ?? client).post<SairDaNewsletterResponses, SairDaNewsletterErrors, ThrowOnError>({ url: '/newsletter/saida/{codigo_saida}', ...options });
+
+/**
+ * Termo Conta
+ */
+export const termoConta = <ThrowOnError extends boolean = false>(options?: Options<TermoContaData, ThrowOnError>): RequestResult<TermoContaResponses, TermoContaErrors, ThrowOnError> => (options?.client ?? client).get<TermoContaResponses, TermoContaErrors, ThrowOnError>({ url: '/contas/termo', ...options });
+
+/**
+ * Cadastrar Conta
+ */
+export const cadastrarConta = <ThrowOnError extends boolean = false>(options: Options<CadastrarContaData, ThrowOnError>): RequestResult<CadastrarContaResponses, CadastrarContaErrors, ThrowOnError> => (options.client ?? client).post<CadastrarContaResponses, CadastrarContaErrors, ThrowOnError>({
+    url: '/contas',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Reenviar Confirmacao
+ */
+export const reenviarConfirmacao = <ThrowOnError extends boolean = false>(options: Options<ReenviarConfirmacaoData, ThrowOnError>): RequestResult<ReenviarConfirmacaoResponses, ReenviarConfirmacaoErrors, ThrowOnError> => (options.client ?? client).post<ReenviarConfirmacaoResponses, ReenviarConfirmacaoErrors, ThrowOnError>({
+    url: '/contas/reenvio',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Recuperar Conta
+ */
+export const recuperarConta = <ThrowOnError extends boolean = false>(options: Options<RecuperarContaData, ThrowOnError>): RequestResult<RecuperarContaResponses, RecuperarContaErrors, ThrowOnError> => (options.client ?? client).post<RecuperarContaResponses, RecuperarContaErrors, ThrowOnError>({
+    url: '/contas/recuperacao',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Confirmar Conta
+ */
+export const confirmarConta = <ThrowOnError extends boolean = false>(options: Options<ConfirmarContaData, ThrowOnError>): RequestResult<ConfirmarContaResponses, ConfirmarContaErrors, ThrowOnError> => (options.client ?? client).post<ConfirmarContaResponses, ConfirmarContaErrors, ThrowOnError>({
+    url: '/contas/confirmacao',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Redefinir Senha
+ */
+export const redefinirSenha = <ThrowOnError extends boolean = false>(options: Options<RedefinirSenhaData, ThrowOnError>): RequestResult<RedefinirSenhaResponses, RedefinirSenhaErrors, ThrowOnError> => (options.client ?? client).post<RedefinirSenhaResponses, RedefinirSenhaErrors, ThrowOnError>({
+    url: '/contas/redefinicao',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Excluir Conta
+ */
+export const excluirConta = <ThrowOnError extends boolean = false>(options: Options<ExcluirContaData, ThrowOnError>): RequestResult<ExcluirContaResponses, ExcluirContaErrors, ThrowOnError> => (options.client ?? client).delete<ExcluirContaResponses, ExcluirContaErrors, ThrowOnError>({
+    url: '/contas/me',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Consultar Perfil
+ */
+export const consultarPerfil = <ThrowOnError extends boolean = false>(options?: Options<ConsultarPerfilData, ThrowOnError>): RequestResult<ConsultarPerfilResponses, ConsultarPerfilErrors, ThrowOnError> => (options?.client ?? client).get<ConsultarPerfilResponses, ConsultarPerfilErrors, ThrowOnError>({ url: '/contas/me', ...options });
 
 /**
  * Listar as edições publicadas

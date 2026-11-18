@@ -30,10 +30,17 @@ import {
 } from "@/lib/edicoes/exemplos-de-teste";
 import { TRILHA_DO_PILOTO } from "@/lib/piloto";
 import { Route as RotaRaiz } from "@/routes/__root";
+import { Route as ContaConfirmar } from "@/routes/cadastro/confirmar";
+import { Route as ContaExcluir } from "@/routes/cadastro/excluir";
+import { Route as ContaIndex } from "@/routes/cadastro/index";
+import { Route as ContaRecuperar } from "@/routes/cadastro/recuperar";
+import { Route as ContaRedefinir } from "@/routes/cadastro/redefinir";
+import { Route as ContaReenvio } from "@/routes/cadastro/reenvio";
 import { Route as RotaDaEdicao } from "@/routes/edicoes/$id";
 import { Route as RotaDasEdicoes } from "@/routes/edicoes/index";
 import { Route as RotaInicial } from "@/routes/index";
 import { Route as RotaDeSair } from "@/routes/newsletter/sair";
+import { Route as Perfil } from "@/routes/perfil";
 import { Route as RotaDoPiloto } from "@/routes/piloto";
 import { Route as RotaDoArtigo } from "@/routes/trilhas/$trilha/$artigo";
 import { Route as RotaDaTrilha } from "@/routes/trilhas/$trilha/index";
@@ -239,6 +246,13 @@ function criarRouter() {
 			RotaDoPiloto.update(
 				naRaiz("/piloto", () => acharQuizFinal(trilhas, TRILHA_DO_PILOTO)),
 			),
+			ContaIndex.update(naRaiz("/cadastro/")),
+			Perfil.update(naRaiz("/perfil")),
+			ContaConfirmar.update(naRaiz("/cadastro/confirmar")),
+			ContaReenvio.update(naRaiz("/cadastro/reenvio")),
+			ContaExcluir.update(naRaiz("/cadastro/excluir")),
+			ContaRecuperar.update(naRaiz("/cadastro/recuperar")),
+			ContaRedefinir.update(naRaiz("/cadastro/redefinir")),
 			RotaDeSair.update(naRaiz("/newsletter/sair")),
 			RotaDasEdicoes.update(
 				naRaiz("/edicoes/", ({ deps }: { deps: { pagina: number } }) =>
@@ -296,6 +310,13 @@ type Pagina = {
  * piloto, a saída da newsletter, a lista das edições e uma edição.
  */
 const QUE_ABREM = [
+	"/perfil",
+	"/cadastro",
+	"/cadastro/confirmar",
+	"/cadastro/reenvio",
+	"/cadastro/excluir",
+	"/cadastro/recuperar",
+	"/cadastro/redefinir",
 	"/",
 	"/trilhas",
 	...trilhas.flatMap(({ slug, artigos }) => [

@@ -93,6 +93,7 @@ describe("cabeçalho", () => {
 		).toEqual([
 			["Início", "/"],
 			["Trilhas", "/trilhas"],
+			["Conta", "/perfil"],
 		]);
 	});
 
@@ -110,6 +111,7 @@ describe("cabeçalho", () => {
 			["Início", "/"],
 			["Trilhas", "/trilhas"],
 			["Edições", "/edicoes"],
+			["Conta", "/perfil"],
 		]);
 		expect(
 			principal.querySelector("ul")?.hasAttribute("data-com-edicoes"),
