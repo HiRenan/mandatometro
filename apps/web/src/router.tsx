@@ -7,6 +7,7 @@ import { NaoEncontrado } from "./components/nao-encontrado";
 import { PaginaDeErro } from "./components/pagina-de-erro";
 import {
 	molduraNaTela,
+	rolagemDasPaginas,
 	semErroNaTrocaPulada,
 	tiposDaTroca,
 	trilhaDaPaginaAberta,
@@ -16,6 +17,9 @@ import { routeTree } from "./routeTree.gen";
 export const getRouter = () => {
 	// Um QueryClient por router: no SSR, cada requisição tem o seu e não vê o cache de outra.
 	const queryClient = new QueryClient();
+	// Onde cada página abre, para o cabeçalho só ficar parado na troca quando
+	// aparece nas duas páginas (lib/troca-de-pagina.ts).
+	const rolagem = rolagemDasPaginas();
 	const router = createTanStackRouter({
 		routeTree,
 		scrollRestoration: true,
@@ -38,13 +42,19 @@ export const getRouter = () => {
 			types: (troca): string[] | false =>
 				tiposDaTroca(troca, {
 					trilhaAberta: trilhaDaPaginaAberta(router.state.matches),
-					molduraNaTela: molduraNaTela(),
+					molduraNaTela: molduraNaTela(rolagem.daPaginaNova(troca)),
 				}),
 		},
 	});
 	// Quando a pessoa volta pelo navegador antes de a troca começar a animar, o
 	// navegador pula a troca, e o AbortError dela não vai para o console.
 	semErroNaTrocaPulada(router);
+	// A rolagem da página que sai e a volta e o avançar do navegador. Só no
+	// navegador: no servidor, o router nasce sem o histórico (router-ssr.test.ts).
+	if (!router.isServer) {
+		router.subscribe("onBeforeLoad", rolagem.guardar);
+		router.history.subscribe(rolagem.anotar);
+	}
 	setupRouterSsrQueryIntegration({ router, queryClient });
 
 	return router;
