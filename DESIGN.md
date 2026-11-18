@@ -291,14 +291,14 @@ A Courier Prime entrou na #89 só para a frase do cartaz e o lema: `@fontsource/
 - **Máquina** (Courier Prime 400, em minúsculas): a segunda linha do título da página inicial ("um passo de cada vez.", a 0.4 em do título, com a tira riscada embaixo) e o lema, a 0.9375rem, no cabeçalho e no rodapé. Só isso.
 - **Lead** (Literata 500, altura 1.45): o resumo do artigo, de 1.25rem a 1.4375rem. A abertura dos cartazes é Literata 400, de 1.0625rem a 1.25rem, com altura 1.5 e até 34rem de largura.
 - **Body** (Literata 400, altura 1.68): o texto do artigo, de 1.0625rem a 1.1875rem, com até 39rem de largura. Os resumos das folhas e os textos dos passos ficam em 1.0625rem, com altura 1.5 a 1.6.
-- **Label** (`rotulo`: Archivo 650, 0.8125rem, maiúsculas, 0.08em entre as letras): a faixa de informações, a frase do progresso, a migalha, "Artigo 2 de 6 artigos", a etiqueta de estado, o rótulo "Seu e-mail", o mês embaixo do dia da edição, "Nesta edição", os títulos do quadro da votação e das fontes do item e, em tinta suave, "Enviando a inscrição…", "Confirmando a saída…", os nomes do placar e "Página 2 de 3". Os nomes dos links e das ações seguem a mesma ideia, um pouco maiores: o botão (800, 1rem), a ação em texto (700, 0.875rem), os links dos artigos de um passo (750, 0.9375rem).
+- **Label** (`rotulo`: Archivo 650, 0.8125rem, maiúsculas, 0.08em entre as letras): a faixa de informações, a frase do progresso, a migalha, "Artigo 2 de 6 artigos", a etiqueta de estado, o rótulo "Seu e-mail", o mês embaixo do dia da edição, "Nesta edição", os títulos do quadro da votação e das fontes do item e, em tinta suave, "Enviando a inscrição…", "Confirmando a saída…", os nomes do placar e "Página 2 de 3". Os nomes dos links e das ações seguem a mesma ideia, um pouco maiores: o botão (800, 1rem), a ação em texto (700, 0.875rem), os links dos artigos de um passo (750, 0.9375rem) e o título de cada passo da sanfona (750, 1rem, 0.05em entre as letras), que também tem o teto da letra grande.
 
 ### O teto da letra grande
 Com a letra do navegador grande, no celular, o título cresce com a letra até a palavra mais comprida dele encostar nas margens, e para aí. O tamanho é `min(o tamanho normal, (a largura da página − as margens − o recuo) ÷ a largura da palavra)`: a classe `letra-com-teto`, com o tamanho no `--letra`, a largura da palavra no `--palavra` (em em) e o recuo no `--recuo`. O Renan escolheu o teto em 11/11/2026 ("Teto (Recomendado)") e, na #76, o teto pela palavra mais larga do conteúdo ("Teto menor (Recomendado)"): o título diminui só o bastante para a palavra caber inteira, e nada se parte.
 
 - **A largura da página** vem da caixa em volta do cabeçalho, do main e do rodapé (o `caixa-do-teto`, no `__root.tsx`), que o teto mede pelo `100cqi`. Ela não conta a barra de rolagem, que o `100vw` conta (15 px no Edge e no Chrome do Windows): com o `100vw`, numa janela de computador estreita, a palavra encostada no teto passava da página e se partia (a #139, em 17/11/2026). No celular e no Mac, a barra não toma espaço, e as duas contas dão o mesmo tamanho. Os recuos que dependem da largura da página também a medem pelo `100cqi`: os 30% do cartaz, a metade da página no anterior e no próximo lado a lado e os 42% do fim do quiz.
 
-- **A largura da palavra** é a dela em maiúsculas, como aparece na tela, com 0,5% de folga. Os tetos de hoje:
+- **A largura da palavra** é a dela em maiúsculas, como aparece na tela, com 0,5% de folga. A exceção é o título de cada passo da sanfona, que é uma etiqueta: abaixo de 22rem, ele fica como escrito, sem o espaço entre as letras, e leva um segundo número, só para essa largura (o `letra-grande:[--palavra:N]`, na mesma linha do TSX). Os tetos de hoje:
 
 | Título | A palavra mais larga | `--palavra` |
 | --- | --- | --- |
@@ -308,6 +308,8 @@ Com a letra do navegador grande, no celular, o título cresce com a letra até a
 | Intertítulo do texto (largura 68%) | CONSTITUCIONALIDADE | 9.64 |
 | O caminho, na página inicial | CAMINHO | 3.62 |
 | Passo da página inicial | APRESENTAÇÃO | 6.07 |
+| Passo da sanfona da trilha (Archivo 750, largura 100%, 0,05 em entre as letras) | APRESENTAÇÃO | 9.33 |
+| Passo da sanfona com a letra grande, abaixo de 22rem, como escrito e sem o espaço | Apresentação | 6.95 |
 | Trilhas | TRILHAS | 3.21 |
 | Edições | EDIÇÕES | 3.25 |
 | A primeira edição ainda não saiu (a lista das edições sem edição) | PRIMEIRA | 3.75 |
@@ -320,7 +322,7 @@ Com a letra do navegador grande, no celular, o título cresce com a letra até a
 | Sair da newsletter (e "Você saiu da newsletter.") | NEWSLETTER. | 5.25 |
 | O nome do site (largura 68%) | MANDATÔMETRO | 7.08 |
 
-- **O recuo** é o que fica entre a caixa do título e as margens da página: o respiro e os fios da folha, a coluna do número e a do azulejo. Quando a folha divide a página com uma coluna ao lado (o caminho, na trilha; "Nesta trilha", no artigo), o contêiner diz quanto ela toma no `--recuo-de-fora`, e os títulos de dentro somam. Na folha da newsletter, a partir de 768 px, o recuo do título soma também a coluna dos azulejos (15.25rem) e o vão (3rem).
+- **O recuo** é o que fica entre a caixa do título e as margens da página: o respiro e os fios da folha, a coluna do número e a do azulejo. Quando a folha divide a página com uma coluna ao lado (o caminho, na trilha; "Nesta trilha", no artigo), o contêiner diz quanto ela toma no `--recuo-de-fora`, e os títulos de dentro somam. No título de cada passo da sanfona, o recuo é o que fica na linha dele: o azulejo pequeno, os dois vãos e o "+" (abaixo de 22rem, sem o azulejo, um vão e o "+"); a partir de 1400 px, a coluna do caminho diz no `--recuo-de-fora` quanto da página fica fora dela. Na folha da newsletter, a partir de 768 px, o recuo do título soma também a coluna dos azulejos (15.25rem) e o vão (3rem).
 - **Na lista das trilhas:**
   - de 640 a 1407 px, o recuo do título é o do azulejo ao lado;
   - a partir de 1408 px, o título divide a cabeça com a coluna da descrição, e o recuo soma também os 42rem dela e o vão entre as duas;
@@ -330,12 +332,12 @@ Com a letra do navegador grande, no celular, o título cresce com a letra até a
 - **Os títulos que vêm da API** (o da edição, o de cada item e o da edição na lista) não têm o `[--palavra:N]` fixo, porque mudam a cada edição: o `estiloDoTeto` (`lib/conteudo/regua.ts`) mede a palavra mais larga de cada um, com a mesma régua do teste e a mesma folga, e põe o `--palavra` num `style`. A conta é a mesma no servidor e no navegador, e o título não muda de tamanho quando a página carrega.
   - O teto deles se mede só pela caixa em volta, e não pela página (o `teto-pela-caixa`, no `index.css`): a folha da edição e o texto da folha na lista também são contêineres (o `caixa-do-teto`), e o tamanho é `min(o tamanho normal, 100cqi ÷ a largura da palavra)`, sem margens nem recuo para somar. Pela largura da página, a conta não via a folha da edição parar de crescer, a partir de uns 1440 px: uma palavra perto do teto passava da caixa e se partia no computador (a revisão do Argos, em 17/11/2026).
   - A caixa do título não fica mais estreita que a palavra mais larga (o `min-width`), mesmo com o `max-width` de 10em do título da edição e o de 14em do título do item: uma palavra de 27 letras diminui a letra e não se parte.
-- **O aviso a quem escreve:** um teste (`src/lib/conteudo/titulos.test.ts`) soma a largura de cada letra em maiúsculas (`larguras-das-letras.ts`, medida no navegador nos dois estilos) e falha quando uma palavra de um título do conteúdo passa do teto, com o arquivo, a palavra e o que fazer (`docs/conteudo-das-trilhas.md`). Os tetos saem do código, e o teste fica fora do `conferir.ts`: ele não derruba o build nem o deploy.
+- **O aviso a quem escreve:** um teste (`src/lib/conteudo/titulos.test.ts`) soma a largura de cada letra em maiúsculas (`larguras-das-letras.ts`, medida no navegador em cada estilo; o título do passo da sanfona tem duas réguas, em maiúsculas espaçadas e como escrito, e o teste confere cada uma com o CSS dele) e falha quando uma palavra de um título do conteúdo passa do teto, com o arquivo, a palavra e o que fazer (`docs/conteudo-das-trilhas.md`). Os tetos saem do código, e o teste fica fora do `conferir.ts`: ele não derruba o build nem o deploy.
 
 ### Named Rules
 **A Regra das Três Letras.** O grotesco estreito para número, título e etiqueta; a serifa para o que se lê de verdade; a letra de máquina só para a frase do cartaz e o lema. Nenhuma quarta família, e a letra de máquina não vira estilo de texto.
 
-**A Regra das Maiúsculas com Medida.** Os títulos grandes vão em maiúsculas sempre, com o teto; a exceção é o enunciado do quiz, que é uma frase. As etiquetas pequenas vão em maiúsculas espaçadas, mas voltam às minúsculas, sem o espaço entre as letras, quando a tela tem menos de 22rem (as variáveis `--caixa-alta` e `--espacado`): em maiúsculas, uma palavra comprida não cabe na linha.
+**A Regra das Maiúsculas com Medida.** Os títulos grandes vão em maiúsculas sempre, com o teto; a exceção é o enunciado do quiz, que é uma frase. As etiquetas pequenas vão em maiúsculas espaçadas, mas voltam às minúsculas, sem o espaço entre as letras, quando a tela tem menos de 22rem (as variáveis `--caixa-alta` e `--espacado`): em maiúsculas, uma palavra comprida não cabe na linha. O título do passo da sanfona é uma delas e tem o teto, medido dos dois jeitos.
 
 ## Layout
 
@@ -512,7 +514,7 @@ Tudo é reto: raio zero (`--radius: 0`).
 
 ### O caminho da trilha (a sanfona)
 - **Onde:** na página da trilha, quando ela tem um `infografico.md`: depois das folhas e, a partir de 1400 px, ao lado delas.
-- **Forma:** o título e o resumo, e uma lista ordenada de passos entre fios. Cada passo é um `<details>` do navegador, com o azulejo pequeno do passo, o título e um "+", que vira "×" quando abre. Um passo fica aberto de cada vez (`name="caminho"`), e o primeiro já vem aberto. Funciona sem JavaScript.
+- **Forma:** o título e o resumo, e uma lista ordenada de passos entre fios. Cada passo é um `<details>` do navegador, com o azulejo pequeno do passo, o título e um "+", que vira "×" quando abre. O título do passo é uma etiqueta, em maiúsculas espaçadas, com o teto: com a letra grande, diminui só o bastante para a palavra mais larga caber ao lado do azulejo e do "+" (a #148). Um passo fica aberto de cada vez (`name="caminho"`), e o primeiro já vem aberto. Funciona sem JavaScript.
 - **Dentro:** o texto, os desvios, os artigos que explicam o passo e as fontes, numa linha ("Fonte:" ou "Fontes:", com os títulos em negrito, separados por " · "), com a data da consulta embaixo: "consultadas em 10 de novembro de 2026", ou "consultadas entre … e …". No texto e nos desvios, o "art." e o "§" não se separam do número na quebra de linha.
 - **Os artigos:** "Artigo 3: O projeto passa pelas comissões", como link, com um azulejinho na fita do artigo ao lado.
 - **Endereço de cada passo:** o `h3` de cada passo tem o id `passo-` e o título sem acento ("Sanção ou veto" vira `passo-sancao-ou-veto`), e o título do caminho tem o id `caminho`. O passo do endereço abre sozinho.
