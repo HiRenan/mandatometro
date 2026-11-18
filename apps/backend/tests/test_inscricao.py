@@ -369,7 +369,11 @@ def test_preflight_da_inscricao_so_aceita_origem_do_site(origem, status):
     assert resposta.status_code == status
     if status == 200:
         assert resposta.headers["access-control-allow-origin"] == ORIGEM_DO_SITE
-        assert set(resposta.headers["access-control-allow-methods"].split(", ")) == {"GET", "POST"}
+        assert set(resposta.headers["access-control-allow-methods"].split(", ")) == {
+            "GET",
+            "POST",
+            "DELETE",
+        }
         assert "Content-Type" in resposta.headers["access-control-allow-headers"].split(", ")
     else:
         assert "access-control-allow-origin" not in resposta.headers

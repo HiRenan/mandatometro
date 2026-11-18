@@ -56,6 +56,40 @@ O banco guarda o que a coleta lê da Câmara e do Senado, o que a newsletter usa
 
 ```mermaid
 erDiagram
+    conta ||--o{ credencial_conta : "autoriza"
+    conta |o--o{ aviso_conta : "gera"
+    conta {
+        uuid id PK
+        string email UK
+        string nome
+        string senha_hash
+        string genero
+        string autodescricao
+        string estado
+        date nascimento
+        string termo
+        timestamptz aceite_em
+        timestamptz criada_em
+        timestamptz confirmada_em
+    }
+    credencial_conta {
+        string resumo PK
+        uuid conta_id FK
+        string finalidade
+        timestamptz expira
+    }
+    aviso_conta {
+        uuid id PK
+        uuid conta_id FK
+        bytes conteudo
+        timestamptz proxima
+        timestamptz expira
+    }
+    limite_conta {
+        string chave PK
+        int minuto
+        int tentativas
+    }
     parlamentar ||--o{ mandato : "tem"
     parlamentar ||--o{ voto : "dá"
     votacao ||--o{ voto : "recebe"
@@ -170,6 +204,16 @@ erDiagram
 ```
 
 ## Como rodar
+
+### Cadastro de contas
+
+O workflow **Retomar avisos de conta** processa a fila de produção a cada cinco minutos quando a variável de repositório `AVISOS_CONTA_ATIVOS` vale `true` e os segredos do ambiente `producao` estão configurados.
+
+Aplique as migrations da API até a revisão atual antes de abrir `/cadastro`. Configure `CONTA_TERMO_VERSAO` e `CONTA_TERMO_URL` com a versão e o endereço do termo apresentado ao público. Em desenvolvimento, use uma versão identificada como teste. Para `CONTA_CHAVE`, gere uma chave privada com `uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` em `apps/backend`. Guarde-a nos segredos da API e do processo de entrega. O envio usa `RESEND_FROM`, `RESEND_API_KEY` e `APP_BASE_URL`.
+
+A API tenta entregar os avisos depois do commit. Para processar retentativas independentemente de novas requisições, execute periodicamente (a cada cinco minutos) `uv run python -m mandatometro.contas` em `apps/backend` com o mesmo banco e segredos. O destinatário e o link ficam criptografados na fila até o aceite do provedor ou o fim da validade.
+
+Em `/login`, quem já confirmou o e-mail entra com a senha e segue para `/perfil`. A sessão dura sete dias a partir do login. A API guarda o SHA-256 do segredo aleatório em `credencial_conta`. O navegador recebe o cookie `sessao_conta` com `HttpOnly`, `SameSite=Lax`, caminho `/` e `Secure` em HTTPS. **Sair** encerra a sessão atual. Redefinir a senha encerra todas as sessões da conta. A #111 deve referenciar `conta.id` com exclusão em cascata.
 
 Precisa de [Node.js](https://nodejs.org/) 24, [pnpm](https://pnpm.io/) (ele mesmo troca para a versão do `packageManager`, no `package.json`), [uv](https://docs.astral.sh/uv/) (ele instala o Python 3.13) e [Docker](https://www.docker.com/).
 
