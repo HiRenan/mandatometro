@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import {
+	COMO_APARECE,
 	type EstiloDeTitulo,
 	LARGURAS_DAS_LETRAS,
 	PARES_MAIS_LARGOS,
@@ -21,16 +22,22 @@ export const FOLGA = 1.005;
 /**
  * A largura de uma palavra, em em, pela soma das letras, mais o que cada par de letras
  * vizinhas passa da soma das duas no navegador (o kerning que afasta, como em "4–").
- * Os títulos vão em maiúsculas na tela (o text-transform do CSS), e a régua mede a
- * palavra como ela aparece.
+ * A régua mede a palavra como ela aparece na tela: em maiúsculas nos títulos que o CSS
+ * passa a maiúsculas (o text-transform), e como escrita no título do passo da sanfona
+ * com a letra grande (o COMO_APARECE).
  */
 export function largura(palavra: string, estilo: EstiloDeTitulo): number {
 	const letras: Record<string, number> = LARGURAS_DAS_LETRAS[estilo];
 	const pares: Record<string, number> = PARES_MAIS_LARGOS[estilo];
 	const maisLarga = Math.max(...Object.values(letras));
+	const escrita = palavra.normalize("NFC");
+	const naTela =
+		COMO_APARECE[estilo].caixa === "alta"
+			? escrita.toLocaleUpperCase("pt-BR")
+			: escrita;
 	let soma = 0;
 	let anterior = "";
-	for (const letra of palavra.normalize("NFC").toLocaleUpperCase("pt-BR")) {
+	for (const letra of naTela) {
 		soma += (letras[letra] ?? maisLarga) + (pares[anterior + letra] ?? 0);
 		anterior = letra;
 	}
