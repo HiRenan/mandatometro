@@ -56,6 +56,40 @@ O banco guarda o que a coleta lê da Câmara e do Senado, o que a newsletter usa
 
 ```mermaid
 erDiagram
+    conta ||--o{ credencial_conta : "autoriza"
+    conta |o--o{ aviso_conta : "gera"
+    conta {
+        uuid id PK
+        string email UK
+        string nome
+        string senha_hash
+        string genero
+        string autodescricao
+        string estado
+        date nascimento
+        string termo
+        timestamptz aceite_em
+        timestamptz criada_em
+        timestamptz confirmada_em
+    }
+    credencial_conta {
+        string resumo PK
+        uuid conta_id FK
+        string finalidade
+        timestamptz expira
+    }
+    aviso_conta {
+        uuid id PK
+        uuid conta_id FK
+        bytes conteudo
+        timestamptz proxima
+        timestamptz expira
+    }
+    limite_conta {
+        string chave PK
+        int minuto
+        int tentativas
+    }
     parlamentar ||--o{ mandato : "tem"
     parlamentar ||--o{ voto : "dá"
     votacao ||--o{ voto : "recebe"

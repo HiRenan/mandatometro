@@ -19,6 +19,62 @@ export type ArtigoDaEdicao = {
 };
 
 /**
+ * Cadastro
+ */
+export type Cadastro = {
+    /**
+     * Senha
+     */
+    senha: string;
+    /**
+     * Confirmar Senha
+     */
+    confirmar_senha: string;
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Nome
+     */
+    nome: string;
+    /**
+     * Genero
+     */
+    genero?: 'mulher' | 'homem' | 'nao_binario' | 'autodescricao' | 'prefiro_nao_informar' | null;
+    /**
+     * Autodescricao
+     */
+    autodescricao?: string | null;
+    /**
+     * Estado
+     */
+    estado?: string | null;
+    /**
+     * Nascimento
+     */
+    nascimento?: string | null;
+    /**
+     * Aceite
+     */
+    aceite: true;
+    /**
+     * Termo
+     */
+    termo: string;
+};
+
+/**
+ * Codigo
+ */
+export type Codigo = {
+    /**
+     * Token
+     */
+    token: string;
+};
+
+/**
  * EdicaoPublica
  */
 export type EdicaoPublica = {
@@ -49,6 +105,26 @@ export type EdicaoPublica = {
 };
 
 /**
+ * Endereco
+ */
+export type Endereco = {
+    /**
+     * Email
+     */
+    email: string;
+};
+
+/**
+ * ErroConta
+ */
+export type ErroConta = {
+    /**
+     * Detail
+     */
+    detail: string;
+};
+
+/**
  * ErroEdicaoPublica
  */
 export type ErroEdicaoPublica = {
@@ -76,6 +152,16 @@ export type ErroPiloto = {
      * Erro
      */
     erro: 'dados_invalidos' | 'corpo_muito_grande' | 'limite_de_tentativas' | 'servico_indisponivel' | 'piloto_encerrado';
+};
+
+/**
+ * Exclusao
+ */
+export type Exclusao = {
+    /**
+     * Senha
+     */
+    senha: string;
 };
 
 /**
@@ -189,6 +275,16 @@ export type PedidoTentativaPiloto = {
 };
 
 /**
+ * PerfilConta
+ */
+export type PerfilConta = {
+    /**
+     * Nome
+     */
+    nome: string;
+};
+
+/**
  * PlacarPublico
  */
 export type PlacarPublico = {
@@ -212,6 +308,24 @@ export type PlacarPublico = {
      * Presidente
      */
     presidente: number;
+};
+
+/**
+ * Redefinicao
+ */
+export type Redefinicao = {
+    /**
+     * Senha
+     */
+    senha: string;
+    /**
+     * Confirmar Senha
+     */
+    confirmar_senha: string;
+    /**
+     * Token
+     */
+    token: string;
 };
 
 /**
@@ -268,6 +382,20 @@ export type Saude = {
      * Status
      */
     status: string;
+};
+
+/**
+ * Termo
+ */
+export type Termo = {
+    /**
+     * Versao
+     */
+    versao: string;
+    /**
+     * Url
+     */
+    url: string;
 };
 
 /**
@@ -378,6 +506,366 @@ export type SairDaNewsletterResponses = {
      */
     200: unknown;
 };
+
+export type TermoContaData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/contas/termo';
+};
+
+export type TermoContaErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErroConta;
+    /**
+     * Forbidden
+     */
+    403: ErroConta;
+    /**
+     * Conflict
+     */
+    409: ErroConta;
+    /**
+     * Unprocessable Content
+     */
+    422: ErroConta;
+    /**
+     * Too Many Requests
+     */
+    429: ErroConta;
+    /**
+     * Service Unavailable
+     */
+    503: ErroConta;
+};
+
+export type TermoContaError = TermoContaErrors[keyof TermoContaErrors];
+
+export type TermoContaResponses = {
+    /**
+     * Successful Response
+     */
+    200: Termo;
+};
+
+export type TermoContaResponse = TermoContaResponses[keyof TermoContaResponses];
+
+export type CadastrarContaData = {
+    body: Cadastro;
+    path?: never;
+    query?: never;
+    url: '/contas';
+};
+
+export type CadastrarContaErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErroConta;
+    /**
+     * Forbidden
+     */
+    403: ErroConta;
+    /**
+     * Conflict
+     */
+    409: ErroConta;
+    /**
+     * Unprocessable Content
+     */
+    422: ErroConta;
+    /**
+     * Too Many Requests
+     */
+    429: ErroConta;
+    /**
+     * Service Unavailable
+     */
+    503: ErroConta;
+};
+
+export type CadastrarContaError = CadastrarContaErrors[keyof CadastrarContaErrors];
+
+export type CadastrarContaResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type CadastrarContaResponse = CadastrarContaResponses[keyof CadastrarContaResponses];
+
+export type ReenviarConfirmacaoData = {
+    body: Endereco;
+    path?: never;
+    query?: never;
+    url: '/contas/reenvio';
+};
+
+export type ReenviarConfirmacaoErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErroConta;
+    /**
+     * Forbidden
+     */
+    403: ErroConta;
+    /**
+     * Conflict
+     */
+    409: ErroConta;
+    /**
+     * Unprocessable Content
+     */
+    422: ErroConta;
+    /**
+     * Too Many Requests
+     */
+    429: ErroConta;
+    /**
+     * Service Unavailable
+     */
+    503: ErroConta;
+};
+
+export type ReenviarConfirmacaoError = ReenviarConfirmacaoErrors[keyof ReenviarConfirmacaoErrors];
+
+export type ReenviarConfirmacaoResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type ReenviarConfirmacaoResponse = ReenviarConfirmacaoResponses[keyof ReenviarConfirmacaoResponses];
+
+export type RecuperarContaData = {
+    body: Endereco;
+    path?: never;
+    query?: never;
+    url: '/contas/recuperacao';
+};
+
+export type RecuperarContaErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErroConta;
+    /**
+     * Forbidden
+     */
+    403: ErroConta;
+    /**
+     * Conflict
+     */
+    409: ErroConta;
+    /**
+     * Unprocessable Content
+     */
+    422: ErroConta;
+    /**
+     * Too Many Requests
+     */
+    429: ErroConta;
+    /**
+     * Service Unavailable
+     */
+    503: ErroConta;
+};
+
+export type RecuperarContaError = RecuperarContaErrors[keyof RecuperarContaErrors];
+
+export type RecuperarContaResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type RecuperarContaResponse = RecuperarContaResponses[keyof RecuperarContaResponses];
+
+export type ConfirmarContaData = {
+    body: Codigo;
+    path?: never;
+    query?: never;
+    url: '/contas/confirmacao';
+};
+
+export type ConfirmarContaErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErroConta;
+    /**
+     * Forbidden
+     */
+    403: ErroConta;
+    /**
+     * Conflict
+     */
+    409: ErroConta;
+    /**
+     * Unprocessable Content
+     */
+    422: ErroConta;
+    /**
+     * Too Many Requests
+     */
+    429: ErroConta;
+    /**
+     * Service Unavailable
+     */
+    503: ErroConta;
+};
+
+export type ConfirmarContaError = ConfirmarContaErrors[keyof ConfirmarContaErrors];
+
+export type ConfirmarContaResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type ConfirmarContaResponse = ConfirmarContaResponses[keyof ConfirmarContaResponses];
+
+export type RedefinirSenhaData = {
+    body: Redefinicao;
+    path?: never;
+    query?: never;
+    url: '/contas/redefinicao';
+};
+
+export type RedefinirSenhaErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErroConta;
+    /**
+     * Forbidden
+     */
+    403: ErroConta;
+    /**
+     * Conflict
+     */
+    409: ErroConta;
+    /**
+     * Unprocessable Content
+     */
+    422: ErroConta;
+    /**
+     * Too Many Requests
+     */
+    429: ErroConta;
+    /**
+     * Service Unavailable
+     */
+    503: ErroConta;
+};
+
+export type RedefinirSenhaError = RedefinirSenhaErrors[keyof RedefinirSenhaErrors];
+
+export type RedefinirSenhaResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type RedefinirSenhaResponse = RedefinirSenhaResponses[keyof RedefinirSenhaResponses];
+
+export type ExcluirContaData = {
+    body: Exclusao;
+    path?: never;
+    query?: never;
+    url: '/contas/me';
+};
+
+export type ExcluirContaErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErroConta;
+    /**
+     * Forbidden
+     */
+    403: ErroConta;
+    /**
+     * Conflict
+     */
+    409: ErroConta;
+    /**
+     * Unprocessable Content
+     */
+    422: ErroConta;
+    /**
+     * Too Many Requests
+     */
+    429: ErroConta;
+    /**
+     * Service Unavailable
+     */
+    503: ErroConta;
+};
+
+export type ExcluirContaError = ExcluirContaErrors[keyof ExcluirContaErrors];
+
+export type ExcluirContaResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type ExcluirContaResponse = ExcluirContaResponses[keyof ExcluirContaResponses];
+
+export type ConsultarPerfilData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/contas/me';
+};
+
+export type ConsultarPerfilErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErroConta;
+    /**
+     * Forbidden
+     */
+    403: ErroConta;
+    /**
+     * Conflict
+     */
+    409: ErroConta;
+    /**
+     * Unprocessable Content
+     */
+    422: ErroConta;
+    /**
+     * Too Many Requests
+     */
+    429: ErroConta;
+    /**
+     * Service Unavailable
+     */
+    503: ErroConta;
+};
+
+export type ConsultarPerfilError = ConsultarPerfilErrors[keyof ConsultarPerfilErrors];
+
+export type ConsultarPerfilResponses = {
+    /**
+     * Successful Response
+     */
+    200: PerfilConta;
+};
+
+export type ConsultarPerfilResponse = ConsultarPerfilResponses[keyof ConsultarPerfilResponses];
 
 export type ListarEdicoesData = {
     body?: never;

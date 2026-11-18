@@ -38,6 +38,49 @@ logger = logging.getLogger(__name__)
 
 CASAS = ("camara", "senado")
 
+
+class Conta(Base):
+    __tablename__ = "conta"
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(unique=True)
+    nome: Mapped[str]
+    senha_hash: Mapped[str]
+    genero: Mapped[str | None]
+    autodescricao: Mapped[str | None]
+    estado: Mapped[str | None]
+    nascimento: Mapped[date | None]
+    termo: Mapped[str]
+    aceite_em: Mapped[datetime]
+    criada_em: Mapped[datetime]
+    confirmada_em: Mapped[datetime | None]
+
+
+class CredencialConta(Base):
+    """Confirmação, recuperação e sessão usam segredos opacos com validade."""
+
+    __tablename__ = "credencial_conta"
+    resumo: Mapped[str] = mapped_column(primary_key=True)
+    conta_id: Mapped[UUID] = mapped_column(ForeignKey("conta.id", ondelete="CASCADE"), index=True)
+    finalidade: Mapped[str]
+    expira: Mapped[datetime]
+
+
+class AvisoConta(Base):
+    __tablename__ = "aviso_conta"
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    conta_id: Mapped[UUID | None] = mapped_column(ForeignKey("conta.id", ondelete="CASCADE"))
+    conteudo: Mapped[bytes]
+    proxima: Mapped[datetime] = mapped_column(index=True)
+    expira: Mapped[datetime]
+
+
+class LimiteConta(Base):
+    __tablename__ = "limite_conta"
+    chave: Mapped[str] = mapped_column(primary_key=True)
+    minuto: Mapped[int]
+    tentativas: Mapped[int]
+
+
 # --- O voto e o resultado: o valor num conjunto nosso e, se pode, o código da Casa ---
 
 # presidente: quem presidiu a sessão e não vota. nao_votou: presente sem voto, ausente em atividade

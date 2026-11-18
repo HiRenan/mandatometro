@@ -30,6 +30,9 @@ class Config(BaseSettings):
     api_url: str = "http://localhost:8000"
     resend_api_key: SecretStr | None = None
     resend_from: str | None = None
+    conta_chave: SecretStr | None = None
+    conta_termo_versao: str | None = None
+    conta_termo_url: str | None = None
     newsletter_limite_por_minuto: int = Field(default=30, gt=0)
     piloto_ativo: bool = False
     piloto_limite_por_minuto: int = Field(default=120, gt=0)

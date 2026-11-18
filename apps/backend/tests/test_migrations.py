@@ -6,6 +6,10 @@ import mandatometro.db.modelos  # noqa: F401  (registra as tabelas no Base.metad
 from mandatometro.db import Base
 
 TABELAS_DO_MVP = {
+    "conta",
+    "credencial_conta",
+    "aviso_conta",
+    "limite_conta",
     "fonte",
     "parlamentar",
     "mandato",
