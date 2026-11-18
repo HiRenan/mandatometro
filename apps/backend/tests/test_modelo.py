@@ -350,7 +350,8 @@ def test_apagar_a_edicao_apaga_os_itens(sessao):
 
 
 def test_o_inscrito_guarda_so_o_minimo():
-    # A inscrição pede só o e-mail (AGENTS.md). Coluna nova aqui é dado pessoal novo: decida antes.
+    # A inscrição pede só o e-mail (docs/dados-pessoais.md). Coluna nova aqui é dado pessoal novo:
+    # decida antes.
     assert set(Inscrito.__table__.columns.keys()) == {
         "id",
         "email",

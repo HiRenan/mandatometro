@@ -6,7 +6,7 @@ import { z } from "zod";
 const PALAVRAS_POR_MINUTO = 200;
 
 // Só entram fontes oficiais: governo, Congresso, Justiça, Ministério Público
-// e Defensoria Pública (AGENTS.md, "Regras de conteúdo").
+// e Defensoria Pública (docs/conteudo-das-trilhas.md, "O artigo").
 const SITE_OFICIAL = /(^|\.)(gov|leg|jus|mp|def)\.br$/;
 
 // O nome da pasta e o do arquivo viram o endereço da página.

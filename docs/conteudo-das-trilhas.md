@@ -68,7 +68,7 @@ Em regra, o projeto começa na Câmara dos Deputados, a não ser que...
 - `ordem`: a posição na trilha, um número inteiro a partir de 1, sem repetir dentro da trilha. Os números podem pular (10, 20, 30), o que deixa espaço para encaixar um artigo no meio depois.
 - `fontes`: pelo menos uma. Cada fonte tem:
   - `titulo`: o nome que aparece na lista de fontes, como "Constituição Federal, art. 64";
-  - `url`: um link `https` de um site oficial, com o domínio terminado em `gov.br`, `leg.br`, `jus.br`, `mp.br` ou `def.br`;
+  - `url`: um link `https` de um site oficial. O validador aceita `gov.br`, `leg.br`, `jus.br`, `mp.br` e `def.br`. As referências planejadas do Ministério Público e da Defensoria Pública usam os dois últimos; mantenha esses links oficiais ao escrever os artigos.
   - `consultadoEm`: o dia em que a fonte foi conferida, no formato `AAAA-MM-DD`.
 - Um campo a mais, ou com o nome errado, também é erro.
 
@@ -77,7 +77,7 @@ Em regra, o projeto começa na Câmara dos Deputados, a não ser que...
 - **As seções começam com `##`.** O título do artigo vem do cabeçalho, então o texto não usa `#`.
 - Parágrafos, listas (`-` ou `1.`), negrito (`**assim**`) e links funcionam. HTML no meio do texto não é interpretado.
 - O tempo de leitura é calculado com 200 palavras por minuto, e o mínimo é 1 minuto.
-- **Valem as regras de conteúdo do `AGENTS.md`:** tom neutro e apartidário, a fonte oficial em cada explicação e nenhum dado pessoal. A voz é a do `PRODUCT.md`: um professor paciente, que trata a pessoa por "você" e dá o exemplo antes da regra.
+- **Texto para o leitor.** Siga as regras de [fonte e tom](../PRODUCT.md#capabilities-and-constraints), de [voz](../PRODUCT.md#brand-commitments) e de [dados pessoais](dados-pessoais.md#trilhas-e-piloto).
 - Quando o texto cita um artigo de lei, como "(art. 61)", essa lei entra nas fontes.
 
 ## O infográfico: `infografico.md`
@@ -161,7 +161,7 @@ perguntas:
   - `fontes`: pelo menos uma, no mesmo formato das fontes do artigo.
 - **A resposta certa está no artigo e na fonte.** Confira a resposta no texto do artigo e abra a fonte oficial antes de escrever a pergunta: o `consultadoEm` é o dia dessa conferência. Quando a explicação cita um artigo de lei, como "(art. 65)", essa lei entra nas fontes da pergunta.
 - **As opções aparecem na ordem do arquivo,** sem sorteio. Varie a posição da certa de uma pergunta para outra.
-- **Valem as regras de conteúdo do `AGENTS.md`:** o quiz pergunta sobre fatos e regras, em tom neutro, e nunca dá nota a político ou partido.
+- **Perguntas do quiz.** Siga as [regras de conteúdo do PRODUCT.md](../PRODUCT.md#capabilities-and-constraints).
 - **Um artigo que não existe na pasta, ou que vem depois do `depoisDe`, é erro,** com a posição da pergunta, que conta a partir do 0:
 
   ```text
@@ -277,6 +277,12 @@ Quando o teste falhar, escreva o título de outro jeito, com a palavra acentuada
   O CI roda o mesmo teste, então um artigo com problema não passa no PR.
 - **`pnpm build`** confere a pasta antes de montar o site e para com a mesma lista. Por isso um artigo com problema também derruba o deploy na Vercel e a imagem do Docker, e o site no ar continua na versão anterior.
 - **`pnpm dev`** sobe o site em http://localhost:3001, e o artigo aparece em `/trilhas/<trilha>/<artigo>`. O infográfico aparece em `/trilhas/<trilha>`, o quiz, em `/trilhas/<trilha>/quiz`, e o quiz final, em `/trilhas/<trilha>/quiz-final`. Um arquivo novo ou mudado aparece ao recarregar a página, sem reiniciar o `pnpm dev`.
+
+### Conferir as fontes oficiais
+
+- A referência do Programa Cidadania Fiscal da Receita Federal no planejamento pode redirecionar para autenticação. Em 11/11/2026, o trecho explicativo foi consultado no índice de busca da própria URL; não trate a tela de login como conteúdo da fonte e confira o acesso público antes de publicar o artigo 3.5.
+- O normas.leg.br, onde os artigos das trilhas citam a Constituição, monta a página no navegador: o `curl` do link não traz o texto. Para conferir por HTTP, peça a norma inteira em `https://normas.leg.br/api/public/normas?urn=<urn>&tipo_documento=maior-detalhe`, com a URN sem o `!art61` do fim (com ele, a resposta só repete a URN). Cada dispositivo vem num `hasPart`, com a URN em `legislationIdentifier` e as versões em `workExample`; o texto em vigor é o `text` da versão com a `legislationDate` mais recente. Quando mais de uma versão tem a data mais recente, vale a que vem sem `legislationLegalForce: NotInForce`: em 18/11/2026, o caput do art. 134 (`!art134_cpt,emc-80-2014-06-04`) tinha duas versões de 04/06/2014, e só a substituída trazia o `NotInForce`, como em outros sete dispositivos da Constituição. Em 13/11/2026, o Regimento Comum e o Regimento Interno da Câmara (RICD) não tinham texto no normas.leg.br: a resposta da API vinha sem `hasPart`. A compilação mais nova do Regimento Comum é a do Senado, o `RCCN.rtf` que `https://www25.senado.leg.br/web/atividade/legislacao/regimento-interno` lista em "Regimento Comum (ver texto compilado até 31/7/2025)"; o site da Câmara traz a republicação de 2023, e o art. 4º já difere entre as duas. O RICD em vigor é o DOCX ou o PDF "atualizado até a Resolução nº 34, de 2026", em `https://www2.camara.leg.br/atividade-legislativa/legislacao/regimento-interno-da-camara-dos-deputados`. O `workExample` de um dispositivo às vezes vem como objeto, e não como lista.
+- No normas.leg.br, o artigo (`!art47`) vem com o `text` vazio: o texto do caput fica no dispositivo `!art47_cpt`, e cada parágrafo no seu, como `!art58_par1`. Um dispositivo acrescentado por emenda leva a emenda no fim da URN: em 17/11/2026, o § 8º do art. 62 da Constituição, que veio da Emenda Constitucional nº 32, de 2001, vinha como `!art62_par8,emc-32-2001-09-11`, e `!art62_par8` não existia na resposta. Para achar um dispositivo, compare a URN inteira até a vírgula que abre o sufixo da emenda e confira o `name` da versão mais nova, que é o rótulo dele. Se duas URNs batem, a versão mais nova de uma delas pode ser só "(Reposicionado)", com o mesmo `name`: o texto em vigor está na outra (em 18/11/2026, o caput e os §§ 1º a 3º do art. 134 e o caput do art. 135, na URN com `,emc-80-2014-06-04`). Em 17/11/2026, `!art37_par1` também era o começo dos §§ 10 a 16 do art. 37, como `!art37_par10,emc-20-1998-12-15`, e o `!art53_par1` era o § 2º do art. 53, renumerado pela Emenda Constitucional nº 35, de 2001: o § 1º em vigor vinha como `!art53_par1,emc-35-2001-12-20`. O Regimento Interno do Senado tem texto lá, mas, em 16/11/2026, a versão mais nova de um dispositivo era de 07/06/2023, e a página do Senado, a mesma do Regimento Comum, lista o texto compilado até 22/8/2025: um dispositivo mudado depois de 2023 se confere na compilação do Senado. A Lei de Introdução às Normas do Direito Brasileiro (Decreto-Lei nº 4.657, de 1942) não tem texto no normas.leg.br, porque a resposta da API vem sem `hasPart`: o texto em vigor é o compilado do planalto.gov.br. Em 16/11/2026, o `curl` para o planalto.gov.br caiu com `Recv failure: Connection was reset`, e a página só abriu por um leitor de páginas.
 
 ## Como o site lê os arquivos
 

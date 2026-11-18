@@ -15,7 +15,7 @@ Com a tela integrada e as decisões que faltam tomadas, o Renan define `PILOTO_A
 
 ## Conteúdo e dados
 
-`processo-legislativo-final-v1` corresponde às **12 perguntas**, duas por artigo, de `apps/web/conteudo/trilhas/processo-legislativo/quiz-final.md`, revisão `3510ff23ec3cfe987029ab3fb0fe04f2c3a1d604`, presente na base `78304ba`. A tela só deve enviar essa versão para esse conjunto congelado. Mudança de enunciado, opções ou gabarito exige uma nova versão combinada entre conteúdo, API e cliente; versões diferentes nunca formam pares. As perguntas não recebem ids nesta etapa, pois não há análise por pergunta.
+`processo-legislativo-final-v1` corresponde às **12 perguntas**, duas por artigo, de `apps/web/conteudo/trilhas/processo-legislativo/quiz-final.md`, revisão `3510ff23ec3cfe987029ab3fb0fe04f2c3a1d604`, presente na base `78304ba`. A tela só deve enviar essa versão para esse conjunto congelado. Mudança de enunciado, opções ou gabarito exige uma nova versão combinada entre conteúdo, API e cliente; versões diferentes nunca formam pares. O `lib/piloto-versao.test.ts` falha quando elas mudam. As perguntas não recebem ids nesta etapa, pois não há análise por pergunta.
 
 | Tabela | Campos | Regra |
 | --- | --- | --- |
@@ -68,7 +68,7 @@ A tela é da #92: `apps/web/src/lib/piloto.ts` guarda o piloto no navegador, `li
 
 ## Relatório para o time
 
-Em `apps/backend`, com `DATABASE_URL` explícito para o banco escolhido, executar:
+A leitura é só por CLI. Em `apps/backend`, com as migrations aplicadas e `DATABASE_URL` explícito para o banco escolhido, executar:
 
 ```text
 uv run mandatometro piloto resultado --versao processo-legislativo-final-v1
@@ -91,13 +91,13 @@ Qualquer pessoa pode inventar um total ou novos códigos; a cota não resolve fr
 
 1. Desligar `PILOTO_ATIVO` em todas as instâncias e reaplicar a configuração; confirmar 410 e esperar os pedidos já iniciados terminarem. O CLI deve usar a mesma configuração da hospedagem: desligar só no terminal não desliga os servidores.
 2. Salvar e revisar o relatório agregado, sem exportar linhas individuais.
-3. Executar no banco certo, com a URL na linha do comando:
+3. Executar no banco certo, com as migrations aplicadas e a URL na linha do comando:
 
    ```text
    uv run mandatometro piloto apagar --versao processo-legislativo-final-v1 --confirmar
    ```
 
-O comando recusa se o seu `PILOTO_ATIVO` estiver ligado ou se faltar `--confirmar`. Apaga a versão indicada e todas as janelas da cota do piloto em uma transação, preservando outras versões e a newsletter. Repeti-lo imprime zero; a saída contém apenas `tentativas_apagadas` e `janelas_apagadas`. Nenhum fechamento por calendário impede reativação: manter a coleta desligada depois da exclusão e descartar pendências da tela para evitar recriação.
+O comando recusa se o seu `PILOTO_ATIVO` estiver ligado ou se faltar `--confirmar`. Apaga a versão indicada e todas as janelas da cota do piloto em uma transação, preservando outras versões e a newsletter. Repeti-lo imprime zero; a saída contém apenas `tentativas_apagadas` e `janelas_apagadas`. Nenhum fechamento por calendário impede reativação: manter a coleta desligada depois da exclusão e descartar pendências da tela para evitar recriação. Reveja a rodada e as pendências da tela antes de reativar.
 
 A limpeza final remove as janelas que tenham sobrado sem tráfego. A tela não tem data no código: o código e as pendências saem com o depois recebido, com o 410 e com o "Começar como outra pessoa". Com o `PILOTO_ATIVO` desligado, o navegador que ainda tentar enviar recebe o 410 e apaga o que guardava. Na data que o Renan aprovar, um PR pequeno tira a página do piloto e a parte do piloto do quiz final e apaga, de quem abrir o site, a chave do piloto e as respostas do antes. A #23 precisa confirmar a retenção/eliminação de backups; se uma cópia for restaurada, reaplicar a exclusão antes de reabrir a API. Os arts. 15–16 da LGPD tratam do encerramento da finalidade e da eliminação.
 
