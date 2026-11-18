@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from unittest.mock import Mock
 
 import httpx2
 import pytest
@@ -13,7 +14,7 @@ from mandatometro.cli import main
 from mandatometro.config import Config
 from mandatometro.ia import cli
 from mandatometro.ia.artigos import CATALOGO
-from mandatometro.ia.servico import exportar, gerar
+from mandatometro.ia.servico import ErroEdicao, exportar, gerar
 
 
 @pytest.mark.parametrize(
@@ -97,6 +98,34 @@ def test_proxy_invalido_da_saida_um_com_erro_fixo(monkeypatch, capsys):
     assert saida.err == ""
     (linha,) = saida.out.splitlines()
     assert json.loads(linha) == {"erro": "Falha no serviço de redação."}
+
+
+def test_interrupcao_do_rascunho_da_saida_130_com_uma_linha_fixa(monkeypatch, capsys):
+    monkeypatch.setattr(cli, "config", lambda: Config(_env_file=None, llm_provider=""))
+    monkeypatch.setattr(cli, "gerar", Mock(side_effect=KeyboardInterrupt(CHAVE)))
+    try:
+        codigo = main(["edicao", "rascunho"])
+    except KeyboardInterrupt:
+        pytest.fail("A interrupção escapou do CLI.", pytrace=False)
+    assert codigo == 130
+    saida = capsys.readouterr()
+    assert saida.out == '{"erro": "Rascunho interrompido."}\n'
+    assert saida.err == ""
+
+
+def test_rascunho_preserva_os_outros_erros_de_gerar(monkeypatch, capsys):
+    inesperado = RuntimeError("Erro inesperado.")
+    monkeypatch.setattr(cli, "config", lambda: Config(_env_file=None, llm_provider=""))
+    erros = [ErroEdicao("Edição indisponível."), inesperado]
+    monkeypatch.setattr(cli, "gerar", Mock(side_effect=erros))
+    assert main(["edicao", "rascunho"]) == 1
+    saida = capsys.readouterr()
+    assert json.loads(saida.out) == {"erro": "Edição indisponível."}
+    assert saida.err == ""
+
+    with pytest.raises(RuntimeError) as erro:
+        main(["edicao", "rascunho"])
+    assert erro.value is inesperado
 
 
 def test_cli_redige_itens_e_exige_revisao_antes_de_publicar(monkeypatch, capsys, abrir, dados):

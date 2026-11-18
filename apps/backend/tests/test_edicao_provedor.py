@@ -3,6 +3,7 @@ import logging
 import os
 import subprocess
 import sys
+import traceback
 from unittest.mock import Mock
 
 import httpx2
@@ -292,6 +293,23 @@ def test_sdk_repete_uma_vez_e_recupera(primeira):
     with abrir_redator(configuracao(), transporte=httpx2.MockTransport(responder)) as redator:
         assert redator.escrever(ENTRADA).conteudo == REDACAO
     assert len(pedidos) == 2 and pedidos[0].content == pedidos[1].content
+
+
+def test_interrupcao_na_espera_apos_timeout_sai_sem_cadeia(monkeypatch):
+    responder = Mock(side_effect=httpx2.ReadTimeout(CHAVE))
+    esperar = Mock(side_effect=KeyboardInterrupt)
+    with (
+        pytest.raises(KeyboardInterrupt) as erro,
+        abrir_redator(configuracao(), transporte=httpx2.MockTransport(responder)) as redator,
+    ):
+        monkeypatch.setattr("time.sleep", esperar)
+        redator.escrever(ENTRADA)
+
+    responder.assert_called_once()
+    esperar.assert_called_once()
+    assert erro.value.__context__ is None and erro.value.__cause__ is None
+    assert CHAVE not in repr(erro.value)
+    assert CHAVE not in "".join(traceback.format_exception(erro.value))
 
 
 @pytest.mark.parametrize(("falha", "tentativas"), [(400, 1), (503, 2), ("timeout", 2)])
