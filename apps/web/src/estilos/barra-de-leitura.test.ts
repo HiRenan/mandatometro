@@ -12,6 +12,11 @@ import { describe, expect, it } from "vitest";
 // Este teste junta o CSS do site na ordem do build e resolve a cascata da barra
 // em cada navegador, porque o jsdom não conhece as camadas nem o @supports. A
 // medida de verdade é no navegador.
+//
+// A cascata também sai para as duas peças que ligam a barra ao texto: o texto do
+// artigo, que é a linha do tempo, e a página do artigo, que deixa a barra ver
+// essa linha. A revisão do PR #160 achou três mudanças que deixavam o teste verde
+// e quebravam a barra no navegador (a #163).
 
 const src = new URL("../", import.meta.url);
 
@@ -33,7 +38,10 @@ const css = readFileSync(new URL("index.css", src), "utf8")
  */
 const CAMADAS = ["theme", "base", "components", "utilities"];
 
-/** O que pode vir antes da barra num seletor que a pega: a página do artigo e o que fica em volta dela. */
+/**
+ * O que pode vir antes da barra num seletor que a pega: a página do artigo e o
+ * que fica em volta dela. A página e o texto do artigo também ficam aí dentro.
+ */
 const EM_VOLTA = new Set([
 	"html",
 	"body",
@@ -44,10 +52,58 @@ const EM_VOLTA = new Set([
 	".pagina-do-artigo",
 ]);
 
+/**
+ * Uma peça do artigo, pela classe dela. Num seletor que pega a peça, a classe
+ * fica na última parte, e o que vem antes fica em volta da peça. A classe numa
+ * parte de antes é de uma peça de dentro dela, como em `.texto h2`.
+ */
+type Peca = {
+	nome: string;
+	classe: string;
+	emVolta: Set<string>;
+	/** O que fica em volta de outra peça com a mesma classe, como o texto de cada item da edição. */
+	deOutra?: Set<string>;
+};
+
+/** A barra (routes/trilhas/$trilha/$artigo.tsx). */
+const BARRA: Peca = {
+	nome: "a barra",
+	classe: ".leitura-barra",
+	emVolta: EM_VOLTA,
+};
+
+/** A página do artigo, que tem em volta a barra e o texto. */
+const PAGINA: Peca = {
+	nome: "a página do artigo",
+	classe: ".pagina-do-artigo",
+	emVolta: EM_VOLTA,
+};
+
+/** O texto do artigo (components/texto-do-artigo.tsx), dentro da folha. */
+const TEXTO: Peca = {
+	nome: "o texto do artigo",
+	classe: ".texto",
+	emVolta: new Set([
+		...EM_VOLTA,
+		".parede",
+		".artigo-grade",
+		"article",
+		".folha",
+		".artigo-folha",
+	]),
+	deOutra: new Set([".item-da-edicao"]),
+};
+
 /** As animações do CSS, para achar o nome dentro do atalho `animation`. */
 const ANIMACOES = new Set(
 	[...css.matchAll(/@keyframes ([\w-]+)/g)].map(([, nome]) => nome),
 );
+
+/** Os preenchimentos da animação, para achar o dele dentro do atalho `animation`. */
+const PREENCHIMENTOS = new Set(["none", "forwards", "backwards", "both"]);
+
+/** Os eixos da linha do tempo, para achar o dela dentro do atalho `view-timeline`. */
+const EIXOS = new Set(["block", "inline", "x", "y"]);
 
 type Regra = { seletores: string[]; declaracoes: string[]; blocos: string[] };
 
@@ -109,20 +165,20 @@ function lerRegras(texto: string): Regra[] {
 
 const REGRAS = lerRegras(css);
 
-/** Se o seletor pega a barra. O que o teste não sabe avaliar falha, para não passar calado. */
-function pegaABarra(seletor: string): boolean {
+/** Se o seletor pega a peça. O que o teste não sabe avaliar falha, para não passar calado. */
+function pega(peca: Peca, seletor: string): boolean {
 	// O * do movimento reduzido, que tira a animação de tudo.
 	if (seletor === "*") return true;
-	if (!seletor.includes("leitura-barra")) return false;
-	const partes = seletor.split(/ ?> ?| /);
-	const ultima = partes.pop();
-	if (
-		(ultima !== ".leitura-barra" && ultima !== "div.leitura-barra") ||
-		!partes.every((parte) => EM_VOLTA.has(parte))
-	) {
-		throw new Error(`o teste não sabe se o seletor ${seletor} pega a barra`);
+	const partes = seletor.split(/ ?[>+~] ?| /);
+	const ultima = partes.pop() ?? "";
+	if (ultima === peca.classe || ultima === `div${peca.classe}`) {
+		if (partes.every((parte) => peca.emVolta.has(parte))) return true;
+		if (partes.some((parte) => peca.deOutra?.has(parte))) return false;
+	} else if (!ultima.split(/(?=[.#:[])/).includes(peca.classe)) {
+		// Sem a classe na última parte: o seletor pega outra coisa, ou uma peça de dentro desta.
+		return false;
 	}
-	return true;
+	throw new Error(`o teste não sabe se o seletor ${seletor} pega ${peca.nome}`);
 }
 
 type Navegador = { rolagem: boolean; menosMovimento: boolean };
@@ -141,7 +197,7 @@ function vale(bloco: string, navegador: Navegador): boolean {
 	if (bloco === "@media (prefers-reduced-motion: no-preference)") {
 		return !navegador.menosMovimento;
 	}
-	throw new Error(`o teste não sabe se o bloco ${bloco} vale para a barra`);
+	throw new Error(`o teste não sabe se o bloco ${bloco} vale no navegador`);
 }
 
 /** A posição da camada na ordem, e a de quem fica fora de camada, depois de todas. */
@@ -176,23 +232,41 @@ function compararEspecificidade(a: number[], b: number[]): number {
 }
 
 /**
- * A declaração, com o atalho `animation` aberto no nome da animação e na linha
- * do tempo, que o atalho zera: a animation-timeline que vem antes dele se perde.
+ * A declaração, com os atalhos abertos nas propriedades que o teste lê. O atalho
+ * volta ao começo o que ele não diz, como no navegador: o `animation` zera a
+ * linha do tempo e o trecho dela, e o `view-timeline`, a janela dela (o inset).
+ * O que vem antes do atalho se perde.
  */
 function abrir(declaracao: string): [string, string, boolean][] {
 	const achada = /^([\w-]+)\s*:\s*([\s\S]+?)\s*(!important)?$/.exec(declaracao);
 	if (!achada) return [];
 	const [, propriedade = "", valor = "", importante] = achada;
 	const peso = Boolean(importante);
-	if (propriedade !== "animation") return [[propriedade, valor, peso]];
-	const nome =
-		valor
-			.split(" ")
-			.find((parte) => parte === "none" || ANIMACOES.has(parte)) ?? "none";
-	return [
-		["animation-name", nome, peso],
-		["animation-timeline", "auto", peso],
-	];
+	const partes = valor.split(" ");
+	if (propriedade === "animation") {
+		const nome =
+			partes.find((parte) => parte === "none" || ANIMACOES.has(parte)) ??
+			"none";
+		const preenchimento =
+			partes.find((parte) => PREENCHIMENTOS.has(parte)) ?? "none";
+		return [
+			["animation-name", nome, peso],
+			["animation-fill-mode", preenchimento, peso],
+			["animation-timeline", "auto", peso],
+			["animation-range", "normal", peso],
+		];
+	}
+	if (propriedade === "view-timeline") {
+		const [nome = "none", ...resto] = partes;
+		const eixo = resto.find((parte) => EIXOS.has(parte)) ?? "block";
+		const janela = resto.filter((parte) => !EIXOS.has(parte)).join(" ");
+		return [
+			["view-timeline-name", nome, peso],
+			["view-timeline-axis", eixo, peso],
+			["view-timeline-inset", janela || "auto", peso],
+		];
+	}
+	return [[propriedade, valor, peso]];
 }
 
 type Candidata = {
@@ -218,15 +292,18 @@ function vence(a: Candidata, b: Candidata): boolean {
 	return a.ordem > b.ordem;
 }
 
-/** O valor de cada propriedade da barra no navegador, pela cascata do CSS do site. */
-function barraNo(navegador: Navegador): (propriedade: string) => string {
+/** O valor de cada propriedade da peça no navegador, pela cascata do CSS do site. */
+function estilo(
+	peca: Peca,
+	navegador: Navegador,
+): (propriedade: string) => string {
 	const vencedoras = new Map<string, Candidata>();
 	let ordem = 0;
 	for (const { seletores, declaracoes, blocos } of REGRAS) {
-		const daBarra = seletores.filter(pegaABarra);
-		if (daBarra.length === 0) continue;
+		const daPeca = seletores.filter((seletor) => pega(peca, seletor));
+		if (daPeca.length === 0) continue;
 		if (!blocos.every((bloco) => vale(bloco, navegador))) continue;
-		const [maior = [0, 0, 0]] = daBarra
+		const [maior = [0, 0, 0]] = daPeca
 			.map(especificidade)
 			.sort((a, b) => compararEspecificidade(b, a));
 		for (const declaracao of declaracoes) {
@@ -249,6 +326,9 @@ function barraNo(navegador: Navegador): (propriedade: string) => string {
 	return (propriedade) => vencedoras.get(propriedade)?.valor ?? "(sem regra)";
 }
 
+/** O valor de cada propriedade da barra no navegador. */
+const barraNo = (navegador: Navegador) => estilo(BARRA, navegador);
+
 /** O z-index do cabeçalho (a .moldura do index.css). */
 const zDoCabecalho = Number(
 	/\.moldura \{[^}]*z-index: (\d+);/.exec(css)?.[1] ?? Number.NaN,
@@ -256,6 +336,8 @@ const zDoCabecalho = Number(
 
 describe("a barra da leitura do artigo", () => {
 	const comRolagem = barraNo({ rolagem: true, menosMovimento: false });
+	const pagina = estilo(PAGINA, { rolagem: true, menosMovimento: false });
+	const texto = estilo(TEXTO, { rolagem: true, menosMovimento: false });
 
 	it("aparece onde o navegador tem a animação de rolagem", () => {
 		expect(comRolagem("display")).toBe("block");
@@ -267,6 +349,23 @@ describe("a barra da leitura do artigo", () => {
 		// acabaria na hora, e a barra ficaria cheia desde o começo do texto.
 		expect(comRolagem("animation-name")).toBe("enche");
 		expect(comRolagem("animation-timeline")).toBe("--leitura");
+	});
+
+	it("acompanha a linha do tempo do texto do artigo", () => {
+		// O texto é a linha do tempo, na rolagem da página. Sem ela, a barra nunca
+		// enche.
+		expect(texto("view-timeline-name")).toBe("--leitura");
+		expect(texto("view-timeline-axis")).toBe("block");
+		// A barra fica fora do texto e só vê a linha do tempo dele pelo
+		// timeline-scope da página do artigo, que tem os dois dentro. Sem ele, a
+		// barra fica cheia desde o alto da página.
+		expect(pagina("timeline-scope").split(/,\s*/)).toContain("--leitura");
+	});
+
+	it("fica cheia depois do fim do texto, e não esvazia", () => {
+		// O preenchimento both deixa a barra vazia antes do texto e cheia depois
+		// dele. Sem ele, ela esvazia quando o texto acaba.
+		expect(comRolagem("animation-fill-mode")).toBe("both");
 	});
 
 	it("não aparece onde o navegador não tem a animação de rolagem", () => {
