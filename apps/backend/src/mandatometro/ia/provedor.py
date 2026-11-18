@@ -78,9 +78,12 @@ class RedatorAnthropic:
 def _cliente_anthropic(http: httpx2.Client, chave: str) -> "Anthropic":
     # O import configura o logging pelo ambiente. O construtor mescla os
     # cabeçalhos do ambiente mesmo quando recebe default_headers explícito.
-    nivel_sdk = os.environ.pop("ANTHROPIC_LOG", None)
-    cabecalhos = os.environ.pop("ANTHROPIC_CUSTOM_HEADERS", None)
+    variaveis = ("ANTHROPIC_LOG", "ANTHROPIC_CUSTOM_HEADERS")
+    anteriores = {nome: os.environ[nome] for nome in variaveis if nome in os.environ}
     try:
+        for nome in variaveis:
+            os.environ.pop(nome, None)
+
         from anthropic import Anthropic
 
         return Anthropic(
@@ -92,10 +95,10 @@ def _cliente_anthropic(http: httpx2.Client, chave: str) -> "Anthropic":
             open_telemetry={"traces": False, "propagation": False},
         )
     finally:
-        if cabecalhos is not None:
-            os.environ["ANTHROPIC_CUSTOM_HEADERS"] = cabecalhos
-        if nivel_sdk is not None:
-            os.environ["ANTHROPIC_LOG"] = nivel_sdk
+        # No Windows, reatribuir "" apaga a entrada vazia do ambiente nativo.
+        for nome, valor in anteriores.items():
+            if os.environ.get(nome) != valor:
+                os.environ[nome] = valor
 
 
 @contextmanager

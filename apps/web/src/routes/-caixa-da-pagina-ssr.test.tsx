@@ -53,7 +53,9 @@ import { Route as RotaDasTrilhas } from "@/routes/trilhas/index";
 // caminho (um @container do Tailwind em volta do título, por exemplo) troca a
 // largura da página pela dele (a #147). O jsdom não calcula o CSS: o teste
 // reconhece o contêiner pelas regras do CSS do site que o criam, pelas classes
-// do Tailwind que o criam e pelo style do elemento.
+// do Tailwind que o criam e pelo style do elemento. Os títulos que só o
+// navegador desenha (o resultado de cada resposta do quiz e o fim do quiz e do
+// piloto) não estão no HTML do servidor e ficam de fora.
 
 // O site com a API e sem ela, como nas prévias dos PRs: com o API_URL, ele tem
 // as edições e a inscrição na newsletter; sem, o cartaz das edições diz que elas
@@ -90,19 +92,33 @@ const css = [
 	)
 	.join("\n");
 
-/** Cada regra do CSS sem outra dentro: o seletor e as declarações. */
-const regras = [...css.matchAll(/([^{};]+)\{([^{}]*)\}/g)].map(
-	([, seletor = "", corpo = ""]) => ({
-		seletor: seletor.trim().replace(/\s+/g, " "),
-		corpo,
-	}),
-);
+/**
+ * Cada regra de um CSS sem outra dentro: o seletor e as declarações. O @utility
+ * do Tailwind faz a classe com o nome dele, e o seletor lido ("@utility nome"),
+ * que o matches recusa, vira o dessa classe. Ela conta só sozinha, sem variante
+ * na frente nem o ! de importante.
+ */
+function lerRegras(texto: string) {
+	return [...texto.matchAll(/([^{};]+)\{([^{}]*)\}/g)].map(
+		([, seletor = "", corpo = ""]) => ({
+			seletor: seletor
+				.trim()
+				.replace(/\s+/g, " ")
+				.replace(/^@utility (\S+)$/, '[class~="$1"]'),
+			corpo,
+		}),
+	);
+}
+
+const regras = lerRegras(css);
 
 /**
  * Uma declaração que faz o contêiner da largura: o container-type ou o
- * container, com o inline-size ou o size.
+ * container, com o inline-size ou o size, ou com o valor numa variável, que pode
+ * ser um dos dois.
  */
-const FAZ_CONTEINER = /(?:^|[;\s])container(?:-type)?\s*:[^;]*\bsize\b/;
+const FAZ_CONTEINER =
+	/(?:^|[;\s])container(?:-type)?\s*:[^;]*(?:\bsize\b|\bvar\()/;
 
 /** Os seletores das regras do CSS que fazem um contêiner (o caixa-do-teto). */
 const CONTEINERES_DO_CSS = regras
@@ -113,10 +129,12 @@ const CONTEINERES_DO_CSS = regras
  * As classes do Tailwind que fazem um contêiner da largura: o @container e o
  * @container-size, com nome ou sem (o @container/folha), o de valor livre com o
  * size (o @container-[size]) e a propriedade livre ([container-type:size]),
- * com ou sem variante na frente (o md:@container conta em toda largura).
+ * com ou sem variante na frente (o md:@container conta em toda largura) e com o
+ * ! de importante, na frente ou no fim. O valor numa variável pode ser um dos
+ * dois, e conta: o @container-(--tipo) e o [container-type:var(--tipo)].
  */
 const CONTEINER_DO_TAILWIND =
-	/(?:^|:)(?:@container(?:-size)?|@container-\[[^\]]*\bsize\])(?:\/[\w-]+)?$|(?:^|:)\[container(?:-type)?:[^\]]*\bsize\]$/;
+	/(?:^|:)!?(?:@container(?:-size|-\[[^\]]*(?:\bsize|var\()[^\]]*\]|-\([^)]*\))?(?:\/[\w-]+)?|\[container(?:-type)?:[^\]]*(?:\bsize|var\()[^\]]*\])!?$/;
 
 /**
  * Os títulos com teto: as regras do CSS em que a letra para na palavra mais
@@ -139,6 +157,12 @@ function eConteiner(elemento: Element) {
 		) ||
 		FAZ_CONTEINER.test(elemento.getAttribute("style") ?? "")
 	);
+}
+
+/** O primeiro elemento de um pedaço de HTML. */
+function elemento(html: string) {
+	const pedaco = new DOMParser().parseFromString(html, "text/html");
+	return pedaco.body.firstElementChild ?? pedaco.body;
 }
 
 /** O contêiner da largura mais perto do título, que o 100cqi dele mede. */
@@ -383,10 +407,6 @@ describe("a caixa da página", () => {
 	});
 
 	it("o contêiner vem da regra do CSS, da classe do Tailwind ou do style", () => {
-		const elemento = (html: string) => {
-			const pedaco = new DOMParser().parseFromString(html, "text/html");
-			return pedaco.body.firstElementChild ?? pedaco.body;
-		};
 		const conteineres = [
 			'<div class="caixa-do-teto"></div>',
 			'<div class="@container"></div>',
@@ -396,13 +416,26 @@ describe("a caixa da página", () => {
 			'<div class="@container-[inline-size]"></div>',
 			'<div class="[container-type:inline-size]"></div>',
 			'<div class="[container:folha/size]"></div>',
+			// O ! de importante, na frente ou no fim, e o valor numa variável.
+			'<div class="@container!"></div>',
+			'<div class="!@container"></div>',
+			'<div class="md:@container/folha!"></div>',
+			'<div class="md:!@container-size"></div>',
+			'<div class="@container-(--tipo)"></div>',
+			'<div class="@container-[var(--tipo)]"></div>',
+			'<div class="[container-type:inline-size]!"></div>',
+			'<div class="![container-type:inline-size]"></div>',
+			'<div class="[container-type:var(--tipo)]"></div>',
 			'<div style="container-type: inline-size"></div>',
 			'<div style="color: red; container: folha / size"></div>',
+			'<div style="container-type: var(--tipo)"></div>',
 		];
 		const outros = [
 			'<div class="container"></div>',
 			'<div class="@container-normal"></div>',
+			'<div class="@container-normal!"></div>',
 			'<div class="[container-type:normal]"></div>',
+			'<div class="![container-type:normal]"></div>',
 			'<div class="[container:folha]"></div>',
 			'<div style="container-name: folha"></div>',
 			'<div class="caixa grid"></div>',
@@ -414,5 +447,65 @@ describe("a caixa da página", () => {
 		for (const html of outros) {
 			expect(eConteiner(elemento(html)), html).toBe(false);
 		}
+	});
+
+	it("a regra do @utility do Tailwind é a da classe que ele faz", () => {
+		// Um @utility que faz um contêiner e um com o teto.
+		const [caixa, titulo] = lerRegras(`
+			@utility caixa-b10 { container-type: inline-size; }
+			@utility titulo-b10 {
+				font-size: min(var(--letra), calc(100cqi / var(--palavra)));
+			}
+		`);
+
+		expect(FAZ_CONTEINER.test(caixa.corpo)).toBe(true);
+		expect(
+			elemento('<div class="cartaz caixa-b10"></div>').matches(caixa.seletor),
+		).toBe(true);
+		expect(
+			elemento('<div class="caixa-b100"></div>').matches(caixa.seletor),
+		).toBe(false);
+		expect(
+			elemento('<h1 class="titulo-b10"></h1>').matches(titulo.seletor),
+		).toBe(true);
+	});
+
+	it("cada rota de src/routes está no criarRouter e abre por um endereço do QUE_ABREM", () => {
+		// As rotas que o TanStack Router lê: os .tsx de src/routes, fora o
+		// __root.tsx e o que começa com "-", como este teste. O id de cada uma é o
+		// caminho do arquivo, e o do index acaba na barra. Assim, uma rota nova
+		// não fica sem a conferência do contêiner.
+		const arquivos = readdirSync(join(src, "routes"), {
+			recursive: true,
+			encoding: "utf8",
+		})
+			.map((arquivo) => arquivo.replaceAll("\\", "/"))
+			.filter(
+				(arquivo) =>
+					arquivo.endsWith(".tsx") &&
+					arquivo !== "__root.tsx" &&
+					!arquivo.split("/").some((parte) => parte.startsWith("-")),
+			)
+			.map(
+				(arquivo) => `/${arquivo.slice(0, -4).replace(/(^|\/)index$/, "$1")}`,
+			)
+			.sort();
+		const router = criarRouter();
+		const montadas = Object.keys(router.routesById)
+			.filter((id) => id !== "__root__")
+			.sort();
+		// A rota que cada endereço do QUE_ABREM abre.
+		const abertas = new Set(
+			QUE_ABREM.map((caminho) => router.getMatchedRoutes(caminho)[2]?.id),
+		);
+
+		expect(
+			montadas,
+			"Cada arquivo de rota entra no criarRouter deste teste, com o caminho dele",
+		).toEqual(arquivos);
+		expect(
+			montadas.filter((id) => !abertas.has(id)),
+			"Cada rota abre por um endereço do QUE_ABREM deste teste: ponha nele um da rota que falta",
+		).toEqual([]);
 	});
 });
