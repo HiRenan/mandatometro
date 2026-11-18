@@ -188,6 +188,12 @@ export function molduraNaTela(rolagemDaNova: number | null = 0): boolean {
 /** Uma página no histórico do navegador: o endereço e a chave da visita. */
 type Visita = { href: string; state: { __TSR_key?: string } };
 
+/**
+ * A página aonde a troca vai: a visita e o trecho do endereço, o que vem depois
+ * do #, que o router dá sem o # (vazio quando não há).
+ */
+type Destino = Visita & { hash: string };
+
 /** As mudanças do histórico que vêm do navegador: a volta, o avançar e o `go`. */
 const PELO_NAVEGADOR = new Set(["BACK", "FORWARD", "GO"]);
 
@@ -198,19 +204,24 @@ function chaveDaVisita(visita: Visita): string {
 
 /**
  * Onde a página nova abre, para saber, antes de ela chegar, se o cabeçalho dela
- * fica na tela. Num link, ela abre no alto. Na volta e no avançar do navegador,
- * o router devolve a rolagem que ela tinha (o `scrollRestoration`), mas só
- * depois de a troca fotografar a página de antes: com o nome, o cabeçalho de
- * antes voava até o da nova, lá no alto, e deixava uma faixa de papel no lugar.
+ * fica na tela. Num link sem trecho (`#`), ela abre no alto. Na volta e no
+ * avançar do navegador, o router devolve a rolagem que ela tinha (o
+ * `scrollRestoration`), mas só depois de a troca fotografar a página de antes:
+ * com o nome, o cabeçalho de antes voava até o da nova, lá no alto, e deixava
+ * uma faixa de papel no lugar.
  *
  * Como o router, guarda a rolagem de cada página pela chave da visita no
  * histórico, quando a pessoa sai dela (o `onBeforeLoad`), e anota as mudanças
  * do histórico que vêm do navegador. A memória é a da página: depois de
  * recarregar, ou na volta de outro site quando o navegador abre a página de
  * novo, a volta para uma visita de antes chega sem a rolagem guardada, e aí não
- * se sabe (`null`). Um link para um trecho de
- * outra página, como /#newsletter, conta como no alto, embora ela abra no
- * trecho: aí o cabeçalho de antes ainda voa.
+ * se sabe (`null`).
+ *
+ * Num endereço com trecho, como o /#newsletter do "Receber por e-mail" das
+ * edições, o router abre a página no trecho, e não no alto, e também só dentro
+ * da troca: sem a rolagem guardada, também não se sabe (a #172). Com ela, como
+ * na volta para a página que abriu no trecho, vale a guardada, que o router
+ * devolve no lugar do trecho.
  */
 export function rolagemDasPaginas() {
 	const guardadas = new Map<string, number>();
@@ -235,9 +246,10 @@ export function rolagemDasPaginas() {
 				: undefined;
 		},
 		/** Onde a página nova abre: a rolagem guardada, o alto, ou `null`. */
-		daPaginaNova({ toLocation }: { toLocation: Visita }): number | null {
+		daPaginaNova({ toLocation }: { toLocation: Destino }): number | null {
 			const chave = chaveDaVisita(toLocation);
-			return guardadas.get(chave) ?? (chave === peloNavegador ? null : 0);
+			const naoSeSabe = chave === peloNavegador || toLocation.hash !== "";
+			return guardadas.get(chave) ?? (naoSeSabe ? null : 0);
 		},
 	};
 }

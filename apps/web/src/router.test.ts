@@ -134,6 +134,7 @@ describe("o cabeçalho na troca de página", () => {
 		});
 	}
 
+	/** O que o router diz da troca, como o `getLocationChangeInfo` dele. */
 	function troca(
 		de: ReturnType<typeof visita>,
 		para: ReturnType<typeof visita>,
@@ -141,9 +142,9 @@ describe("o cabeçalho na troca de página", () => {
 		return {
 			fromLocation: de,
 			toLocation: para,
-			pathChanged: true,
-			hrefChanged: true,
-			hashChanged: false,
+			pathChanged: de.pathname !== para.pathname,
+			hrefChanged: de.href !== para.href,
+			hashChanged: de.hash !== para.hash,
 		};
 	}
 
@@ -173,6 +174,33 @@ describe("o cabeçalho na troca de página", () => {
 			"avancar",
 			"moldura-na-tela",
 		]);
+	});
+
+	// A #172: o "Receber por e-mail" das edições leva à folha da newsletter, no fim
+	// da página inicial. O router abre a página no trecho, dentro da troca: com o
+	// nome, o cabeçalho de antes voava até o alto dela e deixava a faixa de papel.
+	it("num link para um trecho de outra página, como o /#newsletter, o cabeçalho fica sem o nome e vai com a página de antes", async () => {
+		const router = getRouter();
+		await abrir(router, "/edicoes");
+		const edicoes = router.parseLocation(router.history.location);
+		await abrir(router, "/#newsletter");
+		const newsletter = router.parseLocation(router.history.location);
+
+		expect(newsletter.hash).toBe("newsletter");
+		expect(tiposDaTroca(router)(troca(edicoes, newsletter))).toEqual([
+			"folha",
+			"voltar",
+		]);
+	});
+
+	it("num link para um trecho da mesma página, não há troca", async () => {
+		const router = getRouter();
+		await abrir(router, "/edicoes/5");
+		const edicao = router.parseLocation(router.history.location);
+		await abrir(router, "/edicoes/5#item-2");
+		const item = router.parseLocation(router.history.location);
+
+		expect(tiposDaTroca(router)(troca(edicao, item))).toBe(false);
 	});
 
 	it("na volta do navegador sem a rolagem guardada, como depois de recarregar a página, o cabeçalho fica sem o nome", async () => {

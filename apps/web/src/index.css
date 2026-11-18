@@ -90,12 +90,19 @@
 		text-wrap: balance;
 	}
 
+	/*
+	 * Duas alturas de linha, pelo papel do título (a #158). No cartaz, curto, o
+	 * acento da maiúscula (0,885 em) passa por cima da letra de cima com 0,95. Na
+	 * leitura, que aceita qualquer texto, uma cedilha pode cair sobre um acento, e
+	 * as duas só se separam com 1,15. O estilos/entrelinha.test.ts confere cada
+	 * título com a tinta da letra.
+	 */
 	.titulo-condensado {
-		line-height: 0.86;
+		line-height: 0.95;
 	}
 
 	.titulo-de-folha {
-		line-height: 0.92;
+		line-height: 1.15;
 	}
 
 	/* O título menor, um pouco mais largo: o intertítulo, as fontes, o nome do site. */
@@ -103,7 +110,7 @@
 		font-family: var(--font-sans);
 		font-stretch: 68%;
 		font-weight: 900;
-		line-height: 0.95;
+		line-height: 1.15;
 		text-transform: uppercase;
 		text-wrap: balance;
 	}
@@ -1128,7 +1135,6 @@
 
 	.passo h3 {
 		--letra: clamp(2.25rem, 1.6rem + 2.4vw, 3.75rem);
-		line-height: 0.9;
 	}
 
 	.passo-texto > p:not(.rotulo),
@@ -2141,7 +2147,7 @@
 		--recuo: var(--recuo-de-fora);
 		max-width: 10em;
 		margin-top: 1rem;
-		line-height: 0.88;
+		line-height: 1.15;
 	}
 
 	.artigo-folha > .faixa {
@@ -2236,7 +2242,7 @@
 		font-family: var(--font-sans);
 		font-stretch: 68%;
 		font-weight: 900;
-		line-height: 0.95;
+		line-height: 1.15;
 		text-transform: uppercase;
 		text-wrap: balance;
 	}
