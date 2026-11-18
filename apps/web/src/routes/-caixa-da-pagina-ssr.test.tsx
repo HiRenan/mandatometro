@@ -417,15 +417,15 @@ const PAGINAS: Pagina[] = [
  * O id de uma rota, no texto do arquivo dela: o do createFileRoute("…"), em
  * que o gerador de rotas do TanStack escreve o id que dá à rota, ou o do
  * createLazyFileRoute, de um .lazy.tsx, que repete o da rota dele. A busca fica
- * presa ao Route =, como o gerador escreve (export const Route =
- * createFileRoute("…")): um comentário com outro createFileRoute não engana a
- * guarda. Um arquivo sem ele (o __root.tsx, um .functions.ts ou um teste sem o
+ * presa ao = de quem recebe a rota, como no export const Route =
+ * createFileRoute("…") que o gerador escreve: um comentário com outro
+ * createFileRoute não engana a guarda, e as outras formas que o gerador aceita
+ * (o Route com o tipo escrito e a rota com outro nome, exportada como Route)
+ * contam. Um arquivo sem ele (o __root.tsx, um .functions.ts ou um teste sem o
  * "-") não é rota.
  */
 function idDaRota(texto: string) {
-	return texto.match(
-		/\bRoute\s*=\s*create(?:Lazy)?FileRoute\(\s*(["'`])(.*?)\1/,
-	)?.[2];
+	return texto.match(/=\s*create(?:Lazy)?FileRoute\(\s*(["'`])(.*?)\1/)?.[2];
 }
 
 /**
@@ -591,6 +591,16 @@ describe("a caixa da página", () => {
 		expect(
 			idDaRota(
 				'// Antes era o createFileRoute("/piloto").\nexport const Route = createFileRoute("/sobre")({});',
+			),
+		).toBe("/sobre");
+		// As outras formas que o gerador aceita: o Route com o tipo escrito e a
+		// rota com outro nome, exportada como Route.
+		expect(
+			idDaRota('export const Route: Rota = createFileRoute("/sobre")({});'),
+		).toBe("/sobre");
+		expect(
+			idDaRota(
+				'const Sobre = createFileRoute("/sobre")({});\nexport { Sobre as Route };',
 			),
 		).toBe("/sobre");
 		// O __root.tsx e o arquivo que não é rota, como um .functions.ts.
