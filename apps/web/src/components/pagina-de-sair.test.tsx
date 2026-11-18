@@ -836,15 +836,14 @@ describe("a página de sair", () => {
 			const link = screen.getByRole("link", { name: nome });
 			expect(document.activeElement).toBe(link);
 
-			// Quem apertou o Enter duas vezes no botão manda o segundo para o link
-			// que acabou de nascer. No Chromium, o Enter clica no link com o
-			// detail 0; no Firefox, o clique do Enter num link vem com o detail 1,
-			// como o do mouse, e quem segura é o keydown do Enter.
+			// No Chromium e no Firefox, o segundo Enter para no keydown do link
+			// que nasceu no lugar do botão. Esse Enter não gera clique.
 			for (const ms of [0, 499]) {
 				await passar(ms);
 				expect(fireEvent.keyDown(link, { key: "Enter" })).toBe(false);
 				// O Tab sai do link na hora: a guarda é só do Enter.
 				expect(fireEvent.keyDown(link, { key: "Tab" })).toBe(true);
+				// Este clique chega direto ao link, com detail 0 e sem keydown.
 				await act(async () => {
 					fireEvent.click(link, { detail: 0 });
 				});
