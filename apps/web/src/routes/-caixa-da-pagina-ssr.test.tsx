@@ -501,11 +501,11 @@ describe("a caixa da página", () => {
 
 		expect(
 			montadas,
-			"Uma rota nova entra no criarRouter deste teste, com o caminho do arquivo dela",
+			"Cada arquivo de rota entra no criarRouter deste teste, com o caminho dele",
 		).toEqual(arquivos);
 		expect(
 			montadas.filter((id) => !abertas.has(id)),
-			"Cada rota tem um endereço no QUE_ABREM deste teste: ponha um da rota nova",
+			"Cada rota abre por um endereço do QUE_ABREM deste teste: ponha nele um da rota que falta",
 		).toEqual([]);
 	});
 });
