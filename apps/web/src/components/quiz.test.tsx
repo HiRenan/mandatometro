@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
 	createMemoryHistory,
 	createRootRoute,
@@ -237,6 +240,33 @@ function naTela(texto: string): HTMLElement {
 	return screen.getByText(texto, {
 		ignore: "[role=status], [aria-hidden=true], script, style",
 	});
+}
+
+/**
+ * O seletor do separador entre o nome do quiz e a frase do andamento, a regra
+ * do ::before no estilos/quiz.css (a #162), sem o ::before.
+ */
+function seletorDoSeparador(): string {
+	const css = readFileSync(
+		join(dirname(fileURLToPath(import.meta.url)), "../estilos/quiz.css"),
+		"utf8",
+	).replace(/\/\*[\s\S]*?\*\//g, "");
+	const regras = [
+		...css.matchAll(/([^{}]*\.quiz-andamento-texto[^{}]*)::before\s*\{/g),
+	];
+	if (regras.length !== 1) {
+		throw new Error(
+			`esperava uma regra do separador, e vieram ${regras.length}`,
+		);
+	}
+	return regras[0]?.[1]?.trim() ?? "";
+}
+
+/** O texto das frases do andamento que levam o separador antes delas. */
+function comSeparador(): string[] {
+	return [...document.querySelectorAll(seletorDoSeparador())].map(
+		(frase) => frase.textContent ?? "",
+	);
 }
 
 /** A linha do "Recomeçar o quiz": os controles que estão nela. */
@@ -788,6 +818,51 @@ describe("o quiz", () => {
 			screen.getByRole("heading", { level: 2, name: "Você terminou o quiz." }),
 		).toBeTruthy();
 		expect(nomeNoPe()?.getAttribute("aria-hidden")).toBe("true");
+	});
+
+	// O separador entre o nome do quiz e a frase do andamento (a #162) é um
+	// ::before no parágrafo da frase, no estilos/quiz.css, abaixo de 22rem. O
+	// jsdom não desenha o ::before, mas o seletor da regra diz em que telas ele
+	// aparece: com o nome antes de uma frase com texto. Com o nome sozinho, na
+	// primeira pergunta e no fim, ele não aparece.
+	it("o separador do pé só fica entre o nome do quiz e uma frase do andamento", async () => {
+		await mostrar();
+		expect(comSeparador()).toEqual([]);
+
+		comecar();
+		expect(pergunta(1)).toBeTruthy();
+		expect(comSeparador()).toEqual([]);
+
+		escolherEResponder("Pode, pela iniciativa popular.");
+		expect(comSeparador()).toEqual(["Você respondeu 1 de 2."]);
+
+		seguir();
+		expect(pergunta(2)).toBeTruthy();
+		expect(comSeparador()).toEqual(["Você respondeu 1 de 2."]);
+
+		escolherEResponder("Pelo Senado Federal.");
+		expect(comSeparador()).toEqual(["Você terminou o quiz."]);
+
+		seguir();
+		expect(
+			screen.getByRole("heading", { level: 2, name: "Você terminou o quiz." }),
+		).toBeTruthy();
+		expect(comSeparador()).toEqual([]);
+	});
+
+	// A abertura tem a frase, com o quiz pela metade ou depois do recomeço, mas
+	// não tem o nome: o título gigante já diz qual é o quiz.
+	it("na abertura, a frase do andamento fica sem o separador", async () => {
+		guardarRespostas(AS_DUAS);
+		await mostrar();
+		expect(naTela("Você terminou o quiz.")).toBeTruthy();
+		expect(comSeparador()).toEqual([]);
+
+		fireEvent.click(screen.getByRole("button", { name: "Recomeçar o quiz" }), {
+			detail: 1,
+		});
+		expect(naTela("Você recomeçou o quiz.")).toBeTruthy();
+		expect(comSeparador()).toEqual([]);
 	});
 
 	// A frase do andamento é um parágrafo só com ela, em bloco. O Chromium tira da
