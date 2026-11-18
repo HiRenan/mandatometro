@@ -40,6 +40,7 @@ import { Aviso, useAviso } from "./aviso";
 import { AzulejoGrande } from "./azulejo";
 import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "./botao-continuar";
 import { Caminho } from "./caminho";
+import { FaixaDeInformacoes } from "./faixa-de-informacoes";
 import { ListaDeFontes } from "./fontes";
 import { LugarDoBotao } from "./lugar-do-botao";
 import { OutrosArtigos } from "./outros-artigos";
@@ -405,7 +406,7 @@ export function Quiz({
 	// linha dele não guarda lugar: na abertura do depois, a linha vazia só
 	// empurrava o "Começar" para baixo da primeira tela do celular.
 	const recomeco = etapa === undefined && (
-		<p className="recomeco">
+		<div className="recomeco text-pretty">
 			{acao && (
 				<button
 					type="button"
@@ -415,7 +416,7 @@ export function Quiz({
 					{acao.texto}
 				</button>
 			)}
-		</p>
+		</div>
 	);
 
 	// O botão que leva às perguntas, na abertura e no fim. Ele também deixa de
@@ -516,10 +517,10 @@ export function Quiz({
 										Em cada pergunta, escolha uma opção e responda. Você vê se
 										acertou, a resposta certa, a explicação e a fonte oficial.
 									</p>
-									<p className="faixa rotulo">
+									<FaixaDeInformacoes>
 										<span>{plural(total, "pergunta", "perguntas")}</span>
 										<span>Fonte oficial em cada resposta</span>
-									</p>
+									</FaixaDeInformacoes>
 									{recomeco}
 									{/* O "Começar" só funciona com JavaScript, e por isso só
 									    aparece depois que ele carrega. O lugar dele guarda, desde
@@ -686,7 +687,7 @@ export function Quiz({
 									</li>
 								))}
 							</ul>
-							<p className="quiz-fim-acoes">
+							<div className="quiz-fim-acoes text-pretty">
 								<Link
 									to="/trilhas/$trilha"
 									params={{ trilha: trilha.slug }}
@@ -701,7 +702,7 @@ export function Quiz({
 									/>
 								</Link>
 								{comeco(true)}
-							</p>
+							</div>
 						</div>
 					)}
 				</div>
@@ -742,9 +743,9 @@ export function Quiz({
 						)}
 						<div className="quiz-andamento-texto rotulo grid text-pretty">
 							<Reservas frases={frasesDoAndamento(total)} />
-							<p className="col-start-1 row-start-1">
-								{tela === "fim" ? "" : andamento}
-							</p>
+							{tela !== "fim" && andamento && (
+								<p className="col-start-1 row-start-1">{andamento}</p>
+							)}
 						</div>
 					</div>
 				</div>

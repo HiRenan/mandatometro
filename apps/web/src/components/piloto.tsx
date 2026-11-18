@@ -26,6 +26,7 @@ import {
 } from "@/lib/reenvio-do-piloto";
 import { idDoQuizFinal } from "@/lib/respostas-do-quiz";
 import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "./botao-continuar";
+import { FaixaDeInformacoes } from "./faixa-de-informacoes";
 import { LugarDoBotao } from "./lugar-do-botao";
 import { MarcaDeLido } from "./marca-de-lido";
 import { type PartesDoQuiz, Quiz } from "./quiz";
@@ -331,11 +332,11 @@ export function PaginaDoPiloto({
 		return (
 			<>
 				<p className="abertura">{ABERTURA}</p>
-				<p className="faixa rotulo">
+				<FaixaDeInformacoes>
 					<span>12 perguntas</span>
 					<span>Duas etapas</span>
 					<span>Sem nome e sem e-mail</span>
-				</p>
+				</FaixaDeInformacoes>
 				<Passos estados={estadosDosPassos(piloto, comApi)} />
 				<div className="piloto-notas">
 					{NOTAS.map((nota) => (
@@ -400,7 +401,7 @@ export function PaginaDoPiloto({
 				<p className="piloto-outra-pessoa">{OUTRA_PESSOA}</p>
 				{/* A linha guarda a altura do botão, que só aparece com JavaScript.
 				    Depois do clique, o "Pronto" fica no lugar dele, com o foco. */}
-				<p className="recomeco piloto-recomeco">
+				<div className="recomeco piloto-recomeco text-pretty">
 					{zerou ? (
 						<span ref={pronto} tabIndex={-1} className="piloto-pronto">
 							{PRONTO}
@@ -416,7 +417,7 @@ export function PaginaDoPiloto({
 							</button>
 						)
 					)}
-				</p>
+				</div>
 			</>
 		);
 	}
@@ -437,7 +438,7 @@ export function PaginaDoPiloto({
 					<LinhaDoEnvio etapa="antes" situacao={envioDoAntes} avisar={avisar} />
 				)}
 				<p className="quiz-fim-texto">{FIM_DO_ANTES}</p>
-				<p className="quiz-fim-acoes">
+				<div className="quiz-fim-acoes text-pretty">
 					<Link
 						to="/trilhas/$trilha/$artigo"
 						params={{ trilha: trilha.slug, artigo: trilha.artigos[0].slug }}
@@ -466,7 +467,7 @@ export function PaginaDoPiloto({
 							/>
 						</button>
 					)}
-				</p>
+				</div>
 			</div>
 		);
 	}
