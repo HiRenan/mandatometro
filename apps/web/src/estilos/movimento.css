@@ -135,6 +135,10 @@
 		transition: rotate 0.5s var(--ease-mola);
 	}
 
+	.outros-artigos a:focus-visible .grande {
+		transition: none;
+	}
+
 	.chamada-azulejos .grande:nth-child(2) {
 		transition-delay: 50ms;
 	}
