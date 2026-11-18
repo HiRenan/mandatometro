@@ -9,6 +9,7 @@ O Mandatômetro é um site que ensina como funciona a política brasileira, a pa
 - **Trilhas:** artigos curtos com infográficos, um quiz de múltipla escolha no meio e outro no fim. A primeira é a do processo legislativo.
 - **Newsletter semanal (o jornal legislativo):** todo domingo, o que o Congresso votou na semana, em linguagem simples. A inscrição pede só o e-mail e já manda a última edição, e cada edição também fica no site.
 - **Conta opcional:** o login, o cadastro com o termo de consentimento e o progresso no perfil entram no MVP (#109 a #112), mas nada pede conta. Sem ela, o navegador guarda os artigos lidos; com ela, o progresso fica no perfil e passa de um aparelho para outro.
+- **Cadastro:** os dados demográficos opcionais servem para entender o público. Confirmação e recuperação usam links com o token no fragmento e uma ação explícita na página. A exclusão exige sessão e senha atual e gera um comprovante via Resend. O contrato de sessão para a #109 está no README, em "Cadastro de contas".
 - **Fora do MVP:** pontos, ranking e certificado saíram. As páginas de cada parlamentar (promessas × atos e patrimônio declarado ao TSE), o "fake ou fato" e o jogo das comissões ficam no marco "Depois do MVP".
 - **Piloto:** cerca de 50 pessoas (uma turma do Senai e o Instagram) fazem a trilha antes da entrega, e o quiz mede quanto elas acertam antes e depois.
 - **Dados:** Câmara e Senado, com deputados federais e senadores do Brasil todo e Santa Catarina como amostra para testar cada etapa primeiro.

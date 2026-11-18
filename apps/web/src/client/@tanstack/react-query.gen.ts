@@ -3,8 +3,8 @@
 import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { abrirSaida, health, inscreverNewsletter, listarEdicoes, obterEdicao, type Options, registrarTentativaPiloto, sairDaNewsletter } from '../sdk.gen';
-import type { AbrirSaidaData, AbrirSaidaError, HealthData, HealthResponse, InscreverNewsletterData, InscreverNewsletterError, InscreverNewsletterResponse, ListarEdicoesData, ListarEdicoesError, ListarEdicoesResponse, ObterEdicaoData, ObterEdicaoError, ObterEdicaoResponse, RegistrarTentativaPilotoData, RegistrarTentativaPilotoError, RegistrarTentativaPilotoResponse, SairDaNewsletterData, SairDaNewsletterError } from '../types.gen';
+import { abrirSaida, cadastrarConta, confirmarConta, consultarPerfil, excluirConta, health, inscreverNewsletter, listarEdicoes, obterEdicao, type Options, recuperarConta, redefinirSenha, reenviarConfirmacao, registrarTentativaPiloto, sairDaNewsletter, termoConta } from '../sdk.gen';
+import type { AbrirSaidaData, AbrirSaidaError, CadastrarContaData, CadastrarContaError, CadastrarContaResponse, ConfirmarContaData, ConfirmarContaError, ConfirmarContaResponse, ConsultarPerfilData, ConsultarPerfilError, ConsultarPerfilResponse, ExcluirContaData, ExcluirContaError, ExcluirContaResponse, HealthData, HealthResponse, InscreverNewsletterData, InscreverNewsletterError, InscreverNewsletterResponse, ListarEdicoesData, ListarEdicoesError, ListarEdicoesResponse, ObterEdicaoData, ObterEdicaoError, ObterEdicaoResponse, RecuperarContaData, RecuperarContaError, RecuperarContaResponse, RedefinirSenhaData, RedefinirSenhaError, RedefinirSenhaResponse, ReenviarConfirmacaoData, ReenviarConfirmacaoError, ReenviarConfirmacaoResponse, RegistrarTentativaPilotoData, RegistrarTentativaPilotoError, RegistrarTentativaPilotoResponse, SairDaNewsletterData, SairDaNewsletterError, TermoContaData, TermoContaError, TermoContaResponse } from '../types.gen';
 
 /**
  * Receber a inscrição e enviar a última edição publicada
@@ -94,6 +94,144 @@ export const sairDaNewsletterMutation = (options?: Partial<Options<SairDaNewslet
     };
     return mutationOptions;
 };
+
+export const termoContaQueryKey = (options?: Options<TermoContaData>) => createQueryKey('termoConta', options);
+
+/**
+ * Termo Conta
+ */
+export const termoContaOptions = (options?: Options<TermoContaData>) => queryOptions<TermoContaResponse, TermoContaError, TermoContaResponse, ReturnType<typeof termoContaQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await termoConta({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: termoContaQueryKey(options)
+});
+
+/**
+ * Cadastrar Conta
+ */
+export const cadastrarContaMutation = (options?: Partial<Options<CadastrarContaData>>): UseMutationOptions<CadastrarContaResponse, CadastrarContaError, Options<CadastrarContaData>> => {
+    const mutationOptions: UseMutationOptions<CadastrarContaResponse, CadastrarContaError, Options<CadastrarContaData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await cadastrarConta({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Reenviar Confirmacao
+ */
+export const reenviarConfirmacaoMutation = (options?: Partial<Options<ReenviarConfirmacaoData>>): UseMutationOptions<ReenviarConfirmacaoResponse, ReenviarConfirmacaoError, Options<ReenviarConfirmacaoData>> => {
+    const mutationOptions: UseMutationOptions<ReenviarConfirmacaoResponse, ReenviarConfirmacaoError, Options<ReenviarConfirmacaoData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await reenviarConfirmacao({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Recuperar Conta
+ */
+export const recuperarContaMutation = (options?: Partial<Options<RecuperarContaData>>): UseMutationOptions<RecuperarContaResponse, RecuperarContaError, Options<RecuperarContaData>> => {
+    const mutationOptions: UseMutationOptions<RecuperarContaResponse, RecuperarContaError, Options<RecuperarContaData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await recuperarConta({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Confirmar Conta
+ */
+export const confirmarContaMutation = (options?: Partial<Options<ConfirmarContaData>>): UseMutationOptions<ConfirmarContaResponse, ConfirmarContaError, Options<ConfirmarContaData>> => {
+    const mutationOptions: UseMutationOptions<ConfirmarContaResponse, ConfirmarContaError, Options<ConfirmarContaData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await confirmarConta({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Redefinir Senha
+ */
+export const redefinirSenhaMutation = (options?: Partial<Options<RedefinirSenhaData>>): UseMutationOptions<RedefinirSenhaResponse, RedefinirSenhaError, Options<RedefinirSenhaData>> => {
+    const mutationOptions: UseMutationOptions<RedefinirSenhaResponse, RedefinirSenhaError, Options<RedefinirSenhaData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await redefinirSenha({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Excluir Conta
+ */
+export const excluirContaMutation = (options?: Partial<Options<ExcluirContaData>>): UseMutationOptions<ExcluirContaResponse, ExcluirContaError, Options<ExcluirContaData>> => {
+    const mutationOptions: UseMutationOptions<ExcluirContaResponse, ExcluirContaError, Options<ExcluirContaData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await excluirConta({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const consultarPerfilQueryKey = (options?: Options<ConsultarPerfilData>) => createQueryKey('consultarPerfil', options);
+
+/**
+ * Consultar Perfil
+ */
+export const consultarPerfilOptions = (options?: Options<ConsultarPerfilData>) => queryOptions<ConsultarPerfilResponse, ConsultarPerfilError, ConsultarPerfilResponse, ReturnType<typeof consultarPerfilQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await consultarPerfil({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: consultarPerfilQueryKey(options)
+});
 
 export const listarEdicoesQueryKey = (options?: Options<ListarEdicoesData>) => createQueryKey('listarEdicoes', options);
 
