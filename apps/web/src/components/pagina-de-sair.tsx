@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
 import { sementeDe } from "@/lib/azulejos";
 import {
 	codigoValido,
@@ -14,11 +14,14 @@ import { Reservas } from "./reservas";
 /** Onde a saída está: antes do botão, esperando a API ou o que ela respondeu. */
 type Estado = "pronta" | "esperando" | ResultadoDaSaida["tipo"];
 
+const CONFIRMAR = "Confirmar a saída";
 const CONFIRMANDO = "Confirmando a saída…";
 const INCOMPLETO =
 	"Este link está incompleto. Abra de novo o link de saída que vem no fim de cada e-mail da newsletter.";
 const SAIR = "Sair da newsletter";
 const SAIU = "Você saiu da newsletter.";
+const EXPLICA =
+	"Com o botão, o seu e-mail sai da lista e as edições de domingo param de chegar. Antes dele, nada muda.";
 const FORA_DA_LISTA =
 	"O seu e-mail não está mais na lista, e as próximas edições não vão chegar.";
 const ERROS: Partial<Record<Estado, string>> = {
@@ -27,6 +30,18 @@ const ERROS: Partial<Record<Estado, string>> = {
 	"sem-conexao":
 		"Não deu para confirmar a saída. Confira a internet e tente de novo.",
 };
+
+/**
+ * O segundo clique de um clique duplo não segue os links da página (o detail,
+ * como no lib/clique.ts): depois da saída, o "Inscrever-se de novo" surge onde
+ * estava o botão, e, com o código recusado, o "Ir para o início". Um clique
+ * novo, de propósito, segue o link.
+ */
+function semSegundoClique(evento: MouseEvent) {
+	if (evento.detail > 1) {
+		evento.preventDefault();
+	}
+}
 
 /**
  * A página para sair da newsletter, aberta pelo link do fim de cada edição: o
@@ -38,7 +53,9 @@ const ERROS: Partial<Record<Estado, string>> = {
  * JavaScript, ele não envia nada, e o noscript explica. A função não espera a
  * API: ela dispara o pedido, e a página mostra o "Confirmando" enquanto espera
  * (como na inscrição, components/inscricao-na-newsletter.tsx). Depois da saída,
- * o "Inscrever-se de novo" fica no lugar do botão, com o foco.
+ * o "Inscrever-se de novo" fica no lugar do botão, com o foco, e nada sai do
+ * lugar: o título e o pé guardam a altura de antes. Com o código recusado, quem
+ * fica no lugar do botão é o "Ir para o início".
  */
 export function PaginaDeSair({
 	codigo,
@@ -59,11 +76,15 @@ export function PaginaDeSair({
 	const incompleto = estado === "link-invalido" || !codigoValido(codigo);
 	const comBotao = comApi && !incompleto && !saiu;
 	const esperando = estado === "esperando";
-	// Só com a API e o código bem formado a saída pode acontecer e o título mudar.
-	const tituloPodeMudar = comApi && codigoValido(codigo);
+	// Só com a API e o código bem formado a saída pode acontecer e a tela mudar:
+	// só aí o título, a abertura e o lugar do botão guardam a altura de antes.
+	const telaPodeMudar = comApi && codigoValido(codigo);
+	// Com o código recusado, o "Ir para o início" é a ação que sobra e sobe para
+	// o lugar do botão. Só com o lugar guardado: sem ele, fica no item dele.
+	const recusado = telaPodeMudar && estado === "link-invalido";
 
-	// O botão some depois da saída e do código recusado: o foco vai para o que
-	// fica no lugar dele.
+	// O botão some depois da saída e do código recusado: o foco vai para o link
+	// que fica no lugar dele, o "Inscrever-se de novo" ou o "Ir para o início".
 	useEffect(() => {
 		if (estado === "saiu") {
 			deNovo.current?.focus();
@@ -104,8 +125,18 @@ export function PaginaDeSair({
 			? FORA_DA_LISTA
 			: incompleto
 				? INCOMPLETO
-				: "Com o botão, o seu e-mail sai da lista e as edições de domingo param de chegar. Antes dele, nada muda.";
+				: EXPLICA;
 	const erro = ERROS[estado];
+	const irParaOInicio = (
+		<Link
+			ref={inicio}
+			to="/"
+			onClick={semSegundoClique}
+			className="acao-de-texto"
+		>
+			<span>Ir para o início</span>
+		</Link>
+	);
 
 	return (
 		<section className="cartaz cartaz-medio">
@@ -124,58 +155,85 @@ export function PaginaDeSair({
 			    novo" nasce no lugar do botão. O título da vez fica embaixo, apoiado
 			    no fio, como em todo cartaz. */}
 			<h1 className="titulo-condensado letra-com-teto grid [--palavra:5.25]">
-				{tituloPodeMudar && <Reservas frases={[SAIR, SAIU]} />}
+				{telaPodeMudar && <Reservas frases={[SAIR, SAIU]} />}
 				<span className="col-start-1 row-start-1 self-end">
 					{saiu ? SAIU : SAIR}
 				</span>
 			</h1>
+			{/* O pé também guarda a altura de antes da saída. Depois dela, a frase
+			    é mais curta, e os dois links cabem numa linha, onde o botão e o
+			    "Ir para o início" pediam duas: com a letra grande, numa tela
+			    estreita, o pé encolhia, e o "Inscrever-se de novo" nascia até 135
+			    px acima do botão. A abertura guarda as duas frases, invisíveis, e
+			    a da vez fica no alto, junto do fio; o lugar do botão guarda uma
+			    cópia dele. Depois da saída, sobra um vão embaixo da frase, e nada
+			    sai do lugar. Com o código recusado, o "Ir para o início" sobe
+			    para o lugar do botão, e o vão fica no fim do pé, no item dele. */}
 			<div className="cartaz-pe">
-				<p className="abertura">{abertura}</p>
+				<p className="abertura grid">
+					{telaPodeMudar && <Reservas frases={[EXPLICA, FORA_DA_LISTA]} />}
+					<span className="col-start-1 row-start-1">{abertura}</span>
+				</p>
 				<div className="cartaz-acao">
 					<ul className="acoes-da-pagina">
-						{comBotao && (
-							<li>
-								<form action={confirmar}>
-									<button
-										type="submit"
-										aria-disabled={esperando || undefined}
-										onClick={(evento) => {
-											if (enviando.current) {
-												evento.preventDefault();
-											}
-										}}
-										className={BOTAO_CONTINUAR}
-									>
-										Confirmar a saída
-									</button>
-								</form>
-							</li>
-						)}
-						{saiu && (
-							<li>
-								{/* Ele surge onde estava o botão: o segundo clique de um
-								    clique duplo não o segue (o detail, como no
-								    lib/clique.ts). */}
-								<Link
-									ref={deNovo}
-									to="/"
-									hash="newsletter"
-									onClick={(evento) => {
-										if (evento.detail > 1) {
-											evento.preventDefault();
-										}
-									}}
-									className="acao-de-texto"
+						{telaPodeMudar && (
+							<li className="grid items-center justify-items-start">
+								{/* A cópia do botão, com o mesmo desenho, invisível e fora
+								    do leitor de tela: quando ele some, o lugar continua
+								    com o tamanho dele. */}
+								<span
+									aria-hidden="true"
+									className="invisible col-start-1 row-start-1"
 								>
-									<span>Inscrever-se de novo</span>
-								</Link>
+									<span className={BOTAO_CONTINUAR}>{CONFIRMAR}</span>
+								</span>
+								{comBotao && (
+									<form action={confirmar} className="col-start-1 row-start-1">
+										<button
+											type="submit"
+											aria-disabled={esperando || undefined}
+											onClick={(evento) => {
+												if (enviando.current) {
+													evento.preventDefault();
+												}
+											}}
+											className={BOTAO_CONTINUAR}
+										>
+											{CONFIRMAR}
+										</button>
+									</form>
+								)}
+								{/* No meio do lugar do botão, na mesma altura do "Ir
+								    para o início" quando os dois ficam lado a lado. */}
+								{saiu && (
+									<div className="col-start-1 row-start-1">
+										<Link
+											ref={deNovo}
+											to="/"
+											hash="newsletter"
+											onClick={semSegundoClique}
+											className="acao-de-texto"
+										>
+											<span>Inscrever-se de novo</span>
+										</Link>
+									</div>
+								)}
+								{recusado && (
+									<div className="col-start-1 row-start-1">{irParaOInicio}</div>
+								)}
 							</li>
 						)}
-						<li>
-							<Link ref={inicio} to="/" className="acao-de-texto">
-								<span>Ir para o início</span>
-							</Link>
-						</li>
+						{recusado ? (
+							// O item do "Ir para o início" guarda a altura dele com
+							// uma cópia, invisível e fora do leitor de tela.
+							<li aria-hidden="true" className="invisible">
+								<span className="acao-de-texto">
+									<span>Ir para o início</span>
+								</span>
+							</li>
+						) : (
+							<li>{irParaOInicio}</li>
+						)}
 					</ul>
 					{esperando && (
 						<p className="rotulo saida-confirmando">{CONFIRMANDO}</p>
