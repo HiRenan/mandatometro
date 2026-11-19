@@ -1558,6 +1558,29 @@
         ],
         "title": "Exclusao"
       },
+      "FatosAtoPublicos": {
+        "properties": {
+          "votacoes": {
+            "items": {
+              "$ref": "#/components/schemas/VotacaoPublica"
+            },
+            "type": "array",
+            "maxItems": 0,
+            "title": "Votacoes"
+          },
+          "data_publicacao": {
+            "type": "string",
+            "format": "date",
+            "title": "Data Publicacao"
+          }
+        },
+        "type": "object",
+        "required": [
+          "votacoes",
+          "data_publicacao"
+        ],
+        "title": "FatosAtoPublicos"
+      },
       "FatosPublicos": {
         "properties": {
           "votacoes": {
@@ -1625,9 +1648,13 @@
                 "$ref": "#/components/schemas/FatosPublicos"
               },
               {
+                "$ref": "#/components/schemas/FatosAtoPublicos"
+              },
+              {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Fatos"
           },
           "fontes": {
             "items": {
