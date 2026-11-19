@@ -92,8 +92,8 @@
 
 	/*
 	 * Na virada, cada peça leva o quarto dela do desenho, com 2% de sobra para o
-	 * recorte. Com as peças de pé, um SVG pinta a caixa inteira, pois o Edge pode
-	 * deixar um fio ao compor recortes separados em coordenadas fracionadas.
+	 * recorte. Com as peças de pé, a caixa tem um fundo e um SVG inteiro, pois o
+	 * Edge pode deixar um fio ao compor recortes em coordenadas fracionadas.
 	 * As peças continuam na grade para manter as dimensões e poder virar.
 	 */
 	.az > svg,
@@ -116,8 +116,11 @@
 		inset: 0;
 		width: 100%;
 		height: 100%;
-		background: var(--a);
 		pointer-events: none;
+	}
+
+	.com-simbolo:has(> .simbolo-inteiro):not([data-virando]) {
+		background: var(--a);
 	}
 
 	.com-simbolo[data-virando] > .simbolo-inteiro,
@@ -171,6 +174,10 @@
 		.az > svg,
 		.simbolo-inteiro {
 			display: none;
+		}
+
+		.com-simbolo:has(> .simbolo-inteiro):not([data-virando]) {
+			background: none;
 		}
 	}
 }

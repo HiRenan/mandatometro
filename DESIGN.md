@@ -466,7 +466,7 @@ Tudo é reto: raio zero (`--radius: 0`).
 
 ### Azulejos
 - **O que são:** desenho. O painel, o azulejo grande e cada peça ficam fora do leitor de tela (`aria-hidden`), e nada do que a página diz depende deles. Nas cores forçadas do Windows, eles somem.
-- **Como são feitos:** cada peça é um `span` com três variáveis (o fundo, o desenho e a volta), e o CSS pinta o motivo com um gradiente (`estilos/azulejos.css`). O desenho de cada peça vem de `lib/azulejos.ts`, em dados. Em repouso, um SVG pinta o símbolo e o fundo na caixa inteira. Durante a virada, cada peça lisa mostra um quarto do desenho, com 2% de sobra para o recorte. Os mesmos caminhos de `lib/simbolos.ts` e a mesma cor da peça compõem as duas versões.
+- **Como são feitos:** cada peça é um `span` com três variáveis (o fundo, o desenho e a volta), e o CSS pinta o motivo com um gradiente (`estilos/azulejos.css`). O desenho de cada peça vem de `lib/azulejos.ts`, em dados. Em repouso, o fundo cobre toda a caixa, e um SVG mostra o símbolo inteiro. Durante a virada, cada peça lisa mostra um quarto do desenho, com 2% de sobra para o recorte. Os mesmos caminhos de `lib/simbolos.ts` e a mesma cor da peça compõem as duas versões.
 - **O sorteio tem semente:** o servidor e o navegador desenham o mesmo painel. Cada trilha tem o seu, pela semente que sai do endereço dela.
 - **As cores:** poucos azulejos ficam quietos, papel sobre papel, para o painel respirar; os outros levam uma fita, com tinta ou papel (A Regra de Uma Fita por Azulejo).
 - **O azulejo cru:** papel sobre papel, sem cor. É o passo que ainda não foi andado e o artigo que ainda não foi lido. Ele ganha a cor quando vira.

@@ -62,11 +62,9 @@ const LISA = 8;
 function DesenhoDoSimbolo({
 	simbolo,
 	quarto,
-	style,
 }: {
 	simbolo: NomeDoSimbolo;
 	quarto?: number;
-	style?: CSSProperties;
 }) {
 	const inteiro = quarto === undefined;
 	const x = ((quarto ?? 0) % 2) * 50;
@@ -76,7 +74,6 @@ function DesenhoDoSimbolo({
 			aria-hidden="true"
 			focusable="false"
 			className={inteiro ? "simbolo-inteiro" : undefined}
-			style={style}
 			viewBox={inteiro ? "0 0 100 100" : `${x - 1} ${y - 1} 52 52`}
 			preserveAspectRatio={inteiro ? "none" : undefined}
 		>
@@ -174,12 +171,22 @@ export function AzulejoGrande({
 				peca.fundo === primeira.fundo &&
 				peca.desenho === primeira.desenho,
 		);
+	const coresDoInteiro =
+		simbolo && corUniforme
+			? variaveis(
+					crus[0]
+						? { ...primeira, fundo: "papel-2", desenho: "papel-3" }
+						: primeira,
+					0,
+				)
+			: undefined;
 
 	return (
 		<span
 			ref={caixa}
 			className={classes("grande", simbolo && "com-simbolo", className)}
 			data-simbolo={simbolo}
+			style={coresDoInteiro}
 			aria-hidden="true"
 			onTransitionRun={simbolo ? aoGirar : undefined}
 			onTransitionEnd={simbolo ? aoGirar : undefined}
@@ -196,17 +203,7 @@ export function AzulejoGrande({
 					{simbolo && <DesenhoDoSimbolo simbolo={simbolo} quarto={qual} />}
 				</Azulejo>
 			))}
-			{simbolo && corUniforme && (
-				<DesenhoDoSimbolo
-					simbolo={simbolo}
-					style={variaveis(
-						crus[0]
-							? { ...primeira, fundo: "papel-2", desenho: "papel-3" }
-							: primeira,
-						0,
-					)}
-				/>
-			)}
+			{simbolo && coresDoInteiro && <DesenhoDoSimbolo simbolo={simbolo} />}
 		</span>
 	);
 }
