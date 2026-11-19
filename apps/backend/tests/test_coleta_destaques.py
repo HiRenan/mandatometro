@@ -91,11 +91,13 @@ def test_pede_somente_html_bruto_e_leitura_fresca(firecrawl, url):
         PAGINA + "?p_p_id=" + PORTLET,
         PAGINACAO + "2&extra=1",
         PAGINACAO.replace("delta=20", "delta=40") + "2",
+        pytest.param(PAGINACAO + "0", id="pagina-zero"),
         PAGINACAO + "7",
     ],
 )
 def test_recusa_url_fora_da_excecao_antes_do_post(firecrawl, url):
-    http, _, pedidos = firecrawl
+    http, respostas, pedidos = firecrawl
+    respostas.append(httpx2.Response(200, json=envelope()))
 
     with pytest.raises(ErroColeta, match="endereco_fora_da_excecao"):
         http.ler_pagina(url)
@@ -280,6 +282,35 @@ def test_pagina_so_com_ato_mais_novo_nao_interrompe_e_pagina_so_antiga_interromp
     assert resumo.descartes == {"fora_do_periodo": 2}
 
 
+@pytest.mark.parametrize(
+    "abertura",
+    [
+        pytest.param('<div class="dou row" data-exemplo="argos">', id="atributo-extra"),
+        pytest.param('<div class="row dou">', id="ordem-das-classes"),
+    ],
+)
+def test_grava_os_atos_quando_a_marcacao_do_cartao_varia(sessao, executar, abertura):
+    primeiro = cartao("100").replace('<div class="dou row">', abertura, 1)
+
+    resumo, consultadas = executar(pagina(primeiro, cartao("200")), pagina())
+
+    assert resumo.completa and resumo.atos == 2
+    assert resumo.descartes == {}
+    assert sessao.scalars(select(Ato.id_externo).order_by(Ato.id_externo)).all() == ["100", "200"]
+    assert consultadas == [PAGINA, PAGINACAO + "2"]
+
+
+def test_abertura_de_xml_em_cdata_nao_divide_o_cartao(executar):
+    primeiro = cartao("100", ementa="Exemplo <root>", texto="<root>").replace(
+        "<![CDATA[<root>]]>", "<!--[CDATA[<root>]]-->"
+    )
+
+    resumo, _ = executar(pagina(primeiro, cartao("200")), pagina())
+
+    assert resumo.completa and resumo.atos == 2
+    assert resumo.descartes == {}
+
+
 def test_teto_da_excecao_tem_seis_paginas_e_sinaliza_coleta_incompleta(firecrawl):
     http, respostas, pedidos = firecrawl
     respostas.extend(pagina(cartao(f"{n}00", pubDate="19/11/2026")) for n in range(1, 7))
@@ -351,13 +382,14 @@ def test_descarta_datas_e_campos_obrigatorios(executar):
             cartao("800", highlight="", titulo=" "),
             cartao("900", pubName=" "),
             cartao("999", idMateria=" "),
+            cartao("1000", idMateria="A46"),
         ),
         pagina(),
     )
 
     assert resumo.completa and resumo.atos == 1
     assert resumo.assinaturas_ignoradas == 1
-    assert resumo.descartes == {"data_invalida": 2, "data_futura": 1, "campo_obrigatorio": 5}
+    assert resumo.descartes == {"data_invalida": 2, "data_futura": 1, "campo_obrigatorio": 6}
 
 
 @pytest.mark.parametrize("data_no_link", ["19-de-novembro-de-2026", "12-de-dezembro-de-2026"])
@@ -403,6 +435,16 @@ def test_descarta_link_invalido_sem_pedir_o_ato(executar, url):
     assert resumo.completa and resumo.atos == 0
     assert resumo.descartes == {"link_invalido": 1}
     assert consultadas == [PAGINA, PAGINACAO + "2"]
+
+
+def test_cartao_sem_link_nao_reaproveita_o_link_do_proximo(sessao, executar):
+    sem_link = cartao("100").replace('class="title"', 'class="rotulo"')
+
+    resumo, _ = executar(pagina(sem_link, cartao("200")), pagina())
+
+    assert resumo.completa and resumo.atos == 1
+    assert resumo.descartes == {"link_invalido": 1}
+    assert sessao.scalars(select(Ato.id_externo)).all() == ["200"]
 
 
 def test_link_de_portaria_pode_conter_barras_no_nome_do_ato(sessao, executar):
@@ -479,15 +521,38 @@ def test_falha_de_gravacao_desfaz_a_fonte_do_ato(sessao, executar, monkeypatch):
     assert sessao.scalar(select(func.count()).select_from(Fonte)) == 1
 
 
-@pytest.mark.parametrize("status, codigo", [(200, 0), (401, 1), (402, 1), (429, 1), (503, 1)])
-def test_cli_resolve_sete_dias_e_emite_uma_linha_json(atender, monkeypatch, capsys, status, codigo):
+@pytest.fixture
+def atender_cli(atender, monkeypatch):
+    cliente, respostas, pedidos = atender
+    monkeypatch.setattr(
+        destaques, "config", lambda: SimpleNamespace(firecrawl_api_key=SecretStr(CHAVE))
+    )
+    monkeypatch.setattr(
+        destaques, "ClienteFirecrawl", partial(destaques.ClienteFirecrawl, cliente=cliente)
+    )
+    return respostas, pedidos
+
+
+@pytest.mark.parametrize(
+    ("status", "motivo"),
+    [
+        (200, "pagina_sem_destaques"),
+        (401, "chave_recusada"),
+        (402, "sem_credito"),
+        (429, "limite_pedidos"),
+        (503, "servidor_firecrawl"),
+    ],
+)
+def test_cli_resolve_sete_dias_e_emite_uma_linha_json(
+    atender_cli, monkeypatch, capsys, status, motivo
+):
     class Relogio:
         @staticmethod
         def now(fuso):
             assert fuso.key == "America/Sao_Paulo"
             return datetime(2026, 11, 20, tzinfo=fuso)
 
-    cliente, respostas, _ = atender
+    respostas, pedidos = atender_cli
     if status == 200:
         respostas.append(pagina())
     else:
@@ -495,23 +560,54 @@ def test_cli_resolve_sete_dias_e_emite_uma_linha_json(atender, monkeypatch, caps
             httpx2.Response(status, text=MARCADOR_PRIVADO, headers={"Retry-After": "3600"})
         )
     monkeypatch.setattr(cli, "datetime", Relogio)
-    monkeypatch.setattr(
-        destaques, "config", lambda: SimpleNamespace(firecrawl_api_key=SecretStr(CHAVE))
-    )
-    monkeypatch.setattr(
-        destaques, "ClienteFirecrawl", partial(destaques.ClienteFirecrawl, cliente=cliente)
-    )
 
-    assert main(["coleta", "destaques"]) == codigo
+    assert main(["coleta", "destaques"]) == 1
 
     saida = capsys.readouterr()
     assert len(saida.out.splitlines()) == 1 and not saida.err
     resumo = json.loads(saida.out)
     assert (resumo["inicio"], resumo["fim"], resumo["atos"]) == ("2026-11-13", "2026-11-19", 0)
     assert resumo["assinaturas_ignoradas"] == 0
-    assert resumo["completa"] == (codigo == 0)
+    assert resumo["completa"] is False and resumo["descartes"] == {}
+    assert resumo["erro"] == f"Falha na coleta de destaques pelo Firecrawl ({motivo})."
+    assert alvos(pedidos) == [PAGINA]
     assert not {"titulo", "ementa", "assina", "cargo", "texto"}.intersection(resumo)
     assert CHAVE not in saida.out and MARCADOR_PRIVADO not in saida.out
+
+
+def test_cli_resume_coleta_com_ato_sem_expor_conteudo(atender_cli, sessao, monkeypatch, capsys):
+    titulo, ementa = "Título fictício do teste", "Ementa fictícia do teste"
+    respostas, pedidos = atender_cli
+    respostas.extend((pagina(cartao("100", titulo=titulo, ementa=ementa)), pagina()))
+    abrir_sessao = partial(
+        Session, bind=sessao.connection(), join_transaction_mode="create_savepoint"
+    )
+    monkeypatch.setattr(
+        destaques, "coletar", partial(destaques.coletar, abrir_sessao=abrir_sessao, hoje=FIM)
+    )
+
+    assert main(["coleta", "destaques", "--inicio", str(INICIO), "--fim", str(FIM)]) == 0
+
+    saida = capsys.readouterr()
+    assert len(saida.out.splitlines()) == 1 and not saida.err
+    resumo = json.loads(saida.out)
+    assert set(resumo) == {
+        "origem",
+        "inicio",
+        "fim",
+        "atos",
+        "descartes",
+        "chamadas",
+        "tentativas_extras",
+        "duracao_s",
+        "completa",
+        "erro",
+        "assinaturas_ignoradas",
+    }
+    assert (resumo["atos"], resumo["completa"], resumo["erro"]) == (1, True, None)
+    assert all(marcador not in saida.out for marcador in (titulo, ementa, CHAVE))
+    assert sessao.scalars(select(Ato.id_externo)).all() == ["100"]
+    assert alvos(pedidos) == [PAGINA, PAGINACAO + "2"]
 
 
 @pytest.mark.online
@@ -524,5 +620,5 @@ def test_firecrawl_ainda_entrega_os_cartoes_liferay():
         html = http.ler_pagina(PAGINA).dados
 
     assert isinstance(html, str)
-    assert 0 < html.count('<div class="dou row">') <= 20
+    assert 0 < len(destaques._dividir_cartoes(html)) <= 20
     assert all(html.count(f'name="{campo}"') > 0 for campo in ("idMateria", "pubDate", "pubName"))

@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
+from itertools import pairwise
 from typing import Self, cast
 from urllib.parse import urlencode
 from xml.etree import ElementTree
@@ -56,6 +57,7 @@ _CAMPOS = {
     "data",
     "ementa",
 }
+_INICIO_XML = re.compile(r"<!--.*?-->|<!\[CDATA\[.*?\]\]>|(?P<raiz><root(?=[\s>]))", re.DOTALL)
 _XML = re.compile(r"<root(?=[\s>]).*?</root>", re.DOTALL)
 _CDATA_EM_COMENTARIO = re.compile(r"<!--\[CDATA\[(.*?)\]\]-->", re.DOTALL)
 _LINK_ATO = re.compile(
@@ -219,6 +221,12 @@ class _LinkDoAto(HTMLParser):
                 self.url = atributos.get("href") or ""
 
 
+def _dividir_cartoes(html: str) -> list[str]:
+    # O começo de cada bloco também delimita o cartão quando falta o fechamento do XML.
+    inicios = [marca.start() for marca in _INICIO_XML.finditer(html) if marca["raiz"]]
+    return [html[inicio:fim] for inicio, fim in pairwise([*inicios, len(html)])]
+
+
 def _ler_campos(cartao: str) -> tuple[dict[str, str], str]:
     trecho = _XML.search(cartao)
     if trecho is None:
@@ -351,8 +359,11 @@ def coletar(
         for url in _PAGINAS:
             resposta = http.ler_pagina(url)
             html = cast(str, resposta.dados)
+            cartoes = _dividir_cartoes(html)
+            if not cartoes and url == URL_DESTAQUES:
+                raise _FalhaFirecrawl("pagina_sem_destaques")
             seguir = False
-            for cartao in html.split('<div class="dou row">')[1:]:
+            for cartao in cartoes:
                 publicacao = None
                 try:
                     campos, html_link = _ler_campos(cartao)
