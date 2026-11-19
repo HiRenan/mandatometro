@@ -15,8 +15,11 @@ async function servidorNovo() {
 	return import("./busca.server");
 }
 
-/** A API com duas edições; `estado.fora` derruba a API. */
-function api() {
+/** A API com duas edições por padrão; `estado.fora` derruba a API. */
+function api(
+	lista: unknown = listaDeExemplo(2),
+	detalhe = (id: number): unknown => ({ ...edicaoDeExemplo(), id }),
+) {
 	const estado = { fora: false };
 	const fetch = vi.fn(async (pedido: Request) => {
 		if (estado.fora) {
@@ -25,8 +28,8 @@ function api() {
 		const { pathname } = new URL(pedido.url);
 		const corpo =
 			pathname === "/edicoes"
-				? listaDeExemplo(2)
-				: { ...edicaoDeExemplo(), id: Number(pathname.split("/").at(-1)) };
+				? lista
+				: detalhe(Number(pathname.split("/").at(-1)));
 		return new Response(JSON.stringify(corpo), {
 			status: 200,
 			headers: { "Content-Type": "application/json" },
@@ -34,6 +37,16 @@ function api() {
 	});
 	vi.stubGlobal("fetch", fetch);
 	return { fetch, estado };
+}
+
+async function confereRespostaInvalida(leitura: Promise<unknown>) {
+	await expect(leitura).rejects.toHaveProperty(
+		"message",
+		"As edições não carregaram.",
+	);
+	expect(vi.mocked(console.error).mock.calls).toEqual([
+		["[edicoes] A leitura das edições na API falhou: resposta-invalida."],
+	]);
 }
 
 beforeEach(() => {
@@ -86,6 +99,51 @@ describe("o índice das edições", () => {
 				},
 			],
 		});
+	});
+
+	it("leva o título e o texto de um ato, com o link dele", async () => {
+		const ato = {
+			...edicaoDeExemplo().itens[0],
+			titulo: "Decreto altera o calendário de publicações",
+			texto: "O ato muda as datas de publicação dos boletins.",
+			fatos: { data_publicacao: "2026-11-12", votacoes: [] },
+		};
+		api(listaDeExemplo(1), (id) => ({
+			...edicaoDeExemplo(),
+			id,
+			itens: [ato],
+		}));
+		const { indiceDasEdicoes } = await servidorNovo();
+
+		expect(await indiceDasEdicoes()).toMatchObject({
+			tipo: "edicoes",
+			paginas: [
+				{
+					endereco: "/edicoes/1",
+					secoes: [{ id: "item-1", titulo: ato.titulo, texto: ato.texto }],
+				},
+			],
+		});
+	});
+
+	it("uma entrada nula na lista dá o erro de resposta inválida", async () => {
+		api({ ...listaDeExemplo(1), edicoes: [null] });
+		const { indiceDasEdicoes } = await servidorNovo();
+
+		await confereRespostaInvalida(indiceDasEdicoes());
+	});
+
+	it.each([
+		["texto nulo", { texto: null }],
+		["título como objeto", { titulo: { detalhe: "dado interno inventado" } }],
+	])("um item com %s dá o erro de resposta inválida", async (_, dados) => {
+		api(listaDeExemplo(1), (id) => {
+			const edicao = edicaoDeExemplo();
+			return { ...edicao, id, itens: [{ ...edicao.itens[0], ...dados }] };
+		});
+		const { indiceDasEdicoes } = await servidorNovo();
+
+		await confereRespostaInvalida(indiceDasEdicoes());
 	});
 
 	it("sem o API_URL, diz que não há edições, sem pedir nada", async () => {

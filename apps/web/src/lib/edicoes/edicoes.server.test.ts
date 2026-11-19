@@ -74,6 +74,13 @@ function confereErroGenerico(erro: unknown) {
 	}
 }
 
+async function confereRespostaInvalida(leitura: Promise<unknown>) {
+	confereErroGenerico(await erroDe(leitura));
+	expect(erros.mock.calls).toEqual([
+		["[edicoes] A leitura das edições na API falhou: resposta-invalida."],
+	]);
+}
+
 describe("sem o API_URL", () => {
 	it("a lista e a edição dizem que não há edições neste endereço, sem chamar a API", async () => {
 		ambiente.API_URL = "";
@@ -168,6 +175,25 @@ describe("a lista das edições", () => {
 
 		confereErroGenerico(await erroDe(lerEdicoes(1)));
 	});
+
+	it("uma entrada nula na lista dá o erro de resposta inválida", async () => {
+		api(() => json(200, { ...listaDeExemplo(1), edicoes: [null] }));
+
+		await confereRespostaInvalida(lerEdicoes(1));
+	});
+
+	it.each([
+		["id em texto", { id: "7" }],
+		["título como objeto", { titulo: { detalhe: MENSAGEM_DA_FALHA } }],
+		["fim fora do formato de data", { fim: "sem data" }],
+	])("um resumo com %s dá o erro de resposta inválida", async (_, dados) => {
+		const lista = listaDeExemplo(1);
+		api(() =>
+			json(200, { ...lista, edicoes: [{ ...lista.edicoes[0], ...dados }] }),
+		);
+
+		await confereRespostaInvalida(lerEdicoes(1));
+	});
 });
 
 describe("uma edição", () => {
@@ -179,6 +205,15 @@ describe("uma edição", () => {
 			edicao: edicaoDeExemplo(),
 		});
 		expect(new URL(pedidos[0].url).pathname).toBe("/edicoes/7");
+	});
+
+	it("uma edição com um ato volta com os fatos do ato", async () => {
+		const edicao = edicaoDeExemplo();
+		edicao.itens[1].fatos = { data_publicacao: "2026-11-12", votacoes: [] };
+		api(() => json(200, edicao));
+
+		expect(await lerEdicao("7")).toEqual({ tipo: "edicao", edicao });
+		expect(erros).not.toHaveBeenCalled();
 	});
 
 	it("o rascunho e a edição que não existe dão a página não encontrada", async () => {
@@ -233,6 +268,33 @@ describe("uma edição", () => {
 		api(() => json(200, { titulo: "sem os itens" }));
 
 		confereErroGenerico(await erroDe(lerEdicao("7")));
+	});
+
+	it.each([
+		["id em texto", { id: "7" }],
+		["item nulo", { itens: [null] }],
+	])("uma edição com %s dá o erro de resposta inválida", async (_, dados) => {
+		api(() => json(200, { ...edicaoDeExemplo(), ...dados }));
+
+		await confereRespostaInvalida(lerEdicao("7"));
+	});
+
+	it.each([
+		["texto nulo", { texto: null }],
+		["título como objeto", { titulo: { detalhe: MENSAGEM_DA_FALHA } }],
+		["ordem fracionária", { ordem: 1.5 }],
+		["fonte nula", { fontes: [null] }],
+		[
+			"título do artigo como objeto",
+			{ artigo: { caminho: "/trilhas/exemplo/artigo", titulo: {} } },
+		],
+	])("um item com %s dá o erro de resposta inválida", async (_, dados) => {
+		const edicao = edicaoDeExemplo();
+		api(() =>
+			json(200, { ...edicao, itens: [{ ...edicao.itens[0], ...dados }] }),
+		);
+
+		await confereRespostaInvalida(lerEdicao("7"));
 	});
 
 	it("a API lenta: o servidor desiste depois do tempo de espera", async () => {

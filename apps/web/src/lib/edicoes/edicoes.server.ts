@@ -204,21 +204,71 @@ function falhou(motivo: string): never {
 }
 
 function pareceLista(dados: unknown): dados is ListaEdicoes {
-	const lista = dados as Partial<ListaEdicoes> | undefined;
 	return (
-		Array.isArray(lista?.edicoes) &&
-		Number.isSafeInteger(lista.total) &&
-		(lista.total ?? -1) >= 0
+		ehObjeto(dados) &&
+		typeof dados.total === "number" &&
+		Number.isSafeInteger(dados.total) &&
+		dados.total >= 0 &&
+		Array.isArray(dados.edicoes) &&
+		dados.edicoes.every(pareceResumo)
 	);
 }
 
 function pareceEdicao(dados: unknown): dados is EdicaoPublica {
-	const edicao = dados as Partial<EdicaoPublica> | undefined;
 	return (
-		typeof edicao?.titulo === "string" &&
-		typeof edicao.inicio === "string" &&
-		typeof edicao.fim === "string" &&
-		typeof edicao.publicada_em === "string" &&
-		Array.isArray(edicao.itens)
+		pareceResumo(dados) &&
+		"itens" in dados &&
+		Array.isArray(dados.itens) &&
+		dados.itens.every(pareceItem)
 	);
+}
+
+function pareceResumo(dados: unknown): dados is ResumoEdicao {
+	return (
+		ehObjeto(dados) &&
+		typeof dados.id === "number" &&
+		idDaEdicao(dados.id) !== null &&
+		typeof dados.titulo === "string" &&
+		pareceDia(dados.inicio) &&
+		pareceDia(dados.fim) &&
+		typeof dados.publicada_em === "string"
+	);
+}
+
+function pareceDia(valor: unknown): boolean {
+	if (typeof valor !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+		return false;
+	}
+	const dia = new Date(valor);
+	return (
+		Number.isFinite(dia.getTime()) && dia.toISOString().slice(0, 10) === valor
+	);
+}
+
+function pareceItem(dados: unknown): boolean {
+	return (
+		ehObjeto(dados) &&
+		Number.isSafeInteger(dados.ordem) &&
+		typeof dados.titulo === "string" &&
+		typeof dados.texto === "string" &&
+		Array.isArray(dados.fontes) &&
+		dados.fontes.every(pareceFonte) &&
+		(dados.artigo === null ||
+			(ehObjeto(dados.artigo) &&
+				typeof dados.artigo.titulo === "string" &&
+				typeof dados.artigo.caminho === "string"))
+	);
+}
+
+function pareceFonte(dados: unknown): boolean {
+	return (
+		ehObjeto(dados) &&
+		typeof dados.url === "string" &&
+		typeof dados.coletado_em === "string" &&
+		(dados.trecho === null || typeof dados.trecho === "string")
+	);
+}
+
+function ehObjeto(valor: unknown): valor is Record<string, unknown> {
+	return typeof valor === "object" && valor !== null && !Array.isArray(valor);
 }
