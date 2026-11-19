@@ -568,6 +568,8 @@ function ItemDoResultado({
 	const id = useId();
 	const { documento, endereco, secao, trecho } = resultado;
 	const { numero, fita } = numeroDaPagina(documento);
+	// O Link do router recebe o caminho e o trecho (#) separados.
+	const [caminho, ancora] = endereco.split("#");
 	return (
 		<li className={classes("busca-resultado", classeDaFita(fita))}>
 			{/* Com a letra grande, o número fica no lugar, e o texto desce para a
@@ -577,7 +579,8 @@ function ItemDoResultado({
 			</span>
 			<div className="busca-resultado-texto letra-grande:col-span-full">
 				<Link
-					href={endereco}
+					to={caminho}
+					hash={ancora}
 					className="busca-resultado-titulo"
 					aria-describedby={`${id}-tipo ${id}-trecho`}
 					onClick={() => aoSeguir(endereco)}

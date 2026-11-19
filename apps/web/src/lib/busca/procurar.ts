@@ -188,6 +188,16 @@ function pontosNaSecao(secao: SecaoPreparada, termo: string): number {
 	);
 }
 
+/** O fim da última palavra que termina até o limite (o findLast do ES2023). */
+function fimAte(palavras: Palavra[], limite: number): number | undefined {
+	for (let i = palavras.length - 1; i >= 0; i--) {
+		if (palavras[i].fim <= limite) {
+			return palavras[i].fim;
+		}
+	}
+	return undefined;
+}
+
 /**
  * O trecho de um texto: uns 180 caracteres em volta da primeira palavra achada
  * de `centro`, cortados entre palavras, com "…" onde o texto continua, e as
@@ -212,8 +222,7 @@ function recortar(
 		}
 		const limite = inicio + TAMANHO_DO_TRECHO;
 		if (limite < texto.length) {
-			fim =
-				palavras.findLast((palavra) => palavra.fim <= limite)?.fim ?? limite;
+			fim = fimAte(palavras, limite) ?? limite;
 		}
 	}
 
