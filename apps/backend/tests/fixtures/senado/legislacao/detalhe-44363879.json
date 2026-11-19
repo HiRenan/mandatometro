@@ -1,0 +1,83 @@
+{
+  "DetalheDocumento": {
+    "noNamespaceSchemaLocation": "https://legis.senado.leg.br/dadosabertos/dados/DetalheDocumentov3.xsd",
+    "Metadados": {
+      "Versao": "Texto fict?cio de exemplo",
+      "VersaoServico": "Texto fict?cio de exemplo",
+      "DataVersaoServico": "Texto fict?cio de exemplo",
+      "DescricaoDataSet": "Texto fict?cio de exemplo"
+    },
+    "documentos": {
+      "documento": [
+        {
+          "id": "44363879",
+          "identificacao": {
+            "tipo": "MPV-ss",
+            "descricao": "Identifica??o oficial fict?cia",
+            "numero": "1400",
+            "norma": "Identifica??o oficial fict?cia",
+            "normaNome": "Identifica??o oficial fict?cia",
+            "dataassinatura": "06/11/2026",
+            "apelido": "Texto fict?cio de exemplo",
+            "urlDocumento": "https://normas.leg.br/?urn=urn:lex:br:federal:medida.provisoria:2026-11-06;1400"
+          },
+          "publicacoes": {
+            "publicacao": [
+              {
+                "id": "44363892",
+                "tipo": "PUB",
+                "fonte": "Di?rio Oficial da Uni?o  de 09/11/2026",
+                "siglaFonte": "DOU-2026-11-09",
+                "data": "09/11/2026",
+                "pagina": "Texto fict?cio de exemplo",
+                "coluna": "Texto fict?cio de exemplo",
+                "dispositivo": "Texto fict?cio de exemplo",
+                "temTexto": "Texto fict?cio de exemplo"
+              }
+            ]
+          },
+          "vides": "",
+          "edivs": {
+            "ediv": [
+              {
+                "codnormaAnterior": "Texto fict?cio de exemplo",
+                "datAssinatura": "Texto fict?cio de exemplo",
+                "nomeNormaAnterior": "Texto fict?cio de exemplo",
+                "comentario": "Texto fict?cio de exemplo",
+                "itens": ""
+              },
+              {
+                "codnormaAnterior": "Texto fict?cio de exemplo",
+                "datAssinatura": "Texto fict?cio de exemplo",
+                "nomeNormaAnterior": "Texto fict?cio de exemplo",
+                "comentario": "Texto fict?cio de exemplo",
+                "itens": {
+                  "item": [
+                    {
+                      "dispositivo": "Texto fict?cio de exemplo",
+                      "comentario": "Texto fict?cio de exemplo"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "disps": "",
+          "ementa": "Disp?e sobre a nomea??o de Pessoa Fict?cia de Exemplo (CPF 000.000.000-00).",
+          "catalogo": "",
+          "indexacao": {
+            "frase": [
+              "Texto fict?cio de exemplo"
+            ]
+          },
+          "classes": {
+            "classe": [
+              "Texto fict?cio de exemplo",
+              "Texto fict?cio de exemplo"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
