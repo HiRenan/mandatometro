@@ -15,6 +15,7 @@ import {
 	idDoPasso,
 	semQuebrarCitacao,
 } from "@/lib/formatar";
+import { simboloDoPasso } from "@/lib/simbolos";
 import { Azulejo, AzulejoGrande } from "./azulejo";
 
 /** A data da consulta das fontes de um passo, uma vez só quando é a mesma. */
@@ -177,6 +178,7 @@ export function Infografico({
 							<summary>
 								<AzulejoGrande
 									pecas={azulejoGrande(indice, indice % 5)}
+									simbolo={simboloDoPasso(passo.titulo)}
 									className="pequeno"
 								/>
 								<h3

@@ -1,0 +1,39 @@
+{
+  "ListaDocumento": {
+    "noNamespaceSchemaLocation": "https://legis.senado.leg.br/dadosabertos/dados/ListaDocumentov3.xsd",
+    "Metadados": {
+      "Versao": "Texto fict?cio de exemplo",
+      "VersaoServico": "Texto fict?cio de exemplo",
+      "DataVersaoServico": "Texto fict?cio de exemplo",
+      "DescricaoDataSet": "Texto fict?cio de exemplo"
+    },
+    "documentos": {
+      "documento": [
+        {
+          "id": "44391098",
+          "tipo": "LEI-n",
+          "descricao": "Identifica??o oficial fict?cia",
+          "numero": "15529",
+          "norma": "Identifica??o oficial fict?cia",
+          "normaNome": "Identifica??o oficial fict?cia",
+          "ementa": "Disp?e sobre a nomea??o de Pessoa Fict?cia de Exemplo (CPF 000.000.000-00).",
+          "dataassinatura": "12/11/2026",
+          "anoassinatura": "2026",
+          "apelido": "Texto fict?cio de exemplo"
+        },
+        {
+          "id": "44095919",
+          "tipo": "LEI-n",
+          "descricao": "Identifica??o oficial fict?cia",
+          "numero": "15526",
+          "norma": "Identifica??o oficial fict?cia",
+          "normaNome": "Identifica??o oficial fict?cia",
+          "ementa": "Disp?e sobre a nomea??o de Pessoa Fict?cia de Exemplo (CPF 000.000.000-00).",
+          "dataassinatura": "29/09/2026",
+          "anoassinatura": "2026",
+          "apelido": "Texto fict?cio de exemplo"
+        }
+      ]
+    }
+  }
+}

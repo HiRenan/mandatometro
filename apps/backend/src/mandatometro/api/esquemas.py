@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Literal
+from typing import Annotated, Literal
 from unicodedata import category
 
 from pydantic import UUID4, BaseModel, ConfigDict, EmailStr, Field, field_validator
@@ -80,6 +80,12 @@ class FatosPublicos(BaseModel):
     votacoes: list[VotacaoPublica]
 
 
+class FatosAtoPublicos(BaseModel):
+    # A lista vazia permite que a página atual leia o item e mostre suas fontes.
+    votacoes: Annotated[list[VotacaoPublica], Field(max_length=0)]
+    data_publicacao: date
+
+
 class ArtigoDaEdicao(BaseModel):
     titulo: str
     caminho: str
@@ -89,7 +95,7 @@ class ItemPublico(BaseModel):
     ordem: int
     titulo: str
     texto: str
-    fatos: FatosPublicos | None
+    fatos: FatosPublicos | FatosAtoPublicos | None
     fontes: list[FontePublica]
     artigo: ArtigoDaEdicao | None
 

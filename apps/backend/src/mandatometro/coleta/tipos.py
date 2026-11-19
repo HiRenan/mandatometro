@@ -35,3 +35,17 @@ class ResumoColeta:
     sem_proposicao: int = 0
     codigos_desconhecidos: int = 0
     erro: str | None = None
+
+
+@dataclass
+class ResumoAtos:
+    origem: str
+    inicio: date
+    fim: date
+    atos: int = 0
+    descartes: dict[str, int] = field(default_factory=dict)
+    chamadas: int = 0
+    tentativas_extras: int = 0
+    duracao_s: float = 0
+    completa: bool = True
+    erro: str | None = None

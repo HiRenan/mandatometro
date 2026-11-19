@@ -26,11 +26,11 @@ O porquê dessas escolhas está no [ADR 0002](docs/adr/0002-mvp.md) e no [ADR 00
 
 Só dados públicos, sempre com link para a origem:
 
-- [Dados Abertos da Câmara dos Deputados](https://dadosabertos.camara.leg.br/) e [do Senado Federal](https://legis.senado.leg.br/dadosabertos/): votações, proposições e parlamentares, para a newsletter
+- Para a newsletter, os dados abertos da Câmara e do Senado fornecem votações, proposições e parlamentares. A lista de legislação federal do Senado fornece decretos, leis e medidas provisórias publicados no Diário Oficial da União. [Câmara](https://dadosabertos.camara.leg.br/) · [Senado](https://legis.senado.leg.br/dadosabertos/) · [Lista de legislação federal](https://legis.senado.leg.br/dadosabertos/legislacao/lista?tipo=LEI&ano=2026)
 - Leis, regimentos e páginas oficiais da Câmara, do Senado e do TSE, para as trilhas
 - Depois do MVP: o [Portal de Dados Abertos do TSE](https://dadosabertos.tse.jus.br/) (candidaturas e bens declarados) e os sites de campanha
 
-As APIs oficiais e os arquivos de dados abertos (Câmara, Senado, TSE e, pelo INLABS, o Diário Oficial da União) são lidos direto, por HTTP.
+As APIs oficiais e os arquivos de dados abertos da Câmara, do Senado e do TSE são lidos direto, por HTTP.
 
 ## Ferramentas parceiras
 
@@ -57,9 +57,10 @@ O porquê de cada escolha está no [ADR 0001](docs/adr/0001-stack.md).
 
 ## Modelo de dados
 
-O banco guarda o que a coleta lê da Câmara e do Senado, o que a newsletter usa e a medição do piloto. Os modelos ficam em `apps/backend/src/mandatometro/db/modelos.py`, e cada mudança vira uma migration do Alembic.
+O banco guarda os dados da Câmara e do Senado, os atos do Diário Oficial, as edições da newsletter e a medição do piloto. Os modelos ficam em `apps/backend/src/mandatometro/db/modelos.py`, e cada mudança vira uma migration do Alembic.
 
 - **Cada Casa tem os seus números:** parlamentar, proposição e votação se identificam pela Casa e pelo id que a Casa dá (`casa`, `id_externo`). A mesma matéria tem uma linha em cada Casa, ligadas por sigla, número e ano.
+- **Atos do Diário Oficial** se identificam por `origem` e `id_externo`. A seleção semanal usa a data de publicação.
 - **Fonte em tudo:** cada dado coletado e cada item da edição aponta para uma `fonte`, com o endereço e a data da coleta. Sem fonte, o banco não grava.
 - **O partido fica no voto,** porque muda dentro do mandato. Os totais das nominais se contam pelos votos. Nas secretas do Senado, a coleta guarda matéria, votação e resultado, sem votos individuais; o banco não guarda os totais nem a modalidade. Ausência de votos no banco não significa zero votos na sessão nem identifica, sozinha, uma votação secreta.
 - **Ausência sem motivo:** toda ausência reconhecida do Senado (`AP`, `LS`, `MIS`, `NCom`, `LAP` e `LP`, em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, para a licença saúde ficar igual às outras. O voto só guarda os códigos de voto e de presença da lista `CODIGOS_GRAVADOS`, e o banco recusa os demais. Um código ainda não classificado, como `NA`, entra como `outro`, sem o código, e o log não leva o código nem a pessoa: a coleta registra só a votação e quantos códigos desconhecidos vieram nela.
@@ -114,6 +115,7 @@ erDiagram
     fonte ||--o{ proposicao : "comprova"
     fonte ||--o{ votacao : "comprova"
     fonte ||--o{ voto : "comprova"
+    fonte ||--o{ ato : "comprova"
     fonte ||--o{ item_edicao : "comprova"
 
     fonte {
@@ -172,6 +174,20 @@ erDiagram
         string valor_bruto "o código da Casa, só os da lista"
         string partido "o do dia do voto"
         string uf "a do dia do voto"
+        int fonte_id FK
+    }
+    ato {
+        int id PK
+        string origem UK
+        string id_externo UK
+        string tipo "decreto, lei, medida_provisoria ou outro"
+        string titulo
+        string ementa
+        date data_publicacao
+        date data_assinatura
+        string secao
+        string orgao
+        string numero
         int fonte_id FK
     }
     edicao {
@@ -284,6 +300,17 @@ O comando coleta as votações publicadas de acordo com as [regras do endpoint d
 
 Se o histórico de um votante fora da lista atual falhar, seus votos ficam gravados, o mandato não é inventado e `falhas_parlamentares` conta o parlamentar uma vez. Processo indisponível entra no resumo pelo caminho com seu id (por exemplo, `/processo/9006525`), e a votação é pulada. A [saída das coletas](docs/dicionario-de-dados.md#pegadinhas-e-saída-da-coleta) descreve como consultar históricos indisponíveis.
 
+**Coleta de atos da legislação federal.** Em `apps/backend`, aplique as migrations e passe `DATABASE_URL` com o banco de destino.
+
+```bash
+uv run mandatometro coleta legislacao --inicio 2026-11-12 --fim 2026-11-18
+uv run mandatometro coleta legislacao
+```
+
+O comando grava decretos, leis e medidas provisórias pela data de publicação no DOU. Sem datas, coleta os sete dias completos anteriores, no fuso de Brasília. Repetir o período atualiza os atos da mesma origem. O resumo JSON conta gravações e descartes por motivo. A [origem dos campos e a regra do período](docs/dicionario-de-dados.md#atos-do-diário-oficial) estão no dicionário.
+
+A busca de candidatos começa dez dias corridos antes do período para abranger intervalos entre a assinatura e a publicação, como o de um feriado prolongado. Uma norma publicada no período pode ficar de fora se tiver sido assinada mais de dez dias antes do início.
+
 **Edição semanal.** [Como preparar, revisar e publicar a edição](docs/newsletter.md#newsletter-rascunho-e-revisão).
 
 **Checagens,** as mesmas do CI:
@@ -296,6 +323,8 @@ pnpm build         # build do site, que confere o conteúdo das trilhas
 ```
 
 `pnpm check` corrige a formatação do TypeScript. No Python, rode `uv run ruff format` e `uv run ruff check --fix` em `apps/backend`.
+
+Para rodar os testes online, execute `uv run pytest -m online` em `apps/backend`. A suíte padrão e o CI executam apenas os testes offline.
 
 **Testes de banco.** Crie um banco de teste uma vez, com o banco do Docker no ar, e passe o endereço no `TEST_DATABASE_URL`:
 
@@ -316,7 +345,7 @@ Veja as [regras para os testes de banco](AGENTS.md#tests).
 
 **Cliente da API.** `pnpm generate:client`. Veja o [contrato da API](AGENTS.md#conventions).
 
-**Migration nova.** Em `apps/backend`, `uv run alembic revision --autogenerate --rev-id 0009 -m "cria a tabela orientacao"` é um exemplo. `uv run alembic check` diz se algum modelo mudou sem migration. Veja as [convenções de migrations](AGENTS.md#conventions).
+**Migration nova.** Em `apps/backend`, `uv run alembic revision --autogenerate --rev-id 0010 -m "cria a tabela orientacao"` é um exemplo. `uv run alembic check` diz se algum modelo mudou sem migration. Veja as [convenções de migrations](AGENTS.md#conventions).
 
 ## Time
 

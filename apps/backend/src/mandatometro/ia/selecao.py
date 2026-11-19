@@ -1,5 +1,7 @@
-"""Seleção determinística e contagens: a redação nunca escolhe votos ou matérias."""
+"""Seleção determinística de votações e bases dos itens da edição."""
 
+import hashlib
+import json
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date
@@ -8,8 +10,8 @@ from urllib.parse import urlsplit
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
-from mandatometro.db.modelos import Fonte, Parlamentar, Proposicao, Votacao, Voto
-from mandatometro.ia.esquemas import Fatos, FatoVotacao, Placar
+from mandatometro.db.modelos import Ato, Fonte, Parlamentar, Proposicao, Votacao, Voto
+from mandatometro.ia.esquemas import Fatos, FatosAto, FatoVotacao, Placar
 from mandatometro.ia.privacidade import assunto_pessoal
 
 PROCEDIMENTAIS = {"REQ", "REC", "DTQ"}
@@ -36,8 +38,41 @@ class ItemBase:
 
 
 @dataclass
+class ItemAtoBase:
+    ato: Ato = field(repr=False)
+    principal: Fonte = field(repr=False)
+    fatos: FatosAto
+
+    @classmethod
+    def de_ato(cls, ato: Ato) -> "ItemAtoBase":
+        # Detecta alterações nos demais campos da linha sem copiar texto oficial para os fatos.
+        dados = (
+            ato.origem,
+            ato.id_externo,
+            ato.tipo,
+            ato.titulo,
+            ato.ementa,
+            ato.data_assinatura.isoformat() if ato.data_assinatura else None,
+            ato.secao,
+            ato.orgao,
+            ato.numero,
+        )
+        return cls(
+            ato=ato,
+            principal=ato.fonte,
+            fatos=FatosAto(
+                versao=2,
+                ato_id=ato.id,
+                data_publicacao=ato.data_publicacao,
+                fontes=[ato.fonte_id],
+                hash_ato=hashlib.sha256(json.dumps(dados).encode()).hexdigest(),
+            ),
+        )
+
+
+@dataclass
 class Selecao:
-    itens: list[ItemBase]
+    itens: list[ItemBase | ItemAtoBase]
     resumo: ResumoSelecao
     nomes: list[str] = field(repr=False)
 
