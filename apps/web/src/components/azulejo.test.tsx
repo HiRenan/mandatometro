@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, fireEvent, render } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 import { azulejoDaPosicao, type Peca } from "@/lib/azulejos";
@@ -117,6 +117,32 @@ describe("azulejo grande", () => {
 				parte.getAttribute("d"),
 			),
 		).toEqual(SIMBOLOS.livro.map((parte) => parte.d));
+	});
+
+	it("mostra os recortes enquanto uma peça está virando", () => {
+		const { container } = render(
+			<AzulejoGrande pecas={azulejoDaPosicao(1)} simbolo="livro" />,
+		);
+		const azulejo = container.firstElementChild as HTMLElement;
+		const [peca] = azulejo.querySelectorAll(".az");
+		let virando = false;
+		peca.getAnimations = () =>
+			virando ? [{ playState: "running" } as Animation] : [];
+		const transicao = (tipo: string) =>
+			fireEvent(
+				peca,
+				Object.assign(new Event(tipo, { bubbles: true }), {
+					propertyName: "rotate",
+				}),
+			);
+
+		virando = true;
+		transicao("transitionrun");
+		expect(azulejo.hasAttribute("data-virando")).toBe(true);
+
+		virando = false;
+		transicao("transitioncancel");
+		expect(azulejo.hasAttribute("data-virando")).toBe(false);
 	});
 
 	it("reserva o quarto de volta na lista e na sanfona aos azulejos da posição", () => {

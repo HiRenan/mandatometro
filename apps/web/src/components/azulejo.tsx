@@ -135,7 +135,8 @@ export function AzulejoGrande({
 	}, []);
 
 	const aoGirar = (evento: TransitionEvent<HTMLSpanElement>) => {
-		if (evento.propertyName === "rotate") sincronizarSimbolo();
+		// O React só copia o propertyName para o evento sintético no transitionend.
+		if (evento.nativeEvent.propertyName === "rotate") sincronizarSimbolo();
 	};
 
 	useEffect(() => {
