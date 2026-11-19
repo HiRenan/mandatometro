@@ -39,6 +39,7 @@ class ItemBase:
 
 @dataclass
 class ItemAtoBase:
+    ato: Ato = field(repr=False)
     principal: Fonte = field(repr=False)
     fatos: FatosAto
 
@@ -57,6 +58,7 @@ class ItemAtoBase:
             ato.numero,
         )
         return cls(
+            ato=ato,
             principal=ato.fonte,
             fatos=FatosAto(
                 versao=2,

@@ -129,6 +129,45 @@ def test_gerar_exportar_revisar_e_publicar_ato(abrir, dados, ato, selecao_com_at
     assert publicar(abrir, edicao_id)["situacao"] == "publicada"
 
 
+def test_revisar_ato_aceita_numeros_da_linha_e_das_datas(abrir, sessao, ato, selecao_com_ato):
+    ato.numero = "12345"
+    ato.titulo = "Título fictício sobre 628 serviços."
+    ato.ementa = "Ementa fictícia sobre 73 casos."
+    sessao.flush()
+    edicao_id = gerar(abrir, INICIO, FIM)["edicao_id"]
+    arquivo = pronto(exportar(abrir, edicao_id))
+    item = arquivo["itens"][0]
+    item["titulo"] = "Decreto fictício nº 12.345 para 628 serviços"
+    item["explicacao"] = [
+        "O ato de teste, assinado em 11 de novembro e publicado no dia 12, trata de 73 casos.",
+        "O período desta edição vai de 9 a 15 de novembro de 2026.",
+    ]
+
+    assert revisar(abrir, edicao_id, arquivo)["pendencias"] == []
+    revisado = exportar(abrir, edicao_id)["itens"][0]
+    assert revisado["titulo"] == item["titulo"]
+    assert revisado["explicacao"] == item["explicacao"]
+    assert revisado["contexto"] == item["contexto"] == {}
+    assert revisado["fatos"] == item["fatos"] | {"origem": "revisao", "pendencias": []}
+
+
+@pytest.mark.parametrize(
+    ("alteracao", "campo"),
+    [
+        ({"titulo": "Decreto fictício nº 98.765"}, "título"),
+        ({"explicacao": ["O exemplo define 98.765 casos."]}, "explicação"),
+    ],
+    ids=["titulo", "explicacao"],
+)
+def test_revisar_ato_recusa_numero_de_fora(abrir, rascunho_ato, alteracao, campo):
+    arquivo = pronto(exportar(abrir, rascunho_ato.id))
+    arquivo["itens"][0].update(alteracao)
+
+    with pytest.raises(ErroEdicao) as erro:
+        revisar(abrir, rascunho_ato.id, arquivo)
+    assert str(erro.value) == f"Item 1: o campo {campo} tem número que não está nos fatos enviados."
+
+
 def test_gerar_recusa_coleta_alterada_entre_selecao_e_gravacao(
     abrir, dados, sessao, ato, selecao_com_ato
 ):

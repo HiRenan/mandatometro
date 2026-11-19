@@ -392,10 +392,15 @@ def _numeros(texto: str) -> set[str]:
 
 
 def _numeros_permitidos(base: ItemBase | ItemAtoBase, edicao: Edicao) -> set[str]:
-    dados = [str(edicao.inicio), str(edicao.fim)]
     if isinstance(base, ItemAtoBase):
-        dados.append(str(base.fatos.data_publicacao))
+        ato = base.ato
+        dados = [ato.numero or "", ato.titulo, ato.ementa or ""]
+        for data in (edicao.inicio, edicao.fim, ato.data_publicacao, ato.data_assinatura):
+            if data is not None:
+                # Aceita o dia e o mês sem zero à esquerda no texto editorial.
+                dados.extend([data.isoformat(), str(data.day), str(data.month)])
         return _numeros(" ".join(dados))
+    dados = [str(edicao.inicio), str(edicao.fim)]
     for p in base.proposicoes:
         dados.extend([str(p.numero), str(p.ano), p.ementa or ""])
     for v, fato in zip(base.votacoes, base.fatos.votacoes, strict=True):
