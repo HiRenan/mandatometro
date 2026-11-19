@@ -147,12 +147,14 @@
 
 	/*
 	 * Os azulejos giram um quarto de volta quando o ponteiro passa pela folha, pela
-	 * faixa ou pela chamada deles. Na chamada do quiz e na folha da newsletter,
-	 * giram em fila, um depois do outro. O do símbolo vira em onda (mais acima).
+	 * faixa ou pela chamada deles. Na lista e na sanfona, o quarto de volta é
+	 * dos azulejos da posição. Na chamada do quiz e na folha da newsletter,
+	 * giram em fila, um depois do outro.
 	 */
 	.da-linha,
 	.chamada-azulejos .grande,
-	.outros-artigos .grande {
+	.outros-artigos .grande,
+	.sanfona .grande:not(.com-simbolo) {
 		transition: rotate 0.5s var(--ease-mola);
 	}
 
@@ -221,7 +223,9 @@
 	.linha:hover .da-linha,
 	.outros-artigos a:hover .grande,
 	.chamada-quiz:hover .chamada-azulejos .grande,
-	.newsletter-folha:hover .chamada-azulejos .grande {
+	.newsletter-folha:hover .chamada-azulejos .grande,
+	.trilha-da-lista:hover .trilha-cabeca > .da-linha:not(.com-simbolo),
+	.sanfona details[open] .grande:not(.com-simbolo) {
 		rotate: 90deg;
 	}
 

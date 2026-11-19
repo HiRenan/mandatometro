@@ -1,6 +1,8 @@
 import {
 	type CSSProperties,
 	type ReactNode,
+	type TransitionEvent,
+	useCallback,
 	useEffect,
 	useRef,
 	useState,
@@ -56,26 +58,27 @@ export function Azulejo({
 /** A peça lisa, só com o fundo: a do símbolo, que vem desenhado no SVG. */
 const LISA = 8;
 
-/**
- * Um quarto do símbolo, numa peça: o SVG mostra só o pedaço da caixa de 100
- * que cabe nela, com 1 de sobra em volta. A sobra passa da borda da peça (o
- * CSS), e a emenda entre duas peças não mostra um fio. O `quarto` vai de 0 a 3,
- * na ordem da leitura.
- */
-function QuartoDoSimbolo({
+/** O mesmo desenho inteiro ou num quarto, com sobra para o recorte da peça. */
+function DesenhoDoSimbolo({
 	simbolo,
 	quarto,
+	style,
 }: {
 	simbolo: NomeDoSimbolo;
-	quarto: number;
+	quarto?: number;
+	style?: CSSProperties;
 }) {
-	const x = (quarto % 2) * 50;
-	const y = Math.floor(quarto / 2) * 50;
+	const inteiro = quarto === undefined;
+	const x = ((quarto ?? 0) % 2) * 50;
+	const y = Math.floor((quarto ?? 0) / 2) * 50;
 	return (
 		<svg
 			aria-hidden="true"
 			focusable="false"
-			viewBox={`${x - 1} ${y - 1} 52 52`}
+			className={inteiro ? "simbolo-inteiro" : undefined}
+			style={style}
+			viewBox={inteiro ? "0 0 100 100" : `${x - 1} ${y - 1} 52 52`}
+			preserveAspectRatio={inteiro ? "none" : undefined}
 		>
 			{SIMBOLOS[simbolo].map((parte) => (
 				<path
@@ -121,12 +124,28 @@ export function AzulejoGrande({
 	const tempos = useRef({ passo, atraso });
 	tempos.current = { passo, atraso };
 
+	const sincronizarSimbolo = useCallback(() => {
+		const azulejo = caixa.current;
+		if (!azulejo) return;
+		// A figura inteira volta quando a última peça termina de virar.
+		const virando = [...azulejo.querySelectorAll(":scope > .az")].some((peca) =>
+			peca.getAnimations?.().some((giro) => giro.playState === "running"),
+		);
+		azulejo.toggleAttribute("data-virando", virando);
+	}, []);
+
+	const aoGirar = (evento: TransitionEvent<HTMLSpanElement>) => {
+		if (evento.propertyName === "rotate") sincronizarSimbolo();
+	};
+
 	useEffect(() => {
+		if (simbolo) sincronizarSimbolo();
 		if (ultimo.current === cru) {
 			return;
 		}
 		ultimo.current = cru;
-		const desistir = [...(caixa.current?.children ?? [])].map((peca, qual) =>
+		const pecasNaTela = caixa.current?.querySelectorAll(":scope > .az") ?? [];
+		const desistir = [...pecasNaTela].map((peca, qual) =>
 			virar(
 				peca,
 				() =>
@@ -134,6 +153,7 @@ export function AzulejoGrande({
 						antes.map((era, outra) => (outra === qual ? cru : era)),
 					),
 				tempos.current.atraso + qual * tempos.current.passo,
+				simbolo ? sincronizarSimbolo : undefined,
 			),
 		);
 		return () => {
@@ -141,7 +161,18 @@ export function AzulejoGrande({
 				desiste();
 			}
 		};
-	}, [cru]);
+	}, [cru, simbolo, sincronizarSimbolo]);
+
+	const primeira = pecas[0];
+	const corUniforme =
+		primeira &&
+		pecas.length === 4 &&
+		pecas.every(
+			(peca, qual) =>
+				crus[qual] === crus[0] &&
+				peca.fundo === primeira.fundo &&
+				peca.desenho === primeira.desenho,
+		);
 
 	return (
 		<span
@@ -149,6 +180,9 @@ export function AzulejoGrande({
 			className={classes("grande", simbolo && "com-simbolo", className)}
 			data-simbolo={simbolo}
 			aria-hidden="true"
+			onTransitionRun={simbolo ? aoGirar : undefined}
+			onTransitionEnd={simbolo ? aoGirar : undefined}
+			onTransitionCancel={simbolo ? aoGirar : undefined}
 		>
 			{pecas.map((peca, qual) => (
 				<Azulejo
@@ -158,9 +192,20 @@ export function AzulejoGrande({
 					vez={qual}
 					cru={crus[qual]}
 				>
-					{simbolo && <QuartoDoSimbolo simbolo={simbolo} quarto={qual} />}
+					{simbolo && <DesenhoDoSimbolo simbolo={simbolo} quarto={qual} />}
 				</Azulejo>
 			))}
+			{simbolo && corUniforme && (
+				<DesenhoDoSimbolo
+					simbolo={simbolo}
+					style={variaveis(
+						crus[0]
+							? { ...primeira, fundo: "papel-2", desenho: "papel-3" }
+							: primeira,
+						0,
+					)}
+				/>
+			)}
 		</span>
 	);
 }

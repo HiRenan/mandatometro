@@ -37,11 +37,13 @@ function assinar(avisar: () => void): () => void {
 /**
  * Vira uma peça: ela gira até ficar de lado, o `mudar` troca o desenho, e ela
  * volta. Devolve a função que desiste da virada, se ela ainda não começou.
+ * O `aoMudarOMovimento` avisa no começo e no fim da animação.
  */
 export function virar(
 	peca: Element,
 	mudar: () => void,
 	atraso = 0,
+	aoMudarOMovimento?: () => void,
 ): () => void {
 	if (movimentoReduzido() || typeof peca.animate !== "function") {
 		mudar();
@@ -56,22 +58,24 @@ export function virar(
 			],
 			{ duration: 200, easing: "ease-in", fill: "forwards" },
 		);
+		aoMudarOMovimento?.();
 		ida.finished
 			.then(() => {
 				if (!desistiu) {
 					mudar();
 				}
 				ida.cancel();
-				peca.animate(
+				const volta = peca.animate(
 					[
 						{ transform: "rotateY(-90deg)", filter: "brightness(0.75)" },
 						{ transform: "rotateY(0deg)" },
 					],
 					{ duration: 380, easing: "cubic-bezier(0.2, 0.8, 0.3, 1.25)" },
 				);
+				if (aoMudarOMovimento) return volta.finished.then(aoMudarOMovimento);
 			})
 			// A animação cancelada (a página trocou no meio) rejeita a promessa.
-			.catch(() => {});
+			.catch(() => aoMudarOMovimento?.());
 	}, atraso);
 	return () => {
 		desistiu = true;

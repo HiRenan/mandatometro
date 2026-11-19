@@ -292,13 +292,13 @@ describe("infográfico", () => {
 		const secao = await mostrar();
 		const comCor = [...secao.querySelectorAll<HTMLElement>("[style]")];
 		const desenhos = [
-			...secao.querySelectorAll<HTMLElement>(".grande, .az, .az > svg"),
+			...secao.querySelectorAll<HTMLElement>(".grande, .az, .grande svg"),
 		];
 
 		expect(comCor.length).toBeGreaterThan(0);
-		// O azulejo de cada passo, com as quatro peças dele e o quarto do símbolo
-		// em cada peça, e o azulejinho de cada artigo.
-		expect(desenhos).toHaveLength(20);
+		// O azulejo, as quatro peças e o desenho inteiro e em quartos de cada
+		// passo, além do azulejinho de cada artigo.
+		expect(desenhos).toHaveLength(22);
 		for (const elemento of [...comCor, ...desenhos]) {
 			expect(elemento.getAttribute("aria-hidden")).toBe("true");
 		}

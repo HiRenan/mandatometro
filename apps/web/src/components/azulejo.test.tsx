@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { cleanup, render } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
@@ -97,6 +100,38 @@ describe("azulejo grande", () => {
 				),
 			).toEqual(SIMBOLOS.livro.map((parte) => parte.d));
 		}
+	});
+
+	it("tem o desenho inteiro para pintar as emendas com as peças paradas", () => {
+		const { container } = render(
+			<AzulejoGrande pecas={azulejoDaPosicao(1)} simbolo="livro" />,
+		);
+		const inteiro = container.querySelector(".grande > svg");
+
+		expect(inteiro?.getAttribute("viewBox")).toBe("0 0 100 100");
+		expect(inteiro?.getAttribute("preserveAspectRatio")).toBe("none");
+		expect(inteiro?.getAttribute("aria-hidden")).toBe("true");
+		expect(inteiro?.getAttribute("focusable")).toBe("false");
+		expect(
+			[...(inteiro?.querySelectorAll("path") ?? [])].map((parte) =>
+				parte.getAttribute("d"),
+			),
+		).toEqual(SIMBOLOS.livro.map((parte) => parte.d));
+	});
+
+	it("reserva o quarto de volta na lista e na sanfona aos azulejos da posição", () => {
+		const css = readFileSync(
+			join(dirname(fileURLToPath(import.meta.url)), "../estilos/movimento.css"),
+			"utf8",
+		);
+		const quartoDeVolta = css.match(/([^{}]+)\{\s*rotate: 90deg;\s*\}/)?.[1];
+
+		expect(quartoDeVolta).toContain(
+			".trilha-da-lista:hover .trilha-cabeca > .da-linha:not(.com-simbolo)",
+		);
+		expect(quartoDeVolta).toContain(
+			".sanfona details[open] .grande:not(.com-simbolo)",
+		);
 	});
 
 	it("desenha os buracos, o traço e o giro de cada parte do símbolo", () => {

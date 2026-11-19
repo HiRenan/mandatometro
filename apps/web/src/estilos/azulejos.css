@@ -91,19 +91,42 @@
 	}
 
 	/*
-	 * O símbolo do azulejo grande: cada peça mostra o quarto dela do desenho, num
-	 * SVG com 1 de sobra em volta (components/azulejo.tsx). Como o motivo, a sobra
-	 * passa 2% da borda da peça, e a emenda entre duas peças não mostra um fio.
+	 * Na virada, cada peça leva o quarto dela do desenho, com 2% de sobra para o
+	 * recorte. Com as peças de pé, um SVG pinta a caixa inteira, pois o Edge pode
+	 * deixar um fio ao compor recortes separados em coordenadas fracionadas.
+	 * As peças continuam na grade para manter as dimensões e poder virar.
 	 */
-	.az > svg {
+	.az > svg,
+	.simbolo-inteiro {
 		position: absolute;
-		inset: -2%;
-		width: 104%;
-		height: 104%;
 		fill: var(--b);
 	}
 
+	.az > svg {
+		inset: -2%;
+		width: 104%;
+		height: 104%;
+	}
+
+	.com-simbolo {
+		position: relative;
+	}
+
+	.simbolo-inteiro {
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		background: var(--a);
+		pointer-events: none;
+	}
+
+	.com-simbolo[data-virando] > .simbolo-inteiro,
+	.com-simbolo:has(> .simbolo-inteiro):not([data-virando]) > .az {
+		visibility: hidden;
+	}
+
 	/* A parte que é linha, e não área: a seta das duas casas. */
+	.simbolo-inteiro .traco,
 	.az > svg .traco {
 		fill: none;
 		stroke: var(--b);
@@ -145,7 +168,8 @@
 	 */
 	@media (forced-colors: active) {
 		.az::before,
-		.az > svg {
+		.az > svg,
+		.simbolo-inteiro {
 			display: none;
 		}
 	}
