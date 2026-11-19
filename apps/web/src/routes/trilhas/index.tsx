@@ -10,6 +10,7 @@ import { classeDaFita, fraseDoProgresso, plural } from "@/lib/formatar";
 import { variaveisDaLista } from "@/lib/lista-das-trilhas";
 import { metaDaPagina, metaSemPagina } from "@/lib/meta";
 import { contarLidos, idDoArtigo, useArtigosLidos } from "@/lib/progresso";
+import { simboloDaTrilha } from "@/lib/simbolos";
 
 export const Route = createFileRoute("/trilhas/")({
 	loader: () => buscarTrilhas(),
@@ -104,7 +105,11 @@ function ItemDaTrilha({
 			style={variaveisDaLista(total)}
 		>
 			<div className="trilha-cabeca">
-				<AzulejoGrande pecas={azulejoDaPosicao(posicao)} className="da-linha" />
+				<AzulejoGrande
+					pecas={azulejoDaPosicao(posicao)}
+					simbolo={simboloDaTrilha(trilha.slug)}
+					className="da-linha"
+				/>
 				<div className="trilha-cabeca-texto">
 					{/* Com a letra grande, o título cresce até "CONSTITUIÇÃO", a palavra mais
 					    larga dos títulos das trilhas, encostar nas bordas da folha (o

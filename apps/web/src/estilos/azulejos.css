@@ -1,9 +1,10 @@
 /*
  * Os azulejos (DESIGN.md): cada peça é um quadrado com o fundo (--a), o motivo
- * desenhado por cima (--b) e a volta (--r, em quartos). Tudo é gradiente do CSS,
- * sem imagem. O desenho de cada peça vem de lib/azulejos.ts, e o componente
- * (components/azulejo.tsx) escreve as variáveis. Os azulejos são só desenho e
- * ficam fora do leitor de tela.
+ * desenhado por cima (--b) e a volta (--r, em quartos). Os motivos são
+ * gradientes do CSS, sem imagem. O desenho de cada peça vem de lib/azulejos.ts,
+ * e o componente (components/azulejo.tsx) escreve as variáveis. O símbolo do
+ * azulejo grande é um SVG escrito no código (lib/simbolos.ts), na cor do
+ * desenho. Os azulejos são só desenho e ficam fora do leitor de tela.
  */
 @layer components {
 	/* O painel: as peças lado a lado, com 2 px de rejunte. */
@@ -90,15 +91,63 @@
 	}
 
 	/*
+	 * Na virada, cada peça leva o quarto dela do desenho, com 2% de sobra para o
+	 * recorte. Com as peças de pé, a caixa tem um fundo e um SVG inteiro, pois o
+	 * Edge pode deixar um fio ao compor recortes em coordenadas fracionadas.
+	 * As peças continuam na grade para manter as dimensões e poder virar.
+	 */
+	.az > svg,
+	.simbolo-inteiro {
+		position: absolute;
+		fill: var(--b);
+	}
+
+	.az > svg {
+		inset: -2%;
+		width: 104%;
+		height: 104%;
+	}
+
+	.com-simbolo {
+		position: relative;
+	}
+
+	.simbolo-inteiro {
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		pointer-events: none;
+	}
+
+	.com-simbolo:has(> .simbolo-inteiro):not([data-virando]) {
+		background: var(--a);
+	}
+
+	.com-simbolo[data-virando] > .simbolo-inteiro,
+	.com-simbolo:has(> .simbolo-inteiro):not([data-virando]) > .az {
+		visibility: hidden;
+	}
+
+	/* A parte que é linha, e não área: a seta das duas casas. */
+	.simbolo-inteiro .traco,
+	.az > svg .traco {
+		fill: none;
+		stroke: var(--b);
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	/*
 	 * O azulejo cru: papel sobre papel. Ele ganha a cor quando vira. O fundo e o
 	 * desenho da peça vêm escritos nela (--a e --b): aqui, o fundo troca direto, e
-	 * o desenho, na camada do motivo.
+	 * o desenho, na camada do motivo e no símbolo.
 	 */
 	.az.cru {
 		background: var(--papel-2);
 	}
 
-	.az.cru::before {
+	.az.cru::before,
+	.az.cru > svg {
 		--b: var(--papel-3);
 	}
 
@@ -121,8 +170,14 @@
 	 * somem: são só desenho, e nada do que a página diz depende deles.
 	 */
 	@media (forced-colors: active) {
-		.az::before {
+		.az::before,
+		.az > svg,
+		.simbolo-inteiro {
 			display: none;
+		}
+
+		.com-simbolo:has(> .simbolo-inteiro):not([data-virando]) {
+			background: none;
 		}
 	}
 }

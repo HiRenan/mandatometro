@@ -212,7 +212,7 @@ O que ficaria errado, nas palavras do Renan: "Site do governo, Coisa de criança
 - Papel claro e tinta. A cor fica nas fitas: nos azulejos, nos números e na tira.
 - O papel não é liso: tem um grão miúdo e, atrás de tudo, o mapa da trilha, em curvas de nível um tom acima do papel.
 - A letra do cartaz: Archivo de peso 900, estreito, em maiúsculas, com uma frase em letra de máquina de escrever (Courier Prime). O que se lê com calma vai em serifa (Literata).
-- Azulejos feitos de gradientes do CSS, sem imagem. São só desenho e ficam fora do leitor de tela.
+- Azulejos feitos de gradientes do CSS, sem imagem. O azulejo de cada trilha e de cada passo do caminho leva o símbolo do assunto, em SVG escrito no código, também sem arquivo de imagem. São desenho e ficam fora do leitor de tela.
 - O estado em palavras e em marca: o visto no lido, "Lido", "Continue daqui", "Você está aqui", "Você leu 1 de 3."
 - Fio de tinta de 2 px e canto reto. A única sombra é dura, de tinta, embaixo do que sobe quando o ponteiro passa.
 - Movimento com sentido: os azulejos viram, as palavras tombam, o que entra na tela sobe, e a página troca azulejo por azulejo. Com o movimento reduzido, nada disso acontece.
@@ -395,10 +395,10 @@ Na trilha, o botão de continuar vem depois da linha do "Recomeçar a trilha", e
 O sistema é chapado: sem sombra esfumada e sem degradê suave. A profundidade vem da tinta.
 
 - **A sombra dura:** a folha de uma lista sobe 4 px quando o ponteiro passa, sobre uma sombra de tinta de 6 px, sem desfoque. O azulejo do passo da vez, na página inicial, fica 8 px acima, sobre uma sombra igual, de 8 px. São as duas únicas sombras do site. O fio grosso da folha aberta, em "Nesta trilha", também usa o `box-shadow`, mas `inset`: desenha um fio de 6 px, e não uma sombra. No quiz, a opção que o ponteiro toca, ou que a pessoa escolheu, anda 7 px para o lado e mostra um fio rosa, amarelo ou azul, e a certa e a errada levam um fio de 8 px por dentro, verde ou vermelho: também são fios feitos com o `box-shadow`, sem desfoque.
-- **O giro:** os azulejos viram em volta do próprio eixo, com perspectiva. É movimento, e não camada: parado, tudo é plano.
+- **O giro:** os azulejos viram em volta do próprio eixo, com perspectiva. Na lista das trilhas, quando o ponteiro passa pela folha, e na sanfona, quando o passo abre, as quatro peças do azulejo com símbolo dão uma volta inteira em onda. O símbolo termina de pé. Na fila da página inicial, "Próximo passo" vira as peças uma a uma e troca a cor de cada peça quando ela fica de lado. Em repouso, tudo é plano.
 
 ### Named Rules
-**A Regra da Tinta Chapada.** Sem sombra esfumada e sem degradê suave. Os gradientes do site têm borda dura: as faixas da tira e os motivos dos azulejos. O fundo segue a regra: o grão é ponto e o mapa é traço, sem mancha e sem desfoque.
+**A Regra da Tinta Chapada.** Sem sombra esfumada e sem degradê suave. Os gradientes do site têm borda dura: as faixas da tira e os motivos dos azulejos. Os símbolos dos azulejos também são chapados, numa cor só, sem contorno e sem sombra. O fundo segue a regra: o grão é ponto e o mapa é traço, sem mancha e sem desfoque.
 
 ## Shapes
 
@@ -407,7 +407,8 @@ Tudo é reto: raio zero (`--radius: 0`).
 - **O fio:** 2 px em tinta. Contorna as folhas, separa as seções e os itens das listas. "Fontes oficiais" abre com um fio de 6 px.
 - **A tira:** as cinco fitas em faixas iguais, com 6 px de altura: embaixo do cabeçalho, embaixo do botão quando o ponteiro passa, e na barra de leitura do artigo. Embaixo da frase do título, ela é mais fina e se risca: 0,075 em da frase, com pelo menos 3 px. No alto da folha da resposta do quiz, ela tem 10 px.
 - **O azulejo:** um quadrado com o fundo, um motivo por cima e uma volta, de 0 a 3 quartos. Os motivos são dez: o quarto de círculo, a meia-lua, o triângulo, o círculo, as listras, o arco, os dois quartos opostos, o liso, os quatro pontos e a metade. Entre dois azulejos de um painel, 2 px de rejunte.
-- **O azulejo grande:** quatro peças que formam um desenho. São cinco desenhos, e dois lembram o Congresso: a cúpula e os dois lados.
+- **O azulejo grande:** quatro peças que formam um desenho. São cinco desenhos abstratos, e dois lembram o Congresso: a cúpula e os dois lados.
+- **O símbolo:** o azulejo grande de cada trilha e de cada passo do caminho leva um desenho que diz o assunto, numa caixa de 100 por 100: o livro fechado, com a etiqueta e a fita (A Constituição); o frontão sobre três colunas (Os Três Poderes); a balança (Direitos e Deveres); o Congresso, com as duas torres, a tigela e a cúpula (Processo legislativo); a folha do projeto, com a ponta dobrada e as linhas do texto (Apresentação); a mesa, com as cadeiras em volta (Comissões); as cadeiras em meia-lua, diante da mesa (Plenário); a tigela, a cúpula e a seta de uma Casa à outra (A outra Casa); e a caneta deitada sobre a linha da assinatura (Sanção ou veto). São prédios e objetos das instituições, sem partido e sem pessoa, em formas geométricas chapadas que se leem a 40 px.
 - **A etiqueta de estado:** um retângulo de tinta com a letra em papel, que pende do fio de cima da folha.
 - **O visto:** um traço só, levemente curvo, com a perna curta e a longa, de ponta redonda, em tinta, sobre um traço mais largo na cor da folha, que o separa do que fica atrás.
 
@@ -465,11 +466,12 @@ Tudo é reto: raio zero (`--radius: 0`).
 
 ### Azulejos
 - **O que são:** desenho. O painel, o azulejo grande e cada peça ficam fora do leitor de tela (`aria-hidden`), e nada do que a página diz depende deles. Nas cores forçadas do Windows, eles somem.
-- **Como são feitos:** cada peça é um `span` com três variáveis (o fundo, o desenho e a volta), e o CSS pinta o motivo com um gradiente (`estilos/azulejos.css`). O desenho de cada peça vem de `lib/azulejos.ts`, em dados.
+- **Como são feitos:** cada peça é um `span` com três variáveis (o fundo, o desenho e a volta), e o CSS pinta o motivo com um gradiente (`estilos/azulejos.css`). O desenho de cada peça vem de `lib/azulejos.ts`, em dados. Em repouso, o fundo cobre toda a caixa, e um SVG mostra o símbolo inteiro. Durante a virada, cada peça lisa mostra um quarto do desenho, com 2% de sobra para o recorte. Os mesmos caminhos de `lib/simbolos.ts` e a mesma cor da peça compõem as duas versões.
 - **O sorteio tem semente:** o servidor e o navegador desenham o mesmo painel. Cada trilha tem o seu, pela semente que sai do endereço dela.
 - **As cores:** poucos azulejos ficam quietos, papel sobre papel, para o painel respirar; os outros levam uma fita, com tinta ou papel (A Regra de Uma Fita por Azulejo).
 - **O azulejo cru:** papel sobre papel, sem cor. É o passo que ainda não foi andado e o artigo que ainda não foi lido. Ele ganha a cor quando vira.
-- **O azulejo da posição:** cada artigo e cada trilha da lista têm um azulejo grande, na fita da posição, com os desenhos alternados para dois vizinhos não ficarem iguais (`azulejoDaPosicao`).
+- **O azulejo da posição:** cada artigo tem um azulejo grande, na fita da posição, com os desenhos alternados para dois vizinhos não ficarem iguais (`azulejoDaPosicao`).
+- **O azulejo do assunto:** a trilha, na lista das trilhas, e cada passo do caminho, na sanfona da trilha e no passo a passo da página inicial, levam o símbolo do assunto no lugar do desenho (`simboloDaTrilha` e `simboloDoPasso`, em `lib/simbolos.ts`). A cor continua sendo a da posição. O símbolo sai de um mapa no código, pelo endereço da trilha e do passo, e um teste lê o conteúdo e falha quando uma trilha ou um passo fica sem símbolo; sem ele, o azulejo volta ao desenho da posição. O Renan escolheu os símbolos em 19/11/2026, na #232.
 - **O painel vivo** (`lib/painel-vivo.ts`): a peça que o ponteiro toca vira e ganha outro desenho; um clique faz a onda, da peça tocada para fora; e, no cartaz, uma peça vira sozinha a cada 1,4 s. No toque, o dedo que rola a página não vira as peças. O painel para quando a aba está escondida ou ele saiu da tela. As cinco fitas continuam juntas: a peça que é a única da cor dela muda de desenho, e não de cor.
 
 ### Cartaz
@@ -486,7 +488,7 @@ Tudo é reto: raio zero (`--radius: 0`).
 - **Estados:** a lida leva o visto no meio do número, que perde a cor, e a etiqueta "Lido"; onde a pessoa parou leva a etiqueta "Continue daqui".
 
 ### A trilha na lista das trilhas
-- Uma folha por trilha: o azulejo da posição, o título, a descrição, "8 artigos · 16 min de leitura" e o progresso em palavras ("Você leu 1 de 8." ou "Você terminou a trilha.").
+- Uma folha por trilha: o azulejo com o símbolo da trilha, na fita da posição, o título, a descrição, "8 artigos · 16 min de leitura" e o progresso em palavras ("Você leu 1 de 8." ou "Você terminou a trilha."). Quando o ponteiro passa pela folha, as quatro peças do azulejo viram em onda, e o símbolo termina de pé.
 - **O título é o link** para a trilha, o único no celular. A área de toque dele tem pelo menos 44 px de altura, também quando o título cabe numa linha: um `::before` soma o que falta, por igual em cima e embaixo, sem mexer no desenho.
 - **Com a letra grande** (abaixo de 22rem, a variante `letra-grande`), o azulejo passa para cima do texto, como nas folhas da trilha, e a descrição fica em 1rem. Ao lado, o azulejo crescia com a letra, e a coluna do texto ficava estreita demais: palavras como "Constituição" se partiam. Nenhuma palavra da página se parte, de 320 a 430 px, com a letra de 100% a 200%.
 - **As miniaturas** (abaixo de 1024 px): um quadrado de 44 px por artigo, com fio de tinta e o número na fita da posição; os lidos levam o visto no canto de cima, por cima da borda. Os quadrados ficam a 6 px um do outro e, quando quebram de linha, as linhas ficam a 12 px (o Renan, em 11/11/2026: "Linhas mais afastadas"). São desenho: o estado está na frase do progresso.
@@ -508,7 +510,7 @@ Tudo é reto: raio zero (`--radius: 0`).
 
 ### O passo a passo (página inicial)
 - **Caráter:** o caminho de um projeto de lei, um passo de cada vez. O conteúdo é o do `infografico.md` da trilha: o texto, os desvios, as fontes e os artigos de cada passo.
-- **A fila:** cinco azulejos grandes, um por passo, cada um um botão com o número e o nome do passo (no celular, o nome fica só para o leitor de tela). Os passos já andados ficam com a cor, e os da frente, crus. A partir de 768 px, um fio liga os cinco: o de Papel 3 é o caminho inteiro, e o de tinta avança até o passo da vez. Com o nome à vista, as cinco abas dividem a largura em partes iguais (`minmax(0, 1fr)`), como o fio pede. O nome de um passo não se parte: ele fica do tamanho da palavra mais comprida e, se ela passar da coluna, entra no vão até a aba seguinte. No Edge, "APRESENTAÇÃO" passa 1,14 px da coluna a 768 px, com a letra a 100%, e sobram pelo menos 11 px do vão.
+- **A fila:** cinco azulejos grandes, um por passo, com o símbolo dele; cada um é um botão com o número e o nome do passo (no celular, o nome fica só para o leitor de tela). Os passos já andados ficam com a cor, e os da frente, crus. A partir de 768 px, um fio liga os cinco: o de Papel 3 é o caminho inteiro, e o de tinta avança até o passo da vez. Com o nome à vista, as cinco abas dividem a largura em partes iguais (`minmax(0, 1fr)`), como o fio pede. O nome de um passo não se parte: ele fica do tamanho da palavra mais comprida e, se ela passar da coluna, entra no vão até a aba seguinte. No Edge, "APRESENTAÇÃO" passa 1,14 px da coluna a 768 px, com a letra a 100%, e sobram pelo menos 11 px do vão.
 - **O passo:** o número gigante, que tomba no lugar, e ao lado "Passo 2 de 5", o título, o texto, os desvios (cada um com um fio da cor do passo ao lado), as fontes com a data da consulta e os artigos que explicam o passo. O passo sem artigo traz "Ler este passo na trilha", com o título do passo num sufixo só para o leitor de tela.
 - **Os controles:** "Voltar" (vazado) e "Próximo passo", que no último vira "Ver do começo"; e o link "Ver o caminho na trilha".
 - **Sem JavaScript,** os cinco passos ficam abertos, um embaixo do outro, e a fila e os botões saem. Com JavaScript, o CSS já mostra um passo de cada vez desde a primeira pintura (`@media (scripting: enabled)`), e nada pula quando o código carrega. No navegador que não sabe dizer no CSS se tem JavaScript, os cinco ficam abertos até o código carregar.
@@ -516,7 +518,7 @@ Tudo é reto: raio zero (`--radius: 0`).
 
 ### O caminho da trilha (a sanfona)
 - **Onde:** na página da trilha, quando ela tem um `infografico.md`: depois das folhas e, a partir de 1400 px, ao lado delas.
-- **Forma:** o título e o resumo, e uma lista ordenada de passos entre fios. Cada passo é um `<details>` do navegador, com o azulejo pequeno do passo, o título e um "+", que vira "×" quando abre. O título do passo é uma etiqueta em maiúsculas espaçadas. Abaixo de 22rem, fica como escrito. O teto da #148 diminui a letra até a palavra mais larga caber na linha do título, ao lado do "+". A partir de 22rem, o azulejo também ocupa essa linha. Um passo fica aberto de cada vez (`name="caminho"`), e o primeiro já vem aberto. Funciona sem JavaScript.
+- **Forma:** o título e o resumo, e uma lista ordenada de passos entre fios. Cada passo é um `<details>` do navegador, com o azulejo pequeno do passo, com o símbolo dele, o título e um "+", que vira "×" quando abre. Quando o passo abre, as quatro peças do azulejo viram em onda, e o símbolo termina de pé. O título do passo é uma etiqueta em maiúsculas espaçadas. Abaixo de 22rem, fica como escrito. O teto da #148 diminui a letra até a palavra mais larga caber na linha do título, ao lado do "+". A partir de 22rem, o azulejo também ocupa essa linha. Um passo fica aberto de cada vez (`name="caminho"`), e o primeiro já vem aberto. Funciona sem JavaScript.
 - **Dentro:** o texto, os desvios, os artigos que explicam o passo e as fontes, numa linha ("Fonte:" ou "Fontes:", com os títulos em negrito, separados por " · "), com a data da consulta embaixo: "consultadas em 10 de novembro de 2026", ou "consultadas entre … e …". No texto e nos desvios, o "art." e o "§" não se separam do número na quebra de linha.
 - **Os artigos:** "Artigo 3: O projeto passa pelas comissões", como link, com um azulejinho na fita do artigo ao lado.
 - **Endereço de cada passo:** o `h3` de cada passo tem o id `passo-` e o título sem acento ("Sanção ou veto" vira `passo-sancao-ou-veto`), e o título do caminho tem o id `caminho`. O passo do endereço abre sozinho.
@@ -673,7 +675,7 @@ Três curvas: o **golpe** (`cubic-bezier(0.5, 0, 0.15, 1)`), seco, para o que se
 - **Na chegada:** os azulejos do painel entram virando, em onda, a partir do canto de cima (0,7 s cada, 42 ms entre um e outro); as palavras do título tombam no lugar (70 ms entre uma e outra); a tira se risca embaixo da frase; o pé do cartaz sobe.
 - **Na rolagem:** as seções sobem e aparecem quando entram na tela (`.revelar`), e a barra de leitura enche. As duas usam a animação de rolagem do CSS, dentro de `@supports`: sem ela, e sem JavaScript, a peça já está no lugar. Nada fica escondido à espera de um script. A seção termina de aparecer quando o alto dela sobe 7rem na tela, e não numa fração da altura dela: só a faixa de baixo da tela mostra a peça entrando, e o texto parado mais acima nunca fica apagado. O que um link da própria página alcança não sobe, como os itens da edição, que o índice "Nesta edição" alcança: o navegador calcularia o lugar com a peça ainda deslocada, e o item pararia 28 px acima do alto da tela.
 - **O mapa do fundo** anda mais devagar que a página: sobe um décimo do que ela rola, até 60vh, nas seis primeiras telas de rolagem, e depois fica parado (`mapa-anda`, com `animation-timeline: scroll()` e `animation-range: 0 600vh`, dentro de `@supports`). O trecho é um comprimento fixo, e não o progresso da página inteira: ele só se mexe quando a pessoa rola, e não salta quando a página muda de altura com ela parada, como ao abrir um passo do caminho. Parado, o fundo está parado. Sem a animação de rolagem, o mapa fica fixo atrás da página. O décimo vale em todas as páginas: antes, a velocidade dependia do comprimento da página, e, nos artigos, o mapa agora anda o dobro no celular e uma vez e meia no computador; no quiz e no 404, que são curtos, anda bem menos. O Renan decidiu manter assim em 14/11/2026, na #101: "Manter como está".
-- **Com o ponteiro:** o azulejo vira; a folha sobe; o azulejo da folha dá um quarto de volta; o botão sobe e mostra a tira; o traço do link do cabeçalho se risca.
+- **Com o ponteiro:** o azulejo vira; a folha sobe; o azulejo da folha dá um quarto de volta, e o da trilha, na lista das trilhas, vira peça por peça; o botão sobe e mostra a tira; o traço do link do cabeçalho se risca.
 - **Na ação:** os azulejos do passo a passo viram em fila até o passo da vez, o texto do passo entra de lado (da direita ao avançar, da esquerda ao voltar), com a seção cortando o que passa da borda da tela, para a página não rolar de lado, e o número tomba; o azulejo do lido vira para o verde, e o visto se desenha. No quiz, as opções tombam no lugar, uma a uma; depois da resposta, viram com o estado, a folha da resposta tomba, presa pela borda de cima, e os azulejos já acesos do mosaico fazem a onda; no fim, o mosaico inteiro faz a onda. A tela que sai sobe um pouco e some (0,4 s) antes de a seguinte entrar.
 - **Cada animação parte de um estado de saída e chega ao estado normal da peça:** onde a animação não roda, a peça aparece pronta.
 
@@ -696,6 +698,7 @@ Com `prefers-reduced-motion: reduce`, nada vira, tomba, sobe nem se risca: as pe
 - **Do** dar a cada artigo, trilha, passo e item de uma edição a fita da posição, pela ordem verde, amarela, azul, rosa, vermelha, e a cada edição a fita da semana dela.
 - **Do** pôr uma fita só em cada azulejo, e as cinco juntas em cada painel.
 - **Do** deixar os azulejos fora do leitor de tela: são desenho.
+- **Do** dar a cada trilha e a cada passo do caminho o símbolo do assunto: um prédio ou um objeto das instituições, chapado, numa cor só, que se leia a 40 px.
 - **Do** escrever o estado em palavras e marcar na folha: o visto e "Lido", "Continue daqui", "Você está aqui".
 - **Do** guardar desde o HTML do servidor o lugar do que só aparece depois que o navegador sabe o progresso. A exceção são as linhas do piloto, que só quem participa vê (veja "O progresso chega depois").
 - **Do** deixar o botão que vira "Desfazer" no mesmo lugar, sem outro controle aparecendo ali.
@@ -720,7 +723,8 @@ Com `prefers-reduced-motion: reduce`, nada vira, tomba, sobe nem se risca: as pe
 - **Don't** inventar um logo; até o time fazer o dele, o nome em texto é a marca, e o M do nome é o ícone.
 - **Don't** usar a vermelha como cor de domingo, nem escolher a cor de uma edição pelo assunto: a cor é a da semana no calendário (A Regra da Cor da Semana).
 - **Don't** pintar o placar de uma votação: o Sim não é verde, e o Não não é vermelho. O placar fica em tinta.
-- **Don't** trazer uma biblioteca de animação nem imagem para os azulejos: o movimento é do navegador, e o desenho, do CSS.
+- **Don't** trazer uma biblioteca de animação nem imagem para os azulejos: o movimento é do navegador, e o desenho, do CSS e dos caminhos de SVG escritos no código.
+- **Don't** pôr símbolo de partido, pessoa ou rosto nos azulejos, nem escolher a cor deles pelo assunto: o símbolo diz o assunto, e a cor é a da posição.
 - **Don't** esconder conteúdo à espera de um script: o que anima na entrada já está no HTML, no lugar.
 - **Don't** pôr ícone girando ou barra no carregando: ele diz em palavras que a página está a caminho, e nada nele se mexe.
 - **Don't** marcar o lido com um X: ele lê como "errado" ou "cancelado", ainda mais num site com quiz.

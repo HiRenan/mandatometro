@@ -322,6 +322,28 @@ describe("página inicial", () => {
 		]);
 	});
 
+	it("o azulejo de cada passo desenha o assunto dele", async () => {
+		await mostrar();
+		const caminho = screen.getByRole("region", {
+			name: "O caminho de um projeto de lei",
+		});
+		const azulejos = [
+			...caminho.querySelectorAll<HTMLElement>("ol.passos-abas .grande"),
+		];
+
+		// O símbolo do passo (lib/simbolos.ts), dividido nas quatro peças.
+		expect(azulejos.map((azulejo) => azulejo.dataset.simbolo)).toEqual([
+			"folha",
+			"mesa",
+			"hemiciclo",
+			"duas-casas",
+			"caneta",
+		]);
+		for (const azulejo of azulejos) {
+			expect(azulejo.querySelectorAll(".az > svg")).toHaveLength(4);
+		}
+	});
+
 	it("mostra um passo de cada vez e avisa o leitor de tela na troca", async () => {
 		await mostrar();
 		const caminho = screen.getByRole("region", {
