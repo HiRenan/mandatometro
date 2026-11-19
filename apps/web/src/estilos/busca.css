@@ -306,6 +306,18 @@
 		font-weight: 700;
 	}
 
+	/*
+	 * Nas cores forçadas, o navegador dá ao <mark> a letra do realce do sistema
+	 * sobre o fundo sem cor, e a palavra sumia na folha escura: aqui, ela fica
+	 * com o realce inteiro.
+	 */
+	@media (forced-colors: active) {
+		.busca-resultado-trecho mark {
+			background: Mark;
+			color: MarkText;
+		}
+	}
+
 	/* O intertítulo para onde o link leva, antes do trecho. */
 	.busca-resultado-secao {
 		font-family: var(--font-sans);
