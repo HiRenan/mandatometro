@@ -1,8 +1,10 @@
 """A coleta de atos usa amostras gravadas dos dados abertos do Senado."""
 
 import json
+from contextlib import contextmanager
 from copy import deepcopy
 from datetime import date
+from functools import partial
 from pathlib import Path
 
 import httpx2
@@ -11,6 +13,8 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from mandatometro.cli import main
+from mandatometro.coleta import http as base_http
 from mandatometro.coleta import legislacao
 from mandatometro.coleta.cli import mostrar_resumo
 from mandatometro.coleta.http import USER_AGENT, ClienteHttp
@@ -42,8 +46,9 @@ def respostas():
 
 
 @pytest.fixture
-def executar(sessao, respostas):
-    def rodar(inicio=INICIO, fim=FIM, hoje=HOJE, *, robots="User-agent: *\nDisallow:"):
+def preparar_cliente(respostas):
+    @contextmanager
+    def abrir(*, robots="User-agent: *\nDisallow:", tentativas=1):
         consultas = []
 
         def atender(requisicao):
@@ -62,21 +67,34 @@ def executar(sessao, respostas):
             resposta = respostas[chave]
             if isinstance(resposta, int):
                 return httpx2.Response(resposta)
+            if isinstance(resposta, httpx2.TransportError):
+                raise resposta
             return httpx2.Response(200, json=resposta)
 
-        conexao = sessao.connection()
         with (
             httpx2.Client(transport=httpx2.MockTransport(atender)) as transporte,
-            ClienteHttp(legislacao.BASE, cliente=transporte, intervalo=0, tentativas=1) as http,
+            ClienteHttp(
+                legislacao.BASE, cliente=transporte, intervalo=0, tentativas=tentativas
+            ) as http,
         ):
+            yield http, consultas
+
+    return abrir
+
+
+@pytest.fixture
+def abrir_sessao(sessao):
+    return partial(Session, bind=sessao.connection(), join_transaction_mode="create_savepoint")
+
+
+@pytest.fixture
+def executar(sessao, preparar_cliente, abrir_sessao):
+    def rodar(
+        inicio=INICIO, fim=FIM, hoje=HOJE, *, robots="User-agent: *\nDisallow:", tentativas=1
+    ):
+        with preparar_cliente(robots=robots, tentativas=tentativas) as (http, consultas):
             resumo = legislacao.coletar(
-                inicio,
-                fim,
-                http=http,
-                hoje=hoje,
-                abrir_sessao=lambda: Session(
-                    bind=conexao, join_transaction_mode="create_savepoint"
-                ),
+                inicio, fim, http=http, hoje=hoje, abrir_sessao=abrir_sessao
             )
         sessao.expire_all()
         return resumo, consultas
@@ -152,7 +170,10 @@ def test_virada_consulta_ano_da_margem_e_ano_do_periodo(sessao, respostas, execu
     assert resumo.chamadas == 8
 
 
-def test_descarta_por_motivo_e_continua_sem_payload(sessao, respostas, executar, caplog, capsys):
+@pytest.mark.parametrize("status", [404, 410])
+def test_descarta_por_motivo_e_continua_sem_payload(
+    sessao, respostas, executar, caplog, capsys, status
+):
     lista = documentos(respostas["DEC", 2026], "ListaDocumento")
     modelo = lista[0]
     casos = [
@@ -177,7 +198,7 @@ def test_descarta_por_motivo_e_continua_sem_payload(sessao, respostas, executar,
     publicacoes(respostas["5"])[0]["data"] = "20/11/2026"
     documentos(respostas["6"], "DetalheDocumento")[0]["identificacao"]["urlDocumento"] = ""
     documentos(respostas["7"], "DetalheDocumento")[0]["id"] = "77"
-    respostas["8"] = 410
+    respostas["8"] = status
 
     resumo, _ = executar()
 
@@ -197,6 +218,20 @@ def test_descarta_por_motivo_e_continua_sem_payload(sessao, respostas, executar,
     mostrar_resumo(resumo)
     saida = caplog.text + capsys.readouterr().out
     assert all(texto not in saida for texto in ("Pessoa Fictícia", "000.000.000-00", "normaNome"))
+
+
+def test_descarta_link_oficial_invalido(sessao, respostas, executar):
+    identificacao = documentos(respostas[DECRETO], "DetalheDocumento")[0]["identificacao"]
+    identificacao["urlDocumento"] = identificacao["urlDocumento"].replace(
+        "normas.leg.br", "example.com"
+    )
+
+    resumo, _ = executar()
+
+    assert resumo.completa
+    assert resumo.descartes.get("campo_obrigatorio") == 1
+    assert sessao.scalars(select(Ato.id_externo)).all() == [LEI]
+    assert sessao.scalar(select(func.count(Fonte.id))) == 1
 
 
 def test_repetir_atualiza_a_mesma_linha_e_preserva_a_outra_origem(sessao, respostas, executar):
@@ -247,7 +282,54 @@ def test_detalhe_proibido_pelo_robots_interrompe(executar):
     assert consultas[-1].url.path.endswith("/lista")
 
 
-def test_falha_de_gravacao_desfaz_fonte_e_omite_parametros(sessao, executar, monkeypatch, caplog):
+def test_falha_no_segundo_detalhe_preserva_primeiro_ato_e_fonte(
+    sessao, respostas, executar, monkeypatch
+):
+    respostas[LEI] = 503
+    monkeypatch.setattr(base_http.time, "sleep", lambda _: None)
+
+    resumo, consultas = executar(tentativas=3)
+
+    assert not resumo.completa
+    assert resumo.erro == "Falha transitória na fonte após esgotar as tentativas."
+    assert (resumo.atos, resumo.tentativas_extras) == (1, 2)
+    assert sum(r.url.path.endswith(f"/{LEI}") for r in consultas) == 3
+    consulta = select(Ato.id_externo, Fonte.url).join(Fonte)
+    assert sessao.execute(consulta).all() == [(DECRETO, f"{legislacao.BASE}/legislacao/{DECRETO}")]
+    assert sessao.scalar(select(func.count(Fonte.id))) == 1
+
+
+def test_falha_de_transporte_no_detalhe_encerra_cli_apos_tentativas(
+    respostas, preparar_cliente, abrir_sessao, monkeypatch, capsys
+):
+    respostas[DECRETO] = httpx2.ConnectError("Falha de conexão simulada.")
+    esperas = []
+    monkeypatch.setattr(base_http.time, "sleep", esperas.append)
+    monkeypatch.setattr(
+        legislacao, "coletar", partial(legislacao.coletar, hoje=HOJE, abrir_sessao=abrir_sessao)
+    )
+
+    with preparar_cliente(tentativas=3) as (http, consultas):
+        monkeypatch.setattr(legislacao, "ClienteHttp", lambda _: http)
+        codigo = main(
+            ["coleta", "legislacao", "--inicio", INICIO.isoformat(), "--fim", FIM.isoformat()]
+        )
+
+    assert codigo == 1
+    resumo = json.loads(capsys.readouterr().out)
+    assert not resumo["completa"]
+    assert resumo["erro"] == "Falha transitória na fonte após esgotar as tentativas."
+    assert (resumo["atos"], resumo["tentativas_extras"]) == (0, 2)
+    assert resumo["chamadas"] == len(consultas) == 5
+    assert esperas == [1.0, 2.0]
+
+
+def test_falha_de_gravacao_desfaz_fonte_e_omite_parametros(
+    sessao, respostas, executar, monkeypatch, caplog, capsys
+):
+    titulo = "Norma fictícia para teste de sigilo"
+    documentos(respostas["DEC", 2026], "ListaDocumento")[0]["normaNome"] = titulo
+
     def falhar(*args, **kwargs):
         raise SQLAlchemyError("Parâmetro com Pessoa Fictícia de Exemplo.")
 
@@ -260,7 +342,12 @@ def test_falha_de_gravacao_desfaz_fonte_e_omite_parametros(sessao, executar, mon
     assert resumo.descartes.get("falha_gravacao") == 1
     assert resumo.erro == "Falha de gravação no banco; ato desfeito."
     assert sessao.scalar(select(func.count(Fonte.id))) == 0
-    assert "Pessoa Fictícia" not in caplog.text
+    mostrar_resumo(resumo)
+    saida = capsys.readouterr()
+    vazou = any(
+        texto in caplog.text + saida.out + saida.err for texto in (titulo, "Pessoa Fictícia")
+    )
+    assert not vazou
 
 
 @pytest.mark.online
