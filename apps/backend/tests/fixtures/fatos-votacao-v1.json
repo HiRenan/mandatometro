@@ -1,0 +1,41 @@
+{
+  "versao": 1,
+  "proposicoes": [
+    101
+  ],
+  "votacoes": [
+    {
+      "id": 201,
+      "data": "2026-11-10",
+      "resultado": "aprovada",
+      "placar": {
+        "sim": 1,
+        "nao": 0,
+        "abstencao": 0,
+        "obstrucao": 0,
+        "presidente": 1
+      },
+      "fontes": [
+        301
+      ]
+    },
+    {
+      "id": 202,
+      "data": "2026-11-11",
+      "resultado": "outro",
+      "placar": null,
+      "fontes": [
+        302
+      ]
+    }
+  ],
+  "fontes": [
+    301,
+    302,
+    303
+  ],
+  "origem": "revisao",
+  "pendencias": [
+    "cobertura"
+  ]
+}
