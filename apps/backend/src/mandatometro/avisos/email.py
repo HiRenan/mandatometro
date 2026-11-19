@@ -1,5 +1,6 @@
 """Conteúdo compartilhado pela prévia, inscrição e envio semanal; texto nunca vira HTML."""
 
+from collections.abc import Collection
 from dataclasses import dataclass
 from datetime import UTC
 from html import escape
@@ -13,6 +14,7 @@ from mandatometro.ia.artigos import CATALOGO
 from mandatometro.ia.esquemas import Fatos, FatosAto
 
 DOMINIOS_OFICIAIS = ("gov.br", "leg.br", "jus.br", "mp.br", "def.br")
+FONTE_OCULTA_NA_PREVIA = "Fonte oficial disponível no arquivo de revisão."
 
 
 class MensagemInvalida(Exception):
@@ -71,6 +73,7 @@ def formatar_edicao(
     app_base_url: str,
     fontes: dict[int, Fonte] | None = None,
     previa: bool = False,
+    itens_sem_link: Collection[int] = (),
 ) -> Conteudo:
     """Não lê banco, não publica e não envia. A prévia admite endereço local do site."""
     if not edicao.titulo.strip() or any(ord(c) < 32 for c in edicao.titulo):
@@ -133,11 +136,13 @@ def formatar_edicao(
             for numero, fonte in enumerate(fontes_pagina):
                 coleta = fonte.coletado_em.astimezone(UTC).strftime("%d/%m/%Y às %H:%M UTC")
                 if numero == 0:
-                    html.append(
-                        f'<p><a href="{escape(url, quote=True)}">{rotulo}</a>'
-                        f" · Coleta: {coleta}</p>"
-                    )
-                    texto.append(f"{rotulo}: {url}\nColeta: {coleta}")
+                    if previa and item.id in itens_sem_link:
+                        link_html = link_texto = FONTE_OCULTA_NA_PREVIA
+                    else:
+                        link_html = f'<a href="{escape(url, quote=True)}">{rotulo}</a>'
+                        link_texto = f"{rotulo}: {url}"
+                    html.append(f"<p>{link_html} · Coleta: {coleta}</p>")
+                    texto.append(f"{link_texto}\nColeta: {coleta}")
                 else:
                     html.append(f"<p>Outra coleta da mesma referência: {coleta}</p>")
                     texto.append(f"Outra coleta da mesma referência: {coleta}")

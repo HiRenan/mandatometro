@@ -183,6 +183,13 @@ def _erro_confirmacao_ato(numero: int, motivo: MotivoRetencaoAto) -> ErroEdicao:
     )
 
 
+def _carregar_atos(sessao: Session, ids: set[int]) -> dict[int, Ato]:
+    if not ids:
+        return {}
+    linhas = sessao.scalars(select(Ato).where(Ato.id.in_(ids)).options(joinedload(Ato.fonte)))
+    return {ato.id: ato for ato in linhas}
+
+
 def _conferir(
     sessao: Session, edicao: Edicao
 ) -> tuple[dict[int, ItemBase | ItemAtoBase], list[str]]:
@@ -196,12 +203,11 @@ def _conferir(
         if isinstance(i, ItemBase)
     }
     ids_atos = {fatos.ato_id for _, fatos in fatos_itens if isinstance(fatos, FatosAto)}
-    atos = {}
-    if ids_atos:
-        linhas = sessao.scalars(
-            select(Ato).where(Ato.id.in_(ids_atos)).options(joinedload(Ato.fonte))
-        )
-        atos = {ato.id: ItemAtoBase.de_ato(ato) for ato in linhas if pagina_publica(ato.fonte)}
+    atos = {
+        id_: ItemAtoBase.de_ato(ato)
+        for id_, ato in _carregar_atos(sessao, ids_atos).items()
+        if pagina_publica(ato.fonte)
+    }
     bases = {}
     for item, fatos in fatos_itens:
         atual = (
@@ -636,24 +642,43 @@ def publicar(abrir: AbrirSessao, edicao_id: int) -> dict:
     return {"situacao": "publicada", "edicao_id": edicao_id}
 
 
+def _privacidade_previa(sessao: Session, edicao: Edicao) -> tuple[set[int], list[str]]:
+    if edicao.estado != "rascunho":
+        return set(), []
+    itens_atos = [
+        (item, fatos)
+        for item in edicao.itens
+        if item.fatos is not None and isinstance(fatos := _fatos(item), FatosAto)
+    ]
+    atos = _carregar_atos(sessao, {fatos.ato_id for _, fatos in itens_atos})
+    sem_link, avisos = set(), []
+    for item, fatos in itens_atos:
+        ato = atos.get(fatos.ato_id)
+        if ato is None or fatos.privacidade_confirmada is False:
+            sem_link.add(item.id)
+        if ato is not None and (motivo := motivo_retencao_ato(ato)):
+            avisos.append(_aviso_ato(item.ordem, motivo))
+            if fatos.privacidade_confirmada is not True or (
+                _dados_fatuais(ItemAtoBase.de_ato(ato).fatos) != _dados_fatuais(fatos)
+            ):
+                sem_link.add(item.id)
+    return sem_link, avisos
+
+
 def mostrar(abrir: AbrirSessao, edicao_id: int, *, app_base_url: str) -> str:
     with abrir() as sessao:
         edicao = _carregar(sessao, edicao_id)
+        sem_link, avisos = _privacidade_previa(sessao, edicao)
         try:
             texto = formatar_edicao(
-                edicao, app_base_url=app_base_url, fontes=_fontes(sessao, edicao), previa=True
+                edicao,
+                app_base_url=app_base_url,
+                fontes=_fontes(sessao, edicao),
+                previa=True,
+                itens_sem_link=sem_link,
             ).texto
         except MensagemInvalida:
             raise ErroEdicao("Confira os textos, os artigos e as referências da edição.") from None
-        if edicao.estado == "rascunho" and any(
-            item.fatos and item.fatos.get("versao") == 2 for item in edicao.itens
-        ):
-            bases, _ = _conferir(sessao, edicao)
-            avisos = []
-            for item in edicao.itens:
-                base = bases[item.id]
-                if isinstance(base, ItemAtoBase) and (motivo := motivo_retencao_ato(base.ato)):
-                    avisos.append(_aviso_ato(item.ordem, motivo))
-            if avisos:
-                texto += "\n\n" + "\n".join(avisos)
+        if avisos:
+            texto += "\n\n" + "\n".join(avisos)
         return texto

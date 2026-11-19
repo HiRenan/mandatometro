@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from test_edicao_atos import ato as ato
+from test_edicao_atos import rascunho_ato as rascunho_ato
 from test_edicao_atos import selecao_com_ato as selecao_com_ato
 from test_edicao_revisao import abrir as abrir
 from test_edicao_revisao import pronto
@@ -443,3 +444,62 @@ def test_cli_retido_mensagens_e_logs_seguros(
     assert sessao.scalar(select(Ato).where(Ato.id == ato_retido.id)) is ato_retido
     assert ato_retido.titulo == f"Nomeia {NOME} para o cargo de exemplo."
     assert ato_retido.ementa == "Ementa reservada fictícia da coleta."
+
+
+def test_cli_mostrar_oculta_link_ate_confirmar_privacidade(
+    abrir, dados, sessao, ato_retido, selecao_com_ato, monkeypatch, capsys, caplog
+):
+    marcador = "pessoa-inventada-para-teste-de-link"
+    ato_retido.fonte.url_publica += f"/{marcador}"
+    sessao.flush()
+    dados(10, valores=("sim",))
+    monkeypatch.setattr(cli, "sessao_do_banco", abrir)
+    caplog.set_level("INFO")
+    edicao_id = gerar(abrir, INICIO, FIM)["edicao_id"]
+    arquivo = pronto(exportar(abrir, edicao_id))
+    votacao, retido = arquivo["itens"]
+    assert marcador in retido["fontes"][0]["url_publica"]
+
+    assert main(["edicao", "mostrar", str(edicao_id)]) == 0
+    previa = capsys.readouterr()
+    if any(marcador in saida for saida in (previa.out, previa.err, caplog.text)):
+        pytest.fail("O endereço do ato retido apareceu em stdout, stderr ou no log.")
+    assert "Fonte oficial disponível no arquivo de revisão." in previa.out
+    assert votacao["fontes"][0]["url_publica"] in previa.out
+    assert f"Item 2 ({MOTIVO})" in previa.out
+
+    retido[CAMPO] = True
+    revisar(abrir, edicao_id, arquivo)
+    assert main(["edicao", "mostrar", str(edicao_id)]) == 0
+    previa_confirmada = capsys.readouterr()
+    assert retido["fontes"][0]["url_publica"] in previa_confirmada.out
+    assert "Fonte oficial disponível no arquivo de revisão." not in previa_confirmada.out
+
+    ato_retido.ementa = "Outra ementa fictícia para o ato retido."
+    sessao.flush()
+    assert main(["edicao", "mostrar", str(edicao_id)]) == 0
+    previa_atualizada = capsys.readouterr()
+    assert marcador not in previa_atualizada.out
+    assert f"Item 2 ({MOTIVO})" in previa_atualizada.out
+
+
+@pytest.mark.parametrize("retido", [False, True], ids=["elegivel", "agora-retido"])
+def test_cli_mostrar_rascunho_antigo_com_ato_alterado(
+    abrir, sessao, ato, rascunho_ato, monkeypatch, capsys, retido
+):
+    edicao_id = rascunho_ato.id
+    arquivo = pronto(exportar(abrir, edicao_id))
+    assert CAMPO not in arquivo["itens"][0]["fatos"]
+    ato.ementa = f"Exonera {NOME} do cargo de exemplo." if retido else "Nova ementa fictícia."
+    sessao.flush()
+
+    monkeypatch.setattr(cli, "sessao_do_banco", abrir)
+    assert main(["edicao", "mostrar", str(edicao_id)]) == 0
+    previa = capsys.readouterr()
+    assert "Publicado no Diário Oficial em 12/11/2026." in previa.out
+    assert previa.err == ""
+    assert (f"Item 1 ({MOTIVO})" in previa.out) is retido
+    assert (ato.fonte.url_publica in previa.out) is not retido
+    for operacao, argumentos in ((exportar, ()), (revisar, (arquivo,)), (publicar, ())):
+        with pytest.raises(ErroEdicao, match="Item 1: os dados usados mudaram"):
+            operacao(abrir, edicao_id, *argumentos)
