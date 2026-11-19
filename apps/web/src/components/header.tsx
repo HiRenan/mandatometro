@@ -20,8 +20,8 @@ function estaNaSecao(caminho: string, secao: string): boolean {
  * O cabeçalho: o bloco de tinta com o nome, o lema em letra de máquina, a
  * entrada da busca e os links, e a tira das cinco fitas embaixo. É o que separa
  * o cabeçalho da página clara (o Renan, na #89: "um header bem feito"). A busca
- * fica no meio, entre o nome e os links (o Renan, na #233). Abaixo de 1312 px,
- * o lema sai, porque é largo, e está no rodapé; abaixo de 912 px, a barra da
+ * fica no meio, entre o nome e os links (o Renan, na #233). Abaixo de 1344 px,
+ * o lema sai, porque é largo, e está no rodapé; abaixo de 960 px, a barra da
  * busca encolhe para a lupa e o "Buscar".
  *
  * Onde o site tem a API (o API_URL), as edições entram nos links. No celular, os

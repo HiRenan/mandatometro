@@ -11,15 +11,18 @@
 	 * A entrada da busca no cabeçalho, entre o nome e os links: a barra com a
 	 * lupa, "Buscar no site" e a tecla do atalho, com o fio de 2 px em papel 3
 	 * sobre a tinta. Com o ponteiro, o fio e a letra vão para o papel, e o foco é
-	 * o amarelo do cabeçalho (o .moldura). Ela fica no meio do espaço entre o
-	 * nome e os links, e encolhe com ele.
+	 * o amarelo do cabeçalho (o .moldura). Ela cresce até 20rem no espaço entre
+	 * o nome e os links e fica no meio dele. A base é de 14rem, o que a lupa, o
+	 * "Buscar no site" e a tecla pedem: a linha do cabeçalho quebra pela base, e,
+	 * com a base de 20rem, os links desciam para a linha de baixo.
 	 */
 	.entrada-da-busca {
 		display: flex;
-		flex: 0 1 20rem;
+		flex: 1 1 14rem;
 		align-items: center;
 		gap: 0.6rem;
 		min-width: 0;
+		max-width: 20rem;
 		min-height: 2.75rem;
 		margin-inline: auto;
 		padding: 0 0.5rem 0 0.75rem;
@@ -61,8 +64,8 @@
 		text-transform: uppercase;
 	}
 
-	/* Abaixo de 912 px, a barra encolhe para a lupa e o "Buscar". */
-	@media (width < 57rem) {
+	/* Abaixo de 960 px, a barra encolhe para a lupa e o "Buscar". */
+	@media (width < 60rem) {
 		.entrada-da-busca {
 			flex: none;
 		}

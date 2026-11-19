@@ -80,10 +80,12 @@ describe("o CSS do cabeçalho com a busca", () => {
 		return midias.find(({ corpo }) => TIRA_O_LEMA.test(corpo))?.largura;
 	}
 
-	it("o lema sai do cabeçalho abaixo de 82rem, e a barra da busca fica com o espaço", () => {
-		// O nome, o lema, a barra e os quatro links cabem numa linha a partir de
-		// 82rem (medido no navegador, com as edições).
-		expect(larguraDoLema()).toBe(82);
+	it("o lema sai do cabeçalho abaixo de 84rem, e a barra da busca fica com o espaço", () => {
+		// O nome com o lema (548 px), a barra (224 px) e os quatro links (362 px)
+		// pedem 1166 px de linha: a 1344 px, com a barra de rolagem, sobram 42 px
+		// (medido no navegador, com as edições). A 82rem, com a barra de 20rem, os
+		// links desciam para a linha de baixo até 1439 px.
+		expect(larguraDoLema()).toBe(84);
 	});
 
 	it("o pré-carregamento da letra de máquina acompanha o lema", () => {
@@ -107,12 +109,25 @@ describe("o CSS do cabeçalho com a busca", () => {
 		);
 	});
 
-	it("abaixo de 57rem, a barra encolhe para a lupa e o Buscar", () => {
+	it("abaixo de 60rem, a barra encolhe para a lupa e o Buscar", () => {
+		// O nome, a barra e os quatro links pedem 801 px de linha: a 960 px, com a
+		// barra de rolagem, sobram 58 px (medido no navegador, com as edições).
 		const encolhe =
 			/\.entrada-da-busca-resto,\s*\.entrada-da-busca kbd \{\s*display: none;\s*\}/;
 		const midia = midiasDe(cssDaBusca).find(({ corpo }) => encolhe.test(corpo));
 
-		expect(midia?.largura).toBe(57);
+		expect(midia?.largura).toBe(60);
+	});
+
+	it("a barra entra na linha com o que o conteúdo pede e cresce até 20rem", () => {
+		// Numa linha que quebra (o flex-wrap do .topo-dentro), a base decide se os
+		// links cabem, antes de a barra encolher: com a base de 20rem, os links
+		// desciam para a linha de baixo de 912 a 1023 px. A lupa, o "Buscar no
+		// site" e a tecla pedem 221 px, e a base é de 14rem (medido no navegador).
+		const barra = /\n\t\.entrada-da-busca \{([^}]*)\}/.exec(cssDaBusca)?.[1];
+
+		expect(barra).toMatch(/\bflex: 1 1 14rem;/);
+		expect(barra).toMatch(/\bmax-width: 20rem;/);
 	});
 
 	it("sem JavaScript, a entrada não aparece: ela só abre a caixa", () => {
