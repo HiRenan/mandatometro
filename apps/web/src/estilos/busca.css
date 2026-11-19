@@ -117,6 +117,11 @@
 		flex-direction: column;
 	}
 
+	/*
+	 * A tinta escrita, e não o var(--tinta): até o começo de 2024 (Chrome 122,
+	 * Firefox 120 e Safari 17.4), o ::backdrop não herdava as variáveis da
+	 * página, e o véu ficaria sem cor.
+	 */
 	.busca::backdrop {
 		background: rgb(20 22 28 / 0.72);
 	}
