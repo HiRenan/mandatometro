@@ -11,6 +11,7 @@ from mandatometro.coleta.cli import adicionar_argumentos_periodo, resolver_perio
 from mandatometro.config import config
 from mandatometro.db import sessao as sessao_do_banco
 from mandatometro.ia.provedor import ConfiguracaoRedatorInvalida, FalhaRedator, abrir_redator
+from mandatometro.ia.selecao import TETO_ATOS
 from mandatometro.ia.servico import ErroEdicao, exportar, gerar, mostrar, publicar, revisar
 
 LIMITE_ARQUIVO = 2 * 1024 * 1024
@@ -40,6 +41,8 @@ def _rodar(args: argparse.Namespace) -> int:
             inicio, fim = resolver_periodo(args.inicio, args.fim)
             if args.teto < 1:
                 raise ValueError("O teto precisa ser um número inteiro maior que zero.")
+            if args.teto_atos < 1:
+                raise ValueError("O teto de atos precisa ser um número inteiro maior que zero.")
         except ValueError as erro:
             _json({"erro": str(erro)})
             return 2
@@ -54,6 +57,7 @@ def _rodar(args: argparse.Namespace) -> int:
                     inicio,
                     fim,
                     teto=args.teto,
+                    teto_atos=args.teto_atos,
                     refazer=args.refazer,
                     redator=redator,
                 )
@@ -106,7 +110,12 @@ def registrar_comando(comandos: argparse._SubParsersAction) -> None:
     registrar_envio(acoes)
     rascunho = acoes.add_parser("rascunho", help="prepara os fatos e o texto para revisão")
     adicionar_argumentos_periodo(rascunho)
-    rascunho.add_argument("--teto", type=int, default=8, help="máximo de itens (padrão: 8)")
+    rascunho.add_argument(
+        "--teto", type=int, default=8, help="máximo de itens de votação (padrão: 8)"
+    )
+    rascunho.add_argument(
+        "--teto-atos", type=int, default=TETO_ATOS, help=f"máximo de atos (padrão: {TETO_ATOS})"
+    )
     rascunho.add_argument(
         "--refazer", action="store_true", help="refaz o rascunho e descarta a revisão anterior"
     )

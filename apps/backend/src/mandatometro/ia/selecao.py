@@ -1,8 +1,9 @@
-"""Seleção determinística de votações e bases dos itens da edição."""
+"""Seleção de votações por regra e preparação dos atos elegíveis para a edição."""
 
 import hashlib
 import json
-from collections import defaultdict
+import re
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import date
 from urllib.parse import urlsplit
@@ -10,12 +11,21 @@ from urllib.parse import urlsplit
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
+from mandatometro.coleta.destaques import ORIGEM as DESTAQUES_DOU
+from mandatometro.coleta.legislacao import ORIGEM as LEGISLACAO_SENADO
 from mandatometro.db.modelos import Ato, Fonte, Parlamentar, Proposicao, Votacao, Voto
 from mandatometro.ia.esquemas import Fatos, FatosAto, FatoVotacao, Placar
-from mandatometro.ia.privacidade import assunto_pessoal
+from mandatometro.ia.privacidade import (
+    MotivoRetencaoAto,
+    assunto_pessoal,
+    normalizar,
+    separar_atos_para_modelo,
+)
 
 PROCEDIMENTAIS = {"REQ", "REC", "DTQ"}
 VALORES = tuple(Placar.model_fields)
+TETO_ATOS = 5
+_NUMERO_ATO = re.compile(r"(?:[0-9]+|[0-9]{1,3}(?:\.[0-9]{3})+)")
 
 
 @dataclass
@@ -27,6 +37,21 @@ class ResumoSelecao:
     sem_pagina_publica: list[str] = field(default_factory=list)
     assunto_pessoal: int = 0
     cortadas_pelo_teto: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class AtoRetido:
+    id: int
+    codigo: MotivoRetencaoAto
+
+
+@dataclass
+class ResumoSelecaoAtos:
+    no_banco: int
+    sem_pagina_publica: int
+    retidos: list[AtoRetido]
+    retidos_por_codigo: dict[MotivoRetencaoAto, int]
+    duplicados: int
 
 
 @dataclass
@@ -72,7 +97,7 @@ class ItemAtoBase:
 
 @dataclass
 class Selecao:
-    itens: list[ItemBase | ItemAtoBase]
+    itens: list[ItemBase]
     resumo: ResumoSelecao
     nomes: list[str] = field(repr=False)
 
@@ -92,6 +117,65 @@ def pagina_publica(fonte: Fonte) -> bool:
         )
     except ValueError:
         return False
+
+
+def _chave_ato(ato: Ato) -> tuple[str, str, date] | None:
+    if ato.tipo not in {"decreto", "lei", "medida_provisoria"} or ato.data_assinatura is None:
+        return None
+    bruto = (ato.numero or "").strip()
+    if not _NUMERO_ATO.fullmatch(bruto):
+        return None
+    numero = bruto.replace(".", "").lstrip("0")
+    if not numero:
+        return None
+    tipo = ato.tipo
+    if tipo == "lei" and re.match(r"lei\s+complementar\b", normalizar(ato.titulo.strip())):
+        tipo = "lei_complementar"
+    return tipo, numero, ato.data_assinatura
+
+
+def selecionar_atos(
+    sessao: Session, inicio: date, fim: date
+) -> tuple[list[ItemAtoBase], ResumoSelecaoAtos]:
+    atos = list(
+        sessao.scalars(
+            select(Ato)
+            .where(Ato.data_publicacao.between(inicio, fim))
+            .options(joinedload(Ato.fonte))
+        )
+    )
+    com_pagina = {ato.id for ato in atos if pagina_publica(ato.fonte)}
+    liberados, retidos = separar_atos_para_modelo(atos)
+    retencoes = dict(retidos)
+    grupos = defaultdict(list)
+    for ato in atos:
+        if ato.origem in {DESTAQUES_DOU, LEGISLACAO_SENADO} and (chave := _chave_ato(ato)):
+            grupos[chave].append(ato)
+
+    duplicados = set()
+    for grupo in grupos.values():
+        if len(grupo) != 2 or grupo[0].origem == grupo[1].origem:
+            continue
+        dou, senado = sorted(grupo, key=lambda ato: ato.origem != DESTAQUES_DOU)
+        if codigo := retencoes.get(dou.id) or retencoes.get(senado.id):
+            # A segunda observação da mesma norma não contorna uma retenção.
+            retencoes.setdefault(dou.id, codigo)
+            retencoes.setdefault(senado.id, codigo)
+        elif dou.id in com_pagina and senado.id in com_pagina:
+            duplicados.add(senado.id)
+
+    excluidos = retencoes.keys() | duplicados
+    elegiveis = [ato for ato in liberados if ato.id in com_pagina and ato.id not in excluidos]
+    elegiveis.sort(
+        key=lambda ato: (ato.origem != DESTAQUES_DOU, -ato.data_publicacao.toordinal(), ato.id)
+    )
+    return [ItemAtoBase.de_ato(ato) for ato in elegiveis], ResumoSelecaoAtos(
+        no_banco=len(atos),
+        sem_pagina_publica=len(atos) - len(com_pagina),
+        retidos=[AtoRetido(id_, codigo) for id_, codigo in sorted(retencoes.items())],
+        retidos_por_codigo=dict(Counter(retencoes.values())),
+        duplicados=len(duplicados),
+    )
 
 
 def chave_votacao(votacao: Votacao) -> tuple:

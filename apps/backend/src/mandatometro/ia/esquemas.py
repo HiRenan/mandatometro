@@ -1,4 +1,4 @@
-"""Fotografia editorial: somente fatos agregados, nunca cadastro ou texto da fonte."""
+"""Fotografia editorial com fatos agregados e campos de revisão."""
 
 import json
 from datetime import date
@@ -9,6 +9,17 @@ from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 Id = Annotated[int, Field(gt=0)]
 Contagem = Annotated[int, Field(ge=0)]
 Pendencia = Literal["redacao", "revisao", "cobertura", "artigo"]
+OrigemSelecaoAto = Literal["modelo", "regra"]
+CodigoFallbackSelecao = Literal[
+    "sem_provedor",
+    "recusa_provedor",
+    "resposta_interrompida",
+    "falha_provedor",
+    "tempo_esgotado",
+    "resposta_invalida",
+]
+LIMITE_MOTIVO_ATO = 160
+MotivoSelecaoAto = Annotated[str, Field(min_length=1, max_length=LIMITE_MOTIVO_ATO)]
 
 
 class Estrito(BaseModel):
@@ -45,6 +56,18 @@ class Fatos(Estrito):
         return _FATOS_ITEM.validate_json(json.dumps(valor))
 
 
+class SelecaoAto(Estrito):
+    ordem: Id
+    teto: Id
+    origem: OrigemSelecaoAto
+    motivo: MotivoSelecaoAto | None = Field(
+        default=None, repr=False, exclude_if=lambda valor: valor is None
+    )
+    codigo_fallback: CodigoFallbackSelecao | None = Field(
+        default=None, exclude_if=lambda valor: valor is None
+    )
+
+
 class FatosAto(Estrito):
     versao: Literal[2]
     ato_id: Id
@@ -56,6 +79,7 @@ class FatosAto(Estrito):
     privacidade_confirmada: bool | None = Field(
         default=None, exclude_if=lambda valor: valor is None
     )
+    selecao: SelecaoAto | None = Field(default=None, exclude_if=lambda valor: valor is None)
 
 
 FatosItem = Fatos | FatosAto
@@ -65,3 +89,12 @@ _FATOS_ITEM = TypeAdapter(FatosItem)
 class Redacao(Estrito):
     titulo: Annotated[str, Field(min_length=1, max_length=140)]
     explicacao: Annotated[list[str], Field(min_length=1, max_length=4)]
+
+
+class AtoClassificado(Estrito):
+    posicao: Id
+    motivo: MotivoSelecaoAto = Field(repr=False)
+
+
+class OrdemAtos(Estrito):
+    ordem: Annotated[list[AtoClassificado], Field(min_length=1)]

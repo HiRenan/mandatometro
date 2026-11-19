@@ -32,7 +32,15 @@ from mandatometro.ia.redacao import (
     redigir,
     requer_conferencia_pessoal,
 )
-from mandatometro.ia.selecao import ItemAtoBase, ItemBase, pagina_publica, selecionar
+from mandatometro.ia.relevancia import ordenar_atos
+from mandatometro.ia.selecao import (
+    TETO_ATOS,
+    ItemAtoBase,
+    ItemBase,
+    pagina_publica,
+    selecionar,
+    selecionar_atos,
+)
 
 AbrirSessao = Callable[[], Session]
 PENDENTE_ATO = "Redação pendente: escreva a explicação do ato."
@@ -169,7 +177,9 @@ def _fontes(sessao: Session, edicao: Edicao) -> dict[int, Fonte]:
 
 
 def _dados_fatuais(fatos: FatosItem) -> dict:
-    return fatos.model_dump(mode="json", exclude={"origem", "pendencias", "privacidade_confirmada"})
+    return fatos.model_dump(
+        mode="json", exclude={"origem", "pendencias", "privacidade_confirmada", "selecao"}
+    )
 
 
 def _aviso_ato(numero: int, motivo: MotivoRetencaoAto) -> str:
@@ -197,11 +207,7 @@ def _conferir(
         raise ErroEdicao("A edição precisa ter ao menos um item.")
     fatos_itens = [(item, _fatos(item)) for item in edicao.itens]
     selecao = selecionar(sessao, edicao.inicio, edicao.fim, teto=2**31 - 1)
-    votacoes = {
-        frozenset(v.id for v in i.fatos.votacoes): i
-        for i in selecao.itens
-        if isinstance(i, ItemBase)
-    }
+    votacoes = {frozenset(v.id for v in i.fatos.votacoes): i for i in selecao.itens}
     ids_atos = {fatos.ato_id for _, fatos in fatos_itens if isinstance(fatos, FatosAto)}
     atos = {
         id_: ItemAtoBase.de_ato(ato)
@@ -233,9 +239,12 @@ def gerar(
     fim: date,
     *,
     teto: int = 8,
+    teto_atos: int = TETO_ATOS,
     refazer: bool = False,
     redator: Redator | None = None,
 ) -> dict:
+    if type(teto_atos) is not int or teto_atos < 1:
+        raise ValueError("O teto de atos precisa ser um número inteiro maior que zero.")
     redacao = {"textos_do_modelo": 0, "textos_do_codigo": 0, "motivos_texto_do_codigo": {}}
     with abrir() as sessao:
         anterior = _periodo(sessao, inicio, fim)
@@ -249,33 +258,45 @@ def gerar(
             }
         versao = _hash(anterior) if anterior else None
         selecao = selecionar(sessao, inicio, fim, teto=teto)
+        atos, resumo_atos = selecionar_atos(sessao, inicio, fim)
+
+    # Durante as chamadas ao redator, não há transação aberta nem conexão do banco em uso.
+    atos_escolhidos, origem_ordem, codigo_fallback = ordenar_atos(
+        atos, selecao.nomes, redator, teto=teto_atos
+    )
+    itens = [*selecao.itens, *atos_escolhidos]
     resumo = asdict(selecao.resumo)
+    resumo["atos"] = {
+        **asdict(resumo_atos),
+        "elegiveis": len(atos),
+        "selecionados": len(atos_escolhidos),
+        "cortados_pelo_teto": len(atos) - len(atos_escolhidos),
+        "teto": teto_atos,
+        "origem_ordem": origem_ordem,
+        "codigo_fallback": codigo_fallback,
+    }
     resumo["itens_com_termo_pessoal"] = sum(
-        requer_conferencia_pessoal(item) for item in selecao.itens if isinstance(item, ItemBase)
+        requer_conferencia_pessoal(item) for item in selecao.itens
     )
     for campo in ("sem_proposicao", "sem_pagina_publica", "cortadas_pelo_teto"):
         resumo[f"quantidade_{campo}"] = len(resumo[campo])
-    if not selecao.itens:
+    if not itens:
         return {
             "situacao": "sem_votacoes_no_banco"
-            if not resumo["votacoes_no_banco"]
+            if not resumo["votacoes_no_banco"] and not resumo_atos.no_banco
             else "sem_itens_elegiveis",
             **redacao,
             **resumo,
         }
-    # Durante a chamada ao redator, não há transação aberta nem conexão do banco em uso.
-    preparados, avisos = [], []
+    preparados = []
     motivos = Counter()
-    for numero, base in enumerate(selecao.itens, 1):
+    for base in itens:
         fatos = base.fatos.model_copy(deep=True)
         if isinstance(base, ItemAtoBase):
             texto = TextoGerado(
                 "Ato do Diário Oficial", PENDENTE_ATO, "codigo", "sem_redacao_do_ato"
             )
             artigo = None
-            if (motivo := motivo_retencao_ato(base.ato)) and isinstance(fatos, FatosAto):
-                fatos.privacidade_confirmada = False
-                avisos.append(_aviso_ato(numero, motivo))
         else:
             texto = redigir(base, selecao.nomes, redator)
             artigo = sugerir(base)
@@ -323,7 +344,6 @@ def gerar(
         "textos_do_modelo": len(preparados) - motivos.total(),
         "textos_do_codigo": motivos.total(),
         "motivos_texto_do_codigo": dict(motivos),
-        **({"avisos": avisos} if avisos else {}),
         **resumo,
     }
 

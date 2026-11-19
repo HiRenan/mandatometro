@@ -7,7 +7,6 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from test_edicao_atos import ato as ato
 from test_edicao_atos import rascunho_ato as rascunho_ato
-from test_edicao_atos import selecao_com_ato as selecao_com_ato
 from test_edicao_revisao import abrir as abrir
 from test_edicao_revisao import pronto
 from test_edicao_selecao import FIM, INICIO
@@ -20,7 +19,16 @@ from mandatometro.db.modelos import Ato, Edicao, ItemEdicao
 from mandatometro.ia import cli, privacidade
 from mandatometro.ia.redacao import RespostaRedator
 from mandatometro.ia.selecao import ItemAtoBase
-from mandatometro.ia.servico import ErroEdicao, exportar, gerar, mostrar, publicar, revisar
+from mandatometro.ia.servico import (
+    PENDENTE_ATO,
+    ErroEdicao,
+    exportar,
+    gerar,
+    mostrar,
+    publicar,
+    revisar,
+    titulo_periodo,
+)
 
 NOME = "Pessoa Fictícia"
 DOCUMENTO = "111.111.111-11"
@@ -288,19 +296,46 @@ def ato_retido(sessao, ato):
     return ato
 
 
+@pytest.fixture
+def rascunho_com_retido(abrir, sessao, ato_retido):
+    def criar(*, com_votacao=False):
+        if com_votacao:
+            edicao = sessao.get(Edicao, gerar(abrir, INICIO, FIM)["edicao_id"])
+        else:
+            edicao = Edicao(titulo=titulo_periodo(INICIO, FIM), inicio=INICIO, fim=FIM)
+            sessao.add(edicao)
+        fatos = ItemAtoBase.de_ato(ato_retido).fatos
+        fatos.privacidade_confirmada = False
+        fatos.pendencias.append("redacao")
+        edicao.itens.append(
+            ItemEdicao(
+                ordem=len(edicao.itens) + 1,
+                titulo="Ato do Diário Oficial",
+                texto=PENDENTE_ATO,
+                fonte=ato_retido.fonte,
+                fatos=fatos.model_dump(mode="json"),
+            )
+        )
+        sessao.flush()
+        return edicao.id
+
+    return criar
+
+
 def _sem_dados_oficiais(ato, *saidas):
     for dado in (NOME, DOCUMENTO, ato.titulo, ato.ementa, ato.orgao, ato.fonte.trecho):
         if any(dado in str(saida) for saida in saidas):
             pytest.fail("Uma saída do ato retido contém dados da fonte.")
 
 
-def test_rascunho_e_arquivo_de_ato_retido_sem_enviar_ato_ao_redator(
-    abrir, dados, ato_retido, selecao_com_ato, caplog
-):
+def test_rascunho_so_informa_codigo_e_id_do_ato_retido(abrir, dados, ato_retido, caplog):
     dados(10, valores=("sim",))
     entradas = []
 
     class RedatorFalso:
+        def ordenar_atos(self, _):
+            pytest.fail("O ato retido foi enviado ao modelo.", pytrace=False)
+
         def escrever(self, entrada):
             entradas.append(entrada)
             return RespostaRedator(
@@ -309,25 +344,24 @@ def test_rascunho_e_arquivo_de_ato_retido_sem_enviar_ato_ao_redator(
 
     resumo = gerar(abrir, INICIO, FIM, redator=RedatorFalso())
     edicao_id = resumo["edicao_id"]
-    item = exportar(abrir, edicao_id)["itens"][1]
+    [item] = exportar(abrir, edicao_id)["itens"]
     previa = mostrar(abrir, edicao_id, app_base_url="https://example.com")
 
     assert len(entradas) == 1
-    assert "Item 2" in resumo["avisos"][0] and MOTIVO in resumo["avisos"][0]
-    assert "Item 2" in previa and MOTIVO in previa
-    assert item["contexto"]["motivo_retencao"] == MOTIVO
-    [aviso] = item["contexto"]["avisos"]
-    assert "Item 2" in aviso and MOTIVO in aviso
-    assert aviso in resumo["avisos"][0] and aviso in previa
-    assert item[CAMPO] is False and item["fatos"][CAMPO] is False
+    assert resumo["atos"]["retidos"] == [{"id": ato_retido.id, "codigo": MOTIVO}]
+    assert resumo["atos"]["retidos_por_codigo"] == {MOTIVO: 1}
+    assert item["fatos"]["versao"] == 1
+    assert MOTIVO not in previa
     _sem_dados_oficiais(ato_retido, resumo, item, entradas, previa, caplog.text)
 
 
 @pytest.mark.parametrize(
     "valor", [False, None, "true", 1], ids=["falsa", "ausente", "texto", "numero"]
 )
-def test_revisao_e_publicacao_recusam_ato_sem_decisao(abrir, ato_retido, selecao_com_ato, valor):
-    edicao_id = gerar(abrir, INICIO, FIM)["edicao_id"]
+def test_revisao_e_publicacao_recusam_ato_sem_decisao(
+    abrir, ato_retido, rascunho_com_retido, valor
+):
+    edicao_id = rascunho_com_retido()
     original = exportar(abrir, edicao_id)
     arquivo = pronto(deepcopy(original))
     if valor is None:
@@ -343,11 +377,11 @@ def test_revisao_e_publicacao_recusam_ato_sem_decisao(abrir, ato_retido, selecao
 
 
 def test_confirma_ato_no_arquivo_grava_decisao_e_api_so_mostra_fatos_publicos(
-    abrir, ato_retido, selecao_com_ato, monkeypatch
+    abrir, ato_retido, rascunho_com_retido, monkeypatch
 ):
     monkeypatch.setattr(edicoes, "sessao_do_banco", abrir)
     cliente = TestClient(app)
-    edicao_id = gerar(abrir, INICIO, FIM)["edicao_id"]
+    edicao_id = rascunho_com_retido()
     caminho = f"/edicoes/{edicao_id}"
     assert cliente.get(caminho).status_code == 404
 
@@ -371,11 +405,9 @@ def test_confirma_ato_no_arquivo_grava_decisao_e_api_so_mostra_fatos_publicos(
     _sem_dados_oficiais(ato_retido, revisao, resposta.text, previa_publicada)
 
 
-def test_excluir_ato_retido_exige_motivo_e_grava_a_remocao(
-    abrir, dados, ato_retido, selecao_com_ato
-):
+def test_excluir_ato_retido_exige_motivo_e_grava_a_remocao(abrir, dados, rascunho_com_retido):
     dados(10, valores=("sim",))
-    edicao_id = gerar(abrir, INICIO, FIM)["edicao_id"]
+    edicao_id = rascunho_com_retido(com_votacao=True)
     arquivo = pronto(exportar(abrir, edicao_id))
     item = arquivo["itens"][1]
     item["excluir"] = True
@@ -415,16 +447,18 @@ def test_rascunho_antigo_de_ato_retido_exige_nova_confirmacao(abrir, sessao, ato
 
 
 def test_cli_retido_mensagens_e_logs_seguros(
-    abrir, sessao, ato_retido, selecao_com_ato, monkeypatch, tmp_path, capsys, caplog
+    abrir, sessao, ato_retido, rascunho_com_retido, monkeypatch, tmp_path, capsys, caplog
 ):
     ato_retido.orgao = f"Órgão fictício com CPF {DOCUMENTO}"
     sessao.flush()
     monkeypatch.setattr(cli, "sessao_do_banco", abrir)
     monkeypatch.setattr(cli, "abrir_redator", lambda _: nullcontext(None))
     caplog.set_level("INFO")
+    edicao_id = rascunho_com_retido()
     assert main(["edicao", "rascunho", "--inicio", str(INICIO), "--fim", str(FIM)]) == 0
     resumo = capsys.readouterr()
-    edicao_id = json.loads(resumo.out)["edicao_id"]
+    assert json.loads(resumo.out)["edicao_id"] == edicao_id
+    assert json.loads(resumo.out)["situacao"] == "rascunho_existente"
     alvo = tmp_path / "revisao-ficticia.json"
     arquivo = pronto(exportar(abrir, edicao_id))
     alvo.write_text(json.dumps(arquivo, ensure_ascii=False), encoding="utf-8")
@@ -447,7 +481,7 @@ def test_cli_retido_mensagens_e_logs_seguros(
 
 
 def test_cli_mostrar_oculta_link_ate_confirmar_privacidade(
-    abrir, dados, sessao, ato_retido, selecao_com_ato, monkeypatch, capsys, caplog
+    abrir, dados, sessao, ato_retido, rascunho_com_retido, monkeypatch, capsys, caplog
 ):
     marcador = "pessoa-inventada-para-teste-de-link"
     ato_retido.fonte.url_publica += f"/{marcador}"
@@ -455,7 +489,7 @@ def test_cli_mostrar_oculta_link_ate_confirmar_privacidade(
     dados(10, valores=("sim",))
     monkeypatch.setattr(cli, "sessao_do_banco", abrir)
     caplog.set_level("INFO")
-    edicao_id = gerar(abrir, INICIO, FIM)["edicao_id"]
+    edicao_id = rascunho_com_retido(com_votacao=True)
     arquivo = pronto(exportar(abrir, edicao_id))
     votacao, retido = arquivo["itens"]
     assert marcador in retido["fontes"][0]["url_publica"]
