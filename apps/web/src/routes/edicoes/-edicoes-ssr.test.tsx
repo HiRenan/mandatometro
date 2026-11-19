@@ -152,6 +152,30 @@ describe("o HTML das páginas das edições", () => {
 		expect(html).not.toContain("<b>emenda</b>");
 	});
 
+	it("a edição com um ato mostra seu texto e o link do Diário Oficial", async () => {
+		const edicao = edicaoDeExemplo();
+		const fonte = "https://www.in.gov.br/ato-ficticio";
+		edicao.itens[2] = {
+			ordem: 3,
+			titulo: "Ato de exemplo",
+			texto: "Explicação editorial fictícia.",
+			fatos: { votacoes: [], data_publicacao: "2026-11-12" },
+			fontes: [
+				{ url: fonte, coletado_em: "2026-11-16T00:00:00Z", trecho: null },
+			],
+			artigo: null,
+		};
+		api(() => json(200, edicao));
+
+		const { status, html } = await pedir("/edicoes/7");
+
+		expect(status).toBe(200);
+		expect(html).toContain("Ato de exemplo");
+		expect(html).toContain("Explicação editorial fictícia.");
+		expect(html).toContain(`href="${fonte}"`);
+		expect(html.match(/class="votacao"/g)).toHaveLength(2);
+	});
+
 	it("o cabeçalho leva às edições só onde o site tem o API_URL", async () => {
 		api(() => json(200, listaDeExemplo(3)));
 

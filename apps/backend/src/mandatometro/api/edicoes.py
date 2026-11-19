@@ -10,6 +10,7 @@ from mandatometro.api.esquemas import (
     ArtigoDaEdicao,
     EdicaoPublica,
     ErroEdicaoPublica,
+    FatosAtoPublicos,
     FatosPublicos,
     FontePublica,
     ItemPublico,
@@ -25,7 +26,7 @@ from mandatometro.config import config
 from mandatometro.db import sessao as sessao_do_banco
 from mandatometro.db.modelos import Edicao, Fonte, ItemEdicao
 from mandatometro.ia.artigos import CATALOGO
-from mandatometro.ia.esquemas import Fatos
+from mandatometro.ia.esquemas import Fatos, FatosAto
 
 router = APIRouter(
     prefix="/edicoes",
@@ -48,21 +49,27 @@ def _resumo(edicao: Edicao) -> ResumoEdicao:
     )
 
 
-def _fonte(fonte: Fonte) -> FontePublica:
+def _fonte(fonte: Fonte, *, de_ato: bool = False) -> FontePublica:
+    url = fonte.url_publica if de_ato else fonte.url_publica or fonte.url
+    if not url:
+        raise MensagemInvalida("A referência está sem página oficial.")
     return FontePublica(
-        url=fonte.url_publica or fonte.url,
+        url=url,
         coletado_em=fonte.coletado_em,
-        trecho=fonte.trecho,
+        trecho=None if de_ato else fonte.trecho,
     )
 
 
 def _item(item: ItemEdicao, fontes: dict[int, Fonte]) -> ItemPublico:
     fatos = Fatos.ler(item.fatos) if item.fatos is not None else None
-    return ItemPublico(
-        ordem=item.ordem,
-        titulo=item.titulo,
-        texto=item.texto,
-        fatos=FatosPublicos(
+    fatos_publicos: FatosPublicos | FatosAtoPublicos | None
+    if isinstance(fatos, FatosAto):
+        fatos_publicos = FatosAtoPublicos(votacoes=[], data_publicacao=fatos.data_publicacao)
+        fontes_publicas = [
+            _fonte(fontes[i], de_ato=True) for i in dict.fromkeys([item.fonte_id, *fatos.fontes])
+        ]
+    elif fatos is not None:
+        fatos_publicos = FatosPublicos(
             votacoes=[
                 VotacaoPublica(
                     data=v.data,
@@ -73,11 +80,16 @@ def _item(item: ItemEdicao, fontes: dict[int, Fonte]) -> ItemPublico:
                 for v in fatos.votacoes
             ]
         )
-        if fatos
-        else None,
-        fontes=[_fonte(fontes[i]) for i in dict.fromkeys(fatos.fontes)]
-        if fatos
-        else [_fonte(item.fonte)],
+        fontes_publicas = [_fonte(fontes[i]) for i in dict.fromkeys(fatos.fontes)]
+    else:
+        fatos_publicos = None
+        fontes_publicas = [_fonte(item.fonte)]
+    return ItemPublico(
+        ordem=item.ordem,
+        titulo=item.titulo,
+        texto=item.texto,
+        fatos=fatos_publicos,
+        fontes=fontes_publicas,
         artigo=ArtigoDaEdicao(titulo=CATALOGO[item.artigo_caminho], caminho=item.artigo_caminho)
         if item.artigo_caminho
         else None,
