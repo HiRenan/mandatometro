@@ -131,6 +131,11 @@ ATO_DE_PESSOAL = [
         "Institui o título de benemérita da cidade fictícia.",
         id="titulo-benemerita",
     ),
+    pytest.param(
+        f"Confere título a {NOME}.",
+        "Confere títulos de propriedade a comunidades fictícias.",
+        id="titulo-conferido",
+    ),
 ]
 
 
@@ -144,6 +149,7 @@ def test_termos_de_ato_de_pessoal(pessoal, geral):
     "ementa",
     [
         "Concurso público para nomeação e promoção de servidores.",
+        "Nomeação dos candidatos aprovados em concurso público fictício.",
         "Cria cargos de provimento efetivo para nomeações futuras.",
         "Nomeação do Órgão Fictício responsável pelo programa.",
         "Nomeia Conselho Gestor do Programa Fictício.",
@@ -159,6 +165,7 @@ def test_termos_de_ato_de_pessoal(pessoal, geral):
     ],
     ids=[
         "concurso",
+        "candidatos",
         "cargos",
         "orgao",
         "conselho",
@@ -209,7 +216,9 @@ def test_cpf_em_qualquer_campo(campo, numero):
     assert privacidade.motivo_retencao_ato(Ato(**valores)) == "documento_pessoal"
 
 
-@pytest.mark.parametrize("secao", ["2", "Seção II", "DO2", "DOU - Seção 2 (extra)", "2ª Seção"])
+@pytest.mark.parametrize(
+    "secao", ["2", "Seção II", "DO2", "DOU - Seção 2 (extra)", "2ª Seção", "2ª"]
+)
 def test_secao_de_pessoal_retem_mesmo_sem_termo(secao):
     valores = {"tipo": "outro", "titulo": "Portaria fictícia sobre concurso público"}
     retido = Ato(**valores, secao=secao, ementa=f"CPF {DOCUMENTO}.")
@@ -222,13 +231,22 @@ def test_tipo_de_pessoal_independe_do_titulo():
 
 
 @pytest.mark.parametrize(
+    "verbo", ["Designo", "Cedo", "Reformo", "Casso o mandato de", "Confiro título a"]
+)
+def test_flexoes_verbais_de_atos_de_pessoal(verbo):
+    ato = Ato(tipo="outro", titulo="Portaria fictícia", ementa=f"{verbo} {NOME}.")
+    assert privacidade.motivo_retencao_ato(ato) == MOTIVO
+
+
+@pytest.mark.parametrize(
     "ementa",
     [
         "Regulamenta o concurso público fictício e nomeia Exemplo Fictício para o cargo.",
         "Dispõe sobre a nomeação de Exemplo Fictício.",
         "Nomeia os servidores abaixo relacionados.",
+        "Nomeados os servidores Exemplo Fictício e Exemplo Inventado.",
     ],
-    ids=["concurso-com-nomeacao", "ementa-com-nomeacao", "lista-de-servidores"],
+    ids=["concurso-com-nomeacao", "ementa-com-nomeacao", "lista-de-servidores", "lista-nominal"],
 )
 def test_regra_geral_nao_libera_ato_individual_na_mesma_ementa(ementa):
     ato = Ato(

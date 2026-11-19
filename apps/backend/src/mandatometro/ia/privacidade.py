@@ -43,8 +43,8 @@ DISTANCIA_PESSOAL = 6
 
 MotivoRetencaoAto = Literal["secao_de_pessoal", "documento_pessoal", "ato_de_pessoal"]
 SECAO_DE_PESSOAL = re.compile(
-    r"^(?:dou?[–-]?[ ]*)?(?:0?2e?|ii)(?:$|[ :–—-])|"
-    r"\b(?:secao\s*[-:]?\s*(?:(?:n[.°o]+|numero)\s*)?(?:0?2|ii)|0?2[ao]\s+secao)\b"
+    r"^(?:dou?[–-]?[ ]*)?(?:0?2[aeo]?|ii)(?:$|[ :–—-])|"
+    r"\b(?:secao\s*[-:]?\s*(?:(?:n[.°o]+|numero)\s*)?(?:0?2[ao]?|ii)|0?2[ao]\s+secao)\b"
 )
 ATOS_DE_PESSOAL = re.compile(r"\batos?\s+de\s+pessoal\b")
 CPF = re.compile(r"(?<!\w)(?:[\d*x]{3}\.[\d*x]{3}\.[\d*x]{3}[-–][\d*x]{2}|\d{11})(?!\w)")
@@ -56,12 +56,16 @@ DOCUMENTO_PESSOAL = re.compile(
 )
 TERMO_ATO_PESSOAL = re.compile(
     r"\b(?:nomea(?:c(?:ao|oes)|r|d[oa]s?|m|ndo|ram|va\w*)|nomei(?:[aeo]|am|em|ou)|"
-    r"exoner\w*|design(?:a\w*|e[ms]?|ou)|dispens\w*|aposent\w*|pens(?:ao|oes)|"
-    r"reform(?:a\w*|e[ms]?|ou)|promoc(?:ao|oes)|promov\w*|demiss(?:ao|oes)|demit\w*|"
-    r"cass(?:a\w*|e[ms]?|ou)|penalidad(?:e|es)|penaliz\w*|sanc(?:ao|oes)|sancion\w*|"
+    r"exoner\w*|design(?:a\w*|e[ms]?|ou?)|dispens\w*|aposent\w*|pens(?:ao|oes)|"
+    r"reform(?:a\w*|e[ms]?|ou?)|promoc(?:ao|oes)|promov\w*|demiss(?:ao|oes)|demit\w*|"
+    r"cass(?:a\w*|e[ms]?|ou?)|penalidad(?:e|es)|penaliz\w*|sanc(?:ao|oes)|sancion\w*|"
     r"cess(?:ao|oes)|ced(?:e[ms]?|a[ms]?|er|eu|id[oa]s?|endo)|"
+    r"cedo(?=\s+(?:[oa]s?\s+)?(?:servidora?|empregad[oa]|funcionari[oa]|pessoa)\b)|"
     r"remoc(?:ao|oes)|remov\w*|redistribu\w*|naturali[sz]\w*|extradi\w*|expuls\w*|"
-    r"condecor\w*|titulos?\s+(?:honorific[oa]s?|de\s+(?:cidad(?:ania|aos?|as?)|benemerit[oa]s?|"
+    r"condecor\w*|(?:conced[eo]|outorg[ao]|confere|confiro|atribu[io])\s+"
+    r"(?:(?:o|a|os|as|um|uns)\s+)?titulos?|"
+    r"titulos?\s+(?:honor(?:ari|ific)[oa]s?|(?:concedid|outorgad|conferid)[oa]s?|"
+    r"de\s+(?:cidad(?:ania|aos?|as?)|benemerit[oa]s?|"
     r"doutor(?:a)?\s+honoris\s+causa)))\b"
 )
 # Esses sinais se aplicam ao termo da oração, sem liberar outros atos no mesmo texto.
@@ -85,14 +89,18 @@ ALVO_INSTITUCIONAL = re.compile(
     r"(?:orgaos?|programas?|sistemas?|conselhos?|comissoes?|comites?|instituicoes?|"
     r"ministerios?|entidades?|empresas?|pais(?:es)?|pessoas?\s+juridicas?|leis?|projetos?|"
     r"licitac(?:ao|oes)|orcamentos?|categorias?|carreiras?|igualdade|transparencia|saude|"
-    r"educacao|cultura|presidencial|reformas?|previdencia|"
+    r"educacao|cultura|presidencial|reformas?|previdencia|propriedade|credito|divida|"
     r"imoveis?|residuos?|futur[oa]s?|(?:licencas?|autorizacoes?)\s+"
     r"(?:d[aeo]s?\s+)(?:uma?\s+)?(?:empresas?|entidades?))\b"
 )
+# O plural só indica uma categoria se o complemento também for genérico.
 ALVO_COLETIVO = re.compile(
     r"^\s*(?:(?:a|o|ao|as|os|aos|de|do|da|dos|das|para)\s+)*"
     r"(?:servidores|servidoras|empregad[oa]s|militares|estrangeir[oa]s|dependentes|"
-    r"funcoes|cargos|nomeacoes|pensoes)\b"
+    r"candidat[oa]s|funcoes|cargos|nomeacoes|pensoes)\b"
+    r"(?=\s*(?:$|[.,]|(?:(?:d[aeo]|n[ao]|em)\s+)?"
+    r"(?:carreiras?|categorias?|classes?|confianca|comissao|comissionad[oa]s|"
+    r"public[oa]s|federais|vag[oa]s|aprovad[oa]s)\b))"
 )
 SINAL_INDIVIDUAL = re.compile(
     r"\b(?:a\s+pedido|ocupad[oa]s?\s+por|abaixo\s+relacionad[oa]s?|"
