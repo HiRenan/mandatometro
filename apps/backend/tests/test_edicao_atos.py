@@ -186,6 +186,32 @@ def test_gerar_recusa_coleta_alterada_entre_selecao_e_gravacao(
     assert sessao.scalar(select(Edicao)) is None
 
 
+@pytest.mark.parametrize("etapa", ["gerar", "exportar", "revisar", "publicar"])
+@pytest.mark.parametrize(
+    "url_publica",
+    [None, "", "https://example.com/ato-exemplo"],
+    ids=["ausente", "vazia", "dominio-nao-oficial"],
+)
+def test_conferencia_recusa_ato_sem_pagina_publica_oficial(
+    abrir, sessao, ato, selecao_com_ato, etapa, url_publica
+):
+    edicao_id = gerar(abrir, INICIO, FIM)["edicao_id"]
+    revisar(abrir, edicao_id, pronto(exportar(abrir, edicao_id)))
+    arquivo = exportar(abrir, edicao_id)
+    ato.fonte.url_publica = url_publica
+    sessao.flush()
+
+    operacoes = {
+        "gerar": lambda: gerar(abrir, INICIO, FIM, refazer=True),
+        "exportar": lambda: exportar(abrir, edicao_id),
+        "revisar": lambda: revisar(abrir, edicao_id, arquivo),
+        "publicar": lambda: publicar(abrir, edicao_id),
+    }
+    with pytest.raises(ErroEdicao) as erro:
+        operacoes[etapa]()
+    assert str(erro.value) == ERRO_DADOS
+
+
 @pytest.mark.parametrize("mudanca", ["data", "ementa", "fonte", "exclusao"])
 def test_exportar_revisar_e_publicar_recusam_ato_alterado_ou_removido(
     abrir, sessao, ato, rascunho_ato, mudanca

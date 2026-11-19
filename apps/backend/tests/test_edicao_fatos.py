@@ -1,5 +1,5 @@
 import json
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 import pytest
@@ -9,7 +9,15 @@ from test_edicao_revisao import pronto
 from test_edicao_selecao import FIM, INICIO
 from test_edicao_selecao import dados as dados
 
-from mandatometro.db.modelos import Edicao, ItemEdicao
+from mandatometro.db.modelos import (
+    Edicao,
+    Fonte,
+    ItemEdicao,
+    Parlamentar,
+    Proposicao,
+    Votacao,
+    Voto,
+)
 from mandatometro.ia.esquemas import Fatos, FatoVotacao, Placar
 from mandatometro.ia.servico import exportar, publicar, revisar
 
@@ -64,6 +72,64 @@ def test_le_fatos_gravados_na_v1_sem_conversao(sessao, abrir, dados, gravado_na_
     assert arquivo["itens"][0]["fatos"] == gravado_na_v1
     assert revisar(abrir, edicao.id, pronto(arquivo))["pendencias"] == []
     assert publicar(abrir, edicao.id)["situacao"] == "publicada"
+
+
+def test_revisar_aceita_arquivo_exportado_em_e29a7a4(sessao, abrir):
+    caminho = Path(__file__).parent / "fixtures" / "arquivo-revisao-e29a7a4.json"
+    arquivo = json.loads(caminho.read_text(encoding="utf-8"))
+    [item] = arquivo["itens"]
+    fatos, contexto = item["fatos"], item["contexto"]
+
+    # A fotografia do rascunho inclui os ids, que precisam ser os da captura.
+    fontes = {
+        fonte["id"]: Fonte(
+            **(fonte | {"coletado_em": datetime.fromisoformat(fonte["coletado_em"])})
+        )
+        for fonte in item["fontes"]
+    }
+    [materia] = contexto["proposicoes"]
+    proposicao = Proposicao(**materia, casa="camara", id_externo=materia["numero"], fonte=fontes[5])
+    for dados_votacao, fato in zip(contexto["votacoes"], fatos["votacoes"], strict=True):
+        [fonte_id] = fato["fontes"]
+        fonte = fontes[fonte_id]
+        votacao = Votacao(
+            **dados_votacao,
+            data=date.fromisoformat(fato["data"]),
+            resultado=fato["resultado"],
+            fonte=fonte,
+            proposicoes=[proposicao],
+        )
+        sessao.add(votacao)
+        if fato["placar"] is not None:
+            cadastro = Parlamentar(
+                casa="camara", id_externo=1, nome="Cadastro fictício", fonte=fonte
+            )
+            sessao.add(Voto(votacao=votacao, parlamentar=cadastro, valor="sim", fonte=fonte))
+
+    edicao = Edicao(
+        id=arquivo["edicao_id"],
+        titulo=arquivo["titulo"],
+        inicio=date.fromisoformat(arquivo["inicio"]),
+        fim=date.fromisoformat(arquivo["fim"]),
+        itens=[
+            ItemEdicao(
+                id=item["id"],
+                ordem=1,
+                titulo=item["titulo"],
+                texto="\n\n".join(item["explicacao"]),
+                artigo_caminho=item["artigo_caminho"],
+                fonte=fontes[4],
+                fatos=fatos,
+            )
+        ],
+    )
+    sessao.add(edicao)
+    sessao.flush()
+
+    resultado = revisar(abrir, edicao.id, pronto(arquivo))
+
+    assert resultado["situacao"] == "revisao_salva"
+    assert resultado["pendencias"] == []
 
 
 def test_dump_de_votacao_permanece_igual_ao_da_v1(gravado_na_v1):
