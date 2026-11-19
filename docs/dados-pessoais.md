@@ -14,9 +14,11 @@ Motivo de ausência fica fora do banco, para a licença saúde não ser deduzida
 
 ## Atos do Diário Oficial
 
-Atos de pessoal, atos da seção 2 e textos com número de documento pessoal ficam retidos para conferência editorial. O filtro considera o risco de identificar alguém. Nenhum campo dos atos retidos, inclusive título, ementa e órgão, segue para o modelo. Logs, resumos de comandos e erros usam só o número do item e o código do motivo, sem nomes, documentos ou trechos oficiais. Testes e fixtures usam atos e dados pessoais inteiramente inventados.
+Antes do modelo, o filtro retém atos da seção 2 e atos com rótulo de pessoal ou padrões de documento, como CPF e matrícula. No título e na ementa, procura palavras do vocabulário de atos de pessoal e sinais como duas ou mais palavras com inicial maiúscula compatíveis com um nome ou indicação de lista nominal. Um título ou uma ementa em caixa alta com termo do vocabulário também retém o ato. Só os atos elegíveis seguem para a seleção pelo modelo. Os diagnósticos de retenção usam o número do item e o código do motivo. Testes e fixtures usam atos e dados pessoais inteiramente inventados.
 
-O título e a ementa oficiais ficam na tabela `ato`. A revisão usa o link oficial para decidir se exclui o item ou se o mantém com redação própria. Confira também o endereço da fonte antes de publicar. O item 6.9 do regulamento do hackathon proíbe expor dados pessoais reais de terceiros na demo. [Revisão dos atos](newsletter.md#como-preparar-a-edição)
+O sinal de nome pode falhar com texto todo em minúsculas, nome de uma palavra só ou nome misturado ao de uma instituição. Vocabulário diferente e dados presentes apenas no inteiro teor ou no endereço da fonte também podem escapar do filtro. Um número de processo com 11 dígitos corridos pode ser retido pelo padrão de CPF. A revisão humana de cada item de ato, inclusive dos elegíveis, é a barreira antes da publicação.
+
+O título e a ementa oficiais ficam na tabela `ato`. Confira o título, a explicação e o endereço da fonte no arquivo de revisão antes de decidir se exclui o item ou se o mantém com redação própria. O item 6.9 do regulamento do hackathon proíbe expor dados pessoais reais de terceiros na demo. [Revisão dos atos](newsletter.md#como-preparar-a-edição)
 
 ## Inscrição e conta
 
