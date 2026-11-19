@@ -299,6 +299,15 @@ O comando coleta as votações publicadas de acordo com as [regras do endpoint d
 
 Se o histórico de um votante fora da lista atual falhar, seus votos ficam gravados, o mandato não é inventado e `falhas_parlamentares` conta o parlamentar uma vez. Processo indisponível entra no resumo pelo caminho com seu id (por exemplo, `/processo/9006525`), e a votação é pulada. A [saída das coletas](docs/dicionario-de-dados.md#pegadinhas-e-saída-da-coleta) descreve como consultar históricos indisponíveis.
 
+**Coleta de atos da legislação federal.** Em `apps/backend`, aplique as migrations e passe `DATABASE_URL` com o banco de destino.
+
+```bash
+uv run mandatometro coleta legislacao --inicio 2026-11-12 --fim 2026-11-18
+uv run mandatometro coleta legislacao
+```
+
+O comando grava decretos, leis e medidas provisórias pela data de publicação no DOU. Sem datas, coleta os sete dias completos anteriores, no fuso de Brasília. Repetir o período atualiza os atos da mesma origem. O resumo JSON conta gravações e descartes por motivo. A [origem dos campos e a regra do período](docs/dicionario-de-dados.md#atos-do-diário-oficial) estão no dicionário.
+
 **Edição semanal.** [Como preparar, revisar e publicar a edição](docs/newsletter.md#newsletter-rascunho-e-revisão).
 
 **Checagens,** as mesmas do CI:

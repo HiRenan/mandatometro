@@ -535,26 +535,48 @@ O `resultado` e o `voto.valor` têm domínios diferentes nas duas Casas, e o mod
 
 ## Atos do Diário Oficial
 
-A tabela `ato` guarda os atos publicados para a seleção semanal da newsletter. A escolha da fonte está em decisão na [#203](https://github.com/HiRenan/mandatometro/issues/203).
+A tabela `ato` guarda os atos publicados para a seleção semanal da newsletter. Os dados abertos do Senado fornecem os decretos, as leis e as medidas provisórias. A escolha está no [ADR 0005](adr/0005-legislacao-federal-na-newsletter.md).
 
-| Campo | Tipo | Obrigatório | O que guarda |
+### Legislação federal nos dados abertos do Senado
+
+Conferido em 19/11/2026, com a mesma base HTTPS das votações do Senado. A lista usa `tipo=DEC`, `tipo=LEI` ou `tipo=MPV` e o ano da assinatura.
+
+```text
+/legislacao/lista?tipo=LEI&ano=2026
+/legislacao/44391098
+/legislacao/tiposNorma
+```
+
+Na lista, as normas ficam em `ListaDocumento.documentos.documento`. A resposta sem normas pode trazer `documentos: ""`. A lista também traz `descricao`, `norma`, `anoassinatura` e `apelido`. O detalhe vem em `DetalheDocumento.documentos.documento` e inclui `identificacao`, `publicacoes`, `ementa`, `indexacao` e `classes`. O exemplo da lei `44391098` tem três publicações, duas na edição extra de 12/11/2026 e uma na edição de 13/11/2026. A [fixture sanitizada](../apps/backend/tests/fixtures/senado/legislacao/detalhe-44391098.json) conserva os ids e as datas.
+
+| Campo | Tipo | Obrigatório | Procedência na coleta de legislação |
 |---|---|---|---|
 | `id` | inteiro | sim | Chave interna gerada pelo banco. |
-| `origem` | texto | sim | Código estável da origem que atribui o identificador externo. |
-| `id_externo` | texto | sim | Identificador do ato dentro da origem. |
-| `tipo` | texto | sim | Classificação do ato. O banco aceita `decreto`, `lei`, `medida_provisoria` e `outro`. |
-| `titulo` | texto | sim | Título ou identificação oficial do ato. |
-| `ementa` | texto | não | Ementa ou resumo oficial, quando houver. |
-| `data_publicacao` | data | sim | Dia da publicação no DOU, com índice para a seleção por período. |
-| `data_assinatura` | data | não | Dia da assinatura, quando a fonte o informa. |
-| `secao` | texto | não | Seção do DOU, quando informada. |
-| `orgao` | texto | não | Órgão responsável pelo ato, quando informado. |
-| `numero` | texto | não | Número oficial do ato, quando informado, na forma publicada. |
-| `fonte_id` | inteiro | sim | Referência à `fonte` que comprova o ato. |
+| `origem` | texto | sim | Código do conector, `legislacao_senado`. |
+| `id_externo` | texto | sim | `id` da lista, confirmado no detalhe. |
+| `tipo` | texto | sim | Prefixo de `tipo` da lista, antes do hífen. `DEC` vira `decreto`, `LEI` vira `lei` e `MPV` vira `medida_provisoria`. O banco também admite `outro`. |
+| `titulo` | texto | sim | `normaNome` da lista. |
+| `ementa` | texto | não | `ementa` da lista, preservada como veio. |
+| `data_publicacao` | data | sim | Menor data válida de `publicacoes.publicacao[].data` no detalhe, entre as entradas com `siglaFonte` da família `DOU` ou `DOUE`. Tem índice para a seleção por período. |
+| `data_assinatura` | data | não | `dataassinatura` da lista, no formato `DD/MM/AAAA`. |
+| `secao` | texto | não | Fica nula nesta coleta. |
+| `orgao` | texto | não | Fica nulo nesta coleta. |
+| `numero` | texto | não | `numero` da lista, como texto. |
+| `fonte_id` | inteiro | sim | Referência à observação criada para o detalhe. |
 
-A chave `(origem, id_externo)` permite atualizar a mesma linha numa nova coleta, mesmo se ela gravar outra `fonte`. `fonte.url` aponta para o recurso lido e `fonte.url_publica` para a página oficial do ato.
+`fonte.url` guarda a URL consultada em `/legislacao/{id}`, e `fonte.url_publica` guarda `identificacao.urlDocumento`, no portal oficial `https://normas.leg.br/`. `fonte.coletado_em` registra quando a base recebeu o detalhe. A chave `(origem, id_externo)` mantém o id interno ao atualizar. Cada gravação cria outra fonte na mesma transação.
 
-A semana é definida pela publicação. A assinatura preserva a data informada pela fonte, que pode conter erro. Título e ementa são textos oficiais e podem mencionar pessoas. O uso desses textos segue as [regras de dados pessoais](dados-pessoais.md).
+### Período e descartes
+
+O filtro por data na lista retornou zero no teste de 19/11/2026. A coleta cobre as assinaturas de três dias corridos antes do início até o fim do período, incluindo as duas pontas. Pede uma lista por tipo e por ano que essa faixa atravessa e consulta detalhes apenas das assinaturas na faixa. Assim, ao começar em 1º de janeiro, consulta também o ano anterior. A margem cobre publicações até três dias depois de uma assinatura anterior ao período. Atrasos maiores podem ficar fora.
+
+A data de publicação inclui edições extras (`DOUE`). A escolha pela menor data válida usa `siglaFonte` como identificador do DOU. `fonte` no detalhe é o rótulo textual da publicação e a ordem do array pode variar. A primeira publicação determina se o ato pertence ao período, inclusive nas duas pontas. Uma republicação em outro dia conserva a data original.
+
+O Senado devolveu um decreto com assinatura em 13/12/2026 na lista consultada em 19/11/2026. Assinatura ou primeira publicação posterior ao dia da coleta em Brasília conta como `data_futura`. Assinatura ausente ou inválida conta como `assinatura_invalida` e fica fora da consulta de detalhe. Nos candidatos, o resumo também conta `tipo_fora_do_conjunto`, `campo_obrigatorio` (id, título, tipo ou endereço oficial), `sem_publicacao`, `detalhe_invalido` ou `detalhe_indisponivel` (HTTP 404 ou 410).
+
+O resumo é uma linha JSON. O código de saída é 0 quando a coleta percorre as listas, ainda que haja descartes. Uma falha de rede, de listagem, de gravação ou uma proibição no robots encerra a execução com código 1 e mantém os atos já confirmados. A falha de gravação conta como `falha_gravacao`. Datas inválidas na linha de comando retornam 2.
+
+Título e ementa podem mencionar pessoas. O conector guarda o texto oficial em `ato`, com `fonte.trecho` nulo. Logs, resumo e erros omitem esse conteúdo. O uso editorial segue as [regras de dados pessoais](dados-pessoais.md).
 
 ## Campos pessoais
 
