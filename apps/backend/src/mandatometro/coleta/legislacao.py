@@ -21,7 +21,7 @@ from mandatometro.db import sessao
 ORIGEM = "legislacao_senado"
 TIPOS = {"DEC": "decreto", "LEI": "lei", "MPV": "medida_provisoria"}
 MARGEM_ASSINATURA_DIAS = 10
-_URN_NORMA = re.compile(r"urn:lex:br:federal:[a-z.]+:[0-9]{4}(?:-[0-9]{2}-[0-9]{2})?(?:;[^:;\s]+)*")
+_URN_NORMA = re.compile(r"urn:lex:br:federal:[a-z.]+:[0-9]{4}(?:-[0-9]{2}-[0-9]{2})?(?:;[^:;\s]+)+")
 
 
 class _DescartarAto(Exception):

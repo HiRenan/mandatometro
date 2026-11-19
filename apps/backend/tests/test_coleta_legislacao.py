@@ -289,6 +289,14 @@ def test_detalhe_com_json_invalido_e_descartado(sessao, respostas, executar, con
         pytest.param("https://normas.leg.br/", id="pagina_inicial"),
         pytest.param("https://normas.leg.br/?urn=urn:lex:br:federal:decreto:", id="urn_incompleta"),
         pytest.param(
+            "https://normas.leg.br/?urn=urn:lex:br:federal:decreto:2026-11-16",
+            id="data_sem_identificador",
+        ),
+        pytest.param(
+            "https://normas.leg.br/?urn=urn:lex:br:federal:decreto:2026",
+            id="ano_sem_identificador",
+        ),
+        pytest.param(
             "https://normas.leg.br/sobre?urn=urn:lex:br:federal:decreto:2026-11-16;13168",
             id="outra_pagina",
         ),
