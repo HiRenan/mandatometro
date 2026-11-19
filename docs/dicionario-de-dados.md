@@ -1,6 +1,6 @@
-# Dicionário de dados: Câmara e Senado
+# Dicionário de dados
 
-O que cada API devolve, quais campos usamos e como os registros se ligam. É a referência do modelo de dados (#7) e dos conectores (#10 e #11).
+O que as APIs devolvem, quais campos usamos e como os registros se ligam. É a referência do modelo de dados (#7), dos conectores da Câmara e do Senado (#10 e #11) e da tabela dos atos do Diário Oficial (#202).
 
 **Conferido em:** 11/11/2026, por chamada real a cada endpoint, e de novo em 16/11/2026, nas correções da revisão (#90) e na coleta do Senado (#11). As respostas completas estão em [`apps/backend/tests/fixtures/`](../apps/backend/tests/fixtures/), e os testes offline leem de lá. Os históricos `mandatos.json` e uma votação secreta entraram com a #11; uma amostra da lista de deputados entrou com a #10.
 
@@ -24,7 +24,7 @@ Cada endpoint tem a URL que usamos, uma tabela de campos e um exemplo real recor
 
 - Toda chamada externa tem timeout e nova tentativa com backoff. A API da Câmara devolve 504 de vez em quando.
 - O User-Agent identifica o projeto (`mandatometro (Hack Brasil 2026)`), e a coleta respeita o robots.txt dos sites.
-- **O `in.gov.br` proíbe a raspagem:** em 18/11/2026, `https://www.in.gov.br/robots.txt` respondeu HTTP 200 com `User-agent: *` e `Disallow: /` — o site inteiro, para todos os agentes. A página de destaques do Diário Oficial não se lê, nem direto nem pelo Firecrawl, que faz a mesma requisição ao servidor do órgão. A fonte do DOU é o **INLABS** (`inlabs.in.gov.br`), o serviço de dados abertos da Imprensa Nacional, com cadastro gratuito e os XMLs das edições; ele não tem `robots.txt` (404, que a RFC 9309 trata como ausência de regras) e, em 18/11/2026, respondia com a página "Manutenção Programada". O porquê está no [ADR 0004](adr/0004-newsletter-do-dou.md).
+- **O `in.gov.br` proíbe a raspagem:** em 18/11/2026, `https://www.in.gov.br/robots.txt` respondeu HTTP 200 com `User-agent: *` e `Disallow: /` — o site inteiro, para todos os agentes. A página de destaques do Diário Oficial não se lê, nem direto nem pelo Firecrawl, que faz a mesma requisição ao servidor do órgão. O **INLABS** (`inlabs.in.gov.br`) é o serviço de dados abertos da Imprensa Nacional, com cadastro gratuito e os XMLs das edições. O serviço não tem `robots.txt` (404, que a RFC 9309 trata como ausência de regras) e, em 18/11/2026, respondia com a página "Manutenção Programada". O porquê está no [ADR 0004](adr/0004-newsletter-do-dou.md).
 - **Robots da coleta:** em 16/11/2026, `dadosabertos.camara.leg.br/robots.txt` respondeu HTTP 200 com HTML de página inexistente, sem regras, e `legis.senado.leg.br/robots.txt` respondeu 403. A base lê o arquivo uma vez por execução, usa `RobotFileParser.parse()` e segue a RFC 9309: aplica as regras legíveis; sem regras ou com 4xx no arquivo (exceto 408/429, transitórios), continua; falha de rede/5xx persistente interrompe. Um 403 no endpoint de dados continua sendo erro. `Crawl-delay`, `Request-rate` e `Retry-After` são respeitados.
 - As respostas da Câmara e do Senado são UTF-8, e nenhuma das duas declara o charset no `content-type` (as duas mandam `application/json`): decodifique explicitamente como UTF-8, ou os acentos embaralham no Windows.
 - As chamadas de cada coleta rodam em sequência.
@@ -532,6 +532,29 @@ O `resultado` e o `voto.valor` têm domínios diferentes nas duas Casas, e o mod
 
 - **`votacao.resultado`:** `aprovada`, `rejeitada` ou `outro`. O `1` e o `"A"` viram `aprovada`, o `0` e o `"R"` viram `rejeitada`, e um código ainda não classificado vira `outro`. O `resultado_bruto` guarda o código como a Casa publicou.
 - **`voto.valor`:** `sim`, `nao`, `abstencao`, `obstrucao`, `presidente`, `nao_votou` ou `outro`. O `Artigo 17` e o `Presidente (art. 51 RISF)` viram `presidente`, e o `P-NRV` vira `nao_votou`. O armazenamento do `valor_bruto` segue as regras de [ausências e afastamentos](dados-pessoais.md#ausências-e-afastamentos).
+
+## Atos do Diário Oficial
+
+A tabela `ato` guarda os atos publicados para a seleção semanal da newsletter. A escolha da fonte está em decisão na [#203](https://github.com/HiRenan/mandatometro/issues/203).
+
+| Campo | Tipo | Obrigatório | O que guarda |
+|---|---|---|---|
+| `id` | inteiro | sim | Chave interna gerada pelo banco. |
+| `origem` | texto | sim | Código estável da origem que atribui o identificador externo. |
+| `id_externo` | texto | sim | Identificador do ato dentro da origem. |
+| `tipo` | texto | sim | Classificação do ato. O banco aceita `decreto`, `lei`, `medida_provisoria` e `outro`. |
+| `titulo` | texto | sim | Título ou identificação oficial do ato. |
+| `ementa` | texto | não | Ementa ou resumo oficial, quando houver. |
+| `data_publicacao` | data | sim | Dia da publicação no DOU, com índice para a seleção por período. |
+| `data_assinatura` | data | não | Dia da assinatura, quando a fonte o informa. |
+| `secao` | texto | não | Seção do DOU, quando informada. |
+| `orgao` | texto | não | Órgão responsável pelo ato, quando informado. |
+| `numero` | texto | não | Número oficial do ato, quando informado, na forma publicada. |
+| `fonte_id` | inteiro | sim | Referência à `fonte` que comprova o ato. |
+
+A chave `(origem, id_externo)` permite atualizar a mesma linha numa nova coleta, mesmo se ela gravar outra `fonte`. `fonte.url` aponta para o recurso lido e `fonte.url_publica` para a página oficial do ato.
+
+A semana é definida pela publicação. A assinatura preserva a data informada pela fonte, que pode conter erro. Título e ementa são textos oficiais e podem mencionar pessoas. O uso desses textos segue as [regras de dados pessoais](dados-pessoais.md).
 
 ## Campos pessoais
 

@@ -2,6 +2,7 @@
 
 - A coleta da Câmara (#10) e do Senado (#11) grava parlamentar, mandato, proposição, votação e
   voto. Os campos de cada API estão em docs/dicionario-de-dados.md.
+- Os atos do Diário Oficial se identificam pela origem e pelo id que ela fornece.
 - A newsletter: a edição da semana, com os itens, que a IA rascunha e o time revisa (#22), e
   quem assina, que se inscreve pela #21 e recebe as edições pelo envio da #39.
 - Fonte em tudo (docs/dicionario-de-dados.md#fonte-dos-dados-coletados): cada dado coletado e cada
@@ -161,8 +162,7 @@ class Fonte(Base):
     """De onde veio um dado: o endereço coletado, a página que o leitor abre, a data e o trecho.
 
     - url: o que a coleta leu (a API, ou a página e o PDF lidos pelo Firecrawl).
-    - url_publica: a página da Câmara ou do Senado que o leitor abre, quando houver. É a que a
-      newsletter mostra.
+    - url_publica: a página oficial que o leitor abre, quando houver. É a que a newsletter mostra.
     - trecho: o trecho literal, quando a afirmação vier de texto.
 
     Registros da mesma resposta dividem a fonte: os votos de uma votação apontam todos para a fonte
@@ -349,6 +349,40 @@ class Voto(Base):
 
     votacao: Mapped[Votacao] = relationship(back_populates="votos")
     parlamentar: Mapped[Parlamentar] = relationship()
+    fonte: Mapped[Fonte] = relationship()
+
+
+# --- Os atos do Diário Oficial ---
+
+TIPOS_DE_ATO = ("decreto", "lei", "medida_provisoria", "outro")
+
+
+class Ato(Base):
+    """Um ato publicado no Diário Oficial, identificado pela origem e pelo id que ela fornece.
+
+    A data de publicação delimita o período da coleta. A data de assinatura, quando informada,
+    é a que veio da fonte. A página oficial do ato fica em fonte.url_publica.
+    """
+
+    __tablename__ = "ato"
+    __table_args__ = (
+        UniqueConstraint("origem", "id_externo"),
+        CheckConstraint(_um_de("tipo", TIPOS_DE_ATO), name="tipo"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    origem: Mapped[str]
+    id_externo: Mapped[str]
+    tipo: Mapped[str]
+    titulo: Mapped[str]
+    ementa: Mapped[str | None]
+    data_publicacao: Mapped[date] = mapped_column(index=True)
+    data_assinatura: Mapped[date | None]
+    secao: Mapped[str | None]
+    orgao: Mapped[str | None]
+    numero: Mapped[str | None]
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
     fonte: Mapped[Fonte] = relationship()
 
 
