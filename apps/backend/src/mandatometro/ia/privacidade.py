@@ -70,7 +70,9 @@ TERMO_ATO_PESSOAL = re.compile(
 )
 # Esses sinais se aplicam ao termo da oração, sem liberar outros atos no mesmo texto.
 REGRA_GERAL = re.compile(
-    r"\b(?:concursos?\s+publicos?|tratados?|futur[oa]s?|"
+    r"\b(?:concursos?\s+publicos?\s+(?:para|de)\s+(?:[oa]s?\s+)?$|"
+    r"tratados?(?:\s+(?:bilatera|internaciona)(?:l|is))?\s+(?:para|de|sobre)\s*$|"
+    r"futur[oa]s?\s*$|"
     r"(?:cria|institui|estabelece)\s+(?:(?:o|a|os|as)\s+)?(?:cargos?\b|$)|"
     r"(?:regras?|normas?|regimes?|politicas?|criterios?|requisitos?|procedimentos?)\s+"
     r"(?:(?:gerais|propri[oa]s?)\s+)?(?:para|d[aeo]s?|sobre)\b)"
@@ -83,12 +85,13 @@ REFORMA_GERAL = re.compile(
     r"^\s+(?:administrativ[oa]s?|previdenciari[oa]s?|tributari[oa]s?|eleitorais?|constitucionais?)\b"
 )
 ALVO_INSTITUCIONAL = re.compile(
-    r"^[\s,:–-]*(?:(?:a|o|ao|as|os|aos|de|do|da|dos|das|para|contra|como|uma?|"
+    r"^[\s,:–-]*(?:(?:a|o|ao|as|os|aos|de|do|da|dos|das|para|contra|como|com|em|uma?|"
     r"concedid[oa]s?|aplicad[oa]s?|aplicave(?:l|is)|economic[oa]s?|comercia(?:l|is)|administrativ[oa]s?|"
     r"de\s+(?:multa|advertencia|suspensao))\s+)*"
     r"(?:orgaos?|programas?|sistemas?|conselhos?|comissoes?|comites?|instituicoes?|"
     r"ministerios?|entidades?|empresas?|pais(?:es)?|pessoas?\s+juridicas?|leis?|projetos?|"
-    r"licitac(?:ao|oes)|orcamentos?|categorias?|carreiras?|igualdade|transparencia|saude|"
+    r"licitac(?:ao|oes)|concursos?\s+publicos?|orcamentos?|categorias?|carreiras?|"
+    r"igualdade|transparencia|saude|"
     r"educacao|cultura|presidencial|reformas?|previdencia|propriedade|credito|divida|"
     r"imoveis?|residuos?|futur[oa]s?|(?:licencas?|autorizacoes?)\s+"
     r"(?:d[aeo]s?\s+)(?:uma?\s+)?(?:empresas?|entidades?))\b"
@@ -107,7 +110,7 @@ SINAL_INDIVIDUAL = re.compile(
     r"listad[oa]s?\s+no\s+anexo|(?:sr|sra|senhor|senhora)(?=[.\s]))\b"
 )
 ORACOES_ATO = re.compile(
-    r"[;!?]+|(?<=[a-z]{5})\.+\s+|\be\s+(?=(?:nomeia|exonera|designa|dispensa|"
+    r"[;!?]+|(?<=[a-z]{5})\.+\s+|(?:\be\s+|,\s*)(?=(?:nomeia|nomear|exonera|designa|dispensa|"
     r"demite|cassa|aplica|cede|remove|redistribui|expulsa|concede|condecora)\b)"
 )
 

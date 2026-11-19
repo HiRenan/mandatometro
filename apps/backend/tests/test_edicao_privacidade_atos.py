@@ -242,11 +242,20 @@ def test_flexoes_verbais_de_atos_de_pessoal(verbo):
     "ementa",
     [
         "Regulamenta o concurso público fictício e nomeia Exemplo Fictício para o cargo.",
+        "Após o concurso público, nomear Exemplo Fictício para o cargo.",
+        "Com base no tratado fictício, fica deferida a extradição de Exemplo Fictício.",
         "Dispõe sobre a nomeação de Exemplo Fictício.",
         "Nomeia os servidores abaixo relacionados.",
         "Nomeados os servidores Exemplo Fictício e Exemplo Inventado.",
     ],
-    ids=["concurso-com-nomeacao", "ementa-com-nomeacao", "lista-de-servidores", "lista-nominal"],
+    ids=[
+        "concurso-com-nomeacao",
+        "concurso-antecedente",
+        "tratado-antecedente",
+        "ementa-com-nomeacao",
+        "lista-de-servidores",
+        "lista-nominal",
+    ],
 )
 def test_regra_geral_nao_libera_ato_individual_na_mesma_ementa(ementa):
     ato = Ato(
