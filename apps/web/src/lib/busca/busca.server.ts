@@ -4,9 +4,10 @@ import { formatarPeriodo } from "@/lib/formatar";
 import type { EdicaoNaBusca } from "./paginas-na-busca";
 
 // O índice das edições para a busca: as mais novas, lidas na API pelo
-// lerEdicoesDaBusca e guardadas na memória do servidor. Uma edição nova entra na
-// busca em até 5 minutos. A falha não fica guardada: ela vira o erro genérico do
-// edicoes.server.ts, e o pedido seguinte tenta de novo.
+// lerEdicoesDaBusca. Após 5 minutos na memória do servidor, um novo pedido lê
+// as edições publicadas na API. A aba mantém o índice que recebeu até recarregar.
+// A falha vira o erro genérico do edicoes.server.ts, e o pedido seguinte tenta
+// de novo.
 
 /** Quanto tempo o servidor guarda o índice antes de ler a API de novo. */
 export const TEMPO_NA_MEMORIA = 5 * 60 * 1000;

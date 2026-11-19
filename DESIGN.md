@@ -468,7 +468,7 @@ Tudo é reto: raio zero (`--radius: 0`).
   - Com Alt ou Shift, ou no meio de uma composição (o teclado japonês, por exemplo), a tecla fica com o que ela já fazia.
   - Com o foco na página, a busca do navegador no Ctrl+K (Chrome e Firefox) deixa de valer, como no GitHub e no MDN. Com o foco na barra do navegador, o atalho continua dele.
 - **A caixa:**
-  - **O elemento:** o `<dialog>` do navegador, aberto com `showModal()`. Ele fica por cima de tudo, o resto da página fica inerte, e o foco fica preso nele.
+  - **O elemento:** o `<dialog>` do navegador, aberto com `showModal()`. A caixa fica por cima de tudo e o resto da página fica inerte. Nos limites da caixa, Tab e Shift+Tab podem passar pela barra do navegador antes de voltar à caixa.
   - **A folha:** uma folha clara (Folha) com fio de tinta de 2 px e até 44rem de largura. Ela fica no alto da tela, com um respiro em cima (`clamp(1.5rem, 8vh, 6rem)`), sobre um véu de tinta a 72%, chapado, sem desfoque. Ela cresce para baixo com os resultados, e a cabeça não pula enquanto a pessoa digita.
   - **No celular:** abaixo de 40rem, a folha é a tela inteira, sem o fio.
   - **O HTML:** ela é montada na primeira abertura, e o HTML das páginas não muda.
@@ -499,7 +499,9 @@ Tudo é reto: raio zero (`--radius: 0`).
   - no artigo, o título, o resumo, os intertítulos e o texto inteiro;
   - nas 20 edições mais novas, o título, o período e o título e o texto de cada item.
 
-  O quiz, o infográfico e as fontes ficam de fora. Uma edição nova entra na busca em até 5 minutos. Sem a API, a busca não fala das edições.
+  O quiz, o infográfico e as fontes ficam de fora. Sem a API, a busca não fala das edições.
+
+  Os pedidos feitos após os 5 minutos de memória do servidor incluem as edições novas e excluem as despublicadas. A aba que já carregou o índice o mantém até recarregar. Links de edições despublicadas levam à página de edição não encontrada.
 - **Como ela acha:**
   - **O texto:** sem acento e sem maiúscula ("constituicao" acha "Constituição") e pelo começo de cada palavra ("constitu"). O resultado tem todas as palavras digitadas. As palavras vazias ("o", "de", "que"…) saem quando há outra.
   - **A ordem:** vem de onde a palavra aparece: o título, o intertítulo, o resumo e o texto. No empate, a trilha vem antes do artigo, e o artigo antes da edição, na ordem do site.
