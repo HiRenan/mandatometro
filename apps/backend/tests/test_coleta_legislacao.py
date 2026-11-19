@@ -42,6 +42,12 @@ def publicacoes(detalhe):
 def respostas():
     dados = {(tipo, 2026): ler(f"lista-{tipo}-2026.json") for tipo in TIPOS}
     dados.update({id_norma: ler(f"detalhe-{id_norma}.json") for id_norma in (DECRETO, LEI, MPV)})
+    for id_norma in ("44332135", "44331919"):
+        detalhe = {
+            "id": id_norma,
+            "publicacoes": {"publicacao": {"siglaFonte": "DOU", "data": "05/11/2026"}},
+        }
+        dados[id_norma] = {"DetalheDocumento": {"documentos": {"documento": [detalhe]}}}
     return dados
 
 
@@ -67,6 +73,8 @@ def preparar_cliente(respostas):
             resposta = respostas[chave]
             if isinstance(resposta, int):
                 return httpx2.Response(resposta)
+            if isinstance(resposta, bytes):
+                return httpx2.Response(200, content=resposta)
             if isinstance(resposta, httpx2.TransportError):
                 raise resposta
             return httpx2.Response(200, json=resposta)
@@ -106,7 +114,7 @@ def test_semana_real_consulta_so_candidatos_e_grava_fontes(sessao, respostas, ex
     resumo, consultas = executar()
 
     assert resumo.completa
-    assert (resumo.atos, resumo.chamadas, resumo.tentativas_extras) == (2, 6, 0)
+    assert (resumo.atos, resumo.chamadas, resumo.tentativas_extras) == (2, 9, 0)
     assert resumo.descartes == {"data_futura": 1}
     assert consultas[0].url.path == "/robots.txt"
     assert {r.url.params["tipo"] for r in consultas if r.url.path.endswith("/lista")} == set(TIPOS)
@@ -151,10 +159,42 @@ def test_medida_publicada_tres_dias_depois_da_assinatura(sessao, executar):
     assert sessao.execute(select(Ato.id_externo, Ato.tipo)).one() == (MPV, "medida_provisoria")
 
 
+def test_lei_publicada_quatro_dias_depois_da_assinatura_na_pascoa(sessao, respostas, executar):
+    id_norma = "43009368"
+    for tipo in TIPOS:
+        documentos(respostas[tipo, 2026], "ListaDocumento").clear()
+    documentos(respostas["LEI", 2026], "ListaDocumento").append(
+        {
+            "id": id_norma,
+            "tipo": "LEI-n",
+            "numero": "15377",
+            "dataassinatura": "02/04/2026",
+            "normaNome": "Lei fictícia",
+            "ementa": "Ementa fictícia.",
+        }
+    )
+    detalhe = {
+        "id": id_norma,
+        "identificacao": {
+            "urlDocumento": "https://normas.leg.br/?urn=urn:lex:br:federal:lei:2026-04-02;15377"
+        },
+        "publicacoes": {"publicacao": [{"siglaFonte": "DOU-2026-04-06", "data": "06/04/2026"}]},
+    }
+    respostas[id_norma] = {"DetalheDocumento": {"documentos": {"documento": [detalhe]}}}
+    inicio, fim = date(2026, 4, 6), date(2026, 4, 12)
+
+    resumo, _ = executar(inicio, fim, date(2026, 4, 13))
+
+    assert resumo.completa
+    assert (resumo.atos, resumo.descartes) == (1, {})
+    consulta = select(Ato.id_externo, Ato.data_assinatura, Ato.data_publicacao)
+    assert sessao.execute(consulta).one() == (id_norma, date(2026, 4, 2), inicio)
+
+
 def test_virada_consulta_ano_da_margem_e_ano_do_periodo(sessao, respostas, executar):
     lista = documentos(respostas["DEC", 2026], "ListaDocumento")
-    lista[0]["dataassinatura"] = "29/12/2026"
-    lista[-1]["dataassinatura"] = "28/12/2026"
+    lista[0]["dataassinatura"] = "22/12/2026"
+    lista[-1]["dataassinatura"] = "21/12/2026"
     publicacoes(respostas[DECRETO])[0]["data"] = "01/01/2027"
     for tipo in TIPOS:
         respostas[tipo, 2027] = {"ListaDocumento": {"documentos": ""}}
@@ -162,7 +202,10 @@ def test_virada_consulta_ano_da_margem_e_ano_do_periodo(sessao, respostas, execu
     resumo, requisicoes = executar(date(2027, 1, 1), date(2027, 1, 2), date(2027, 1, 3))
 
     assert resumo.atos == 1
-    assert sessao.scalars(select(Ato.id_externo)).one() == DECRETO
+    assert sessao.execute(select(Ato.id_externo, Ato.data_assinatura)).one() == (
+        DECRETO,
+        date(2026, 12, 22),
+    )
     listas = [r.url.params for r in requisicoes if r.url.path.endswith("/lista")]
     assert {(p["tipo"], p["ano"]) for p in listas} == {
         (tipo, ano) for tipo in TIPOS for ano in ("2026", "2027")
@@ -220,11 +263,40 @@ def test_descarta_por_motivo_e_continua_sem_payload(
     assert all(texto not in saida for texto in ("Pessoa Fictícia", "000.000.000-00", "normaNome"))
 
 
-def test_descarta_link_oficial_invalido(sessao, respostas, executar):
+@pytest.mark.parametrize(
+    "conteudo", [pytest.param(b'{"documentos":', id="json"), pytest.param(b"\xff", id="utf8")]
+)
+def test_detalhe_com_json_invalido_e_descartado(sessao, respostas, executar, conteudo):
+    respostas[DECRETO] = conteudo
+
+    resumo, _ = executar()
+
+    assert resumo.completa
+    assert resumo.erro is None
+    assert resumo.descartes == {"detalhe_invalido": 1, "data_futura": 1}
+    assert resumo.tentativas_extras == 0
+    assert sessao.scalars(select(Ato.id_externo)).all() == [LEI]
+    assert sessao.scalar(select(func.count(Fonte.id))) == 1
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        pytest.param(
+            "https://example.com/?urn=urn:lex:br:federal:decreto:2026-11-16;13168",
+            id="outro_dominio",
+        ),
+        pytest.param("https://normas.leg.br/", id="pagina_inicial"),
+        pytest.param("https://normas.leg.br/?urn=urn:lex:br:federal:decreto:", id="urn_incompleta"),
+        pytest.param(
+            "https://normas.leg.br/sobre?urn=urn:lex:br:federal:decreto:2026-11-16;13168",
+            id="outra_pagina",
+        ),
+    ],
+)
+def test_descarta_link_oficial_invalido(sessao, respostas, executar, url):
     identificacao = documentos(respostas[DECRETO], "DetalheDocumento")[0]["identificacao"]
-    identificacao["urlDocumento"] = identificacao["urlDocumento"].replace(
-        "normas.leg.br", "example.com"
-    )
+    identificacao["urlDocumento"] = url
 
     resumo, _ = executar()
 

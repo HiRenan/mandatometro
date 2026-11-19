@@ -1,17 +1,18 @@
 """Coleta decretos, leis e medidas provisórias pelos dados abertos do Senado."""
 
 import argparse
+import re
 import time
 from collections.abc import Callable, Iterator
 from datetime import date, datetime, timedelta
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 from zoneinfo import ZoneInfo
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from mandatometro.coleta.cli import adicionar_argumentos_periodo, mostrar_resumo, resolver_periodo
-from mandatometro.coleta.http import ClienteHttp, ErroColeta
+from mandatometro.coleta.http import ClienteHttp, ErroColeta, ErroJsonInvalido
 from mandatometro.coleta.persistencia import registrar_fonte, salvar_ato
 from mandatometro.coleta.senado import BASE
 from mandatometro.coleta.tipos import ResumoAtos
@@ -19,7 +20,8 @@ from mandatometro.db import sessao
 
 ORIGEM = "legislacao_senado"
 TIPOS = {"DEC": "decreto", "LEI": "lei", "MPV": "medida_provisoria"}
-MARGEM_ASSINATURA_DIAS = 3
+MARGEM_ASSINATURA_DIAS = 10
+_URN_NORMA = re.compile(r"urn:lex:br:federal:[a-z.]+:[0-9]{4}(?:-[0-9]{2}-[0-9]{2})?(?:;[^:;\s]+)*")
 
 
 class _DescartarAto(Exception):
@@ -103,8 +105,14 @@ def _url_publica(detalhe: dict) -> str:
         except ValueError:
             pass
         else:
-            if partes.scheme == "https" and partes.netloc == "normas.leg.br":
-                return url
+            if (
+                partes.scheme == "https"
+                and partes.netloc == "normas.leg.br"
+                and partes.path in ("", "/")
+            ):
+                urns = parse_qs(partes.query, keep_blank_values=True).get("urn", [])
+                if len(urns) == 1 and _URN_NORMA.fullmatch(urns[0]):
+                    return url
     raise _DescartarAto("campo_obrigatorio")
 
 
@@ -132,6 +140,8 @@ def _coletar_ato(
 
     try:
         resposta = http.obter_json(f"/legislacao/{id_externo}")
+    except ErroJsonInvalido:
+        raise _DescartarAto("detalhe_invalido") from None
     except ErroColeta as erro:
         if erro.status_http in {404, 410}:
             raise _DescartarAto("detalhe_indisponivel") from None
