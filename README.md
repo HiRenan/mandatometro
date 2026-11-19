@@ -56,9 +56,10 @@ O porquê de cada escolha está no [ADR 0001](docs/adr/0001-stack.md).
 
 ## Modelo de dados
 
-O banco guarda o que a coleta lê da Câmara e do Senado, o que a newsletter usa e a medição do piloto. Os modelos ficam em `apps/backend/src/mandatometro/db/modelos.py`, e cada mudança vira uma migration do Alembic.
+O banco guarda os dados da Câmara e do Senado, os atos do Diário Oficial, as edições da newsletter e a medição do piloto. Os modelos ficam em `apps/backend/src/mandatometro/db/modelos.py`, e cada mudança vira uma migration do Alembic.
 
 - **Cada Casa tem os seus números:** parlamentar, proposição e votação se identificam pela Casa e pelo id que a Casa dá (`casa`, `id_externo`). A mesma matéria tem uma linha em cada Casa, ligadas por sigla, número e ano.
+- **Atos do Diário Oficial** se identificam por `origem` e `id_externo`. A seleção semanal usa a data de publicação.
 - **Fonte em tudo:** cada dado coletado e cada item da edição aponta para uma `fonte`, com o endereço e a data da coleta. Sem fonte, o banco não grava.
 - **O partido fica no voto,** porque muda dentro do mandato. Os totais das nominais se contam pelos votos. Nas secretas do Senado, a coleta guarda matéria, votação e resultado, sem votos individuais; o banco não guarda os totais nem a modalidade. Ausência de votos no banco não significa zero votos na sessão nem identifica, sozinha, uma votação secreta.
 - **Ausência sem motivo:** toda ausência reconhecida do Senado (`AP`, `LS`, `MIS`, `NCom`, `LAP` e `LP`, em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, para a licença saúde ficar igual às outras. O voto só guarda os códigos de voto e de presença da lista `CODIGOS_GRAVADOS`, e o banco recusa os demais. Um código ainda não classificado, como `NA`, entra como `outro`, sem o código, e o log não leva o código nem a pessoa: a coleta registra só a votação e quantos códigos desconhecidos vieram nela.
@@ -113,6 +114,7 @@ erDiagram
     fonte ||--o{ proposicao : "comprova"
     fonte ||--o{ votacao : "comprova"
     fonte ||--o{ voto : "comprova"
+    fonte ||--o{ ato : "comprova"
     fonte ||--o{ item_edicao : "comprova"
 
     fonte {
@@ -171,6 +173,20 @@ erDiagram
         string valor_bruto "o código da Casa, só os da lista"
         string partido "o do dia do voto"
         string uf "a do dia do voto"
+        int fonte_id FK
+    }
+    ato {
+        int id PK
+        string origem UK
+        string id_externo UK
+        string tipo "decreto, lei, medida_provisoria ou outro"
+        string titulo
+        string ementa
+        date data_publicacao
+        date data_assinatura
+        string secao
+        string orgao
+        string numero
         int fonte_id FK
     }
     edicao {
@@ -315,7 +331,7 @@ Veja as [regras para os testes de banco](AGENTS.md#tests).
 
 **Cliente da API.** `pnpm generate:client`. Veja o [contrato da API](AGENTS.md#conventions).
 
-**Migration nova.** Em `apps/backend`, `uv run alembic revision --autogenerate --rev-id 0009 -m "cria a tabela orientacao"` é um exemplo. `uv run alembic check` diz se algum modelo mudou sem migration. Veja as [convenções de migrations](AGENTS.md#conventions).
+**Migration nova.** Em `apps/backend`, `uv run alembic revision --autogenerate --rev-id 0010 -m "cria a tabela orientacao"` é um exemplo. `uv run alembic check` diz se algum modelo mudou sem migration. Veja as [convenções de migrations](AGENTS.md#conventions).
 
 ## Time
 
