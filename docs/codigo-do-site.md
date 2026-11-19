@@ -21,6 +21,7 @@ O desenho inteiro está no [DESIGN.md](../DESIGN.md). O que mais pega quem mexe 
 - No Chromium, `content: "" / ""` tira da árvore o nó `generic` vazio que `content: ""` cria num `::before` ou `::after` decorativo (#162).
 - Para um desenho sem avanço, use a largura com sinal trocado na margem e posicione com `left`, pois margens calculadas separadamente deslocaram o texto em 1/64 de px no Chromium (#162).
 - No Chromium, `overflow-clip-margin` não amplia o corte quando só há `overflow-x: clip` (#162).
+- No Edge, a camada de entrada da folha pode deixar um fio ao compor os recortes de um azulejo fracionado (#232). Com as peças de pé na mesma cor, um SVG cobre a caixa toda com o símbolo e o fundo. Os quatro recortes acompanham a virada.
 - **O Enter num link:** no Chromium, o clique que ele dispara vem com o `detail` 0; no Firefox, com 1, como o do mouse, e cada repetição do Enter segurado clica de novo: uma guarda contra o segundo clique num link olha também o `keydown` (medido na #153).
 - **Link em linha sem padding dos lados:** num item da largura do texto, como o de uma fileira em flex, o Firefox conta a margem negativa de um elemento em linha ao medir o item, e não ao decidir a quebra: o link de texto, com 4 px de padding de cada lado devolvidos por uma margem negativa, quebrava com espaço de sobra (#173). O `a.acao-de-texto` faz a área de toque só com o padding de cima e de baixo, e o `estilos/acao-de-texto.test.ts` recusa o padding e a margem negativa dos lados nele e no que fica dentro dele.
 
