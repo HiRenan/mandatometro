@@ -4,6 +4,7 @@ import { cleanup, render } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 import { azulejoDaPosicao, type Peca } from "@/lib/azulejos";
+import { SIMBOLOS } from "@/lib/simbolos";
 import { Azulejo, AzulejoGrande, Painel } from "./azulejo";
 
 afterEach(cleanup);
@@ -62,6 +63,67 @@ describe("azulejo grande", () => {
 		);
 
 		expect(container.querySelectorAll(".az.cru")).toHaveLength(4);
+	});
+
+	it("com o símbolo, cada peça fica lisa e mostra o quarto dela do desenho", () => {
+		const { container } = render(
+			<AzulejoGrande
+				pecas={azulejoDaPosicao(1)}
+				simbolo="livro"
+				className="da-linha"
+			/>,
+		);
+		const grande = container.firstElementChild as HTMLElement;
+		const pecas = [...grande.querySelectorAll<HTMLElement>(".az")];
+		const desenhos = pecas.map((peca) => peca.querySelector("svg"));
+
+		expect(grande.className).toBe("grande com-simbolo da-linha");
+		expect(grande.dataset.simbolo).toBe("livro");
+		// A peça lisa é o motivo 8: o desenho vem só do SVG, com a cor da posição.
+		expect(pecas.map((peca) => peca.className)).toEqual(Array(4).fill("az m8"));
+		expect(pecas[0].style.getPropertyValue("--b")).toBe("var(--tinta)");
+		// Cada quarto da caixa de 100, com 1 de sobra em volta para a emenda.
+		expect(desenhos.map((svg) => svg?.getAttribute("viewBox"))).toEqual([
+			"-1 -1 52 52",
+			"49 -1 52 52",
+			"-1 49 52 52",
+			"49 49 52 52",
+		]);
+		for (const svg of desenhos) {
+			expect(svg?.getAttribute("aria-hidden")).toBe("true");
+			expect(
+				[...(svg?.querySelectorAll("path") ?? [])].map((parte) =>
+					parte.getAttribute("d"),
+				),
+			).toEqual(SIMBOLOS.livro.map((parte) => parte.d));
+		}
+	});
+
+	it("desenha os buracos, o traço e o giro de cada parte do símbolo", () => {
+		const { container } = render(
+			<>
+				<AzulejoGrande pecas={azulejoDaPosicao(1)} simbolo="caneta" />
+				<AzulejoGrande pecas={azulejoDaPosicao(2)} simbolo="duas-casas" />
+			</>,
+		);
+		const [caneta, casas] = [...container.children].map((grande) => [
+			...(grande.querySelector("svg")?.querySelectorAll("path") ?? []),
+		]);
+
+		expect(caneta[0].getAttribute("fill-rule")).toBe("evenodd");
+		expect(caneta[0].getAttribute("transform")).toBe("rotate(35 50 50)");
+		expect(caneta[2].getAttribute("transform")).toBeNull();
+		expect(casas[3].getAttribute("class")).toBe("traco");
+		expect(casas[3].getAttribute("stroke-width")).toBe("5");
+		expect(casas[0].getAttribute("class")).toBeNull();
+	});
+
+	it("cru, o azulejo do símbolo fica sem cor e continua com o desenho", () => {
+		const { container } = render(
+			<AzulejoGrande pecas={azulejoDaPosicao(1)} simbolo="folha" cru />,
+		);
+
+		expect(container.querySelectorAll(".az.cru > svg")).toHaveLength(4);
 	});
 });
 

@@ -1,9 +1,10 @@
 /*
  * Os azulejos (DESIGN.md): cada peça é um quadrado com o fundo (--a), o motivo
- * desenhado por cima (--b) e a volta (--r, em quartos). Tudo é gradiente do CSS,
- * sem imagem. O desenho de cada peça vem de lib/azulejos.ts, e o componente
- * (components/azulejo.tsx) escreve as variáveis. Os azulejos são só desenho e
- * ficam fora do leitor de tela.
+ * desenhado por cima (--b) e a volta (--r, em quartos). Os motivos são
+ * gradientes do CSS, sem imagem. O desenho de cada peça vem de lib/azulejos.ts,
+ * e o componente (components/azulejo.tsx) escreve as variáveis. O símbolo do
+ * azulejo grande é um SVG escrito no código (lib/simbolos.ts), na cor do
+ * desenho. Os azulejos são só desenho e ficam fora do leitor de tela.
  */
 @layer components {
 	/* O painel: as peças lado a lado, com 2 px de rejunte. */
@@ -90,15 +91,37 @@
 	}
 
 	/*
+	 * O símbolo do azulejo grande: cada peça mostra o quarto dela do desenho, num
+	 * SVG com 1 de sobra em volta (components/azulejo.tsx). Como o motivo, a sobra
+	 * passa 2% da borda da peça, e a emenda entre duas peças não mostra um fio.
+	 */
+	.az > svg {
+		position: absolute;
+		inset: -2%;
+		width: 104%;
+		height: 104%;
+		fill: var(--b);
+	}
+
+	/* A parte que é linha, e não área: a seta das duas casas. */
+	.az > svg .traco {
+		fill: none;
+		stroke: var(--b);
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	/*
 	 * O azulejo cru: papel sobre papel. Ele ganha a cor quando vira. O fundo e o
 	 * desenho da peça vêm escritos nela (--a e --b): aqui, o fundo troca direto, e
-	 * o desenho, na camada do motivo.
+	 * o desenho, na camada do motivo e no símbolo.
 	 */
 	.az.cru {
 		background: var(--papel-2);
 	}
 
-	.az.cru::before {
+	.az.cru::before,
+	.az.cru > svg {
 		--b: var(--papel-3);
 	}
 
@@ -121,7 +144,8 @@
 	 * somem: são só desenho, e nada do que a página diz depende deles.
 	 */
 	@media (forced-colors: active) {
-		.az::before {
+		.az::before,
+		.az > svg {
 			display: none;
 		}
 	}

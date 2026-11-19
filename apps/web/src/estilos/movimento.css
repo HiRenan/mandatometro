@@ -104,6 +104,28 @@
 	}
 
 	/*
+	 * O azulejo do símbolo não gira de lado, que deixaria o desenho deitado: as
+	 * quatro peças viram em onda, uma volta inteira, e o símbolo termina de pé.
+	 * Ele vira quando o ponteiro passa pela trilha, na lista das trilhas, e quando
+	 * o passo da sanfona abre.
+	 */
+	.com-simbolo .az {
+		transition: rotate 0.6s var(--ease-mola);
+	}
+
+	.com-simbolo .az:nth-child(2) {
+		transition-delay: 70ms;
+	}
+
+	.com-simbolo .az:nth-child(3) {
+		transition-delay: 140ms;
+	}
+
+	.com-simbolo .az:nth-child(4) {
+		transition-delay: 210ms;
+	}
+
+	/*
 	 * A página de erro que volta depois de uma tentativa que falha (o data-de-novo,
 	 * em pagina-de-erro.tsx) fica parada: ela já estava na tela antes do
 	 * carregando, e os azulejos virando e o pé subindo de novo pareceriam uma
@@ -125,12 +147,11 @@
 
 	/*
 	 * Os azulejos giram um quarto de volta quando o ponteiro passa pela folha, pela
-	 * faixa ou pela chamada deles, e quando o passo da sanfona abre. Na chamada do
-	 * quiz e na folha da newsletter, giram em fila, um depois do outro.
+	 * faixa ou pela chamada deles. Na chamada do quiz e na folha da newsletter,
+	 * giram em fila, um depois do outro. O do símbolo vira em onda (mais acima).
 	 */
 	.da-linha,
 	.chamada-azulejos .grande,
-	.sanfona .grande,
 	.outros-artigos .grande {
 		transition: rotate 0.5s var(--ease-mola);
 	}
@@ -198,12 +219,16 @@
 	}
 
 	.linha:hover .da-linha,
-	.trilha-da-lista:hover .da-linha,
 	.outros-artigos a:hover .grande,
-	.sanfona details[open] .grande,
 	.chamada-quiz:hover .chamada-azulejos .grande,
 	.newsletter-folha:hover .chamada-azulejos .grande {
 		rotate: 90deg;
+	}
+
+	/* O azulejo do símbolo vira em onda, e o desenho termina de pé (mais acima). */
+	.trilha-da-lista:hover .com-simbolo .az,
+	.sanfona details[open] .com-simbolo .az {
+		rotate: y 360deg;
 	}
 
 	/* Na folha do artigo, o número chega um pouco para o lado. */
