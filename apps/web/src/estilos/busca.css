@@ -199,11 +199,20 @@
 	}
 
 	/* A dica, o carregando, o nenhum resultado e o erro: texto, sem ícone e sem giro. */
-	.busca-aviso {
+	.busca-aviso,
+	.busca-nota {
+		padding-top: 1.25rem;
+	}
+
+	/*
+	 * O aviso com o "Tentar de novo": a frase e a ação, uma embaixo da outra. A
+	 * grade fica na caixa em volta, e não no <p>: no Chromium, o parágrafo em
+	 * grade sai da árvore de acessibilidade (#152).
+	 */
+	.busca-com-acao {
 		display: grid;
 		justify-items: start;
 		gap: 0.75rem;
-		padding-top: 1.25rem;
 	}
 
 	.busca-aviso.prosa,
@@ -217,13 +226,6 @@
 	.busca-carregando,
 	.busca-nota {
 		color: var(--tinta-suave);
-	}
-
-	.busca-nota {
-		display: grid;
-		justify-items: start;
-		gap: 0.75rem;
-		padding-top: 1.25rem;
 	}
 
 	/*

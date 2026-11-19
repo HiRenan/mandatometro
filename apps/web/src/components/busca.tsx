@@ -413,7 +413,7 @@ function CaixaDaBusca({
 		);
 	} else if (conteudo.estado === "erro") {
 		corpo = (
-			<div className="busca-aviso">
+			<div className="busca-aviso busca-com-acao">
 				<p className="prosa">{ERRO}</p>
 				<button
 					type="button"
@@ -494,7 +494,7 @@ function CaixaDaBusca({
 					<p className="busca-nota rotulo">{EDICOES_A_CAMINHO}</p>
 				)}
 				{pronta && edicoes.estado === "erro" && (
-					<div className="busca-nota">
+					<div className="busca-nota busca-com-acao">
 						<p className="prosa">{ERRO_DAS_EDICOES}</p>
 						<button
 							type="button"
