@@ -165,6 +165,20 @@ export type Exclusao = {
 };
 
 /**
+ * FatosAtoPublicos
+ */
+export type FatosAtoPublicos = {
+    /**
+     * Votacoes
+     */
+    votacoes: Array<VotacaoPublica>;
+    /**
+     * Data Publicacao
+     */
+    data_publicacao: string;
+};
+
+/**
  * FatosPublicos
  */
 export type FatosPublicos = {
@@ -208,7 +222,10 @@ export type ItemPublico = {
      * Texto
      */
     texto: string;
-    fatos: FatosPublicos | null;
+    /**
+     * Fatos
+     */
+    fatos: FatosPublicos | FatosAtoPublicos | null;
     /**
      * Fontes
      */

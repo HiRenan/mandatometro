@@ -3,8 +3,9 @@ from uuid import UUID
 
 import pytest
 
-from mandatometro.avisos.email import MensagemInvalida, montar_email
+from mandatometro.avisos.email import MensagemInvalida, formatar_edicao, montar_email
 from mandatometro.db.modelos import Edicao, Fonte, ItemEdicao
+from mandatometro.ia.esquemas import FatosAto
 
 CODIGO = UUID("34868836-8b08-4f77-9d43-fce466da4817")
 
@@ -177,3 +178,51 @@ def test_sem_placar_nao_inventa_modalidade_e_resultado_outro_nao_vira_aprovacao(
     item.fatos["fontes"].append(999)
     with pytest.raises(MensagemInvalida):
         montar(edicao)
+
+
+@pytest.fixture
+def edicao_com_ato(edicao):
+    item = edicao.itens[0]
+    item.fonte.id = 110
+    item.fonte.url = "https://www.senado.leg.br/dados/ato-ficticio"
+    item.fonte.url_publica = "https://www.in.gov.br/ato-ficticio"
+    item.fatos = FatosAto(
+        versao=2,
+        ato_id=989898,
+        data_publicacao=date(2026, 11, 12),
+        fontes=[item.fonte.id],
+        hash_ato="b" * 64,
+        origem="revisao",
+        pendencias=[],
+    ).model_dump(mode="json")
+    edicao.itens = [item]
+    return edicao
+
+
+def test_formatar_ato_mostra_data_e_pagina_oficial_sem_campos_internos(edicao_com_ato):
+    previa = formatar_edicao(edicao_com_ato, app_base_url="http://localhost:3001", previa=True)
+    mensagem = montar(edicao_com_ato)
+
+    for corpo in (previa.texto, previa.html, mensagem.texto, mensagem.html):
+        assert "Publicado no Diário Oficial em 12/11/2026." in corpo
+        assert "https://www.in.gov.br/ato-ficticio" in corpo
+        assert all(
+            termo not in corpo
+            for termo in (
+                "https://www.senado.leg.br/dados/ato-ficticio",
+                "Trecho fictício",
+                "989898",
+                "revisao",
+                "pendencias",
+                "versao",
+                "Votação",
+                "placar",
+            )
+        )
+
+
+def test_formatar_ato_exige_pagina_oficial(edicao_com_ato):
+    edicao_com_ato.itens[0].fonte.url_publica = None
+
+    with pytest.raises(MensagemInvalida, match="página oficial"):
+        montar(edicao_com_ato)

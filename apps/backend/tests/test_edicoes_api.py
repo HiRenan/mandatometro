@@ -13,7 +13,7 @@ from mandatometro.config import config
 from mandatometro.db import engine
 from mandatometro.db.modelos import Edicao, Fonte, ItemEdicao
 from mandatometro.ia.artigos import CATALOGO
-from mandatometro.ia.esquemas import Fatos, FatoVotacao, Placar
+from mandatometro.ia.esquemas import Fatos, FatosAto, FatoVotacao, Placar
 
 
 @pytest.fixture
@@ -24,7 +24,7 @@ def publicadas(engine_de_teste, monkeypatch):
     criadas = []
     fontes = []
 
-    def criar(*, estado="publicada", dias=0, fatos=False):
+    def criar(*, estado="publicada", dias=0, fatos=False, com_ato=False):
         with Session(engine_de_teste, expire_on_commit=False) as sessao, sessao.begin():
             principal = Fonte(
                 url="https://dadosabertos.camara.leg.br/api/v2/votacoes/ficticia",
@@ -86,6 +86,33 @@ def publicadas(engine_de_teste, monkeypatch):
                     ),
                 ],
             )
+            if com_ato:
+                fonte_ato = Fonte(
+                    url="https://www.senado.leg.br/dados/ato-ficticio",
+                    url_publica="https://www.in.gov.br/ato-ficticio",
+                    coletado_em=datetime(2026, 11, 16, tzinfo=UTC),
+                    trecho="Trecho fictício reservado.",
+                )
+                sessao.add(fonte_ato)
+                sessao.flush()
+                fontes.append(fonte_ato.id)
+                edicao.itens.append(
+                    ItemEdicao(
+                        ordem=3,
+                        titulo="Ato fictício",
+                        texto="Explicação editorial fictícia.",
+                        fonte=fonte_ato,
+                        fatos=FatosAto(
+                            versao=2,
+                            ato_id=989898,
+                            data_publicacao=date(2026, 11, 12),
+                            fontes=[fonte_ato.id],
+                            hash_ato="b" * 64,
+                            origem="revisao",
+                            pendencias=[],
+                        ).model_dump(mode="json"),
+                    )
+                )
             sessao.add(edicao)
             sessao.flush()
             criadas.append(edicao.id)
@@ -167,6 +194,42 @@ def test_rascunho_e_inexistente_tem_mesmo_404(publicadas):
         assert resposta.status_code == 404
         assert resposta.json() == {"erro": "edicao_nao_encontrada"}
     assert cliente.get("/edicoes").json()["edicoes"] == []
+
+
+def test_detalhe_publica_fotografia_do_ato_com_a_pagina_oficial(publicadas):
+    edicao = publicadas(fatos=True, com_ato=True)
+
+    resposta = TestClient(app).get(f"/edicoes/{edicao.id}")
+
+    assert resposta.status_code == 200
+    votacao, antigo, ato = resposta.json()["itens"]
+    assert set(votacao["fatos"]) == {"votacoes"}
+    assert antigo["fatos"] is None
+    assert ato == {
+        "ordem": 3,
+        "titulo": "Ato fictício",
+        "texto": "Explicação editorial fictícia.",
+        "fatos": {"votacoes": [], "data_publicacao": "2026-11-12"},
+        "fontes": [
+            {
+                "url": "https://www.in.gov.br/ato-ficticio",
+                "coletado_em": "2026-11-16T00:00:00Z",
+                "trecho": None,
+            }
+        ],
+        "artigo": None,
+    }
+
+
+def test_ato_sem_pagina_oficial_nao_devolve_o_endereco_da_coleta(publicadas, engine_de_teste):
+    edicao = publicadas(com_ato=True)
+    with Session(engine_de_teste) as sessao, sessao.begin():
+        sessao.get(Fonte, edicao.itens[-1].fonte_id).url_publica = None
+
+    resposta = TestClient(app).get(f"/edicoes/{edicao.id}")
+
+    assert resposta.status_code == 503
+    assert resposta.json() == {"erro": "servico_indisponivel"}
 
 
 @pytest.mark.parametrize(
