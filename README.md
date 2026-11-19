@@ -14,6 +14,7 @@ Falta aos eleitores conhecimento sobre o sistema político brasileiro: como nasc
 
 - **Trilhas:** artigos curtos e infográficos que explicam com casos reais como funciona a política, com um quiz no meio e outro no fim. A primeira é a do processo legislativo: como nasce uma lei.
 - **Newsletter semanal:** o jornal legislativo chega todo domingo com o que o Congresso votou na semana, explicado em linguagem simples. Quem se inscreve recebe na hora a última edição, e todas ficam no site. Em construção: uma segunda seção, com os destaques do Diário Oficial da União, e a revisão num painel ([ADR 0004](docs/adr/0004-newsletter-do-dou.md)).
+- **Busca:** o Ctrl+K, ou a barra no alto de qualquer página, procura nas trilhas, nos artigos e nas edições publicadas, sem IA. A busca não liga para acento nem para maiúscula e acha a palavra pelo começo. O que a pessoa digita fica no navegador.
 
 Cada explicação leva a fonte oficial: a lei, o regimento ou a página da Câmara, do Senado ou do TSE. Não precisa de conta: as trilhas são abertas, e a newsletter pede só o e-mail. A conta é opcional e guarda o progresso no perfil, para ele passar de um aparelho para outro.
 
@@ -52,7 +53,7 @@ O porquê de cada escolha está no [ADR 0001](docs/adr/0001-stack.md).
 1. **Coleta em lote, agendada:** as APIs da Câmara e do Senado, todo dia.
 2. **PostgreSQL com pgvector** guarda tudo.
 3. **LLM** escreve o rascunho da edição semanal com as votações da semana, e uma pessoa do time revisa antes de publicar.
-4. **FastAPI** expõe os dados, o **site** mostra as trilhas e as edições, e o **Resend** manda a última edição para quem se inscreve e a edição nova todo domingo.
+4. **FastAPI** expõe os dados, o **site** mostra as trilhas e as edições e busca nelas, e o **Resend** manda a última edição para quem se inscreve e a edição nova todo domingo.
 
 ## Modelo de dados
 

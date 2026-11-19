@@ -5,6 +5,7 @@
 @import "./estilos/quiz.css";
 @import "./estilos/newsletter.css";
 @import "./estilos/edicoes.css";
+@import "./estilos/busca.css";
 
 @theme {
 	/*
@@ -644,10 +645,11 @@
 	}
 
 	/*
-	 * O lema, em letra de máquina, é largo: abaixo de 864 px ele não cabe na linha
-	 * do nome e dos links, e sai do cabeçalho (ele está no rodapé).
+	 * O lema, em letra de máquina, é largo: abaixo de 1344 px ele não cabe na
+	 * linha do nome, da barra da busca e dos links, e sai do cabeçalho (ele está
+	 * no rodapé). A barra fica com o espaço dele (o Renan, na #233).
 	 */
-	@media (width < 54rem) {
+	@media (width < 84rem) {
 		.moldura .marca-lema {
 			display: none;
 		}

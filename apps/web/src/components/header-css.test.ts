@@ -6,13 +6,21 @@ import { describe, expect, it } from "vitest";
 // lê o CSS do site, porque o jsdom não desenha.
 
 const css = readFileSync(new URL("../index.css", import.meta.url), "utf8");
+const cssDaBusca = readFileSync(
+	new URL("../estilos/busca.css", import.meta.url),
+	"utf8",
+);
 
 /** Cada @media com largura máxima: a largura, em rem, e o corpo dela. */
-const midias = [
-	...css.matchAll(
-		/@media \(width < ([\d.]+)rem\) \{((?:[^{}]*\{[^}]*\})*)\s*\}/g,
-	),
-].map(([, largura, corpo]) => ({ largura: Number(largura), corpo }));
+function midiasDe(texto: string) {
+	return [
+		...texto.matchAll(
+			/@media \(width < ([\d.]+)rem\) \{((?:[^{}]*\{[^}]*\})*)\s*\}/g,
+		),
+	].map(([, largura, corpo]) => ({ largura: Number(largura), corpo }));
+}
+
+const midias = midiasDe(css);
 
 const TIRA_O_INICIO =
 	/\.topo-links\[data-com-edicoes\] > li:first-child \{\s*display: none;\s*\}/;
@@ -61,5 +69,70 @@ describe("o CSS do cabeçalho com as edições", () => {
 		expect(midias.some(({ corpo }) => quebra.test(corpo))).toBe(false);
 		// O cabeçalho sem a API fica como era.
 		expect(css).not.toMatch(/\.topo-links \{[^}]*flex-wrap/);
+	});
+});
+
+describe("o CSS do cabeçalho com a busca", () => {
+	const TIRA_O_LEMA = /\.moldura \.marca-lema \{\s*display: none;\s*\}/;
+
+	/** A largura, em rem, abaixo da qual o lema sai do cabeçalho. */
+	function larguraDoLema(): number | undefined {
+		return midias.find(({ corpo }) => TIRA_O_LEMA.test(corpo))?.largura;
+	}
+
+	it("o lema sai do cabeçalho abaixo de 84rem, e a barra da busca fica com o espaço", () => {
+		// O nome com o lema (548 px), a barra (224 px) e os quatro links (362 px)
+		// pedem 1166 px de linha: a 1344 px, com a barra de rolagem, sobram 42 px
+		// (medido no navegador, com as edições). A 82rem, com a barra de 20rem, os
+		// links desciam para a linha de baixo até 1439 px.
+		expect(larguraDoLema()).toBe(84);
+	});
+
+	it("o pré-carregamento da letra de máquina acompanha o lema", () => {
+		const raiz = readFileSync(
+			new URL("../routes/__root.tsx", import.meta.url),
+			"utf8",
+		);
+		const inicial = readFileSync(
+			new URL("../routes/index.tsx", import.meta.url),
+			"utf8",
+		);
+		const largura = larguraDoLema() ?? 0;
+
+		// Onde o lema aparece, a rota raiz adianta a fonte; abaixo disso, só a
+		// página inicial, para a frase do título.
+		expect(raiz).toContain(
+			`preloadDaFonte(fontes.maquina, "(min-width: ${largura}rem)")`,
+		);
+		expect(inicial).toContain(
+			`preloadDaFonte(fontes.maquina, "(max-width: ${(largura - 0.01).toFixed(2)}rem)")`,
+		);
+	});
+
+	it("abaixo de 60rem, a barra encolhe para a lupa e o Buscar", () => {
+		// O nome, a barra e os quatro links pedem 801 px de linha: a 960 px, com a
+		// barra de rolagem, sobram 58 px (medido no navegador, com as edições).
+		const encolhe =
+			/\.entrada-da-busca-resto,\s*\.entrada-da-busca kbd \{\s*display: none;\s*\}/;
+		const midia = midiasDe(cssDaBusca).find(({ corpo }) => encolhe.test(corpo));
+
+		expect(midia?.largura).toBe(60);
+	});
+
+	it("a barra entra na linha com o que o conteúdo pede e cresce até 20rem", () => {
+		// Numa linha que quebra (o flex-wrap do .topo-dentro), a base decide se os
+		// links cabem, antes de a barra encolher: com a base de 20rem, os links
+		// desciam para a linha de baixo de 912 a 1023 px. A lupa, o "Buscar no
+		// site" e a tecla pedem 221 px, e a base é de 14rem (medido no navegador).
+		const barra = /\n\t\.entrada-da-busca \{([^}]*)\}/.exec(cssDaBusca)?.[1];
+
+		expect(barra).toMatch(/\bflex: 1 1 14rem;/);
+		expect(barra).toMatch(/\bmax-width: 20rem;/);
+	});
+
+	it("sem JavaScript, a entrada não aparece: ela só abre a caixa", () => {
+		expect(cssDaBusca).toMatch(
+			/@media \(scripting: none\) \{\s*\.entrada-da-busca \{\s*display: none;\s*\}\s*\}/,
+		);
 	});
 });

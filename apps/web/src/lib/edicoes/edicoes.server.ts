@@ -104,6 +104,62 @@ export async function lerEdicao(valor: unknown): Promise<EdicaoDaPagina> {
 	return { tipo: "edicao", edicao: data };
 }
 
+/** Quantas edições a busca lê: a primeira página da lista, das mais novas. */
+export const EDICOES_NA_BUSCA = 20;
+
+export type EdicoesDaBusca =
+	| { tipo: "sem-api" }
+	| {
+			tipo: "edicoes";
+			/** Da publicação mais nova para a mais antiga, como a lista. */
+			edicoes: EdicaoPublica[];
+	  };
+
+/**
+ * As edições mais novas, inteiras, para o índice da busca: a lista e cada edição
+ * dela, ao mesmo tempo. A API não tem rota de busca, e o backend não muda com a
+ * busca (#233). A edição que sumiu entre a lista e o pedido, como a despublicada,
+ * fica de fora; outra falha dá o erro genérico, como nas páginas.
+ */
+export async function lerEdicoesDaBusca(): Promise<EdicoesDaBusca> {
+	if (!ENV.API_URL) {
+		return { tipo: "sem-api" };
+	}
+	const { data, response } = await pedir((signal) =>
+		listarEdicoes({
+			query: { limite: EDICOES_NA_BUSCA, deslocamento: 0 },
+			signal,
+		}),
+	);
+	if (!response.ok) {
+		falhou(`http-${response.status}`);
+	}
+	if (!pareceLista(data)) {
+		falhou("resposta-invalida");
+	}
+	const edicoes = await Promise.all(
+		data.edicoes.map(async ({ id }) => {
+			const { data: edicao, response } = await pedir((signal) =>
+				obterEdicao({ path: { id }, signal }),
+			);
+			if (response.status === 404) {
+				return undefined;
+			}
+			if (!response.ok) {
+				falhou(`http-${response.status}`);
+			}
+			if (!pareceEdicao(edicao)) {
+				falhou("resposta-invalida");
+			}
+			return edicao;
+		}),
+	);
+	return {
+		tipo: "edicoes",
+		edicoes: edicoes.filter((edicao) => edicao !== undefined),
+	};
+}
+
 /**
  * Um pedido à API com o tempo de espera. O relógio é daqui, com o
  * AbortController, como no envio do piloto: ele para quando a resposta chega.
@@ -148,21 +204,71 @@ function falhou(motivo: string): never {
 }
 
 function pareceLista(dados: unknown): dados is ListaEdicoes {
-	const lista = dados as Partial<ListaEdicoes> | undefined;
 	return (
-		Array.isArray(lista?.edicoes) &&
-		Number.isSafeInteger(lista.total) &&
-		(lista.total ?? -1) >= 0
+		ehObjeto(dados) &&
+		typeof dados.total === "number" &&
+		Number.isSafeInteger(dados.total) &&
+		dados.total >= 0 &&
+		Array.isArray(dados.edicoes) &&
+		dados.edicoes.every(pareceResumo)
 	);
 }
 
 function pareceEdicao(dados: unknown): dados is EdicaoPublica {
-	const edicao = dados as Partial<EdicaoPublica> | undefined;
 	return (
-		typeof edicao?.titulo === "string" &&
-		typeof edicao.inicio === "string" &&
-		typeof edicao.fim === "string" &&
-		typeof edicao.publicada_em === "string" &&
-		Array.isArray(edicao.itens)
+		pareceResumo(dados) &&
+		"itens" in dados &&
+		Array.isArray(dados.itens) &&
+		dados.itens.every(pareceItem)
 	);
+}
+
+function pareceResumo(dados: unknown): dados is ResumoEdicao {
+	return (
+		ehObjeto(dados) &&
+		typeof dados.id === "number" &&
+		idDaEdicao(dados.id) !== null &&
+		typeof dados.titulo === "string" &&
+		pareceDia(dados.inicio) &&
+		pareceDia(dados.fim) &&
+		typeof dados.publicada_em === "string"
+	);
+}
+
+function pareceDia(valor: unknown): boolean {
+	if (typeof valor !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+		return false;
+	}
+	const dia = new Date(valor);
+	return (
+		Number.isFinite(dia.getTime()) && dia.toISOString().slice(0, 10) === valor
+	);
+}
+
+function pareceItem(dados: unknown): boolean {
+	return (
+		ehObjeto(dados) &&
+		Number.isSafeInteger(dados.ordem) &&
+		typeof dados.titulo === "string" &&
+		typeof dados.texto === "string" &&
+		Array.isArray(dados.fontes) &&
+		dados.fontes.every(pareceFonte) &&
+		(dados.artigo === null ||
+			(ehObjeto(dados.artigo) &&
+				typeof dados.artigo.titulo === "string" &&
+				typeof dados.artigo.caminho === "string"))
+	);
+}
+
+function pareceFonte(dados: unknown): boolean {
+	return (
+		ehObjeto(dados) &&
+		typeof dados.url === "string" &&
+		typeof dados.coletado_em === "string" &&
+		(dados.trecho === null || typeof dados.trecho === "string")
+	);
+}
+
+function ehObjeto(valor: unknown): valor is Record<string, unknown> {
+	return typeof valor === "object" && valor !== null && !Array.isArray(valor);
 }

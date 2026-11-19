@@ -110,6 +110,12 @@ components:
     height: "72px"
   tira-de-fitas:
     height: "6px"
+  entrada-da-busca:
+    backgroundColor: "{colors.tinta}"
+    textColor: "{colors.papel-3}"
+    rounded: "{rounded.none}"
+    height: "44px"
+    padding: "0 8px 0 12px"
   botao:
     backgroundColor: "{colors.tinta}"
     textColor: "{colors.papel}"
@@ -187,6 +193,11 @@ components:
     rounded: "{rounded.none}"
     height: "52px"
     padding: "9.6px 14.4px"
+  folha-da-busca:
+    backgroundColor: "{colors.folha}"
+    textColor: "{colors.tinta}"
+    rounded: "{rounded.none}"
+    width: "44rem"
   folha-da-newsletter:
     backgroundColor: "{colors.folha}"
     textColor: "{colors.tinta}"
@@ -275,14 +286,14 @@ No quiz, a opção que se apaga depois da resposta passa para a tinta suave na f
 **Body Font:** Literata Variable, eixo de tamanho óptico, com itálico (com ui-serif, Georgia)
 **Accent Font:** Courier Prime 400, letra de máquina de escrever (com Courier New, ui-monospace)
 
-As três são servidas pelo próprio site, pelo `@fontsource`, com `font-display: swap`: o texto aparece na letra reserva e troca de letra quando a fonte chega. Os arquivos latinos da Archivo e da Literata são pré-carregados no `<head>` de todas as páginas, e o navegador os pede junto com o CSS. Numa rede boa, eles chegam antes de o texto aparecer, que já sai na letra certa; numa rede lenta, chegam depois, e o texto ainda pula na troca. A Courier Prime é baixada em todas as páginas, porque o lema está no rodapé de todas. O pré-carregamento dela só vale onde ela aparece na primeira tela: a partir de 864 px, por causa do lema no cabeçalho, e, abaixo disso, só na página inicial, para a frase do título. Nas outras páginas, no celular, o navegador a pede pelo CSS, para o rodapé.
+As três são servidas pelo próprio site, pelo `@fontsource`, com `font-display: swap`: o texto aparece na letra reserva e troca de letra quando a fonte chega. Os arquivos latinos da Archivo e da Literata são pré-carregados no `<head>` de todas as páginas, e o navegador os pede junto com o CSS. Numa rede boa, eles chegam antes de o texto aparecer, que já sai na letra certa; numa rede lenta, chegam depois, e o texto ainda pula na troca. A Courier Prime é baixada em todas as páginas, porque o lema está no rodapé de todas. O pré-carregamento dela só vale onde ela aparece na primeira tela: a partir de 1344 px, por causa do lema no cabeçalho, e, abaixo disso, só na página inicial, para a frase do título. Nas outras páginas, abaixo de 1344 px, o navegador a pede pelo CSS, para o rodapé.
 
 A Courier Prime entrou na #89 só para a frase do cartaz e o lema: `@fontsource/courier-prime`, licença SIL OFL 1.1, 19 kB. É a única dependência nova da direção. Ela tomou o lugar da Instrument Serif itálica (22 kB), que o Renan achou com "muito cara de IA": em 13/11/2026, ele escolheu a letra de máquina num rascunho com cinco letras.
 
 **Character:** a Archivo, bem preta e apertada, grita como cartaz de rua; a Courier Prime responde baixo, batida à máquina, como uma linha de diário oficial; a Literata, calma, faz o professor paciente falar.
 
 ### Hierarchy
-- **Numeral** (900, largura 62%, altura de linha 0.78): o número da folha, na cor da fita da posição, com contorno de tinta, pintado antes do miolo: `max(3px, 0.05em)` nos grandes e 2 px nos pequenos (o da aba do passo a passo, o de "Nesta trilha" e "Nesta edição", o das faixas do anterior e do próximo e o das miniaturas). O do artigo lido tem o miolo em Papel 2 e o contorno em tinta suave. Na folha da trilha, de 5.5rem a 11.5rem; no passo da página inicial, 7rem no celular e até 17rem; no alto do artigo, de 5rem a 9rem; no 404, de 7rem a 17rem; o dia de cada edição, na lista das edições, de 4.5rem a 9rem, em algarismos da mesma largura; o número de cada item da edição, de 3.5rem a 5.5rem; em "Nesta trilha", "Nesta edição" e nas faixas do anterior e do próximo, 2.75rem; nas miniaturas, 1.75rem. Os números do placar da votação usam a mesma letra, de 2.5rem a 3.25rem, em tinta, sem fita e sem contorno.
+- **Numeral** (900, largura 62%, altura de linha 0.78): o número da folha, na cor da fita da posição, com contorno de tinta, pintado antes do miolo: `max(3px, 0.05em)` nos grandes e 2 px nos pequenos (o da aba do passo a passo, o de "Nesta trilha" e "Nesta edição", o das faixas do anterior e do próximo, o dos resultados da busca e o das miniaturas). O do artigo lido tem o miolo em Papel 2 e o contorno em tinta suave. Na folha da trilha, de 5.5rem a 11.5rem; no passo da página inicial, 7rem no celular e até 17rem; no alto do artigo, de 5rem a 9rem; no 404, de 7rem a 17rem; o dia de cada edição, na lista das edições, de 4.5rem a 9rem, em algarismos da mesma largura; o número de cada item da edição, de 3.5rem a 5.5rem; em "Nesta trilha", "Nesta edição" e nas faixas do anterior e do próximo, 2.75rem; nos resultados da busca, 2.25rem, em algarismos da mesma largura; nas miniaturas, 1.75rem. Os números do placar da votação usam a mesma letra, de 2.5rem a 3.25rem, em tinta, sem fita e sem contorno.
 - **Headline** (`titulo-condensado`: 900, largura 62%, altura 0.95, maiúsculas): o título da página. Na página inicial, de 3.25rem a 8rem; nas páginas de dentro (a trilha, Trilhas, Edições, o 404, a de erro e a de sair da newsletter), de 3.5rem a 11rem; no artigo e na edição, de 2.75rem a 6rem, com no máximo 10 em de largura e a altura 1.15 da leitura. Também "A primeira edição ainda não saiu", na lista das edições sem edição (2.25rem a 4.5rem), "O caminho de um projeto de lei" na página inicial (2.75rem a 6.5rem, altura 0.88), o título de cada passo dela (2.25rem a 3.75rem), "Quiz da trilha" e "Quiz final" nas chamadas (2.5rem a 5.5rem) e "O jornal legislativo" na folha da newsletter (2.5rem a 5.5rem). No quiz, o título da abertura (4rem a 12.5rem, altura 0.86): "Quiz da trilha", "Quiz final" e, na página do piloto, "Antes da trilha"; o título do fim (3.25rem a 7.5rem), também o "Você terminou a primeira etapa." do piloto; e o resultado da resposta (2.25rem a 3.5rem, altura 0.88).
 - **Enunciado** (Archivo 800, largura 72%, altura 1.02, em minúsculas): a pergunta do quiz, de 1.75rem a 2.75rem, e 1.375rem abaixo de 22rem. É o único título em minúsculas: lê-se como frase.
 - **Title** (`titulo-de-folha`: 900, largura 62%, altura 1.15, maiúsculas): o título de cada folha de uma lista. O do artigo na trilha e o da edição na lista das edições, de 1.875rem a 3.5rem; o da trilha em Trilhas, de 2.25rem a 4.5rem; o do anterior e do próximo, de 1.5rem a 2.5rem.
@@ -291,7 +302,7 @@ A Courier Prime entrou na #89 só para a frase do cartaz e o lema: `@fontsource/
 - **Máquina** (Courier Prime 400, em minúsculas): a segunda linha do título da página inicial ("um passo de cada vez.", a 0.4 em do título, com a tira riscada embaixo) e o lema, a 0.9375rem, no cabeçalho e no rodapé. Só isso.
 - **Lead** (Literata 500, altura 1.45): o resumo do artigo, de 1.25rem a 1.4375rem. A abertura dos cartazes é Literata 400, de 1.0625rem a 1.25rem, com altura 1.5 e até 34rem de largura.
 - **Body** (Literata 400, altura 1.68): o texto do artigo, de 1.0625rem a 1.1875rem, com até 39rem de largura. Os resumos das folhas e os textos dos passos ficam em 1.0625rem, com altura 1.5 a 1.6.
-- **Label** (`rotulo`: Archivo 650, 0.8125rem, maiúsculas, 0.08em entre as letras): a faixa de informações, a frase do progresso, a migalha, "Artigo 2 de 6 artigos", o nome do quiz no pé, a etiqueta de estado, o rótulo "Seu e-mail", o mês embaixo do dia da edição, "Nesta edição", os títulos do quadro da votação e das fontes do item e, em tinta suave, "Enviando a inscrição…", "Confirmando a saída…", os nomes do placar e "Página 2 de 3". Os nomes dos links e das ações seguem a mesma ideia, um pouco maiores: o botão (800, 1rem), a ação em texto (700, 0.875rem), os links dos artigos de um passo (750, 0.9375rem) e o título de cada passo da sanfona (750, 1rem, 0.05em entre as letras), que também tem o teto da letra grande.
+- **Label** (`rotulo`: Archivo 650, 0.8125rem, maiúsculas, 0.08em entre as letras): a faixa de informações, a frase do progresso, a migalha, "Artigo 2 de 6 artigos", o nome do quiz no pé, a etiqueta de estado, o rótulo "Seu e-mail", o mês embaixo do dia da edição, "Nesta edição", os títulos do quadro da votação e das fontes do item e, em tinta suave, "Enviando a inscrição…", "Confirmando a saída…", os nomes do placar, "Página 2 de 3" e, na caixa da busca, o título "Buscar no site", a contagem, o tipo de cada resultado, "Carregando a busca…" e "Procurando também nas edições…". Os nomes dos links e das ações seguem a mesma ideia, um pouco maiores: o botão (800, 1rem), a ação em texto (700, 0.875rem), os links dos artigos de um passo (750, 0.9375rem), o título de cada resultado da busca (750, 1.0625rem, 0.03em entre as letras) e o título de cada passo da sanfona (750, 1rem, 0.05em entre as letras), que também tem o teto da letra grande. A tecla do atalho, na entrada da busca, é menor (700, 0.75rem, 0.06em entre as letras), dentro do fio dela.
 
 ### O teto da letra grande
 Com a letra do navegador grande, no celular, o título cresce com a letra até a palavra mais comprida dele encostar nas margens, e para aí. O tamanho é `min(o tamanho normal, (a largura da página − as margens − o recuo) ÷ a largura da palavra)`: a classe `letra-com-teto`, com o tamanho no `--letra`, a largura da palavra no `--palavra` (em em) e o recuo no `--recuo`. O Renan escolheu o teto em 11/11/2026 ("Teto (Recomendado)") e, na #76, o teto pela palavra mais larga do conteúdo ("Teto menor (Recomendado)"): o título diminui só o bastante para a palavra caber inteira, e nada se parte.
@@ -423,11 +434,94 @@ Tudo é reto: raio zero (`--radius: 0`).
 
 ### Moldura (cabeçalho)
 - **Caráter:** um bloco de tinta na largura toda, com a tira das cinco fitas embaixo. É o que separa o cabeçalho da página clara.
-- **Forma:** 72 px de altura, com a tira de 6 px. O nome e, a partir de 864 px, o lema em letra de máquina (em Papel 3) à esquerda; Início e Trilhas à direita, e Edições depois delas onde o build do site tem o `API_URL`. Abaixo de 864 px, ficam o nome e os links: o lema, que é largo na letra de máquina, não cabe na linha e está no rodapé. O respiro fica em px, sem crescer com a letra.
-- **Com as edições, no celular:** os três links não cabem na linha do nome, e, abaixo de 32rem, o Início sai: o nome leva ao início. Abaixo de 26rem, Trilhas e Edições se apertam (6 px de respiro de cada lado, sem vão entre eles, e pelo menos 12 px entre o nome e os links), e a linha cabe a partir de 355 px. Com a letra grande, ela ainda pode quebrar, e os links descem para a linha de baixo. Quando Trilhas e Edições não cabem juntos nem ali, como a 320 px com a letra a 200%, a lista quebra, e Edições desce para baixo de Trilhas: sem a quebra, Edições passava da página no computador, onde a barra de rolagem toma 15 px, e a página rolava de lado (a Atena pediu a correção em 17/11/2026). As regras valem só com a marca `data-com-edicoes`: sem a API, o cabeçalho fica como antes. O Renan escolheu em 17/11/2026, na #39: "Edições" no cabeçalho, sem o Início no celular, e o link "Ler as edições" na folha da newsletter.
-- **Navegação:** links em papel, em maiúsculas espaçadas, sem sublinhado, com um traço de 4 px em papel embaixo: ele se risca da esquerda para a direita quando o ponteiro passa e fica na seção aberta. "Trilhas" fica marcado na lista das trilhas, em cada trilha e em cada artigo, e "Edições", na lista das edições e em cada edição; o `aria-current="page"` só vai no link da própria página.
+- **Forma:** 72 px de altura, com a tira de 6 px. Na linha, da esquerda para a direita:
+  - o nome e, a partir de 1344 px, o lema em letra de máquina (em Papel 3);
+  - no meio, a entrada da busca (veja "Busca");
+  - os links Início e Trilhas, Edições onde o build do site tem o `API_URL`, e Conta.
+- **As larguras,** com as edições e a letra a 100%:
+  - **a partir de 1344 px,** tudo numa linha;
+  - **de 960 a 1344 px,** a mesma linha, sem o lema. Ele é largo na letra de máquina, não cabe com a barra da busca e está no rodapé. O Renan aceitou esse custo na #233, em 19/11/2026: antes da busca, o lema aparecia a partir de 864 px;
+  - **abaixo de 960 px,** a barra encolhe para a lupa e o "Buscar";
+  - **no celular,** quando os links não cabem na linha do nome (a 600 px, por exemplo), eles descem para a linha de baixo, e a entrada fica na ponta direita da linha do nome.
+  - O respiro fica em px, sem crescer com a letra.
+- **Com as edições, no celular:**
+  - Abaixo de 32rem, o Início sai: o nome leva ao início.
+  - Abaixo de 26rem, os links se apertam: 6 px de respiro de cada lado, sem vão entre eles, e pelo menos 12 px entre o nome e os links. Antes do Conta e da busca, isso punha Trilhas e Edições na linha do nome a partir de 355 px; com os dois, os links ficam na linha de baixo.
+  - Quando os links não cabem juntos nem ali, como a 320 px com a letra a 200%, a lista quebra. Sem a quebra, o último link passava da página no computador, onde a barra de rolagem toma 15 px, e a página rolava de lado (a Atena pediu a correção em 17/11/2026). As regras valem só com a marca `data-com-edicoes`: sem a API, o cabeçalho fica como antes. O Renan escolheu em 17/11/2026, na #39: "Edições" no cabeçalho, sem o Início no celular, e o link "Ler as edições" na folha da newsletter.
+- **Navegação:** links em papel, em maiúsculas espaçadas, sem sublinhado, com um traço de 4 px em papel embaixo: ele se risca da esquerda para a direita quando o ponteiro passa e fica na seção aberta. "Trilhas" fica marcado na lista das trilhas, em cada trilha e em cada artigo, "Edições", na lista das edições e em cada edição, e "Conta", na conta, no login e no cadastro; o `aria-current="page"` só vai no link da própria página.
 - **Foco:** o anel de foco fica amarelo dentro do bloco. O "Pular para o conteúdo" aparece no foco, em tinta sobre papel.
 - **Na troca de página,** o cabeçalho fica parado quando aparece nas duas páginas (veja "A troca de página").
+
+### Busca
+- **O que é:** a busca do site, sem IA, nas trilhas, nos artigos e nas edições publicadas (a #233). Ela abre pela entrada do cabeçalho ou pelo Ctrl+K (⌘K no Mac), em qualquer página, numa caixa por cima da página. O Renan escolheu em 19/11/2026:
+  - a "Barra no meio" do cabeçalho;
+  - nenhum campo a mais na página inicial ("Não, só a do cabeçalho");
+  - a "Caixa por cima" e, para ela, a "Folha por cima".
+- **A entrada:**
+  - **A forma:** um botão entre o nome e os links, com a lupa, "Buscar no site" e a tecla do atalho, num fio de 2 px em Papel 3, com 44 px de altura. A tecla diz "Ctrl K"; no Mac, "⌘ K", trocada depois da hidratação, no mesmo espaço.
+  - **Ponteiro e foco:** com o ponteiro, o fio e a letra vão para o papel. O foco é o amarelo do bloco.
+  - **Acessibilidade:** ela leva `aria-haspopup="dialog"` e `aria-keyshortcuts="Control+K Meta+K"`. A tecla é desenho e fica fora do leitor de tela.
+  - **O índice:** quando o ponteiro ou o foco chega nela, o índice já começa a vir.
+- **A largura da entrada:** a base é de 14rem, o que a lupa, o texto e a tecla pedem. Ela cresce até 20rem, no meio do espaço entre o nome e os links. A linha do cabeçalho quebra pela base de cada peça, antes de encolher: com a base de 20rem, na primeira versão, os links desciam para a linha de baixo de 912 a 1023 px e de 1312 a 1439 px. Abaixo de 960 px, ficam só a lupa e o "Buscar".
+- **O atalho:**
+  - O Ctrl+K e o ⌘K abrem a busca. Com a caixa aberta, o atalho volta ao campo e seleciona o texto.
+  - Com Alt ou Shift, ou no meio de uma composição (o teclado japonês, por exemplo), a tecla fica com o que ela já fazia.
+  - Com o foco na página, a busca do navegador no Ctrl+K (Chrome e Firefox) deixa de valer, como no GitHub e no MDN. Com o foco na barra do navegador, o atalho continua dele.
+- **A caixa:**
+  - **O elemento:** o `<dialog>` do navegador, aberto com `showModal()`. A caixa fica por cima de tudo e o resto da página fica inerte. Nos limites da caixa, Tab e Shift+Tab podem passar pela barra do navegador antes de voltar à caixa.
+  - **A folha:** uma folha clara (Folha) com fio de tinta de 2 px e até 44rem de largura. Ela fica no alto da tela, com um respiro em cima (`clamp(1.5rem, 8vh, 6rem)`), sobre um véu de tinta a 72%, chapado, sem desfoque. Ela cresce para baixo com os resultados, e a cabeça não pula enquanto a pessoa digita.
+  - **No celular:** abaixo de 40rem, a folha é a tela inteira, sem o fio.
+  - **O HTML:** ela é montada na primeira abertura, e o HTML das páginas não muda.
+- **A cabeça** fica parada no alto da folha. Ela tem:
+  - "Buscar no site", em Label e tinta suave, que é o título (`h2`) e o nome da caixa;
+  - a ação em texto "Fechar";
+  - o campo (a peça Campo, `type="search"`), com a lupa dentro, à esquerda;
+  - a contagem, "9 resultados", em Label e tinta suave.
+
+  Os resultados rolam embaixo dela, dentro da folha, sem levar a página junto (`overscroll-behavior: contain`).
+- **Cada resultado:** uma linha entre fios de tinta, de um lado ao outro da folha, como as de "Nesta trilha":
+  - **o número pequeno** (2.25rem), na fita da posição, com o contorno de 2 px: a posição da trilha em Trilhas e a do artigo na trilha; na edição, o último dia da semana, na fita da semana. É desenho (`aria-hidden`);
+  - **o título,** em maiúsculas (Archivo 750, 1.0625rem). Ele é o link, e a área dele cobre a linha;
+  - **o tipo,** em Label e tinta suave: "Trilha", "Artigo 6 · A Constituição" ou "Edição · 9 a 15 de novembro de 2026";
+  - **o trecho,** em Literata, a 0.9375rem: uns 180 caracteres em volta da primeira palavra achada, cortados entre palavras, com "…". A palavra achada vai em negrito, sem cor. Quando o link leva a um intertítulo, ele vem antes do trecho, em Archivo 650, com um travessão.
+  - **Ponteiro e foco:** com o ponteiro, a linha vai para o Papel 2, e o título ganha o sublinhado. Com o foco do teclado, o anel azul fica na linha inteira, por dentro.
+- **Os estados,** em palavras, sem ícone e sem giro:
+  - **nada digitado:** "Escreva um assunto, como veto, emenda ou Senado. A busca procura nas trilhas, nos artigos e nas edições." Sem a API, a frase termina em "nas trilhas e nos artigos.";
+  - **o índice a caminho:** "Carregando a busca…", em Label e tinta suave;
+  - **nenhum resultado:** "Nenhum resultado para “xyz”. Confira como a palavra está escrita ou tente só o começo dela." A frase espera as edições: enquanto elas não chegam, fica só "Procurando também nas edições…";
+  - **o índice não chegou:** "A busca não carregou. Confira a internet e tente de novo.", com a ação em texto "Tentar de novo";
+  - **as edições a caminho:** "Procurando também nas edições…", em Label e tinta suave, embaixo da lista;
+  - **as edições não chegaram:** "As edições ficaram fora desta busca: o servidor não respondeu.", com "Tentar de novo". As trilhas e os artigos continuam na lista.
+
+  O "Tentar de novo" sai da tela com o aviso, e o foco volta ao campo.
+- **O que ela procura:**
+  - na trilha, o título e a descrição;
+  - no artigo, o título, o resumo, os intertítulos e o texto inteiro;
+  - nas 20 edições mais novas, o título, o período e o título e o texto de cada item.
+
+  O quiz, o infográfico e as fontes ficam de fora. Sem a API, a busca não fala das edições.
+
+  Os pedidos feitos após os 5 minutos de memória do servidor incluem as edições novas e excluem as despublicadas. A aba que já carregou o índice o mantém até recarregar. Links de edições despublicadas levam à página de edição não encontrada.
+- **Como ela acha:**
+  - **O texto:** sem acento e sem maiúscula ("constituicao" acha "Constituição") e pelo começo de cada palavra ("constitu"). O resultado tem todas as palavras digitadas. As palavras vazias ("o", "de", "que"…) saem quando há outra.
+  - **A ordem:** vem de onde a palavra aparece: o título, o intertítulo, o resumo e o texto. No empate, a trilha vem antes do artigo, e o artigo antes da edição, na ordem do site.
+  - **O link:** a palavra no título leva ao alto da página. Num intertítulo ou no texto abaixo dele, ela leva ao intertítulo (`#id`); na edição, ao item (`#item-3`).
+  - **O erro de digitação** não acha: "consituição" fica sem resultado.
+- **O texto digitado** fica na página. Ele não vai ao servidor, ao endereço, ao armazenamento nem ao console, e nada conta as buscas. A caixa reabre com a última busca, que some quando a página recarrega.
+- **Teclado:**
+  - O Esc fecha a caixa, também com texto no campo, e não apaga o texto. No Chrome, o Esc num campo de busca apagaria.
+  - No campo, ↓ vai ao primeiro resultado, e o Enter abre o primeiro.
+  - Na lista, ↓ e ↑ andam de um resultado ao outro, e ↑ no primeiro volta ao campo. O Tab também anda pela lista.
+- **Foco:**
+  - Ao abrir, o foco vai ao campo, com o texto selecionado; ao fechar, volta para onde estava.
+  - Ao seguir um resultado, a caixa fecha antes da navegação, e a troca de página fotografa a página sem ela. O foco vai para o título da página nova ou para o trecho do endereço, como em qualquer link, também quando o resultado é da página aberta.
+- **Leitor de tela:**
+  - O nome de cada link é o título, e o tipo e o trecho vão na descrição (`aria-describedby`): o foco que anda pelas setas só lê o link.
+  - A contagem chega por uma região `role="status"`, 400 ms depois da última tecla ("9 resultados para constitui").
+  - Sem resultado e sem as edições, as duas frases vão juntas.
+- **Letra grande:** abaixo de 22rem, o número fica no lugar, e o texto desce para a linha de baixo, com a largura toda, como nas folhas da trilha. O título e as etiquetas voltam às minúsculas, sem o espaço entre as letras.
+- **Cores forçadas:** a entrada, a folha e o anel ficam com as cores do sistema. A palavra achada fica com o realce do sistema (`Mark` e `MarkText`). Só com o negrito, o navegador dava a ela a letra do realce sobre o fundo sem cor, e ela sumia.
+- **Sem JavaScript:** a entrada sai do cabeçalho (`@media (scripting: none)`). Sem a caixa, ela seria um botão morto.
 
 ### Rodapé
 - **Caráter:** papel com um fio de tinta em cima e uma fileira de azulejos embaixo. É o `<footer>` do documento, em todas as páginas, inclusive no 404 e na de erro.
@@ -462,7 +556,7 @@ Tudo é reto: raio zero (`--radius: 0`).
 - **Preenchido pelo navegador:** o texto continua em tinta, e o fundo fica no Papel 2, no lugar do azul ou do amarelo do navegador (`:autofill`).
 - **Erro:** quando o erro é do que a pessoa escreveu, o campo leva o `aria-invalid`, a mensagem fica ligada a ele pelo `aria-describedby`, e o foco volta para ele.
 - **Enquanto envia:** fica só de leitura (`readOnly`), com o texto à vista.
-- **Onde:** na folha da newsletter. O login (#109 a #112) pode usar a mesma peça.
+- **Onde:** na folha da newsletter e na caixa da busca, com a lupa dentro (veja "Busca"). O login (#109 a #112) pode usar a mesma peça.
 
 ### Azulejos
 - **O que são:** desenho. O painel, o azulejo grande e cada peça ficam fora do leitor de tela (`aria-hidden`), e nada do que a página diz depende deles. Nas cores forçadas do Windows, eles somem.
@@ -677,6 +771,7 @@ Três curvas: o **golpe** (`cubic-bezier(0.5, 0, 0.15, 1)`), seco, para o que se
 - **O mapa do fundo** anda mais devagar que a página: sobe um décimo do que ela rola, até 60vh, nas seis primeiras telas de rolagem, e depois fica parado (`mapa-anda`, com `animation-timeline: scroll()` e `animation-range: 0 600vh`, dentro de `@supports`). O trecho é um comprimento fixo, e não o progresso da página inteira: ele só se mexe quando a pessoa rola, e não salta quando a página muda de altura com ela parada, como ao abrir um passo do caminho. Parado, o fundo está parado. Sem a animação de rolagem, o mapa fica fixo atrás da página. O décimo vale em todas as páginas: antes, a velocidade dependia do comprimento da página, e, nos artigos, o mapa agora anda o dobro no celular e uma vez e meia no computador; no quiz e no 404, que são curtos, anda bem menos. O Renan decidiu manter assim em 14/11/2026, na #101: "Manter como está".
 - **Com o ponteiro:** o azulejo vira; a folha sobe; o azulejo da folha dá um quarto de volta, e o da trilha, na lista das trilhas, vira peça por peça; o botão sobe e mostra a tira; o traço do link do cabeçalho se risca.
 - **Na ação:** os azulejos do passo a passo viram em fila até o passo da vez, o texto do passo entra de lado (da direita ao avançar, da esquerda ao voltar), com a seção cortando o que passa da borda da tela, para a página não rolar de lado, e o número tomba; o azulejo do lido vira para o verde, e o visto se desenha. No quiz, as opções tombam no lugar, uma a uma; depois da resposta, viram com o estado, a folha da resposta tomba, presa pela borda de cima, e os azulejos já acesos do mosaico fazem a onda; no fim, o mosaico inteiro faz a onda. A tela que sai sobe um pouco e some (0,4 s) antes de a seguinte entrar.
+- **Na busca:** a folha sobe 0,75rem e aparece em 200 ms, na curva suave, e o véu esmaece junto. Os resultados não animam.
 - **Cada animação parte de um estado de saída e chega ao estado normal da peça:** onde a animação não roda, a peça aparece pronta.
 
 ### A troca de página
