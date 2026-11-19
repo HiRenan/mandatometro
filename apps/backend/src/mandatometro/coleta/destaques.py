@@ -4,6 +4,7 @@ import argparse
 import re
 import time
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
@@ -76,6 +77,11 @@ _MESES = (
     "novembro",
     "dezembro",
 )
+
+
+@dataclass
+class ResumoDestaques(ResumoAtos):
+    assinaturas_ignoradas: int = 0
 
 
 def _url_paginada(numero: int) -> str:
@@ -269,7 +275,7 @@ def _gravar_ato(
     publicacao: date | None,
     resposta: Resposta,
     *,
-    resumo: ResumoAtos,
+    resumo: ResumoDestaques,
     hoje: date,
     abrir_sessao: Callable[[], Session],
 ) -> None:
@@ -302,8 +308,7 @@ def _gravar_ato(
         raise _DescartarAto("link_invalido")
     slug = destino[1]
     assinatura = _assinatura(campos.get("data", ""), slug)
-    if assinatura is not None and assinatura > hoje:
-        raise _DescartarAto("data_futura")
+    assinatura_ignorada = assinatura is not None and assinatura > publicacao
     numero = _NUMERO.search(slug) or _NUMERO.search(titulo_oficial)
 
     with abrir_sessao() as s, s.begin():
@@ -316,13 +321,15 @@ def _gravar_ato(
             titulo=titulo,
             ementa=campos.get("ementa") or None,
             data_publicacao=publicacao,
-            data_assinatura=assinatura,
+            data_assinatura=None if assinatura_ignorada else assinatura,
             secao=secao,
             orgao=campos.get("artSection") or campos.get("hierarchy") or None,
             numero=(numero[1].replace(".", "").lstrip("0") or "0") if numero else None,
             fonte=fonte,
         )
     resumo.atos += 1
+    if assinatura_ignorada:
+        resumo.assinaturas_ignoradas += 1
 
 
 def _contar_descarte(resumo: ResumoAtos, motivo: str) -> None:
@@ -336,8 +343,8 @@ def coletar(
     http: ClienteFirecrawl,
     abrir_sessao: Callable[[], Session] = sessao,
     hoje: date | None = None,
-) -> ResumoAtos:
-    resumo = ResumoAtos(ORIGEM, inicio, fim)
+) -> ResumoDestaques:
+    resumo = ResumoDestaques(ORIGEM, inicio, fim)
     comeco = time.monotonic()
     hoje = hoje or datetime.now(ZoneInfo("America/Sao_Paulo")).date()
     try:

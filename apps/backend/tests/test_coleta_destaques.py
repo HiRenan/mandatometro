@@ -345,10 +345,6 @@ def test_descarta_datas_e_campos_obrigatorios(executar):
             cartao("100", pubDate="31/11/2026"),
             cartao("200", pubDate="20/11/2026"),
             cartao("300", data="20/11/2026"),
-            cartao(
-                "400",
-                url="https://www.in.gov.br/web/dou/-/portaria-n-10-de-1-de-dezembro-de-2026-9",
-            ),
             cartao("500", data="31 de novembro de 2026"),
             cartao("600", pubDate=""),
             cartao("700", artType=" "),
@@ -359,8 +355,29 @@ def test_descarta_datas_e_campos_obrigatorios(executar):
         pagina(),
     )
 
-    assert resumo.completa and resumo.atos == 0
-    assert resumo.descartes == {"data_invalida": 2, "data_futura": 3, "campo_obrigatorio": 5}
+    assert resumo.completa and resumo.atos == 1
+    assert resumo.assinaturas_ignoradas == 1
+    assert resumo.descartes == {"data_invalida": 2, "data_futura": 1, "campo_obrigatorio": 5}
+
+
+@pytest.mark.parametrize("data_no_link", ["19-de-novembro-de-2026", "12-de-dezembro-de-2026"])
+def test_assinatura_do_link_posterior_a_publicacao_fica_nula(
+    sessao, executar, capsys, data_no_link
+):
+    url = f"https://www.in.gov.br/web/dou/-/portaria-n-10-de-{data_no_link}-123"
+    titulo = "Portaria fictícia"
+    resumo, _ = executar(pagina(cartao("100", url=url, highlight=titulo)), pagina())
+
+    assert resumo.completa and resumo.atos == 1
+    ato = sessao.scalars(select(Ato)).one()
+    assert ato.id_externo == "100" and ato.data_publicacao == date(2026, 11, 18)
+    assert ato.data_assinatura is None
+    assert ato.titulo == titulo and ato.fonte.url_publica == url
+
+    cli.mostrar_resumo(resumo)
+    saida = json.loads(capsys.readouterr().out)
+    assert saida["assinaturas_ignoradas"] == 1
+    assert saida["descartes"] == {}
 
 
 @pytest.mark.parametrize(
@@ -491,6 +508,7 @@ def test_cli_resolve_sete_dias_e_emite_uma_linha_json(atender, monkeypatch, caps
     assert len(saida.out.splitlines()) == 1 and not saida.err
     resumo = json.loads(saida.out)
     assert (resumo["inicio"], resumo["fim"], resumo["atos"]) == ("2026-11-13", "2026-11-19", 0)
+    assert resumo["assinaturas_ignoradas"] == 0
     assert resumo["completa"] == (codigo == 0)
     assert not {"titulo", "ementa", "assina", "cargo", "texto"}.intersection(resumo)
     assert CHAVE not in saida.out and MARCADOR_PRIVADO not in saida.out

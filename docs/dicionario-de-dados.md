@@ -600,6 +600,8 @@ O Firecrawl entrega cada página em `data.rawHtml`. Cada cartão `dou row` cont�
 
 `fonte.url` guarda o endereço da página de destaques consultada. `fonte.url_publica` é o link principal do cartão, validado como `https://www.in.gov.br/web/dou/-/<slug>-<identificador numérico>`. Alguns links oficiais trazem barras no slug. A validação admite segmentos com letras, algarismos, pontos e hífens, todos iniciados por letra ou algarismo. `fonte.coletado_em` marca o recebimento e `fonte.trecho` fica nulo. Repetir o período atualiza `(origem, id_externo)` e conserva o id interno. O mesmo ato do Senado tem sua própria origem.
 
+O endereço oficial pode trazer uma data de assinatura incorreta. Se a assinatura encontrada for posterior à publicação, a coleta grava o ato com `data_assinatura` nula e soma uma ocorrência em `assinaturas_ignoradas`.
+
 O comando usa as datas de publicação, incluindo as duas pontas do período. Sem datas, cobre os sete dias completos anteriores no fuso de Brasília. Começa pelo endereço fixo e monta as páginas seguintes com o portlet `mhF1RLPnJWPh`, `_delta=20` e `_cur=N`. Uma página vazia ou inteiramente anterior ao período encerra a busca. Uma data de publicação ilegível leva à página seguinte. O teto é de seis páginas. Se a sexta ainda indicar continuação, a coleta sinaliza saída 1.
 
 Atos de pessoal da seção 2 e contratos e editais da seção 3 ficam fora do recorte. O resumo conta descartes por período, seção, data inválida ou futura, campo obrigatório, link e XML inválidos. `assina`, `cargo` e `texto` ficam fora do banco e da saída. Título e ementa são campos do ato no banco e seguem as regras de uso editorial de [dados pessoais](dados-pessoais.md#coleta-dos-destaques-do-diário-oficial).
