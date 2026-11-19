@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from mandatometro.coleta.http import Resposta
 from mandatometro.coleta.tipos import DadosVoto
-from mandatometro.db.modelos import Fonte, Mandato, Parlamentar, Proposicao, Votacao, Voto
+from mandatometro.db.modelos import Ato, Fonte, Mandato, Parlamentar, Proposicao, Votacao, Voto
 
 
 def registrar_fonte(
@@ -39,6 +39,41 @@ def _salvar(sessao, modelo, chaves, valores):
         set_={nome: getattr(comando.excluded, nome) for nome in valores if nome not in chaves},
     ).returning(modelo)
     return sessao.scalars(comando, execution_options={"populate_existing": True}).one()
+
+
+def salvar_ato(
+    sessao: Session,
+    *,
+    origem: str,
+    id_externo: str,
+    tipo: str,
+    titulo: str,
+    data_publicacao: date,
+    fonte: Fonte,
+    ementa: str | None = None,
+    data_assinatura: date | None = None,
+    secao: str | None = None,
+    orgao: str | None = None,
+    numero: str | None = None,
+) -> Ato:
+    return _salvar(
+        sessao,
+        Ato,
+        ["origem", "id_externo"],
+        {
+            "origem": origem,
+            "id_externo": id_externo,
+            "tipo": tipo,
+            "titulo": titulo,
+            "data_publicacao": data_publicacao,
+            "fonte_id": fonte.id,
+            "ementa": ementa,
+            "data_assinatura": data_assinatura,
+            "secao": secao,
+            "orgao": orgao,
+            "numero": numero,
+        },
+    )
 
 
 def salvar_parlamentar(

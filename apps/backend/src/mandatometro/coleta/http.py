@@ -25,6 +25,10 @@ class ErroColeta(Exception):
         self.status_http = status_http
 
 
+class ErroJsonInvalido(ErroColeta):
+    """A resposta HTTP foi bem-sucedida, mas o conteúdo não é JSON UTF-8 válido."""
+
+
 @dataclass(frozen=True)
 class Resposta:
     url: str
@@ -205,5 +209,5 @@ class ClienteHttp:
         try:
             dados = json.loads(resposta.content.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError):
-            raise ErroColeta("Resposta da fonte não é JSON UTF-8 válido.") from None
+            raise ErroJsonInvalido("Resposta da fonte não é JSON UTF-8 válido.") from None
         return Resposta(str(resposta.url), datetime.now(UTC), dados)

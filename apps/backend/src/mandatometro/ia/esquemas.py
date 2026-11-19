@@ -4,7 +4,7 @@ import json
 from datetime import date
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
 Id = Annotated[int, Field(gt=0)]
 Contagem = Annotated[int, Field(ge=0)]
@@ -39,10 +39,24 @@ class Fatos(Estrito):
     origem: Literal["codigo", "modelo", "revisao"] = "codigo"
     pendencias: list[Pendencia] = Field(default_factory=lambda: ["revisao", "cobertura"])
 
-    @classmethod
-    def ler(cls, valor: dict) -> "Fatos":
+    @staticmethod
+    def ler(valor: dict) -> "FatosItem":
         # JSONB devolve datas como texto: a validação JSON estrita aceita o ISO da própria gravação.
-        return cls.model_validate_json(json.dumps(valor))
+        return _FATOS_ITEM.validate_json(json.dumps(valor))
+
+
+class FatosAto(Estrito):
+    versao: Literal[2]
+    ato_id: Id
+    data_publicacao: date
+    fontes: Annotated[list[Id], Field(min_length=1)]
+    hash_ato: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
+    origem: Literal["codigo", "modelo", "revisao"] = "codigo"
+    pendencias: list[Pendencia] = Field(default_factory=lambda: ["revisao", "cobertura"])
+
+
+FatosItem = Fatos | FatosAto
+_FATOS_ITEM = TypeAdapter(FatosItem)
 
 
 class Redacao(Estrito):

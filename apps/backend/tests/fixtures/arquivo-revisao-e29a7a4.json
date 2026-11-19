@@ -1,0 +1,122 @@
+{
+  "versao": 1,
+  "edicao_id": 2,
+  "versao_rascunho": "93b1c34e8c95338488b825ffdc6b845714062641ae0f843f1b58106f1a2d7c24",
+  "inicio": "2026-10-08",
+  "fim": "2026-10-14",
+  "titulo": "Jornal legislativo — 08 a 14/10/2026",
+  "cobertura_confirmada": false,
+  "artigos_disponiveis": {
+    "/trilhas/processo-legislativo/quem-pode-propor-uma-lei": "Quem pode propor uma lei",
+    "/trilhas/processo-legislativo/onde-o-projeto-comeca": "Onde o projeto começa",
+    "/trilhas/processo-legislativo/o-projeto-passa-pelas-comissoes": "O projeto passa pelas comissões",
+    "/trilhas/processo-legislativo/o-plenario-vota-o-projeto": "O Plenário vota o projeto",
+    "/trilhas/processo-legislativo/a-outra-casa-revisa-o-projeto": "A outra Casa revisa o projeto",
+    "/trilhas/processo-legislativo/o-presidente-sanciona-ou-veta": "O presidente sanciona ou veta"
+  },
+  "itens": [
+    {
+      "id": 2,
+      "titulo": "PL 311/2026",
+      "explicacao": [
+        "Redação pendente: explique o ato votado e o que a proposta prevê."
+      ],
+      "artigo_caminho": "/trilhas/processo-legislativo/o-plenario-vota-o-projeto",
+      "revisado": false,
+      "artigo_confirmado": false,
+      "excluir": false,
+      "motivo_exclusao": "",
+      "fatos": {
+        "fontes": [
+          4,
+          5,
+          6
+        ],
+        "origem": "codigo",
+        "votacoes": [
+          {
+            "id": 4,
+            "data": "2026-10-09",
+            "fontes": [
+              6
+            ],
+            "placar": {
+              "nao": 0,
+              "sim": 1,
+              "abstencao": 0,
+              "obstrucao": 0,
+              "presidente": 0
+            },
+            "resultado": "aprovada"
+          },
+          {
+            "id": 3,
+            "data": "2026-10-10",
+            "fontes": [
+              4
+            ],
+            "placar": null,
+            "resultado": "outro"
+          }
+        ],
+        "pendencias": [
+          "revisao",
+          "cobertura",
+          "redacao",
+          "artigo"
+        ],
+        "proposicoes": [
+          2
+        ]
+      },
+      "fontes": [
+        {
+          "id": 4,
+          "url": "https://dadosabertos.camara.leg.br/api/v2/votacoes/311-2",
+          "url_publica": "https://www.camara.leg.br/ficticio/votacoes/311-2",
+          "coletado_em": "2026-10-08T00:00:00+00:00",
+          "trecho": "Trecho sintetico de votacao."
+        },
+        {
+          "id": 5,
+          "url": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/311",
+          "url_publica": "https://www.camara.leg.br/ficticio/proposicoes/311",
+          "coletado_em": "2026-10-08T00:00:00+00:00",
+          "trecho": "Trecho sintetico de votacao."
+        },
+        {
+          "id": 6,
+          "url": "https://dadosabertos.camara.leg.br/api/v2/votacoes/311-1",
+          "url_publica": "https://www.camara.leg.br/ficticio/votacoes/311-1",
+          "coletado_em": "2026-10-08T00:00:00+00:00",
+          "trecho": "Trecho sintetico de votacao."
+        }
+      ],
+      "contexto": {
+        "proposicoes": [
+          {
+            "id": 2,
+            "sigla": "PL",
+            "numero": 311,
+            "ano": 2026,
+            "ementa": "Organiza um servico de exemplo."
+          }
+        ],
+        "votacoes": [
+          {
+            "id": 4,
+            "casa": "camara",
+            "id_externo": "311-1",
+            "descricao": "Projeto de exemplo escolhido."
+          },
+          {
+            "id": 3,
+            "casa": "camara",
+            "id_externo": "311-2",
+            "descricao": "Votacao sem placar de exemplo."
+          }
+        ]
+      }
+    }
+  ]
+}

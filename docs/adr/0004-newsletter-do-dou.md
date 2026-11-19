@@ -17,7 +17,7 @@ Em 16/11/2026, o Arrais propôs ao time ler os destaques do DOU por semana, com 
 ## Decisão
 
 - **A edição passa a ter duas seções:** as votações da Câmara e do Senado, que continuam como estão, e os destaques do Diário Oficial da União. O DOU acrescenta, não substitui.
-- **A fonte do DOU é o INLABS,** o serviço de dados abertos da Imprensa Nacional (`inlabs.in.gov.br`), com cadastro gratuito e os XMLs das edições. **Não** se raspa a página de destaques do `in.gov.br`.
+- **A fonte dos atos do DOU está no [ADR 0005](0005-legislacao-federal-na-newsletter.md).** A seção abaixo registra a escolha de 18/11/2026.
 - **A IA passa a ordenar e sugerir a seleção dos atos do DOU,** e uma pessoa confirma item a item antes de publicar.
 - **A revisão ganha um painel** (#114), onde o material fica pronto no sábado e a pessoa escolhe o que vai no domingo. No primeiro momento o painel serve só para selecionar e validar.
 

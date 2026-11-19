@@ -11,23 +11,25 @@ from typing import Annotated, Literal
 
 from pydantic import Field, ValidationError
 from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from mandatometro.avisos.email import MensagemInvalida, _url, formatar_edicao
-from mandatometro.db.modelos import Edicao, Fonte, ItemEdicao
+from mandatometro.db.modelos import Ato, Edicao, Fonte, ItemEdicao
 from mandatometro.ia.artigos import CATALOGO, sugerir
-from mandatometro.ia.esquemas import Estrito, Fatos, Id
+from mandatometro.ia.esquemas import Estrito, Fatos, FatosAto, FatosItem, Id
 from mandatometro.ia.privacidade import assunto_pessoal, identificacao, normalizar
 from mandatometro.ia.redacao import (
     AVISO_TERMO_PESSOAL,
     PENDENTE,
     Redator,
+    TextoGerado,
     redigir,
     requer_conferencia_pessoal,
 )
-from mandatometro.ia.selecao import ItemBase, selecionar
+from mandatometro.ia.selecao import ItemAtoBase, ItemBase, pagina_publica, selecionar
 
 AbrirSessao = Callable[[], Session]
+PENDENTE_ATO = "Redação pendente: escreva a explicação do ato."
 
 # O Windows-1252 leva bytes de continuação a caracteres fora de U+0080–U+00BF.
 _CONTINUACOES_WINDOWS_1252 = bytes(range(0x80, 0xA0)).decode("cp1252", errors="ignore")
@@ -122,7 +124,7 @@ def _hash(edicao: Edicao) -> str:
     ).hexdigest()
 
 
-def _fatos(item: ItemEdicao) -> Fatos:
+def _fatos(item: ItemEdicao) -> FatosItem:
     try:
         if item.fatos is None:
             raise ValueError
@@ -155,19 +157,36 @@ def _fontes(sessao: Session, edicao: Edicao) -> dict[int, Fonte]:
     return fontes
 
 
-def _dados_fatuais(fatos: Fatos) -> dict:
+def _dados_fatuais(fatos: FatosItem) -> dict:
     return fatos.model_dump(mode="json", exclude={"origem", "pendencias"})
 
 
-def _conferir(sessao: Session, edicao: Edicao) -> tuple[dict[int, ItemBase], list[str]]:
+def _conferir(
+    sessao: Session, edicao: Edicao
+) -> tuple[dict[int, ItemBase | ItemAtoBase], list[str]]:
     if not edicao.itens:
         raise ErroEdicao("A edição precisa ter ao menos um item.")
+    fatos_itens = [(item, _fatos(item)) for item in edicao.itens]
     selecao = selecionar(sessao, edicao.inicio, edicao.fim, teto=2**31 - 1)
-    atuais = {frozenset(v.id for v in i.fatos.votacoes): i for i in selecao.itens}
+    votacoes = {
+        frozenset(v.id for v in i.fatos.votacoes): i
+        for i in selecao.itens
+        if isinstance(i, ItemBase)
+    }
+    ids_atos = {fatos.ato_id for _, fatos in fatos_itens if isinstance(fatos, FatosAto)}
+    atos = {}
+    if ids_atos:
+        linhas = sessao.scalars(
+            select(Ato).where(Ato.id.in_(ids_atos)).options(joinedload(Ato.fonte))
+        )
+        atos = {ato.id: ItemAtoBase.de_ato(ato) for ato in linhas if pagina_publica(ato.fonte)}
     bases = {}
-    for item in edicao.itens:
-        fatos = _fatos(item)
-        atual = atuais.get(frozenset(v.id for v in fatos.votacoes))
+    for item, fatos in fatos_itens:
+        atual = (
+            atos.get(fatos.ato_id)
+            if isinstance(fatos, FatosAto)
+            else votacoes.get(frozenset(v.id for v in fatos.votacoes))
+        )
         if (
             atual is None
             or _dados_fatuais(atual.fatos) != _dados_fatuais(fatos)
@@ -204,7 +223,7 @@ def gerar(
         selecao = selecionar(sessao, inicio, fim, teto=teto)
     resumo = asdict(selecao.resumo)
     resumo["itens_com_termo_pessoal"] = sum(
-        requer_conferencia_pessoal(item) for item in selecao.itens
+        requer_conferencia_pessoal(item) for item in selecao.itens if isinstance(item, ItemBase)
     )
     for campo in ("sem_proposicao", "sem_pagina_publica", "cortadas_pelo_teto"):
         resumo[f"quantidade_{campo}"] = len(resumo[campo])
@@ -220,8 +239,14 @@ def gerar(
     preparados = []
     motivos = Counter()
     for base in selecao.itens:
-        texto = redigir(base, selecao.nomes, redator)
-        artigo = sugerir(base)
+        if isinstance(base, ItemAtoBase):
+            texto = TextoGerado(
+                "Ato do Diário Oficial", PENDENTE_ATO, "codigo", "sem_redacao_do_ato"
+            )
+            artigo = None
+        else:
+            texto = redigir(base, selecao.nomes, redator)
+            artigo = sugerir(base)
         fatos = base.fatos.model_copy(deep=True)
         fatos.origem = texto.origem
         if texto.origem == "codigo":
@@ -271,7 +296,23 @@ def gerar(
     }
 
 
-def _arquivo(sessao: Session, edicao: Edicao, bases: dict[int, ItemBase]) -> dict:
+def _contexto(base: ItemBase | ItemAtoBase) -> dict:
+    if isinstance(base, ItemAtoBase):
+        return {}
+    return {
+        **({"avisos": [AVISO_TERMO_PESSOAL]} if requer_conferencia_pessoal(base) else {}),
+        "proposicoes": [
+            {"id": p.id, "sigla": p.sigla, "numero": p.numero, "ano": p.ano, "ementa": p.ementa}
+            for p in base.proposicoes
+        ],
+        "votacoes": [
+            {"id": v.id, "casa": v.casa, "id_externo": v.id_externo, "descricao": v.descricao}
+            for v in base.votacoes
+        ],
+    }
+
+
+def _arquivo(sessao: Session, edicao: Edicao, bases: dict[int, ItemBase | ItemAtoBase]) -> dict:
     fontes = _fontes(sessao, edicao)
     itens = []
     for item in edicao.itens:
@@ -293,36 +334,11 @@ def _arquivo(sessao: Session, edicao: Edicao, bases: dict[int, ItemBase]) -> dic
                         "url": fontes[i].url,
                         "url_publica": fontes[i].url_publica,
                         "coletado_em": fontes[i].coletado_em.isoformat(),
-                        "trecho": fontes[i].trecho,
+                        "trecho": fontes[i].trecho if isinstance(base, ItemBase) else None,
                     }
                     for i in fatos.fontes
                 ],
-                "contexto": {
-                    **(
-                        {"avisos": [AVISO_TERMO_PESSOAL]}
-                        if requer_conferencia_pessoal(base)
-                        else {}
-                    ),
-                    "proposicoes": [
-                        {
-                            "id": p.id,
-                            "sigla": p.sigla,
-                            "numero": p.numero,
-                            "ano": p.ano,
-                            "ementa": p.ementa,
-                        }
-                        for p in base.proposicoes
-                    ],
-                    "votacoes": [
-                        {
-                            "id": v.id,
-                            "casa": v.casa,
-                            "id_externo": v.id_externo,
-                            "descricao": v.descricao,
-                        }
-                        for v in base.votacoes
-                    ],
-                },
+                "contexto": _contexto(base),
             }
         )
     return {
@@ -375,7 +391,15 @@ def _numeros(texto: str) -> set[str]:
     return {t.replace(".", "").replace(",", ".") for t in re.findall(r"\d+(?:[.,]\d+)*", texto)}
 
 
-def _numeros_permitidos(base: ItemBase, edicao: Edicao) -> set[str]:
+def _numeros_permitidos(base: ItemBase | ItemAtoBase, edicao: Edicao) -> set[str]:
+    if isinstance(base, ItemAtoBase):
+        ato = base.ato
+        dados = [ato.numero or "", ato.titulo, ato.ementa or ""]
+        for data in (edicao.inicio, edicao.fim, ato.data_publicacao, ato.data_assinatura):
+            if data is not None:
+                # Aceita o dia e o mês sem zero à esquerda no texto editorial.
+                dados.extend([data.isoformat(), str(data.day), str(data.month)])
+        return _numeros(" ".join(dados))
     dados = [str(edicao.inicio), str(edicao.fim)]
     for p in base.proposicoes:
         dados.extend([str(p.numero), str(p.ano), p.ementa or ""])
@@ -457,7 +481,7 @@ def revisar(abrir: AbrirSessao, edicao_id: int, dados: dict) -> dict:
                 if not revisao.motivo_exclusao.strip():
                     raise ErroEdicao(f"Item {numero}: preencha o motivo da exclusão.")
                 continue
-            if requer_conferencia_pessoal(base):
+            if isinstance(base, ItemBase) and requer_conferencia_pessoal(base):
                 avisos.append(f"Confira o item {numero}: {AVISO_TERMO_PESSOAL}")
             numeros = _numeros_permitidos(base, edicao)
             numeros_edicao.update(numeros)
@@ -473,9 +497,10 @@ def revisar(abrir: AbrirSessao, edicao_id: int, dados: dict) -> dict:
                 )
             if revisao.artigo_caminho is not None and revisao.artigo_caminho not in CATALOGO:
                 raise ErroEdicao(f"Item {numero}: escolha um artigo do catálogo ou use null.")
-            pendente = (
-                "redacao pendente" in normalizar(texto)
-                or normalizar(texto).strip() == normalizar(PENDENTE.split(":", 1)[1]).strip()
+            marcador = PENDENTE_ATO if isinstance(base, ItemAtoBase) else PENDENTE
+            texto_normalizado = normalizar(texto)
+            pendente = "redacao pendente" in texto_normalizado or (
+                texto_normalizado.strip() == normalizar(marcador.split(":", 1)[1]).strip()
             )
             if revisao.revisado and pendente:
                 raise ErroEdicao(
@@ -539,12 +564,14 @@ def publicar(abrir: AbrirSessao, edicao_id: int) -> dict:
         _periodo(sessao, edicao.inicio, edicao.fim)
         _conferir(sessao, edicao)
         for item in edicao.itens:
-            pendencias = _fatos(item).pendencias
+            fatos = _fatos(item)
+            pendencias = fatos.pendencias
             if pendencias:
                 raise ErroEdicao(
                     f"Item {item.ordem}: há pendência de {', '.join(pendencias)}. Exporte e revise."
                 )
-            if not item.titulo.strip() or not item.texto.strip() or PENDENTE in item.texto:
+            marcador = PENDENTE_ATO if isinstance(fatos, FatosAto) else PENDENTE
+            if not item.titulo.strip() or not item.texto.strip() or marcador in item.texto:
                 raise ErroEdicao(
                     f"Item {item.ordem}: preencha título e explicação antes de publicar."
                 )

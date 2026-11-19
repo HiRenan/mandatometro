@@ -10,7 +10,7 @@ from pydantic import ValidationError
 
 from mandatometro.db.modelos import Edicao, Fonte
 from mandatometro.ia.artigos import CATALOGO
-from mandatometro.ia.esquemas import Fatos
+from mandatometro.ia.esquemas import Fatos, FatosAto
 
 DOMINIOS_OFICIAIS = ("gov.br", "leg.br", "jus.br", "mp.br", "def.br")
 
@@ -81,6 +81,7 @@ def formatar_edicao(
         if item.fonte is None:
             raise MensagemInvalida("Item sem fonte completa.")
         referencias, linhas = [item.fonte], []
+        de_ato = False
         if item.fatos is not None:
             try:
                 fatos = Fatos.ler(item.fatos)
@@ -91,22 +92,26 @@ def formatar_edicao(
             referencias.extend(
                 fontes.get(i) for i in dict.fromkeys(fatos.fontes) if i != item.fonte.id
             )
-            for votacao in fatos.votacoes:
-                resultado = (
-                    "O resultado desta votação não está classificado nos dados usados."
-                    if votacao.resultado == "outro"
-                    else f"Resultado registrado: {votacao.resultado}."
-                )
-                linhas.append(f"Votação em {votacao.data:%d/%m/%Y}. {resultado}")
-                p = votacao.placar
-                if p is None:
-                    linhas.append("O placar não está disponível nos dados usados.")
-                else:
-                    linhas.append(
-                        f"Votos registrados — Sim: {p.sim}; Não: {p.nao}; "
-                        f"Abstenções: {p.abstencao}; Obstruções: {p.obstrucao}. "
-                        f"Presidência: {p.presidente} (contada à parte)."
+            if isinstance(fatos, FatosAto):
+                de_ato = True
+                linhas.append(f"Publicado no Diário Oficial em {fatos.data_publicacao:%d/%m/%Y}.")
+            else:
+                for votacao in fatos.votacoes:
+                    resultado = (
+                        "O resultado desta votação não está classificado nos dados usados."
+                        if votacao.resultado == "outro"
+                        else f"Resultado registrado: {votacao.resultado}."
                     )
+                    linhas.append(f"Votação em {votacao.data:%d/%m/%Y}. {resultado}")
+                    p = votacao.placar
+                    if p is None:
+                        linhas.append("O placar não está disponível nos dados usados.")
+                    else:
+                        linhas.append(
+                            f"Votos registrados — Sim: {p.sim}; Não: {p.nao}; "
+                            f"Abstenções: {p.abstencao}; Obstruções: {p.obstrucao}. "
+                            f"Presidência: {p.presidente} (contada à parte)."
+                        )
         corpo = "\n\n".join([item.texto, *linhas])
         html.extend(
             [
@@ -119,6 +124,8 @@ def formatar_edicao(
         for fonte in referencias:
             if fonte is None or fonte.coletado_em is None:
                 raise MensagemInvalida("Item sem fonte completa.")
+            if de_ato and not fonte.url_publica:
+                raise MensagemInvalida("A referência do ato está sem página oficial.")
             url = _url(fonte.url_publica or fonte.url)
             por_pagina.setdefault(url, []).append(fonte)
         for indice, (url, fontes_pagina) in enumerate(por_pagina.items()):
@@ -134,7 +141,7 @@ def formatar_edicao(
                 else:
                     html.append(f"<p>Outra coleta da mesma referência: {coleta}</p>")
                     texto.append(f"Outra coleta da mesma referência: {coleta}")
-                if fonte.trecho:
+                if fonte.trecho and not de_ato:
                     html.append(f"<blockquote>{escape(fonte.trecho)}</blockquote>")
                     texto.append(f"Trecho da fonte: {fonte.trecho}")
         if item.artigo_caminho is not None:
