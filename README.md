@@ -25,11 +25,11 @@ O porquê dessas escolhas está no [ADR 0002](docs/adr/0002-mvp.md) e no [ADR 00
 
 Só dados públicos, sempre com link para a origem:
 
-- [Dados Abertos da Câmara dos Deputados](https://dadosabertos.camara.leg.br/) e [do Senado Federal](https://legis.senado.leg.br/dadosabertos/): votações, proposições e parlamentares, para a newsletter
+- Para a newsletter, os dados abertos da Câmara e do Senado fornecem votações, proposições e parlamentares. A lista de legislação federal do Senado fornece decretos, leis e medidas provisórias publicados no Diário Oficial da União. [Câmara](https://dadosabertos.camara.leg.br/) · [Senado](https://legis.senado.leg.br/dadosabertos/) · [Lista de legislação federal](https://legis.senado.leg.br/dadosabertos/legislacao/lista?tipo=LEI&ano=2026)
 - Leis, regimentos e páginas oficiais da Câmara, do Senado e do TSE, para as trilhas
 - Depois do MVP: o [Portal de Dados Abertos do TSE](https://dadosabertos.tse.jus.br/) (candidaturas e bens declarados) e os sites de campanha
 
-As APIs oficiais e os arquivos de dados abertos (Câmara, Senado, TSE e, pelo INLABS, o Diário Oficial da União) são lidos direto, por HTTP.
+As APIs oficiais e os arquivos de dados abertos da Câmara, do Senado e do TSE são lidos direto, por HTTP.
 
 ## Ferramentas parceiras
 
@@ -320,6 +320,8 @@ pnpm build         # build do site, que confere o conteúdo das trilhas
 ```
 
 `pnpm check` corrige a formatação do TypeScript. No Python, rode `uv run ruff format` e `uv run ruff check --fix` em `apps/backend`.
+
+Para rodar os testes online, execute `uv run pytest -m online` em `apps/backend`. A suíte padrão e o CI executam apenas os testes offline.
 
 **Testes de banco.** Crie um banco de teste uma vez, com o banco do Docker no ar, e passe o endereço no `TEST_DATABASE_URL`:
 
