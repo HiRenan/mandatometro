@@ -24,8 +24,9 @@ Cada endpoint tem a URL que usamos, uma tabela de campos e um exemplo real recor
 
 - Toda chamada externa tem timeout e nova tentativa com backoff. A API da Câmara devolve 504 de vez em quando.
 - O User-Agent identifica o projeto (`mandatometro (Hack Brasil 2026)`), e a coleta respeita o robots.txt dos sites.
-- **O `in.gov.br` proíbe a raspagem:** em 18/11/2026, `https://www.in.gov.br/robots.txt` respondeu HTTP 200 com `User-agent: *` e `Disallow: /` — o site inteiro, para todos os agentes. A página de destaques do Diário Oficial não se lê, nem direto nem pelo Firecrawl, que faz a mesma requisição ao servidor do órgão.
+- **Robots da Imprensa Nacional.** Em 18/11/2026, `https://www.in.gov.br/robots.txt` respondeu HTTP 200 com `User-agent: *` e `Disallow: /`. A exceção aprovada cobre a página de destaques e sua paginação pelo Firecrawl, com teto de seis páginas. [ADR 0006](adr/0006-destaques-do-dou.md).
 - **Robots da coleta:** em 16/11/2026, `dadosabertos.camara.leg.br/robots.txt` respondeu HTTP 200 com HTML de página inexistente, sem regras, e `legis.senado.leg.br/robots.txt` respondeu 403. A base lê o arquivo uma vez por execução, usa `RobotFileParser.parse()` e segue a RFC 9309: aplica as regras legíveis; sem regras ou com 4xx no arquivo (exceto 408/429, transitórios), continua; falha de rede/5xx persistente interrompe. Um 403 no endpoint de dados continua sendo erro. `Crawl-delay`, `Request-rate` e `Retry-After` são respeitados.
+- **Ordem das regras no Python 3.13.5.** O `RobotFileParser.can_fetch` usado pela base decide pela primeira regra que casa. A RFC 9309 determina o uso da regra mais específica. As respostas atuais de Câmara e Senado ao `robots.txt` tornam a diferença inócua, como anotado na revisão do PR #238. [RFC 9309, seção 2.2.2](https://www.rfc-editor.org/rfc/rfc9309.html#section-2.2.2).
 - As respostas da Câmara e do Senado são UTF-8, e nenhuma das duas declara o charset no `content-type` (as duas mandam `application/json`): decodifique explicitamente como UTF-8, ou os acentos embaralham no Windows.
 - As chamadas de cada coleta rodam em sequência.
 - Veja a [regra de fonte dos dados coletados](#fonte-dos-dados-coletados).
@@ -535,7 +536,7 @@ O `resultado` e o `voto.valor` têm domínios diferentes nas duas Casas, e o mod
 
 ## Atos do Diário Oficial
 
-A tabela `ato` guarda os atos publicados para a seleção semanal da newsletter. Os dados abertos do Senado fornecem os decretos, as leis e as medidas provisórias. A escolha está no [ADR 0005](adr/0005-legislacao-federal-na-newsletter.md).
+A tabela `ato` guarda os atos publicados para a seleção semanal da newsletter. Os dados abertos do Senado fornecem decretos, leis e medidas provisórias. A página de destaques complementa a cobertura com portarias e outros atos de ministérios. [ADR 0005](adr/0005-legislacao-federal-na-newsletter.md) · [ADR 0006](adr/0006-destaques-do-dou.md).
 
 ### Legislação federal nos dados abertos do Senado
 
@@ -577,6 +578,33 @@ O Senado devolveu um decreto com assinatura em 13/12/2026 na lista consultada em
 O resumo é uma linha JSON. O código de saída é 0 quando a coleta percorre as listas, ainda que haja descartes. Falhas de rede ou do servidor após esgotar as tentativas, falhas de listagem ou de gravação e uma proibição no robots encerram a execução com código 1 e mantêm os atos já confirmados. A falha de gravação conta como `falha_gravacao`. Datas inválidas na linha de comando retornam 2.
 
 Título e ementa podem mencionar pessoas. O conector guarda o texto oficial em `ato`, com `fonte.trecho` nulo. Logs, resumo e erros omitem esse conteúdo. O uso editorial segue as [regras de dados pessoais](dados-pessoais.md).
+
+### Destaques da Imprensa Nacional
+
+O Firecrawl entrega cada página em `data.rawHtml`. Cada cartão `dou row` contém um `<root>` do Liferay, com os campos em `dynamic-element` e `dynamic-content`. O Liferay também inclui um script `BuscaDouPortlet_params`, cujo `jsonArray` veio vazio nas amostras. O HTML serializado transforma CDATA em comentário e pode trazer `&nbsp;` em fragmentos XML. O conector ajusta essas duas representações antes de ler o XML. A amostra da primeira página veio do cache (`cacheState: hit`). O POST pede somente `rawHtml` e usa `maxAge: 0` para obter uma leitura fresca. [Firecrawl v2](https://docs.firecrawl.dev/api-reference/endpoint/scrape) · [Cache do Firecrawl](https://docs.firecrawl.dev/features/fast-scraping).
+
+| Campo | Procedência nos destaques |
+| --- | --- |
+| `id` | Chave interna gerada pelo banco. |
+| `origem` | Constante `destaques_dou`. |
+| `id_externo` | `idMateria` em texto. Identifica a matéria no XML e foi distinto nos 40 cartões das duas páginas. Um `idOficio` se repetiu na primeira página. |
+| `tipo` | `artType` vira `decreto`, `lei`, `medida_provisoria` ou `outro`. Portaria entra como `outro`. |
+| `titulo` | `titulo` do XML, com `highlight` quando vazio. `highlight` correspondeu ao título visível dos cartões nas amostras. |
+| `ementa` | `ementa` do XML. Vazia ou só com espaços vira nula. |
+| `data_publicacao` | `pubDate` (`DD/MM/AAAA`). |
+| `data_assinatura` | `data` do XML, quando disponível. Se vier vazia, usa a data por extenso no endereço oficial do ato, quando presente. |
+| `secao` | `pubName`. Entram `DO1`, `DO1E` e `DO1S`, da seção 1, incluindo edição extra e suplemento. |
+| `orgao` | `artSection`, com `hierarchy` como alternativa. |
+| `numero` | Número da norma no endereço oficial ou no `titulo` do XML, em texto, sem separadores de milhar. |
+| `fonte_id` | Referência à observação criada na mesma transação que grava o ato. |
+
+`fonte.url` guarda o endereço da página de destaques consultada. `fonte.url_publica` é o link principal do cartão, validado como `https://www.in.gov.br/web/dou/-/<slug>-<identificador numérico>`. Alguns links oficiais trazem barras no slug. A validação admite segmentos com letras, algarismos, pontos e hífens, todos iniciados por letra ou algarismo. `fonte.coletado_em` marca o recebimento e `fonte.trecho` fica nulo. Repetir o período atualiza `(origem, id_externo)` e conserva o id interno. O mesmo ato do Senado tem sua própria origem.
+
+O comando usa as datas de publicação, incluindo as duas pontas do período. Sem datas, cobre os sete dias completos anteriores no fuso de Brasília. Começa pelo endereço fixo e monta as páginas seguintes com o portlet `mhF1RLPnJWPh`, `_delta=20` e `_cur=N`. Uma página vazia ou inteiramente anterior ao período encerra a busca. Uma data de publicação ilegível leva à página seguinte. O teto é de seis páginas. Se a sexta ainda indicar continuação, a coleta sinaliza saída 1.
+
+Atos de pessoal da seção 2 e contratos e editais da seção 3 ficam fora do recorte. O resumo conta descartes por período, seção, data inválida ou futura, campo obrigatório, link e XML inválidos. `assina`, `cargo` e `texto` ficam fora do banco e da saída. Título e ementa são campos do ato no banco e seguem as regras de uso editorial de [dados pessoais](dados-pessoais.md#coleta-dos-destaques-do-diário-oficial).
+
+Sem `FIRECRAWL_API_KEY`, o comando sai com código 2. Falha do provedor ou de gravação sai com código 1 e mantém os atos já confirmados. HTTP 429 permite até três pedidos da mesma página. O cliente respeita o `Retry-After` e encerra a coleta se a espera solicitada exceder 60 segundos.
 
 ## Campos pessoais
 

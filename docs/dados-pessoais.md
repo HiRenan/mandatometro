@@ -21,3 +21,7 @@ A conta é opcional e pede nome completo, e-mail e senha. Os dados da conta, inc
 ## Trilhas e piloto
 
 Nenhum dado pessoal entra no texto publicado das trilhas. As trilhas não pedem dados pessoais. As respostas do quiz não identificam quem respondeu. O piloto segue o [contrato de medição](medicao-do-piloto.md#conteúdo-e-dados).
+
+## Coleta dos destaques do Diário Oficial
+
+A coleta admite apenas atos da seção 1, incluindo edições extras e suplementos. Atos de pessoal da seção 2 e atos da seção 3 entram na contagem de descartes. O banco guarda título e ementa para o fluxo editorial. Os campos `assina` e `cargo`, de quem assinou, e `texto`, o inteiro teor, ficam fora da gravação, dos logs, do resumo e dos erros. O uso editorial de atos que mencionam pessoas é tratado na #206. [Dicionário de dados](dicionario-de-dados.md#destaques-da-imprensa-nacional).
