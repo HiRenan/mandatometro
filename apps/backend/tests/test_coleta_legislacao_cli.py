@@ -48,3 +48,4 @@ def test_resumo_e_periodo_padrao_da_legislacao(monkeypatch, capsys, completa, co
     resumo = json.loads(linhas[0])
     assert (resumo["inicio"], resumo["fim"], resumo["atos"]) == ("2026-11-12", "2026-11-18", 11)
     assert not {"casa", "parlamentares", "votos", "ementa", "titulo"}.intersection(resumo)
+    assert "assinaturas_ignoradas" not in resumo

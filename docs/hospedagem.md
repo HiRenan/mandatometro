@@ -78,6 +78,8 @@ Para recuperar uma lacuna maior, preencha **inicio e fim juntos**, em `AAAA-MM-D
 
 O rascunho da #22 tem lugar proposto no domingo às **06h37**, depois da coleta, e continua manual. O envio dominical está preparado para **10h37**, depois da revisão e publicação humanas; Renan confirma o horário antes de ativar. A rodada dura no máximo 30 minutos.
 
+A coleta de destaques do DOU usa `FIRECRAWL_API_KEY` como segredo no ambiente que executa o comando. [Coleta dos destaques](../README.md#como-rodar).
+
 ## Ativar e recuperar o envio de domingo
 
 1. Depois da migration `0007` e da publicação da API nova, confira `GET /edicoes` e `GET /edicoes/{id}` com uma edição revisada. Não use a edição local de prova em produção. O envio antigo da inscrição não grava o marcador: ative a agenda somente depois de toda a API usar a versão nova. Se já houve envios reais antes da migration, concilie-os antes de iniciar a primeira rodada; marcador nulo não prova ausência de envio anterior.

@@ -311,6 +311,15 @@ O comando grava decretos, leis e medidas provisórias pela data de publicação 
 
 A busca de candidatos começa dez dias corridos antes do período para abranger intervalos entre a assinatura e a publicação, como o de um feriado prolongado. Uma norma publicada no período pode ficar de fora se tiver sido assinada mais de dez dias antes do início.
 
+**Coleta dos destaques do Diário Oficial.** Em `apps/backend`, use o banco de destino em `DATABASE_URL`, com as migrations aplicadas, e configure o segredo `FIRECRAWL_API_KEY`.
+
+```bash
+uv run mandatometro coleta destaques --inicio 2026-11-13 --fim 2026-11-19
+uv run mandatometro coleta destaques
+```
+
+O comando grava os destaques da seção 1 pela data de publicação, incluindo portarias. Passe as duas datas ou use os sete dias completos anteriores no fuso de Brasília. Quando a coleta roda, o resumo é uma linha JSON com gravações, descartes e falhas. Saída 1 sinaliza falha ou coleta incompleta. Sem a chave ou com datas inválidas, o comando imprime uma linha de texto fixo e sai com código 2. [Campos e paginação](docs/dicionario-de-dados.md#destaques-da-imprensa-nacional).
+
 **Edição semanal.** [Como preparar, revisar e publicar a edição](docs/newsletter.md#newsletter-rascunho-e-revisão).
 
 **Checagens,** as mesmas do CI:

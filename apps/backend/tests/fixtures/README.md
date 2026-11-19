@@ -27,6 +27,7 @@ Respostas reais das APIs da Câmara e do Senado, gravadas para os [testes de uni
 | `senado/processo-9026396.json` | `/processo/9026396` — a matéria da votação secreta |
 | `senado/legislacao/lista-{DEC,LEI,MPV}-2026.json` | `/legislacao/lista?tipo={DEC,LEI,MPV}&ano=2026` — recortes de 19/11/2026 com assinaturas dentro e fora do período |
 | `senado/legislacao/detalhe-{44427519,44391098,44363879}.json` | `/legislacao/{id}` — um detalhe por tipo, com publicações do DOU regular e de edição extra |
+| `firecrawl/destaques-p{1,2}.json` | `POST /v2/scrape` — recortes das duas primeiras páginas dos destaques do DOU em 19/11/2026, com dados fictícios nos textos livres |
 
 Bases: `https://dadosabertos.camara.leg.br/api/v2` e `https://legis.senado.leg.br/dadosabertos`.
 
@@ -57,6 +58,8 @@ O teste percorre todos os arquivos `senado/votacao-*.json` e confere os pares pe
 As demais respostas de votações e cadastros parlamentares omitem CPF, título de eleitor, data de nascimento e motivo de afastamento. Como a fonte publica, os arquivos trazem e-mail e telefone de gabinete, foto, nome completo e sexo de deputados e senadores, e o `camara/deputado-178843.json` traz também a cidade e a UF de nascimento e a escolaridade. Ao gravar uma fixture nova de `/deputados/{id}`, da lista de senadores ou dos mandatos, faça a mesma troca. Ausências nos votos também precisam de sanitização: nunca grave uma licença real ligada ao parlamentar. Os testes do conector que exercitam ausências e códigos desconhecidos usam pessoas inventadas.
 
 Nas amostras de legislação, os textos livres foram trocados por exemplos fictícios antes de gravar os arquivos. As ementas incluem nome e CPF fictícios para exercitar a preservação no banco e a omissão na saída. Foram preservados a estrutura, os ids, os tipos, as datas, as fontes de publicação e os links oficiais.
+
+Nos recortes do Firecrawl, títulos, ementas, órgão, assinaturas, cargos e inteiro teor usam valores fictícios. Os endereços dos atos no recorte conservam número, data e identificador. A primeira página inclui um cartão inventado da seção 2 e um XML quebrado para exercitar os descartes. As amostras preservam os metadados da URL consultada e a representação do XML em `rawHtml`.
 
 ## Por que estes casos
 

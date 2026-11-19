@@ -30,8 +30,8 @@ class Config(BaseSettings):
     api_url: str = "http://localhost:8000"
     resend_api_key: SecretStr | None = None
     resend_from: str | None = None
-    # INLABS, da Imprensa Nacional: a coleta do Diário Oficial entra com estas
-    # credenciais (ADR 0004). Vazias deixam essa coleta desligada, e nada mais muda.
+    firecrawl_api_key: SecretStr | None = None
+    # Credenciais reservadas para a integração com o INLABS (ADR 0004).
     inlabs_usuario: str | None = None
     inlabs_senha: SecretStr | None = None
     conta_chave: SecretStr | None = None
