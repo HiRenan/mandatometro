@@ -53,6 +53,9 @@ class FatosAto(Estrito):
     hash_ato: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
     origem: Literal["codigo", "modelo", "revisao"] = "codigo"
     pendencias: list[Pendencia] = Field(default_factory=lambda: ["revisao", "cobertura"])
+    privacidade_confirmada: bool | None = Field(
+        default=None, exclude_if=lambda valor: valor is None
+    )
 
 
 FatosItem = Fatos | FatosAto

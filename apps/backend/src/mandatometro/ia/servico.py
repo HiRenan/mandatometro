@@ -9,7 +9,7 @@ from dataclasses import asdict
 from datetime import UTC, date, datetime
 from typing import Annotated, Literal
 
-from pydantic import Field, ValidationError
+from pydantic import BeforeValidator, Field, ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
@@ -17,7 +17,13 @@ from mandatometro.avisos.email import MensagemInvalida, _url, formatar_edicao
 from mandatometro.db.modelos import Ato, Edicao, Fonte, ItemEdicao
 from mandatometro.ia.artigos import CATALOGO, sugerir
 from mandatometro.ia.esquemas import Estrito, Fatos, FatosAto, FatosItem, Id
-from mandatometro.ia.privacidade import assunto_pessoal, identificacao, normalizar
+from mandatometro.ia.privacidade import (
+    MotivoRetencaoAto,
+    assunto_pessoal,
+    identificacao,
+    motivo_retencao_ato,
+    normalizar,
+)
 from mandatometro.ia.redacao import (
     AVISO_TERMO_PESSOAL,
     PENDENTE,
@@ -30,6 +36,9 @@ from mandatometro.ia.selecao import ItemAtoBase, ItemBase, pagina_publica, selec
 
 AbrirSessao = Callable[[], Session]
 PENDENTE_ATO = "Redação pendente: escreva a explicação do ato."
+AVISO_ATO_RETIDO = (
+    "Confira a privacidade do ato. Exclua o item com motivo ou confirme que ele fica."
+)
 
 # O Windows-1252 leva bytes de continuação a caracteres fora de U+0080–U+00BF.
 _CONTINUACOES_WINDOWS_1252 = bytes(range(0x80, 0xA0)).decode("cp1252", errors="ignore")
@@ -51,7 +60,9 @@ class ItemRevisao(Estrito):
     revisado: bool
     artigo_confirmado: bool
     excluir: bool
-    motivo_exclusao: Annotated[str, Field(max_length=500)]
+    motivo_exclusao: Annotated[str, Field(max_length=500)] = ""
+    # Só o booleano true é uma decisão. Os demais valores recebem a mensagem editorial do ato.
+    privacidade_confirmada: Annotated[bool, BeforeValidator(lambda valor: valor is True)] = False
     fatos: dict
     fontes: list[dict]
     contexto: dict
@@ -158,7 +169,25 @@ def _fontes(sessao: Session, edicao: Edicao) -> dict[int, Fonte]:
 
 
 def _dados_fatuais(fatos: FatosItem) -> dict:
-    return fatos.model_dump(mode="json", exclude={"origem", "pendencias"})
+    return fatos.model_dump(mode="json", exclude={"origem", "pendencias", "privacidade_confirmada"})
+
+
+def _aviso_ato(numero: int, motivo: MotivoRetencaoAto) -> str:
+    return f"Item {numero} ({motivo}). {AVISO_ATO_RETIDO}"
+
+
+def _erro_confirmacao_ato(numero: int, motivo: MotivoRetencaoAto) -> ErroEdicao:
+    return ErroEdicao(
+        f"Item {numero} ({motivo}). Marque privacidade_confirmada "
+        "ou use excluir com motivo_exclusao."
+    )
+
+
+def _carregar_atos(sessao: Session, ids: set[int]) -> dict[int, Ato]:
+    if not ids:
+        return {}
+    linhas = sessao.scalars(select(Ato).where(Ato.id.in_(ids)).options(joinedload(Ato.fonte)))
+    return {ato.id: ato for ato in linhas}
 
 
 def _conferir(
@@ -174,12 +203,11 @@ def _conferir(
         if isinstance(i, ItemBase)
     }
     ids_atos = {fatos.ato_id for _, fatos in fatos_itens if isinstance(fatos, FatosAto)}
-    atos = {}
-    if ids_atos:
-        linhas = sessao.scalars(
-            select(Ato).where(Ato.id.in_(ids_atos)).options(joinedload(Ato.fonte))
-        )
-        atos = {ato.id: ItemAtoBase.de_ato(ato) for ato in linhas if pagina_publica(ato.fonte)}
+    atos = {
+        id_: ItemAtoBase.de_ato(ato)
+        for id_, ato in _carregar_atos(sessao, ids_atos).items()
+        if pagina_publica(ato.fonte)
+    }
     bases = {}
     for item, fatos in fatos_itens:
         atual = (
@@ -236,18 +264,21 @@ def gerar(
             **resumo,
         }
     # Durante a chamada ao redator, não há transação aberta nem conexão do banco em uso.
-    preparados = []
+    preparados, avisos = [], []
     motivos = Counter()
-    for base in selecao.itens:
+    for numero, base in enumerate(selecao.itens, 1):
+        fatos = base.fatos.model_copy(deep=True)
         if isinstance(base, ItemAtoBase):
             texto = TextoGerado(
                 "Ato do Diário Oficial", PENDENTE_ATO, "codigo", "sem_redacao_do_ato"
             )
             artigo = None
+            if (motivo := motivo_retencao_ato(base.ato)) and isinstance(fatos, FatosAto):
+                fatos.privacidade_confirmada = False
+                avisos.append(_aviso_ato(numero, motivo))
         else:
             texto = redigir(base, selecao.nomes, redator)
             artigo = sugerir(base)
-        fatos = base.fatos.model_copy(deep=True)
         fatos.origem = texto.origem
         if texto.origem == "codigo":
             fatos.pendencias.append("redacao")
@@ -292,13 +323,15 @@ def gerar(
         "textos_do_modelo": len(preparados) - motivos.total(),
         "textos_do_codigo": motivos.total(),
         "motivos_texto_do_codigo": dict(motivos),
+        **({"avisos": avisos} if avisos else {}),
         **resumo,
     }
 
 
-def _contexto(base: ItemBase | ItemAtoBase) -> dict:
+def _contexto(base: ItemBase | ItemAtoBase, numero: int) -> dict:
     if isinstance(base, ItemAtoBase):
-        return {}
+        motivo = motivo_retencao_ato(base.ato)
+        return {"avisos": [_aviso_ato(numero, motivo)], "motivo_retencao": motivo} if motivo else {}
     return {
         **({"avisos": [AVISO_TERMO_PESSOAL]} if requer_conferencia_pessoal(base) else {}),
         "proposicoes": [
@@ -317,6 +350,7 @@ def _arquivo(sessao: Session, edicao: Edicao, bases: dict[int, ItemBase | ItemAt
     itens = []
     for item in edicao.itens:
         fatos, base = _fatos(item), bases[item.id]
+        contexto = _contexto(base, item.ordem)
         itens.append(
             {
                 "id": item.id,
@@ -338,7 +372,12 @@ def _arquivo(sessao: Session, edicao: Edicao, bases: dict[int, ItemBase | ItemAt
                     }
                     for i in fatos.fontes
                 ],
-                "contexto": _contexto(base),
+                "contexto": contexto,
+                **(
+                    {"privacidade_confirmada": fatos.privacidade_confirmada is True}
+                    if isinstance(fatos, FatosAto) and "motivo_retencao" in contexto
+                    else {}
+                ),
             }
         )
     return {
@@ -382,6 +421,7 @@ def _ler_arquivo(dados: dict) -> ArquivoRevisao:
             "artigo_confirmado": "confirmação do artigo",
             "cobertura_confirmada": "confirmação da cobertura",
             "artigo_caminho": "artigo",
+            "motivo_exclusao": "motivo_exclusao",
         }
         campo = next((campos[c] for c in reversed(local) if c in campos), "formato do arquivo")
         raise ErroEdicao(prefixo + f"confira o campo {campo}.") from None
@@ -471,16 +511,25 @@ def revisar(abrir: AbrirSessao, edicao_id: int, dados: dict) -> dict:
         novos, avisos, numeros_edicao = [], [], set()
         for numero, revisao in enumerate(arquivo.itens, 1):
             item, base = existentes[revisao.id], bases[revisao.id]
+            referencia = referencias[item.id]
+            motivo = referencia["contexto"].get("motivo_retencao")
+            prefixo = f"Item {numero} ({motivo})" if motivo else f"Item {numero}"
             for campo in ("fatos", "fontes", "contexto"):
-                if getattr(revisao, campo) != referencias[item.id][campo]:
+                if getattr(revisao, campo) != referencia[campo]:
                     raise ErroEdicao(
-                        f"Item {numero}: o campo {campo} é de consulta e não pode mudar. "
+                        f"{prefixo}: o campo {campo} é de consulta e não pode mudar. "
                         "Exporte o rascunho novamente e refaça os ajustes."
                     )
             if revisao.excluir:
                 if not revisao.motivo_exclusao.strip():
+                    if motivo:
+                        raise ErroEdicao(f"{prefixo}. Preencha o campo motivo_exclusao.")
                     raise ErroEdicao(f"Item {numero}: preencha o motivo da exclusão.")
                 continue
+            if motivo:
+                if not revisao.privacidade_confirmada:
+                    raise _erro_confirmacao_ato(numero, motivo)
+                avisos.append(_aviso_ato(numero, motivo))
             if isinstance(base, ItemBase) and requer_conferencia_pessoal(base):
                 avisos.append(f"Confira o item {numero}: {AVISO_TERMO_PESSOAL}")
             numeros = _numeros_permitidos(base, edicao)
@@ -507,6 +556,8 @@ def revisar(abrir: AbrirSessao, edicao_id: int, dados: dict) -> dict:
                     f"Item {numero}: escreva a explicação antes de confirmar a revisão."
                 )
             fatos = _fatos(item)
+            if isinstance(fatos, FatosAto) and motivo:
+                fatos.privacidade_confirmada = True
             fatos.pendencias = []
             if pendente:
                 fatos.pendencias.append("redacao")
@@ -562,9 +613,13 @@ def publicar(abrir: AbrirSessao, edicao_id: int) -> dict:
         if edicao.estado == "publicada":
             return {"situacao": "ja_publicada", "edicao_id": edicao_id}
         _periodo(sessao, edicao.inicio, edicao.fim)
-        _conferir(sessao, edicao)
+        bases, _ = _conferir(sessao, edicao)
         for item in edicao.itens:
             fatos = _fatos(item)
+            if isinstance(fatos, FatosAto) and fatos.privacidade_confirmada is not True:
+                base = bases[item.id]
+                if isinstance(base, ItemAtoBase) and (motivo := motivo_retencao_ato(base.ato)):
+                    raise _erro_confirmacao_ato(item.ordem, motivo)
             pendencias = fatos.pendencias
             if pendencias:
                 raise ErroEdicao(
@@ -587,12 +642,43 @@ def publicar(abrir: AbrirSessao, edicao_id: int) -> dict:
     return {"situacao": "publicada", "edicao_id": edicao_id}
 
 
+def _privacidade_previa(sessao: Session, edicao: Edicao) -> tuple[set[int], list[str]]:
+    if edicao.estado != "rascunho":
+        return set(), []
+    itens_atos = [
+        (item, fatos)
+        for item in edicao.itens
+        if item.fatos is not None and isinstance(fatos := _fatos(item), FatosAto)
+    ]
+    atos = _carregar_atos(sessao, {fatos.ato_id for _, fatos in itens_atos})
+    sem_link, avisos = set(), []
+    for item, fatos in itens_atos:
+        ato = atos.get(fatos.ato_id)
+        if ato is None or fatos.privacidade_confirmada is False:
+            sem_link.add(item.id)
+        if ato is not None and (motivo := motivo_retencao_ato(ato)):
+            avisos.append(_aviso_ato(item.ordem, motivo))
+            if fatos.privacidade_confirmada is not True or (
+                _dados_fatuais(ItemAtoBase.de_ato(ato).fatos) != _dados_fatuais(fatos)
+            ):
+                sem_link.add(item.id)
+    return sem_link, avisos
+
+
 def mostrar(abrir: AbrirSessao, edicao_id: int, *, app_base_url: str) -> str:
     with abrir() as sessao:
         edicao = _carregar(sessao, edicao_id)
+        sem_link, avisos = _privacidade_previa(sessao, edicao)
         try:
-            return formatar_edicao(
-                edicao, app_base_url=app_base_url, fontes=_fontes(sessao, edicao), previa=True
+            texto = formatar_edicao(
+                edicao,
+                app_base_url=app_base_url,
+                fontes=_fontes(sessao, edicao),
+                previa=True,
+                itens_sem_link=sem_link,
             ).texto
         except MensagemInvalida:
             raise ErroEdicao("Confira os textos, os artigos e as referências da edição.") from None
+        if avisos:
+            texto += "\n\n" + "\n".join(avisos)
+        return texto

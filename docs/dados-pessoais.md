@@ -12,6 +12,14 @@ No MVP, a coleta descarta `cpf` e `dataNascimento` de `/deputados/{id}`. O banco
 
 Motivo de ausência fica fora do banco, para a licença saúde não ser deduzida: toda ausência do Senado (AP, LS, MIS, NCom, LAP, LP e as que entrarem em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, igual às outras, e o motivo de afastamento do senador não é gravado. O voto só guarda os códigos de voto e de presença de `CODIGOS_GRAVADOS` em `valor_bruto`, o que o CHECK do banco garante, e um código novo entra como `outro`, sem o código. O banco guarda `P-NRV`, de quem estava presente. O log também não leva o código nem a pessoa, porque o log junto com o banco apontaria quem recebeu um código que pode ser de saúde: a coleta (#10 e #11) registra a votação e quantos códigos desconhecidos vieram nela, e quem for classificar o código o lê na fonte pública.
 
+## Atos do Diário Oficial
+
+Antes do modelo, o filtro retém atos da seção 2 e atos com rótulo de pessoal ou padrões de documento, como CPF e matrícula. No título e na ementa, procura palavras do vocabulário de atos de pessoal e sinais como duas ou mais palavras com inicial maiúscula compatíveis com um nome ou indicação de lista nominal. Um título ou uma ementa em caixa alta com termo do vocabulário também retém o ato. Só os atos elegíveis seguem para a seleção pelo modelo. Os diagnósticos de retenção usam o número do item e o código do motivo. Testes e fixtures usam atos e dados pessoais inteiramente inventados.
+
+O sinal de nome pode falhar com texto todo em minúsculas, nome de uma palavra só ou nome misturado ao de uma instituição. Vocabulário diferente e dados presentes apenas no inteiro teor ou no endereço da fonte também podem escapar do filtro. Um número de processo com 11 dígitos corridos pode ser retido pelo padrão de CPF. A revisão humana de cada item de ato, inclusive dos elegíveis, é a barreira antes da publicação.
+
+O título e a ementa oficiais ficam na tabela `ato`. Confira o título, a explicação e o endereço da fonte no arquivo de revisão antes de decidir se exclui o item ou se o mantém com redação própria. O item 6.9 do regulamento do hackathon proíbe expor dados pessoais reais de terceiros na demo. [Revisão dos atos](newsletter.md#como-preparar-a-edição)
+
 ## Inscrição e conta
 
 A newsletter pede só o e-mail, que fica no banco e só sai para o envio. Site, API, logs e fixtures de teste identificam a inscrição pelo id interno.
