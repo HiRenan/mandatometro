@@ -1,9 +1,11 @@
 import { isNotFound } from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	EDICOES_NA_BUSCA,
 	ERRO_DAS_EDICOES,
 	lerEdicao,
 	lerEdicoes,
+	lerEdicoesDaBusca,
 	TEMPO_DE_ESPERA,
 } from "./edicoes.server";
 import { edicaoDeExemplo, listaDeExemplo } from "./exemplos-de-teste";
@@ -256,5 +258,136 @@ describe("uma edição", () => {
 		confereErroGenerico(await erro);
 		expect(pedidos[0].signal.aborted).toBe(true);
 		expect(TEMPO_DE_ESPERA).toBe(8_000);
+	});
+});
+
+describe("as edições da busca", () => {
+	/**
+	 * A API com a lista e cada edição dela: a edição volta com o id pedido, e as
+	 * de `sumidas` dão 404, como a despublicada entre a lista e o pedido.
+	 */
+	function apiDasEdicoes(total: number, sumidas: number[] = []) {
+		return api((pedido) => {
+			const { pathname, searchParams } = new URL(pedido.url);
+			if (pathname === "/edicoes") {
+				const limite = Number(searchParams.get("limite"));
+				return json(200, listaDeExemplo(total, { limite }));
+			}
+			const id = Number(pathname.split("/").at(-1));
+			if (sumidas.includes(id)) {
+				return json(404, { erro: "edicao_nao_encontrada" });
+			}
+			return json(200, { ...edicaoDeExemplo(), id });
+		});
+	}
+
+	/** Os ids das edições lidas, na ordem. */
+	async function idsLidos(): Promise<number[]> {
+		const lidas = await lerEdicoesDaBusca();
+		return lidas.tipo === "edicoes"
+			? lidas.edicoes.map((edicao) => edicao.id)
+			: [];
+	}
+
+	it("sem o API_URL, não pede nada à API", async () => {
+		ambiente.API_URL = "";
+		const { fetch } = apiDasEdicoes(3);
+
+		expect(await lerEdicoesDaBusca()).toEqual({ tipo: "sem-api" });
+		expect(fetch).not.toHaveBeenCalled();
+	});
+
+	it("lê as vinte mais novas, cada uma inteira, na ordem da lista", async () => {
+		const { pedidos } = apiDasEdicoes(45);
+
+		const ids = await idsLidos();
+
+		expect(EDICOES_NA_BUSCA).toBe(20);
+		expect(new URL(pedidos[0].url).search).toBe("?limite=20&deslocamento=0");
+		expect(ids).toEqual(Array.from({ length: 20 }, (_, indice) => 45 - indice));
+		expect(pedidos).toHaveLength(21);
+		expect(
+			pedidos.every((pedido) => pedido.signal instanceof AbortSignal),
+		).toBe(true);
+	});
+
+	it("traz os itens de cada edição", async () => {
+		apiDasEdicoes(1);
+
+		expect(await lerEdicoesDaBusca()).toEqual({
+			tipo: "edicoes",
+			edicoes: [{ ...edicaoDeExemplo(), id: 1 }],
+		});
+	});
+
+	it("sem edição publicada, volta vazia, com um pedido só", async () => {
+		const { pedidos } = apiDasEdicoes(0);
+
+		expect(await lerEdicoesDaBusca()).toEqual({ tipo: "edicoes", edicoes: [] });
+		expect(pedidos).toHaveLength(1);
+	});
+
+	it("a edição que sumiu entre a lista e o pedido fica de fora, sem registrar falha", async () => {
+		apiDasEdicoes(3, [2]);
+
+		expect(await idsLidos()).toEqual([3, 1]);
+		expect(erros).not.toHaveBeenCalled();
+	});
+
+	it("a API fora do ar não leva a mensagem dela ao navegador nem ao log", async () => {
+		api(() => {
+			throw new TypeError(MENSAGEM_DA_FALHA);
+		});
+
+		confereErroGenerico(await erroDe(lerEdicoesDaBusca()));
+	});
+
+	it("o erro numa edição da lista também dá o erro genérico, sem o corpo da resposta", async () => {
+		api((pedido) =>
+			new URL(pedido.url).pathname === "/edicoes"
+				? json(200, listaDeExemplo(3))
+				: json(503, {
+						erro: "servico_indisponivel",
+						detalhe: MENSAGEM_DA_FALHA,
+					}),
+		);
+
+		confereErroGenerico(await erroDe(lerEdicoesDaBusca()));
+		expect(JSON.stringify(erros.mock.calls)).toContain("http-503");
+	});
+
+	it("a resposta sem a forma de uma lista ou de uma edição dá o erro genérico", async () => {
+		api(() => json(200, { pagina: "nada" }));
+		confereErroGenerico(await erroDe(lerEdicoesDaBusca()));
+
+		api((pedido) =>
+			new URL(pedido.url).pathname === "/edicoes"
+				? json(200, listaDeExemplo(2))
+				: json(200, { titulo: "sem os itens" }),
+		);
+		confereErroGenerico(await erroDe(lerEdicoesDaBusca()));
+	});
+
+	it("a API lenta: o servidor desiste depois do tempo de espera", async () => {
+		vi.useFakeTimers();
+		api(
+			(pedido) =>
+				new Promise((_, recusar) => {
+					pedido.signal.addEventListener("abort", () =>
+						recusar(pedido.signal.reason),
+					);
+				}),
+		);
+		let terminou = false;
+		const leitura = lerEdicoesDaBusca().finally(() => {
+			terminou = true;
+		});
+		const erro = erroDe(leitura);
+
+		await vi.advanceTimersByTimeAsync(TEMPO_DE_ESPERA - 1);
+		expect(terminou).toBe(false);
+		await vi.advanceTimersByTimeAsync(1);
+
+		confereErroGenerico(await erro);
 	});
 });

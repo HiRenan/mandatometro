@@ -26,6 +26,11 @@ export type Documento = {
 	titulo: string;
 	/** A descrição da trilha, o resumo do artigo ou o período da edição. */
 	resumo: string;
+	/**
+	 * O trecho quando a palavra só aparece no título, se não for o resumo: na
+	 * edição, o período já está na linha do tipo, e o trecho mostra os itens.
+	 */
+	abertura?: string;
 	secoes: Secao[];
 };
 
@@ -310,6 +315,8 @@ function avaliar<D extends Documento>(
 		trecho = recortar(secao.texto, centro, termos);
 	} else if (pontosDoResumo > 0) {
 		trecho = recortar(resumo, centro, termos);
+	} else if (documento.abertura) {
+		trecho = recortar(preparar(documento.abertura), [], []);
 	} else {
 		trecho = recortar(resumo, [], []);
 	}

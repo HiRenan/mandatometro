@@ -104,6 +104,62 @@ export async function lerEdicao(valor: unknown): Promise<EdicaoDaPagina> {
 	return { tipo: "edicao", edicao: data };
 }
 
+/** Quantas edições a busca lê: a primeira página da lista, das mais novas. */
+export const EDICOES_NA_BUSCA = 20;
+
+export type EdicoesDaBusca =
+	| { tipo: "sem-api" }
+	| {
+			tipo: "edicoes";
+			/** Da publicação mais nova para a mais antiga, como a lista. */
+			edicoes: EdicaoPublica[];
+	  };
+
+/**
+ * As edições mais novas, inteiras, para o índice da busca: a lista e cada edição
+ * dela, ao mesmo tempo. A API não tem rota de busca, e o backend não muda com a
+ * busca (#233). A edição que sumiu entre a lista e o pedido, como a despublicada,
+ * fica de fora; outra falha dá o erro genérico, como nas páginas.
+ */
+export async function lerEdicoesDaBusca(): Promise<EdicoesDaBusca> {
+	if (!ENV.API_URL) {
+		return { tipo: "sem-api" };
+	}
+	const { data, response } = await pedir((signal) =>
+		listarEdicoes({
+			query: { limite: EDICOES_NA_BUSCA, deslocamento: 0 },
+			signal,
+		}),
+	);
+	if (!response.ok) {
+		falhou(`http-${response.status}`);
+	}
+	if (!pareceLista(data)) {
+		falhou("resposta-invalida");
+	}
+	const edicoes = await Promise.all(
+		data.edicoes.map(async ({ id }) => {
+			const { data: edicao, response } = await pedir((signal) =>
+				obterEdicao({ path: { id }, signal }),
+			);
+			if (response.status === 404) {
+				return undefined;
+			}
+			if (!response.ok) {
+				falhou(`http-${response.status}`);
+			}
+			if (!pareceEdicao(edicao)) {
+				falhou("resposta-invalida");
+			}
+			return edicao;
+		}),
+	);
+	return {
+		tipo: "edicoes",
+		edicoes: edicoes.filter((edicao) => edicao !== undefined),
+	};
+}
+
 /**
  * Um pedido à API com o tempo de espera. O relógio é daqui, com o
  * AbortController, como no envio do piloto: ele para quando a resposta chega.

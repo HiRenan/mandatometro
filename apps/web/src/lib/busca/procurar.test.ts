@@ -253,6 +253,35 @@ describe("o trecho", () => {
 		]);
 	});
 
+	it("com a palavra só no título, o trecho é a abertura, quando a página tem uma", () => {
+		const [resultado] = buscar(
+			[
+				documento({
+					tipo: "edicao",
+					endereco: "/edicoes/7",
+					titulo: "Jornal legislativo — 09 a 15/11/2026",
+					resumo: "9 a 15 de novembro de 2026",
+					abertura: "Câmara aprova a semana · Senado vota um requerimento",
+					secoes: [
+						{
+							id: "item-1",
+							titulo: "Câmara aprova a semana",
+							texto: "O projeto cria a semana.",
+						},
+					],
+				}),
+			],
+			"jornal",
+		);
+
+		expect(resultado.trecho).toEqual([
+			{
+				texto: "Câmara aprova a semana · Senado vota um requerimento",
+				achado: false,
+			},
+		]);
+	});
+
 	it("com a palavra no resumo, marca o resumo", () => {
 		const [resultado] = buscar(
 			[
