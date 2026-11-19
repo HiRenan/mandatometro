@@ -364,6 +364,21 @@ describe("os estados", () => {
 		).toBe("Trilha Como uma ideia vira lei.");
 	});
 
+	it("com a letra grande, o texto do resultado desce para baixo do número", async () => {
+		await mostrar();
+		const { caixa, campo } = await abrir();
+		digitar(campo, "veto");
+		const [linha] = within(caixa).getAllByRole("listitem");
+		const [numero, texto] = linha.children;
+
+		// Como nas folhas da trilha: o número fica na coluna dele, e o texto ocupa
+		// a linha de baixo inteira (index.css, a variante letra-grande). Ao lado
+		// do número, a 320 px com a letra a 200%, "transforma" se partia.
+		expect(numero.classList.contains("numeral")).toBe(true);
+		expect(numero.classList.contains("letra-grande:mb-2")).toBe(true);
+		expect(texto.classList.contains("letra-grande:col-span-full")).toBe(true);
+	});
+
 	it("nenhum resultado: diz o que foi procurado e o que tentar", async () => {
 		await mostrar();
 		const { caixa, campo } = await abrir();

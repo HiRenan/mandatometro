@@ -570,10 +570,12 @@ function ItemDoResultado({
 	const { numero, fita } = numeroDaPagina(documento);
 	return (
 		<li className={classes("busca-resultado", classeDaFita(fita))}>
-			<span aria-hidden="true" className="numeral">
+			{/* Com a letra grande, o número fica no lugar, e o texto desce para a
+			    linha de baixo, com a largura toda, como nas folhas da trilha. */}
+			<span aria-hidden="true" className="numeral letra-grande:mb-2">
 				{numero}
 			</span>
-			<div className="busca-resultado-texto">
+			<div className="busca-resultado-texto letra-grande:col-span-full">
 				<Link
 					href={endereco}
 					className="busca-resultado-titulo"
