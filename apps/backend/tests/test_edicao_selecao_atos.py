@@ -21,7 +21,7 @@ from mandatometro.avisos.email import montar_email
 from mandatometro.cli import main
 from mandatometro.config import Config
 from mandatometro.db.modelos import Ato, Edicao, Fonte, Parlamentar
-from mandatometro.ia import cli
+from mandatometro.ia import cli, relevancia
 from mandatometro.ia.provedor import abrir_redator
 from mandatometro.ia.redacao import RespostaRedator
 from mandatometro.ia.selecao import selecionar
@@ -243,6 +243,102 @@ def test_duplicata_incerta_preserva_as_linhas(abrir, gravar_ato, caso):
     )
 
 
+@pytest.mark.parametrize(
+    ("titulo_dou", "slug", "titulo_senado", "urn", "duplicados"),
+    [
+        pytest.param(
+            "Destaque fictício",
+            "lei-complementar-n-1234",
+            "Lei ordinária fictícia",
+            "lei",
+            0,
+            id="complementar-no-link-do-destaque",
+        ),
+        pytest.param(
+            "Lei nº 1.234",
+            None,
+            "Norma fictícia",
+            "lei.complementar",
+            0,
+            id="complementar-no-link-do-senado",
+        ),
+        pytest.param(
+            "Destaque fictício",
+            "lei-complementar-n-1234",
+            "Norma fictícia",
+            "lei.complementar",
+            1,
+            id="complementares-nos-links",
+        ),
+        pytest.param(
+            "Destaque fictício",
+            "lei-n-1234",
+            "Norma fictícia",
+            "lei",
+            1,
+            id="ordinarias-nos-links",
+        ),
+        pytest.param(
+            "Lei nº 1.234",
+            None,
+            "Lei ordinária fictícia",
+            None,
+            1,
+            id="ordinarias-nos-titulos",
+        ),
+        pytest.param(
+            "Destaque fictício",
+            None,
+            "Lei ordinária fictícia",
+            "lei",
+            0,
+            id="uma-sem-subtipo",
+        ),
+        pytest.param(
+            "Lei ilustra a questão",
+            None,
+            "Norma fictícia",
+            None,
+            0,
+            id="nenhuma-com-subtipo",
+        ),
+        pytest.param(
+            "Lei ordinária fictícia",
+            "lei-complementar-n-1234",
+            "Lei nº 1.234",
+            "lei",
+            0,
+            id="titulo-e-link-divergentes",
+        ),
+    ],
+)
+def test_subtipos_de_lei_por_titulo_e_endereco(
+    abrir, gravar_ato, titulo_dou, slug, titulo_senado, urn, duplicados
+):
+    assinatura = INICIO - timedelta(days=1)
+    gravar_ato(
+        9001,
+        tipo="lei",
+        titulo=titulo_dou,
+        numero="1234",
+        url_publica=f"https://www.in.gov.br/web/dou/-/{slug}-99990007" if slug else True,
+    )
+    gravar_ato(
+        9002,
+        origem=SENADO,
+        tipo="lei",
+        titulo=titulo_senado,
+        numero="1234",
+        url_publica=f"https://normas.leg.br/?urn=urn:lex:br:federal:{urn}:{assinatura};1234"
+        if urn
+        else True,
+    )
+    resumo = gerar(abrir, INICIO, FIM)
+
+    assert resumo["atos"]["duplicados"] == duplicados
+    assert _ids_atos(abrir, resumo) == ([9001] if duplicados else [9001, 9002])
+
+
 @pytest.mark.parametrize("origem_retida", [DOU, SENADO])
 def test_retencao_de_uma_duplicata_impede_o_uso_da_outra(abrir, gravar_ato, sessao, origem_retida):
     for identificador, origem in [(9001, DOU), (9002, SENADO)]:
@@ -263,6 +359,70 @@ def test_retencao_de_uma_duplicata_impede_o_uso_da_outra(abrir, gravar_ato, sess
     assert resumo["atos"]["retidos_por_codigo"] == {"secao_de_pessoal": 2}
     assert sessao.scalar(select(Edicao.id)) is None
     assert not redator.mock_calls
+
+
+@pytest.mark.parametrize(
+    ("origem_retida", "codigo", "publicacao"),
+    [
+        (DOU, "secao_de_pessoal", INICIO - timedelta(days=1)),
+        (SENADO, "documento_pessoal", INICIO - timedelta(days=1)),
+        (SENADO, "documento_pessoal", FIM + timedelta(days=1)),
+    ],
+    ids=["secao-na-vespera", "documento-na-publicacao-original", "documento-depois"],
+)
+def test_retencao_de_um_par_alcanca_outros_periodos(
+    abrir, gravar_ato, sessao, origem_retida, codigo, publicacao
+):
+    outra_origem = SENADO if origem_retida == DOU else DOU
+    dentro = gravar_ato(9002, origem=outra_origem, numero="4321")
+    gravar_ato(
+        9001,
+        origem=origem_retida,
+        numero="04.321",
+        data_publicacao=publicacao,
+        secao="DO2" if origem_retida == DOU else None,
+        ementa=dentro.ementa if origem_retida == DOU else "CPF fictício 000.000.000-00.",
+    )
+    gravar_ato(9003, origem=origem_retida, numero="4321", data_publicacao=FIM + timedelta(days=3))
+    redator = Mock()
+    redator.ordenar_atos.return_value = RespostaRedator(_resposta(1))
+    resumo = gerar(abrir, INICIO, FIM, redator=redator)
+
+    assert redator.ordenar_atos.call_count == 0
+    assert resumo["situacao"] == "sem_itens_elegiveis"
+    assert resumo["atos"]["no_banco"] == 1
+    assert resumo["atos"]["retidos"] == [{"id": id_, "codigo": codigo} for id_ in (9001, 9002)]
+    assert resumo["atos"]["retidos_por_codigo"] == {codigo: 2}
+    assert sessao.scalar(select(Edicao.id)) is None
+
+
+def test_ato_de_outro_periodo_so_conta_para_retencao(abrir, gravar_ato):
+    gravar_ato(9001, numero="4321", data_publicacao=INICIO - timedelta(days=1))
+    gravar_ato(9002, origem=SENADO, numero="4321")
+    gravar_ato(
+        9003, origem=SENADO, numero="4321", secao="DO2", data_publicacao=FIM + timedelta(days=1)
+    )
+    resumo = gerar(abrir, INICIO, FIM)
+
+    assert resumo["atos"]["no_banco"] == 1
+    assert resumo["atos"]["retidos"] == []
+    assert resumo["atos"]["duplicados"] == 0
+    assert _ids_atos(abrir, resumo) == [9002]
+
+
+def test_retencao_de_outro_periodo_bloqueia_o_par_inteiro_no_periodo(abrir, gravar_ato):
+    gravar_ato(9001, numero="4321")
+    gravar_ato(9002, origem=SENADO, numero="4321")
+    gravar_ato(9003, numero="4321", secao="DO2", data_publicacao=INICIO - timedelta(days=1))
+    redator = Mock()
+    redator.ordenar_atos.return_value = RespostaRedator(_resposta(1))
+    resumo = gerar(abrir, INICIO, FIM, redator=redator)
+
+    assert redator.ordenar_atos.call_count == 0
+    assert resumo["situacao"] == "sem_itens_elegiveis"
+    assert resumo["atos"]["retidos"] == [
+        {"id": id_, "codigo": "secao_de_pessoal"} for id_ in (9001, 9002, 9003)
+    ]
 
 
 def test_modelo_so_recebe_campos_elegiveis_e_define_quem_fica_abaixo_do_teto(
@@ -452,6 +612,50 @@ def test_resposta_inutilizavel_rejeita_a_ordem_inteira_e_grava_codigo(
         assert item["fatos"]["selecao"]["codigo_fallback"] == codigo
         assert "motivo" not in item["fatos"]["selecao"] and item["revisado"] is False
     _sem_conteudo((saida.out, saida.err, caplog.text), MOTIVO, "Detalhe reservado fictício.")
+
+
+@pytest.mark.parametrize(
+    ("motivo", "aceito"),
+    [
+        pytest.param("Cita pessoa  cadastrada.", False, id="nome-com-espaco-duplo"),
+        pytest.param("Cita a zqx.", False, id="sigla-cadastrada-em-minusculas"),
+        pytest.param("Cita a zqxativa.", True, id="sigla-no-meio-de-uma-palavra"),
+        pytest.param("Cita a alianca  civica ficticia.", False, id="nome-do-registro-por-extenso"),
+        pytest.param("Explica como pode mudar.", True, id="pode-como-verbo"),
+        pytest.param("Mostra como a União atua.", True, id="uniao-em-caixa-de-titulo"),
+        pytest.param("Explica como a gestão sonha.", True, id="sigla-comum-cadastrada-como-verbo"),
+        pytest.param("Cita a SONHA.", False, id="sigla-comum-cadastrada-em-maiusculas"),
+    ],
+)
+def test_conferencia_de_identificacao_no_motivo(
+    abrir, dados, gravar_ato, sessao, monkeypatch, motivo, aceito
+):
+    # Usa siglas e nomes inventados para reproduzir as mesmas regras do cadastro e do TSE.
+    monkeypatch.setattr(
+        relevancia, "_NOMES_PARTIDOS_TSE", ("Aliança Cívica Fictícia",), raising=False
+    )
+    palavras_comuns = getattr(relevancia, "_SIGLAS_QUE_SAO_PALAVRAS", set())
+    monkeypatch.setattr(
+        relevancia, "_SIGLAS_QUE_SAO_PALAVRAS", palavras_comuns | {"sonha"}, raising=False
+    )
+    votacao = dados(10, dia=8, valores=("sim", "nao"))
+    for voto, sigla in zip(votacao.votos, ("ZQX", "SONHA"), strict=True):
+        voto.partido = sigla
+    votacao.votos[0].parlamentar.nome = "Pessoa   Cadastráda"
+    sessao.flush()
+    gravar_ato(9001)
+    gravar_ato(9002, origem=SENADO)
+    redator = Mock()
+    redator.ordenar_atos.return_value = RespostaRedator(
+        {"ordem": [{"posicao": 2, "motivo": MOTIVO}, {"posicao": 1, "motivo": motivo}]}
+    )
+    resumo = gerar(abrir, INICIO, FIM, teto_atos=1, redator=redator)
+
+    assert resumo["atos"]["codigo_fallback"] == (None if aceito else "resposta_invalida")
+    assert resumo["atos"]["origem_ordem"] == ("modelo" if aceito else "regra")
+    [item] = _itens_atos(abrir, resumo)
+    assert item["fatos"]["ato_id"] == (9002 if aceito else 9001)
+    assert ("motivo" in item["fatos"]["selecao"]) is aceito
 
 
 def test_revisao_exige_explicacao_e_confirmacao_e_preserva_a_sugestao(

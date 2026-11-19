@@ -1,6 +1,7 @@
 """Sugestão de relevância dos atos do Diário Oficial para a revisão humana."""
 
 import re
+from unicodedata import normalize
 
 from pydantic import ValidationError
 
@@ -11,7 +12,7 @@ from mandatometro.ia.esquemas import (
     OrigemSelecaoAto,
     SelecaoAto,
 )
-from mandatometro.ia.privacidade import identificacao
+from mandatometro.ia.privacidade import identificacao, normalizar
 from mandatometro.ia.provedor import TempoEsgotadoRedator
 from mandatometro.ia.redacao import Redator, RespostaRedator
 from mandatometro.ia.selecao import ItemAtoBase
@@ -29,24 +30,72 @@ REGRAS = (
 )
 _ENDERECO_OU_HTML = re.compile(r"\w\.\w|[:/\\@<>&]")
 _PARTIDO = re.compile(r"\bpartid[oa]s?\b", re.IGNORECASE)
+_SIGLAS_QUE_SAO_PALAVRAS = {
+    "agir",
+    "avante",
+    "cidadania",
+    "democrata",
+    "missao",
+    "mobiliza",
+    "novo",
+    "pode",
+    "rede",
+    "republicanos",
+    "solidariedade",
+    "uniao",
+}
+# Nomes com mais de uma palavra e sem "partido" no registro do TSE, consultado em 19/11/2026.
+# https://www.tse.jus.br/partidos/partidos-politicos/partidos-registrados-no-tse
+_NOMES_PARTIDOS_TSE = (
+    "Democracia Cristã",
+    "Mobilização Nacional",
+    "Movimento Democrático Brasileiro",
+    "Rede Sustentabilidade",
+    "Unidade Popular",
+    "União Brasil",
+)
 
 
-def _motivo_valido(texto: str, nomes: list[str]) -> bool:
+def _termos_reservados(nomes: list[str], siglas: set[str]) -> re.Pattern[str]:
+    termos = {" ".join(normalizar(nome).split()) for nome in (*nomes, *_NOMES_PARTIDOS_TSE)}
+    for sigla in siglas:
+        termo = " ".join(normalizar(sigla).split())
+        if termo not in _SIGLAS_QUE_SAO_PALAVRAS:
+            termos.add(termo)
+    termos.discard("")
+    alternativas = "|".join(map(re.escape, sorted(termos)))
+    return re.compile(rf"(?<!\w)(?:{alternativas})(?!\w)")
+
+
+def _grafia_de_identificacao(motivo: str) -> bool:
+    def minuscula_se_palavra_comum(ocorrencia: re.Match[str]) -> str:
+        palavra = ocorrencia[0]
+        if normalizar(palavra) in _SIGLAS_QUE_SAO_PALAVRAS and not palavra.isupper():
+            return palavra.lower()
+        return palavra
+
+    # Mantém a guarda de maiúsculas internas, com a grafia usual das palavras comuns.
+    comparacao = re.sub(r"\w+", minuscula_se_palavra_comum, normalize("NFC", motivo))
+    return any(letra.isupper() for letra in comparacao[1:])
+
+
+def _motivo_valido(texto: str, termos_reservados: re.Pattern[str]) -> bool:
     motivo = texto.strip()
+    comparacao = " ".join(normalizar(motivo).split())
     return (
         bool(motivo)
         and texto.isprintable()
         and not any(c.isdigit() for c in motivo)
-        # Maiúsculas internas sinalizam siglas e nomes fora do cadastro de parlamentares.
-        and not any(c.isupper() for c in motivo[1:])
+        and not _grafia_de_identificacao(motivo)
         and not _ENDERECO_OU_HTML.search(motivo)
-        and not _PARTIDO.search(motivo)
-        and not identificacao(motivo, nomes)
+        and not _PARTIDO.search(comparacao)
+        and not termos_reservados.search(comparacao)
+        and not identificacao(comparacao, ())
     )
 
 
 def _sugerir(
-    itens: list[ItemAtoBase], nomes: list[str], redator: Redator | None
+    itens: list[ItemAtoBase], nomes: list[str], siglas: set[str], redator: Redator | None
 ) -> tuple[OrdemAtos | None, CodigoFallbackSelecao | None]:
     if redator is None:
         return None, "sem_provedor"
@@ -82,21 +131,27 @@ def _sugerir(
         ordem = OrdemAtos.model_validate(resposta.conteudo)
     except ValidationError:
         return None, "resposta_invalida"
+    termos_reservados = _termos_reservados(nomes, siglas)
     if (
         len(ordem.ordem) != len(itens)
         or {ato.posicao for ato in ordem.ordem} != set(range(1, len(itens) + 1))
-        or any(not _motivo_valido(ato.motivo, nomes) for ato in ordem.ordem)
+        or any(not _motivo_valido(ato.motivo, termos_reservados) for ato in ordem.ordem)
     ):
         return None, "resposta_invalida"
     return ordem, None
 
 
 def ordenar_atos(
-    itens: list[ItemAtoBase], nomes: list[str], redator: Redator | None, *, teto: int
+    itens: list[ItemAtoBase],
+    nomes: list[str],
+    redator: Redator | None,
+    *,
+    siglas: set[str],
+    teto: int,
 ) -> tuple[list[ItemAtoBase], OrigemSelecaoAto | None, CodigoFallbackSelecao | None]:
     if not itens:
         return [], None, None
-    sugestao, codigo = _sugerir(itens, nomes, redator)
+    sugestao, codigo = _sugerir(itens, nomes, siglas, redator)
     origem: OrigemSelecaoAto = "modelo" if sugestao else "regra"
     ordem = (
         [(itens[ato.posicao - 1], ato.motivo.strip()) for ato in sugestao.ordem[:teto]]

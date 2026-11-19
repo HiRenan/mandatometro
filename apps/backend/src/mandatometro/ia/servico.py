@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from mandatometro.avisos.email import MensagemInvalida, _url, formatar_edicao
-from mandatometro.db.modelos import Ato, Edicao, Fonte, ItemEdicao
+from mandatometro.db.modelos import Ato, Edicao, Fonte, ItemEdicao, Voto
 from mandatometro.ia.artigos import CATALOGO, sugerir
 from mandatometro.ia.esquemas import Estrito, Fatos, FatosAto, FatosItem, Id
 from mandatometro.ia.privacidade import (
@@ -246,6 +246,7 @@ def gerar(
     if type(teto_atos) is not int or teto_atos < 1:
         raise ValueError("O teto de atos precisa ser um número inteiro maior que zero.")
     redacao = {"textos_do_modelo": 0, "textos_do_codigo": 0, "motivos_texto_do_codigo": {}}
+    siglas = set()
     with abrir() as sessao:
         anterior = _periodo(sessao, inicio, fim)
         if anterior and (anterior.estado == "publicada" or not refazer):
@@ -259,10 +260,12 @@ def gerar(
         versao = _hash(anterior) if anterior else None
         selecao = selecionar(sessao, inicio, fim, teto=teto)
         atos, resumo_atos = selecionar_atos(sessao, inicio, fim)
+        if atos and redator is not None:
+            siglas = {sigla for sigla in sessao.scalars(select(Voto.partido).distinct()) if sigla}
 
     # Durante as chamadas ao redator, não há transação aberta nem conexão do banco em uso.
     atos_escolhidos, origem_ordem, codigo_fallback = ordenar_atos(
-        atos, selecao.nomes, redator, teto=teto_atos
+        atos, selecao.nomes, redator, siglas=siglas, teto=teto_atos
     )
     itens = [*selecao.itens, *atos_escolhidos]
     resumo = asdict(selecao.resumo)
