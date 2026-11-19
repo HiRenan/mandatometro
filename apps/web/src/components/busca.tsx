@@ -312,6 +312,13 @@ function CaixaDaBusca({
 		}
 	}
 
+	// O "Tentar de novo" sai da tela com o aviso: o foco volta ao campo, e não à
+	// página por trás da caixa.
+	function tentarDeNovo(tentar: () => void) {
+		tentar();
+		campo.current?.focus();
+	}
+
 	function links(): HTMLAnchorElement[] {
 		return Array.from(lista.current?.querySelectorAll("a") ?? []);
 	}
@@ -379,10 +386,16 @@ function CaixaDaBusca({
 	} else if (comPalavras && !pronta) {
 		aviso = CARREGANDO;
 	} else if (pronta) {
-		aviso =
-			resultados.length > 0 ? `${contagem} para ${digitada}` : nenhum(digitada);
+		if (resultados.length > 0) {
+			aviso = `${contagem} para ${digitada}`;
+		} else if (edicoes.estado === "carregando") {
+			aviso = EDICOES_A_CAMINHO;
+		} else {
+			aviso = nenhum(digitada);
+		}
 		if (edicoes.estado === "erro") {
-			aviso += `. ${ERRO_DAS_EDICOES}`;
+			// A frase do nenhum resultado já termina com o ponto.
+			aviso += `${aviso.endsWith(".") ? "" : "."} ${ERRO_DAS_EDICOES}`;
 		}
 	}
 	const [avisoNaTela, setAvisoNaTela] = useState("");
@@ -405,7 +418,7 @@ function CaixaDaBusca({
 				<button
 					type="button"
 					className="acao-de-texto"
-					onClick={tentarConteudo}
+					onClick={() => tentarDeNovo(tentarConteudo)}
 				>
 					Tentar de novo
 				</button>
@@ -413,6 +426,10 @@ function CaixaDaBusca({
 		);
 	} else if (!pronta) {
 		corpo = <p className="busca-aviso rotulo busca-carregando">{CARREGANDO}</p>;
+	} else if (resultados.length === 0 && edicoes.estado === "carregando") {
+		// O nenhum resultado espera as edições: até elas chegarem, fica só o aviso
+		// delas, embaixo.
+		corpo = null;
 	} else if (resultados.length === 0) {
 		corpo = <p className="busca-aviso prosa">{nenhum(digitada)}</p>;
 	} else {
@@ -482,7 +499,7 @@ function CaixaDaBusca({
 						<button
 							type="button"
 							className="acao-de-texto"
-							onClick={tentarEdicoes}
+							onClick={() => tentarDeNovo(tentarEdicoes)}
 						>
 							Tentar de novo
 						</button>

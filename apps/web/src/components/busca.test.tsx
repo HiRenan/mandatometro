@@ -378,7 +378,7 @@ describe("os estados", () => {
 		expect(within(caixa).queryByRole("list")).toBeNull();
 	});
 
-	it("erro: o índice não chegou, e o Tentar de novo pede outra vez", async () => {
+	it("erro: o índice não chegou, e o Tentar de novo pede outra vez, com o foco de volta no campo", async () => {
 		servidor.buscarIndiceDoConteudo.mockImplementation(async () => {
 			throw new Error("A busca não carregou.");
 		});
@@ -396,12 +396,16 @@ describe("os estados", () => {
 			TRILHA,
 			ARTIGO,
 		]);
-		fireEvent.click(
-			within(caixa).getByRole("button", { name: "Tentar de novo" }),
-		);
+		const tentar = within(caixa).getByRole("button", {
+			name: "Tentar de novo",
+		});
+		tentar.focus();
+		fireEvent.click(tentar);
 
 		expect(await within(caixa).findByText("2 resultados")).toBeTruthy();
 		expect(servidor.buscarIndiceDoConteudo).toHaveBeenCalledTimes(2);
+		// O botão sai da tela com o aviso: o foco volta ao campo, e não à página.
+		expect(document.activeElement).toBe(campo);
 	});
 
 	it("edições a caminho: as trilhas e os artigos já aparecem", async () => {
@@ -417,7 +421,36 @@ describe("os estados", () => {
 		).toBeTruthy();
 	});
 
-	it("erro só das edições: as trilhas e os artigos continuam, e o Tentar de novo pede as edições", async () => {
+	it("com as edições a caminho, o nenhum resultado espera por elas", async () => {
+		let entregar: (indice: unknown) => void = () => {};
+		servidor.buscarIndiceDasEdicoes.mockImplementation(
+			() =>
+				new Promise((ok) => {
+					entregar = ok;
+				}),
+		);
+		await mostrar();
+		const { caixa, campo } = await abrir();
+
+		// "Congresso" só está na edição, que ainda não chegou.
+		digitar(campo, "congresso");
+
+		expect(within(caixa).queryByText(/Nenhum resultado/)).toBeNull();
+		expect(
+			within(caixa).getByText("Procurando também nas edições…"),
+		).toBeTruthy();
+		await waitFor(() =>
+			expect(within(caixa).getByRole("status").textContent).toBe(
+				"Procurando também nas edições…",
+			),
+		);
+
+		await act(async () => entregar({ tipo: "edicoes", paginas: [EDICAO] }));
+
+		expect(within(caixa).getByText("1 resultado")).toBeTruthy();
+	});
+
+	it("erro só das edições: as trilhas e os artigos continuam, e o Tentar de novo pede as edições, com o foco de volta no campo", async () => {
 		servidor.buscarIndiceDasEdicoes.mockImplementation(async () => {
 			throw new Error("As edições não carregaram.");
 		});
@@ -436,12 +469,31 @@ describe("os estados", () => {
 			tipo: "edicoes",
 			paginas: [EDICAO],
 		}));
-		fireEvent.click(
-			within(caixa).getByRole("button", { name: "Tentar de novo" }),
-		);
+		const tentar = within(caixa).getByRole("button", {
+			name: "Tentar de novo",
+		});
+		tentar.focus();
+		fireEvent.click(tentar);
 
 		expect(await within(caixa).findByText("2 resultados")).toBeTruthy();
 		expect(servidor.buscarIndiceDoConteudo).toHaveBeenCalledTimes(1);
+		expect(document.activeElement).toBe(campo);
+	});
+
+	it("sem resultado e sem as edições, o leitor de tela ouve as duas frases, com um ponto entre elas", async () => {
+		servidor.buscarIndiceDasEdicoes.mockImplementation(async () => {
+			throw new Error("As edições não carregaram.");
+		});
+		await mostrar();
+		const { caixa, campo } = await abrir();
+
+		digitar(campo, "congresso");
+
+		await waitFor(() =>
+			expect(within(caixa).getByRole("status").textContent).toBe(
+				"Nenhum resultado para “congresso”. Confira como a palavra está escrita ou tente só o começo dela. As edições ficaram fora desta busca: o servidor não respondeu.",
+			),
+		);
 	});
 
 	it("o leitor de tela ouve a contagem 400 ms depois da última tecla", async () => {
