@@ -43,6 +43,8 @@ class Redator(Protocol):
 
     def escrever(self, entrada: dict) -> RespostaRedator: ...
 
+    def ordenar_atos(self, entrada: dict) -> RespostaRedator: ...
+
 
 @dataclass(frozen=True)
 class TextoGerado:

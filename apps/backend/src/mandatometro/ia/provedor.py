@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, get_args
 import httpx2
 
 from mandatometro.config import Config
-from mandatometro.ia.esquemas import Redacao
+from mandatometro.ia.esquemas import OrdemAtos, Redacao
 from mandatometro.ia.redacao import Redator, RespostaRedator
 
 if TYPE_CHECKING:
@@ -26,6 +26,10 @@ class FalhaRedator(RuntimeError):
         super().__init__("Falha no serviço de redação.")
 
 
+class TempoEsgotadoRedator(FalhaRedator):
+    pass
+
+
 class RedatorAnthropic:
     def __init__(self, cliente: "Anthropic", modelo: str):
         from anthropic import transform_schema
@@ -33,8 +37,16 @@ class RedatorAnthropic:
         self._cliente = cliente
         self._modelo = modelo
         self._formato = {"type": "json_schema", "schema": transform_schema(Redacao)}
+        self._formato_atos = {"type": "json_schema", "schema": transform_schema(OrdemAtos)}
 
     def escrever(self, entrada: dict) -> RespostaRedator:
+        return self._pedir(entrada, self._formato)
+
+    def ordenar_atos(self, entrada: dict) -> RespostaRedator:
+        return self._pedir(entrada, self._formato_atos)
+
+    def _pedir(self, entrada: dict, formato: dict) -> RespostaRedator:
+        from anthropic import APITimeoutError
         from anthropic.types import StopReason
 
         try:
@@ -45,13 +57,15 @@ class RedatorAnthropic:
                 messages=[
                     {"role": "user", "content": json.dumps(entrada["fatos"], ensure_ascii=False)}
                 ],
-                output_config={"format": self._formato},
+                output_config={"format": formato},
             )
         except json.JSONDecodeError:
             # Até o envelope HTTP 200 pode vir com JSON inválido.
             return RespostaRedator({})
         except KeyboardInterrupt:
             erro = KeyboardInterrupt()
+        except APITimeoutError:
+            erro = TempoEsgotadoRedator()
         except Exception:
             erro = FalhaRedator()
         else:

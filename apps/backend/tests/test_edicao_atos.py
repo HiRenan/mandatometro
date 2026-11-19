@@ -8,7 +8,6 @@ from test_edicao_selecao import FIM, INICIO
 from test_edicao_selecao import dados as dados
 
 from mandatometro.db.modelos import Ato, Edicao, Fonte, ItemEdicao
-from mandatometro.ia import selecao, servico
 from mandatometro.ia.redacao import RespostaRedator
 from mandatometro.ia.servico import ErroEdicao, exportar, gerar, publicar, revisar
 
@@ -60,17 +59,6 @@ def rascunho_ato(sessao, ato):
     return edicao
 
 
-@pytest.fixture
-def selecao_com_ato(monkeypatch, ato):
-    def selecionar(sessao, inicio, fim, *, teto):
-        resultado = selecao.selecionar(sessao, inicio, fim, teto=teto)
-        if teto == 8:  # Simula a seleção inicial da #205, que a conferência não repete.
-            resultado.itens.append(selecao.ItemAtoBase.de_ato(sessao.get(Ato, ato.id)))
-        return resultado
-
-    monkeypatch.setattr(servico, "selecionar", selecionar)
-
-
 def nova_fonte(fonte):
     return Fonte(
         url=fonte.url,
@@ -81,12 +69,17 @@ def nova_fonte(fonte):
 
 
 @pytest.mark.parametrize("com_votacao", [False, True])
-def test_gerar_exportar_revisar_e_publicar_ato(abrir, dados, ato, selecao_com_ato, com_votacao):
+def test_gerar_exportar_revisar_e_publicar_ato(abrir, dados, ato, com_votacao):
     entradas = []
     if com_votacao:
         dados(10, valores=("sim",))
 
     class RedatorFalso:
+        def ordenar_atos(self, _):
+            return RespostaRedator(
+                {"ordem": [{"posicao": 1, "motivo": "Ajuda a entender o serviço público."}]}
+            )
+
         def escrever(self, entrada):
             entradas.append(entrada)
             return RespostaRedator(
@@ -109,6 +102,12 @@ def test_gerar_exportar_revisar_e_publicar_ato(abrir, dados, ato, selecao_com_at
         "hash_ato": HASH_ATO,
         "origem": "codigo",
         "pendencias": ["revisao", "cobertura", "redacao"],
+        "selecao": {
+            "ordem": 1,
+            "teto": 5,
+            "origem": "modelo",
+            "motivo": "Ajuda a entender o serviço público.",
+        },
     }
     assert item_ato["artigo_caminho"] is None
     assert ato.titulo not in str(item_ato)
@@ -129,7 +128,7 @@ def test_gerar_exportar_revisar_e_publicar_ato(abrir, dados, ato, selecao_com_at
     assert publicar(abrir, edicao_id)["situacao"] == "publicada"
 
 
-def test_revisar_ato_aceita_numeros_da_linha_e_das_datas(abrir, sessao, ato, selecao_com_ato):
+def test_revisar_ato_aceita_numeros_da_linha_e_das_datas(abrir, sessao, ato):
     ato.numero = "12345"
     ato.titulo = "Título fictício sobre 628 serviços."
     ato.ementa = "Ementa fictícia sobre 73 casos."
@@ -168,12 +167,13 @@ def test_revisar_ato_recusa_numero_de_fora(abrir, rascunho_ato, alteracao, campo
     assert str(erro.value) == f"Item 1: o campo {campo} tem número que não está nos fatos enviados."
 
 
-def test_gerar_recusa_coleta_alterada_entre_selecao_e_gravacao(
-    abrir, dados, sessao, ato, selecao_com_ato
-):
+def test_gerar_recusa_coleta_alterada_entre_selecao_e_gravacao(abrir, dados, sessao, ato):
     dados(10, valores=("sim",))
 
     class RedatorFalso:
+        def ordenar_atos(self, _):
+            return RespostaRedator({})
+
         def escrever(self, _):
             ato.fonte = nova_fonte(ato.fonte)
             sessao.flush()
@@ -192,17 +192,23 @@ def test_gerar_recusa_coleta_alterada_entre_selecao_e_gravacao(
     [None, "", "https://example.com/ato-exemplo"],
     ids=["ausente", "vazia", "dominio-nao-oficial"],
 )
-def test_conferencia_recusa_ato_sem_pagina_publica_oficial(
-    abrir, sessao, ato, selecao_com_ato, etapa, url_publica
-):
+def test_conferencia_recusa_ato_sem_pagina_publica_oficial(abrir, sessao, ato, etapa, url_publica):
     edicao_id = gerar(abrir, INICIO, FIM)["edicao_id"]
     revisar(abrir, edicao_id, pronto(exportar(abrir, edicao_id)))
     arquivo = exportar(abrir, edicao_id)
-    ato.fonte.url_publica = url_publica
-    sessao.flush()
+
+    class RedatorFalso:
+        def ordenar_atos(self, _):
+            ato.fonte.url_publica = url_publica
+            sessao.flush()
+            return RespostaRedator({})
+
+    if etapa != "gerar":
+        ato.fonte.url_publica = url_publica
+        sessao.flush()
 
     operacoes = {
-        "gerar": lambda: gerar(abrir, INICIO, FIM, refazer=True),
+        "gerar": lambda: gerar(abrir, INICIO, FIM, refazer=True, redator=RedatorFalso()),
         "exportar": lambda: exportar(abrir, edicao_id),
         "revisar": lambda: revisar(abrir, edicao_id, arquivo),
         "publicar": lambda: publicar(abrir, edicao_id),
