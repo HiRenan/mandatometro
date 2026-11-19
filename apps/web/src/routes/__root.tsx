@@ -10,6 +10,7 @@ import {
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { type ReactNode, useEffect } from "react";
 
+import { ProvedorDaBusca } from "../components/busca";
 import { CliqueNaTroca } from "../components/clique-na-troca";
 import Header from "../components/header";
 import { Rodape } from "../components/rodape";
@@ -100,13 +101,18 @@ function Documento({ children }: { children: ReactNode }) {
 				    comprida não alarga a página. Ela é também a caixa do teto dos
 				    títulos (o caixa-do-teto, no index.css), que mede a página sem a
 				    barra de rolagem: o 100vw conta a barra. */}
-				<div className="caixa-do-teto grid min-h-svh grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr_auto]">
-					<Header comEdicoes={Boolean(ENV.API_URL)} />
-					<main id="conteudo" tabIndex={-1} className="focus:outline-none">
-						{children}
-					</main>
-					<Rodape />
-				</div>
+				{/* A busca, com o Ctrl+K, em todas as páginas: a entrada fica no
+				    cabeçalho, e a caixa só entra na página quando abre
+				    (components/busca.tsx). */}
+				<ProvedorDaBusca comEdicoes={Boolean(ENV.API_URL)}>
+					<div className="caixa-do-teto grid min-h-svh grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr_auto]">
+						<Header comEdicoes={Boolean(ENV.API_URL)} />
+						<main id="conteudo" tabIndex={-1} className="focus:outline-none">
+							{children}
+						</main>
+						<Rodape />
+					</div>
+				</ProvedorDaBusca>
 				<FocoNaPaginaNova />
 				{/* O clique feito durante a troca de página chega à página nova
 				    (components/clique-na-troca.tsx). */}
