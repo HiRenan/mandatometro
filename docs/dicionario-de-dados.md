@@ -24,7 +24,7 @@ Cada endpoint tem a URL que usamos, uma tabela de campos e um exemplo real recor
 
 - Toda chamada externa tem timeout e nova tentativa com backoff. A API da Câmara devolve 504 de vez em quando.
 - O User-Agent identifica o projeto (`mandatometro (Hack Brasil 2026)`), e a coleta respeita o robots.txt dos sites.
-- **O `in.gov.br` proíbe a raspagem:** em 18/11/2026, `https://www.in.gov.br/robots.txt` respondeu HTTP 200 com `User-agent: *` e `Disallow: /` — o site inteiro, para todos os agentes. A página de destaques do Diário Oficial não se lê, nem direto nem pelo Firecrawl, que faz a mesma requisição ao servidor do órgão. O **INLABS** (`inlabs.in.gov.br`) é o serviço de dados abertos da Imprensa Nacional, com cadastro gratuito e os XMLs das edições. O serviço não tem `robots.txt` (404, que a RFC 9309 trata como ausência de regras) e, em 18/11/2026, respondia com a página "Manutenção Programada". O porquê está no [ADR 0004](adr/0004-newsletter-do-dou.md).
+- **O `in.gov.br` proíbe a raspagem:** em 18/11/2026, `https://www.in.gov.br/robots.txt` respondeu HTTP 200 com `User-agent: *` e `Disallow: /` — o site inteiro, para todos os agentes. A página de destaques do Diário Oficial não se lê, nem direto nem pelo Firecrawl, que faz a mesma requisição ao servidor do órgão.
 - **Robots da coleta:** em 16/11/2026, `dadosabertos.camara.leg.br/robots.txt` respondeu HTTP 200 com HTML de página inexistente, sem regras, e `legis.senado.leg.br/robots.txt` respondeu 403. A base lê o arquivo uma vez por execução, usa `RobotFileParser.parse()` e segue a RFC 9309: aplica as regras legíveis; sem regras ou com 4xx no arquivo (exceto 408/429, transitórios), continua; falha de rede/5xx persistente interrompe. Um 403 no endpoint de dados continua sendo erro. `Crawl-delay`, `Request-rate` e `Retry-After` são respeitados.
 - As respostas da Câmara e do Senado são UTF-8, e nenhuma das duas declara o charset no `content-type` (as duas mandam `application/json`): decodifique explicitamente como UTF-8, ou os acentos embaralham no Windows.
 - As chamadas de cada coleta rodam em sequência.
@@ -535,26 +535,48 @@ O `resultado` e o `voto.valor` têm domínios diferentes nas duas Casas, e o mod
 
 ## Atos do Diário Oficial
 
-A tabela `ato` guarda os atos publicados para a seleção semanal da newsletter. A escolha da fonte está em decisão na [#203](https://github.com/HiRenan/mandatometro/issues/203).
+A tabela `ato` guarda os atos publicados para a seleção semanal da newsletter. Os dados abertos do Senado fornecem os decretos, as leis e as medidas provisórias. A escolha está no [ADR 0005](adr/0005-legislacao-federal-na-newsletter.md).
 
-| Campo | Tipo | Obrigatório | O que guarda |
+### Legislação federal nos dados abertos do Senado
+
+Conferido em 19/11/2026, com a mesma base HTTPS das votações do Senado. A lista usa `tipo=DEC`, `tipo=LEI` ou `tipo=MPV` e o ano da assinatura.
+
+```text
+/legislacao/lista?tipo=LEI&ano=2026
+/legislacao/44391098
+/legislacao/tiposNorma
+```
+
+Na lista, as normas ficam em `ListaDocumento.documentos.documento`. A resposta sem normas pode trazer `documentos: ""`. A lista também traz `descricao`, `norma`, `anoassinatura` e `apelido`. O detalhe vem em `DetalheDocumento.documentos.documento` e inclui `identificacao`, `publicacoes`, `ementa`, `indexacao` e `classes`. O exemplo da lei `44391098` tem três publicações, duas na edição extra de 12/11/2026 e uma na edição de 13/11/2026. A [fixture sanitizada](../apps/backend/tests/fixtures/senado/legislacao/detalhe-44391098.json) conserva os ids e as datas.
+
+| Campo | Tipo | Obrigatório | Procedência na coleta de legislação |
 |---|---|---|---|
 | `id` | inteiro | sim | Chave interna gerada pelo banco. |
-| `origem` | texto | sim | Código estável da origem que atribui o identificador externo. |
-| `id_externo` | texto | sim | Identificador do ato dentro da origem. |
-| `tipo` | texto | sim | Classificação do ato. O banco aceita `decreto`, `lei`, `medida_provisoria` e `outro`. |
-| `titulo` | texto | sim | Título ou identificação oficial do ato. |
-| `ementa` | texto | não | Ementa ou resumo oficial, quando houver. |
-| `data_publicacao` | data | sim | Dia da publicação no DOU, com índice para a seleção por período. |
-| `data_assinatura` | data | não | Dia da assinatura, quando a fonte o informa. |
-| `secao` | texto | não | Seção do DOU, quando informada. |
-| `orgao` | texto | não | Órgão responsável pelo ato, quando informado. |
-| `numero` | texto | não | Número oficial do ato, quando informado, na forma publicada. |
-| `fonte_id` | inteiro | sim | Referência à `fonte` que comprova o ato. |
+| `origem` | texto | sim | Código do conector, `legislacao_senado`. |
+| `id_externo` | texto | sim | `id` da lista, confirmado no detalhe. |
+| `tipo` | texto | sim | Prefixo de `tipo` da lista, antes do hífen. `DEC` vira `decreto`, `LEI` vira `lei` e `MPV` vira `medida_provisoria`. O banco também admite `outro`. |
+| `titulo` | texto | sim | `normaNome` da lista. |
+| `ementa` | texto | não | `ementa` da lista, preservada como veio. |
+| `data_publicacao` | data | sim | Menor data válida de `publicacoes.publicacao[].data` no detalhe, entre as entradas com `siglaFonte` da família `DOU` ou `DOUE`. Tem índice para a seleção por período. |
+| `data_assinatura` | data | não | `dataassinatura` da lista, no formato `DD/MM/AAAA`. |
+| `secao` | texto | não | Fica nula nesta coleta. |
+| `orgao` | texto | não | Fica nulo nesta coleta. |
+| `numero` | texto | não | `numero` da lista, como texto. |
+| `fonte_id` | inteiro | sim | Referência à observação criada para o detalhe. |
 
-A chave `(origem, id_externo)` permite atualizar a mesma linha numa nova coleta, mesmo se ela gravar outra `fonte`. `fonte.url` aponta para o recurso lido e `fonte.url_publica` para a página oficial do ato.
+`fonte.url` guarda a URL consultada em `/legislacao/{id}`. `fonte.url_publica` guarda `identificacao.urlDocumento` quando aponta para uma norma no portal oficial, com um identificador LexML no parâmetro `urn` de `https://normas.leg.br/?urn=…`. `fonte.coletado_em` registra quando a base recebeu o detalhe. A chave `(origem, id_externo)` mantém o id interno ao atualizar. Cada gravação cria outra fonte na mesma transação.
 
-A semana é definida pela publicação. A assinatura preserva a data informada pela fonte, que pode conter erro. Título e ementa são textos oficiais e podem mencionar pessoas. O uso desses textos segue as [regras de dados pessoais](dados-pessoais.md).
+### Período e descartes
+
+O filtro por data na lista retornou zero no teste de 19/11/2026. A coleta cobre as assinaturas de dez dias corridos antes do início até o fim do período, incluindo as duas pontas. Pede uma lista por tipo e por ano que essa faixa atravessa e consulta detalhes apenas das assinaturas na faixa. Assim, ao começar em 1º de janeiro, consulta também o ano anterior. A margem abrange feriados prolongados, como no caso da lei assinada em 02/04/2026 e publicada quatro dias depois, em 06/04/2026. Se a assinatura for mais de dez dias anterior ao início, uma publicação no período pode ficar de fora sem contagem de descarte.
+
+A data de publicação inclui edições extras (`DOUE`). A escolha pela menor data válida usa `siglaFonte` como identificador do DOU. `fonte` no detalhe é o rótulo textual da publicação e a ordem do array pode variar. A primeira publicação determina se o ato pertence ao período, inclusive nas duas pontas. Uma republicação em outro dia conserva a data original.
+
+O Senado devolveu um decreto com assinatura em 13/12/2026 na lista consultada em 19/11/2026. Assinatura ou primeira publicação posterior ao dia da coleta em Brasília conta como `data_futura`. Assinatura ausente ou inválida conta como `assinatura_invalida` e fica fora da consulta de detalhe. Nos candidatos, o resumo também conta `tipo_fora_do_conjunto`, `campo_obrigatorio` (id, título, tipo ou endereço oficial), `sem_publicacao`, `detalhe_invalido` (JSON ilegível, envelope inesperado ou id divergente) ou `detalhe_indisponivel` (HTTP 404 ou 410).
+
+O resumo é uma linha JSON. O código de saída é 0 quando a coleta percorre as listas, ainda que haja descartes. Falhas de rede ou do servidor após esgotar as tentativas, falhas de listagem ou de gravação e uma proibição no robots encerram a execução com código 1 e mantêm os atos já confirmados. A falha de gravação conta como `falha_gravacao`. Datas inválidas na linha de comando retornam 2.
+
+Título e ementa podem mencionar pessoas. O conector guarda o texto oficial em `ato`, com `fonte.trecho` nulo. Logs, resumo e erros omitem esse conteúdo. O uso editorial segue as [regras de dados pessoais](dados-pessoais.md).
 
 ## Campos pessoais
 

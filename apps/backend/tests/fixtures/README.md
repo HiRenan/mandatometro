@@ -25,6 +25,8 @@ Respostas reais das APIs da Câmara e do Senado, gravadas para os [testes de uni
 | `senado/senador-4525-mandatos.json` | `/senador/4525/mandatos.json` — dois mandatos como lista, **todas as causas de afastamento trocadas** |
 | `senado/votacao-secreta-7081.json` | `/votacao?dataInicio=2026-04-29&dataFim=2026-04-29&idProcesso=9026396` — uma votação secreta com resultado `R`, **todos os motivos de ausência trocados** |
 | `senado/processo-9026396.json` | `/processo/9026396` — a matéria da votação secreta |
+| `senado/legislacao/lista-{DEC,LEI,MPV}-2026.json` | `/legislacao/lista?tipo={DEC,LEI,MPV}&ano=2026` — recortes de 19/11/2026 com assinaturas dentro e fora do período |
+| `senado/legislacao/detalhe-{44427519,44391098,44363879}.json` | `/legislacao/{id}` — um detalhe por tipo, com publicações do DOU regular e de edição extra |
 
 Bases: `https://dadosabertos.camara.leg.br/api/v2` e `https://legis.senado.leg.br/dadosabertos`.
 
@@ -52,7 +54,9 @@ Nas votações nominais de 03–07/11/2026, os quatro códigos de ausência fora
 
 O teste percorre todos os arquivos `senado/votacao-*.json` e confere os pares permitidos de código e descrição, inclusive o marcador único; uma descrição pessoal também é recusada sob um código de voto permitido. As respostas permanecem inteiras: 324 registros nas quatro nominais e 81 na secreta, incluindo 77 `Votou`. O marcador `XXX` é desconhecido pelo normalizador e vira `outro`, sem código bruto, nos testes das nominais; os testes de `test_modelo.py` continuam exercitando as ausências conhecidas com dados inventados no próprio teste. Nenhum registro da secreta vira voto individual no banco.
 
-Nenhum outro arquivo desta pasta traz CPF, título de eleitor, data de nascimento ou motivo de afastamento. Como a fonte publica, os arquivos trazem e-mail e telefone de gabinete, foto, nome completo e sexo de deputados e senadores, e o `camara/deputado-178843.json` traz também a cidade e a UF de nascimento e a escolaridade. Ao gravar uma fixture nova de `/deputados/{id}`, da lista de senadores ou dos mandatos, faça a mesma troca. Ausências nos votos também precisam de sanitização: nunca grave uma licença real ligada ao parlamentar. Os testes do conector que exercitam ausências e códigos desconhecidos usam pessoas inventadas.
+As demais respostas de votações e cadastros parlamentares omitem CPF, título de eleitor, data de nascimento e motivo de afastamento. Como a fonte publica, os arquivos trazem e-mail e telefone de gabinete, foto, nome completo e sexo de deputados e senadores, e o `camara/deputado-178843.json` traz também a cidade e a UF de nascimento e a escolaridade. Ao gravar uma fixture nova de `/deputados/{id}`, da lista de senadores ou dos mandatos, faça a mesma troca. Ausências nos votos também precisam de sanitização: nunca grave uma licença real ligada ao parlamentar. Os testes do conector que exercitam ausências e códigos desconhecidos usam pessoas inventadas.
+
+Nas amostras de legislação, os textos livres foram trocados por exemplos fictícios antes de gravar os arquivos. As ementas incluem nome e CPF fictícios para exercitar a preservação no banco e a omissão na saída. Foram preservados a estrutura, os ids, os tipos, as datas, as fontes de publicação e os links oficiais.
 
 ## Por que estes casos
 
