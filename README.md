@@ -308,6 +308,8 @@ uv run mandatometro coleta legislacao
 
 O comando grava decretos, leis e medidas provisórias pela data de publicação no DOU. Sem datas, coleta os sete dias completos anteriores, no fuso de Brasília. Repetir o período atualiza os atos da mesma origem. O resumo JSON conta gravações e descartes por motivo. A [origem dos campos e a regra do período](docs/dicionario-de-dados.md#atos-do-diário-oficial) estão no dicionário.
 
+A busca de candidatos começa dez dias corridos antes do período para abranger intervalos entre a assinatura e a publicação, como o de um feriado prolongado. Uma norma publicada no período pode ficar de fora se tiver sido assinada mais de dez dias antes do início.
+
 **Edição semanal.** [Como preparar, revisar e publicar a edição](docs/newsletter.md#newsletter-rascunho-e-revisão).
 
 **Checagens,** as mesmas do CI:
