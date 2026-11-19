@@ -1,4 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import { EntradaDaBusca } from "./busca";
 import { NOME_DO_SITE } from "./nome-do-site";
 
 const LINKS = [
@@ -16,10 +17,12 @@ function estaNaSecao(caminho: string, secao: string): boolean {
 }
 
 /**
- * O cabeçalho: o bloco de tinta com o nome, o lema em letra de máquina e os
- * links, e a tira das cinco fitas embaixo. É o que separa o cabeçalho da página
- * clara (o Renan, na #89: "um header bem feito"). Abaixo de 864 px, ficam só o
- * nome e os links: o lema, que é largo, está no rodapé.
+ * O cabeçalho: o bloco de tinta com o nome, o lema em letra de máquina, a
+ * entrada da busca e os links, e a tira das cinco fitas embaixo. É o que separa
+ * o cabeçalho da página clara (o Renan, na #89: "um header bem feito"). A busca
+ * fica no meio, entre o nome e os links (o Renan, na #233). Abaixo de 1312 px,
+ * o lema sai, porque é largo, e está no rodapé; abaixo de 912 px, a barra da
+ * busca encolhe para a lupa e o "Buscar".
  *
  * Onde o site tem a API (o API_URL), as edições entram nos links. No celular, os
  * três não cabem na linha do nome: o Início sai (o CSS, pelo data-com-edicoes), e
@@ -54,6 +57,7 @@ export default function Header({
 					</Link>
 					<p className="marca-lema">o diário oficial político, simplificado</p>
 				</div>
+				<EntradaDaBusca />
 				<nav aria-label="Principal">
 					<ul
 						className="topo-links"

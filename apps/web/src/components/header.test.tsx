@@ -189,4 +189,28 @@ describe("cabeçalho", () => {
 		expect(trilhas.hasAttribute("data-na-secao")).toBe(false);
 		expect(trilhas.hasAttribute("aria-current")).toBe(false);
 	});
+
+	it("tem a entrada da busca entre o nome e os links, com o atalho para o leitor de tela", async () => {
+		const cabecalho = await mostrar();
+		const nome = within(cabecalho).getByRole("link", { name: "Mandatômetro" });
+		const entrada = within(cabecalho).getByRole("button", {
+			name: "Buscar no site",
+		});
+		const principal = within(cabecalho).getByRole("navigation", {
+			name: "Principal",
+		});
+
+		expect(
+			nome.compareDocumentPosition(entrada) & Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+		expect(
+			entrada.compareDocumentPosition(principal) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+		expect(entrada.getAttribute("aria-haspopup")).toBe("dialog");
+		expect(entrada.getAttribute("aria-keyshortcuts")).toBe("Control+K Meta+K");
+		expect(entrada.querySelector("kbd")?.getAttribute("aria-hidden")).toBe(
+			"true",
+		);
+	});
 });

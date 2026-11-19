@@ -102,6 +102,46 @@ export function useBusca(): ControleDaBusca {
 	return useContext(ContextoDaBusca);
 }
 
+/** O atalho como o teclado da pessoa escreve: no Mac, o ⌘. */
+function teclaDoAtalho(): string {
+	return /mac|iphone|ipad/i.test(navigator.userAgent) ? "⌘ K" : "Ctrl K";
+}
+
+/**
+ * A entrada da busca no cabeçalho, entre o nome e os links: a lupa, "Buscar no
+ * site" e a tecla do atalho. O servidor escreve "Ctrl K", e o Mac troca por
+ * "⌘ K" no mesmo espaço. Quando o ponteiro ou o foco chega nela, os índices já
+ * vêm. Sem JavaScript, ela não abriria nada, e o CSS a esconde.
+ */
+export function EntradaDaBusca() {
+	const { abrir, carregar } = useBusca();
+	const [tecla, setTecla] = useState("Ctrl K");
+	useEffect(() => {
+		setTecla(teclaDoAtalho());
+	}, []);
+
+	return (
+		<button
+			type="button"
+			className="entrada-da-busca"
+			aria-haspopup="dialog"
+			aria-keyshortcuts="Control+K Meta+K"
+			onClick={abrir}
+			onPointerEnter={carregar}
+			onFocus={carregar}
+		>
+			<Search aria-hidden="true" />
+			{/* O espaço fica fora do span: no jsdom, o nome do botão perde o espaço
+			    do começo do texto de um elemento em linha ("Buscarno site"). */}
+			<span>
+				Buscar <span className="entrada-da-busca-resto">no site</span>
+			</span>
+			{/* biome-ignore lint/a11y/noAriaHiddenOnFocusable: o <kbd> não recebe foco; a tecla chega ao leitor de tela pelo aria-keyshortcuts do botão. */}
+			<kbd aria-hidden="true">{tecla}</kbd>
+		</button>
+	);
+}
+
 /**
  * A busca em todas as páginas (routes/__root.tsx): o atalho Ctrl+K ou ⌘K, os
  * índices e a caixa, que só entra na página na primeira vez que abre. O HTML que

@@ -8,6 +8,89 @@
  */
 @layer components {
 	/*
+	 * A entrada da busca no cabeçalho, entre o nome e os links: a barra com a
+	 * lupa, "Buscar no site" e a tecla do atalho, com o fio de 2 px em papel 3
+	 * sobre a tinta. Com o ponteiro, o fio e a letra vão para o papel, e o foco é
+	 * o amarelo do cabeçalho (o .moldura). Ela fica no meio do espaço entre o
+	 * nome e os links, e encolhe com ele.
+	 */
+	.entrada-da-busca {
+		display: flex;
+		flex: 0 1 20rem;
+		align-items: center;
+		gap: 0.6rem;
+		min-width: 0;
+		min-height: 2.75rem;
+		margin-inline: auto;
+		padding: 0 0.5rem 0 0.75rem;
+		border: 2px solid var(--papel-3);
+		color: var(--papel-3);
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		font-weight: 500;
+		line-height: 1;
+		white-space: nowrap;
+		cursor: pointer;
+		transition:
+			border-color 0.2s,
+			color 0.2s;
+	}
+
+	.entrada-da-busca:hover {
+		border-color: var(--papel);
+		color: var(--papel);
+	}
+
+	.entrada-da-busca > svg {
+		flex: none;
+		width: 1.125rem;
+		height: 1.125rem;
+	}
+
+	/* A tecla do atalho, à direita; a largura guarda o lugar do "⌘ K" do Mac. */
+	.entrada-da-busca kbd {
+		min-width: 3.5rem;
+		margin-left: auto;
+		padding: 0.3rem 0.4rem;
+		border: 2px solid var(--tinta-suave);
+		font-family: var(--font-sans);
+		font-size: 0.75rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-align: center;
+		text-transform: uppercase;
+	}
+
+	/* Abaixo de 912 px, a barra encolhe para a lupa e o "Buscar". */
+	@media (width < 57rem) {
+		.entrada-da-busca {
+			flex: none;
+		}
+
+		.entrada-da-busca-resto,
+		.entrada-da-busca kbd {
+			display: none;
+		}
+	}
+
+	/*
+	 * No celular, quando os links descem para a linha de baixo, a entrada fica na
+	 * ponta direita da linha do nome.
+	 */
+	@media (width < 48rem) {
+		.entrada-da-busca {
+			margin-right: 0;
+		}
+	}
+
+	/* Sem JavaScript, a entrada não abriria nada: ela sai do cabeçalho. */
+	@media (scripting: none) {
+		.entrada-da-busca {
+			display: none;
+		}
+	}
+
+	/*
 	 * A folha, no alto da tela, com o respiro em cima: ela cresce para baixo com
 	 * os resultados, e a cabeça não pula enquanto a pessoa digita. Sem o
 	 * [open], a <dialog> fica escondida pelo navegador.

@@ -27,7 +27,7 @@ import {
 	vi,
 } from "vitest";
 import type { PaginaNaBusca } from "@/lib/busca";
-import { ProvedorDaBusca } from "./busca";
+import { EntradaDaBusca, ProvedorDaBusca } from "./busca";
 
 // As funções do servidor que entregam os índices são simuladas: cada teste diz
 // o que elas devolvem. As páginas são inventadas, sem pessoa nenhuma.
@@ -136,6 +136,7 @@ async function mostrar({
 	const raiz = createRootRoute({
 		component: () => (
 			<ProvedorDaBusca comEdicoes={comEdicoes}>
+				<EntradaDaBusca />
 				<button type="button">Antes da busca</button>
 				<main id="conteudo">
 					<Outlet />
@@ -238,6 +239,56 @@ describe("o atalho", () => {
 
 		expect(document.activeElement).toBe(campo);
 		expect([campo.selectionStart, campo.selectionEnd]).toEqual([0, 4]);
+	});
+});
+
+describe("a entrada do cabeçalho", () => {
+	it("pede os índices quando o ponteiro chega, e abre a caixa no clique", async () => {
+		await mostrar();
+		const entrada = screen.getByRole("button", { name: "Buscar no site" });
+
+		fireEvent.pointerEnter(entrada);
+		await act(async () => {});
+
+		expect(servidor.buscarIndiceDoConteudo).toHaveBeenCalledTimes(1);
+		expect(servidor.buscarIndiceDasEdicoes).toHaveBeenCalledTimes(1);
+		expect(document.querySelector("dialog")).toBeNull();
+
+		fireEvent.click(entrada);
+		const caixa = await screen.findByRole("dialog", { name: "Buscar no site" });
+		const campo = within(caixa).getByRole("searchbox");
+		digitar(campo, "veto");
+
+		expect(document.activeElement).toBe(campo);
+		expect(within(caixa).getByText("2 resultados")).toBeTruthy();
+		expect(servidor.buscarIndiceDoConteudo).toHaveBeenCalledTimes(1);
+	});
+
+	it("o foco do teclado na entrada também pede os índices", async () => {
+		await mostrar();
+
+		screen.getByRole("button", { name: "Buscar no site" }).focus();
+		await act(async () => {});
+
+		expect(servidor.buscarIndiceDoConteudo).toHaveBeenCalledTimes(1);
+	});
+
+	it("mostra o Ctrl K, e o ⌘ K no Mac", async () => {
+		await mostrar();
+		const tecla = () =>
+			screen
+				.getByRole("button", { name: "Buscar no site" })
+				.querySelector("kbd")?.textContent;
+
+		expect(tecla()).toBe("Ctrl K");
+
+		cleanup();
+		vi.spyOn(navigator, "userAgent", "get").mockReturnValue(
+			"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+		);
+		await mostrar();
+
+		expect(tecla()).toBe("⌘ K");
 	});
 });
 

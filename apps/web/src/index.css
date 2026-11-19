@@ -645,10 +645,11 @@
 	}
 
 	/*
-	 * O lema, em letra de máquina, é largo: abaixo de 864 px ele não cabe na linha
-	 * do nome e dos links, e sai do cabeçalho (ele está no rodapé).
+	 * O lema, em letra de máquina, é largo: abaixo de 1312 px ele não cabe na
+	 * linha do nome, da barra da busca e dos links, e sai do cabeçalho (ele está
+	 * no rodapé). A barra fica com o espaço dele (o Renan, na #233).
 	 */
-	@media (width < 54rem) {
+	@media (width < 82rem) {
 		.moldura .marca-lema {
 			display: none;
 		}

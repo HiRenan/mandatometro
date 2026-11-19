@@ -6,13 +6,21 @@ import { describe, expect, it } from "vitest";
 // lê o CSS do site, porque o jsdom não desenha.
 
 const css = readFileSync(new URL("../index.css", import.meta.url), "utf8");
+const cssDaBusca = readFileSync(
+	new URL("../estilos/busca.css", import.meta.url),
+	"utf8",
+);
 
 /** Cada @media com largura máxima: a largura, em rem, e o corpo dela. */
-const midias = [
-	...css.matchAll(
-		/@media \(width < ([\d.]+)rem\) \{((?:[^{}]*\{[^}]*\})*)\s*\}/g,
-	),
-].map(([, largura, corpo]) => ({ largura: Number(largura), corpo }));
+function midiasDe(texto: string) {
+	return [
+		...texto.matchAll(
+			/@media \(width < ([\d.]+)rem\) \{((?:[^{}]*\{[^}]*\})*)\s*\}/g,
+		),
+	].map(([, largura, corpo]) => ({ largura: Number(largura), corpo }));
+}
+
+const midias = midiasDe(css);
 
 const TIRA_O_INICIO =
 	/\.topo-links\[data-com-edicoes\] > li:first-child \{\s*display: none;\s*\}/;
@@ -61,5 +69,55 @@ describe("o CSS do cabeçalho com as edições", () => {
 		expect(midias.some(({ corpo }) => quebra.test(corpo))).toBe(false);
 		// O cabeçalho sem a API fica como era.
 		expect(css).not.toMatch(/\.topo-links \{[^}]*flex-wrap/);
+	});
+});
+
+describe("o CSS do cabeçalho com a busca", () => {
+	const TIRA_O_LEMA = /\.moldura \.marca-lema \{\s*display: none;\s*\}/;
+
+	/** A largura, em rem, abaixo da qual o lema sai do cabeçalho. */
+	function larguraDoLema(): number | undefined {
+		return midias.find(({ corpo }) => TIRA_O_LEMA.test(corpo))?.largura;
+	}
+
+	it("o lema sai do cabeçalho abaixo de 82rem, e a barra da busca fica com o espaço", () => {
+		// O nome, o lema, a barra e os quatro links cabem numa linha a partir de
+		// 82rem (medido no navegador, com as edições).
+		expect(larguraDoLema()).toBe(82);
+	});
+
+	it("o pré-carregamento da letra de máquina acompanha o lema", () => {
+		const raiz = readFileSync(
+			new URL("../routes/__root.tsx", import.meta.url),
+			"utf8",
+		);
+		const inicial = readFileSync(
+			new URL("../routes/index.tsx", import.meta.url),
+			"utf8",
+		);
+		const largura = larguraDoLema() ?? 0;
+
+		// Onde o lema aparece, a rota raiz adianta a fonte; abaixo disso, só a
+		// página inicial, para a frase do título.
+		expect(raiz).toContain(
+			`preloadDaFonte(fontes.maquina, "(min-width: ${largura}rem)")`,
+		);
+		expect(inicial).toContain(
+			`preloadDaFonte(fontes.maquina, "(max-width: ${(largura - 0.01).toFixed(2)}rem)")`,
+		);
+	});
+
+	it("abaixo de 57rem, a barra encolhe para a lupa e o Buscar", () => {
+		const encolhe =
+			/\.entrada-da-busca-resto,\s*\.entrada-da-busca kbd \{\s*display: none;\s*\}/;
+		const midia = midiasDe(cssDaBusca).find(({ corpo }) => encolhe.test(corpo));
+
+		expect(midia?.largura).toBe(57);
+	});
+
+	it("sem JavaScript, a entrada não aparece: ela só abre a caixa", () => {
+		expect(cssDaBusca).toMatch(
+			/@media \(scripting: none\) \{\s*\.entrada-da-busca \{\s*display: none;\s*\}\s*\}/,
+		);
 	});
 });
