@@ -1,6 +1,7 @@
 """Configuração da função, sem abrir conexão durante a importação."""
 
 import importlib
+import json
 import runpy
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
@@ -100,6 +101,11 @@ def test_entrada_da_vercel_importa_sem_migration_ou_conexao(monkeypatch):
     entrada = runpy.run_path(str(BACKEND / "app.py"))
     assert entrada["app"] is modulo.app
     assert "/newsletter/saida/{codigo_saida}" in entrada["app"].openapi()["paths"]
+
+
+def test_vercel_instala_o_pacote_no_ambiente_da_funcao():
+    configuracao = json.loads((BACKEND / "vercel.json").read_text(encoding="utf-8"))
+    assert configuracao.get("installCommand") == "uv sync --active --locked --no-dev --no-editable"
 
 
 def test_instancias_sem_pool_compartilham_a_cota(engine_de_teste):
