@@ -12,6 +12,12 @@ No MVP, a coleta descarta `cpf` e `dataNascimento` de `/deputados/{id}`. O banco
 
 Motivo de ausência fica fora do banco, para a licença saúde não ser deduzida: toda ausência do Senado (AP, LS, MIS, NCom, LAP, LP e as que entrarem em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, igual às outras, e o motivo de afastamento do senador não é gravado. O voto só guarda os códigos de voto e de presença de `CODIGOS_GRAVADOS` em `valor_bruto`, o que o CHECK do banco garante, e um código novo entra como `outro`, sem o código. O banco guarda `P-NRV`, de quem estava presente. O log também não leva o código nem a pessoa, porque o log junto com o banco apontaria quem recebeu um código que pode ser de saúde: a coleta (#10 e #11) registra a votação e quantos códigos desconhecidos vieram nela, e quem for classificar o código o lê na fonte pública.
 
+## Atos do Diário Oficial
+
+Atos de pessoal, atos da seção 2 e textos com número de documento pessoal ficam retidos para conferência editorial. O filtro considera o risco de identificar alguém. Nenhum campo dos atos retidos, inclusive título, ementa e órgão, segue para o modelo. Logs, resumos de comandos e erros usam só o número do item e o código do motivo, sem nomes, documentos ou trechos oficiais. Testes e fixtures usam atos e dados pessoais inteiramente inventados.
+
+O título e a ementa oficiais ficam na tabela `ato`. A revisão usa o link oficial para decidir se exclui o item ou se o mantém com redação própria. Confira também o endereço da fonte antes de publicar. O item 6.9 do regulamento do hackathon proíbe expor dados pessoais reais de terceiros na demo. [Revisão dos atos](newsletter.md#como-preparar-a-edição)
+
 ## Inscrição e conta
 
 A newsletter pede só o e-mail, que fica no banco e só sai para o envio. Site, API, logs e fixtures de teste identificam a inscrição pelo id interno.
