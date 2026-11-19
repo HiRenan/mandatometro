@@ -18,15 +18,15 @@ web
 O Mandatômetro ensina como funciona a política brasileira, em linguagem simples e de forma interativa, a partir do que o Congresso vota (Renan, 09/11/2026). Ele tem duas partes:
 
 - **Trilhas:** artigos curtos com infográficos e, se der tempo, vídeos curtos, com um quiz de múltipla escolha no meio e outro no fim. A primeira, e a principal, é a do processo legislativo: como nasce uma lei.
-- **Newsletter semanal, o jornal legislativo:** todo domingo, o que o Congresso votou na semana, em linguagem simples e com o link oficial de cada item. A inscrição pede só o e-mail e já manda a última edição publicada. Cada edição também fica no site.
+- **Newsletter semanal, o jornal legislativo:** todo domingo, o que o Congresso votou na semana, em linguagem simples e com o link oficial de cada item. A inscrição pede só o e-mail e já manda a última edição publicada. Cada edição também fica no site. A edição vai ganhar uma segunda seção, com os destaques do Diário Oficial da União, para alcançar também o que o Executivo publica (ADR 0004); hoje só a seção do Congresso está no ar.
 
 O projeto concorre na trilha Acesso à educação do Hack Brasil 2026. O regulamento (item 5.4) exige que o problema e o público estejam dentro dessa trilha. Aprender é a função principal do site. A entrega em 30/11/2026 pede repositório público, demo no ar e vídeo de até 3 minutos.
 
-O sucesso se mede no piloto, com cerca de 50 pessoas (uma turma do Senai e o Instagram), pelo quanto elas acertam no quiz antes e depois da trilha. O porquê do MVP está no [ADR 0002](docs/adr/0002-mvp.md), e o do login opcional, no [ADR 0003](docs/adr/0003-login-opcional.md).
+O sucesso se mede no piloto, com cerca de 50 pessoas (uma turma do Senai e o Instagram), pelo quanto elas acertam no quiz antes e depois da trilha. O porquê do MVP está no [ADR 0002](docs/adr/0002-mvp.md); o do login opcional, no [ADR 0003](docs/adr/0003-login-opcional.md); e o do Diário Oficial na newsletter, no [ADR 0004](docs/adr/0004-newsletter-do-dou.md).
 
 ## Positioning
 
-A política explicada em linguagem simples e de forma interativa, a partir de casos reais e recentes do Congresso. As trilhas ensinam as regras, e a newsletter mostra o Congresso da semana. O lema: "o diário oficial político, simplificado".
+A política explicada em linguagem simples e de forma interativa, a partir de casos reais e recentes do Congresso. As trilhas ensinam as regras, e a newsletter mostra a semana — hoje o Congresso, e, pelo ADR 0004, também o que sai no Diário Oficial. O lema: "o diário oficial político, simplificado".
 
 ## Operating Context
 

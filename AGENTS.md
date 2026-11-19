@@ -29,7 +29,7 @@ Use your judgment for trivial tasks. These principles draw inspiration from the 
 
 ## The project
 
-Mandatômetro teaches how Brazilian politics works through what Congress is voting on, mainly for voters aged 20 to 40. The Hack Brasil 2026 submission is due November 30, 2026, with a public repository, a live demo, and a video up to three minutes long. See the [product definition](PRODUCT.md) and the [ADRs](docs/adr/) for scope and decisions, including the [stack](docs/adr/0001-stack.md), the [MVP](docs/adr/0002-mvp.md), and [optional login](docs/adr/0003-login-opcional.md).
+Mandatômetro teaches how Brazilian politics works through what Congress is voting on, mainly for voters aged 20 to 40. The Hack Brasil 2026 submission is due November 30, 2026, with a public repository, a live demo, and a video up to three minutes long. See the [product definition](PRODUCT.md) and the [ADRs](docs/adr/) for scope and decisions, including the [stack](docs/adr/0001-stack.md), the [MVP](docs/adr/0002-mvp.md), [optional login](docs/adr/0003-login-opcional.md), and the [Official Gazette in the newsletter](docs/adr/0004-newsletter-do-dou.md).
 
 ## Stack and structure
 
