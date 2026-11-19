@@ -18,11 +18,17 @@ O rascunho reúne as votações do Congresso e os atos do Diário Oficial da Uni
 
 O `rascunho` inclui atos com uma página pública oficial e data de publicação dentro do período informado, incluindo as duas datas. Os atos entram depois das votações, com seu próprio teto de cinco por padrão. Use `--teto-atos N` para mudar esse limite.
 
-O comando considera duplicata um par único entre as duas origens com o mesmo tipo, número positivo normalizado e data completa de assinatura. A comparação remove zeros à esquerda e pontos de milhar e distingue uma lei complementar identificada no título. Tipos sem identificação precisa, dados ausentes e chaves com mais de uma linha da mesma origem preservam os candidatos. Se as duas linhas podem entrar, fica a dos destaques, com o link do Diário Oficial. A outra linha e sua fonte permanecem na coleta. Se apenas uma tem página pública, ela é candidata. Uma retenção de privacidade vale para as duas linhas do par reconhecido.
+O comando considera duplicata um par único no período entre as duas origens com o mesmo tipo, número positivo normalizado e data completa de assinatura. A comparação remove zeros à esquerda e pontos de milhar. Para leis, as duas linhas precisam indicar o mesmo subtipo, ordinária ou complementar, pelo título ou pelo endereço oficial do ato. Subtipo ausente ou divergente, tipos sem identificação precisa, dados ausentes e chaves com mais de uma linha da mesma origem preservam os candidatos. Se as duas linhas podem entrar, fica a dos destaques, com o link do Diário Oficial. A outra linha e sua fonte permanecem na coleta. Se apenas uma tem página pública, ela é candidata.
 
-O resumo JSON em `atos` mostra quantos ficaram sem página pública, quantos foram deduplicados, quantos eram elegíveis e quantos ficaram abaixo do teto. `retidos` lista o id interno e o código de cada retenção, e `retidos_por_codigo` traz as contagens. Consulte o id no banco editorial autorizado para conferir um descarte.
+A retenção vale para a norma reconhecida nas duas origens, inclusive quando as datas de publicação estão em períodos diferentes. Se uma linha for retida, as linhas correspondentes ficam fora do modelo e do rascunho. Publicações fora do período só participam da conferência de privacidade.
 
-Com provedor, uma chamada ordena todos os candidatos pela relevância para quem está aprendendo como funciona a política brasileira. Cada ato leva uma posição temporária, título, ementa, órgão, tipo e data de publicação. O prompt manda tratar texto oficial como dado. A resposta precisa listar todas as posições exatamente uma vez, em ordem de relevância. Cada motivo tem até 160 caracteres, em texto simples. A validação recusa texto vazio, controles, algarismos, sinais de URL ou HTML e sinais de identificação de pessoa ou partido.
+O resumo JSON em `atos` mostra quantos ficaram sem página pública, quantos foram deduplicados, quantos eram elegíveis e quantos ficaram abaixo do teto. `retidos` lista o id interno e o código de cada retenção, inclusive as linhas de fora do período que acionaram o bloqueio. `retidos_por_codigo` traz as contagens. Consulte o id no banco editorial autorizado para conferir um descarte.
+
+Com provedor, uma chamada ordena todos os candidatos pela relevância para quem está aprendendo como funciona a política brasileira. Cada ato leva uma posição temporária, título, ementa, órgão, tipo e data de publicação. O prompt manda tratar texto oficial como dado. A resposta precisa listar todas as posições exatamente uma vez, em ordem de relevância. Cada motivo tem até 160 caracteres, em texto simples. A validação recusa texto vazio, controles, algarismos e sinais de URL ou HTML.
+
+A conferência de identificação compara os nomes do cadastro de parlamentares sem distinguir caixa, acento ou sequências de espaços. Também recusa tratamentos parlamentares, maiúsculas internas que sinalizem identificação, o padrão de sigla com UF e a palavra `partido` e suas flexões. Siglas registradas em `voto.partido` são procuradas como palavras inteiras em qualquer caixa. As que também são palavras comuns entram nessa guarda quando aparecem todas em maiúsculas. São elas agir, avante, cidadania, democrata, missão, mobiliza, novo, pode, rede, republicanos, solidariedade e união.
+
+A conferência também recusa os nomes do registro do TSE com mais de uma palavra e sem o termo `partido`. A consulta de 19/11/2026 encontrou Democracia Cristã, Mobilização Nacional, Movimento Democrático Brasileiro, Rede Sustentabilidade, Unidade Popular e União Brasil. A pessoa que revisa confere o idioma do motivo, os nomes de pessoas fora do cadastro e se uma palavra comum está sendo usada como sigla ou nome de partido de uma só palavra. [Registro do TSE](https://www.tse.jus.br/partidos/partidos-politicos/partidos-registrados-no-tse)
 
 Se faltar provedor ou a sugestão falhar, entram primeiro os destaques, depois os demais. Em cada grupo vale a publicação mais recente e, no empate, o menor id interno. O resumo registra a origem da ordem e o código aplicável.
 
@@ -33,7 +39,7 @@ Se faltar provedor ou a sugestão falhar, entram primeiro os destaques, depois o
 | `resposta_interrompida` | Houve corte ou outra parada diferente de `end_turn`. |
 | `falha_provedor` | A chamada falhou. |
 | `tempo_esgotado` | O provedor esgotou o tempo da chamada. |
-| `resposta_invalida` | O formato, as posições ou um motivo falharam na validação. |
+| `resposta_invalida` | O formato, as posições ou qualquer motivo falharam na validação. A ordem inteira segue pela regra. |
 
 O arquivo de revisão mostra `fatos.selecao` como consulta. O campo guarda a ordem sugerida entre os atos, a origem da ordem, o teto e o motivo validado ou o código da ordem por regra. A pessoa pode mudar a posição do item ou excluí-lo. A seleção fica pendente de revisão e a explicação nasce pendente de redação. A sugestão é interna à revisão.
 
