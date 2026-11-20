@@ -606,7 +606,7 @@ O comando usa as datas de publicação, incluindo as duas pontas do período. Se
 
 Atos de pessoal da seção 2 e contratos e editais da seção 3 ficam fora do recorte. O resumo conta descartes por período, seção, data inválida ou futura, campo obrigatório, link e XML inválidos. `assina`, `cargo` e `texto` ficam fora do banco e da saída. Título e ementa são campos do ato no banco e seguem as regras de uso editorial de [dados pessoais](dados-pessoais.md#coleta-dos-destaques-do-diário-oficial).
 
-Sem `FIRECRAWL_API_KEY`, o comando sai com código 2. A coleta confirma a conexão com o banco antes do primeiro pedido. Se o banco não responder, a saída é 1 e o resumo registra zero chamadas. Falha do provedor ou de gravação também sai com código 1 e mantém os atos já confirmados. HTTP 429 permite até três pedidos da mesma página. O cliente respeita o `Retry-After` e encerra a coleta se a espera solicitada exceder 60 segundos.
+Sem `FIRECRAWL_API_KEY`, o comando sai com código 2. A coleta confirma a conexão com o banco antes do primeiro pedido. Se o banco não responder, a saída é 1 e o resumo registra zero chamadas. Falha do provedor ou de gravação também sai com código 1 e mantém os atos já confirmados. Respostas HTTP 429 e 5xx permitem até três pedidos da mesma página. O cliente respeita o `Retry-After` e encerra a coleta se a espera solicitada exceder 60 segundos.
 
 ## Campos pessoais
 
