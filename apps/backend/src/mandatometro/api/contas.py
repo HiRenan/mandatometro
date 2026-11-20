@@ -302,7 +302,8 @@ def conta_da_sessao(db: Session, sessao_conta: str | None) -> Conta:
 
 
 def exigir_administradora(sessao_conta: Annotated[str | None, Cookie()] = None) -> Conta:
-    # A dependência é chamada após a leitura do corpo da requisição.
+    if not sessao_conta:
+        raise StarletteHTTPException(404)
     with sessao() as db:
         try:
             conta = conta_da_sessao(db, sessao_conta)

@@ -60,6 +60,14 @@ class ErroEdicao(Exception):
     """Mensagem editorial segura, sem texto de fonte ou exceção de terceiros."""
 
 
+class EdicaoNaoEncontrada(ErroEdicao):
+    """Nenhuma edição corresponde ao id informado."""
+
+
+class ConflitoEdicao(ErroEdicao):
+    """O conteúdo ou o estado da edição mudou."""
+
+
 class ItemRevisao(Estrito):
     id: Id
     titulo: Annotated[str, Field(min_length=1, max_length=180)]
@@ -95,18 +103,20 @@ def titulo_periodo(inicio: date, fim: date) -> str:
     return f"Jornal legislativo — {inicio.strftime(formato)} a {fim:%d/%m/%Y}"
 
 
-def _carregar(sessao: Session, edicao_id: int) -> Edicao:
-    edicao = sessao.scalar(
+def _carregar(sessao: Session, edicao_id: int, *, bloquear: bool = False) -> Edicao:
+    consulta = (
         select(Edicao)
         .where(Edicao.id == edicao_id)
         .options(selectinload(Edicao.itens).joinedload(ItemEdicao.fonte))
     )
+    # Escritas conferem o estado e a versão depois de obter o bloqueio da edição.
+    edicao = sessao.scalar(consulta.with_for_update() if bloquear else consulta)
     if edicao is None:
-        raise ErroEdicao("Não encontramos essa edição. Confira o número informado.")
+        raise EdicaoNaoEncontrada("Não encontramos essa edição. Confira o número informado.")
     return edicao
 
 
-def _periodo(sessao: Session, inicio: date, fim: date) -> Edicao | None:
+def _periodo(sessao: Session, inicio: date, fim: date, *, bloquear: bool = False) -> Edicao | None:
     edicoes = list(
         sessao.scalars(select(Edicao.id).where(Edicao.inicio == inicio, Edicao.fim == fim))
     )
@@ -114,7 +124,7 @@ def _periodo(sessao: Session, inicio: date, fim: date) -> Edicao | None:
         raise ErroEdicao(
             "Há mais de uma edição nesse período. Resolva a duplicação antes de continuar."
         )
-    return _carregar(sessao, edicoes[0]) if edicoes else None
+    return _carregar(sessao, edicoes[0], bloquear=bloquear) if edicoes else None
 
 
 def _hash(edicao: Edicao) -> str:
@@ -311,7 +321,7 @@ def gerar(
             fatos.pendencias.append("artigo")
         preparados.append((base.principal.id, texto, fatos.model_dump(mode="json"), artigo))
     with abrir() as sessao, sessao.begin():
-        edicao = _periodo(sessao, inicio, fim)
+        edicao = _periodo(sessao, inicio, fim, bloquear=True)
         if edicao and edicao.estado == "publicada":
             return {"situacao": "ja_publicada", "edicao_id": edicao.id, **redacao}
         if (edicao is not None and _hash(edicao) != versao) or (
@@ -422,7 +432,7 @@ def exportar(abrir: AbrirSessao, edicao_id: int) -> dict:
     with abrir() as sessao:
         edicao = _carregar(sessao, edicao_id)
         if edicao.estado == "publicada":
-            raise ErroEdicao("A edição está publicada. Use mostrar para consultá-la.")
+            raise ConflitoEdicao("A edição está publicada. Use mostrar para consultá-la.")
         bases, _ = _conferir(sessao, edicao)
         return _arquivo(sessao, edicao, bases)
 
@@ -509,11 +519,13 @@ def _texto_valido(texto: str, campo: str, prefixo: str, numeros: set[str]) -> No
 def revisar(abrir: AbrirSessao, edicao_id: int, dados: dict) -> dict:
     arquivo = _ler_arquivo(dados)
     with abrir() as sessao, sessao.begin():
-        edicao = _carregar(sessao, edicao_id)
+        edicao = _carregar(sessao, edicao_id, bloquear=True)
         if edicao.estado == "publicada":
-            raise ErroEdicao("A edição publicada não pode ser revisada.")
+            raise ConflitoEdicao("A edição publicada não pode ser revisada.")
         if arquivo.edicao_id != edicao.id or arquivo.versao_rascunho != _hash(edicao):
-            raise ErroEdicao("Esse arquivo é antigo ou de outra edição. Exporte o rascunho atual.")
+            raise ConflitoEdicao(
+                "Esse arquivo é antigo ou de outra edição. Exporte o rascunho atual."
+            )
         bases, nomes = _conferir(sessao, edicao)
         original = _arquivo(sessao, edicao, bases)
         if (
@@ -632,7 +644,7 @@ def revisar(abrir: AbrirSessao, edicao_id: int, dados: dict) -> dict:
 
 def publicar(abrir: AbrirSessao, edicao_id: int) -> dict:
     with abrir() as sessao, sessao.begin():
-        edicao = _carregar(sessao, edicao_id)
+        edicao = _carregar(sessao, edicao_id, bloquear=True)
         if edicao.estado == "publicada":
             return {"situacao": "ja_publicada", "edicao_id": edicao_id}
         _periodo(sessao, edicao.inicio, edicao.fim)
