@@ -7,6 +7,7 @@ import {
 	salvarRevisao,
 } from "@/client";
 import { ENV } from "@/env";
+import { plural } from "@/lib/formatar";
 import {
 	type AvisosNoLugar,
 	avisosNoRascunhoNovo,
@@ -35,8 +36,6 @@ const PRAZO = 30_000;
 export const SEM_CONEXAO =
 	"Não deu para falar com o servidor. Confira a internet e tente de novo.";
 const FALHA_DA_API = "A API não respondeu como esperado. Tente de novo.";
-export const RASCUNHO_MUDOU =
-	"O rascunho mudou enquanto você revisava. Carregamos a versão atual e mantivemos o que você alterou. Confira e salve de novo.";
 
 /** Onde o foco vai depois de uma resposta: o id de um elemento da página. */
 export type Foco = { alvo: string; vez: number };
@@ -77,7 +76,7 @@ export type Revisao =
 	| { tipo: "publicada"; edicaoId: number; jaEstava: boolean }
 	/** A edição foi publicada ou trocada enquanto a pessoa revisava. */
 	| { tipo: "trocada" }
-	/** A API respondeu 404: a sessão caiu ou o papel saiu, e o rascunho sai da tela. */
+	/** A API respondeu 401 ou 404 e a guarda está conferindo o acesso de novo. */
 	| { tipo: "saiu" };
 
 type Estado = { revisao: Revisao; foco: Foco | null };
@@ -96,7 +95,11 @@ type Acao =
 			erros?: Aberta["erros"];
 			alvo: string;
 	  }
-	| { tipo: "juntou"; arquivo: ArquivoRevisao; campos: Campos }
+	| {
+			tipo: "juntou";
+			arquivo: ArquivoRevisao;
+			juncao: ReturnType<typeof juntarAoRascunhoAtual>;
+	  }
 	| { tipo: "publicou"; edicaoId: number; jaEstava: boolean }
 	| { tipo: "trocada" }
 	| { tipo: "salva-sem-releitura" }
@@ -132,6 +135,31 @@ export const ID_DA_FALTA_NA_EDICAO = "edicao-falta";
 export const ID_DO_TITULO_DA_EDICAO = "edicao-titulo";
 export const ID_DA_MENSAGEM_DO_PE = "pe-da-revisao-mensagem";
 export const ID_DO_RESULTADO = "painel-resultado";
+
+function fraseDoConflito({
+	itensAlteradosQueSairam,
+	confirmacoesDePrivacidadePerdidas,
+}: ReturnType<typeof juntarAoRascunhoAtual>): string {
+	const inicio =
+		"O rascunho mudou enquanto você revisava. Carregamos a versão atual";
+	const fim = "Confira e salve de novo.";
+	const perdaDeItens = itensAlteradosQueSairam
+		? `O que você alterou em ${plural(itensAlteradosQueSairam, "item que saiu da edição", "itens que saíram da edição")} ficou de fora`
+		: "";
+	if (confirmacoesDePrivacidadePerdidas) {
+		const atos = plural(
+			confirmacoesDePrivacidadePerdidas,
+			"ato que não precisa mais dessa conferência",
+			"atos que não precisam mais dessa conferência",
+		);
+		const retirada = perdaDeItens ? `${perdaDeItens}. ` : "";
+		return `${inicio}. ${retirada}A confirmação de privacidade ficou de fora em ${atos}. O resto do que você alterou foi mantido. ${fim}`;
+	}
+	if (perdaDeItens) {
+		return `${inicio}. ${perdaDeItens}; o resto foi mantido. ${fim}`;
+	}
+	return `${inicio} e mantivemos o que você alterou. ${fim}`;
+}
 
 function reduzir(estado: Estado, acao: Acao): Estado {
 	const { revisao } = estado;
@@ -206,8 +234,8 @@ function reduzir(estado: Estado, acao: Acao): Estado {
 		case "juntou":
 			return {
 				revisao: {
-					...aberta(acao.arquivo, acao.campos),
-					nota: RASCUNHO_MUDOU,
+					...aberta(acao.arquivo, acao.juncao.campos),
+					nota: fraseDoConflito(acao.juncao),
 				},
 				foco: focar(estado, ID_DA_MENSAGEM_DO_PE),
 			};
@@ -280,6 +308,10 @@ function opcoes(sinal: AbortSignal) {
 	} as const;
 }
 
+function acessoRecusado(status: number): boolean {
+	return status === 401 || status === 404;
+}
+
 /**
  * A frase do pé quando a API recusa ou falha: a mensagem dela, como a do 503
  * ("Há outra gravação em andamento. Tente de novo."), ou a frase geral quando a
@@ -348,10 +380,8 @@ function recusa(
  * publicar. A página só monta depois da guarda do layout (_autenticado.tsx), e
  * só então o rascunho é pedido.
  *
- * Um 404 em qualquer pedido quer dizer que a sessão caiu ou que o papel saiu:
- * o rascunho sai da tela na hora, e a guarda roda de novo (router.invalidate),
- * que leva ao login ou à página não encontrada. Se ela ainda for administradora,
- * a tela carrega o rascunho de novo.
+ * Um 401 ou 404 em qualquer pedido tira o rascunho e a moldura da tela na hora.
+ * A guarda roda de novo (router.invalidate) e decide se a revisão pode voltar.
  */
 export function useRevisao() {
 	const router = useRouter();
@@ -382,7 +412,7 @@ export function useRevisao() {
 			}
 			if (resposta.tipo === "ok") {
 				despachar({ tipo: "carregou", arquivo: resposta.dados, falha });
-			} else if (resposta.tipo === "erro" && resposta.status === 404) {
+			} else if (resposta.tipo === "erro" && acessoRecusado(resposta.status)) {
 				await perdeuOAcesso(sinal);
 			} else {
 				despachar({ tipo: "nao-carregou", mensagem: falhaDe(resposta) });
@@ -408,7 +438,7 @@ export function useRevisao() {
 			if (sinal.aborted) {
 				return null;
 			}
-			if (releitura.tipo === "erro" && releitura.status === 404) {
+			if (releitura.tipo === "erro" && acessoRecusado(releitura.status)) {
 				await perdeuOAcesso(sinal);
 				return null;
 			}
@@ -498,7 +528,7 @@ export function useRevisao() {
 				return;
 			}
 
-			if (resposta.tipo === "erro" && resposta.status === 404) {
+			if (resposta.tipo === "erro" && acessoRecusado(resposta.status)) {
 				await perdeuOAcesso(
 					sinal,
 					resposta.detalhe && `A revisão não foi salva. ${resposta.detalhe}`,
@@ -507,8 +537,7 @@ export function useRevisao() {
 			}
 
 			if (resposta.tipo === "erro" && resposta.status === 409) {
-				// O rascunho mudou depois da leitura: a tela pega o atual e mantém o que
-				// a pessoa mudou. Se a edição foi publicada ou trocada, não há onde juntar.
+				// A tela pega o rascunho atual, passa o que couber e avisa o que se perdeu.
 				const releitura = await reler(sinal);
 				if (!releitura) {
 					return;
@@ -519,7 +548,7 @@ export function useRevisao() {
 					despachar({
 						tipo: "juntou",
 						arquivo: releitura.dados,
-						campos: juntarAoRascunhoAtual(arquivo, campos, releitura.dados),
+						juncao: juntarAoRascunhoAtual(arquivo, campos, releitura.dados),
 					});
 				} else {
 					despachar({ tipo: "trocada" });
@@ -552,7 +581,7 @@ export function useRevisao() {
 					edicaoId: resposta.dados.edicao_id,
 					jaEstava: resposta.dados.situacao === "ja_publicada",
 				});
-			} else if (resposta.tipo === "erro" && resposta.status === 404) {
+			} else if (resposta.tipo === "erro" && acessoRecusado(resposta.status)) {
 				await perdeuOAcesso(
 					sinal,
 					resposta.detalhe && `A edição não foi publicada. ${resposta.detalhe}`,

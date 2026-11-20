@@ -68,6 +68,7 @@ export function FichaDoItem({
 	const id = `item-${posicao}`;
 	const estado = estadoDoItem(item, campos, leitura);
 	const titulo = campos.titulo.trim() || "Item sem título";
+	const tituloDoArtigo = artigos[campos.artigo];
 	const quantos = paragrafos(campos.explicacao).length;
 	// O aviso do salvar que repete um do rascunho ("Confira o item 2: " e o mesmo
 	// texto) fica de fora.
@@ -183,7 +184,12 @@ export function FichaDoItem({
 					))}
 				</>
 			)}
-			<FontesDoItem posicao={posicao} fontes={leitura.fontes} Titulo="h4" />
+			<FontesDoItem
+				posicao={posicao}
+				fontes={leitura.fontes}
+				Titulo="h4"
+				emOutraAba
+			/>
 
 			{leitura.retido && !campos.excluir && (
 				<fieldset className="privacidade-do-ato">
@@ -291,7 +297,7 @@ export function FichaDoItem({
 							))}
 						</select>
 					</div>
-					{campos.artigo && (
+					{tituloDoArtigo && (
 						<label className="marcar">
 							<input
 								type="checkbox"
@@ -301,7 +307,7 @@ export function FichaDoItem({
 									mudar("artigoConfirmado", evento.currentTarget.checked)
 								}
 							/>
-							<span>Confirmo o artigo: ele explica o assunto deste item</span>
+							<span>Confirmo o artigo: {tituloDoArtigo}</span>
 						</label>
 					)}
 					<label className="marcar">

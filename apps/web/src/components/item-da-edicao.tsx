@@ -166,10 +166,12 @@ export function FontesDoItem({
 	posicao,
 	fontes,
 	Titulo,
+	emOutraAba = false,
 }: {
 	posicao: number;
 	fontes: FontePublica[];
 	Titulo: "h3" | "h4";
+	emOutraAba?: boolean;
 }) {
 	return (
 		<div className="fontes-do-item">
@@ -194,8 +196,17 @@ export function FontesDoItem({
 							<div>
 								<p>
 									{endereco ? (
-										<a href={endereco}>
-											{nome} <span className="sr-only">{soParaOLeitor}</span>
+										<a
+											href={endereco}
+											target={emOutraAba ? "_blank" : undefined}
+											rel={emOutraAba ? "noopener noreferrer" : undefined}
+										>
+											{nome}{" "}
+											<span className="sr-only">
+												{emOutraAba
+													? `${soParaOLeitor} (abre em outra aba)`
+													: soParaOLeitor}
+											</span>
 										</a>
 									) : (
 										<strong>{nome}</strong>

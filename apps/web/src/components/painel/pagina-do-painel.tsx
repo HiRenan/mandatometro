@@ -1,5 +1,5 @@
 import { Link, useBlocker } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { classes } from "@/lib/classes";
 import { formatarPeriodo, plural } from "@/lib/formatar";
 import {
@@ -77,6 +77,10 @@ export function PaginaDoPainel() {
 		}
 	}, [operacao, salva, avisar]);
 
+	if (revisao.tipo === "saiu") {
+		return <VerificandoSessao />;
+	}
+
 	return (
 		<div className="pagina-do-painel">
 			<div className="parede">
@@ -151,7 +155,7 @@ function CorpoDaRevisao({
 	salvar,
 	pedirPublicacao,
 }: {
-	revisao: Revisao;
+	revisao: Exclude<Revisao, { tipo: "saiu" }>;
 	alterada: boolean;
 	frase: string;
 	carregar: () => Promise<void>;
@@ -166,8 +170,6 @@ function CorpoDaRevisao({
 					Carregando o rascunho da semana…
 				</p>
 			);
-		case "saiu":
-			return <VerificandoSessao />;
 		case "sem-api":
 			return (
 				<p className="lide">
@@ -290,6 +292,7 @@ function FormularioDaRevisao({
 	pedirPublicacao: () => void;
 }) {
 	const { arquivo, leituras, campos, erros, avisos, operacao } = revisao;
+	const pe = useRef<HTMLDivElement>(null);
 	const ocupada = operacao !== null;
 	const pronta = prontaParaPublicar(oQueFalta(arquivo, leituras), alterada);
 	const itens = arquivo.itens.map((item, indice) => ({
@@ -300,6 +303,71 @@ function FormularioDaRevisao({
 	const votacoes = itens.filter(({ leitura }) => leitura.tipo === "votacao");
 	const atos = itens.filter(({ leitura }) => leitura.tipo === "ato");
 	const erroDaEdicao = erros.edicao;
+
+	useLayoutEffect(() => {
+		const rodape = pe.current;
+		if (!rodape) {
+			return;
+		}
+		const raiz = document.documentElement;
+		const folha = rodape.closest("article");
+
+		function mostrar(alvo: EventTarget | null) {
+			if (
+				!(alvo instanceof HTMLElement) ||
+				!alvo.closest(".pagina-do-painel") ||
+				alvo.closest("dialog") ||
+				(alvo.tabIndex < 0 && !alvo.matches(".falta-no-campo, .frase-do-pe"))
+			) {
+				return;
+			}
+			const estilo = getComputedStyle(alvo);
+			const anel =
+				estilo.outlineStyle === "none"
+					? 0
+					: Math.max(
+							0,
+							Number.parseFloat(estilo.outlineWidth) +
+								Number.parseFloat(estilo.outlineOffset),
+						);
+			const { top, bottom } = alvo.getBoundingClientRect();
+			const limite =
+				folha?.contains(alvo) &&
+				!rodape.contains(alvo) &&
+				getComputedStyle(rodape).position === "sticky"
+					? Math.min(raiz.clientHeight, rodape.getBoundingClientRect().top)
+					: raiz.clientHeight;
+			if (top < anel) {
+				window.scrollBy(0, Math.floor(top - anel));
+			} else if (bottom + anel > limite) {
+				window.scrollBy(0, Math.ceil(bottom + anel - limite));
+			}
+		}
+
+		// A altura muda quando a frase quebra ou o estado muda. O Tab também pode
+		// parar num campo que o navegador já considera visível, atrás do pé preso.
+		function ajustar() {
+			const { height } = rodape.getBoundingClientRect();
+			raiz.style.setProperty("--altura-do-pe-da-revisao", `${height}px`);
+			const ativo = document.activeElement;
+			const caixa = ativo?.getBoundingClientRect();
+			if (caixa && caixa.bottom > 0 && caixa.top < raiz.clientHeight) {
+				mostrar(ativo);
+			}
+		}
+		const aoFocar = (evento: FocusEvent) => mostrar(evento.target);
+		const observador = new ResizeObserver(ajustar);
+		observador.observe(rodape, { box: "border-box" });
+		ajustar();
+		document.addEventListener("focusin", aoFocar);
+		window.addEventListener("resize", ajustar);
+		return () => {
+			observador.disconnect();
+			raiz.style.removeProperty("--altura-do-pe-da-revisao");
+			document.removeEventListener("focusin", aoFocar);
+			window.removeEventListener("resize", ajustar);
+		};
+	}, []);
 
 	function editarItem(posicao: number) {
 		return (mudar: (campos: CamposDoItem) => CamposDoItem) =>
@@ -429,7 +497,7 @@ function FormularioDaRevisao({
 				/>
 				{secao("congresso", "O que o Congresso votou", votacoes)}
 				{secao("diario-oficial", "O que saiu no Diário Oficial", atos)}
-				<div className="pe-da-revisao">
+				<div className="pe-da-revisao" ref={pe}>
 					<p
 						id={ID_DA_MENSAGEM_DO_PE}
 						tabIndex={-1}

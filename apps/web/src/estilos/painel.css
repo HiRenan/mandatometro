@@ -67,6 +67,7 @@
 	 */
 	.explicacao-do-item {
 		min-height: 12rem;
+		max-height: calc(100dvh - 12px);
 		font-family: var(--font-serif);
 		font-size: 1.0625rem;
 		line-height: 1.6;
@@ -105,10 +106,6 @@
 	.campo-com-rotulo > .falta-no-campo,
 	.privacidade-do-ato > .falta-no-campo {
 		margin-top: 0.2rem;
-	}
-
-	.falta-no-campo:focus {
-		outline: none;
 	}
 
 	/*
@@ -400,8 +397,12 @@
 		line-height: 1.4;
 	}
 
-	.frase-do-pe:focus {
-		outline: none;
+	/* As mensagens focadas são exceção à regra do #conteudo [tabindex="-1"]. */
+	#conteudo
+		.revisao
+		:is(.falta-no-campo, .frase-do-pe, [aria-invalid="true"]):focus {
+		outline: 3px solid var(--ring);
+		outline-offset: 3px;
 	}
 
 	/* A falha e o rascunho que mudou: em negrito, como o "Ainda não deu". */
@@ -445,7 +446,15 @@
 
 		/* O que recebe o foco, ou é levado para a tela, fica acima do pé. */
 		html:has(.pe-da-revisao) {
-			scroll-padding-bottom: 9rem;
+			scroll-padding-bottom: var(--altura-do-pe-da-revisao, 0px);
+		}
+
+		.explicacao-do-item {
+			max-height: calc(100dvh - var(--altura-do-pe-da-revisao, 0px) - 12px);
+		}
+
+		.pagina-do-painel .ao-lado-do-artigo {
+			max-height: calc(100svh - 4rem - var(--altura-do-pe-da-revisao, 0px));
 		}
 	}
 

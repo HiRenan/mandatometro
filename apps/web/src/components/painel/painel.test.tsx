@@ -77,7 +77,7 @@ const semConexao = (): Devolvido => ({
 /** Faz a função simulada devolver cada resultado uma vez, e o último dali em diante. */
 function emSequencia(
 	funcao: ReturnType<typeof vi.fn>,
-	...resultados: Devolvido[]
+	...resultados: (Devolvido | Promise<Devolvido>)[]
 ) {
 	const fila = [...resultados];
 	funcao.mockImplementation(async () =>
@@ -134,6 +134,14 @@ beforeEach(() => {
 		(nome) => vi.spyOn(console, nome).mockImplementation(() => {}),
 	);
 	vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+	vi.spyOn(window, "scrollBy").mockImplementation(() => {});
+	vi.stubGlobal(
+		"ResizeObserver",
+		class {
+			observe() {}
+			disconnect() {}
+		},
+	);
 	emSequencia(perfil, resposta(200, ADMINISTRADORA));
 	emSequencia(ler, resposta(200, rascunhoDeExemplo()));
 	emSequencia(salvar, resposta(200, SALVO));
@@ -143,6 +151,7 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	vi.restoreAllMocks();
+	vi.unstubAllGlobals();
 	window.history.replaceState(null, "", "/");
 });
 
@@ -261,6 +270,76 @@ describe("a guarda do painel", () => {
 		await screen.findByRole("button", { name: "Tentar de novo" });
 		expect(ler).not.toHaveBeenCalled();
 	});
+
+	describe.each([401, 404])("perda de acesso com %i", (status) => {
+		it.each(["leitura", "releitura", "salvar", "publicar"] as const)(
+			"mostra só a conferência da sessão enquanto a guarda responde (%s)",
+			async (operacao) => {
+				let responderGuarda!: (resultado: Devolvido) => void;
+				const guarda = new Promise<Devolvido>((resolve) => {
+					responderGuarda = resolve;
+				});
+				emSequencia(perfil, resposta(200, ADMINISTRADORA), guarda);
+				const recusa = resposta(status, { detail: "Sem acesso." });
+				if (operacao === "leitura") {
+					emSequencia(ler, recusa);
+					abrir();
+				} else {
+					emSequencia(ler, resposta(200, rascunhoPronto()), recusa);
+					await abrirORascunho();
+					if (operacao === "publicar") {
+						emSequencia(publicar, recusa);
+						fireEvent.click(botao("Publicar a edição"));
+						fireEvent.click(botao("Publicar agora"));
+					} else {
+						if (operacao === "salvar") {
+							emSequencia(salvar, recusa);
+						}
+						fireEvent.change(screen.getByLabelText("Título da edição"), {
+							target: { value: "Título local por salvar" },
+						});
+						fireEvent.click(botao("Salvar a revisão"));
+					}
+				}
+
+				await screen.findByText("Verificando sua sessão…");
+				expect(perfil).toHaveBeenCalledTimes(2);
+				const principal = screen.getByRole("main");
+				expect(principal.textContent).toBe("Verificando sua sessão…");
+				expect(
+					principal.querySelector(".pagina-do-painel, .ficha-do-item, input"),
+				).toBeNull();
+				semORascunhoNaPagina();
+
+				responderGuarda(
+					status === 401
+						? resposta(401, { detail: "Sessão ausente." })
+						: resposta(200, COMUM),
+				);
+				await screen.findByRole("heading", {
+					name: status === 401 ? "Entrar na conta" : "Página não encontrada",
+				});
+				semORascunhoNaPagina();
+			},
+		);
+	});
+
+	it("relê o rascunho sem os ajustes antigos quando a guarda confirma o acesso de novo", async () => {
+		const antes = rascunhoPronto();
+		const atual = { ...antes, titulo: "Rascunho que a API voltou a entregar" };
+		emSequencia(ler, resposta(200, antes), resposta(200, atual));
+		emSequencia(salvar, resposta(404, { detail: "Edição não encontrada." }));
+		await abrirORascunho();
+		fireEvent.change(screen.getByLabelText("Título da edição"), {
+			target: { value: "Título por salvar" },
+		});
+		fireEvent.click(botao("Salvar a revisão"));
+
+		await screen.findByDisplayValue(atual.titulo);
+		expect(perfil).toHaveBeenCalledTimes(2);
+		expect(ler).toHaveBeenCalledTimes(2);
+		expect(screen.queryByDisplayValue("Título por salvar")).toBeNull();
+	});
 });
 
 describe("os estados do rascunho", () => {
@@ -281,6 +360,40 @@ describe("os estados do rascunho", () => {
 		);
 		fireEvent.click(botao("Tentar de novo"));
 		await screen.findByRole("region", { name: /^Item 1:/ });
+	});
+});
+
+describe("a ficha do item", () => {
+	it("mostra o título inteiro do artigo escolhido no texto da caixa de confirmação", async () => {
+		await abrirORascunho();
+		const campos = within(ficha(1));
+		const seletor = campos.getByLabelText("Artigo da trilha");
+		const titulo = "O projeto passa pelas comissões";
+		const artigo = campos.getByRole<HTMLOptionElement>("option", {
+			name: titulo,
+		});
+		fireEvent.change(seletor, { target: { value: artigo.value } });
+
+		expect(
+			campos.getByRole("checkbox", { name: `Confirmo o artigo: ${titulo}` }),
+		).toBeTruthy();
+		fireEvent.change(seletor, { target: { value: "" } });
+		expect(
+			campos.queryByRole("checkbox", { name: /^Confirmo o artigo:/ }),
+		).toBeNull();
+	});
+
+	it.each([
+		[1, "https://www.camara.leg.br/votacoes/exemplo-1"],
+		[3, "https://www.in.gov.br/web/dou/-/exemplo-3"],
+	])("abre a fonte oficial do item %i em outra aba", async (posicao, url) => {
+		await abrirORascunho();
+		const fonte = within(ficha(posicao)).getByRole("link", {
+			name: `Fonte oficial do item ${posicao} (abre em outra aba)`,
+		});
+		expect(fonte.getAttribute("href")).toBe(url);
+		expect(fonte.getAttribute("target")).toBe("_blank");
+		expect(fonte.getAttribute("rel")).toBe("noopener noreferrer");
 	});
 });
 
@@ -443,6 +556,95 @@ describe("salvar a revisão", () => {
 			within(ficha(1)).getByLabelText<HTMLTextAreaElement>("Explicação").value,
 		).toBe("A outra gravação mudou este texto.");
 	});
+
+	it.each([
+		[1, "1 item que saiu da edição"],
+		[2, "2 itens que saíram da edição"],
+	] as const)(
+		"avisa quando %i dos itens alterados ficaram de fora (409)",
+		async (quantos, perda) => {
+			const antes = rascunhoPronto();
+			const atual = {
+				...antes,
+				versao_rascunho: "e".repeat(64),
+				itens: antes.itens.slice(quantos),
+			};
+			emSequencia(ler, resposta(200, antes), resposta(200, atual));
+			emSequencia(salvar, resposta(409));
+			await abrirORascunho();
+			for (let posicao = 1; posicao <= quantos; posicao++) {
+				fireEvent.change(within(ficha(posicao)).getByLabelText("Título"), {
+					target: { value: `Título que saiu do item ${posicao}` },
+				});
+			}
+			fireEvent.change(within(ficha(1)).getByLabelText("Explicação"), {
+				target: { value: "Outro campo do mesmo item." },
+			});
+			fireEvent.change(screen.getByLabelText("Título da edição"), {
+				target: { value: "Título mantido na edição" },
+			});
+			fireEvent.click(botao("Salvar a revisão"));
+
+			await screen.findByText(
+				`O rascunho mudou enquanto você revisava. Carregamos a versão atual. O que você alterou em ${perda} ficou de fora; o resto foi mantido. Confira e salve de novo.`,
+			);
+			expect(
+				screen.getByLabelText<HTMLInputElement>("Título da edição").value,
+			).toBe("Título mantido na edição");
+			expect(
+				screen.queryByRole("region", { name: /Título que saiu/ }),
+			).toBeNull();
+			expect(document.activeElement).toBe(frase());
+		},
+	);
+
+	it.each([
+		[false, ""],
+		[true, "O que você alterou em 1 item que saiu da edição ficou de fora. "],
+	] as const)(
+		"avisa no 409 quando a conferência do ato deixou de existir (com item removido: %s)",
+		async (saiuItem, retirada) => {
+			const atual = rascunhoDeExemplo();
+			atual.versao_rascunho = "e".repeat(64);
+			delete atual.itens[2].privacidade_confirmada;
+			if (saiuItem) {
+				atual.itens.shift();
+			}
+			emSequencia(
+				ler,
+				resposta(200, rascunhoDeExemplo()),
+				resposta(200, atual),
+			);
+			emSequencia(salvar, resposta(409));
+			await abrirORascunho();
+			if (saiuItem) {
+				fireEvent.change(within(ficha(1)).getByLabelText("Título"), {
+					target: { value: "Título que saiu" },
+				});
+			}
+			const ato = within(ficha(3));
+			fireEvent.change(ato.getByLabelText("Título"), {
+				target: { value: "Título mantido no ato" },
+			});
+			fireEvent.click(
+				ato.getByRole("checkbox", {
+					name: "Conferi a privacidade, e o ato fica na edição",
+				}),
+			);
+			fireEvent.click(botao("Salvar a revisão"));
+
+			await screen.findByText(
+				`O rascunho mudou enquanto você revisava. Carregamos a versão atual. ${retirada}A confirmação de privacidade ficou de fora em 1 ato que não precisa mais dessa conferência. O resto do que você alterou foi mantido. Confira e salve de novo.`,
+			);
+			const atoAtual = within(ficha(saiuItem ? 2 : 3));
+			expect(atoAtual.getByLabelText<HTMLInputElement>("Título").value).toBe(
+				"Título mantido no ato",
+			);
+			expect(
+				atoAtual.queryByRole("checkbox", { name: /^Conferi a privacidade/ }),
+			).toBeNull();
+		},
+	);
 
 	it("avisa quando a edição foi publicada ou trocada no meio", async () => {
 		emSequencia(ler, resposta(200, rascunhoDeExemplo()), resposta(200, null));
@@ -614,6 +816,25 @@ describe("publicar a edição", () => {
 			"true",
 		);
 		expect(frase()?.textContent).toBe("Você tem alterações por salvar.");
+	});
+
+	it("não abre a folha quando falta só a revisão de um item", async () => {
+		const rascunho = rascunhoPronto();
+		rascunho.itens[0].revisado = false;
+		rascunho.itens[0].fatos.pendencias = ["revisao"];
+		emSequencia(ler, resposta(200, rascunho));
+		await abrirORascunho();
+
+		const publicarBotao = botao("Publicar a edição");
+		expect(frase()?.textContent).toBe(
+			"Para publicar, falta confirmar a revisão de 1 item.",
+		);
+		expect(publicarBotao.getAttribute("aria-disabled")).toBe("true");
+		fireEvent.click(publicarBotao);
+		expect(
+			screen.queryByRole("dialog", { name: "Publicar a edição?" }),
+		).toBeNull();
+		expect(publicar).not.toHaveBeenCalled();
 	});
 });
 

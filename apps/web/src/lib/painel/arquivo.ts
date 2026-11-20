@@ -476,19 +476,21 @@ export function avisosNoRascunhoNovo(
 /**
  * Depois de um 409, junta o que a pessoa mudou ao rascunho atual. Cada item é
  * achado pela chave do assunto, e só os campos que ela mudou passam por cima:
- * o resto fica como está no rascunho atual. O item que não está mais no rascunho
- * leva as mudanças dele junto.
+ * o resto fica como está no rascunho atual. Conta os itens alterados que saíram
+ * e as confirmações de privacidade que já não cabem nos atos que ficaram.
  */
 export function juntarAoRascunhoAtual(
 	antes: ArquivoRevisao,
 	campos: Campos,
 	atual: ArquivoRevisao,
-): Campos {
+) {
 	const eram = camposDoArquivo(antes);
 	const agora = camposDoArquivo(atual);
 	const porChave = new Map(
 		antes.itens.map((item, indice) => [chaveDoItem(item), indice]),
 	);
+	const chavesAtuais = new Set<string>();
+	let confirmacoesDePrivacidadePerdidas = 0;
 	function oQueMudou<T extends object>(meus: T, original: T, deles: T): T {
 		const junto = { ...deles };
 		for (const campo of Object.keys(meus) as (keyof T)[]) {
@@ -498,18 +500,38 @@ export function juntarAoRascunhoAtual(
 		}
 		return junto;
 	}
+	const itens = atual.itens.map((item, indice) => {
+		const chave = chaveDoItem(item);
+		chavesAtuais.add(chave);
+		const antesDele = porChave.get(chave);
+		const novo = agora.itens[indice];
+		if (antesDele === undefined) {
+			return novo;
+		}
+		const original = eram.itens[antesDele];
+		const local = campos.itens[antesDele];
+		const junto = oQueMudou(local, original, novo);
+		if (
+			!("privacidade_confirmada" in item) &&
+			local.privacidade !== original.privacidade
+		) {
+			junto.privacidade = novo.privacidade;
+			confirmacoesDePrivacidadePerdidas++;
+		}
+		return junto;
+	});
+
 	return {
-		edicao: oQueMudou(campos.edicao, eram.edicao, agora.edicao),
-		itens: atual.itens.map((item, indice) => {
-			const antesDele = porChave.get(chaveDoItem(item));
-			return antesDele === undefined
-				? agora.itens[indice]
-				: oQueMudou(
-						campos.itens[antesDele],
-						eram.itens[antesDele],
-						agora.itens[indice],
-					);
-		}),
+		campos: {
+			edicao: oQueMudou(campos.edicao, eram.edicao, agora.edicao),
+			itens,
+		},
+		itensAlteradosQueSairam: antes.itens.filter(
+			(item, indice) =>
+				!chavesAtuais.has(chaveDoItem(item)) &&
+				!mesmosCampos(eram.itens[indice], campos.itens[indice]),
+		).length,
+		confirmacoesDePrivacidadePerdidas,
 	};
 }
 

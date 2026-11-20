@@ -331,6 +331,7 @@ describe("o rascunho que mudou durante a revisão (409)", () => {
 		const atual: ArquivoRevisao = {
 			...antes,
 			versao_rascunho: "e".repeat(64),
+			titulo: "Título da outra gravação",
 			cobertura_confirmada: true,
 			itens: [antes.itens[0], antes.itens[2], antes.itens[3]].map(
 				(item, indice) => ({ ...item, id: 300 + indice }),
@@ -341,7 +342,12 @@ describe("o rascunho que mudou durante a revisão (409)", () => {
 			explicacao: ["Texto da outra gravação."],
 		};
 
-		const junto = juntarAoRascunhoAtual(antes, campos, atual);
+		const { campos: junto, itensAlteradosQueSairam } = juntarAoRascunhoAtual(
+			antes,
+			campos,
+			atual,
+		);
+		expect(itensAlteradosQueSairam).toBe(0);
 		expect(junto.edicao).toEqual({ titulo: "Meu título", cobertura: true });
 		expect(junto.itens).toHaveLength(3);
 		expect(junto.itens[0]).toMatchObject({
@@ -350,6 +356,49 @@ describe("o rascunho que mudou durante a revisão (409)", () => {
 		});
 		expect(junto.itens[1]).toEqual(camposDoArquivo(atual).itens[1]);
 		expect(junto.itens[2].revisado).toBe(true);
+	});
+
+	it("conta os itens que saíram com mudanças e mantém a cobertura alterada", () => {
+		const antes = rascunhoDeExemplo();
+		const campos = editar(antes, (campos) => {
+			campos.edicao.cobertura = true;
+			campos.itens[0].titulo = "Título do item que saiu";
+			campos.itens[0].explicacao = "Explicação do mesmo item que saiu.";
+			campos.itens[2].privacidade = true;
+		});
+		const atual = { ...antes, itens: [antes.itens[3]] };
+		expect(juntarAoRascunhoAtual(antes, campos, atual)).toEqual({
+			campos: {
+				edicao: { titulo: atual.titulo, cobertura: true },
+				itens: camposDoArquivo(atual).itens,
+			},
+			itensAlteradosQueSairam: 2,
+			confirmacoesDePrivacidadePerdidas: 0,
+		});
+	});
+
+	it("não perde os outros campos de um ato que deixou de pedir a confirmação", () => {
+		const antes = rascunhoDeExemplo();
+		const atual = rascunhoDeExemplo();
+		delete atual.itens[2].privacidade_confirmada;
+
+		const campos = editar(antes, (campos) => {
+			campos.itens[2].titulo = "Título local do ato";
+		});
+		expect(juntarAoRascunhoAtual(antes, campos, atual)).toMatchObject({
+			itensAlteradosQueSairam: 0,
+			confirmacoesDePrivacidadePerdidas: 0,
+		});
+		campos.itens[2].privacidade = true;
+		const junto = juntarAoRascunhoAtual(antes, campos, atual);
+		expect(junto).toMatchObject({
+			itensAlteradosQueSairam: 0,
+			confirmacoesDePrivacidadePerdidas: 1,
+		});
+		expect(junto.campos.itens[2]).toMatchObject({
+			titulo: "Título local do ato",
+			privacidade: false,
+		});
 	});
 });
 

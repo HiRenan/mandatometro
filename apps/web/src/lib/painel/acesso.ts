@@ -2,9 +2,8 @@ import { notFound, redirect } from "@tanstack/react-router";
 import { consultarPerfil } from "@/client";
 import { ENV } from "@/env";
 
-// A guarda do painel. O cookie da sessão é da API, e só o navegador o envia:
-// o servidor do site nunca vê a conta, e por isso o layout _autenticado.tsx não
-// roda no servidor (ssr: false). O rascunho só é pedido depois desta conferência.
+// Na hospedagem, o cookie da sessão é do host da API. A guarda do painel roda
+// no navegador, que envia o cookie à API. O rascunho só é pedido depois dela.
 
 /** Quanto a guarda espera a API responder antes de desistir. */
 const PRAZO = 15_000;
