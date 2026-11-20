@@ -3,8 +3,8 @@
 import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { abrirSaida, cadastrarConta, confirmarConta, consultarPerfil, entrarConta, excluirConta, health, inscreverNewsletter, listarEdicoes, obterEdicao, type Options, recuperarConta, redefinirSenha, reenviarConfirmacao, registrarTentativaPiloto, sairConta, sairDaNewsletter, termoConta } from '../sdk.gen';
-import type { AbrirSaidaData, AbrirSaidaError, CadastrarContaData, CadastrarContaError, CadastrarContaResponse, ConfirmarContaData, ConfirmarContaError, ConfirmarContaResponse, ConsultarPerfilData, ConsultarPerfilError, ConsultarPerfilResponse, EntrarContaData, EntrarContaError, EntrarContaResponse, ExcluirContaData, ExcluirContaError, ExcluirContaResponse, HealthData, HealthResponse, InscreverNewsletterData, InscreverNewsletterError, InscreverNewsletterResponse, ListarEdicoesData, ListarEdicoesError, ListarEdicoesResponse, ObterEdicaoData, ObterEdicaoError, ObterEdicaoResponse, RecuperarContaData, RecuperarContaError, RecuperarContaResponse, RedefinirSenhaData, RedefinirSenhaError, RedefinirSenhaResponse, ReenviarConfirmacaoData, ReenviarConfirmacaoError, ReenviarConfirmacaoResponse, RegistrarTentativaPilotoData, RegistrarTentativaPilotoError, RegistrarTentativaPilotoResponse, SairContaData, SairContaError, SairContaResponse, SairDaNewsletterData, SairDaNewsletterError, TermoContaData, TermoContaError, TermoContaResponse } from '../types.gen';
+import { abrirSaida, cadastrarConta, confirmarConta, consultarPerfil, entrarConta, excluirConta, health, inscreverNewsletter, lerRascunho, listarEdicoes, obterEdicao, type Options, publicarEdicao, recuperarConta, redefinirSenha, reenviarConfirmacao, registrarTentativaPiloto, sairConta, sairDaNewsletter, salvarRevisao, termoConta } from '../sdk.gen';
+import type { AbrirSaidaData, AbrirSaidaError, CadastrarContaData, CadastrarContaError, CadastrarContaResponse, ConfirmarContaData, ConfirmarContaError, ConfirmarContaResponse, ConsultarPerfilData, ConsultarPerfilError, ConsultarPerfilResponse, EntrarContaData, EntrarContaError, EntrarContaResponse, ExcluirContaData, ExcluirContaError, ExcluirContaResponse, HealthData, HealthResponse, InscreverNewsletterData, InscreverNewsletterError, InscreverNewsletterResponse, LerRascunhoData, LerRascunhoError, LerRascunhoResponse, ListarEdicoesData, ListarEdicoesError, ListarEdicoesResponse, ObterEdicaoData, ObterEdicaoError, ObterEdicaoResponse, PublicarEdicaoData, PublicarEdicaoError, PublicarEdicaoResponse, RecuperarContaData, RecuperarContaError, RecuperarContaResponse, RedefinirSenhaData, RedefinirSenhaError, RedefinirSenhaResponse, ReenviarConfirmacaoData, ReenviarConfirmacaoError, ReenviarConfirmacaoResponse, RegistrarTentativaPilotoData, RegistrarTentativaPilotoError, RegistrarTentativaPilotoResponse, SairContaData, SairContaError, SairContaResponse, SairDaNewsletterData, SairDaNewsletterError, SalvarRevisaoData, SalvarRevisaoError, SalvarRevisaoResponse, TermoContaData, TermoContaError, TermoContaResponse } from '../types.gen';
 
 /**
  * Receber a inscrição e enviar a última edição publicada
@@ -302,6 +302,62 @@ export const obterEdicaoOptions = (options: Options<ObterEdicaoData>) => queryOp
     },
     queryKey: obterEdicaoQueryKey(options)
 });
+
+export const lerRascunhoQueryKey = (options?: Options<LerRascunhoData>) => createQueryKey('lerRascunho', options);
+
+/**
+ * Ler o rascunho da edição mais recente
+ *
+ * Devolve o mesmo arquivo do CLI edicao exportar, ou null se não há rascunho.
+ */
+export const lerRascunhoOptions = (options?: Options<LerRascunhoData>) => queryOptions<LerRascunhoResponse, LerRascunhoError, LerRascunhoResponse, ReturnType<typeof lerRascunhoQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await lerRascunho({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: lerRascunhoQueryKey(options)
+});
+
+/**
+ * Salvar a revisão da edição
+ */
+export const salvarRevisaoMutation = (options?: Partial<Options<SalvarRevisaoData>>): UseMutationOptions<SalvarRevisaoResponse, SalvarRevisaoError, Options<SalvarRevisaoData>> => {
+    const mutationOptions: UseMutationOptions<SalvarRevisaoResponse, SalvarRevisaoError, Options<SalvarRevisaoData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await salvarRevisao({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Publicar a edição revisada
+ *
+ * Publica a edição sem disparar o envio da newsletter.
+ */
+export const publicarEdicaoMutation = (options?: Partial<Options<PublicarEdicaoData>>): UseMutationOptions<PublicarEdicaoResponse, PublicarEdicaoError, Options<PublicarEdicaoData>> => {
+    const mutationOptions: UseMutationOptions<PublicarEdicaoResponse, PublicarEdicaoError, Options<PublicarEdicaoData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await publicarEdicao({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 /**
  * Receber a primeira conclusão de uma etapa do piloto

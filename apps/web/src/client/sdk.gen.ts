@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AbrirSaidaData, AbrirSaidaErrors, CadastrarContaData, CadastrarContaErrors, CadastrarContaResponses, ConfirmarContaData, ConfirmarContaErrors, ConfirmarContaResponses, ConsultarPerfilData, ConsultarPerfilErrors, ConsultarPerfilResponses, EntrarContaData, EntrarContaErrors, EntrarContaResponses, ExcluirContaData, ExcluirContaErrors, ExcluirContaResponses, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, ListarEdicoesData, ListarEdicoesErrors, ListarEdicoesResponses, ObterEdicaoData, ObterEdicaoErrors, ObterEdicaoResponses, RecuperarContaData, RecuperarContaErrors, RecuperarContaResponses, RedefinirSenhaData, RedefinirSenhaErrors, RedefinirSenhaResponses, ReenviarConfirmacaoData, ReenviarConfirmacaoErrors, ReenviarConfirmacaoResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, SairContaData, SairContaErrors, SairContaResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses, TermoContaData, TermoContaErrors, TermoContaResponses } from './types.gen';
+import type { AbrirSaidaData, AbrirSaidaErrors, CadastrarContaData, CadastrarContaErrors, CadastrarContaResponses, ConfirmarContaData, ConfirmarContaErrors, ConfirmarContaResponses, ConsultarPerfilData, ConsultarPerfilErrors, ConsultarPerfilResponses, EntrarContaData, EntrarContaErrors, EntrarContaResponses, ExcluirContaData, ExcluirContaErrors, ExcluirContaResponses, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, LerRascunhoData, LerRascunhoErrors, LerRascunhoResponses, ListarEdicoesData, ListarEdicoesErrors, ListarEdicoesResponses, ObterEdicaoData, ObterEdicaoErrors, ObterEdicaoResponses, PublicarEdicaoData, PublicarEdicaoErrors, PublicarEdicaoResponses, RecuperarContaData, RecuperarContaErrors, RecuperarContaResponses, RedefinirSenhaData, RedefinirSenhaErrors, RedefinirSenhaResponses, ReenviarConfirmacaoData, ReenviarConfirmacaoErrors, ReenviarConfirmacaoResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, SairContaData, SairContaErrors, SairContaResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses, SalvarRevisaoData, SalvarRevisaoErrors, SalvarRevisaoResponses, TermoContaData, TermoContaErrors, TermoContaResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -152,6 +152,32 @@ export const listarEdicoes = <ThrowOnError extends boolean = false>(options?: Op
  * Ler uma edição publicada com fatos, fontes e artigos da trilha
  */
 export const obterEdicao = <ThrowOnError extends boolean = false>(options: Options<ObterEdicaoData, ThrowOnError>): RequestResult<ObterEdicaoResponses, ObterEdicaoErrors, ThrowOnError> => (options.client ?? client).get<ObterEdicaoResponses, ObterEdicaoErrors, ThrowOnError>({ url: '/edicoes/{id}', ...options });
+
+/**
+ * Ler o rascunho da edição mais recente
+ *
+ * Devolve o mesmo arquivo do CLI edicao exportar, ou null se não há rascunho.
+ */
+export const lerRascunho = <ThrowOnError extends boolean = false>(options?: Options<LerRascunhoData, ThrowOnError>): RequestResult<LerRascunhoResponses, LerRascunhoErrors, ThrowOnError> => (options?.client ?? client).get<LerRascunhoResponses, LerRascunhoErrors, ThrowOnError>({ url: '/painel/edicoes/rascunho', ...options });
+
+/**
+ * Salvar a revisão da edição
+ */
+export const salvarRevisao = <ThrowOnError extends boolean = false>(options: Options<SalvarRevisaoData, ThrowOnError>): RequestResult<SalvarRevisaoResponses, SalvarRevisaoErrors, ThrowOnError> => (options.client ?? client).post<SalvarRevisaoResponses, SalvarRevisaoErrors, ThrowOnError>({
+    url: '/painel/edicoes/{id}/revisao',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Publicar a edição revisada
+ *
+ * Publica a edição sem disparar o envio da newsletter.
+ */
+export const publicarEdicao = <ThrowOnError extends boolean = false>(options: Options<PublicarEdicaoData, ThrowOnError>): RequestResult<PublicarEdicaoResponses, PublicarEdicaoErrors, ThrowOnError> => (options.client ?? client).post<PublicarEdicaoResponses, PublicarEdicaoErrors, ThrowOnError>({ url: '/painel/edicoes/{id}/publicar', ...options });
 
 /**
  * Receber a primeira conclusão de uma etapa do piloto
