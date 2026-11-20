@@ -8,10 +8,11 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import httpx2
+import psycopg
 import pytest
 from pydantic import SecretStr
-from sqlalchemy import func, select
-from sqlalchemy.exc import OperationalError, SQLAlchemyError
+from sqlalchemy import create_engine, func, select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from mandatometro.cli import main
@@ -577,14 +578,21 @@ def test_cli_resolve_sete_dias_e_emite_uma_linha_json(
 def test_cli_banco_indisponivel_falha_sem_pedir_ao_firecrawl(atender_cli, monkeypatch, capsys):
     respostas, pedidos = atender_cli
     respostas.append(httpx2.Response(401))
+    tentativas = []
 
-    def banco_indisponivel():
-        raise OperationalError(None, None, RuntimeError(MARCADOR_PRIVADO))
+    def conectar():
+        tentativas.append(1)
+        raise psycopg.OperationalError(MARCADOR_PRIVADO)
 
-    monkeypatch.setattr("mandatometro.db.engine", banco_indisponivel)
+    banco = create_engine("postgresql+psycopg://", creator=conectar)
+    monkeypatch.setattr("mandatometro.db.engine", lambda: banco)
 
-    assert main(["coleta", "destaques", "--inicio", str(INICIO), "--fim", str(FIM)]) == 1
+    try:
+        assert main(["coleta", "destaques", "--inicio", str(INICIO), "--fim", str(FIM)]) == 1
+    finally:
+        banco.dispose()
 
+    assert tentativas == [1]
     assert pedidos == []
     saida = capsys.readouterr()
     assert saida.err == ""
