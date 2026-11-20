@@ -37,6 +37,8 @@ import {
 } from "@/lib/jogo/paginas.server";
 import { TRILHA_DO_PILOTO } from "@/lib/piloto";
 import { Route as RotaRaiz } from "@/routes/__root";
+import { Route as RotaAutenticada } from "@/routes/_autenticado";
+import { Route as RotaDoPainel } from "@/routes/_autenticado/painel";
 import { Route as ContaConfirmar } from "@/routes/cadastro/confirmar";
 import { Route as ContaExcluir } from "@/routes/cadastro/excluir";
 import { Route as ContaIndex } from "@/routes/cadastro/index";
@@ -328,6 +330,16 @@ function criarRouter() {
 			ContaRecuperar.update(naRaiz("/cadastro/recuperar")),
 			ContaRedefinir.update(naRaiz("/cadastro/redefinir")),
 			RotaDeSair.update(naRaiz("/newsletter/sair")),
+			// O layout do painel roda só no navegador, com a guarda: aqui, ele roda no
+			// servidor, sem a guarda, e a página mostra o título e o carregando.
+			RotaAutenticada.update({
+				id: "/_autenticado",
+				getParentRoute: () => raiz,
+				beforeLoad: undefined,
+				ssr: true,
+			} as never).addChildren([
+				RotaDoPainel.update(dentroDe(RotaAutenticada, "/painel")),
+			]),
 			RotaDasEdicoes.update(
 				naRaiz("/edicoes/", ({ deps }: { deps: { pagina: number } }) =>
 					lerEdicoes(deps.pagina),
@@ -405,6 +417,7 @@ const QUE_ABREM = [
 	"/newsletter/sair",
 	"/edicoes",
 	"/edicoes/7",
+	"/painel",
 ];
 
 /**
