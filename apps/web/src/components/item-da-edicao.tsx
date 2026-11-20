@@ -90,14 +90,17 @@ export function ItemDaEdicao({
  * Presidência fica à parte e não entra no placar. Sem placar, como nas votações
  * secretas do Senado, o quadro diz que ele não está disponível, sem zero. É uma
  * lista de termos só: o leitor de tela lê "Sim, 312", e a tela põe o número em
- * cima do nome.
+ * cima do nome. O painel de revisão (components/painel/) põe embaixo da data a
+ * casa e a descrição oficial da votação, que a edição publicada não mostra.
  */
-function QuadroDaVotacao({
+export function QuadroDaVotacao({
 	votacao,
 	Titulo,
+	descricao,
 }: {
-	votacao: VotacaoPublica;
+	votacao: Pick<VotacaoPublica, "data" | "resultado" | "placar">;
 	Titulo: "h3" | "h4";
+	descricao?: string;
 }) {
 	const { placar } = votacao;
 	return (
@@ -105,6 +108,7 @@ function QuadroDaVotacao({
 			<Titulo className="rotulo">
 				Votação de {formatarData(votacao.data.slice(0, 10))}
 			</Titulo>
+			{descricao && <p className="descricao-da-votacao">{descricao}</p>}
 			<dl>
 				<div className="resultado">
 					<dt>Resultado registrado</dt>
@@ -158,7 +162,7 @@ function QuadroDaVotacao({
  * do trecho escondido fica fora dele: dentro, o nome do link perderia o espaço
  * em parte dos leitores.
  */
-function FontesDoItem({
+export function FontesDoItem({
 	posicao,
 	fontes,
 	Titulo,

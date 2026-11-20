@@ -1,0 +1,587 @@
+import { useRouter } from "@tanstack/react-router";
+import { useEffect, useMemo, useReducer, useRef } from "react";
+import {
+	type ArquivoRevisao,
+	lerRascunho,
+	publicarEdicao,
+	salvarRevisao,
+} from "@/client";
+import { ENV } from "@/env";
+import {
+	type AvisosNoLugar,
+	avisosNoRascunhoNovo,
+	type CampoComFalta,
+	type Campos,
+	camposDoArquivo,
+	corpoDaRevisao,
+	emLista,
+	faltaNaEdicao,
+	faltaNoItem,
+	juntarAoRascunhoAtual,
+	type LeituraDoItem,
+	lerItem,
+	lugarDaMensagem,
+	revisaoAlterada,
+} from "./arquivo";
+
+// O estado da tela de revisão (/painel). O rascunho fica só aqui, na memória da
+// página: nada dele vai para o console, a URL, o armazenamento do navegador, o
+// router ou o React Query. Cada pedido leva o cookie da sessão, que é da API
+// (credentials: "include"), e nenhum fica no cache do navegador.
+
+/** Quanto a tela espera a API antes de desistir. O salvar espera a trava da edição. */
+const PRAZO = 30_000;
+
+export const SEM_CONEXAO =
+	"Não deu para falar com o servidor. Confira a internet e tente de novo.";
+const FALHA_DA_API = "A API não respondeu como esperado. Tente de novo.";
+export const RASCUNHO_MUDOU =
+	"O rascunho mudou enquanto você revisava. Carregamos a versão atual e mantivemos o que você alterou. Confira e salve de novo.";
+
+/** Onde o foco vai depois de uma resposta: o id de um elemento da página. */
+export type Foco = { alvo: string; vez: number };
+
+/**
+ * Uma falta ou uma recusa, no lugar dela. Com o campo, a frase fica embaixo
+ * dele, e o foco vai para o campo; sem ele (a recusa da API), a frase fica no
+ * alto da ficha, e o foco vai para ela.
+ */
+export type Erro = { mensagem: string; campo?: CampoComFalta };
+
+export type Aberta = {
+	tipo: "aberta";
+	arquivo: ArquivoRevisao;
+	leituras: LeituraDoItem[];
+	campos: Campos;
+	operacao: "salvando" | "publicando" | null;
+	/** A falha do último envio, no pé. Some com a próxima mudança. */
+	falha: string | null;
+	/** O aviso do rascunho que mudou (409), no pé, até o próximo envio. */
+	nota: string | null;
+	/** O que faltou ou a API recusou, no lugar: o item pela posição e a edição. */
+	erros: { edicao?: Erro; itens: Map<number, Erro> };
+	/** Os avisos do último salvar, no lugar. */
+	avisos: AvisosNoLugar;
+	/** O salvar acabou de dar certo, e nada mudou desde então. */
+	salva: boolean;
+};
+
+export type Revisao =
+	| { tipo: "carregando" }
+	| { tipo: "sem-api" }
+	| { tipo: "sem-rascunho" }
+	| { tipo: "falhou"; mensagem: string }
+	| Aberta
+	/** O salvar deu certo, mas a versão nova não chegou. */
+	| { tipo: "salva-sem-releitura" }
+	| { tipo: "publicada"; edicaoId: number; jaEstava: boolean }
+	/** A edição foi publicada ou trocada enquanto a pessoa revisava. */
+	| { tipo: "trocada" }
+	/** A API respondeu 404: a sessão caiu ou o papel saiu, e o rascunho sai da tela. */
+	| { tipo: "saiu" };
+
+type Estado = { revisao: Revisao; foco: Foco | null };
+
+type Acao =
+	| { tipo: "carregando" }
+	| { tipo: "sem-api" }
+	| { tipo: "carregou"; arquivo: ArquivoRevisao | null; falha?: string }
+	| { tipo: "nao-carregou"; mensagem: string }
+	| { tipo: "editou"; mudar: (campos: Campos) => Campos }
+	| { tipo: "enviando"; operacao: "salvando" | "publicando" }
+	| { tipo: "salvou"; arquivo: ArquivoRevisao; avisos: AvisosNoLugar }
+	| {
+			tipo: "nao-enviou";
+			falha: string;
+			erros?: Aberta["erros"];
+			alvo: string;
+	  }
+	| { tipo: "juntou"; arquivo: ArquivoRevisao; campos: Campos }
+	| { tipo: "publicou"; edicaoId: number; jaEstava: boolean }
+	| { tipo: "trocada" }
+	| { tipo: "salva-sem-releitura" }
+	| { tipo: "saiu" };
+
+const SEM_AVISOS: AvisosNoLugar = { edicao: [], itens: new Map(), pe: [] };
+
+function aberta(arquivo: ArquivoRevisao, campos?: Campos): Aberta {
+	return {
+		tipo: "aberta",
+		arquivo,
+		leituras: arquivo.itens.map(lerItem),
+		campos: campos ?? camposDoArquivo(arquivo),
+		operacao: null,
+		falha: null,
+		nota: null,
+		erros: { itens: new Map() },
+		avisos: SEM_AVISOS,
+		salva: false,
+	};
+}
+
+function focar(estado: Estado, alvo: string): Foco {
+	return { alvo, vez: (estado.foco?.vez ?? 0) + 1 };
+}
+
+/** O id da frase de falta ou de recusa de um item. */
+export const idDaFaltaNoItem = (posicao: number) => `item-${posicao}-falta`;
+/** O id de um campo do item, para o foco e os rótulos. */
+export const idDoCampo = (posicao: number, campo: CampoComFalta) =>
+	`item-${posicao}-campo-${campo}`;
+export const ID_DA_FALTA_NA_EDICAO = "edicao-falta";
+export const ID_DO_TITULO_DA_EDICAO = "edicao-titulo";
+export const ID_DA_MENSAGEM_DO_PE = "pe-da-revisao-mensagem";
+export const ID_DO_RESULTADO = "painel-resultado";
+
+function reduzir(estado: Estado, acao: Acao): Estado {
+	const { revisao } = estado;
+	switch (acao.tipo) {
+		case "carregando":
+			return { ...estado, revisao: { tipo: "carregando" } };
+		case "sem-api":
+			return { ...estado, revisao: { tipo: "sem-api" } };
+		case "carregou": {
+			if (!acao.arquivo) {
+				return { ...estado, revisao: { tipo: "sem-rascunho" } };
+			}
+			const nova = aberta(acao.arquivo);
+			if (acao.falha) {
+				return {
+					revisao: { ...nova, falha: acao.falha },
+					foco: focar(estado, ID_DA_MENSAGEM_DO_PE),
+				};
+			}
+			return { ...estado, revisao: nova };
+		}
+		case "nao-carregou":
+			return {
+				...estado,
+				revisao: { tipo: "falhou", mensagem: acao.mensagem },
+			};
+		case "editou":
+			if (revisao.tipo !== "aberta" || revisao.operacao) {
+				return estado;
+			}
+			return {
+				...estado,
+				revisao: {
+					...revisao,
+					campos: acao.mudar(revisao.campos),
+					falha: null,
+					salva: false,
+				},
+			};
+		case "enviando":
+			if (revisao.tipo !== "aberta") {
+				return estado;
+			}
+			return {
+				...estado,
+				revisao: {
+					...revisao,
+					operacao: acao.operacao,
+					falha: null,
+					nota: null,
+					salva: false,
+				},
+			};
+		case "salvou":
+			return {
+				...estado,
+				revisao: { ...aberta(acao.arquivo), avisos: acao.avisos, salva: true },
+			};
+		case "nao-enviou":
+			if (revisao.tipo !== "aberta") {
+				return estado;
+			}
+			return {
+				revisao: {
+					...revisao,
+					operacao: null,
+					falha: acao.falha,
+					erros: acao.erros ?? revisao.erros,
+				},
+				foco: focar(estado, acao.alvo),
+			};
+		case "juntou":
+			return {
+				revisao: {
+					...aberta(acao.arquivo, acao.campos),
+					nota: RASCUNHO_MUDOU,
+				},
+				foco: focar(estado, ID_DA_MENSAGEM_DO_PE),
+			};
+		case "publicou":
+			return {
+				revisao: {
+					tipo: "publicada",
+					edicaoId: acao.edicaoId,
+					jaEstava: acao.jaEstava,
+				},
+				foco: focar(estado, ID_DO_RESULTADO),
+			};
+		case "trocada":
+			return {
+				revisao: { tipo: "trocada" },
+				foco: focar(estado, ID_DO_RESULTADO),
+			};
+		case "salva-sem-releitura":
+			return {
+				revisao: { tipo: "salva-sem-releitura" },
+				foco: focar(estado, ID_DO_RESULTADO),
+			};
+		case "saiu":
+			return { revisao: { tipo: "saiu" }, foco: null };
+	}
+}
+
+/** A mensagem que a API manda nos erros do painel (ErroPainel), quando é texto. */
+function detalheDe(erro: unknown): string | undefined {
+	return typeof erro === "object" &&
+		erro !== null &&
+		"detail" in erro &&
+		typeof erro.detail === "string"
+		? erro.detail
+		: undefined;
+}
+
+/** A resposta de um pedido do painel, reduzida ao que a tela usa. */
+type Resposta<T> =
+	| { tipo: "ok"; dados: T }
+	| { tipo: "erro"; status: number; detalhe: string | undefined }
+	| { tipo: "sem-conexao" };
+
+async function pedir<T>(
+	pedido: Promise<{ data?: T; error?: unknown; response?: Response }>,
+): Promise<Resposta<T>> {
+	try {
+		const { data, error, response } = await pedido;
+		// Sem internet ou com o prazo esgotado, o cliente gerado devolve a resposta
+		// vazia, embora o tipo dele diga que ela sempre vem.
+		const resposta: Response | undefined = response;
+		if (!resposta) {
+			return { tipo: "sem-conexao" };
+		}
+		if (resposta.ok && data !== undefined) {
+			return { tipo: "ok", dados: data };
+		}
+		return { tipo: "erro", status: resposta.status, detalhe: detalheDe(error) };
+	} catch {
+		return { tipo: "sem-conexao" };
+	}
+}
+
+/** As opções de todo pedido do painel: o cookie da API, sem cache e com prazo. */
+function opcoes(sinal: AbortSignal) {
+	return {
+		credentials: "include",
+		cache: "no-store",
+		signal: AbortSignal.any([sinal, AbortSignal.timeout(PRAZO)]),
+	} as const;
+}
+
+/**
+ * A frase do pé quando a API recusa ou falha: a mensagem dela, como a do 503
+ * ("Há outra gravação em andamento. Tente de novo."), ou a frase geral quando a
+ * resposta não traz mensagem, como a de um servidor no caminho.
+ */
+function falhaDe(resposta: Resposta<unknown>): string {
+	if (resposta.tipo === "sem-conexao") {
+		return SEM_CONEXAO;
+	}
+	return (resposta.tipo === "erro" && resposta.detalhe) || FALHA_DA_API;
+}
+
+/** Onde a frase de uma recusa fica: o item, o título da edição ou o pé. */
+function noLugar(
+	mensagem: string,
+	quantos: number,
+): { erros: Aberta["erros"]; alvo: string; onde: string } {
+	const lugar = lugarDaMensagem(mensagem);
+	if (lugar.onde === "item" && lugar.posicao >= 1 && lugar.posicao <= quantos) {
+		return {
+			erros: { itens: new Map([[lugar.posicao, { mensagem }]]) },
+			alvo: idDaFaltaNoItem(lugar.posicao),
+			onde: `no item ${lugar.posicao}`,
+		};
+	}
+	if (lugar.onde === "edicao") {
+		return {
+			erros: { edicao: { mensagem }, itens: new Map() },
+			alvo: ID_DA_FALTA_NA_EDICAO,
+			onde: "no título da edição",
+		};
+	}
+	return { erros: { itens: new Map() }, alvo: ID_DA_MENSAGEM_DO_PE, onde: "" };
+}
+
+/**
+ * Um envio recusado: a frase no pé, que começa pelo que não aconteceu, e, na
+ * recusa editorial (422), a mensagem da API no item ou no título da edição de
+ * que ela fala. As mudanças da pessoa ficam na tela.
+ */
+function recusa(
+	resposta: Resposta<unknown>,
+	prefixo: string,
+	arquivo: ArquivoRevisao,
+): Acao {
+	if (resposta.tipo === "erro" && resposta.status === 422 && resposta.detalhe) {
+		const lugar = noLugar(resposta.detalhe, arquivo.itens.length);
+		return {
+			tipo: "nao-enviou",
+			falha: lugar.onde
+				? `${prefixo} Veja o aviso ${lugar.onde}.`
+				: `${prefixo} ${resposta.detalhe}`,
+			erros: lugar.erros,
+			alvo: lugar.alvo,
+		};
+	}
+	return {
+		tipo: "nao-enviou",
+		falha: `${prefixo} ${falhaDe(resposta)}`,
+		alvo: ID_DA_MENSAGEM_DO_PE,
+	};
+}
+
+/**
+ * O rascunho da semana e o que a administradora faz com ele: editar, salvar e
+ * publicar. A página só monta depois da guarda do layout (_autenticado.tsx), e
+ * só então o rascunho é pedido.
+ *
+ * Um 404 em qualquer pedido quer dizer que a sessão caiu ou que o papel saiu:
+ * o rascunho sai da tela na hora, e a guarda roda de novo (router.invalidate),
+ * que leva ao login ou à página não encontrada. Se ela ainda for administradora,
+ * a tela carrega o rascunho de novo.
+ */
+export function useRevisao() {
+	const router = useRouter();
+	const [estado, despachar] = useReducer(reduzir, {
+		revisao: { tipo: "carregando" },
+		foco: null,
+	});
+	const atual = useRef(estado.revisao);
+	atual.current = estado.revisao;
+	const controle = useRef<AbortController>(null);
+
+	const acoes = useMemo(() => {
+		/** O sinal da página montada: cada operação guarda o dela ao começar. */
+		function sinalDaPagina() {
+			return controle.current?.signal ?? AbortSignal.abort();
+		}
+
+		async function carregar(falha?: string) {
+			if (!ENV.API_URL) {
+				despachar({ tipo: "sem-api" });
+				return;
+			}
+			const sinal = sinalDaPagina();
+			despachar({ tipo: "carregando" });
+			const resposta = await pedir(lerRascunho(opcoes(sinal)));
+			if (sinal.aborted) {
+				return;
+			}
+			if (resposta.tipo === "ok") {
+				despachar({ tipo: "carregou", arquivo: resposta.dados, falha });
+			} else if (resposta.tipo === "erro" && resposta.status === 404) {
+				await perdeuOAcesso(sinal);
+			} else {
+				despachar({ tipo: "nao-carregou", mensagem: falhaDe(resposta) });
+			}
+		}
+
+		async function perdeuOAcesso(sinal: AbortSignal, falha?: string) {
+			// O rascunho sai da conta na hora, antes de a tela trocar: o login a que
+			// a guarda leva não pergunta se a pessoa quer sair sem salvar.
+			atual.current = { tipo: "saiu" };
+			despachar({ tipo: "saiu" });
+			await router.invalidate();
+			// Se a guarda deixou passar, ela ainda é administradora, e a página segue
+			// montada: o rascunho atual volta, com a frase da API no pé.
+			if (!sinal.aborted) {
+				await carregar(falha);
+			}
+		}
+
+		/** Relê o rascunho depois de um envio, ou null se a página saiu ou o acesso caiu. */
+		async function reler(sinal: AbortSignal) {
+			const releitura = await pedir(lerRascunho(opcoes(sinal)));
+			if (sinal.aborted) {
+				return null;
+			}
+			if (releitura.tipo === "erro" && releitura.status === 404) {
+				await perdeuOAcesso(sinal);
+				return null;
+			}
+			return releitura;
+		}
+
+		function editar(mudar: (campos: Campos) => Campos) {
+			despachar({ tipo: "editou", mudar });
+		}
+
+		async function salvar() {
+			const revisao = atual.current;
+			if (revisao.tipo !== "aberta" || revisao.operacao) {
+				return;
+			}
+			const { arquivo, campos, leituras } = revisao;
+
+			// As conferências da tela vêm antes do envio, com as palavras dela.
+			const faltas = new Map<number, Erro>();
+			campos.itens.forEach((item, indice) => {
+				const falta = faltaNoItem(item, leituras[indice]);
+				if (falta) {
+					faltas.set(indice + 1, falta);
+				}
+			});
+			const naEdicao = faltaNaEdicao(campos.edicao);
+			if (naEdicao || faltas.size > 0) {
+				const posicoes = [...faltas.keys()];
+				const lugares = [
+					...(naEdicao ? ["no título da edição"] : []),
+					...posicoes.map((posicao) => `no item ${posicao}`),
+				];
+				const [primeira] = posicoes;
+				const campo = faltas.get(primeira)?.campo;
+				despachar({
+					tipo: "nao-enviou",
+					falha: `A revisão não foi salva. Veja ${lugares.length > 1 ? "os avisos" : "o aviso"} ${emLista(lugares)}.`,
+					erros: {
+						edicao: naEdicao
+							? { mensagem: naEdicao, campo: "titulo" }
+							: undefined,
+						itens: faltas,
+					},
+					alvo: naEdicao
+						? ID_DO_TITULO_DA_EDICAO
+						: campo
+							? idDoCampo(primeira, campo)
+							: idDaFaltaNoItem(primeira),
+				});
+				return;
+			}
+
+			const sinal = sinalDaPagina();
+			despachar({ tipo: "enviando", operacao: "salvando" });
+			const enviado = corpoDaRevisao(arquivo, campos);
+			const resposta = await pedir(
+				salvarRevisao({
+					...opcoes(sinal),
+					path: { id: arquivo.edicao_id },
+					body: enviado,
+				}),
+			);
+			if (sinal.aborted) {
+				return;
+			}
+
+			if (resposta.tipo === "ok") {
+				const releitura = await reler(sinal);
+				if (!releitura) {
+					return;
+				}
+				if (releitura.tipo !== "ok") {
+					despachar({ tipo: "salva-sem-releitura" });
+				} else if (releitura.dados?.edicao_id === arquivo.edicao_id) {
+					despachar({
+						tipo: "salvou",
+						arquivo: releitura.dados,
+						avisos: avisosNoRascunhoNovo(
+							resposta.dados.avisos,
+							enviado,
+							releitura.dados,
+						),
+					});
+				} else {
+					despachar({ tipo: "trocada" });
+				}
+				return;
+			}
+
+			if (resposta.tipo === "erro" && resposta.status === 404) {
+				await perdeuOAcesso(
+					sinal,
+					resposta.detalhe && `A revisão não foi salva. ${resposta.detalhe}`,
+				);
+				return;
+			}
+
+			if (resposta.tipo === "erro" && resposta.status === 409) {
+				// O rascunho mudou depois da leitura: a tela pega o atual e mantém o que
+				// a pessoa mudou. Se a edição foi publicada ou trocada, não há onde juntar.
+				const releitura = await reler(sinal);
+				if (!releitura) {
+					return;
+				}
+				if (releitura.tipo !== "ok") {
+					despachar(recusa(releitura, "A revisão não foi salva.", arquivo));
+				} else if (releitura.dados?.edicao_id === arquivo.edicao_id) {
+					despachar({
+						tipo: "juntou",
+						arquivo: releitura.dados,
+						campos: juntarAoRascunhoAtual(arquivo, campos, releitura.dados),
+					});
+				} else {
+					despachar({ tipo: "trocada" });
+				}
+				return;
+			}
+
+			despachar(recusa(resposta, "A revisão não foi salva.", arquivo));
+		}
+
+		async function publicar() {
+			const revisao = atual.current;
+			if (revisao.tipo !== "aberta" || revisao.operacao) {
+				return;
+			}
+			const sinal = sinalDaPagina();
+			despachar({ tipo: "enviando", operacao: "publicando" });
+			const resposta = await pedir(
+				publicarEdicao({
+					...opcoes(sinal),
+					path: { id: revisao.arquivo.edicao_id },
+				}),
+			);
+			if (sinal.aborted) {
+				return;
+			}
+			if (resposta.tipo === "ok") {
+				despachar({
+					tipo: "publicou",
+					edicaoId: resposta.dados.edicao_id,
+					jaEstava: resposta.dados.situacao === "ja_publicada",
+				});
+			} else if (resposta.tipo === "erro" && resposta.status === 404) {
+				await perdeuOAcesso(
+					sinal,
+					resposta.detalhe && `A edição não foi publicada. ${resposta.detalhe}`,
+				);
+			} else {
+				despachar(
+					recusa(resposta, "A edição não foi publicada.", revisao.arquivo),
+				);
+			}
+		}
+
+		/** Há alterações por salvar no rascunho que está na tela, agora. */
+		function temAlteracoes() {
+			const revisao = atual.current;
+			return (
+				revisao.tipo === "aberta" &&
+				revisaoAlterada(revisao.arquivo, revisao.campos)
+			);
+		}
+
+		return { carregar, editar, salvar, publicar, temAlteracoes };
+	}, [router]);
+
+	useEffect(() => {
+		const novo = new AbortController();
+		controle.current = novo;
+		void acoes.carregar();
+		return () => novo.abort();
+	}, [acoes]);
+
+	return { revisao: estado.revisao, foco: estado.foco, ...acoes };
+}

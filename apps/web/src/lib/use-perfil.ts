@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { consultarPerfil } from "@/client";
+import { consultarPerfil, type PerfilConta } from "@/client";
 import { ENV } from "@/env";
 import { reconhecerSessaoDoProgresso } from "./progresso";
 
 type Sessao =
 	| { estado: "verificando" | "visitante" | "indisponivel" }
-	| { estado: "autenticada"; nome: string };
+	| { estado: "autenticada"; nome: string; papel: PerfilConta["papel"] };
 
 export function usePerfil(pagina: "login" | "perfil") {
 	const [sessao, setSessao] = useState<Sessao>({ estado: "verificando" });
@@ -29,7 +29,11 @@ export function usePerfil(pagina: "login" | "perfil") {
 				if (pagina === "login") window.location.replace("/perfil");
 				else {
 					reconhecerSessaoDoProgresso();
-					setSessao({ estado: "autenticada", nome: data.nome });
+					setSessao({
+						estado: "autenticada",
+						nome: data.nome,
+						papel: data.papel,
+					});
 				}
 			} else setSessao({ estado: "indisponivel" });
 		}
