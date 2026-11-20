@@ -17,24 +17,25 @@ web
 
 O Mandatômetro ensina como funciona a política brasileira, em linguagem simples e de forma interativa, a partir do que o Congresso vota (Renan, 09/11/2026). Ele tem duas partes:
 
-- **Trilhas:** artigos curtos com infográficos e, se der tempo, vídeos curtos, com um quiz de múltipla escolha no meio e outro no fim. A primeira, e a principal, é a do processo legislativo: como nasce uma lei.
-- **Newsletter semanal, o jornal legislativo:** todo domingo, o que o Congresso votou na semana, em linguagem simples e com o link oficial de cada item. A inscrição pede só o e-mail e já manda a última edição publicada. Cada edição também fica no site. A edição vai ganhar uma segunda seção, com os destaques do Diário Oficial da União, para alcançar também o que o Executivo publica (ADR 0004); hoje só a seção do Congresso está no ar.
+- **Trilhas:** artigos curtos e, se der tempo, vídeos curtos. A principal é a do processo legislativo, sobre como nasce uma lei. Ela tem um infográfico, um quiz de múltipla escolha no meio e outro no fim.
+- **Newsletter semanal, o jornal legislativo:** todo domingo, o que o Congresso votou na semana e os destaques do Diário Oficial da União, em duas seções (ADR 0004), em linguagem simples e com o link oficial de cada item. A inscrição pede só o e-mail e já manda a última edição publicada. Cada edição também fica no site.
 
 O projeto concorre na trilha Acesso à educação do Hack Brasil 2026. O regulamento (item 5.4) exige que o problema e o público estejam dentro dessa trilha. Aprender é a função principal do site. A entrega em 30/11/2026 pede repositório público, demo no ar e vídeo de até 3 minutos.
 
-O sucesso se mede no piloto, com cerca de 50 pessoas (uma turma do Senai e o Instagram), pelo quanto elas acertam no quiz antes e depois da trilha. O porquê do MVP está no [ADR 0002](docs/adr/0002-mvp.md); o do login opcional, no [ADR 0003](docs/adr/0003-login-opcional.md); e o do Diário Oficial na newsletter, no [ADR 0004](docs/adr/0004-newsletter-do-dou.md).
+O sucesso se mede no piloto, com cerca de 50 pessoas (uma turma do Senai e o Instagram), pelo quanto elas acertam no quiz antes e depois da trilha. O porquê do MVP está no [ADR 0002](docs/adr/0002-mvp.md); o do login opcional, no [ADR 0003](docs/adr/0003-login-opcional.md); e o do Diário Oficial na newsletter, no [ADR 0004](docs/adr/0004-newsletter-do-dou.md). As fontes dos atos estão no [ADR 0005](docs/adr/0005-legislacao-federal-na-newsletter.md) e no [ADR 0006](docs/adr/0006-destaques-do-dou.md).
 
 ## Positioning
 
-A política explicada em linguagem simples e de forma interativa, a partir de casos reais e recentes do Congresso. As trilhas ensinam as regras, e a newsletter mostra a semana — hoje o Congresso, e, pelo ADR 0004, também o que sai no Diário Oficial. O lema: "o diário oficial político, simplificado".
+A política explicada em linguagem simples e de forma interativa, a partir de casos reais e recentes do Congresso. As trilhas ensinam as regras, e a newsletter mostra a semana no Congresso e os destaques do Diário Oficial. O lema: "o diário oficial político, simplificado".
 
 ## Operating Context
 
-- **Conta opcional:** o login, o cadastro com o termo de consentimento e o progresso no perfil entram no MVP (#109 a #112), mas nada pede conta. Sem ela, o navegador guarda os artigos lidos; com ela, o progresso fica no perfil e passa de um aparelho para outro.
-- **Cadastro:** os dados demográficos opcionais servem para entender o público. Confirmação e recuperação usam links com o token no fragmento e uma ação explícita na página. A exclusão exige sessão e senha atual e gera um comprovante via Resend. O contrato de sessão para a #109 está no [README, em "Cadastro de contas"](README.md#cadastro-de-contas).
+- **Conta opcional:** o login, o cadastro com o termo de consentimento e o progresso no perfil fazem parte do MVP (#109 a #112). Dá para ler as trilhas, responder aos quizzes e assinar a newsletter sem conta. Sem ela, o navegador guarda os artigos lidos; com ela, o progresso fica no perfil e passa de um aparelho para outro.
+- **Cadastro:** os dados demográficos opcionais servem para entender o público. Confirmação e recuperação usam links com o token no fragmento e uma ação explícita na página. A exclusão exige sessão e senha atual e gera um comprovante via Resend. O contrato de sessão está no [README, em "Cadastro de contas"](README.md#cadastro-de-contas).
 - **Dados:** Câmara e Senado, com deputados federais e senadores do Brasil todo e Santa Catarina como amostra para testar cada etapa primeiro.
 - **Textos das trilhas.** Cada mudança em Markdown vira um PR, que também é a revisão do conteúdo. O formato está no [guia de conteúdo das trilhas](docs/conteudo-das-trilhas.md).
-- **A edição da semana sai da coleta diária da Câmara e do Senado.** O [guia da newsletter](docs/newsletter.md) descreve a redação, a revisão e o envio.
+- **Edição da semana.** As votações vêm da coleta diária da Câmara e do Senado. Os atos vêm da legislação federal nos dados abertos do Senado (ADR 0005) e dos destaques do Diário Oficial (ADR 0006). A agenda de sábado prepara o rascunho.
+- **Revisão da edição.** No painel (`/painel`), quem tem uma conta administradora confere os itens e as fontes, ajusta os textos e publica a edição. O [guia da newsletter](docs/newsletter.md) descreve a redação, a revisão e o envio.
 - **As páginas aparecem no Google e têm prévia de link no WhatsApp** (ADR 0001).
 
 ## Capabilities and Constraints
@@ -61,7 +62,7 @@ A política explicada em linguagem simples e de forma interativa, a partir de ca
 
 ## Evidence on Hand
 
-- **Os textos das trilhas ainda não existem.** Os tópicos saem na #31, e os artigos e as perguntas do quiz, na #34. Até lá, o site usa artigos de exemplo, com a fonte oficial real.
+- **O site tem quatro trilhas e 28 artigos.** Os textos ficam em Markdown na pasta `apps/web/conteudo/trilhas/`.
 - **A pesquisa sobre o que o eleitor sabe de política está no `docs/problema.md`.** Nenhuma tela afirma números sobre o eleitor sem essa fonte.
 - **O piloto ainda não aconteceu (#40).** Não há depoimentos, números de uso nem resultados para mostrar.
 
