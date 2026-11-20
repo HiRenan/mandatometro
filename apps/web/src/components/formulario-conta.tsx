@@ -21,6 +21,7 @@ import {
 	anotarEntradaNaConta,
 	encerrarProgressoNaConta,
 } from "@/lib/progresso";
+import { VERSAO_DO_TERMO } from "@/lib/termo";
 import { BOTAO_CONTINUAR } from "./botao-continuar";
 
 export const titulos = {
@@ -117,7 +118,9 @@ export function FormularioConta({ modo }: { modo: Modo }) {
 		const abortar = new AbortController();
 		termoConta({ signal: abortar.signal }).then(({ data }) => {
 			if (abortar.signal.aborted) return;
-			if (data) setTermo(data);
+			// A versão que a API pede tem que ser a da página do termo: com outra, a
+			// pessoa aceitaria um texto que não leu (lib/termo.ts).
+			if (data?.versao === VERSAO_DO_TERMO) setTermo(data);
 			else setMensagem("O cadastro está indisponível no momento.");
 		});
 		return () => abortar.abort();
@@ -377,7 +380,7 @@ export function FormularioConta({ modo }: { modo: Modo }) {
 										aria-invalid={erros.aceite ? true : undefined}
 										aria-describedby={erros.aceite ? "erro-aceite" : undefined}
 									/>{" "}
-									Li e aceito{" "}
+									Tenho 12 anos ou mais e li e aceito{" "}
 									{termo ? (
 										<a
 											href={termo.url}

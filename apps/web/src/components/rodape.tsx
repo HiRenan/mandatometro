@@ -1,10 +1,12 @@
+import { ENDERECO_DO_TERMO } from "@/lib/termo";
 import { Painel } from "./azulejo";
 import { NOME_DO_SITE } from "./nome-do-site";
 
 /**
  * O rodapé: o papel com um fio de tinta em cima, o nome e o lema, e uma fileira
  * de azulejos embaixo, que faz a onda quando entra na tela. Diz que o projeto foi
- * feito para o Hack Brasil, de onde vêm as explicações e onde está o código. Mora
+ * feito para o Hack Brasil, de onde vêm as explicações, onde está o código e onde
+ * está o termo da conta, para quem quer lê-lo fora do cadastro. Mora
  * no documento (__root.tsx), e por isso aparece em todas as páginas, inclusive na
  * de não encontrado e na de erro.
  */
@@ -33,6 +35,12 @@ export function Rodape() {
 							className="acao-de-texto"
 						>
 							<span>O código é aberto, no GitHub</span>
+						</a>
+						.
+					</p>
+					<p>
+						<a href={ENDERECO_DO_TERMO} className="acao-de-texto">
+							<span>O termo de consentimento da conta</span>
 						</a>
 						.
 					</p>
