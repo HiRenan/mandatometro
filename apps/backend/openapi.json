@@ -1129,6 +1129,14 @@
             "description": "Too Many Requests"
           },
           "503": {
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos de espera quando a trava da conta está ocupada.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1236,6 +1244,14 @@
             "description": "Too Many Requests"
           },
           "503": {
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos de espera quando a trava da conta está ocupada.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1244,6 +1260,16 @@
               }
             },
             "description": "Service Unavailable"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroConta"
+                }
+              }
+            },
+            "description": "Content Too Large"
           }
         }
       }

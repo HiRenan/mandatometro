@@ -1240,6 +1240,10 @@ export type AlterarProgressoContaErrors = {
      */
     409: ErroConta;
     /**
+     * Content Too Large
+     */
+    413: ErroConta;
+    /**
      * Unprocessable Content
      */
     422: ErroConta;
