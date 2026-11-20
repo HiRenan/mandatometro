@@ -95,7 +95,6 @@ export function PaginaDeSair({
 	const { aviso, avisar } = useAviso();
 	const enviando = useRef(false);
 	const deNovo = useRef<HTMLAnchorElement>(null);
-	const edicoes = useRef<HTMLAnchorElement>(null);
 	const inicio = useRef<HTMLAnchorElement>(null);
 	// O link que nasceu no lugar do botão, no primeiro meio segundo (semPressa e
 	// semEnterApressado).
@@ -155,32 +154,6 @@ export function PaginaDeSair({
 		}
 	}
 
-	// A abertura vem antes das ações no HTML. Depois da saída, encaixe o
-	// "Edições" entre elas no Tab, com a saída do grupo pela ordem nativa.
-	function percorrerLinksDaSaida(evento: KeyboardEvent<HTMLAnchorElement>) {
-		if (
-			evento.key !== "Tab" ||
-			evento.altKey ||
-			evento.ctrlKey ||
-			evento.metaKey
-		) {
-			return;
-		}
-		const { currentTarget, shiftKey } = evento;
-		const destino =
-			currentTarget === edicoes.current
-				? shiftKey
-					? deNovo.current
-					: inicio.current
-				: currentTarget === (shiftKey ? inicio.current : deNovo.current)
-					? edicoes.current
-					: null;
-		if (destino) {
-			evento.preventDefault();
-			destino.focus();
-		}
-	}
-
 	function confirmar() {
 		if (enviando.current || !codigoValido(codigo)) {
 			return;
@@ -226,9 +199,7 @@ export function PaginaDeSair({
 			ref={inicio}
 			to="/"
 			onClick={recusado ? semPressa : semSegundoClique}
-			onKeyDown={
-				recusado ? semEnterApressado : saiu ? percorrerLinksDaSaida : undefined
-			}
+			onKeyDown={recusado ? semEnterApressado : undefined}
 			className="acao-de-texto"
 		>
 			<span>Ir para o início</span>
@@ -297,13 +268,7 @@ export function PaginaDeSair({
 						{saiu ? (
 							<>
 								{ANTES_DE_EDICOES}
-								<Link
-									ref={edicoes}
-									to="/edicoes"
-									tabIndex={-1}
-									onClick={semSegundoClique}
-									onKeyDown={percorrerLinksDaSaida}
-								>
+								<Link to="/edicoes" onClick={semSegundoClique}>
 									{EDICOES}
 								</Link>
 								{DEPOIS_DE_EDICOES}
@@ -351,10 +316,7 @@ export function PaginaDeSair({
 											to="/"
 											hash="newsletter"
 											onClick={semPressa}
-											onKeyDown={(evento) => {
-												semEnterApressado(evento);
-												percorrerLinksDaSaida(evento);
-											}}
+											onKeyDown={semEnterApressado}
 											className="acao-de-texto"
 										>
 											<span>Inscrever-se de novo</span>

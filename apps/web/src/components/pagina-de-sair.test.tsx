@@ -343,23 +343,28 @@ describe("a página de sair", () => {
 		expect(router.state.location.pathname).toBe("/edicoes");
 	});
 
-	it("depois da saída, o Tab passa do link no lugar do botão para “Edições” e “Ir para o início”", async () => {
+	it("depois da saída, a ordem dos links no HTML é a do Tab do navegador", async () => {
 		sair.mockResolvedValue({ tipo: "saiu" });
 		await mostrar();
 		await confirmar();
 		const deNovo = screen.getByRole("link", { name: "Inscrever-se de novo" });
 		const edicoes = screen.getByRole("link", { name: "Edições" });
-		const inicio = screen.getByRole("link", { name: "Ir para o início" });
+		const links = [...document.querySelectorAll(".cartaz a[href]")];
 
+		expect(edicoes.hasAttribute("tabindex")).toBe(false);
+		expect(links.map((link) => link.textContent)).toEqual([
+			"Edições",
+			"Inscrever-se de novo",
+			"Ir para o início",
+		]);
 		expect(document.activeElement).toBe(deNovo);
-		fireEvent.keyDown(deNovo, { key: "Tab" });
-		expect(document.activeElement).toBe(edicoes);
-		fireEvent.keyDown(edicoes, { key: "Tab" });
-		expect(document.activeElement).toBe(inicio);
-		fireEvent.keyDown(inicio, { key: "Tab", shiftKey: true });
-		expect(document.activeElement).toBe(edicoes);
-		fireEvent.keyDown(edicoes, { key: "Tab", shiftKey: true });
-		expect(document.activeElement).toBe(deNovo);
+		const tab = new KeyboardEvent("keydown", {
+			key: "Tab",
+			bubbles: true,
+			cancelable: true,
+		});
+		fireEvent(deNovo, tab);
+		expect(tab.defaultPrevented).toBe(false);
 	});
 
 	it("o segundo clique de um clique duplo no botão não segue o “Inscrever-se de novo”, que surge no lugar dele", async () => {
@@ -921,11 +926,8 @@ describe("a página de sair", () => {
 			for (const ms of [0, 499]) {
 				await passar(ms);
 				expect(fireEvent.keyDown(link, { key: "Enter" })).toBe(false);
-				// Com o código recusado, o Tab segue a ordem nativa. Depois da
-				// saída, outro teste confere a passagem imediata para "Edições".
-				if (tipo === "link-invalido") {
-					expect(fireEvent.keyDown(link, { key: "Tab" })).toBe(true);
-				}
+				// O Tab sai do link na hora: a guarda é só do Enter.
+				expect(fireEvent.keyDown(link, { key: "Tab" })).toBe(true);
 				// Este clique chega direto ao link, com detail 0 e sem keydown.
 				await act(async () => {
 					fireEvent.click(link, { detail: 0 });
@@ -1007,12 +1009,8 @@ describe("a página de sair", () => {
 				false,
 			);
 			expect(fireEvent.keyDown(link, { key: "Enter" })).toBe(true);
+			expect(fireEvent.keyDown(link, { key: "Tab", repeat: true })).toBe(true);
 			expect(document.activeElement).toBe(link);
-			if (tipo === "link-invalido") {
-				expect(fireEvent.keyDown(link, { key: "Tab", repeat: true })).toBe(
-					true,
-				);
-			}
 		},
 	);
 
