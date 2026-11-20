@@ -104,7 +104,14 @@ Confira o commit no passo **Registrar o código executado** e os três resumos J
 - **Destaques.** Se o resumo informar chave ausente ou recusada, confira `FIRECRAWL_API_KEY`. Para falha do Firecrawl, confira o serviço e a cota da conta. Se o banco não responder antes da coleta, confira a conexão. Nesse caso, `chamadas` é zero. Para falha de gravação, confira também as migrations. Se o limite de páginas deixar a coleta incompleta, leve a lacuna à revisão ao conferir a cobertura. [Referência da coleta](dicionario-de-dados.md#destaques-da-imprensa-nacional).
 - **Rascunho.** Confira a conexão e as migrations em falhas do banco. Se a configuração do redator estiver incompleta, ajuste-a ou use a ordem por regra sem a chave. Se sair `sem_votacoes_no_banco` ou `sem_itens_elegiveis`, confira o período e os descartes. Essas situações terminam com código 0 e sem um novo ID.
 
-Conclua a recuperação das coletas antes da revisão sempre que possível. A agenda devolve o mesmo `edicao_id` para `rascunho_existente` ou `ja_publicada` e preserva as edições e revisões gravadas. Se uma recoleta trocar uma fonte usada no rascunho, a conferência dos fatos pede que a pessoa decida como refazer e revisar. Use o ID para exportar, revisar e publicar antes do envio de domingo. [Como preparar a edição](newsletter.md#como-preparar-a-edição).
+Com **refazer** desmarcado, `rascunho_existente` devolve o mesmo `edicao_id` e preserva a revisão gravada. Uma edição publicada retorna `ja_publicada` com o mesmo ID e permanece intacta.
+
+### Recuperar a coleta dos destaques
+
+1. Corrija a causa indicada no resumo da etapa `destaques`.
+2. Em **Actions → Preparar edição de sábado → Run workflow**, escolha a branch que usou o banco da rodada original (**main** para recuperar o cron). Preencha **inicio** e **fim** com as mesmas datas e marque **refazer**. A opção vem desmarcada. Refazer descarta a revisão já salva daquele rascunho.
+3. Confira se `legislacao` e `destaques` terminaram com `codigo` igual a `0`. Se uma coleta falhar de novo, a rodada fica vermelha e o resumo do rascunho registra `"refazer_ignorado": "coleta_incompleta"`. Corrija a falha e repita com as mesmas datas.
+4. Se a agenda retornar `rascunho_refeito` ou `rascunho_criado`, use o `edicao_id` para exportar um novo arquivo, revisar e publicar antes do envio de domingo. [Como preparar a edição](newsletter.md#como-preparar-a-edição).
 
 ## Conceder e revogar o papel de administradora
 
