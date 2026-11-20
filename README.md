@@ -2,9 +2,9 @@
 
 **O diário oficial político, simplificado.** Um site que ensina como funciona a política brasileira, em linguagem simples e a partir do que o Congresso está votando.
 
-> Em construção no [Hack Brasil 2026](https://hackbrasil.com), de 4 a 30 de novembro de 2026. A demo vai ficar em mandatometro.com.br.
+> Projeto da trilha **Acesso à educação** do [Hack Brasil 2026](https://hackbrasil.com).
 >
-> Trilha: Acesso à educação.
+> [Site público de produção](https://mandatometro.com.br) (`main`) · [Site de desenvolvimento](https://dev.mandatometro.com.br) (`develop`)
 
 ## O problema
 
@@ -12,11 +12,11 @@ Falta aos eleitores conhecimento sobre o sistema político brasileiro: como nasc
 
 ## O que ele faz
 
-- **Trilhas:** artigos curtos e infográficos que explicam com casos reais como funciona a política, com um quiz no meio e outro no fim. A primeira é a do processo legislativo: como nasce uma lei.
-- **Newsletter semanal:** o jornal legislativo chega todo domingo com o que o Congresso votou na semana, explicado em linguagem simples. Quem se inscreve recebe na hora a última edição, e todas ficam no site. A conta administradora revisa e publica cada edição no painel do site, em `/painel`. Em construção: uma segunda seção, com os destaques do Diário Oficial da União ([ADR 0004](docs/adr/0004-newsletter-do-dou.md)).
-- **Busca:** o Ctrl+K, ou a barra no alto de qualquer página, procura nas trilhas, nos artigos e nas edições publicadas, sem IA. A busca não liga para acento nem para maiúscula e acha a palavra pelo começo. O que a pessoa digita fica no navegador.
+- **Trilhas.** Artigos curtos explicam como a política funciona com exemplos reais. Na trilha do processo legislativo, um infográfico mostra como uma ideia vira lei. Há um quiz no meio e outro no fim.
+- **Newsletter semanal.** O jornal legislativo pode reunir o que o Congresso votou na semana e os destaques do Diário Oficial da União. Cada item traz uma explicação simples e a fonte oficial. As edições publicadas ficam no site e o envio semanal é programado para domingo. Se já houver uma edição publicada, o sistema tenta enviá-la logo depois da inscrição. [Diário Oficial na newsletter](docs/adr/0004-newsletter-do-dou.md)
+- **Busca.** Use Ctrl+K ou a busca no alto da página para procurar nas trilhas, nos artigos e nas edições publicadas mais recentes. Você pode digitar só o começo da palavra, com ou sem acento. A busca ignora maiúsculas, funciona sem IA e mantém no navegador o que você digita.
 
-Cada explicação leva a fonte oficial: a lei, o regimento ou a página da Câmara, do Senado ou do TSE. Não precisa de conta: as trilhas são abertas, e a newsletter pede só o e-mail. A conta é opcional e guarda o progresso no perfil, para ele passar de um aparelho para outro.
+As trilhas são abertas e a newsletter pede só o e-mail. O navegador guarda os artigos lidos. Se você criar uma conta, o progresso também fica no perfil para continuar em outro aparelho.
 
 **Depois do MVP:** a página de cada deputado federal e senador, com o que prometeu na campanha, o que fez no mandato e o patrimônio que declarou ao TSE. Também ficam para depois o "fake ou fato" e o jogo das comissões, em que a pessoa acompanha um projeto real e decide como se fosse parlamentar.
 
@@ -24,25 +24,22 @@ O porquê dessas escolhas está no [ADR 0002](docs/adr/0002-mvp.md) e no [ADR 00
 
 ## Fontes
 
-Só dados públicos, sempre com link para a origem:
-
-- Para a newsletter, os dados abertos da Câmara e do Senado fornecem votações, proposições e parlamentares. A lista de legislação federal do Senado fornece decretos, leis e medidas provisórias publicados no Diário Oficial da União. [Câmara](https://dadosabertos.camara.leg.br/) · [Senado](https://legis.senado.leg.br/dadosabertos/) · [Lista de legislação federal](https://legis.senado.leg.br/dadosabertos/legislacao/lista?tipo=LEI&ano=2026)
-- Leis, regimentos e páginas oficiais da Câmara, do Senado e do TSE, para as trilhas
-- Depois do MVP: o [Portal de Dados Abertos do TSE](https://dadosabertos.tse.jus.br/) (candidaturas e bens declarados) e os sites de campanha
-
-As APIs oficiais e os arquivos de dados abertos da Câmara, do Senado e do TSE são lidos direto, por HTTP.
+- **Trilhas.** As explicações citam leis, regimentos e páginas oficiais da Câmara, do Senado e do TSE.
+- **Votações.** Os dados abertos da Câmara e do Senado fornecem votações, proposições e parlamentares. [Câmara](https://dadosabertos.camara.leg.br/) · [Senado](https://legis.senado.leg.br/dadosabertos/)
+- **Diário Oficial.** A lista de legislação federal do Senado fornece decretos, leis e medidas provisórias. A página de destaques da Imprensa Nacional acrescenta portarias e outros atos de ministérios. [Legislação federal](https://legis.senado.leg.br/dadosabertos/legislacao/lista?tipo=LEI&ano=2026) · [Destaques do Diário Oficial](https://www.in.gov.br/servicos/diario-oficial-da-uniao/destaques-do-diario-oficial-da-uniao)
+- **Depois do MVP.** A coleta de candidaturas e bens declarados ao TSE e a leitura dos sites de campanha ficam para essa etapa. [Portal de Dados Abertos do TSE](https://dadosabertos.tse.jus.br/)
 
 ## Ferramentas parceiras
 
 | Ferramenta | Uso no Mandatômetro |
 |---|---|
 | [Resend](https://resend.com/) | Todos os e-mails, incluindo a newsletter de domingo, a última edição para quem se inscreve e os avisos de conta |
-| [Firecrawl](https://www.firecrawl.dev/) | Em teste: ler o inteiro teor das proposições votadas e as notícias da Câmara e do Senado, para a edição da semana (#9). Depois do MVP, ler os sites de campanha |
+| [Firecrawl](https://www.firecrawl.dev/) | Lê a página de destaques do Diário Oficial na coleta de sábado. A leitura do inteiro teor das proposições e das notícias da Câmara e do Senado segue em teste na #9. O teste com sites de campanha fica para depois do MVP |
 | [Devin](https://devin.ai/) | Conectores de dados e testes, com PRs neste repositório |
 
 ## Stack
 
-FastAPI · PostgreSQL com pgvector · TanStack Start (React) · Turborepo · Docker Compose
+O site usa TypeScript, React e TanStack Start. O backend usa Python 3.13, FastAPI e SQLAlchemy. O banco é PostgreSQL com pgvector. O Turborepo roda as tarefas do repositório e o Docker Compose sobe os serviços localmente.
 
 O porquê de cada escolha está no [ADR 0001](docs/adr/0001-stack.md).
 
