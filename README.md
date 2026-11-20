@@ -50,16 +50,32 @@ O porquê de cada escolha está no [ADR 0001](docs/adr/0001-stack.md).
 
 ## Arquitetura
 
-1. **Coleta em lote, agendada:** as APIs da Câmara e do Senado, todo dia.
-2. **PostgreSQL com pgvector** guarda tudo.
-3. **LLM** escreve o rascunho da edição semanal com as votações da semana, e uma pessoa do time revisa antes de publicar.
-4. **FastAPI** expõe os dados, o **site** mostra as trilhas e as edições e busca nelas, e o **Resend** manda a última edição para quem se inscreve e a edição nova todo domingo.
+```mermaid
+flowchart TD
+    fontes["Fontes oficiais"] --> coleta["Coletas e rascunho"]
+    coleta <--> banco[(PostgreSQL)]
+    banco <--> api["API"]
+    api <--> site["Site e /painel"]
+    banco <--> envios["Envios agendados"]
+    envios --> email["E-mail via Resend"]
+    api --> email
+```
+
+O GitHub Actions roda as coletas e o rascunho fora dos pedidos ao site. A coleta diária usa `coleta camara` e `coleta senado` e grava no PostgreSQL. A agenda de sábado roda `coleta legislacao` nos dados abertos do Senado, `coleta destaques` na página da Imprensa Nacional via Firecrawl e `edicao rascunho`, nessa ordem.
+
+O comando de rascunho lê os dados já gravados e salva a edição no banco. Quando configurado, o modelo de linguagem sugere a ordem dos atos do Diário Oficial e escreve o texto das votações elegíveis. Em `/painel`, uma administradora confere os itens e as fontes, completa os textos pendentes e publica pela API.
+
+A API entrega ao site as edições publicadas e registra inscrições, contas, progresso das trilhas e tentativas do piloto. As trilhas vêm de arquivos do site. Na hospedagem, o site e a API ficam na Vercel e o PostgreSQL fica no Neon.
+
+Quando a agenda de domingo está ativa, `edicao enviar` usa o Resend para mandar a edição publicada naquela semana. O Resend também envia a edição mais recente na inscrição, quando disponível, e os avisos de conta. O workflow de avisos retoma pendências com `python -m mandatometro.contas`. O de migrations atualiza o banco com `alembic upgrade head`.
+
+[Horários e ativação das tarefas](docs/hospedagem.md#como-as-tarefas-funcionam) · [Revisão da edição](docs/newsletter.md#revisão-pelo-painel)
 
 ## Modelo de dados
 
 O banco guarda os dados da Câmara e do Senado, os atos do Diário Oficial, as edições da newsletter, a medição do piloto e as contas com o progresso das trilhas. Os modelos ficam em `apps/backend/src/mandatometro/db/modelos.py`, e cada mudança vira uma migration do Alembic.
 
-- **Cada Casa tem os seus números:** parlamentar, proposição e votação se identificam pela Casa e pelo id que a Casa dá (`casa`, `id_externo`). A mesma matéria tem uma linha em cada Casa, ligadas por sigla, número e ano.
+- **Cada Casa tem os seus números:** parlamentar, proposição e votação se identificam pela Casa e pelo id que a Casa dá (`casa`, `id_externo`). Quando a mesma matéria aparece nas duas Casas, cada uma tem o seu registro. A numeração única de 2019 em diante permite relacioná-los por sigla, número e ano.
 - **Atos do Diário Oficial** se identificam por `origem` e `id_externo`. A seleção semanal usa a data de publicação.
 - **Fonte em tudo:** cada dado coletado e cada item da edição aponta para uma `fonte`, com o endereço e a data da coleta. Sem fonte, o banco não grava.
 - **O partido fica no voto,** porque muda dentro do mandato. Os totais das nominais se contam pelos votos. Nas secretas do Senado, a coleta guarda matéria, votação e resultado, sem votos individuais; o banco não guarda os totais nem a modalidade. Ausência de votos no banco não significa zero votos na sessão nem identifica, sozinha, uma votação secreta.
@@ -152,7 +168,7 @@ erDiagram
         int id PK
         string casa UK
         int id_externo UK "no Senado, o idProcesso"
-        string sigla "sigla, número e ano ligam as Casas"
+        string sigla "com número e ano, permite relacionar matérias das duas Casas"
         int numero
         int ano
         string ementa
@@ -167,7 +183,7 @@ erDiagram
         date data
         string descricao
         string resultado "aprovada, rejeitada ou outro"
-        string resultado_bruto "1, 0 ou A"
+        string resultado_bruto "código publicado pela Casa"
         int fonte_id FK
     }
     votacao_proposicao {
