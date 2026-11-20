@@ -27,6 +27,12 @@ O desenho inteiro está no [DESIGN.md](../DESIGN.md). O que mais pega quem mexe 
 - **Linha que quebra pela base:** numa fileira em flex com `flex-wrap`, o navegador decide a quebra pela base de cada peça (o `flex-basis`), antes de encolher. Uma peça com a base larga leva as outras para a linha de baixo, mesmo quando todas caberiam com ela encolhida: na primeira versão, com a base de 20rem, a barra da busca levava os links do cabeçalho para baixo de 912 a 1023 px e de 1312 a 1439 px. A barra entra com a base do que o conteúdo pede (14rem) e cresce até o teto (`max-width: 20rem`), e o `components/header-css.test.ts` confere as duas (#233).
 - **O `<mark>` nas cores forçadas:** o navegador troca a cor da letra pela do sistema e guarda a transparência do fundo que o CSS deu. Um `<mark>` com `background: none` ficou com a letra do realce (`MarkText`) sem o fundo do realce, e a palavra sumiu na folha escura (#233). Dentro do `@media (forced-colors: active)`, dê o fundo e a letra do sistema juntos (`background: Mark; color: MarkText`).
 
+## Progresso das trilhas
+
+`lib/progresso.ts` guarda as marcas de visitante na chave original do navegador. Com `API_URL`, um login bem-sucedido anota uma chave aleatória local que vale até o fim da sessão. O site guarda essa chave sem dados da conta e consulta o progresso somente quando ela existe. Uma sessão anterior à implantação pode ser reconhecida pelo perfil ao verificar o cookie.
+
+As marcas de visitante entram na união com a conta uma vez. O site guarda o espelho da conta em outra chave e manda só as ações da sessão, em ordem, enquanto a tela responde de imediato. A próxima visita consulta a conta para reconciliar o espelho depois de uma falha. O botão **Começar como outra pessoa** do piloto limpa as marcas do navegador. A conta aberta conserva as marcas guardadas e volta a mostrá-las na próxima visita.
+
 ## Testes do site
 
 - **Raízes do React nos testes do site:** sem os globais do Vitest, o Testing Library não limpa a tela sozinho: chame o `cleanup()` no `afterEach`. Uma raiz do `hydrateRoot` também fica montada até o `unmount()`, e uma esquecida continua ouvindo o navegador nos testes seguintes.

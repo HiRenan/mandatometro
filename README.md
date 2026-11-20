@@ -57,7 +57,7 @@ O porquê de cada escolha está no [ADR 0001](docs/adr/0001-stack.md).
 
 ## Modelo de dados
 
-O banco guarda os dados da Câmara e do Senado, os atos do Diário Oficial, as edições da newsletter e a medição do piloto. Os modelos ficam em `apps/backend/src/mandatometro/db/modelos.py`, e cada mudança vira uma migration do Alembic.
+O banco guarda os dados da Câmara e do Senado, os atos do Diário Oficial, as edições da newsletter, a medição do piloto e as contas com o progresso das trilhas. Os modelos ficam em `apps/backend/src/mandatometro/db/modelos.py`, e cada mudança vira uma migration do Alembic.
 
 - **Cada Casa tem os seus números:** parlamentar, proposição e votação se identificam pela Casa e pelo id que a Casa dá (`casa`, `id_externo`). A mesma matéria tem uma linha em cada Casa, ligadas por sigla, número e ano.
 - **Atos do Diário Oficial** se identificam por `origem` e `id_externo`. A seleção semanal usa a data de publicação.
@@ -248,7 +248,11 @@ Aplique as migrations da API até a revisão atual antes de abrir `/cadastro`. C
 
 A API tenta entregar os avisos depois do commit. Para processar retentativas independentemente de novas requisições, execute periodicamente (a cada cinco minutos) `uv run python -m mandatometro.contas` em `apps/backend` com o mesmo banco e segredos. O destinatário e o link ficam criptografados na fila até o aceite do provedor ou o fim da validade.
 
-Em `/login`, quem já confirmou o e-mail entra com a senha e segue para `/perfil`. A sessão dura sete dias a partir do login. A API guarda o SHA-256 do segredo aleatório em `credencial_conta`. O navegador recebe o cookie `sessao_conta` com `HttpOnly`, `SameSite=Lax`, caminho `/` e `Secure` em HTTPS. **Sair** encerra a sessão atual. Redefinir a senha encerra todas as sessões da conta. A #111 deve referenciar `conta.id` com exclusão em cascata.
+Em `/login`, quem já confirmou o e-mail entra com a senha e segue para `/perfil`. A sessão dura sete dias a partir do login. A API guarda o SHA-256 do segredo aleatório em `credencial_conta`. O navegador recebe o cookie `sessao_conta` com `HttpOnly`, `SameSite=Lax`, caminho `/` e `Secure` em HTTPS. **Sair** encerra a sessão atual. Redefinir a senha encerra todas as sessões da conta.
+
+Ao entrar, os artigos lidos como visitante neste navegador se juntam aos da conta. Nas próximas visitas, o site consulta o progresso da conta e grava em segundo plano as ações de marcar, desmarcar, recomeçar e desfazer. **Sair** limpa as marcas deste navegador. Excluir a conta também apaga as marcas em `artigo_lido`, por exclusão em cascata.
+
+`GET /contas/progresso` devolve `{"lidos": [...]}` da sessão atual. `POST /contas/progresso` aceita as listas opcionais `marcar` e `desmarcar` e devolve os ids após a alteração. Cada id segue o formato `trilha/slug` e tem até 128 caracteres. O servidor aceita até 256 ids somados por pedido e até 256 marcas por conta.
 
 Toda conta nasce com o papel `comum`. Quem opera o banco pode [conceder ou revogar o papel de administradora](docs/hospedagem.md#conceder-e-revogar-o-papel-de-administradora) pelo CLI depois da confirmação do e-mail.
 
