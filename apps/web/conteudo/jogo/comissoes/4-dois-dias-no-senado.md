@@ -109,7 +109,7 @@ passos:
     sim: 16
     nao: 42
     data: 2024-12-18
-    legenda: A Emenda 1 foi rejeitada em 18/12/2024, na mesma sessão que aprovou o texto-base.
+    legenda: A Emenda 1 foi rejeitada na mesma sessão que aprovou o texto-base.
   - tipo: fala
     id: c4-12
     quem: arnaldo

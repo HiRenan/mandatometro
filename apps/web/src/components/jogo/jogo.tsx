@@ -12,6 +12,7 @@ import {
 	escolher,
 	type Partida,
 	passoAtual,
+	retratoDaVez,
 } from "@/lib/jogo/partida";
 import { tocar } from "@/lib/jogo/som";
 import { movimentoReduzido } from "@/lib/painel-vivo";
@@ -80,10 +81,8 @@ export function Jogo({
 	const cenario =
 		naCena || partida.fase === "revelacao" ? cena.cenario : jogo.cenario;
 	const fala = passo?.tipo === "fala" ? passo : undefined;
-	const retrato =
-		fala && fala.quem !== "narracao" && fala.expressao !== undefined
-			? `${fala.quem}-${fala.expressao}`
-			: undefined;
+	// Quem falou por último fica na cena durante a decisão, o painel e o carimbo.
+	const retrato = retratoDaVez(jogo, partida);
 
 	function seguir() {
 		setPartida((agora) => avancar(jogo, agora));

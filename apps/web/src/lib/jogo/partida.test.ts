@@ -15,6 +15,7 @@ import {
 	type Partida,
 	passoAtual,
 	regrasDoCaminho,
+	retratoDaVez,
 } from "./partida";
 
 // A partida roda no roteiro de verdade: o que o jogo conta e o que a tela
@@ -174,6 +175,23 @@ describe("partida", () => {
 
 		expect(erradas.every((regra) => !regra.comoNoRegimento)).toBe(true);
 		expect(erradas[0].doRegimento).toBe("O autor pede o desarquivamento");
+	});
+
+	it("mantém na cena o retrato de quem falou por último, e a narração deixa sem retrato", () => {
+		let partida = avancar(jogo, comecar());
+		// A cena 1 começa na narração, e o retrato só entra com a Lia.
+		expect(retratoDaVez(jogo, partida)).toBeUndefined();
+		partida = avancar(jogo, partida);
+		expect(retratoDaVez(jogo, partida)).toBe("lia-confiante");
+
+		// Na decisão, o retrato é o de quem falou antes dela.
+		while (passoAtual(jogo, partida)?.tipo !== "decisao") {
+			partida = avancar(jogo, partida);
+		}
+		expect(retratoDaVez(jogo, partida)).toBe("lia-preocupada");
+		expect(
+			retratoDaVez(jogo, { ...partida, fase: "revelacao" }),
+		).toBeUndefined();
 	});
 
 	it("deixa a decisão de regra sem escolha quando a partida não chegou nela", () => {

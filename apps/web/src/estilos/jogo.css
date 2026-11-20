@@ -18,6 +18,15 @@
 		padding-block: clamp(1.5rem, 4vw, 3rem);
 	}
 
+	/*
+	 * O título da página, menor que o cartaz de uma lista: aqui quem manda é o
+	 * palco, logo abaixo dele. O teto (o letra-com-teto) segura a palavra mais
+	 * larga dentro da página.
+	 */
+	.jogo > h1 {
+		--letra: clamp(2.25rem, 1.2rem + 4.5vw, 4.5rem);
+	}
+
 	/* O palco: o cenário atrás e o passo da vez na frente. */
 	.jogo-palco {
 		position: relative;
@@ -28,11 +37,15 @@
 		background: var(--papel-2);
 	}
 
+	/*
+	 * A cena ocupa a largura do palco e tem altura própria: com aspect-ratio, o
+	 * teto de altura encolhia a largura, e a imagem deixava um vão do lado.
+	 */
 	.jogo-cena {
 		position: relative;
 		overflow: hidden;
-		aspect-ratio: 16 / 9;
-		max-height: 52svh;
+		width: 100%;
+		height: clamp(12rem, 42svh, 26rem);
 		border-bottom: 2px solid var(--tinta);
 	}
 

@@ -44,7 +44,7 @@ passos:
     sim: 45
     nao: 14
     data: 2024-12-11
-    legenda: A CCJ aprovou o projeto em caráter conclusivo, em 11/12/2024.
+    legenda: A CCJ aprovou o projeto em caráter conclusivo.
   - tipo: fala
     id: c3-06
     quem: lia

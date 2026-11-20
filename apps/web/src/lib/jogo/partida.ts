@@ -121,6 +121,32 @@ export function escolher(
 	return { ...partida, escolhas: [...partida.escolhas, escolha] };
 }
 
+/**
+ * O retrato que fica na cena: o de quem falou por último, que continua na
+ * decisão, no painel, no prazo e no carimbo. A narração deixa a cena sem
+ * retrato, como no roteiro, e cada cena começa do zero.
+ */
+export function retratoDaVez(
+	jogo: JogoNaPagina,
+	partida: Partida,
+): string | undefined {
+	if (partida.fase !== "cena") {
+		return undefined;
+	}
+	const passos = cenaDa(jogo, partida)?.passos ?? [];
+	for (let indice = partida.passo; indice >= 0; indice -= 1) {
+		const passo = passos[indice];
+		if (passo?.tipo !== "fala") {
+			continue;
+		}
+		if (passo.quem === "narracao" || passo.expressao === undefined) {
+			return undefined;
+		}
+		return `${passo.quem}-${passo.expressao}`;
+	}
+	return undefined;
+}
+
 /** Todas as decisões do roteiro, na ordem das cenas. */
 export function decisoesDoJogo(jogo: JogoNaPagina): Decisao[] {
 	return jogo.cenas.flatMap((cena) =>
