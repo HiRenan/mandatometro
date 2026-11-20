@@ -39,13 +39,15 @@
 
 	/*
 	 * A cena ocupa a largura do palco e tem altura própria: com aspect-ratio, o
-	 * teto de altura encolhia a largura, e a imagem deixava um vão do lado.
+	 * teto de altura encolhia a largura, e a imagem deixava um vão do lado. Ela
+	 * é alta o bastante para a fala ficar em cima dela sem cobrir o cenário e o
+	 * retrato inteiros.
 	 */
 	.jogo-cena {
 		position: relative;
 		overflow: hidden;
 		width: 100%;
-		height: clamp(12rem, 42svh, 26rem);
+		height: clamp(17rem, 56svh, 32rem);
 		border-bottom: 2px solid var(--tinta);
 	}
 
@@ -72,11 +74,15 @@
 		object-position: bottom right;
 	}
 
+	/*
+	 * O item de cena fica no alto, à esquerda: embaixo, a caixa de diálogo passa
+	 * por cima dele.
+	 */
 	.jogo-item {
 		position: absolute;
-		bottom: 0.75rem;
+		top: 0.75rem;
 		left: 0.75rem;
-		width: clamp(5rem, 16vw, 9rem);
+		width: clamp(4.5rem, 13vw, 7.5rem);
 	}
 
 	.jogo-item img {
@@ -576,6 +582,34 @@
 		color: var(--tinta-suave);
 		font-family: var(--font-sans);
 		font-size: 0.8125rem;
+	}
+
+	/*
+	 * A fala em cima da cena: as duas peças dividem a mesma célula da grade, e a
+	 * caixa desce para o pé do cenário, como numa visual novel. A folha continua
+	 * opaca, com o fio de tinta: texto direto sobre a ilustração perderia
+	 * contraste. As regras vêm depois das peças que elas mudam, para a
+	 * especificidade não descer no meio do arquivo.
+	 */
+	.jogo-palco[data-sobre-a-cena] {
+		grid-template-rows: auto auto;
+		gap: 0;
+	}
+
+	.jogo-palco[data-sobre-a-cena] > .jogo-cena,
+	.jogo-palco[data-sobre-a-cena] > .jogo-frente {
+		grid-row: 1;
+		grid-column: 1;
+	}
+
+	.jogo-palco[data-sobre-a-cena] > .jogo-frente {
+		align-self: end;
+		z-index: 1;
+		padding-block: 0 clamp(0.75rem, 2vw, 1.25rem);
+	}
+
+	.jogo-palco[data-sobre-a-cena] > .jogo-pe {
+		grid-row: 2;
 	}
 
 	/* O cartão "O que aconteceu de verdade" e o fim do jogo. */

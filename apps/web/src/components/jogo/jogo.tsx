@@ -93,7 +93,14 @@ export function Jogo({
 	}
 
 	return (
-		<div className="jogo-palco" data-fase={partida.fase} ref={palco}>
+		<div
+			className="jogo-palco"
+			data-fase={partida.fase}
+			// A fala fica em cima da cena, como numa visual novel; a decisão, o
+			// painel e o cartão, que são altos, ficam embaixo dela.
+			data-sobre-a-cena={fala ? "true" : undefined}
+			ref={palco}
+		>
 			<div className="jogo-cena" aria-hidden="true">
 				<img
 					className="jogo-cenario"
