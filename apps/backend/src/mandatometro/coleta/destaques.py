@@ -16,6 +16,7 @@ from zoneinfo import ZoneInfo
 
 import httpx2
 from pydantic import SecretStr
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -356,6 +357,13 @@ def coletar(
     comeco = time.monotonic()
     hoje = hoje or datetime.now(ZoneInfo("America/Sao_Paulo")).date()
     try:
+        # Abrir a sessão é preguiçoso. Confirme a conexão antes de gastar crédito.
+        try:
+            with abrir_sessao() as s:
+                s.execute(select(1))
+        except SQLAlchemyError:
+            raise ErroColeta("O banco não respondeu antes da coleta dos destaques.") from None
+
         for url in _PAGINAS:
             resposta = http.ler_pagina(url)
             html = cast(str, resposta.dados)
