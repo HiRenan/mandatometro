@@ -2,7 +2,7 @@
 cena: 5
 titulo: A caneta
 cenario: bg-planalto
-casa: Sanção
+casa: Sanção ou veto
 artigo: o-presidente-sanciona-ou-veta
 passos:
   - tipo: fala

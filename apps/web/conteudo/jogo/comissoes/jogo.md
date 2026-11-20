@@ -16,9 +16,9 @@ personagens:
 casas:
   - Apresentação
   - Comissões
-  - Plenário dispensado
-  - Senado
-  - Sanção
+  - Plenário
+  - A outra Casa
+  - Sanção ou veto
 epilogo:
   titulo: O que a lei mudou
   itens:

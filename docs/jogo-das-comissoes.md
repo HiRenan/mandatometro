@@ -40,6 +40,8 @@ O título, o resumo, o cenário da abertura, o aviso, os três personagens (com 
 
 `cena` (o número), `titulo`, `cenario`, `casa` (uma das do `jogo.md`), `artigo` (o arquivo de um artigo da trilha do processo legislativo, sem o `.md`), `passos` e `revelacao`.
 
+As `casas` do `jogo.md` são as mesmas do infográfico "O caminho de um projeto de lei" — Apresentação, Comissões, Plenário, A outra Casa e Sanção ou veto —, e é de lá que vem o azulejo de cada uma, com o símbolo do passo (`simboloDoPasso`, em `lib/simbolos.ts`). Mudou um nome no infográfico, mude aqui também: sem o par, a casa fica com o azulejo da posição, sem símbolo.
+
 Cada passo tem um `tipo`:
 
 | `tipo` | Campos | O que faz |
@@ -70,7 +72,9 @@ As expressões com desenho são as que o roteiro usa:
 
 O `roteiro.test.ts` confere que existe o arquivo de cada expressão, cenário e item que uma fala pede, e o leitor recusa uma expressão que não está na lista.
 
-O som **começa desligado** e só toca depois de a pessoa ligar: o texto na tela funciona sozinho. As folhas de referência de arte (`ref-lia`, `ref-arnaldo` e `ref-caio`) e o PDF do roteiro são material de produção e ficam fora do repositório.
+O som **vem ligado**, e quem não quiser desliga no botão do pé do palco; a escolha fica guardada naquele navegador. O navegador só deixa tocar depois de um toque ou de uma tecla, então a trilha de fundo começa no primeiro clique da pessoa, e não ao abrir a página. O texto na tela continua funcionando sozinho, sem o som.
+
+As folhas de referência de arte (`ref-lia`, `ref-arnaldo` e `ref-caio`) e o PDF do roteiro são material de produção e ficam fora do repositório.
 
 ## Pendências
 

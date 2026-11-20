@@ -2,7 +2,7 @@
 cena: 4
 titulo: Dois dias no Senado
 cenario: bg-senado
-casa: Senado
+casa: A outra Casa
 artigo: a-outra-casa-revisa-o-projeto
 passos:
   - tipo: fala

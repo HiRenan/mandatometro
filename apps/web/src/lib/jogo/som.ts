@@ -1,14 +1,20 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * O som do jogo começa desligado e só toca depois de a pessoa ligar: nada de
- * som ao abrir a página. A preferência fica neste navegador, numa chave só
- * dela, e não diz nada sobre quem está jogando. O texto na tela funciona
- * sozinho (docs/jogo-das-comissoes.md).
+ * O som do jogo vem ligado, e quem não quiser desliga no botão do pé do palco.
+ * A preferência fica neste navegador, numa chave só dela, e não diz nada sobre
+ * quem está jogando. O texto na tela continua funcionando sozinho, sem o som
+ * (docs/jogo-das-comissoes.md).
+ *
+ * O navegador só deixa tocar depois de um toque ou de uma tecla: a trilha de
+ * fundo começa no primeiro clique da pessoa, não ao abrir a página
+ * (components/jogo/botao-de-som.tsx).
  */
 const CHAVE = "mandatometro:jogo-som";
 
 const LIGADO = "ligado";
+
+const DESLIGADO = "desligado";
 
 /** Os efeitos de public/jogo/audio/, pelo que cada um marca na tela. */
 const EFEITOS = {
@@ -48,13 +54,13 @@ function lerBruto(): string | null {
 	}
 }
 
-/** Se o som está ligado neste navegador. Começa desligado. */
+/** Se o som está ligado neste navegador. Sem escolha guardada, está ligado. */
 export function lerSom(): boolean {
-	return lerBruto() === LIGADO;
+	return lerBruto() !== DESLIGADO;
 }
 
 export function ligarSom(ligado: boolean): void {
-	const bruto = ligado ? LIGADO : "";
+	const bruto = ligado ? LIGADO : DESLIGADO;
 	try {
 		window.localStorage.setItem(CHAVE, bruto);
 		emMemoria = null;
@@ -80,16 +86,16 @@ function assinar(avisar: () => void): () => void {
 	};
 }
 
-function desligado(): boolean {
-	return false;
+function comoNasce(): boolean {
+	return true;
 }
 
 /**
- * Se o som está ligado. No servidor e na hidratação, o jogo vem sem som; a
- * escolha da pessoa aparece logo depois, sem erro de hidratação.
+ * Se o som está ligado. No servidor, vale o padrão; a escolha guardada neste
+ * navegador aparece na hidratação, sem erro.
  */
 export function useSom(): boolean {
-	return useSyncExternalStore(assinar, lerSom, desligado);
+	return useSyncExternalStore(assinar, lerSom, comoNasce);
 }
 
 /**

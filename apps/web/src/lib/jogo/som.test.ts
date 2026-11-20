@@ -17,26 +17,27 @@ describe("som do jogo", () => {
 		vi.unstubAllGlobals();
 	});
 
-	it("começa desligado e guarda a escolha neste navegador", () => {
-		expect(lerSom()).toBe(false);
-
-		ligarSom(true);
+	it("começa ligado e guarda a escolha neste navegador", () => {
 		expect(lerSom()).toBe(true);
 
 		ligarSom(false);
 		expect(lerSom()).toBe(false);
+
+		ligarSom(true);
+		expect(lerSom()).toBe(true);
 	});
 
 	it("não toca nada com o som desligado", () => {
 		const falso = vi.fn();
 		vi.stubGlobal("Audio", falso);
+		ligarSom(false);
 
 		tocar("carimbo");
 
 		expect(falso).not.toHaveBeenCalled();
 	});
 
-	it("toca o efeito pelo endereço do arquivo, com o som ligado", () => {
+	it("toca o efeito pelo endereço do arquivo, com o som ligado (o padrão)", () => {
 		const play = vi.fn(() => Promise.resolve());
 		const pedidos: string[] = [];
 		const tocados: Array<{ volume: number }> = [];
@@ -80,9 +81,9 @@ describe("som do jogo", () => {
 			throw new Error("armazenamento bloqueado");
 		});
 
-		ligarSom(true);
+		ligarSom(false);
 
-		expect(lerSom()).toBe(true);
+		expect(lerSom()).toBe(false);
 	});
 
 	it("tem um endereço por efeito, dentro de /jogo/audio/", () => {

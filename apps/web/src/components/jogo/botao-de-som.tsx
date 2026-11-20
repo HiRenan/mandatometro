@@ -3,10 +3,11 @@ import { semCliqueDuplo } from "@/lib/clique";
 import { ligarSom, MUSICA, useSom, VOLUME_DA_MUSICA } from "@/lib/jogo/som";
 
 /**
- * Liga e desliga o som do jogo. Ele começa desligado e só toca depois do
- * clique: a trilha de fundo nunca começa sozinha, e o `preload="none"` só baixa
- * o arquivo quando a pessoa pede. O que o som marca também está em palavras na
- * tela (docs/jogo-das-comissoes.md).
+ * Liga e desliga o som do jogo. Ele vem ligado, e quem não quiser desliga aqui
+ * (docs/jogo-das-comissoes.md). O navegador só deixa tocar depois de um toque
+ * ou de uma tecla: a trilha de fundo não começa ao abrir a página, e sim no
+ * primeiro clique da pessoa, como o "Começar pela primeira cena". O que o som
+ * marca também está em palavras na tela.
  */
 export function BotaoDeSom() {
 	const ligado = useSom();
@@ -18,11 +19,22 @@ export function BotaoDeSom() {
 			return;
 		}
 		toca.volume = VOLUME_DA_MUSICA;
-		if (ligado) {
-			void toca.play?.()?.catch(() => undefined);
-		} else {
+		if (!ligado) {
 			toca.pause?.();
+			return;
 		}
+		const tentar = () => {
+			void toca.play?.()?.catch(() => undefined);
+		};
+		tentar();
+		// A primeira tentativa, ao abrir a página, é recusada pelo navegador: a
+		// trilha entra no primeiro toque ou tecla, e a escuta sai depois dele.
+		document.addEventListener("pointerdown", tentar, { once: true });
+		document.addEventListener("keydown", tentar, { once: true });
+		return () => {
+			document.removeEventListener("pointerdown", tentar);
+			document.removeEventListener("keydown", tentar);
+		};
 	}, [ligado]);
 
 	return (
