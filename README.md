@@ -57,7 +57,7 @@ O porquê de cada escolha está no [ADR 0001](docs/adr/0001-stack.md).
 
 ## Modelo de dados
 
-O banco guarda os dados da Câmara e do Senado, os atos do Diário Oficial, as edições da newsletter e a medição do piloto. Os modelos ficam em `apps/backend/src/mandatometro/db/modelos.py`, e cada mudança vira uma migration do Alembic.
+O banco guarda os dados da Câmara e do Senado, os atos do Diário Oficial, as edições da newsletter, a medição do piloto e as contas com o progresso das trilhas. Os modelos ficam em `apps/backend/src/mandatometro/db/modelos.py`, e cada mudança vira uma migration do Alembic.
 
 - **Cada Casa tem os seus números:** parlamentar, proposição e votação se identificam pela Casa e pelo id que a Casa dá (`casa`, `id_externo`). A mesma matéria tem uma linha em cada Casa, ligadas por sigla, número e ano.
 - **Atos do Diário Oficial** se identificam por `origem` e `id_externo`. A seleção semanal usa a data de publicação.
@@ -70,6 +70,7 @@ O banco guarda os dados da Câmara e do Senado, os atos do Diário Oficial, as e
 ```mermaid
 erDiagram
     conta ||--o{ credencial_conta : "autoriza"
+    conta ||--o{ artigo_lido : "guarda"
     conta |o--o{ aviso_conta : "gera"
     conta {
         uuid id PK
@@ -91,6 +92,11 @@ erDiagram
         uuid conta_id FK
         string finalidade
         timestamptz expira
+    }
+    artigo_lido {
+        uuid conta_id PK,FK
+        string artigo_id PK
+        timestamptz marcado_em
     }
     aviso_conta {
         uuid id PK
@@ -242,7 +248,13 @@ Aplique as migrations da API até a revisão atual antes de abrir `/cadastro`. C
 
 A API tenta entregar os avisos depois do commit. Para processar retentativas independentemente de novas requisições, execute periodicamente (a cada cinco minutos) `uv run python -m mandatometro.contas` em `apps/backend` com o mesmo banco e segredos. O destinatário e o link ficam criptografados na fila até o aceite do provedor ou o fim da validade.
 
-Em `/login`, quem já confirmou o e-mail entra com a senha e segue para `/perfil`. A sessão dura sete dias a partir do login. A API guarda o SHA-256 do segredo aleatório em `credencial_conta`. O navegador recebe o cookie `sessao_conta` com `HttpOnly`, `SameSite=Lax`, caminho `/` e `Secure` em HTTPS. **Sair** encerra a sessão atual. Redefinir a senha encerra todas as sessões da conta. A #111 deve referenciar `conta.id` com exclusão em cascata.
+Em `/login`, quem já confirmou o e-mail entra com a senha e segue para `/perfil`. A sessão dura sete dias a partir do login. A API guarda o SHA-256 do segredo aleatório em `credencial_conta`. O navegador recebe o cookie `sessao_conta` com `HttpOnly`, `SameSite=Lax`, caminho `/` e `Secure` em HTTPS. **Sair** encerra a sessão atual. Redefinir a senha encerra todas as sessões da conta.
+
+Ao entrar, os artigos lidos como visitante se juntam aos da conta. Com Web Locks, as abas compartilham a fila de pedidos e importam as marcas de visitante uma vez. Em navegadores sem Web Locks, cada aba tem sua própria fila. O outro aparelho lê o progresso ao abrir o site, ao restaurar uma página pelo histórico, ao navegar para outra página ou ao voltar à aba. Navegação e visibilidade compartilham um intervalo mínimo de 30 segundos entre releituras no mesmo documento. [Progresso das trilhas](docs/codigo-do-site.md#progresso-das-trilhas)
+
+Marcar, desmarcar, recomeçar e desfazer atualizam a tela na hora e gravam na conta em segundo plano. Após falha de rede, prazo esgotado, `429` ou `5xx`, as ações pendentes ficam em memória até uma nova ação ou releitura no mesmo documento. Fechar ou recarregar a página pode perder essas ações. Lotes recusados por `409` ou `422` são descartados e a releitura acerta a tela com o que a conta guardou. **Sair** limpa as marcas deste navegador. Excluir a conta também apaga as marcas em `artigo_lido`, por exclusão em cascata.
+
+`GET /contas/progresso` devolve `{"lidos": [...]}` da sessão atual. `POST /contas/progresso` aceita as listas opcionais `marcar` e `desmarcar` e devolve os ids após a alteração. Cada id segue o formato `trilha/slug` e tem até 128 caracteres. O servidor aceita até 256 ids somados por pedido e até 256 marcas por conta. O POST aceita até 64 KiB de corpo em JSON UTF-8 e responde `413` acima desse tamanho. Nas duas rotas de progresso, cada espera pela trava da conta tem prazo de 3 segundos. Quando vence, a API devolve `503` com `Retry-After: 3`.
 
 Toda conta nasce com o papel `comum`. Quem opera o banco pode [conceder ou revogar o papel de administradora](docs/hospedagem.md#conceder-e-revogar-o-papel-de-administradora) pelo CLI depois da confirmação do e-mail.
 

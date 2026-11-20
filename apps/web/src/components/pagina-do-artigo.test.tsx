@@ -7,7 +7,14 @@ import {
 	Outlet,
 	RouterProvider,
 } from "@tanstack/react-router";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+	act,
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	acharArtigo,
@@ -16,12 +23,22 @@ import {
 } from "@/lib/conteudo/paginas.server";
 import { Route } from "@/routes/trilhas/$trilha/$artigo";
 
+const { alterar } = vi.hoisted(() => ({ alterar: vi.fn() }));
+vi.mock("@/env", () => ({ ENV: { API_URL: "https://api.example.com" } }));
+vi.mock("@/client", () => ({
+	alterarProgressoConta: alterar,
+	consultarProgressoConta: async () => ({ data: { lidos: [] } }),
+}));
+
 const CHAVE = "mandatometro:artigos-lidos";
+const SESSAO = "mandatometro:sessao-do-progresso";
+const ESPELHO = "mandatometro:artigos-lidos-na-conta";
 const ARTIGO = "processo-legislativo/onde-o-projeto-comeca";
 
 beforeEach(() => {
 	// O artigo já está lido. O jsdom não rola a janela.
 	window.localStorage.setItem(CHAVE, JSON.stringify([ARTIGO]));
+	alterar.mockReset().mockResolvedValue({ data: { lidos: [] } });
 	vi.spyOn(window, "scrollTo").mockImplementation(() => {});
 });
 
@@ -29,6 +46,7 @@ afterEach(() => {
 	cleanup();
 	window.localStorage.clear();
 	vi.restoreAllMocks();
+	vi.unstubAllGlobals();
 });
 
 const lidos = () => JSON.parse(window.localStorage.getItem(CHAVE) ?? "[]");
@@ -134,4 +152,90 @@ describe("página do artigo", () => {
 		);
 		expect(lidos()).toEqual([ARTIGO]);
 	});
+
+	it.each(["conta B", null])(
+		"o Desfazer da conta A não grava após mudar para %s em outra aba",
+		async (outraSessao) => {
+			localStorage.removeItem(CHAVE);
+			localStorage.setItem(SESSAO, "conta A");
+			localStorage.setItem(ESPELHO, JSON.stringify([ARTIGO]));
+			abrir();
+			fireEvent.click(await screen.findByRole("button", { name: "Desmarcar" }));
+			const desfazer = screen.getByRole("button", { name: "Desfazer" });
+			await vi.dynamicImportSettled();
+			await waitFor(() => expect(alterar).toHaveBeenCalledTimes(1));
+			alterar.mockClear();
+
+			localStorage.removeItem(ESPELHO);
+			if (outraSessao) localStorage.setItem(SESSAO, outraSessao);
+			else localStorage.removeItem(SESSAO);
+			// O clique pode chegar antes do evento storage da outra aba.
+			fireEvent.click(desfazer);
+			act(() =>
+				window.dispatchEvent(
+					new StorageEvent("storage", {
+						key: SESSAO,
+						oldValue: "conta A",
+						newValue: outraSessao,
+					}),
+				),
+			);
+			await vi.dynamicImportSettled();
+			expect(localStorage.getItem(ESPELHO)).toBeNull();
+			expect(localStorage.getItem(CHAVE)).toBeNull();
+			expect(alterar).not.toHaveBeenCalled();
+			expect(screen.queryByRole("button", { name: "Desfazer" })).toBeNull();
+		},
+	);
+
+	it("o Desfazer de visitante some ao entrar em outra aba", async () => {
+		abrir();
+		fireEvent.click(await screen.findByRole("button", { name: "Desmarcar" }));
+		const desfazer = screen.getByRole("button", { name: "Desfazer" });
+		localStorage.setItem(SESSAO, "conta A");
+		act(() =>
+			window.dispatchEvent(
+				new StorageEvent("storage", { key: SESSAO, newValue: "conta A" }),
+			),
+		);
+		fireEvent.click(desfazer);
+		await vi.dynamicImportSettled();
+		expect(screen.queryByRole("button", { name: "Desfazer" })).toBeNull();
+		expect(localStorage.getItem(CHAVE)).toBe("[]");
+		expect(localStorage.getItem(ESPELHO)).toBeNull();
+		expect(alterar).not.toHaveBeenCalled();
+	});
+
+	it.each([null, "conta A"])(
+		"a leitura automática aberta em %s não marca na conta seguinte",
+		async (sessao) => {
+			localStorage.removeItem(CHAVE);
+			if (sessao) localStorage.setItem(SESSAO, sessao);
+			let observarFim!: IntersectionObserverCallback;
+			const observador = { observe: vi.fn(), disconnect: vi.fn() };
+			vi.stubGlobal(
+				"IntersectionObserver",
+				class {
+					constructor(callback: IntersectionObserverCallback) {
+						observarFim = callback;
+					}
+					observe = observador.observe;
+					disconnect = observador.disconnect;
+				},
+			);
+			abrir();
+			await waitFor(() => expect(observador.observe).toHaveBeenCalledTimes(1));
+			localStorage.setItem(SESSAO, "conta B");
+			act(() =>
+				observarFim(
+					[{ isIntersecting: true } as IntersectionObserverEntry],
+					observador as unknown as IntersectionObserver,
+				),
+			);
+			await vi.dynamicImportSettled();
+			expect(localStorage.getItem(ESPELHO)).toBeNull();
+			expect(localStorage.getItem(CHAVE)).toBeNull();
+			expect(alterar).not.toHaveBeenCalled();
+		},
+	);
 });

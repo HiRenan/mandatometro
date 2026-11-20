@@ -1,4 +1,7 @@
+import json
 import secrets
+from collections.abc import AsyncIterator, Iterator
+from contextlib import contextmanager
 from datetime import date, timedelta
 from typing import Annotated, Literal
 from uuid import uuid4
@@ -8,10 +11,11 @@ from fastapi import APIRouter, BackgroundTasks, Cookie, HTTPException, Request, 
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
-from pydantic import BaseModel, EmailStr, Field, model_validator
-from sqlalchemy import delete, select
+from psycopg.errors import LockNotAvailable
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
+from sqlalchemy import delete, select, text
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -19,7 +23,14 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from mandatometro.config import config
 from mandatometro.contas import agendar, agora, consumir_cota, entregar_pendentes, resumo, senhas
 from mandatometro.db import sessao
-from mandatometro.db.modelos import Conta, CredencialConta, PapelConta
+from mandatometro.db.modelos import (
+    PADRAO_ID_ARTIGO,
+    TAMANHO_ID_ARTIGO,
+    ArtigoLido,
+    Conta,
+    CredencialConta,
+    PapelConta,
+)
 
 ESTADOS = set(
     [
@@ -53,6 +64,7 @@ ESTADOS = set(
         "EX",
     ]
 )
+FORMATO_INVALIDO = "Confira os campos informados."
 
 
 class RotaConta(APIRoute):
@@ -69,7 +81,7 @@ class RotaConta(APIRoute):
                         raise HTTPException(429, "Tente novamente em um minuto.")
                 resposta = await tratar(request)
             except RequestValidationError:
-                resposta = JSONResponse({"detail": "Confira os campos informados."}, 422)
+                resposta = JSONResponse({"detail": FORMATO_INVALIDO}, 422)
             except HTTPException as erro:
                 resposta = JSONResponse(
                     {"detail": erro.detail}, erro.status_code, headers=erro.headers
@@ -349,6 +361,142 @@ def consultar_perfil(sessao_conta: Annotated[str | None, Cookie()] = None) -> Pe
     with sessao() as db:
         conta = conta_da_sessao(db, sessao_conta)
         return PerfilConta(nome=conta.nome, papel=conta.papel)
+
+
+MAX_IDS_POR_PEDIDO = 256
+MAX_ARTIGOS_LIDOS = 256
+LIMITE_CORPO_PROGRESSO = 64 * 1024
+IdArtigo = Annotated[str, Field(max_length=TAMANHO_ID_ARTIGO, pattern=PADRAO_ID_ARTIGO)]
+LoteDeArtigos = Annotated[list[IdArtigo], Field(max_length=MAX_IDS_POR_PEDIDO)]
+
+
+class PedidoProgressoLimitado(Request):
+    async def stream(self) -> AsyncIterator[bytes]:
+        erro = HTTPException(413, "O pedido de progresso excede 64 KiB.")
+        try:
+            declarado = int(self.headers.get("content-length", "0"))
+        except ValueError:
+            declarado = 0
+        if declarado > LIMITE_CORPO_PROGRESSO:
+            raise erro
+
+        recebido = 0
+        async for parte in super().stream():
+            recebido += len(parte)
+            if recebido > LIMITE_CORPO_PROGRESSO:
+                raise erro
+            yield parte
+
+    async def json(self):
+        try:
+            return json.loads((await self.body()).decode("utf-8"))
+        except (ValueError, RecursionError):
+            raise HTTPException(422, FORMATO_INVALIDO) from None
+
+
+class RotaProgresso(RotaConta):
+    def get_route_handler(self):
+        tratar = super().get_route_handler()
+
+        async def progresso(request: Request) -> Response:
+            if request.method == "POST":
+                request = PedidoProgressoLimitado(request.scope, request.receive)
+            return await tratar(request)
+
+        return progresso
+
+
+router_progresso = APIRouter(
+    route_class=RotaProgresso,
+    responses={
+        503: {
+            "model": ErroConta,
+            "headers": {
+                "Retry-After": {
+                    "description": "Segundos de espera quando a trava da conta está ocupada.",
+                    "schema": {"type": "integer"},
+                },
+            },
+        },
+    },
+)
+
+
+class PedidoProgresso(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    marcar: LoteDeArtigos = Field(default_factory=list)
+    desmarcar: LoteDeArtigos = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validar_lote(self):
+        if len(self.marcar) + len(self.desmarcar) > MAX_IDS_POR_PEDIDO or not set(
+            self.marcar
+        ).isdisjoint(self.desmarcar):
+            raise ValueError("Lote de progresso inválido.")
+        return self
+
+
+class ProgressoConta(BaseModel):
+    lidos: list[IdArtigo]
+
+
+def _ids_lidos(db: Session, conta: Conta) -> set[str]:
+    return set(db.scalars(select(ArtigoLido.artigo_id).where(ArtigoLido.conta_id == conta.id)))
+
+
+@contextmanager
+def _sessao_do_progresso() -> Iterator[Session]:
+    try:
+        with sessao() as db, db.begin():
+            db.execute(text("SET LOCAL lock_timeout = '3s'"))
+            yield db
+    except OperationalError as erro:
+        if isinstance(erro.orig, LockNotAvailable):
+            raise HTTPException(
+                503, "O progresso está ocupado. Tente novamente.", headers={"Retry-After": "3"}
+            ) from None
+        raise
+
+
+@router_progresso.get("/progresso")
+def consultar_progresso_conta(
+    sessao_conta: Annotated[str | None, Cookie()] = None,
+) -> ProgressoConta:
+    if not sessao_conta:
+        raise HTTPException(401, "Entre na sua conta.")
+    with _sessao_do_progresso() as db:
+        conta = conta_da_sessao(db, sessao_conta)
+        return ProgressoConta(lidos=sorted(_ids_lidos(db, conta)))
+
+
+@router_progresso.post("/progresso", responses={413: {"model": ErroConta}})
+def alterar_progresso_conta(
+    pedido: PedidoProgresso, request: Request, sessao_conta: Annotated[str | None, Cookie()] = None
+) -> ProgressoConta:
+    validar_origem(request)
+    if not sessao_conta:
+        raise HTTPException(401, "Entre na sua conta.")
+    with _sessao_do_progresso() as db:
+        # O lock da conta serializa alterações e a exclusão, inclusive a checagem do teto.
+        conta = conta_da_sessao(db, sessao_conta)
+        lidos = _ids_lidos(db, conta)
+        marcar = set(pedido.marcar) - lidos
+        desmarcar = lidos.intersection(pedido.desmarcar)
+        resultado = (lidos - desmarcar) | marcar
+        if len(resultado) > MAX_ARTIGOS_LIDOS:
+            raise HTTPException(409, "Limite de artigos lidos atingido.")
+        if desmarcar:
+            db.execute(
+                delete(ArtigoLido).where(
+                    ArtigoLido.conta_id == conta.id, ArtigoLido.artigo_id.in_(desmarcar)
+                )
+            )
+        db.add_all([ArtigoLido(conta_id=conta.id, artigo_id=id) for id in marcar])
+    return ProgressoConta(lidos=sorted(resultado))
+
+
+router.include_router(router_progresso)
 
 
 @router.delete("/me", status_code=204)

@@ -24,6 +24,10 @@ import {
 	TITULO_DE_ERRO,
 	TITULO_NAO_ENCONTRADA,
 } from "../lib/meta";
+import {
+	acompanharProgressoDaConta,
+	relerProgressoDaConta,
+} from "../lib/progresso";
 
 export interface RouterAppContext {
 	queryClient: QueryClient;
@@ -90,6 +94,22 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 });
 
 function Documento({ children }: { children: ReactNode }) {
+	const router = useRouter();
+	useEffect(() => {
+		const parar = acompanharProgressoDaConta();
+		if (!parar) return;
+		const pararNavegacao = router.subscribe(
+			"onResolved",
+			({ fromLocation, pathChanged }) => {
+				if (fromLocation && pathChanged) relerProgressoDaConta();
+			},
+		);
+		return () => {
+			parar();
+			pararNavegacao();
+		};
+	}, [router]);
+
 	return (
 		<html lang="pt-BR">
 			<head>

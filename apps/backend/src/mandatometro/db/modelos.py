@@ -42,6 +42,8 @@ logger = logging.getLogger(__name__)
 CASAS = ("camara", "senado")
 
 PapelConta = Literal["comum", "administradora"]
+PADRAO_ID_ARTIGO = r"^[a-z0-9-]+/[a-z0-9-]+$"
+TAMANHO_ID_ARTIGO = 128
 
 
 class Conta(Base):
@@ -70,6 +72,21 @@ class CredencialConta(Base):
     conta_id: Mapped[UUID] = mapped_column(ForeignKey("conta.id", ondelete="CASCADE"), index=True)
     finalidade: Mapped[str]
     expira: Mapped[datetime]
+
+
+class ArtigoLido(Base):
+    """Marca privada de leitura. A conta e o artigo juntos identificam a marca."""
+
+    __tablename__ = "artigo_lido"
+    __table_args__ = (
+        CheckConstraint(f"""artigo_id COLLATE "C" ~ '{PADRAO_ID_ARTIGO}'""", name="artigo_id"),
+    )
+
+    conta_id: Mapped[UUID] = mapped_column(
+        ForeignKey("conta.id", ondelete="CASCADE"), primary_key=True
+    )
+    artigo_id: Mapped[str] = mapped_column(String(TAMANHO_ID_ARTIGO), primary_key=True)
+    marcado_em: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
 class AvisoConta(Base):

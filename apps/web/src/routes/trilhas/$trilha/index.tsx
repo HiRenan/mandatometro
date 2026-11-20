@@ -20,12 +20,15 @@ import { classeDaFita, fraseDoProgresso, plural } from "@/lib/formatar";
 import { metaDaPagina, metaSemPagina } from "@/lib/meta";
 import {
 	contarLidos,
+	contextoDoProgresso,
 	idDoArtigo,
 	lerLidos,
+	podeRestaurarLidos,
 	primeiroNaoLido,
 	recomecarTrilha,
 	restaurarLidos,
 	useArtigosLidos,
+	useContextoDoProgresso,
 } from "@/lib/progresso";
 import { contarRespondidas } from "@/lib/quiz";
 import {
@@ -73,11 +76,16 @@ function ComSeta({ children }: { children: string }) {
 function PaginaDaTrilha() {
 	const trilha = Route.useLoaderData();
 	const lidos = useArtigosLidos();
+	const contexto = useContextoDoProgresso();
 	const respostas = useRespostasDoQuiz(idDoQuiz(trilha.slug));
 	const doQuizFinal = useRespostasDoQuiz(idDoQuizFinal(trilha.slug));
 	// As marcas que o "Recomeçar a trilha" apagou, para o "Desfazer". Valem até a
-	// pessoa sair da página.
-	const [apagadas, setApagadas] = useState<string[] | null>(null);
+	// pessoa sair da página ou trocar de sessão.
+	const [marcasDoRecomeco, setApagadas] = useState<string[] | null>(null);
+	const apagadas =
+		marcasDoRecomeco && podeRestaurarLidos(marcasDoRecomeco, contexto)
+			? marcasDoRecomeco
+			: null;
 	const { aviso, avisar } = useAviso();
 	const total = trilha.artigos.length;
 	const quantosLidos = contarLidos(trilha.artigos, lidos);
@@ -113,12 +121,15 @@ function PaginaDaTrilha() {
 			: fraseDoProgresso(quantosLidos, total);
 
 	function recomecar() {
+		if (contexto !== contextoDoProgresso()) return;
 		setApagadas(recomecarTrilha(trilha.slug));
 		avisar("Você recomeçou a trilha.");
 	}
 
 	function desfazer() {
-		restaurarLidos(apagadas ?? []);
+		if (!apagadas || !podeRestaurarLidos(apagadas, contextoDoProgresso()))
+			return;
+		restaurarLidos(apagadas);
 		setApagadas(null);
 		avisar(fraseDoProgresso(contarLidos(trilha.artigos, lerLidos()), total));
 	}

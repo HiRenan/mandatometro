@@ -1042,6 +1042,238 @@
         }
       }
     },
+    "/contas/progresso": {
+      "get": {
+        "tags": [
+          "contas"
+        ],
+        "summary": "Consultar Progresso Conta",
+        "operationId": "consultar_progresso_conta",
+        "parameters": [
+          {
+            "name": "sessao_conta",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sessao Conta"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressoConta"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroConta"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroConta"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroConta"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroConta"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroConta"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos de espera quando a trava da conta está ocupada.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroConta"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "contas"
+        ],
+        "summary": "Alterar Progresso Conta",
+        "operationId": "alterar_progresso_conta",
+        "parameters": [
+          {
+            "name": "sessao_conta",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sessao Conta"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PedidoProgresso"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressoConta"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroConta"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroConta"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroConta"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroConta"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroConta"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos de espera quando a trava da conta está ocupada.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroConta"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroConta"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          }
+        }
+      }
+    },
     "/edicoes": {
       "get": {
         "tags": [
@@ -2261,6 +2493,33 @@
         ],
         "title": "PedidoInscricao"
       },
+      "PedidoProgresso": {
+        "properties": {
+          "marcar": {
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "pattern": "^[a-z0-9-]+/[a-z0-9-]+$"
+            },
+            "type": "array",
+            "maxItems": 256,
+            "title": "Marcar"
+          },
+          "desmarcar": {
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "pattern": "^[a-z0-9-]+/[a-z0-9-]+$"
+            },
+            "type": "array",
+            "maxItems": 256,
+            "title": "Desmarcar"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "PedidoProgresso"
+      },
       "PedidoTentativaPiloto": {
         "properties": {
           "participacao": {
@@ -2353,6 +2612,24 @@
           "presidente"
         ],
         "title": "PlacarPublico"
+      },
+      "ProgressoConta": {
+        "properties": {
+          "lidos": {
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "pattern": "^[a-z0-9-]+/[a-z0-9-]+$"
+            },
+            "type": "array",
+            "title": "Lidos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lidos"
+        ],
+        "title": "ProgressoConta"
       },
       "Redefinicao": {
         "properties": {

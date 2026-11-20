@@ -17,6 +17,10 @@ import {
 	termoConta,
 } from "@/client";
 import { pedirInscricao } from "@/lib/newsletter";
+import {
+	anotarEntradaNaConta,
+	encerrarProgressoNaConta,
+} from "@/lib/progresso";
 import { BOTAO_CONTINUAR } from "./botao-continuar";
 
 export const titulos = {
@@ -228,9 +232,11 @@ export function FormularioConta({ modo }: { modo: Modo }) {
 				return;
 			}
 			if (modo === "login") {
+				anotarEntradaNaConta();
 				window.location.replace("/perfil");
 				return;
 			}
+			if (modo === "excluir") encerrarProgressoNaConta();
 			setConcluido(true);
 			setMensagem(conclusoes[modo]);
 			if (token)

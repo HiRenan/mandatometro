@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { sairConta } from "@/client";
+import { encerrarProgressoNaConta } from "@/lib/progresso";
 import { usePerfil } from "@/lib/use-perfil";
 
 export const Route = createFileRoute("/perfil")({
@@ -27,6 +28,7 @@ function Perfil() {
 				signal: AbortSignal.timeout(15000),
 			});
 			if (response?.ok) {
+				encerrarProgressoNaConta();
 				window.location.replace("/login");
 				return;
 			}

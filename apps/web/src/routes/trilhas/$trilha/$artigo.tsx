@@ -17,11 +17,13 @@ import { type ArtigoNaTrilha, buscarArtigo } from "@/lib/conteudo";
 import { classeDaFita, plural } from "@/lib/formatar";
 import { metaDaPagina, metaSemPagina } from "@/lib/meta";
 import {
+	contextoDoProgresso,
 	desmarcarLido,
 	idDoArtigo,
 	lerLidos,
 	marcarLido,
 	useArtigosLidos,
+	useContextoDoProgresso,
 } from "@/lib/progresso";
 
 export const Route = createFileRoute("/trilhas/$trilha/$artigo")({
@@ -57,8 +59,11 @@ function Folha({
 	const id = idDoArtigo(artigo);
 	const lidos = useArtigosLidos();
 	const lido = lidos.has(id);
-	const [leuAgora, setLeuAgora] = useState(false);
-	const [desmarcou, setDesmarcou] = useState(false);
+	const contexto = useContextoDoProgresso();
+	const [leuEm, setLeuEm] = useState<typeof contexto | null>(null);
+	const [desmarcouEm, setDesmarcouEm] = useState<typeof contexto | null>(null);
+	const leuAgora = leuEm === contexto;
+	const desmarcou = desmarcouEm === contexto;
 	const { aviso, avisar } = useAviso();
 	const fimDoTexto = useRef<HTMLDivElement>(null);
 	// Depois do "Desmarcar", o fim do texto na tela não marca de novo nesta visita.
@@ -73,16 +78,21 @@ function Folha({
 		if (lerLidos().has(id)) {
 			return;
 		}
+		const contextoAoAbrir = contextoDoProgresso();
 		const observador = new IntersectionObserver(
 			([entrada]) => {
 				if (!entrada?.isIntersecting) {
 					return;
 				}
 				observador.disconnect();
-				if (!podeMarcar.current || lerLidos().has(id)) {
+				if (
+					contextoAoAbrir !== contextoDoProgresso() ||
+					!podeMarcar.current ||
+					lerLidos().has(id)
+				) {
 					return;
 				}
-				setLeuAgora(true);
+				setLeuEm(contextoAoAbrir);
 				marcarLido(id);
 				avisar("Você leu este artigo.");
 			},
@@ -93,14 +103,16 @@ function Folha({
 	}, [id, avisar]);
 
 	function desmarcar() {
+		if (contexto !== contextoDoProgresso()) return;
 		podeMarcar.current = false;
 		desmarcarLido(id);
-		setLeuAgora(false);
-		setDesmarcou(true);
+		setLeuEm(null);
+		setDesmarcouEm(contexto);
 		avisar("Você desmarcou o artigo.");
 	}
 
 	function desfazer() {
+		if (desmarcouEm !== contextoDoProgresso()) return;
 		marcarLido(id);
 		avisar("Você leu este artigo.");
 	}
