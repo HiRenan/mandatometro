@@ -1,13 +1,18 @@
 import asyncio
 import json
+from concurrent.futures import Future, ThreadPoolExecutor
 from copy import deepcopy
 from datetime import timedelta
+from threading import Event
+from time import monotonic, sleep
 from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select
+from pydantic import SecretStr
+from sqlalchemy import delete, event, select, text
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import Session, sessionmaker
 from test_edicao_atos import ato as ato
 from test_edicao_revisao import abrir as abrir
 from test_edicao_revisao import pronto
@@ -18,9 +23,10 @@ from mandatometro import db
 from mandatometro.api import contas
 from mandatometro.api.app import app
 from mandatometro.avisos.resend import Resend
+from mandatometro.cli import main
 from mandatometro.config import config
 from mandatometro.db.modelos import Ato, Conta, CredencialConta, Edicao, Fonte, ItemEdicao
-from mandatometro.ia import servico
+from mandatometro.ia import cli, servico
 from mandatometro.ia.selecao import ItemAtoBase
 
 RASCUNHO = "/painel/edicoes/rascunho"
@@ -28,6 +34,7 @@ INEXISTENTE = "/rota-inexistente"
 ORIGEM = config().app_base_url
 LIMITE = 2 * 1024 * 1024
 MARCADOR = "entrada.editorial@example.com"
+EDICAO_OCUPADA = "Há outra gravação em andamento. Tente de novo."
 
 
 def _revisao(edicao_id):
@@ -59,7 +66,7 @@ def cliente(abrir, monkeypatch):
     monkeypatch.setattr(db, "sessao", abrir)
     monkeypatch.setattr(contas, "sessao", abrir)
     monkeypatch.setattr(config(), "conta_chave", None)
-    return TestClient(app)
+    return TestClient(app, follow_redirects=False)
 
 
 @pytest.fixture
@@ -325,6 +332,148 @@ def test_publicar_exige_revisao_e_repetir_preserva_publicacao(
     assert _status(cliente.get(RASCUNHO, headers=admin), 200) is None
 
 
+def _chamar_com_edicao_travada(abrir, edicao_id, chamar):
+    with ThreadPoolExecutor(max_workers=1) as executor, abrir() as reserva, reserva.begin():
+        reserva.scalar(select(Edicao.id).where(Edicao.id == edicao_id).with_for_update())
+        chamada = executor.submit(chamar)
+        try:
+            return chamada.result(timeout=7)
+        except TimeoutError:
+            pytest.fail("A operação ainda aguardava a trava da edição após 7 segundos.")
+
+
+class TestGravacoesConcorrentes:
+    @pytest.fixture
+    def sessao(self, engine_de_teste):
+        # A edição, o ato e a sessão precisam estar visíveis a outras conexões do PostgreSQL.
+        with Session(engine_de_teste) as sessao:
+            yield sessao
+
+    @pytest.fixture
+    def abrir(self, engine_de_teste):
+        return sessionmaker(engine_de_teste)
+
+    @pytest.fixture
+    def edicao_concorrente(self, sessao, abrir, ato, credencial):
+        conta, cookie = credencial()
+        conta_id, ato_id, fonte_id = conta.id, ato.id, ato.fonte_id
+        sessao.commit()
+        edicao_id = None
+        try:
+            edicao_id = servico.gerar(abrir, INICIO, FIM)["edicao_id"]
+            arquivo = pronto(servico.exportar(abrir, edicao_id))
+            servico.revisar(abrir, edicao_id, arquivo)
+            yield edicao_id, {"Cookie": cookie, "Origin": ORIGEM}
+        finally:
+            with abrir.begin() as limpeza:
+                limpeza.execute(delete(Edicao).where(Edicao.id == edicao_id))
+                limpeza.execute(delete(Ato).where(Ato.id == ato_id))
+                limpeza.execute(delete(Fonte).where(Fonte.id == fonte_id))
+                limpeza.execute(delete(Conta).where(Conta.id == conta_id))
+
+    @pytest.mark.parametrize("operacao", ["revisao", "publicar"])
+    def test_trava_tem_prazo_e_permite_tentar_de_novo(
+        self, cliente, abrir, edicao_concorrente, engine_de_teste, monkeypatch, operacao
+    ):
+        edicao_id, admin = edicao_concorrente
+        if operacao == "revisao":
+            caminho = _revisao(edicao_id)
+            pedido = {"json": servico.exportar(abrir, edicao_id)}
+            situacao = "revisao_salva"
+        else:
+            caminho = _publicacao(edicao_id)
+            pedido = {}
+            situacao = "publicada"
+
+        def chamar():
+            return cliente.post(caminho, headers=admin, **pedido)
+
+        with engine_de_teste.connect() as conexao:
+            prazo = conexao.scalar(text("SHOW lock_timeout"))
+            conexao.rollback()
+            # Reutiliza a mesma conexão na operação seguinte e mantém a autenticação separada.
+            monkeypatch.setattr(db, "sessao", sessionmaker(conexao))
+            resposta = _chamar_com_edicao_travada(abrir, edicao_id, chamar)
+            _erro(resposta, 503, EDICAO_OCUPADA)
+            assert not conexao.in_transaction()
+            assert conexao.scalar(text("SHOW lock_timeout")) == prazo
+            conexao.rollback()
+
+            assert _status(chamar(), 200)["situacao"] == situacao
+            assert not conexao.in_transaction()
+            assert conexao.scalar(text("SHOW lock_timeout")) == prazo
+
+    def test_cli_tem_o_mesmo_erro_quando_a_edicao_esta_travada(
+        self, abrir, edicao_concorrente, monkeypatch, capsys
+    ):
+        edicao_id, _ = edicao_concorrente
+        monkeypatch.setattr(cli, "sessao_do_banco", abrir)
+        args = ["edicao", "publicar", str(edicao_id)]
+        assert _chamar_com_edicao_travada(abrir, edicao_id, lambda: main(args)) == 1
+        saida = capsys.readouterr()
+        assert json.loads(saida.out) == {"erro": EDICAO_OCUPADA}
+        assert saida.err == ""
+        assert main(args) == 0
+        assert json.loads(capsys.readouterr().out)["situacao"] == "publicada"
+
+    def test_revisao_concorrente_preserva_a_edicao_publicada(
+        self, cliente, abrir, edicao_concorrente, engine_de_teste
+    ):
+        edicao_id, admin = edicao_concorrente
+        arquivo = servico.exportar(abrir, edicao_id)
+        titulo_original = arquivo["titulo"]
+        arquivo["titulo"] = "Título da revisão concorrente"
+        arquivo["itens"][0]["titulo"] = "Item da revisão concorrente"
+        itens = (
+            select(ItemEdicao.__table__)
+            .where(ItemEdicao.edicao_id == edicao_id)
+            .order_by(ItemEdicao.ordem)
+        )
+        with abrir() as sessao:
+            itens_originais = sessao.execute(itens).all()
+
+        publicacao_gravada = Future()
+        concluir_publicacao = Event()
+
+        def pausar_antes_do_commit(sessao, _contexto):
+            publicacao_gravada.set_result(sessao.scalar(text("SELECT pg_backend_pid()")))
+            assert concluir_publicacao.wait(10)
+
+        # A publicação já alterou a linha quando a revisão começa, mas ainda não fez commit.
+        event.listen(abrir, "after_flush", pausar_antes_do_commit, once=True)
+        consulta_bloqueio = text("""
+            SELECT EXISTS (
+                SELECT 1 FROM pg_stat_activity
+                WHERE datname = current_database() AND :pid = ANY(pg_blocking_pids(pid))
+            )
+        """)
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            publicacao = executor.submit(cliente.post, _publicacao(edicao_id), headers=admin)
+            try:
+                pid = publicacao_gravada.result(timeout=5)
+                revisao = executor.submit(
+                    cliente.post, _revisao(edicao_id), headers=admin, json=arquivo
+                )
+                teto = monotonic() + 5
+                with engine_de_teste.connect().execution_options(
+                    isolation_level="AUTOCOMMIT"
+                ) as observador:
+                    while not observador.scalar(consulta_bloqueio, {"pid": pid}):
+                        assert monotonic() < teto and not revisao.done(), (
+                            "A revisão não esperou pela publicação."
+                        )
+                        sleep(0.02)
+            finally:
+                concluir_publicacao.set()
+            assert _status(publicacao.result(timeout=5), 200)["situacao"] == "publicada"
+            _erro(revisao.result(timeout=5), 409, "A edição publicada não pode ser revisada.")
+
+        with abrir() as sessao:
+            edicao = sessao.get(Edicao, edicao_id)
+            assert edicao.estado == "publicada" and edicao.titulo == titulo_original
+            assert sessao.execute(itens).all() == itens_originais
+
+
 def test_edicao_inexistente_tem_erro_editorial(cliente, admin, abrir, edicao_id):
     faltante = edicao_id + 1
     mensagem = "Não encontramos essa edição. Confira o número informado."
@@ -333,11 +482,37 @@ def test_edicao_inexistente_tem_erro_editorial(cliente, admin, abrir, edicao_id)
     _erro(cliente.post(_publicacao(faltante), headers=admin), 404, mensagem)
 
 
+@pytest.mark.parametrize("caminho", [_revisao, _publicacao], ids=["revisao", "publicar"])
+@pytest.mark.parametrize("valor", [MARCADOR, str(uuid4())], ids=["email", "uuid"])
+def test_barra_final_do_painel_nao_redireciona_nem_repete_o_id(cliente, admin, caminho, valor):
+    resposta = cliente.post(caminho(valor) + "/", headers=admin, json={})
+    _erro(resposta, 404, "Rota do painel não encontrada.")
+    assert "location" not in resposta.headers
+    assert valor not in resposta.text + str(resposta.headers.raw)
+
+
+def test_barra_final_fora_do_painel_mantem_o_redirecionamento(cliente, admin):
+    resposta = cliente.get("/health/", headers=admin)
+    assert resposta.status_code == 307
+    assert resposta.headers["location"] == f"{cliente.base_url}/health"
+
+
 @pytest.mark.parametrize(
-    "autenticacao", ["ausente", "inventada", "vencida", "comum", "revogada", "recuperacao"]
+    "autenticacao",
+    [
+        "ausente",
+        "inventada",
+        "vencida",
+        "comum",
+        "revogada",
+        "recuperacao",
+        "confirmacao",
+        "excluida",
+        "logout",
+    ],
 )
 def test_nao_administradora_recebe_o_mesmo_que_rota_inexistente(
-    cliente, credencial, sessao, edicao_id, abrir, autenticacao
+    cliente, credencial, sessao, edicao_id, abrir, monkeypatch, autenticacao
 ):
     cabecalhos = {"Origin": ORIGEM, "Content-Type": "application/json"}
     if autenticacao == "inventada":
@@ -346,12 +521,20 @@ def test_nao_administradora_recebe_o_mesmo_que_rota_inexistente(
         conta, cabecalhos["Cookie"] = credencial(
             "comum" if autenticacao == "comum" else "administradora",
             vencida=autenticacao == "vencida",
-            finalidade="recuperacao" if autenticacao == "recuperacao" else "sessao",
+            finalidade=autenticacao if autenticacao in {"recuperacao", "confirmacao"} else "sessao",
         )
-        if autenticacao == "revogada":
+        if autenticacao in {"revogada", "excluida", "logout"}:
             assert _status(cliente.get(RASCUNHO, headers=cabecalhos), 200)["edicao_id"] == edicao_id
+        if autenticacao == "revogada":
             conta.papel = "comum"
             sessao.flush()
+        elif autenticacao == "excluida":
+            sessao.delete(conta)
+            sessao.flush()
+        elif autenticacao == "logout":
+            monkeypatch.setattr(config(), "conta_chave", SecretStr("chave-ficticia"))
+            monkeypatch.setattr(contas, "consumir_cota", lambda *_: True)
+            assert cliente.post("/contas/logout", headers=cabecalhos).status_code == 204
 
     original = servico.exportar(abrir, edicao_id)
     casos = [
@@ -370,8 +553,11 @@ def test_nao_administradora_recebe_o_mesmo_que_rota_inexistente(
         ("POST", RASCUNHO, b"{"),
         ("DELETE", _publicacao(edicao_id), b""),
         ("GET", f"{RASCUNHO}/", b""),
+        ("POST", _revisao(edicao_id) + "/", b"{"),
+        ("POST", _publicacao(edicao_id) + "/", b""),
         ("POST", "/painel/rota-inexistente", b"{"),
         ("GET", "/painel", b""),
+        ("GET", "/painel/", b""),
     ]
     for metodo, caminho, corpo in casos:
         resposta = cliente.request(metodo, caminho, content=corpo, headers=cabecalhos)
@@ -394,7 +580,7 @@ def test_preflight_cors_independe_do_caminho():
         _mesma_resposta(cliente.options(_revisao(1), headers=cabecalhos), controle)
 
 
-@pytest.mark.parametrize("origem", [None, "https://outro.example.com"])
+@pytest.mark.parametrize("origem", [None, "https://outro.example.com", "null"])
 def test_mutacoes_exigem_origem_do_site_antes_do_corpo(cliente, admin, edicao_id, origem):
     cabecalhos = {"Cookie": admin["Cookie"], "Content-Type": "application/json"}
     if origem:
@@ -561,13 +747,19 @@ def test_openapi_declara_as_tres_operacoes_e_seus_modelos():
     assert schema["properties"] == modelo_arquivo["properties"]
     assert schema["required"] == modelo_arquivo["required"]
     respostas = leitura["responses"]["200"]["content"]["application/json"]["schema"]["anyOf"]
-    assert {"type": "null"} in respostas
+    assert respostas == [{"$ref": "#/components/schemas/ArquivoRevisao"}, {"type": "null"}]
     for operacao, modelo in [(revisao, "ResultadoRevisao"), (publicacao, "ResultadoPublicacao")]:
-        respostas = operacao["responses"]
-        assert respostas["200"]["content"]["application/json"]["schema"] == {
+        assert operacao["responses"]["200"]["content"]["application/json"]["schema"] == {
             "$ref": f"#/components/schemas/{modelo}"
         }
-        for codigo in ("403", "404", "422", "500"):
+    for operacao, erros in [
+        (leitura, {"404", "409", "422", "500"}),
+        (revisao, {"403", "404", "409", "413", "422", "500", "503"}),
+        (publicacao, {"403", "404", "422", "500", "503"}),
+    ]:
+        respostas = operacao["responses"]
+        assert set(respostas) == {"200", *erros}
+        for codigo in erros:
             assert respostas[codigo]["content"]["application/json"]["schema"] == {
                 "$ref": "#/components/schemas/ErroPainel"
             }

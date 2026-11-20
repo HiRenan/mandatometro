@@ -9,8 +9,10 @@ from dataclasses import asdict
 from datetime import UTC, date, datetime
 from typing import Annotated, Literal
 
+from psycopg.errors import LockNotAvailable
 from pydantic import BeforeValidator, Field, ValidationError
-from sqlalchemy import select
+from sqlalchemy import select, text
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from mandatometro.avisos.email import MensagemInvalida, _url, formatar_edicao
@@ -68,6 +70,10 @@ class ConflitoEdicao(ErroEdicao):
     """O conteúdo ou o estado da edição mudou."""
 
 
+class EdicaoOcupada(ErroEdicao):
+    """O prazo para obter a trava da edição se esgotou."""
+
+
 class ItemRevisao(Estrito):
     id: Id
     titulo: Annotated[str, Field(min_length=1, max_length=180)]
@@ -110,7 +116,14 @@ def _carregar(sessao: Session, edicao_id: int, *, bloquear: bool = False) -> Edi
         .options(selectinload(Edicao.itens).joinedload(ItemEdicao.fonte))
     )
     # Escritas conferem o estado e a versão depois de obter o bloqueio da edição.
-    edicao = sessao.scalar(consulta.with_for_update() if bloquear else consulta)
+    if bloquear:
+        sessao.execute(text("SET LOCAL lock_timeout = '3s'"))
+    try:
+        edicao = sessao.scalar(consulta.with_for_update() if bloquear else consulta)
+    except OperationalError as erro:
+        if bloquear and isinstance(erro.orig, LockNotAvailable):
+            raise EdicaoOcupada("Há outra gravação em andamento. Tente de novo.") from None
+        raise
     if edicao is None:
         raise EdicaoNaoEncontrada("Não encontramos essa edição. Confira o número informado.")
     return edicao

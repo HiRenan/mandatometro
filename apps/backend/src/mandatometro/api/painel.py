@@ -56,6 +56,11 @@ class AcessoPainel:
                 MutableHeaders(scope=mensagem)["Cache-Control"] = "no-store"
             await send(mensagem)
 
+        if caminho.endswith("/"):
+            resposta = _erro(404, "Rota do painel não encontrada.")
+            await resposta(scope, receive, sem_cache)
+            return
+
         await self.app(scope, receive, sem_cache)
 
 
@@ -117,6 +122,8 @@ class RotaPainel(APIRoute):
                 return _erro(404, str(erro))
             except servico.ConflitoEdicao as erro:
                 return _erro(409, str(erro))
+            except servico.EdicaoOcupada as erro:
+                return _erro(503, str(erro))
             except servico.ErroEdicao as erro:
                 return _erro(422, str(erro))
             except Exception:
@@ -165,6 +172,7 @@ def ler_rascunho() -> JSONResponse:
         403: {"model": ErroPainel, "description": "Origem do pedido inválida."},
         409: {"model": ErroPainel, "description": "Arquivo antigo ou edição já publicada."},
         413: {"model": ErroPainel, "description": "Corpo maior que 2 MiB."},
+        503: {"model": ErroPainel, "description": "Outra gravação da edição está em andamento."},
     },
 )
 def salvar_revisao(
@@ -179,7 +187,10 @@ def salvar_revisao(
     "/edicoes/{id}/publicar",
     summary="Publicar a edição revisada",
     description="Publica a edição sem disparar o envio da newsletter.",
-    responses={403: {"model": ErroPainel, "description": "Origem do pedido inválida."}},
+    responses={
+        403: {"model": ErroPainel, "description": "Origem do pedido inválida."},
+        503: {"model": ErroPainel, "description": "Outra gravação da edição está em andamento."},
+    },
 )
 def publicar_edicao(id: IdEdicao) -> ResultadoPublicacao:
     return ResultadoPublicacao.model_validate(servico.publicar(db.sessao, id))
