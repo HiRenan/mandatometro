@@ -2,7 +2,7 @@
 
 ## Newsletter: rascunho e revisão
 
-O rascunho reúne as votações do Congresso e os atos do Diário Oficial da União. A apresentação em duas seções e a revisão no painel estão em construção (#113 e #114). [ADR 0004](adr/0004-newsletter-do-dou.md)
+O rascunho reúne as votações do Congresso e os atos do Diário Oficial da União. A apresentação em duas seções é a #113. [ADR 0004](adr/0004-newsletter-do-dou.md)
 
 - O comando `edicao` lê do banco as votações e os atos já coletados. O subcomando `rascunho` chama o redator quando configurado, fora da transação. A revisão usa só o banco e o arquivo da pessoa que revisa. O subcomando `enviar` chama o Resend. O código escolhe as matérias e agrupa os vínculos explícitos dentro de cada Casa, unindo os grupos que se conectam. Preserva data, resultado, placar por votação e fontes. A aprovação de ato procedimental não vira aprovação do projeto. Grupos com placar vêm antes; depois valem data mais recente, Casa e menor id externo da proposição principal. Teto padrão de oito itens de votação, com `--teto`. O resumo lista ids e contagens de votações sem proposição, sem página pública e cortadas pelo teto. O item aponta para a fonte da votação mais recente do grupo (desempate pelo id externo numérico). Sem página pública nessa fonte, a ficha pública de uma proposição ligada à votação pode substituí-la. Uma votação sem proposição ligada ou sem nenhuma dessas páginas fica fora. Não se deduz o vínculo pelo prefixo do id da votação.
 - `item_edicao.fatos` é JSONB versionado, opcional para itens antigos. A versão 1 aceita só ids de proposições/votações/fontes, data, resultado, totais permitidos, origem (`codigo`, `modelo` ou `revisao`) e pendências. A confirmação da cobertura é única para a edição e fica registrada pela presença ou ausência da pendência `cobertura` nos itens. Nunca guarda texto livre da fonte, pessoa, partido, voto individual ou ausência. Sim, Não, Abstenções e Obstruções são contados por votação; Presidência fica à parte, e ausência e valores não classificados ficam fora. Sem placar, informe a indisponibilidade, sem inferir modalidade ou zero. `outro` sinaliza resultado não classificado e não vira aprovação. A edição publicada conserva a fotografia dos fatos e as fontes daquela coleta. A explicação em `item_edicao.texto` é texto puro e `artigo_caminho` é opcional.
@@ -42,6 +42,14 @@ Se faltar provedor ou a sugestão falhar, entram primeiro os destaques, depois o
 | `resposta_invalida` | O formato, as posições ou qualquer motivo falharam na validação. A ordem inteira segue pela regra. |
 
 O arquivo de revisão mostra `fatos.selecao` como consulta. O campo guarda a ordem sugerida entre os atos, a origem da ordem, o teto e o motivo validado ou o código da ordem por regra. A pessoa pode mudar a posição do item ou excluí-lo. A seleção fica pendente de revisão e a explicação nasce pendente de redação. A sugestão é interna à revisão.
+
+### Revisão pelo painel
+
+A API do painel oferece a revisão a quem entrou com uma conta administradora. A interface em `/painel` é a #209. A sessão é conferida a cada pedido, e a API exige a origem do site para salvar ou publicar.
+
+1. Leia o rascunho mais recente em `GET /painel/edicoes/rascunho`. A resposta é o mesmo arquivo de `edicao exportar` ou `null` quando não há rascunho.
+2. Confira as fontes e os avisos, edite os textos, confirme os itens ou marque a exclusão com motivo. Envie o arquivo inteiro em `POST /painel/edicoes/{id}/revisao`, com o id e a versão que leu. Valem as regras de `edicao revisar`, inclusive para campos de consulta e a confirmação de privacidade de atos retidos. Após salvar, carregue o rascunho de novo para obter a versão atual.
+3. Com a revisão salva e as pendências resolvidas, use `POST /painel/edicoes/{id}/publicar` sem corpo. Valem as regras de `edicao publicar`. O workflow de domingo envia a edição publicada.
 
 ### Como preparar a edição
 
@@ -128,7 +136,7 @@ Escolha `artigo_caminho` entre os seis artigos do catálogo e marque `artigo_con
 
 A prévia e o e-mail compartilham `formatar_edicao`, que escapa o texto, acrescenta fatos, fontes e link da trilha. Reutilize `formatar_edicao`/`montar_email` e carregue as fontes pelos ids de `fatos.fontes`, além da fonte principal. Renderizar apenas `texto` perderia os blocos factuais. Item antigo sem os novos campos continua válido.
 
-Repetir o rascunho no mesmo período retorna a edição existente sem sobrescrever ajustes. `--refazer` recompõe **só um rascunho**, descarta a revisão anterior e invalida os arquivos exportados; use-o também se a coleta mudou os dados usados. Depois de salvar uma revisão, exporte outro arquivo para fazer novos ajustes. Edição publicada permanece intocada, inclusive ao repetir geração ou publicação. Mais de uma edição no período é erro a resolver. O fluxo prevê uma pessoa operando por vez, sem travas para execuções simultâneas.
+Repetir o rascunho no mesmo período retorna a edição existente sem sobrescrever ajustes. `--refazer` recompõe **só um rascunho**, descarta a revisão anterior e invalida os arquivos exportados; use-o também se a coleta mudou os dados usados. Depois de salvar uma revisão, exporte outro arquivo para fazer novos ajustes. Edição publicada permanece intocada, inclusive ao repetir geração ou publicação. Mais de uma edição no período é erro a resolver. O banco serializa as gravações sobre a mesma edição antes de conferir o estado e a versão.
 
 Sem votações e sem atos no banco para o período, retorna `sem_votacoes_no_banco`. Se houver dados e todos ficarem fora da seleção, retorna `sem_itens_elegiveis`. Ao refazer um rascunho, uma seleção vazia preserva a revisão existente. A saída é **0** para operação concluída, inclusive redação pendente, repetição sem efeito e período sem itens. Falha operacional ou revisão/publicação recusada dá **1**. Argumentos ou configuração do redator inválidos dão **2**. Exceto a prévia e os erros de sintaxe do comando, a saída é JSON com ids, contagens e mensagens sem conteúdo de fonte ou exceção bruta. Erros de sintaxe, como `publicar --arquivo`, imprimem o texto de uso e o erro em stderr, com saída **2**, sem JSON.
 
