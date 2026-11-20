@@ -33,6 +33,8 @@ O desenho inteiro está no [DESIGN.md](../DESIGN.md). O que mais pega quem mexe 
 
 As marcas de visitante entram na união com a conta uma vez. O site guarda o espelho da conta em outra chave e manda só as ações da sessão, em ordem, enquanto a tela responde de imediato. A próxima visita consulta a conta para reconciliar o espelho depois de uma falha. O botão **Começar como outra pessoa** do piloto limpa as marcas do navegador. A conta aberta conserva as marcas guardadas e volta a mostrá-las na próxima visita.
 
+O cliente da API é importado durante a sincronização no navegador. O teste da versão do quiz importa `lib/piloto.ts` fora do runtime do site.
+
 ## Testes do site
 
 - **Raízes do React nos testes do site:** sem os globais do Vitest, o Testing Library não limpa a tela sozinho: chame o `cleanup()` no `afterEach`. Uma raiz do `hydrateRoot` também fica montada até o `unmount()`, e uma esquecida continua ouvindo o navegador nos testes seguintes.

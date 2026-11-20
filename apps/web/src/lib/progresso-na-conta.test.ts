@@ -27,7 +27,12 @@ const resposta = (...lidos: string[]) => ({
 });
 
 function adiarResposta() {
-	return Promise.withResolvers<ReturnType<typeof resposta>>();
+	type Resposta = ReturnType<typeof resposta>;
+	let resolver!: (valor: Resposta) => void;
+	const promise = new Promise<Resposta>((resolve) => {
+		resolver = resolve;
+	});
+	return { promise, resolve: resolver };
 }
 
 async function visitar() {
@@ -35,6 +40,7 @@ async function visitar() {
 	vi.resetModules();
 	progresso = await import("./progresso");
 	parar = progresso.acompanharProgressoDaConta();
+	await vi.dynamicImportSettled();
 }
 
 beforeEach(async () => {
@@ -177,12 +183,14 @@ describe("progresso com conta opcional", () => {
 		alterar.mockReturnValueOnce(reinicio.promise);
 		const apagadas = progresso.recomecarTrilha("leis");
 		expect(progresso.lerLidos()).toEqual(new Set([OUTRA_TRILHA]));
-		expect(alterar).toHaveBeenNthCalledWith(
-			1,
-			expect.objectContaining({
-				body: { marcar: [], desmarcar: [PRIMEIRO, SEGUNDO] },
-			}),
-		);
+		await vi.waitFor(() => {
+			expect(alterar).toHaveBeenNthCalledWith(
+				1,
+				expect.objectContaining({
+					body: { marcar: [], desmarcar: [PRIMEIRO, SEGUNDO] },
+				}),
+			);
+		});
 		progresso.restaurarLidos(apagadas);
 		expect(progresso.lerLidos()).toEqual(
 			new Set([OUTRA_TRILHA, PRIMEIRO, SEGUNDO]),

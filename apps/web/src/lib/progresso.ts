@@ -1,9 +1,5 @@
 import { useSyncExternalStore } from "react";
-import {
-	alterarProgressoConta,
-	consultarProgressoConta,
-	type PedidoProgresso,
-} from "@/client";
+import type { PedidoProgresso } from "@/client";
 import { ENV } from "@/env";
 
 const CHAVE = "mandatometro:artigos-lidos";
@@ -136,6 +132,10 @@ function emSessao(estado: Sincronia): boolean {
 }
 
 async function pedirProgresso(estado: Sincronia, body?: PedidoProgresso) {
+	const { alterarProgressoConta, consultarProgressoConta } = await import(
+		"@/client"
+	);
+	if (!emSessao(estado)) return;
 	const opcoes = {
 		credentials: "include",
 		cache: "no-store",
