@@ -37,7 +37,14 @@ export function PaginaDaEdicao({ pagina }: { pagina: EdicaoDaPagina }) {
 
 function FolhaDaEdicao({ edicao }: { edicao: EdicaoPublica }) {
 	const semana = posicaoDaSemana(edicao.fim);
-	const itens = [...edicao.itens].sort((um, outro) => um.ordem - outro.ordem);
+	const emOrdem = [...edicao.itens].sort((um, outro) => um.ordem - outro.ordem);
+	const votacoes = emOrdem.filter((item) => item.tipo === "votacao");
+	const atos = emOrdem.filter((item) => item.tipo === "ato");
+	const itens = [...votacoes, ...atos];
+	const assunto =
+		atos.length > 0
+			? "Os destaques da semana"
+			: "O que o Congresso votou na semana";
 	// O período, na faixa, já diz o ano: a publicação só leva o dela quando é outro.
 	const publicada = dataEmBrasilia(edicao.publicada_em);
 	const publicacao =
@@ -90,13 +97,27 @@ function FolhaDaEdicao({ edicao }: { edicao: EdicaoPublica }) {
 							<span>{plural(itens.length, "item", "itens")}</span>
 						</FaixaDeInformacoes>
 						<p className="lide">
-							O que o Congresso votou na semana, em linguagem simples. Cada item
-							traz a fonte oficial e a data em que ela foi coletada.
+							{`${assunto}, em linguagem simples. Cada item traz a fonte oficial e a data em que ela foi coletada.`}
 						</p>
 						<NestaEdicao itens={itens} onde="na-folha" />
-						{itens.map((item) => (
-							<ItemDaEdicao key={item.ordem} item={item} />
-						))}
+						{atos.length > 0 ? (
+							<>
+								<SecaoDaEdicao
+									id="congresso"
+									titulo="O que o Congresso votou"
+									itens={votacoes}
+								/>
+								<SecaoDaEdicao
+									id="diario-oficial"
+									titulo="O que saiu no Diário Oficial"
+									itens={atos}
+								/>
+							</>
+						) : (
+							votacoes.map((item) => (
+								<ItemDaEdicao key={item.ordem} item={item} />
+							))
+						)}
 						<nav aria-label="Mais edições" className="fim-da-edicao">
 							<ul className="acoes-da-pagina">
 								<li>
@@ -119,6 +140,30 @@ function FolhaDaEdicao({ edicao }: { edicao: EdicaoPublica }) {
 				</div>
 			</div>
 		</div>
+	);
+}
+
+function SecaoDaEdicao({
+	id,
+	titulo,
+	itens,
+}: {
+	id: string;
+	titulo: string;
+	itens: ItemPublico[];
+}) {
+	if (itens.length === 0) {
+		return null;
+	}
+	return (
+		<section aria-labelledby={id} className="secao-da-edicao">
+			<h2 id={id} className="rotulo text-tinta-suave">
+				{titulo}
+			</h2>
+			{itens.map((item) => (
+				<ItemDaEdicao key={item.ordem} item={item} comSecao />
+			))}
+		</section>
 	);
 }
 

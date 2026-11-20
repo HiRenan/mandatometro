@@ -28,9 +28,17 @@ const RESULTADOS: Record<VotacaoPublica["resultado"], string> = {
  * O item não sobe com a rolagem (o revelar), como o texto do artigo: o índice
  * leva até ele, e o navegador calcularia o lugar com o item ainda deslocado.
  */
-export function ItemDaEdicao({ item }: { item: ItemPublico }) {
+export function ItemDaEdicao({
+	item,
+	comSecao = false,
+}: {
+	item: ItemPublico;
+	comSecao?: boolean;
+}) {
 	const id = `item-${item.ordem}`;
 	const artigo = caminhoDaTrilha(item.artigo);
+	const Titulo = comSecao ? "h3" : "h2";
+	const Subtitulo = comSecao ? "h4" : "h3";
 	return (
 		<section
 			id={id}
@@ -40,13 +48,13 @@ export function ItemDaEdicao({ item }: { item: ItemPublico }) {
 			<span aria-hidden="true" className="numeral">
 				{item.ordem}
 			</span>
-			<h2
+			<Titulo
 				id={`${id}-titulo`}
 				className="subtitulo-condensado letra-com-teto teto-pela-caixa"
 				style={estiloDoTeto(item.titulo, "subtitulo-condensado")}
 			>
 				{item.titulo}
-			</h2>
+			</Titulo>
 			<div className="texto">
 				{paragrafos(item.texto).map((paragrafo, posicao) => (
 					// biome-ignore lint/suspicious/noArrayIndexKey: os parágrafos ficam fixos, na ordem do texto da edição publicada.
@@ -55,9 +63,13 @@ export function ItemDaEdicao({ item }: { item: ItemPublico }) {
 			</div>
 			{item.fatos?.votacoes.map((votacao, posicao) => (
 				// biome-ignore lint/suspicious/noArrayIndexKey: as votações ficam fixas, na ordem da edição publicada.
-				<QuadroDaVotacao key={posicao} votacao={votacao} />
+				<QuadroDaVotacao key={posicao} votacao={votacao} Titulo={Subtitulo} />
 			))}
-			<FontesDoItem ordem={item.ordem} fontes={item.fontes} />
+			<FontesDoItem
+				ordem={item.ordem}
+				fontes={item.fontes}
+				Titulo={Subtitulo}
+			/>
 			{artigo && item.artigo && (
 				<p className="na-trilha">
 					<Link
@@ -81,13 +93,19 @@ export function ItemDaEdicao({ item }: { item: ItemPublico }) {
  * lista de termos só: o leitor de tela lê "Sim, 312", e a tela põe o número em
  * cima do nome.
  */
-function QuadroDaVotacao({ votacao }: { votacao: VotacaoPublica }) {
+function QuadroDaVotacao({
+	votacao,
+	Titulo,
+}: {
+	votacao: VotacaoPublica;
+	Titulo: "h3" | "h4";
+}) {
 	const { placar } = votacao;
 	return (
 		<div className="votacao">
-			<h3 className="rotulo">
+			<Titulo className="rotulo">
 				Votação de {formatarData(votacao.data.slice(0, 10))}
-			</h3>
+			</Titulo>
 			<dl>
 				<div className="resultado">
 					<dt>Resultado registrado</dt>
@@ -144,15 +162,17 @@ function QuadroDaVotacao({ votacao }: { votacao: VotacaoPublica }) {
 function FontesDoItem({
 	ordem,
 	fontes,
+	Titulo,
 }: {
 	ordem: number;
 	fontes: FontePublica[];
+	Titulo: "h3" | "h4";
 }) {
 	return (
 		<div className="fontes-do-item">
-			<h3 className="rotulo">
+			<Titulo className="rotulo">
 				Fontes <span className="sr-only">do item {ordem}</span>
-			</h3>
+			</Titulo>
 			<ol role="list" className="lista-de-fontes">
 				{fontesPorEndereco(fontes).map(({ url, coletas }, indice) => {
 					const nome =
