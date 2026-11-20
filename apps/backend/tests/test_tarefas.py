@@ -3,6 +3,8 @@
 import json
 import logging
 import runpy
+import sys
+from datetime import UTC, date, datetime
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -15,7 +17,13 @@ SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "tarefas.py"
 
 @pytest.fixture
 def tarefa(monkeypatch, tmp_path):
-    for nome in ("DATABASE_URL", "GITHUB_EVENT_NAME", "COLETA_INICIO", "COLETA_FIM"):
+    for nome in (
+        "DATABASE_URL",
+        "GITHUB_EVENT_NAME",
+        "COLETA_INICIO",
+        "COLETA_FIM",
+        "AGENDA_SABADO_ATIVA",
+    ):
         monkeypatch.delenv(nome, raising=False)
     monkeypatch.setenv("GITHUB_OUTPUT", str(tmp_path / "saida"))
     return runpy.run_path(str(SCRIPT))["main"]
@@ -134,9 +142,197 @@ def test_migration_usa_head_e_configuracao_do_projeto(tarefa, monkeypatch):
     assert Path(configuracao.toml_file_name) == SCRIPT.parents[1] / "pyproject.toml"
 
 
-def test_envio_agendado_filtra_semana_no_fuso_de_brasilia(tarefa, monkeypatch):
-    from datetime import UTC, date, datetime
+@pytest.mark.parametrize(
+    "evento,momento,datas,esperado",
+    [
+        ("schedule", (21, 7), ("", ""), ("2026-11-14", "2026-11-20")),
+        # A fila pode adiar a execução até domingo.
+        ("schedule", (22, 7), ("", ""), ("2026-11-14", "2026-11-20")),
+        # Domingo em UTC ainda é sábado em Brasília.
+        ("workflow_dispatch", (22, 1), ("", ""), ("2026-11-14", "2026-11-20")),
+        ("workflow_dispatch", (22, 7), ("", ""), ("2026-11-15", "2026-11-21")),
+        (
+            "workflow_dispatch",
+            (22, 7),
+            ("2026-11-07", "2026-11-13"),
+            ("2026-11-07", "2026-11-13"),
+        ),
+    ],
+)
+def test_agenda_usa_o_mesmo_periodo_na_ordem_e_sem_refazer(
+    tarefa, monkeypatch, capsys, evento, momento, datas, esperado
+):
+    dia, hora = momento
 
+    class Relogio:
+        @staticmethod
+        def now(fuso):
+            assert fuso.key == "America/Sao_Paulo"
+            return datetime(2026, 11, dia, hora, tzinfo=UTC).astimezone(fuso)
+
+    monkeypatch.setitem(tarefa.__globals__, "datetime", Relogio)
+    monkeypatch.setenv("DATABASE_URL", "banco-ficticio")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", evento)
+    monkeypatch.setenv("AGENDA_SABADO_ATIVA", "true")
+    monkeypatch.setenv("COLETA_INICIO", datas[0])
+    monkeypatch.setenv("COLETA_FIM", datas[1])
+    comandos = []
+
+    def executar(argv):
+        comandos.append(argv)
+        print("{}")
+
+    monkeypatch.setattr("mandatometro.cli.main", executar)
+
+    assert tarefa(["agenda"]) == 0
+    periodo = ["--inicio", esperado[0], "--fim", esperado[1]]
+    assert comandos == [
+        ["coleta", "legislacao", *periodo],
+        ["coleta", "destaques", *periodo],
+        ["edicao", "rascunho", *periodo],
+    ]
+    saida = capsys.readouterr()
+    assert [json.loads(linha) for linha in saida.out.splitlines()] == [
+        {"etapa": etapa, "codigo": 0} for etapa in ("legislacao", "destaques", "rascunho")
+    ]
+    assert saida.err == ""
+
+
+@pytest.mark.parametrize("ativo", ["", "false", "TRUE", "true "])
+def test_agenda_automatica_exige_true_literal(tarefa, monkeypatch, capsys, ativo):
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "schedule")
+    monkeypatch.setenv("DATABASE_URL", "banco-ficticio")
+    monkeypatch.setenv("AGENDA_SABADO_ATIVA", ativo)
+    monkeypatch.setattr("mandatometro.cli.main", lambda _: pytest.fail("executou CLI"))
+
+    assert tarefa(["agenda"]) == 0
+    assert capsys.readouterr() == ("", "")
+
+
+@pytest.mark.parametrize(
+    "banco,inicio,fim",
+    [
+        ("", "", ""),
+        ("banco-ficticio", "valor-reservado", "2026-11-20"),
+        ("banco-ficticio", "2026-11-14", ""),
+        ("banco-ficticio", "", "2026-11-20"),
+        ("banco-ficticio", "2026-11-20", "2026-11-14"),
+    ],
+)
+def test_agenda_valida_banco_e_periodo_antes_dos_comandos(
+    tarefa, monkeypatch, capsys, banco, inicio, fim
+):
+    monkeypatch.setenv("DATABASE_URL", banco)
+    monkeypatch.setenv("COLETA_INICIO", inicio)
+    monkeypatch.setenv("COLETA_FIM", fim)
+    monkeypatch.setattr("mandatometro.cli.main", lambda _: pytest.fail("executou CLI"))
+
+    assert tarefa(["agenda"]) == 2
+    saida = capsys.readouterr()
+    assert "erro" in json.loads(saida.out)
+    assert "valor-reservado" not in saida.out
+    assert saida.err == ""
+
+
+@pytest.mark.parametrize(
+    "falha,tipo",
+    [
+        (None, None),
+        ("legislacao", "incompleta"),
+        ("destaques", "incompleta"),
+        ("destaques", "firecrawl"),
+        ("destaques", "excecao"),
+        ("destaques", "parser"),
+        ("rascunho", "excecao"),
+        ("rascunho", "configuracao"),
+    ],
+)
+def test_agenda_tenta_as_tres_etapas_emite_resumos_e_restaura_logging(
+    tarefa, monkeypatch, capsys, caplog, falha, tipo
+):
+    monkeypatch.setenv("DATABASE_URL", "banco-ficticio")
+    marcador = "conteudo-ficticio-reservado"
+
+    def executar(argv):
+        etapa = argv[1]
+        assert logging.root.manager.disable == logging.CRITICAL
+        logging.getLogger("sqlalchemy.engine").critical(marcador)
+        if etapa != falha:
+            print(json.dumps({"confirmados": 1}))
+            return 0
+        if tipo in {"excecao", "parser"}:
+            print(marcador)
+            print(marcador, file=sys.stderr)
+            if tipo == "parser":
+                raise SystemExit(2)
+            raise RuntimeError(marcador)
+        print(json.dumps({"erro": tipo}))
+        return 2 if tipo == "configuracao" else 1
+
+    monkeypatch.setattr("mandatometro.cli.main", executar)
+    original = logging.root.manager.disable
+    logging.disable(logging.WARNING)
+    try:
+        assert tarefa(["agenda"]) == int(falha is not None)
+        assert logging.root.manager.disable == logging.WARNING
+    finally:
+        logging.disable(original)
+    saida = capsys.readouterr()
+    assert saida.err == ""
+    assert caplog.records == []
+    assert marcador not in saida.out
+    resumos = [json.loads(linha) for linha in saida.out.splitlines()]
+    assert [r["etapa"] for r in resumos] == ["legislacao", "destaques", "rascunho"]
+    for resumo in resumos:
+        if resumo["etapa"] != falha:
+            assert (resumo["codigo"], resumo["confirmados"]) == (0, 1)
+        elif tipo in {"excecao", "parser"}:
+            assert (resumo["codigo"], resumo["falhas_gerais"]) == (1, 1)
+        else:
+            assert (resumo["codigo"], resumo["erro"]) == (2 if tipo == "configuracao" else 1, tipo)
+
+
+def test_agenda_sem_chave_firecrawl_ainda_gera_rascunho(tarefa, monkeypatch, capsys):
+    from mandatometro.cli import main as cli
+    from mandatometro.coleta import destaques
+
+    monkeypatch.setenv("DATABASE_URL", "banco-ficticio")
+    monkeypatch.setattr(destaques, "config", lambda: SimpleNamespace(firecrawl_api_key=None))
+    monkeypatch.setattr(
+        destaques, "ClienteFirecrawl", lambda *_: pytest.fail("abriu cliente Firecrawl")
+    )
+
+    def executar(argv):
+        if argv[1] == "destaques":
+            return cli(argv)
+        if argv[1] == "legislacao":
+            print('{"atos": 1, "completa": true}')
+        else:
+            print('{"situacao": "rascunho_criado"}')
+        return 0
+
+    monkeypatch.setattr("mandatometro.cli.main", executar)
+
+    assert tarefa(["agenda"]) == 1
+    saida = capsys.readouterr()
+    assert saida.err == ""
+    legislacao, destaques, rascunho = map(json.loads, saida.out.splitlines())
+    assert (legislacao["etapa"], legislacao["atos"], legislacao["codigo"]) == ("legislacao", 1, 0)
+    assert destaques == {
+        "etapa": "destaques",
+        "codigo": 2,
+        "erro": "Falta FIRECRAWL_API_KEY.",
+        "completa": False,
+        "chamadas": 0,
+    }
+    assert (rascunho["etapa"], rascunho["situacao"], rascunho["codigo"]) == (
+        "rascunho",
+        "rascunho_criado",
+        0,
+    )
+
+
+def test_envio_agendado_filtra_semana_no_fuso_de_brasilia(tarefa, monkeypatch):
     class Relogio:
         @classmethod
         def now(cls, fuso):
