@@ -28,6 +28,12 @@ A conta é opcional e pede nome completo, e-mail e senha. Os dados da conta, inc
 
 O papel da conta (`comum` ou `administradora`) serve para controlar o acesso à revisão de edições. A API entrega esse campo exclusivamente à própria pessoa em `GET /contas/me`, com `Cache-Control: no-store`. O papel fica fora dos logs, dos e-mails, da API pública de edições e da medição do piloto. O CLI recebe o endereço da conta e usa mensagens fixas de resultado e de erro que omitem o endereço, inclusive quando os argumentos estão fora de ordem.
 
+## Painel de revisão
+
+A rota do painel entrega à administradora o mesmo arquivo de revisão do CLI, com os textos oficiais, e só a ela. O arquivo reúne o texto editorial, as confirmações, os fatos agregados e os trechos, descrições e endereços das fontes para conferência. Nos atos do Diário Oficial, a fonte aponta para o endereço oficial e o contexto indica o código de retenção quando aplicável. A demo usa dados fictícios.
+
+E-mail, id de conta, id de inscrito e dados da sessão ficam fora das respostas. As respostas à administradora levam `Cache-Control: no-store`. As linhas de log do painel são fixas e os erros omitem o conteúdo dos pedidos e do rascunho. [Revisão pelo painel](newsletter.md#revisão-pelo-painel)
+
 ## Trilhas e piloto
 
 Nenhum dado pessoal entra no texto publicado das trilhas. As trilhas não pedem dados pessoais. As respostas do quiz não identificam quem respondeu. O piloto segue o [contrato de medição](medicao-do-piloto.md#conteúdo-e-dados).

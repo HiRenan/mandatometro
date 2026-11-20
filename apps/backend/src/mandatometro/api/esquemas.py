@@ -5,6 +5,7 @@ from unicodedata import category
 from pydantic import UUID4, BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from mandatometro.avisos.inscricao import SituacaoInscricao
+from mandatometro.ia.esquemas import Pendencia
 from mandatometro.piloto import TOTAL_PERGUNTAS, Etapa, VersaoQuiz
 
 
@@ -103,6 +104,23 @@ class ItemPublico(BaseModel):
 
 class EdicaoPublica(ResumoEdicao):
     itens: list[ItemPublico]
+
+
+class ErroPainel(BaseModel):
+    detail: str
+
+
+class ResultadoRevisao(BaseModel):
+    situacao: Literal["revisao_salva"]
+    edicao_id: int
+    itens: int
+    pendencias: list[Pendencia]
+    avisos: list[str]
+
+
+class ResultadoPublicacao(BaseModel):
+    situacao: Literal["publicada", "ja_publicada"]
+    edicao_id: int
 
 
 class PedidoTentativaPiloto(BaseModel):

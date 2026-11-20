@@ -1171,6 +1171,336 @@
         }
       }
     },
+    "/painel/edicoes/rascunho": {
+      "get": {
+        "tags": [
+          "painel"
+        ],
+        "summary": "Ler o rascunho da edição mais recente",
+        "description": "Devolve o mesmo arquivo do CLI edicao exportar, ou null se não há rascunho.",
+        "operationId": "ler_rascunho",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ArquivoRevisao"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Ler Rascunho"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rota ou edição não encontrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Pedido ou edição inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha inesperada na operação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Edição publicada durante a leitura.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/painel/edicoes/{id}/revisao": {
+      "post": {
+        "tags": [
+          "painel"
+        ],
+        "summary": "Salvar a revisão da edição",
+        "operationId": "salvar_revisao",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2147483647,
+              "exclusiveMinimum": 0,
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "versao": {
+                    "const": 1,
+                    "type": "integer",
+                    "title": "Versao"
+                  },
+                  "edicao_id": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "title": "Edicao Id"
+                  },
+                  "versao_rascunho": {
+                    "type": "string",
+                    "title": "Versao Rascunho"
+                  },
+                  "inicio": {
+                    "type": "string",
+                    "title": "Inicio"
+                  },
+                  "fim": {
+                    "type": "string",
+                    "title": "Fim"
+                  },
+                  "titulo": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 180,
+                    "title": "Titulo"
+                  },
+                  "cobertura_confirmada": {
+                    "type": "boolean",
+                    "title": "Cobertura Confirmada"
+                  },
+                  "artigos_disponiveis": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "title": "Artigos Disponiveis"
+                  },
+                  "itens": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ItemRevisao"
+                    },
+                    "title": "Itens"
+                  }
+                },
+                "required": [
+                  "versao",
+                  "edicao_id",
+                  "versao_rascunho",
+                  "inicio",
+                  "fim",
+                  "titulo",
+                  "cobertura_confirmada",
+                  "artigos_disponiveis",
+                  "itens"
+                ],
+                "title": "Arquivo",
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoRevisao"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rota ou edição não encontrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Pedido ou edição inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha inesperada na operação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem do pedido inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Arquivo antigo ou edição já publicada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que 2 MiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra gravação da edição está em andamento.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/painel/edicoes/{id}/publicar": {
+      "post": {
+        "tags": [
+          "painel"
+        ],
+        "summary": "Publicar a edição revisada",
+        "description": "Publica a edição sem disparar o envio da newsletter.",
+        "operationId": "publicar_edicao",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2147483647,
+              "exclusiveMinimum": 0,
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoPublicacao"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rota ou edição não encontrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Pedido ou edição inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha inesperada na operação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem do pedido inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra gravação da edição está em andamento.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/piloto/tentativas": {
       "post": {
         "tags": [
@@ -1285,6 +1615,70 @@
   },
   "components": {
     "schemas": {
+      "ArquivoRevisao": {
+        "properties": {
+          "versao": {
+            "type": "integer",
+            "const": 1,
+            "title": "Versao"
+          },
+          "edicao_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Edicao Id"
+          },
+          "versao_rascunho": {
+            "type": "string",
+            "title": "Versao Rascunho"
+          },
+          "inicio": {
+            "type": "string",
+            "title": "Inicio"
+          },
+          "fim": {
+            "type": "string",
+            "title": "Fim"
+          },
+          "titulo": {
+            "type": "string",
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Titulo"
+          },
+          "cobertura_confirmada": {
+            "type": "boolean",
+            "title": "Cobertura Confirmada"
+          },
+          "artigos_disponiveis": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Artigos Disponiveis"
+          },
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/ItemRevisao"
+            },
+            "type": "array",
+            "title": "Itens"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "versao",
+          "edicao_id",
+          "versao_rascunho",
+          "inicio",
+          "fim",
+          "titulo",
+          "cobertura_confirmada",
+          "artigos_disponiveis",
+          "itens"
+        ],
+        "title": "ArquivoRevisao"
+      },
       "ArtigoDaEdicao": {
         "properties": {
           "titulo": {
@@ -1523,6 +1917,19 @@
         ],
         "title": "ErroNewsletter"
       },
+      "ErroPainel": {
+        "properties": {
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "title": "ErroPainel"
+      },
       "ErroPiloto": {
         "properties": {
           "erro": {
@@ -1693,6 +2100,97 @@
           "artigo"
         ],
         "title": "ItemPublico"
+      },
+      "ItemRevisao": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Id"
+          },
+          "titulo": {
+            "type": "string",
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Titulo"
+          },
+          "explicacao": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "minItems": 1,
+            "title": "Explicacao"
+          },
+          "artigo_caminho": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artigo Caminho"
+          },
+          "revisado": {
+            "type": "boolean",
+            "title": "Revisado"
+          },
+          "artigo_confirmado": {
+            "type": "boolean",
+            "title": "Artigo Confirmado"
+          },
+          "excluir": {
+            "type": "boolean",
+            "title": "Excluir"
+          },
+          "motivo_exclusao": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Motivo Exclusao",
+            "default": ""
+          },
+          "privacidade_confirmada": {
+            "type": "boolean",
+            "title": "Privacidade Confirmada",
+            "default": false
+          },
+          "fatos": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Fatos"
+          },
+          "fontes": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Fontes"
+          },
+          "contexto": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Contexto"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "titulo",
+          "explicacao",
+          "artigo_caminho",
+          "revisado",
+          "artigo_confirmado",
+          "excluir",
+          "fatos",
+          "fontes",
+          "contexto"
+        ],
+        "title": "ItemRevisao"
       },
       "ListaEdicoes": {
         "properties": {
@@ -1900,6 +2398,74 @@
           "situacao"
         ],
         "title": "ResultadoInscricao"
+      },
+      "ResultadoPublicacao": {
+        "properties": {
+          "situacao": {
+            "type": "string",
+            "enum": [
+              "publicada",
+              "ja_publicada"
+            ],
+            "title": "Situacao"
+          },
+          "edicao_id": {
+            "type": "integer",
+            "title": "Edicao Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "situacao",
+          "edicao_id"
+        ],
+        "title": "ResultadoPublicacao"
+      },
+      "ResultadoRevisao": {
+        "properties": {
+          "situacao": {
+            "type": "string",
+            "const": "revisao_salva",
+            "title": "Situacao"
+          },
+          "edicao_id": {
+            "type": "integer",
+            "title": "Edicao Id"
+          },
+          "itens": {
+            "type": "integer",
+            "title": "Itens"
+          },
+          "pendencias": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "redacao",
+                "revisao",
+                "cobertura",
+                "artigo"
+              ]
+            },
+            "type": "array",
+            "title": "Pendencias"
+          },
+          "avisos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Avisos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "situacao",
+          "edicao_id",
+          "itens",
+          "pendencias",
+          "avisos"
+        ],
+        "title": "ResultadoRevisao"
       },
       "ResultadoTentativaPiloto": {
         "properties": {
