@@ -205,19 +205,20 @@ def test_agenda_tem_chave_propria_e_disparo_manual(evento, branch, ativo, espera
 
 
 @pytest.mark.parametrize(
-    "evento,branch,ambiente",
+    "evento,branch,ambiente,referencia",
     [
-        ("schedule", "develop", "producao"),
-        ("workflow_dispatch", "main", "producao"),
-        ("workflow_dispatch", "develop", "desenvolvimento"),
+        ("schedule", "develop", "producao", "main"),
+        ("workflow_dispatch", "main", "producao", "commit-do-disparo"),
+        ("workflow_dispatch", "develop", "desenvolvimento", "commit-do-disparo"),
     ],
 )
-def test_agenda_usa_a_main_e_a_fila_dos_outros_workflows(evento, branch, ambiente):
+def test_agenda_separa_codigo_banco_e_concorrencia(evento, branch, ambiente, referencia):
     workflow = ler("agenda-sabado.yml")
     job = workflow["jobs"]["preparar"]
     checkout = job["steps"][0]
     assert checkout["uses"].startswith("actions/checkout@")
-    assert checkout["with"]["ref"] == "main"
+    ref = checkout["with"]["ref"]
+    assert (avaliar(ref, evento, branch) if ref.startswith("${{") else ref) == referencia
     assert checkout["with"]["persist-credentials"] == "false"
     assert avaliar(job["environment"], evento, branch) == ambiente
     assert avaliar(workflow["concurrency"]["group"], evento, branch) == f"banco-{ambiente}"

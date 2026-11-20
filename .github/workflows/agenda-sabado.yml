@@ -38,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: main
+          ref: ${{ github.event_name == 'schedule' && 'main' || github.sha }}
           persist-credentials: false
       - name: Registrar o código executado
         run: git rev-parse HEAD
