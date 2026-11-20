@@ -253,11 +253,70 @@ erDiagram
 
 ## Como rodar
 
+### Requisitos
+
+Instale o [Docker](https://www.docker.com/) para subir os serviços. Para desenvolver e rodar as checagens no computador, instale também o [Node.js](https://nodejs.org/) 24, o [pnpm](https://pnpm.io/) e o [uv](https://docs.astral.sh/uv/). O pnpm usa a versão do `packageManager` no `package.json`, e o uv usa o Python 3.13.
+
+Na raiz do repositório, copie o arquivo de exemplo para configurar o ambiente local.
+
+```bash
+cp .env.example .env   # preencha as chaves; o .env fica fora do Git
+```
+
+### Tudo no Docker
+
+`docker compose up --build` sobe o banco, a API e o site. O site fica em http://localhost:3001 e a API em http://localhost:8000, com a documentação em http://localhost:8000/docs. A API aplica as migrations ao subir.
+
+### Desenvolvimento
+
+Rode na raiz para desenvolver com recarga automática.
+
+```bash
+pnpm install
+docker compose up -d db         # só o banco, na porta 5433
+pnpm --filter backend migrate   # aplica as migrations
+pnpm dev                        # site na porta 3001 e API na 8000
+```
+
+**O build do site no PC:** o `pnpm check-types` do site roda um `vite build` antes do `tsc` e regrava o `.output`. O `API_URL` vai na linha dele também, como no `pnpm build` e no `pnpm dev`, senão o build leva o `http://localhost:8000` que o `.env.schema` dá fora da Vercel. Uma cópia do `.output` sobe com a pasta `apps/web` como diretório de trabalho: na partida, o servidor chama o CLI do varlock, que ele procura no `node_modules/.bin` a partir dessa pasta, e lê o `.env.schema` dali. Em 18/11/2026, com a cópia fora do repositório, da raiz ele subiu sem ler o `.env.schema`, com o aviso "No .env files found" do varlock (o CLI também está no `node_modules/.bin` da raiz), e de uma pasta fora do repositório não subiu ("'varlock' não é reconhecido como um comando interno ou externo", no Windows).
+
+**Ícone, prévia do link e mapa.** [Como editar e gerar as imagens](docs/codigo-do-site.md#css-e-imagens).
+
+**Cliente da API.** `pnpm generate:client`. Veja o [contrato da API](AGENTS.md#conventions).
+
+**Migration nova.** Em `apps/backend`, use o próximo número de revisão. Um exemplo depois da `0011` é `uv run alembic revision --autogenerate --rev-id 0012 -m "cria a tabela orientacao"`. `uv run alembic check` diz se algum modelo mudou sem migration. Veja as [convenções de migrations](AGENTS.md#conventions).
+
+### Checagens
+
+Rode na raiz do repositório.
+
+```bash
+pnpm lint          # Biome no TypeScript e Ruff no Python
+pnpm check-types   # tipos do site
+pnpm test          # pytest e Vitest
+pnpm build         # build do site, que confere o conteúdo das trilhas
+```
+
+`pnpm check` corrige a formatação do TypeScript. No Python, rode `uv run ruff format` e `uv run ruff check --fix` em `apps/backend`.
+
+Para rodar os testes online, execute `uv run pytest -m online` em `apps/backend`. A suíte padrão e o CI executam apenas os testes offline.
+
+**Testes de banco.** Crie um banco de teste uma vez, com o banco do Docker no ar, e passe o endereço no `TEST_DATABASE_URL`:
+
+```bash
+docker compose exec db createdb -U mandatometro mandatometro_teste
+TEST_DATABASE_URL=postgresql+psycopg://mandatometro:troque-esta-senha@localhost:5433/mandatometro_teste pnpm test
+```
+
+Veja as [regras para os testes de banco](AGENTS.md#tests).
+
+**Medição do piloto.** [Contrato, relatório agregado e roteiro de encerramento](docs/medicao-do-piloto.md).
+
 ### Cadastro de contas
 
 O workflow **Retomar avisos de conta** processa a fila de produção a cada cinco minutos quando a variável de repositório `AVISOS_CONTA_ATIVOS` vale `true` e os segredos do ambiente `producao` estão configurados.
 
-Aplique as migrations da API até a revisão atual antes de abrir `/cadastro`. Configure `CONTA_TERMO_VERSAO` e `CONTA_TERMO_URL` com a versão e o endereço do termo apresentado ao público. Em desenvolvimento, use uma versão identificada como teste. Para `CONTA_CHAVE`, gere uma chave privada com `uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` em `apps/backend`. Guarde-a nos segredos da API e do processo de entrega. O envio usa `RESEND_FROM`, `RESEND_API_KEY` e `APP_BASE_URL`.
+Aplique as migrations da API até a revisão atual antes de abrir `/cadastro`. Configure `CONTA_TERMO_VERSAO` e `CONTA_TERMO_URL` com a versão e o endereço do termo apresentado ao público. Em desenvolvimento, use uma versão identificada como teste. Para `CONTA_CHAVE`, gere uma chave privada com `uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` em `apps/backend`. Guarde-a nos segredos da API e do processo de entrega. O envio usa `RESEND_FROM` e `RESEND_API_KEY`. A API usa `APP_BASE_URL` para montar os links.
 
 A API tenta entregar os avisos depois do commit. Para processar retentativas independentemente de novas requisições, execute periodicamente (a cada cinco minutos) `uv run python -m mandatometro.contas` em `apps/backend` com o mesmo banco e segredos. O destinatário e o link ficam criptografados na fila até o aceite do provedor ou o fim da validade.
 
@@ -271,24 +330,7 @@ Marcar, desmarcar, recomeçar e desfazer atualizam a tela na hora e gravam na co
 
 Toda conta nasce com o papel `comum`. Quem opera o banco pode [conceder ou revogar o papel de administradora](docs/hospedagem.md#conceder-e-revogar-o-papel-de-administradora) pelo CLI depois da confirmação do e-mail. Com o papel, o `/perfil` mostra o link "Revisar a edição da semana", que leva à revisão em `/painel`. [Revisão pelo painel](docs/newsletter.md#revisão-pelo-painel)
 
-Precisa de [Node.js](https://nodejs.org/) 24, [pnpm](https://pnpm.io/) (ele mesmo troca para a versão do `packageManager`, no `package.json`), [uv](https://docs.astral.sh/uv/) (ele instala o Python 3.13) e [Docker](https://www.docker.com/).
-
-```bash
-cp .env.example .env   # preencha as chaves; o .env fica fora do Git
-pnpm install
-```
-
-**Tudo no Docker:** `docker compose up --build` sobe o banco, a API e o site. O site fica em http://localhost:3001 e a API em http://localhost:8000, com a documentação em http://localhost:8000/docs. A API aplica as migrations ao subir.
-
-**Desenvolvimento,** com recarga automática:
-
-```bash
-docker compose up -d db         # só o banco, na porta 5433
-pnpm --filter backend migrate   # aplica as migrations
-pnpm dev                        # site na porta 3001 e API na 8000
-```
-
-**O build do site no PC:** o `pnpm check-types` do site roda um `vite build` antes do `tsc` e regrava o `.output`. O `API_URL` vai na linha dele também, como no `pnpm build` e no `pnpm dev`, senão o build leva o `http://localhost:8000` que o `.env.schema` dá fora da Vercel. Uma cópia do `.output` sobe com a pasta `apps/web` como diretório de trabalho: na partida, o servidor chama o CLI do varlock, que ele procura no `node_modules/.bin` a partir dessa pasta, e lê o `.env.schema` dali. Em 18/11/2026, com a cópia fora do repositório, da raiz ele subiu sem ler o `.env.schema`, com o aviso "No .env files found" do varlock (o CLI também está no `node_modules/.bin` da raiz), e de uma pasta fora do repositório não subiu ("'varlock' não é reconhecido como um comando interno ou externo", no Windows).
+### Coletas
 
 **Coleta das duas Casas.** Com as migrations aplicadas e `DATABASE_URL` apontando explicitamente para o banco que deve receber os dados, rode os comandos abaixo em `apps/backend`. As datas incluem o primeiro e o último dia: informe `--inicio` e `--fim` juntos, no formato `AAAA-MM-DD`, ou nenhum dos dois. Sem datas, valem os sete dias completos anteriores, no fuso de Brasília.
 
@@ -301,8 +343,6 @@ O resumo final é uma linha JSON com contagens confirmadas, chamadas HTTP (inclu
 - **2:** argumentos inválidos, antes de acessar a rede ou o banco.
 
 As [regras da coleta e da saída dos jobs](docs/dicionario-de-dados.md#regras-que-valem-para-as-duas-apis) valem para os dois conectores.
-
-**Coleta e migrations na hospedagem.** [Ativação, agendamento e recuperação](docs/hospedagem.md#como-as-tarefas-funcionam).
 
 **Coleta da Câmara.**
 
@@ -348,43 +388,21 @@ uv run mandatometro coleta destaques
 
 O comando grava os destaques da seção 1 pela data de publicação, incluindo portarias. Passe as duas datas ou use os sete dias completos anteriores no fuso de Brasília. Quando a coleta roda, o resumo é uma linha JSON com gravações, descartes e falhas. Saída 1 sinaliza falha ou coleta incompleta. O comando confere a conexão com o banco antes de pedir a primeira página. Se o banco não responder, o resumo traz o erro e zero chamadas. Sem a chave ou com datas inválidas, o comando imprime uma linha de texto fixo e sai com código 2. [Campos e paginação](docs/dicionario-de-dados.md#destaques-da-imprensa-nacional).
 
-**Edição semanal.** A agenda de sábado coleta a legislação e os destaques do Diário Oficial e prepara o rascunho às 04h47 de Brasília quando `AGENDA_SABADO_ATIVA` vale `true`. [Ativação e recuperação](docs/hospedagem.md#ativar-e-recuperar-a-agenda-de-sábado).
+### Edição semanal
+
+A agenda de sábado coleta a legislação e os destaques do Diário Oficial e prepara o rascunho às 04h47 de Brasília quando `AGENDA_SABADO_ATIVA` vale `true`. [Ativação e recuperação](docs/hospedagem.md#ativar-e-recuperar-a-agenda-de-sábado).
 
 `uv run mandatometro edicao rascunho` prepara manualmente as votações e os atos do Diário Oficial coletados. Use `--teto-atos N` para ajustar o limite de atos, que começa em cinco. [Como preparar, revisar e publicar a edição](docs/newsletter.md#newsletter-rascunho-e-revisão).
 
-**Checagens,** as mesmas do CI:
+### Newsletter
 
-```bash
-pnpm lint          # Biome no TypeScript e Ruff no Python
-pnpm check-types   # tipos do site
-pnpm test          # pytest e Vitest
-pnpm build         # build do site, que confere o conteúdo das trilhas
-```
+[Inscrição e saída](docs/newsletter.md#newsletter-inscrição-e-saída) e [envio e leitura pública das edições](docs/newsletter.md#newsletter-envio-e-leitura-pública).
 
-`pnpm check` corrige a formatação do TypeScript. No Python, rode `uv run ruff format` e `uv run ruff check --fix` em `apps/backend`.
+### Hospedagem
 
-Para rodar os testes online, execute `uv run pytest -m online` em `apps/backend`. A suíte padrão e o CI executam apenas os testes offline.
+[Configuração do site, da API e das tarefas](docs/hospedagem.md).
 
-**Testes de banco.** Crie um banco de teste uma vez, com o banco do Docker no ar, e passe o endereço no `TEST_DATABASE_URL`:
-
-```bash
-docker compose exec db createdb -U mandatometro mandatometro_teste
-TEST_DATABASE_URL=postgresql+psycopg://mandatometro:troque-esta-senha@localhost:5433/mandatometro_teste pnpm test
-```
-
-Veja as [regras para os testes de banco](AGENTS.md#tests).
-
-**Medição do piloto.** [Contrato, relatório agregado e roteiro de encerramento](docs/medicao-do-piloto.md).
-
-**Newsletter.** [Inscrição e saída](docs/newsletter.md#newsletter-inscrição-e-saída) e [envio e leitura pública das edições](docs/newsletter.md#newsletter-envio-e-leitura-pública).
-
-**No ar.** [Configuração do site, da API e das tarefas](docs/hospedagem.md).
-
-**Ícone, prévia do link e mapa.** [Como editar e gerar as imagens](docs/codigo-do-site.md#css-e-imagens).
-
-**Cliente da API.** `pnpm generate:client`. Veja o [contrato da API](AGENTS.md#conventions).
-
-**Migration nova.** Em `apps/backend`, `uv run alembic revision --autogenerate --rev-id 0010 -m "cria a tabela orientacao"` é um exemplo. `uv run alembic check` diz se algum modelo mudou sem migration. Veja as [convenções de migrations](AGENTS.md#conventions).
+**Coleta e migrations na hospedagem.** [Ativação, agendamento e recuperação](docs/hospedagem.md#como-as-tarefas-funcionam).
 
 ## Time
 
