@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AbrirSaidaData, AbrirSaidaErrors, CadastrarContaData, CadastrarContaErrors, CadastrarContaResponses, ConfirmarContaData, ConfirmarContaErrors, ConfirmarContaResponses, ConsultarPerfilData, ConsultarPerfilErrors, ConsultarPerfilResponses, EntrarContaData, EntrarContaErrors, EntrarContaResponses, ExcluirContaData, ExcluirContaErrors, ExcluirContaResponses, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, LerRascunhoData, LerRascunhoErrors, LerRascunhoResponses, ListarEdicoesData, ListarEdicoesErrors, ListarEdicoesResponses, ObterEdicaoData, ObterEdicaoErrors, ObterEdicaoResponses, PublicarEdicaoData, PublicarEdicaoErrors, PublicarEdicaoResponses, RecuperarContaData, RecuperarContaErrors, RecuperarContaResponses, RedefinirSenhaData, RedefinirSenhaErrors, RedefinirSenhaResponses, ReenviarConfirmacaoData, ReenviarConfirmacaoErrors, ReenviarConfirmacaoResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, SairContaData, SairContaErrors, SairContaResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses, SalvarRevisaoData, SalvarRevisaoErrors, SalvarRevisaoResponses, TermoContaData, TermoContaErrors, TermoContaResponses } from './types.gen';
+import type { AbrirSaidaData, AbrirSaidaErrors, AlterarProgressoContaData, AlterarProgressoContaErrors, AlterarProgressoContaResponses, CadastrarContaData, CadastrarContaErrors, CadastrarContaResponses, ConfirmarContaData, ConfirmarContaErrors, ConfirmarContaResponses, ConsultarPerfilData, ConsultarPerfilErrors, ConsultarPerfilResponses, ConsultarProgressoContaData, ConsultarProgressoContaErrors, ConsultarProgressoContaResponses, EntrarContaData, EntrarContaErrors, EntrarContaResponses, ExcluirContaData, ExcluirContaErrors, ExcluirContaResponses, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, LerRascunhoData, LerRascunhoErrors, LerRascunhoResponses, ListarEdicoesData, ListarEdicoesErrors, ListarEdicoesResponses, ObterEdicaoData, ObterEdicaoErrors, ObterEdicaoResponses, PublicarEdicaoData, PublicarEdicaoErrors, PublicarEdicaoResponses, RecuperarContaData, RecuperarContaErrors, RecuperarContaResponses, RedefinirSenhaData, RedefinirSenhaErrors, RedefinirSenhaResponses, ReenviarConfirmacaoData, ReenviarConfirmacaoErrors, ReenviarConfirmacaoResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, SairContaData, SairContaErrors, SairContaResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses, SalvarRevisaoData, SalvarRevisaoErrors, SalvarRevisaoResponses, TermoContaData, TermoContaErrors, TermoContaResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -142,6 +142,23 @@ export const excluirConta = <ThrowOnError extends boolean = false>(options: Opti
  * Consultar Perfil
  */
 export const consultarPerfil = <ThrowOnError extends boolean = false>(options?: Options<ConsultarPerfilData, ThrowOnError>): RequestResult<ConsultarPerfilResponses, ConsultarPerfilErrors, ThrowOnError> => (options?.client ?? client).get<ConsultarPerfilResponses, ConsultarPerfilErrors, ThrowOnError>({ url: '/contas/me', ...options });
+
+/**
+ * Consultar Progresso Conta
+ */
+export const consultarProgressoConta = <ThrowOnError extends boolean = false>(options?: Options<ConsultarProgressoContaData, ThrowOnError>): RequestResult<ConsultarProgressoContaResponses, ConsultarProgressoContaErrors, ThrowOnError> => (options?.client ?? client).get<ConsultarProgressoContaResponses, ConsultarProgressoContaErrors, ThrowOnError>({ url: '/contas/progresso', ...options });
+
+/**
+ * Alterar Progresso Conta
+ */
+export const alterarProgressoConta = <ThrowOnError extends boolean = false>(options: Options<AlterarProgressoContaData, ThrowOnError>): RequestResult<AlterarProgressoContaResponses, AlterarProgressoContaErrors, ThrowOnError> => (options.client ?? client).post<AlterarProgressoContaResponses, AlterarProgressoContaErrors, ThrowOnError>({
+    url: '/contas/progresso',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Listar as edições publicadas

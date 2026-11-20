@@ -3,8 +3,8 @@
 import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { abrirSaida, cadastrarConta, confirmarConta, consultarPerfil, entrarConta, excluirConta, health, inscreverNewsletter, lerRascunho, listarEdicoes, obterEdicao, type Options, publicarEdicao, recuperarConta, redefinirSenha, reenviarConfirmacao, registrarTentativaPiloto, sairConta, sairDaNewsletter, salvarRevisao, termoConta } from '../sdk.gen';
-import type { AbrirSaidaData, AbrirSaidaError, CadastrarContaData, CadastrarContaError, CadastrarContaResponse, ConfirmarContaData, ConfirmarContaError, ConfirmarContaResponse, ConsultarPerfilData, ConsultarPerfilError, ConsultarPerfilResponse, EntrarContaData, EntrarContaError, EntrarContaResponse, ExcluirContaData, ExcluirContaError, ExcluirContaResponse, HealthData, HealthResponse, InscreverNewsletterData, InscreverNewsletterError, InscreverNewsletterResponse, LerRascunhoData, LerRascunhoError, LerRascunhoResponse, ListarEdicoesData, ListarEdicoesError, ListarEdicoesResponse, ObterEdicaoData, ObterEdicaoError, ObterEdicaoResponse, PublicarEdicaoData, PublicarEdicaoError, PublicarEdicaoResponse, RecuperarContaData, RecuperarContaError, RecuperarContaResponse, RedefinirSenhaData, RedefinirSenhaError, RedefinirSenhaResponse, ReenviarConfirmacaoData, ReenviarConfirmacaoError, ReenviarConfirmacaoResponse, RegistrarTentativaPilotoData, RegistrarTentativaPilotoError, RegistrarTentativaPilotoResponse, SairContaData, SairContaError, SairContaResponse, SairDaNewsletterData, SairDaNewsletterError, SalvarRevisaoData, SalvarRevisaoError, SalvarRevisaoResponse, TermoContaData, TermoContaError, TermoContaResponse } from '../types.gen';
+import { abrirSaida, alterarProgressoConta, cadastrarConta, confirmarConta, consultarPerfil, consultarProgressoConta, entrarConta, excluirConta, health, inscreverNewsletter, lerRascunho, listarEdicoes, obterEdicao, type Options, publicarEdicao, recuperarConta, redefinirSenha, reenviarConfirmacao, registrarTentativaPiloto, sairConta, sairDaNewsletter, salvarRevisao, termoConta } from '../sdk.gen';
+import type { AbrirSaidaData, AbrirSaidaError, AlterarProgressoContaData, AlterarProgressoContaError, AlterarProgressoContaResponse, CadastrarContaData, CadastrarContaError, CadastrarContaResponse, ConfirmarContaData, ConfirmarContaError, ConfirmarContaResponse, ConsultarPerfilData, ConsultarPerfilError, ConsultarPerfilResponse, ConsultarProgressoContaData, ConsultarProgressoContaError, ConsultarProgressoContaResponse, EntrarContaData, EntrarContaError, EntrarContaResponse, ExcluirContaData, ExcluirContaError, ExcluirContaResponse, HealthData, HealthResponse, InscreverNewsletterData, InscreverNewsletterError, InscreverNewsletterResponse, LerRascunhoData, LerRascunhoError, LerRascunhoResponse, ListarEdicoesData, ListarEdicoesError, ListarEdicoesResponse, ObterEdicaoData, ObterEdicaoError, ObterEdicaoResponse, PublicarEdicaoData, PublicarEdicaoError, PublicarEdicaoResponse, RecuperarContaData, RecuperarContaError, RecuperarContaResponse, RedefinirSenhaData, RedefinirSenhaError, RedefinirSenhaResponse, ReenviarConfirmacaoData, ReenviarConfirmacaoError, ReenviarConfirmacaoResponse, RegistrarTentativaPilotoData, RegistrarTentativaPilotoError, RegistrarTentativaPilotoResponse, SairContaData, SairContaError, SairContaResponse, SairDaNewsletterData, SairDaNewsletterError, SalvarRevisaoData, SalvarRevisaoError, SalvarRevisaoResponse, TermoContaData, TermoContaError, TermoContaResponse } from '../types.gen';
 
 /**
  * Receber a inscrição e enviar a última edição publicada
@@ -266,6 +266,41 @@ export const consultarPerfilOptions = (options?: Options<ConsultarPerfilData>) =
     },
     queryKey: consultarPerfilQueryKey(options)
 });
+
+export const consultarProgressoContaQueryKey = (options?: Options<ConsultarProgressoContaData>) => createQueryKey('consultarProgressoConta', options);
+
+/**
+ * Consultar Progresso Conta
+ */
+export const consultarProgressoContaOptions = (options?: Options<ConsultarProgressoContaData>) => queryOptions<ConsultarProgressoContaResponse, ConsultarProgressoContaError, ConsultarProgressoContaResponse, ReturnType<typeof consultarProgressoContaQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await consultarProgressoConta({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: consultarProgressoContaQueryKey(options)
+});
+
+/**
+ * Alterar Progresso Conta
+ */
+export const alterarProgressoContaMutation = (options?: Partial<Options<AlterarProgressoContaData>>): UseMutationOptions<AlterarProgressoContaResponse, AlterarProgressoContaError, Options<AlterarProgressoContaData>> => {
+    const mutationOptions: UseMutationOptions<AlterarProgressoContaResponse, AlterarProgressoContaError, Options<AlterarProgressoContaData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await alterarProgressoConta({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 export const listarEdicoesQueryKey = (options?: Options<ListarEdicoesData>) => createQueryKey('listarEdicoes', options);
 

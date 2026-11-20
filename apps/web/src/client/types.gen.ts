@@ -400,6 +400,20 @@ export type PedidoInscricao = {
 };
 
 /**
+ * PedidoProgresso
+ */
+export type PedidoProgresso = {
+    /**
+     * Marcar
+     */
+    marcar?: Array<string>;
+    /**
+     * Desmarcar
+     */
+    desmarcar?: Array<string>;
+};
+
+/**
  * PedidoTentativaPiloto
  */
 export type PedidoTentativaPiloto = {
@@ -461,6 +475,16 @@ export type PlacarPublico = {
      * Presidente
      */
     presidente: number;
+};
+
+/**
+ * ProgressoConta
+ */
+export type ProgressoConta = {
+    /**
+     * Lidos
+     */
+    lidos: Array<string>;
 };
 
 /**
@@ -1149,6 +1173,96 @@ export type ConsultarPerfilResponses = {
 };
 
 export type ConsultarPerfilResponse = ConsultarPerfilResponses[keyof ConsultarPerfilResponses];
+
+export type ConsultarProgressoContaData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/contas/progresso';
+};
+
+export type ConsultarProgressoContaErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErroConta;
+    /**
+     * Forbidden
+     */
+    403: ErroConta;
+    /**
+     * Conflict
+     */
+    409: ErroConta;
+    /**
+     * Unprocessable Content
+     */
+    422: ErroConta;
+    /**
+     * Too Many Requests
+     */
+    429: ErroConta;
+    /**
+     * Service Unavailable
+     */
+    503: ErroConta;
+};
+
+export type ConsultarProgressoContaError = ConsultarProgressoContaErrors[keyof ConsultarProgressoContaErrors];
+
+export type ConsultarProgressoContaResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProgressoConta;
+};
+
+export type ConsultarProgressoContaResponse = ConsultarProgressoContaResponses[keyof ConsultarProgressoContaResponses];
+
+export type AlterarProgressoContaData = {
+    body: PedidoProgresso;
+    path?: never;
+    query?: never;
+    url: '/contas/progresso';
+};
+
+export type AlterarProgressoContaErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErroConta;
+    /**
+     * Forbidden
+     */
+    403: ErroConta;
+    /**
+     * Conflict
+     */
+    409: ErroConta;
+    /**
+     * Unprocessable Content
+     */
+    422: ErroConta;
+    /**
+     * Too Many Requests
+     */
+    429: ErroConta;
+    /**
+     * Service Unavailable
+     */
+    503: ErroConta;
+};
+
+export type AlterarProgressoContaError = AlterarProgressoContaErrors[keyof AlterarProgressoContaErrors];
+
+export type AlterarProgressoContaResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProgressoConta;
+};
+
+export type AlterarProgressoContaResponse = AlterarProgressoContaResponses[keyof AlterarProgressoContaResponses];
 
 export type ListarEdicoesData = {
     body?: never;
