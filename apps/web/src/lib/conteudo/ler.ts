@@ -10,21 +10,21 @@ const PALAVRAS_POR_MINUTO = 200;
 const SITE_OFICIAL = /(^|\.)(gov|leg|jus|mp|def)\.br$/;
 
 // O nome da pasta e o do arquivo viram o endereço da página.
-const NOME_DE_ENDERECO = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const NOME_DE_ENDERECO = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 // O Bloco de Notas do Windows pode gravar o BOM no começo do arquivo.
 const BOM = "\uFEFF";
 
 const CABECALHO = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)([\s\S]*)$/;
 
-function exigido(formato: string) {
+export function exigido(formato: string) {
 	return {
 		error: (issue: { input?: unknown }) =>
 			issue.input === undefined ? "falta este campo" : formato,
 	};
 }
 
-const texto = z
+export const texto = z
 	.string(exigido("precisa ser um texto"))
 	.trim()
 	.min(1, "está vazio");
@@ -56,7 +56,7 @@ const trilhaSchema = z.strictObject({
 	ordem,
 });
 
-const fontes = z
+export const fontes = z
 	.array(fonteSchema, exigido("precisa ser uma lista de fontes"))
 	.min(1, "precisa de pelo menos uma fonte oficial");
 
@@ -77,7 +77,7 @@ const nomeDeArtigo = z
  * vezes na página. Compara pela chave e aponta a segunda vez, no campo `campo`
  * do item.
  */
-function semRepetir<T>(
+export function semRepetir<T>(
 	chave: (item: T) => string,
 	repetido: (valor: string) => string,
 	campo: string[] = [],
@@ -295,7 +295,9 @@ function descrever(issue: Issue): string {
 	return `campo "${issue.path.join(".")}": ${issue.message}`;
 }
 
-function separar(bruto: string): { dados: unknown; corpo: string } | string {
+export function separar(
+	bruto: string,
+): { dados: unknown; corpo: string } | string {
 	const partes = CABECALHO.exec(
 		bruto.startsWith(BOM) ? bruto.slice(BOM.length) : bruto,
 	);
@@ -313,7 +315,7 @@ function separar(bruto: string): { dados: unknown; corpo: string } | string {
 	}
 }
 
-function validar<T>(
+export function validar<T>(
 	schema: z.ZodType<T>,
 	dados: unknown,
 ): { ok: true; valor: T } | { ok: false; problemas: string[] } {
