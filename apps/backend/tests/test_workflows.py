@@ -43,8 +43,11 @@ def avaliar(expressao, evento, branch, **variaveis):
             "vars": SimpleNamespace(
                 COLETAS_ATIVAS=variaveis.get("COLETAS_ATIVAS", ""),
                 ENVIOS_ATIVOS=variaveis.get("ENVIOS_ATIVOS", ""),
+                AGENDA_SABADO_ATIVA=variaveis.get("AGENDA_SABADO_ATIVA", ""),
+                LLM_PROVIDER=variaveis.get("LLM_PROVIDER", ""),
             ),
             "inputs": SimpleNamespace(simular=variaveis.get("simular", False)),
+            "secrets": SimpleNamespace(LLM_API_KEY=variaveis.get("LLM_API_KEY", "")),
         },
     )
 
@@ -110,7 +113,9 @@ def test_push_de_migration_e_manual_usam_mesmo_banco_e_fila(branch, ambiente):
         assert passo["if"] == "${{ steps.banco.outputs.executar == 'true' }}"
 
 
-@pytest.mark.parametrize("nome", ["coleta.yml", "migrar.yml", "enviar-edicao.yml"])
+@pytest.mark.parametrize(
+    "nome", ["coleta.yml", "migrar.yml", "enviar-edicao.yml", "agenda-sabado.yml"]
+)
 def test_fila_nao_cancela_migration_pendente_ao_chegar_coleta(nome):
     workflow = ler(nome)
     assert workflow["permissions"] == {"contents": "read"}
@@ -168,3 +173,98 @@ def test_envio_manual_inicia_em_simulacao():
 def test_envio_simula_so_no_manual_marcado(evento, simular, esperado):
     expressao = ler("enviar-edicao.yml")["jobs"]["enviar"]["env"]["ENVIO_SIMULAR"]
     assert avaliar(expressao, evento, "develop", simular=simular) == esperado
+
+
+@pytest.mark.parametrize(
+    "evento,branch,ativo,esperado",
+    [
+        ("schedule", "develop", "", False),
+        ("schedule", "develop", "false", False),
+        ("schedule", "develop", "true", True),
+        ("workflow_dispatch", "main", "", True),
+        ("workflow_dispatch", "develop", "", True),
+        ("workflow_dispatch", "feat/teste", "true", False),
+        ("push", "develop", "true", False),
+    ],
+)
+def test_agenda_tem_chave_propria_e_disparo_manual(evento, branch, ativo, esperado):
+    agenda = ler("agenda-sabado.yml")["jobs"]["preparar"]
+    assert (
+        bool(
+            avaliar(
+                agenda["if"],
+                evento,
+                branch,
+                AGENDA_SABADO_ATIVA=ativo,
+                COLETAS_ATIVAS="true",
+                ENVIOS_ATIVOS="true",
+            )
+        )
+        == esperado
+    )
+
+
+@pytest.mark.parametrize(
+    "evento,branch,ambiente,referencia",
+    [
+        ("schedule", "develop", "producao", "main"),
+        ("workflow_dispatch", "main", "producao", "commit-do-disparo"),
+        ("workflow_dispatch", "develop", "desenvolvimento", "commit-do-disparo"),
+    ],
+)
+def test_agenda_separa_codigo_banco_e_concorrencia(evento, branch, ambiente, referencia):
+    workflow = ler("agenda-sabado.yml")
+    job = workflow["jobs"]["preparar"]
+    checkout = job["steps"][0]
+    assert checkout["uses"].startswith("actions/checkout@")
+    ref = checkout["with"]["ref"]
+    assert (avaliar(ref, evento, branch) if ref.startswith("${{") else ref) == referencia
+    assert checkout["with"]["persist-credentials"] == "false"
+    assert avaliar(job["environment"], evento, branch) == ambiente
+    assert avaliar(workflow["concurrency"]["group"], evento, branch) == f"banco-{ambiente}"
+    for nome in ("coleta.yml", "enviar-edicao.yml"):
+        assert workflow["concurrency"] == ler(nome)["concurrency"]
+    branch_do_banco = "main" if ambiente == "producao" else "develop"
+    migrar = ler("migrar.yml")["concurrency"]
+    assert avaliar(migrar["group"], "push", branch_do_banco) == f"banco-{ambiente}"
+
+
+def test_agenda_cron_de_sabado_e_periodo_opcional():
+    gatilhos = ler("agenda-sabado.yml")["on"]
+    assert set(gatilhos) == {"schedule", "workflow_dispatch"}
+    assert gatilhos["schedule"] == [{"cron": "47 7 * * 6"}]
+    datas = gatilhos["workflow_dispatch"]["inputs"]
+    assert set(datas) == {"inicio", "fim"}
+    assert all(
+        dados["required"] == "false" and dados["type"] == "string" for dados in datas.values()
+    )
+
+
+def test_agenda_passa_os_nomes_dos_segredos_e_o_periodo_ao_roteiro():
+    job = ler("agenda-sabado.yml")["jobs"]["preparar"]
+    assert job["defaults"]["run"]["working-directory"] == "apps/backend"
+    passo = job["steps"][-1]
+    assert passo["run"] == "uv run --no-sync python scripts/tarefas.py agenda"
+    assert "continue-on-error" not in passo
+    assert passo["env"]["AGENDA_SABADO_ATIVA"] == "${{ vars.AGENDA_SABADO_ATIVA }}"
+    assert passo["env"]["DATABASE_URL"] == "${{ secrets.DATABASE_URL }}"
+    assert passo["env"]["FIRECRAWL_API_KEY"] == "${{ secrets.FIRECRAWL_API_KEY }}"
+    assert passo["env"]["LLM_API_KEY"] == "${{ secrets.LLM_API_KEY }}"
+    assert passo["env"]["LLM_MODEL"] == "${{ vars.LLM_MODEL }}"
+    assert passo["env"]["COLETA_INICIO"] == "${{ inputs.inicio }}"
+    assert passo["env"]["COLETA_FIM"] == "${{ inputs.fim }}"
+
+
+@pytest.mark.parametrize("chave,esperado", [("", ""), ("ficticia", "anthropic")])
+def test_agenda_so_configura_provedor_com_chave(chave, esperado):
+    ambiente = ler("agenda-sabado.yml")["jobs"]["preparar"]["steps"][-1]["env"]
+    assert (
+        avaliar(
+            ambiente["LLM_PROVIDER"],
+            "schedule",
+            "develop",
+            LLM_API_KEY=chave,
+            LLM_PROVIDER="anthropic",
+        )
+        == esperado
+    )

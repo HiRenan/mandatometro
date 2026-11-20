@@ -1,0 +1,63 @@
+name: Preparar edição de sábado
+
+on:
+  schedule:
+    # Sábado, 04h47 de Brasília, após a janela da coleta das duas Casas.
+    - cron: "47 7 * * 6"
+  workflow_dispatch:
+    inputs:
+      inicio:
+        description: "Primeiro dia (AAAA-MM-DD). Deixe ambos vazios para os últimos 7 dias completos"
+        required: false
+        type: string
+      fim:
+        description: "Último dia, inclusive (AAAA-MM-DD)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ (github.event_name == 'schedule' || github.ref == 'refs/heads/main') && 'banco-producao' || 'banco-desenvolvimento' }}
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  preparar:
+    if: >-
+      ${{ (github.event_name == 'schedule' && vars.AGENDA_SABADO_ATIVA == 'true') ||
+          (github.event_name == 'workflow_dispatch' &&
+          (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: ${{ (github.event_name == 'schedule' || github.ref == 'refs/heads/main') && 'producao' || 'desenvolvimento' }}
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'schedule' && 'main' || github.sha }}
+          persist-credentials: false
+      - name: Registrar o código executado
+        run: git rev-parse HEAD
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.7"
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: apps/backend/uv.lock
+      - run: uv sync --locked --no-dev
+      - name: Coletar o Diário Oficial e preparar o rascunho
+        run: uv run --no-sync python scripts/tarefas.py agenda
+        env:
+          AGENDA_SABADO_ATIVA: ${{ vars.AGENDA_SABADO_ATIVA }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+          LLM_PROVIDER: ${{ secrets.LLM_API_KEY && vars.LLM_PROVIDER || '' }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          COLETA_INICIO: ${{ inputs.inicio }}
+          COLETA_FIM: ${{ inputs.fim }}
+          PYTHONUTF8: "1"

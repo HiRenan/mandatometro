@@ -65,6 +65,8 @@ Comece depois de conferir a inscrição de teste no ambiente anterior. A publica
 | --- | --- | --- |
 | Coleta diária | 03h17 de Brasília (`17 6 * * *` UTC), se `COLETAS_ATIVAS=true` | YAML da `develop`, checkout da `main`, banco `producao` |
 | Coleta manual | Botão Run workflow | `develop` → `desenvolvimento`; `main` → `producao` |
+| Agenda de sábado | 04h47 de Brasília (`47 7 * * 6` UTC), se `AGENDA_SABADO_ATIVA=true` | YAML da `develop`, checkout da `main`, banco `producao` |
+| Preparo manual da edição | Botão Run workflow, com período opcional | Commit do disparo (`github.sha`). `develop` usa `desenvolvimento` e `main` usa `producao` |
 | Envio dominical | 10h37 de Brasília (`37 13 * * 0` UTC), se `ENVIOS_ATIVOS=true` | YAML da `develop`, checkout da `main`, banco `producao` |
 | Envio/ensaio manual | Botão Run workflow, com ID opcional, limite e simulação | `develop` → `desenvolvimento`; `main` → `producao` |
 | Migration automática (`alembic upgrade head`) | Push em `develop` ou `main` que muda `apps/backend/migrations/**` | Commit do push, banco da mesma branch, URL direta |
@@ -72,13 +74,37 @@ Comece depois de conferir a inscrição de teste no ambiente anterior. A publica
 
 Sem o secret da URL direta, a migration no push mostra um aviso e pula antes de instalar dependências. Um disparo manual sem segredo falha, para não parecer que criou tabelas. A coleta diária fica pulada enquanto a variável não for `true`; depois de ligada, uma configuração ausente ou coleta parcial falha. Não há credenciais de produção nos testes de PR.
 
-As duas Casas rodam uma por vez, com até 30 minutos cada, e a segunda é tentada mesmo se a primeira falhar. Coleta, migration e envio compartilham a fila `banco-producao` ou `banco-desenvolvimento`. `cancel-in-progress: false` deixa terminar quem já começou, e `queue: max` preserva até 100 execuções pendentes. A ordem pelo horário do push pode variar. Falha ou cancelamento pede conferir o último sucesso e, se necessário, disparar a migration de reserva. O cron pode atrasar ou ser descartado; em repositório público, fica inativo após 60 dias sem atividade. [Concorrência](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency), [agendamento](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
+As duas Casas rodam uma por vez, com até 30 minutos cada, e a segunda é tentada mesmo se a primeira falhar. Coleta, agenda de sábado, migration e envio compartilham a fila `banco-producao` ou `banco-desenvolvimento`. `cancel-in-progress: false` deixa terminar quem já começou, e `queue: max` preserva até 100 execuções pendentes. A ordem pelo horário do push pode variar. Falha ou cancelamento pede conferir o último sucesso e, se necessário, disparar a migration de reserva. O cron pode atrasar ou ser descartado. Em repositório público, fica inativo após 60 dias sem atividade. [Concorrência](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency), [agendamento](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
 
 Para recuperar uma lacuna maior, preencha **inicio e fim juntos**, em `AAAA-MM-DD`, no disparo manual da coleta. Sem datas, valem os sete dias completos anteriores em Brasília. O deploy da Vercel não espera o Actions. Na hospedagem, siga as [convenções de migrations](../AGENTS.md#conventions). Não há migration na importação, no build ou na requisição da API.
 
-O rascunho da #22 tem lugar proposto no domingo às **06h37**, depois da coleta, e continua manual. O envio dominical está preparado para **10h37**, depois da revisão e publicação humanas; Renan confirma o horário antes de ativar. A rodada dura no máximo 30 minutos.
+## Ativar e recuperar a agenda de sábado
 
-A coleta de destaques do DOU usa `FIRECRAWL_API_KEY` como segredo no ambiente que executa o comando. [Coleta dos destaques](../README.md#como-rodar).
+**Preparar edição de sábado** coleta a legislação federal pelo Senado, coleta os destaques do Diário Oficial pelo Firecrawl e prepara o rascunho, nessa ordem e no mesmo banco. A rodada tem até 60 minutos. O horário de **04h47 de Brasília** reserva uma hora para a coleta das duas Casas, que começa às 03h17, mais 30 minutos de folga. Se a coleta diária ainda ocupar a fila, a agenda espera a sua vez.
+
+Os três comandos usam os sete dias completos anteriores ao sábado, inclusive quando a fila atrasa a agenda até domingo. Em **21/11/2026**, o recorte vai de **14 a 20/11**, inclusive. A edição revisada deve ser publicada antes do envio de **22/11 às 10h37**. Nesse domingo o envio procura publicações desde **16/11 à meia-noite**, no fuso de Brasília, usando a data de publicação da edição.
+
+Mantenha `AGENDA_SABADO_ATIVA` ausente ou com valor `false` durante os ensaios manuais. O YAML fica na `develop`, a branch padrão. O cron executa o código da `main` no ambiente `producao`. Cada disparo manual executa o commit da branch escolhida. [Agendamento](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
+
+1. **Teste na develop.** Depois que o workflow estiver na `develop`, confirme as migrations no banco de desenvolvimento. Em **GitHub → Settings → Environments → desenvolvimento**, confira `DATABASE_URL` com pool e cadastre `FIRECRAWL_API_KEY` em **Environment secrets**. Em **Actions → Preparar edição de sábado → Run workflow**, escolha **develop**. Confira o commit da `develop` e os resumos da rodada no ambiente `desenvolvimento`. [Disparo manual](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow).
+2. **Publique na main.** Depois do teste na `develop`, publique a versão com o workflow, `scripts/tarefas.py agenda` e os conectores na `main`.
+3. **Teste na main.** Confirme as migrations no banco de produção. Em **Settings → Environments → producao**, configure `DATABASE_URL` com pool e `FIRECRAWL_API_KEY` em **Environment secrets**. Em **Run workflow**, escolha **main** e confira o commit da `main` e os resumos no ambiente `producao`.
+4. **Ligue a agenda.** Depois de conferir o preparo em produção, em **Settings → Secrets and variables → Actions → Variables**, defina a variável de repositório **`AGENDA_SABADO_ATIVA`** com o valor **`true`** em minúsculas. Confira a próxima rodada agendada. Para pausar, mude o valor para `false`. `COLETAS_ATIVAS` e `ENVIOS_ATIVOS` controlam suas próprias agendas.
+
+Para usar o redator, cadastre `LLM_API_KEY` em **Environment secrets** e `LLM_PROVIDER` e `LLM_MODEL` em **Environment variables**, no ambiente que vai rodar o preparo. Sem `LLM_API_KEY`, a ordem dos atos segue pela regra e os textos pendentes vão para a revisão humana.
+
+No disparo manual, preencha **inicio** e **fim** juntos, em `AAAA-MM-DD`, ou deixe ambos vazios para os sete dias completos anteriores à execução em Brasília. Para recuperar a rodada de 21/11 em outro dia, informe `2026-11-14` e `2026-11-20`.
+
+Confira o commit no passo **Registrar o código executado** e os três resumos JSON em **Coletar o Diário Oficial e preparar o rascunho**. Cada linha traz `etapa` e `codigo`. Nas coletas, confira `completa`, o período, as gravações e os descartes. No rascunho, confira `situacao`, `edicao_id` e a seleção em `atos`. Com itens e sem provedor, `atos.origem_ordem: regra` e `atos.codigo_fallback: sem_provedor` são esperados.
+
+**Recuperação da rodada.** Se o cron faltar ou falhar, use **Run workflow** com as duas datas da rodada que quer recuperar. A agenda tenta o rascunho mesmo após uma falha de coleta e fica vermelha se qualquer etapa retornar erro. As gravações já confirmadas ficam no banco. Se aparecer apenas `falhas_gerais`, confirme o commit executado e a configuração do ambiente selecionado.
+
+- **Banco ou período.** Se aparecer um `erro` antes das etapas, confira `DATABASE_URL` no ambiente escolhido e preencha as duas datas na ordem correta.
+- **Legislação.** Se `completa` vier como `false`, leia `erro` e `descartes`. Confira a disponibilidade dos dados abertos do Senado ou as migrations e a conexão do banco, conforme a mensagem, e repita o período.
+- **Destaques.** Se o resumo informar chave ausente ou recusada, confira `FIRECRAWL_API_KEY`. Para falha do Firecrawl, confira o serviço e a cota da conta. Se o banco não responder antes da coleta, confira a conexão. Nesse caso, `chamadas` é zero. Para falha de gravação, confira também as migrations. Se o limite de páginas deixar a coleta incompleta, leve a lacuna à revisão ao conferir a cobertura. [Referência da coleta](dicionario-de-dados.md#destaques-da-imprensa-nacional).
+- **Rascunho.** Confira a conexão e as migrations em falhas do banco. Se a configuração do redator estiver incompleta, ajuste-a ou use a ordem por regra sem a chave. Se sair `sem_votacoes_no_banco` ou `sem_itens_elegiveis`, confira o período e os descartes. Essas situações terminam com código 0 e sem um novo ID.
+
+Conclua a recuperação das coletas antes da revisão sempre que possível. A agenda devolve o mesmo `edicao_id` para `rascunho_existente` ou `ja_publicada` e preserva as edições e revisões gravadas. Se uma recoleta trocar uma fonte usada no rascunho, a conferência dos fatos pede que a pessoa decida como refazer e revisar. Use o ID para exportar, revisar e publicar antes do envio de domingo. [Como preparar a edição](newsletter.md#como-preparar-a-edição).
 
 ## Conceder e revogar o papel de administradora
 
@@ -133,7 +159,7 @@ Fora da Vercel, como no Docker, defina o `APP_BASE_URL` com o endereço do site 
 | --- | --- | --- |
 | Vercel Hobby | Python: 500 MB; função até 300 s (a nossa pede 30 s). Site e API compartilham 4 h de CPU ativa, 360 GB-h e 1 milhão de invocações/mês | Pode suspender os deployments; não há upgrade autorizado |
 | Cada projeto Neon Free | 1 GB, 100 CU-h/mês, 5 GB de saída/mês; pausa após 5 min sem uso | Compute/transferência esgotados suspendem conexões; armazenamento cheio impede operações que aumentam o espaço |
-| GitHub Actions | Runner Ubuntu padrão gratuito neste repositório público; limite geral de 6 h por job | Nossos tetos de 30 min para coleta/envio e 10 min para migration interrompem tarefas travadas |
+| GitHub Actions | Runner Ubuntu padrão gratuito neste repositório público; limite geral de 6 h por job | Os tetos são de 30 min para coleta diária e envio, 60 min para a agenda de sábado e 10 min para migration |
 
 O Neon estima despertar em centenas de milissegundos, sem garantia da resposta completa ao navegador. Não mantenha um ping para impedir a pausa. A medição local de 09–15/11 deu 824 KiB nas tabelas da coleta e cerca de 100 MiB/ano pela extrapolação com recoletas; aquela semana não tinha votos individuais da Câmara. Confira o uso real antes de ampliar a carga. [Hobby](https://vercel.com/docs/plans/hobby), [excedentes da Vercel](https://vercel.com/docs/functions/usage-and-pricing), [Neon Free](https://neon.com/docs/introduction/plans), [pausa](https://neon.com/docs/introduction/scale-to-zero), [Actions: cobrança](https://docs.github.com/en/billing/concepts/product-billing/github-actions), [limites](https://docs.github.com/en/actions/reference/limits).
 
