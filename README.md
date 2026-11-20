@@ -8,7 +8,13 @@
 
 ## O problema
 
-Falta aos eleitores conhecimento sobre o sistema político brasileiro: como nasce uma lei, quem decide o quê e como o Congresso vota. O Mandatômetro é para eleitores, principalmente de 20 a 40 anos.
+As pesquisas mostram que muitas pessoas têm dificuldade para citar quem as representa no Congresso. Também indicam que as emendas parlamentares são pouco conhecidas. [Pesquisas e fontes](docs/problema.md#destaques)
+
+- **68%** dos entrevistados não citam o nome de nenhum deputado federal em exercício e **75%** não citam o nome de nenhum senador (Datafolha, 17–18/06/2026).
+- Entre os eleitores de 20 anos ou mais, **85%** lembram em quem votaram para presidente em 2022 e **67%** não lembram em quem votaram para deputado federal naquele ano (Datafolha, 17–18/06/2026).
+- **87%** de quem já ouviu falar em emendas parlamentares dizem saber pouco ou nada sobre elas (DataSenado, 18/11 a 14/12/2021).
+
+O DataSenado encontrou mais apoio à democracia entre pessoas com mais escolaridade. Essa relação ajuda a explicar a escolha da trilha **Acesso à educação**, com a proposta de ensinar como o Congresso funciona. O Mandatômetro é para eleitores, principalmente de 20 a 40 anos.
 
 ## O que ele faz
 
