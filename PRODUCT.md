@@ -11,14 +11,14 @@ web
 - **Eleitores,** principalmente de 20 a 40 anos, a quem falta conhecimento sobre o sistema político brasileiro: como nasce uma lei, quem decide o quê e como o Congresso vota (ADR 0002).
 - **Onde leem:** no celular e no computador, na mesma medida (Renan, 09/11/2026). O piloto tem os dois casos: quem chega por um link do Instagram ou do WhatsApp e uma turma do Senai, numa aula.
 - **O que vêm fazer:** entender, num artigo curto, um passo de como a política funciona, conferir a fonte oficial e voltar depois de onde pararam, sem criar conta.
-- **O júri do Hack Brasil 2026** também usa o site: avalia a demo, o vídeo de até 3 minutos e o repositório. Um jurado que se inscreve na newsletter no meio da semana pode receber a última edição (ADR 0002).
+- **O júri do Hack Brasil 2026** também usa o site: avalia a demo, o vídeo de até 3 minutos e o repositório. Um jurado que se inscreve na newsletter no meio da semana já recebe a última edição (ADR 0002).
 
 ## Product Purpose
 
 O Mandatômetro ensina como funciona a política brasileira, em linguagem simples e de forma interativa, a partir do que o Congresso vota (Renan, 09/11/2026). Ele tem duas partes:
 
 - **Trilhas:** artigos curtos e, se der tempo, vídeos curtos. A principal é a do processo legislativo, sobre como nasce uma lei. Ela tem um infográfico, um quiz de múltipla escolha no meio e outro no fim.
-- **Newsletter semanal, o jornal legislativo.** A edição pode reunir, em duas seções, o que o Congresso votou na semana e os destaques do Diário Oficial da União (ADR 0004). Cada item traz uma explicação em linguagem simples e o link oficial. O envio semanal é programado para domingo. A inscrição pede só o e-mail e tenta enviar na hora a última edição, quando já há uma publicada. Cada edição também fica no site.
+- **Newsletter semanal, o jornal legislativo:** todo domingo, o que o Congresso votou na semana e os destaques do Diário Oficial da União, em duas seções (ADR 0004), em linguagem simples e com o link oficial de cada item. A inscrição pede só o e-mail e já manda a última edição publicada. Cada edição também fica no site.
 
 O projeto concorre na trilha Acesso à educação do Hack Brasil 2026. O regulamento (item 5.4) exige que o problema e o público estejam dentro dessa trilha. Aprender é a função principal do site. A entrega em 30/11/2026 pede repositório público, demo no ar e vídeo de até 3 minutos.
 
