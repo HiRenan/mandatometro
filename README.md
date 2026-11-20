@@ -2,21 +2,27 @@
 
 **O diário oficial político, simplificado.** Um site que ensina como funciona a política brasileira, em linguagem simples e a partir do que o Congresso está votando.
 
-> Em construção no [Hack Brasil 2026](https://hackbrasil.com), de 4 a 30 de novembro de 2026. A demo vai ficar em mandatometro.com.br.
+> Projeto da trilha **Acesso à educação** do [Hack Brasil 2026](https://hackbrasil.com).
 >
-> Trilha: Acesso à educação.
+> [Site público de produção](https://mandatometro.com.br) (`main`) · [Site de desenvolvimento](https://dev.mandatometro.com.br) (`develop`)
 
 ## O problema
 
-Falta aos eleitores conhecimento sobre o sistema político brasileiro: como nasce uma lei, quem decide o quê e como o Congresso vota. O Mandatômetro é para eleitores, principalmente de 20 a 40 anos.
+As pesquisas mostram que muitas pessoas têm dificuldade para citar quem as representa no Congresso. Também indicam que as emendas parlamentares são pouco conhecidas. [Pesquisas e fontes](docs/problema.md#destaques)
+
+- **68%** dos entrevistados não citam o nome de nenhum deputado federal em exercício e **75%** não citam o nome de nenhum senador (Datafolha, 17–18/06/2026).
+- Entre os eleitores de 20 anos ou mais, **85%** lembram em quem votaram para presidente em 2022 e **67%** não lembram em quem votaram para deputado federal naquele ano (Datafolha, 17–18/06/2026).
+- **87%** de quem já ouviu falar em emendas parlamentares dizem saber pouco ou nada sobre elas (DataSenado, 18/11 a 14/12/2021).
+
+O DataSenado encontrou mais apoio à democracia entre pessoas com mais escolaridade. Essa relação ajuda a explicar a escolha da trilha **Acesso à educação**, com a proposta de ensinar como o Congresso funciona. O Mandatômetro é para eleitores, principalmente de 20 a 40 anos.
 
 ## O que ele faz
 
-- **Trilhas:** artigos curtos e infográficos que explicam com casos reais como funciona a política, com um quiz no meio e outro no fim. A primeira é a do processo legislativo: como nasce uma lei.
-- **Newsletter semanal:** o jornal legislativo chega todo domingo com o que o Congresso votou na semana, explicado em linguagem simples. Quem se inscreve recebe na hora a última edição, e todas ficam no site. A conta administradora revisa e publica cada edição no painel do site, em `/painel`. Em construção: uma segunda seção, com os destaques do Diário Oficial da União ([ADR 0004](docs/adr/0004-newsletter-do-dou.md)).
-- **Busca:** o Ctrl+K, ou a barra no alto de qualquer página, procura nas trilhas, nos artigos e nas edições publicadas, sem IA. A busca não liga para acento nem para maiúscula e acha a palavra pelo começo. O que a pessoa digita fica no navegador.
+- **Trilhas.** Artigos curtos explicam como a política funciona com exemplos reais. Na trilha do processo legislativo, um infográfico mostra como uma ideia vira lei. Há um quiz no meio e outro no fim.
+- **Newsletter semanal.** O jornal legislativo pode reunir o que o Congresso votou na semana e os destaques do Diário Oficial da União. Cada item traz uma explicação simples e a fonte oficial. As edições publicadas ficam no site e o envio semanal é programado para domingo. Se já houver uma edição publicada, o sistema tenta enviá-la logo depois da inscrição. [Diário Oficial na newsletter](docs/adr/0004-newsletter-do-dou.md)
+- **Busca.** Use Ctrl+K ou a busca no alto da página para procurar nas trilhas, nos artigos e nas edições publicadas mais recentes. Você pode digitar só o começo da palavra, com ou sem acento. A busca ignora maiúsculas, funciona sem IA e mantém no navegador o que você digita.
 
-Cada explicação leva a fonte oficial: a lei, o regimento ou a página da Câmara, do Senado ou do TSE. Não precisa de conta: as trilhas são abertas, e a newsletter pede só o e-mail. A conta é opcional e guarda o progresso no perfil, para ele passar de um aparelho para outro.
+As trilhas são abertas e a newsletter pede só o e-mail. O navegador guarda os artigos lidos. Se você criar uma conta, o progresso também fica no perfil para continuar em outro aparelho.
 
 **Depois do MVP:** a página de cada deputado federal e senador, com o que prometeu na campanha, o que fez no mandato e o patrimônio que declarou ao TSE. Também ficam para depois o "fake ou fato" e o jogo das comissões, em que a pessoa acompanha um projeto real e decide como se fosse parlamentar.
 
@@ -24,25 +30,22 @@ O porquê dessas escolhas está no [ADR 0002](docs/adr/0002-mvp.md) e no [ADR 00
 
 ## Fontes
 
-Só dados públicos, sempre com link para a origem:
-
-- Para a newsletter, os dados abertos da Câmara e do Senado fornecem votações, proposições e parlamentares. A lista de legislação federal do Senado fornece decretos, leis e medidas provisórias publicados no Diário Oficial da União. [Câmara](https://dadosabertos.camara.leg.br/) · [Senado](https://legis.senado.leg.br/dadosabertos/) · [Lista de legislação federal](https://legis.senado.leg.br/dadosabertos/legislacao/lista?tipo=LEI&ano=2026)
-- Leis, regimentos e páginas oficiais da Câmara, do Senado e do TSE, para as trilhas
-- Depois do MVP: o [Portal de Dados Abertos do TSE](https://dadosabertos.tse.jus.br/) (candidaturas e bens declarados) e os sites de campanha
-
-As APIs oficiais e os arquivos de dados abertos da Câmara, do Senado e do TSE são lidos direto, por HTTP.
+- **Trilhas.** As explicações citam leis, regimentos e páginas oficiais da Câmara, do Senado e do TSE.
+- **Votações.** Os dados abertos da Câmara e do Senado fornecem votações, proposições e parlamentares. [Câmara](https://dadosabertos.camara.leg.br/) · [Senado](https://legis.senado.leg.br/dadosabertos/)
+- **Diário Oficial.** A lista de legislação federal do Senado fornece decretos, leis e medidas provisórias. A página de destaques da Imprensa Nacional acrescenta portarias e outros atos de ministérios. [Legislação federal](https://legis.senado.leg.br/dadosabertos/legislacao/lista?tipo=LEI&ano=2026) · [Destaques do Diário Oficial](https://www.in.gov.br/servicos/diario-oficial-da-uniao/destaques-do-diario-oficial-da-uniao)
+- **Depois do MVP.** A coleta de candidaturas e bens declarados ao TSE e a leitura dos sites de campanha ficam para essa etapa. [Portal de Dados Abertos do TSE](https://dadosabertos.tse.jus.br/)
 
 ## Ferramentas parceiras
 
 | Ferramenta | Uso no Mandatômetro |
 |---|---|
 | [Resend](https://resend.com/) | Todos os e-mails, incluindo a newsletter de domingo, a última edição para quem se inscreve e os avisos de conta |
-| [Firecrawl](https://www.firecrawl.dev/) | Em teste: ler o inteiro teor das proposições votadas e as notícias da Câmara e do Senado, para a edição da semana (#9). Depois do MVP, ler os sites de campanha |
+| [Firecrawl](https://www.firecrawl.dev/) | Lê a página de destaques do Diário Oficial na coleta de sábado. A leitura do inteiro teor das proposições e das notícias da Câmara e do Senado segue em teste na #9. O teste com sites de campanha fica para depois do MVP |
 | [Devin](https://devin.ai/) | Conectores de dados e testes, com PRs neste repositório |
 
 ## Stack
 
-FastAPI · PostgreSQL com pgvector · TanStack Start (React) · Turborepo · Docker Compose
+O site usa TypeScript, React e TanStack Start. O backend usa Python 3.13, FastAPI e SQLAlchemy. O banco é PostgreSQL com pgvector. O Turborepo roda as tarefas do repositório e o Docker Compose sobe os serviços localmente.
 
 O porquê de cada escolha está no [ADR 0001](docs/adr/0001-stack.md).
 
@@ -50,16 +53,32 @@ O porquê de cada escolha está no [ADR 0001](docs/adr/0001-stack.md).
 
 ## Arquitetura
 
-1. **Coleta em lote, agendada:** as APIs da Câmara e do Senado, todo dia.
-2. **PostgreSQL com pgvector** guarda tudo.
-3. **LLM** escreve o rascunho da edição semanal com as votações da semana, e uma pessoa do time revisa antes de publicar.
-4. **FastAPI** expõe os dados, o **site** mostra as trilhas e as edições e busca nelas, e o **Resend** manda a última edição para quem se inscreve e a edição nova todo domingo.
+```mermaid
+flowchart TD
+    fontes["Fontes oficiais"] --> coleta["Coletas e rascunho"]
+    coleta <--> banco[(PostgreSQL)]
+    banco <--> api["API"]
+    api <--> site["Site e /painel"]
+    banco <--> envios["Envios agendados"]
+    envios --> email["E-mail via Resend"]
+    api --> email
+```
+
+O GitHub Actions roda as coletas e o rascunho fora dos pedidos ao site. A coleta diária usa `coleta camara` e `coleta senado` e grava no PostgreSQL. A agenda de sábado roda `coleta legislacao` nos dados abertos do Senado, `coleta destaques` na página da Imprensa Nacional via Firecrawl e `edicao rascunho`, nessa ordem.
+
+O comando de rascunho lê os dados já gravados e salva a edição no banco. Quando configurado, o modelo de linguagem sugere a ordem dos atos do Diário Oficial e escreve o texto das votações elegíveis. Em `/painel`, uma administradora confere os itens e as fontes, completa os textos pendentes e publica pela API.
+
+A API entrega ao site as edições publicadas e registra inscrições, contas, progresso das trilhas e tentativas do piloto. As trilhas vêm de arquivos do site. Na hospedagem, o site e a API ficam na Vercel e o PostgreSQL fica no Neon.
+
+Quando a agenda de domingo está ativa, `edicao enviar` usa o Resend para mandar a edição publicada naquela semana. O Resend também envia a edição mais recente na inscrição, quando disponível, e os avisos de conta. O workflow de avisos retoma pendências com `python -m mandatometro.contas`. O de migrations atualiza o banco com `alembic upgrade head`.
+
+[Horários e ativação das tarefas](docs/hospedagem.md#como-as-tarefas-funcionam) · [Revisão da edição](docs/newsletter.md#revisão-pelo-painel)
 
 ## Modelo de dados
 
 O banco guarda os dados da Câmara e do Senado, os atos do Diário Oficial, as edições da newsletter, a medição do piloto e as contas com o progresso das trilhas. Os modelos ficam em `apps/backend/src/mandatometro/db/modelos.py`, e cada mudança vira uma migration do Alembic.
 
-- **Cada Casa tem os seus números:** parlamentar, proposição e votação se identificam pela Casa e pelo id que a Casa dá (`casa`, `id_externo`). A mesma matéria tem uma linha em cada Casa, ligadas por sigla, número e ano.
+- **Cada Casa tem os seus números:** parlamentar, proposição e votação se identificam pela Casa e pelo id que a Casa dá (`casa`, `id_externo`). Quando a mesma matéria aparece nas duas Casas, cada uma tem o seu registro. A numeração única de 2019 em diante permite relacioná-los por sigla, número e ano.
 - **Atos do Diário Oficial** se identificam por `origem` e `id_externo`. A seleção semanal usa a data de publicação.
 - **Fonte em tudo:** cada dado coletado e cada item da edição aponta para uma `fonte`, com o endereço e a data da coleta. Sem fonte, o banco não grava.
 - **O partido fica no voto,** porque muda dentro do mandato. Os totais das nominais se contam pelos votos. Nas secretas do Senado, a coleta guarda matéria, votação e resultado, sem votos individuais; o banco não guarda os totais nem a modalidade. Ausência de votos no banco não significa zero votos na sessão nem identifica, sozinha, uma votação secreta.
@@ -152,7 +171,7 @@ erDiagram
         int id PK
         string casa UK
         int id_externo UK "no Senado, o idProcesso"
-        string sigla "sigla, número e ano ligam as Casas"
+        string sigla "com número e ano, permite relacionar matérias das duas Casas"
         int numero
         int ano
         string ementa
@@ -167,7 +186,7 @@ erDiagram
         date data
         string descricao
         string resultado "aprovada, rejeitada ou outro"
-        string resultado_bruto "1, 0 ou A"
+        string resultado_bruto "código publicado pela Casa"
         int fonte_id FK
     }
     votacao_proposicao {
@@ -240,11 +259,70 @@ erDiagram
 
 ## Como rodar
 
+### Requisitos
+
+Instale o [Docker](https://www.docker.com/) para subir os serviços. Para desenvolver e rodar as checagens no computador, instale também o [Node.js](https://nodejs.org/) 24, o [pnpm](https://pnpm.io/) e o [uv](https://docs.astral.sh/uv/). O pnpm usa a versão do `packageManager` no `package.json`, e o uv usa o Python 3.13.
+
+Na raiz do repositório, copie o arquivo de exemplo para configurar o ambiente local.
+
+```bash
+cp .env.example .env   # preencha as chaves; o .env fica fora do Git
+```
+
+### Tudo no Docker
+
+`docker compose up --build` sobe o banco, a API e o site. O site fica em http://localhost:3001 e a API em http://localhost:8000, com a documentação em http://localhost:8000/docs. A API aplica as migrations ao subir.
+
+### Desenvolvimento
+
+Rode na raiz para desenvolver com recarga automática.
+
+```bash
+pnpm install
+docker compose up -d db         # só o banco, na porta 5433
+pnpm --filter backend migrate   # aplica as migrations
+pnpm dev                        # site na porta 3001 e API na 8000
+```
+
+**O build do site no PC:** o `pnpm check-types` do site roda um `vite build` antes do `tsc` e regrava o `.output`. O `API_URL` vai na linha dele também, como no `pnpm build` e no `pnpm dev`, senão o build leva o `http://localhost:8000` que o `.env.schema` dá fora da Vercel. Uma cópia do `.output` sobe com a pasta `apps/web` como diretório de trabalho: na partida, o servidor chama o CLI do varlock, que ele procura no `node_modules/.bin` a partir dessa pasta, e lê o `.env.schema` dali. Em 18/11/2026, com a cópia fora do repositório, da raiz ele subiu sem ler o `.env.schema`, com o aviso "No .env files found" do varlock (o CLI também está no `node_modules/.bin` da raiz), e de uma pasta fora do repositório não subiu ("'varlock' não é reconhecido como um comando interno ou externo", no Windows).
+
+**Ícone, prévia do link e mapa.** [Como editar e gerar as imagens](docs/codigo-do-site.md#css-e-imagens).
+
+**Cliente da API.** `pnpm generate:client`. Veja o [contrato da API](AGENTS.md#conventions).
+
+**Migration nova.** Em `apps/backend`, use o próximo número de revisão. Um exemplo depois da `0011` é `uv run alembic revision --autogenerate --rev-id 0012 -m "cria a tabela orientacao"`. `uv run alembic check` diz se algum modelo mudou sem migration. Veja as [convenções de migrations](AGENTS.md#conventions).
+
+### Checagens
+
+Rode na raiz do repositório.
+
+```bash
+pnpm lint          # Biome no TypeScript e Ruff no Python
+pnpm check-types   # tipos do site
+pnpm test          # pytest e Vitest
+pnpm build         # build do site, que confere o conteúdo das trilhas
+```
+
+`pnpm check` corrige a formatação do TypeScript. No Python, rode `uv run ruff format` e `uv run ruff check --fix` em `apps/backend`.
+
+Para rodar os testes online, execute `uv run pytest -m online` em `apps/backend`. A suíte padrão e o CI executam apenas os testes offline.
+
+**Testes de banco.** Crie um banco de teste uma vez, com o banco do Docker no ar, e passe o endereço no `TEST_DATABASE_URL`:
+
+```bash
+docker compose exec db createdb -U mandatometro mandatometro_teste
+TEST_DATABASE_URL=postgresql+psycopg://mandatometro:troque-esta-senha@localhost:5433/mandatometro_teste pnpm test
+```
+
+Veja as [regras para os testes de banco](AGENTS.md#tests).
+
+**Medição do piloto.** [Contrato, relatório agregado e roteiro de encerramento](docs/medicao-do-piloto.md).
+
 ### Cadastro de contas
 
 O workflow **Retomar avisos de conta** processa a fila de produção a cada cinco minutos quando a variável de repositório `AVISOS_CONTA_ATIVOS` vale `true` e os segredos do ambiente `producao` estão configurados.
 
-Aplique as migrations da API até a revisão atual antes de abrir `/cadastro`. Configure `CONTA_TERMO_VERSAO` e `CONTA_TERMO_URL` com a versão e o endereço do termo apresentado ao público. Em desenvolvimento, use uma versão identificada como teste. Para `CONTA_CHAVE`, gere uma chave privada com `uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` em `apps/backend`. Guarde-a nos segredos da API e do processo de entrega. O envio usa `RESEND_FROM`, `RESEND_API_KEY` e `APP_BASE_URL`.
+Aplique as migrations da API até a revisão atual antes de abrir `/cadastro`. Configure `CONTA_TERMO_VERSAO` e `CONTA_TERMO_URL` com a versão e o endereço do termo apresentado ao público. Em desenvolvimento, use uma versão identificada como teste. Para `CONTA_CHAVE`, gere uma chave privada com `uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` em `apps/backend`. Guarde-a nos segredos da API e do processo de entrega. O envio usa `RESEND_FROM` e `RESEND_API_KEY`. A API usa `APP_BASE_URL` para montar os links.
 
 A API tenta entregar os avisos depois do commit. Para processar retentativas independentemente de novas requisições, execute periodicamente (a cada cinco minutos) `uv run python -m mandatometro.contas` em `apps/backend` com o mesmo banco e segredos. O destinatário e o link ficam criptografados na fila até o aceite do provedor ou o fim da validade.
 
@@ -258,24 +336,7 @@ Marcar, desmarcar, recomeçar e desfazer atualizam a tela na hora e gravam na co
 
 Toda conta nasce com o papel `comum`. Quem opera o banco pode [conceder ou revogar o papel de administradora](docs/hospedagem.md#conceder-e-revogar-o-papel-de-administradora) pelo CLI depois da confirmação do e-mail. Com o papel, o `/perfil` mostra o link "Revisar a edição da semana", que leva à revisão em `/painel`. [Revisão pelo painel](docs/newsletter.md#revisão-pelo-painel)
 
-Precisa de [Node.js](https://nodejs.org/) 24, [pnpm](https://pnpm.io/) (ele mesmo troca para a versão do `packageManager`, no `package.json`), [uv](https://docs.astral.sh/uv/) (ele instala o Python 3.13) e [Docker](https://www.docker.com/).
-
-```bash
-cp .env.example .env   # preencha as chaves; o .env fica fora do Git
-pnpm install
-```
-
-**Tudo no Docker:** `docker compose up --build` sobe o banco, a API e o site. O site fica em http://localhost:3001 e a API em http://localhost:8000, com a documentação em http://localhost:8000/docs. A API aplica as migrations ao subir.
-
-**Desenvolvimento,** com recarga automática:
-
-```bash
-docker compose up -d db         # só o banco, na porta 5433
-pnpm --filter backend migrate   # aplica as migrations
-pnpm dev                        # site na porta 3001 e API na 8000
-```
-
-**O build do site no PC:** o `pnpm check-types` do site roda um `vite build` antes do `tsc` e regrava o `.output`. O `API_URL` vai na linha dele também, como no `pnpm build` e no `pnpm dev`, senão o build leva o `http://localhost:8000` que o `.env.schema` dá fora da Vercel. Uma cópia do `.output` sobe com a pasta `apps/web` como diretório de trabalho: na partida, o servidor chama o CLI do varlock, que ele procura no `node_modules/.bin` a partir dessa pasta, e lê o `.env.schema` dali. Em 18/11/2026, com a cópia fora do repositório, da raiz ele subiu sem ler o `.env.schema`, com o aviso "No .env files found" do varlock (o CLI também está no `node_modules/.bin` da raiz), e de uma pasta fora do repositório não subiu ("'varlock' não é reconhecido como um comando interno ou externo", no Windows).
+### Coletas
 
 **Coleta das duas Casas.** Com as migrations aplicadas e `DATABASE_URL` apontando explicitamente para o banco que deve receber os dados, rode os comandos abaixo em `apps/backend`. As datas incluem o primeiro e o último dia: informe `--inicio` e `--fim` juntos, no formato `AAAA-MM-DD`, ou nenhum dos dois. Sem datas, valem os sete dias completos anteriores, no fuso de Brasília.
 
@@ -288,8 +349,6 @@ O resumo final é uma linha JSON com contagens confirmadas, chamadas HTTP (inclu
 - **2:** argumentos inválidos, antes de acessar a rede ou o banco.
 
 As [regras da coleta e da saída dos jobs](docs/dicionario-de-dados.md#regras-que-valem-para-as-duas-apis) valem para os dois conectores.
-
-**Coleta e migrations na hospedagem.** [Ativação, agendamento e recuperação](docs/hospedagem.md#como-as-tarefas-funcionam).
 
 **Coleta da Câmara.**
 
@@ -335,49 +394,27 @@ uv run mandatometro coleta destaques
 
 O comando grava os destaques da seção 1 pela data de publicação, incluindo portarias. Passe as duas datas ou use os sete dias completos anteriores no fuso de Brasília. Quando a coleta roda, o resumo é uma linha JSON com gravações, descartes e falhas. Saída 1 sinaliza falha ou coleta incompleta. O comando confere a conexão com o banco antes de pedir a primeira página. Se o banco não responder, o resumo traz o erro e zero chamadas. Sem a chave ou com datas inválidas, o comando imprime uma linha de texto fixo e sai com código 2. [Campos e paginação](docs/dicionario-de-dados.md#destaques-da-imprensa-nacional).
 
-**Edição semanal.** A agenda de sábado coleta a legislação e os destaques do Diário Oficial e prepara o rascunho às 04h47 de Brasília quando `AGENDA_SABADO_ATIVA` vale `true`. [Ativação e recuperação](docs/hospedagem.md#ativar-e-recuperar-a-agenda-de-sábado).
+### Edição semanal
+
+A agenda de sábado coleta a legislação e os destaques do Diário Oficial e prepara o rascunho às 04h47 de Brasília quando `AGENDA_SABADO_ATIVA` vale `true`. [Ativação e recuperação](docs/hospedagem.md#ativar-e-recuperar-a-agenda-de-sábado).
 
 `uv run mandatometro edicao rascunho` prepara manualmente as votações e os atos do Diário Oficial coletados. Use `--teto-atos N` para ajustar o limite de atos, que começa em cinco. [Como preparar, revisar e publicar a edição](docs/newsletter.md#newsletter-rascunho-e-revisão).
 
-**Checagens,** as mesmas do CI:
+### Newsletter
 
-```bash
-pnpm lint          # Biome no TypeScript e Ruff no Python
-pnpm check-types   # tipos do site
-pnpm test          # pytest e Vitest
-pnpm build         # build do site, que confere o conteúdo das trilhas
-```
+[Inscrição e saída](docs/newsletter.md#newsletter-inscrição-e-saída) e [envio e leitura pública das edições](docs/newsletter.md#newsletter-envio-e-leitura-pública).
 
-`pnpm check` corrige a formatação do TypeScript. No Python, rode `uv run ruff format` e `uv run ruff check --fix` em `apps/backend`.
+### Hospedagem
 
-Para rodar os testes online, execute `uv run pytest -m online` em `apps/backend`. A suíte padrão e o CI executam apenas os testes offline.
+[Configuração do site, da API e das tarefas](docs/hospedagem.md).
 
-**Testes de banco.** Crie um banco de teste uma vez, com o banco do Docker no ar, e passe o endereço no `TEST_DATABASE_URL`:
-
-```bash
-docker compose exec db createdb -U mandatometro mandatometro_teste
-TEST_DATABASE_URL=postgresql+psycopg://mandatometro:troque-esta-senha@localhost:5433/mandatometro_teste pnpm test
-```
-
-Veja as [regras para os testes de banco](AGENTS.md#tests).
-
-**Medição do piloto.** [Contrato, relatório agregado e roteiro de encerramento](docs/medicao-do-piloto.md).
-
-**Newsletter.** [Inscrição e saída](docs/newsletter.md#newsletter-inscrição-e-saída) e [envio e leitura pública das edições](docs/newsletter.md#newsletter-envio-e-leitura-pública).
-
-**No ar.** [Configuração do site, da API e das tarefas](docs/hospedagem.md).
-
-**Ícone, prévia do link e mapa.** [Como editar e gerar as imagens](docs/codigo-do-site.md#css-e-imagens).
-
-**Cliente da API.** `pnpm generate:client`. Veja o [contrato da API](AGENTS.md#conventions).
-
-**Migration nova.** Em `apps/backend`, `uv run alembic revision --autogenerate --rev-id 0010 -m "cria a tabela orientacao"` é um exemplo. `uv run alembic check` diz se algum modelo mudou sem migration. Veja as [convenções de migrations](AGENTS.md#conventions).
+**Coleta e migrations na hospedagem.** [Ativação, agendamento e recuperação](docs/hospedagem.md#como-as-tarefas-funcionam).
 
 ## Time
 
-- Renan Mocelin
-- Pedro Vinicius Meerholz
-- Nathan Arrais
+- [Renan Mocelin](https://github.com/HiRenan)
+- [Pedro Vinicius Meerholz](https://github.com/PedroMeerholz)
+- [Nathan Arrais](https://github.com/nathan-arrais)
 
 ## Licença
 
