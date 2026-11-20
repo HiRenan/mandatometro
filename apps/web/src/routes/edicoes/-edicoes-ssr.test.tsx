@@ -216,9 +216,33 @@ describe("o HTML das páginas das edições", () => {
 			[3, primeiroAto.titulo],
 			[3, segundoAto.titulo],
 		]);
+		const posicoes = [
+			["item-2", "fita-verde", "1"],
+			["item-4", "fita-amarela", "2"],
+			["item-1", "fita-azul", "3"],
+			["item-3", "fita-rosa", "4"],
+		];
 		expect(
-			[...html.matchAll(/<a href="#item-(\d+)"/g)].map(([, ordem]) => ordem),
-		).toEqual(["2", "4", "1", "3", "2", "4", "1", "3"]);
+			[
+				...html.matchAll(
+					/<section id="(item-\d+)"[^>]* class="item-da-edicao (fita-\w+)"><span aria-hidden="true" class="numeral">(\d+)<\/span>/g,
+				),
+			].map(([, id, fita, numero]) => [id, fita, numero]),
+		).toEqual(posicoes);
+		expect(
+			[
+				...html.matchAll(
+					/<li class="(fita-\w+)"><a href="#(item-\d+)"><span aria-hidden="true" class="numeral[^"]*">(\d+)<\/span>/g,
+				),
+			].map(([, fita, id, numero]) => [id, fita, numero]),
+		).toEqual([...posicoes, ...posicoes]);
+		expect(
+			[
+				...html
+					.replaceAll("<!-- -->", "")
+					.matchAll(/Fontes <span class="sr-only">do item (\d+)<\/span>/g),
+			].map(([, numero]) => numero),
+		).toEqual(["1", "2", "3", "4"]);
 		expect(html).toMatch(/<h4 class="rotulo">Votação de /);
 		expect(html).toMatch(/<h4 class="rotulo">Fontes /);
 		expect(html).toContain("4 itens");

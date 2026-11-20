@@ -20,6 +20,8 @@ import { FaixaDeInformacoes } from "./faixa-de-informacoes";
 import { ItemDaEdicao } from "./item-da-edicao";
 import { EdicoesIndisponiveis } from "./pagina-das-edicoes";
 
+type ItemNaPagina = { item: ItemPublico; posicao: number };
+
 /**
  * A página de uma edição publicada, em /edicoes/7: a folha de leitura da página
  * do artigo, com a cor da semana (a mesma da lista), o título que a API manda, o
@@ -38,8 +40,12 @@ export function PaginaDaEdicao({ pagina }: { pagina: EdicaoDaPagina }) {
 function FolhaDaEdicao({ edicao }: { edicao: EdicaoPublica }) {
 	const semana = posicaoDaSemana(edicao.fim);
 	const emOrdem = [...edicao.itens].sort((um, outro) => um.ordem - outro.ordem);
-	const votacoes = emOrdem.filter((item) => item.tipo === "votacao");
-	const atos = emOrdem.filter((item) => item.tipo === "ato");
+	const votacoes = emOrdem
+		.filter((item) => item.tipo === "votacao")
+		.map((item, indice) => ({ item, posicao: indice + 1 }));
+	const atos = emOrdem
+		.filter((item) => item.tipo === "ato")
+		.map((item, indice) => ({ item, posicao: votacoes.length + indice + 1 }));
 	const itens = [...votacoes, ...atos];
 	const assunto =
 		atos.length > 0
@@ -114,8 +120,8 @@ function FolhaDaEdicao({ edicao }: { edicao: EdicaoPublica }) {
 								/>
 							</>
 						) : (
-							votacoes.map((item) => (
-								<ItemDaEdicao key={item.ordem} item={item} />
+							votacoes.map(({ item, posicao }) => (
+								<ItemDaEdicao key={item.ordem} item={item} posicao={posicao} />
 							))
 						)}
 						<nav aria-label="Mais edições" className="fim-da-edicao">
@@ -150,7 +156,7 @@ function SecaoDaEdicao({
 }: {
 	id: string;
 	titulo: string;
-	itens: ItemPublico[];
+	itens: ItemNaPagina[];
 }) {
 	if (itens.length === 0) {
 		return null;
@@ -160,8 +166,8 @@ function SecaoDaEdicao({
 			<h2 id={id} className="rotulo text-tinta-suave">
 				{titulo}
 			</h2>
-			{itens.map((item) => (
-				<ItemDaEdicao key={item.ordem} item={item} comSecao />
+			{itens.map(({ item, posicao }) => (
+				<ItemDaEdicao key={item.ordem} item={item} posicao={posicao} comSecao />
 			))}
 		</section>
 	);
@@ -178,7 +184,7 @@ function NestaEdicao({
 	itens,
 	onde,
 }: {
-	itens: ItemPublico[];
+	itens: ItemNaPagina[];
 	onde: "na-folha" | "ao-lado";
 }) {
 	const id = `nesta-edicao-${onde}`;
@@ -188,11 +194,11 @@ function NestaEdicao({
 				Nesta edição
 			</h2>
 			<ol role="list" className="folhas-da-trilha">
-				{itens.map((item) => (
-					<li key={item.ordem} className={classeDaFita(item.ordem)}>
+				{itens.map(({ item, posicao }) => (
+					<li key={item.ordem} className={classeDaFita(posicao)}>
 						<a href={`#item-${item.ordem}`}>
 							<span aria-hidden="true" className="numeral letra-grande:mb-4">
-								{item.ordem}
+								{posicao}
 							</span>
 							<span className="letra-grande:col-span-full">
 								<span className="titulo">{item.titulo}</span>

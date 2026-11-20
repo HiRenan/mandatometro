@@ -22,17 +22,20 @@ const RESULTADOS: Record<VotacaoPublica["resultado"], string> = {
 /**
  * Um item da edição, na ordem dela: o número na fita da posição, o título, o
  * texto, o quadro de cada votação, as fontes e, quando há, o artigo da trilha que
- * explica o assunto. O `id` leva o índice "Nesta edição" até o item. O texto vem
- * da API e vai sempre como texto.
+ * explica o assunto. O número segue a posição na página, e o `id` usa a ordem
+ * gravada para os links do índice e da busca. O texto vem da API e vai sempre
+ * como texto.
  *
  * O item não sobe com a rolagem (o revelar), como o texto do artigo: o índice
  * leva até ele, e o navegador calcularia o lugar com o item ainda deslocado.
  */
 export function ItemDaEdicao({
 	item,
+	posicao,
 	comSecao = false,
 }: {
 	item: ItemPublico;
+	posicao: number;
 	comSecao?: boolean;
 }) {
 	const id = `item-${item.ordem}`;
@@ -43,10 +46,10 @@ export function ItemDaEdicao({
 		<section
 			id={id}
 			aria-labelledby={`${id}-titulo`}
-			className={classes("item-da-edicao", classeDaFita(item.ordem))}
+			className={classes("item-da-edicao", classeDaFita(posicao))}
 		>
 			<span aria-hidden="true" className="numeral">
-				{item.ordem}
+				{posicao}
 			</span>
 			<Titulo
 				id={`${id}-titulo`}
@@ -65,11 +68,7 @@ export function ItemDaEdicao({
 				// biome-ignore lint/suspicious/noArrayIndexKey: as votações ficam fixas, na ordem da edição publicada.
 				<QuadroDaVotacao key={posicao} votacao={votacao} Titulo={Subtitulo} />
 			))}
-			<FontesDoItem
-				ordem={item.ordem}
-				fontes={item.fontes}
-				Titulo={Subtitulo}
-			/>
+			<FontesDoItem posicao={posicao} fontes={item.fontes} Titulo={Subtitulo} />
 			{artigo && item.artigo && (
 				<p className="na-trilha">
 					<Link
@@ -160,18 +159,18 @@ function QuadroDaVotacao({
  * em parte dos leitores.
  */
 function FontesDoItem({
-	ordem,
+	posicao,
 	fontes,
 	Titulo,
 }: {
-	ordem: number;
+	posicao: number;
 	fontes: FontePublica[];
 	Titulo: "h3" | "h4";
 }) {
 	return (
 		<div className="fontes-do-item">
 			<Titulo className="rotulo">
-				Fontes <span className="sr-only">do item {ordem}</span>
+				Fontes <span className="sr-only">do item {posicao}</span>
 			</Titulo>
 			<ol role="list" className="lista-de-fontes">
 				{fontesPorEndereco(fontes).map(({ url, coletas }, indice) => {
@@ -179,8 +178,8 @@ function FontesDoItem({
 						indice === 0 ? "Fonte oficial" : "Outra referência oficial";
 					const soParaOLeitor =
 						indice === 0
-							? `do item ${ordem}`
-							: `${indice + 1} do item ${ordem}`;
+							? `do item ${posicao}`
+							: `${indice + 1} do item ${posicao}`;
 					const endereco = enderecoSeguro(url);
 					const [primeira, ...outras] = coletas;
 					return (
