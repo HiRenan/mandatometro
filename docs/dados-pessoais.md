@@ -38,6 +38,8 @@ A rota do painel entrega à administradora o mesmo arquivo de revisão do CLI, c
 
 E-mail, id de conta, id de inscrito e dados da sessão ficam fora das respostas. As respostas à administradora levam `Cache-Control: no-store`. As linhas de log do painel são fixas e os erros omitem o conteúdo dos pedidos e do rascunho. [Revisão pelo painel](newsletter.md#revisão-pelo-painel)
 
+A tela `/painel` guarda o rascunho só na memória da página, e nada dele vai para o console, o endereço, o armazenamento do navegador, o HTML do servidor ou os logs do site. Quando a API do painel responde com a recusa de acesso (`401` ou `404`), o rascunho e os ajustes locais saem da tela na hora, enquanto a guarda verifica a sessão e o papel da conta. [O painel no código do site](codigo-do-site.md#painel-de-revisão)
+
 ## Trilhas e piloto
 
 Nenhum dado pessoal entra no texto publicado das trilhas. As trilhas não pedem dados pessoais. As respostas do quiz não identificam quem respondeu. O piloto segue o [contrato de medição](medicao-do-piloto.md#conteúdo-e-dados).

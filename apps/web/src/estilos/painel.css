@@ -1,0 +1,518 @@
+/*
+ * A revisão da edição, em /painel (DESIGN.md, "Painel de revisão"): a folha de
+ * leitura da edição, sem o azulejo, com o título e a cobertura, o índice dos
+ * itens e uma ficha por item. É uma tela de trabalho: o título é menor que o da
+ * edição, e a cor fica nos números das fitas. Os campos são os do site (o
+ * .campo), as caixas de marcar são as do navegador, na cor da tinta, e o pé com
+ * "Salvar" e "Publicar" fica preso embaixo numa tela com altura para isso. A
+ * tela fica em components/painel/.
+ */
+@layer components {
+	/* O título da tela de trabalho: o mesmo desenho, numa letra menor. */
+	.pagina-do-painel .artigo-folha h1 {
+		--letra: clamp(2.25rem, 1.5rem + 3vw, 4rem);
+	}
+
+	/* Os estados sem rascunho aberto: a frase e a ação, embaixo do título. */
+	.estado-da-revisao {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		justify-items: start;
+		gap: 1rem;
+		max-width: 39rem;
+		margin-top: clamp(1.5rem, 4vw, 2.5rem);
+		padding-bottom: clamp(1.75rem, 4vw, 3rem);
+	}
+
+	/* "Carregando o rascunho da semana…", como o carregando das páginas. */
+	.carregando-o-rascunho {
+		margin-top: clamp(1.5rem, 4vw, 2.5rem);
+		padding-bottom: clamp(1.75rem, 4vw, 3rem);
+		color: var(--tinta-suave);
+	}
+
+	.estado-da-revisao > .lide,
+	.resultado > .lide {
+		margin-top: 0;
+	}
+
+	.resultado {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.resultado:focus {
+		outline: none;
+	}
+
+	.resultado:focus-visible {
+		outline: 3px solid var(--ring);
+		outline-offset: 6px;
+	}
+
+	/* ───── Os campos ───── */
+
+	/* O rótulo em cima do campo, e a dica e a falta embaixo dele. */
+	.campo-com-rotulo {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.4rem;
+		max-width: 39rem;
+	}
+
+	/*
+	 * A explicação, na serifa de leitura da edição: o texto no campo tem a cara
+	 * do texto publicado. O campo cresce com o texto onde o navegador sabe fazer
+	 * isso (o field-sizing); nos outros, tem oito linhas e o puxador.
+	 */
+	.explicacao-do-item {
+		min-height: 12rem;
+		max-height: calc(100dvh - 12px);
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.6;
+		resize: vertical;
+		field-sizing: content;
+	}
+
+	.campo[aria-invalid="true"] {
+		box-shadow: inset 5px 0 0 var(--fita-vermelha);
+	}
+
+	.campo:read-only,
+	.campo:disabled {
+		color: var(--tinta-suave);
+	}
+
+	select.campo {
+		cursor: pointer;
+	}
+
+	.dica-do-campo {
+		max-width: 39rem;
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		font-weight: 500;
+		line-height: 1.45;
+		color: var(--tinta-suave);
+	}
+
+	/* A contagem que passou de 12 parágrafos sai do cinza. */
+	.passou-do-limite {
+		color: var(--tinta);
+		font-weight: 800;
+	}
+
+	.campo-com-rotulo > .falta-no-campo,
+	.privacidade-do-ato > .falta-no-campo {
+		margin-top: 0.2rem;
+	}
+
+	/*
+	 * A caixa de marcar: a do navegador, maior e na cor da tinta, com a frase ao
+	 * lado. A linha inteira é a área do toque, com 44 px de altura.
+	 */
+	.marcar {
+		display: grid;
+		grid-template-columns: 1.375rem minmax(0, 1fr);
+		align-items: start;
+		gap: 0.75rem;
+		max-width: 39rem;
+		min-height: 2.75rem;
+		padding-block: 0.55rem;
+		font-family: var(--font-sans);
+		font-size: 1.0625rem;
+		font-weight: 650;
+		line-height: 1.35;
+		cursor: pointer;
+	}
+
+	.marcar > input {
+		width: 1.375rem;
+		height: 1.375rem;
+		margin: 0;
+		accent-color: var(--tinta);
+		cursor: pointer;
+	}
+
+	.marcar > input:disabled {
+		cursor: default;
+	}
+
+	/* ───── O alto da folha: o título e a cobertura ───── */
+
+	.revisao {
+		margin-top: clamp(1.75rem, 4vw, 2.5rem);
+	}
+
+	.cabeca-da-revisao {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem;
+		padding-top: 1.25rem;
+		border-top: 6px solid var(--tinta);
+	}
+
+	.cabeca-da-revisao .dica-do-campo {
+		margin-left: calc(1.375rem + 0.75rem);
+	}
+
+	/*
+	 * O índice dos itens, como "Nesta edição": abaixo de 1200 px, dentro da
+	 * folha, depois da cobertura; daí para cima, na coluna ao lado, que para na
+	 * tela durante a rolagem. Uma cópia fica escondida em cada largura.
+	 */
+	.indice-da-revisao-na-folha {
+		max-width: 39rem;
+		margin-top: clamp(2rem, 5vw, 3rem);
+	}
+
+	.indice-da-revisao .para-publicar {
+		margin-top: 1rem;
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		font-weight: 500;
+		line-height: 1.45;
+	}
+
+	.para-publicar > .rotulo {
+		display: block;
+		margin-bottom: 0.2rem;
+		color: var(--tinta-suave);
+	}
+
+	@media (width < 75rem) {
+		.pagina-do-painel .ao-lado-do-artigo {
+			display: none;
+		}
+	}
+
+	@media (width >= 75rem) {
+		.indice-da-revisao-na-folha {
+			display: none;
+		}
+
+		.pagina-do-painel .ao-lado-do-artigo {
+			margin-top: 10rem;
+		}
+	}
+
+	/* ───── A ficha de cada item ───── */
+
+	.secao-da-revisao {
+		margin-top: clamp(2.5rem, 6vw, 4rem);
+	}
+
+	/*
+	 * A ficha: um fio de tinta em cima, o número na fita da posição e o estado
+	 * pendurado no fio, como "Lido" na folha da trilha. O índice leva até ela, e
+	 * o respiro de cima fica na tela quando ela chega.
+	 */
+	.ficha-do-item {
+		position: relative;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		margin-top: clamp(2.5rem, 6vw, 4rem);
+		padding-top: 1.5rem;
+		border-top: 2px solid var(--tinta);
+		scroll-margin-top: 1rem;
+	}
+
+	.secao-da-revisao > h2 + .ficha-do-item {
+		margin-top: 0.75rem;
+	}
+
+	/* O número da ficha, menor que o da edição: de 2.75rem, o de "Nesta edição", a 3.5rem. */
+	.cabeca-da-ficha > .numeral {
+		font-size: clamp(2.75rem, 2.2rem + 2.4vw, 3.5rem);
+	}
+
+	/* O estado que pede alguma coisa é o retângulo de tinta; o revisado, só o fio. */
+	.estado-do-item {
+		position: absolute;
+		top: 0;
+		right: 0;
+		max-width: calc(100% - 4.5rem);
+		padding: 0.2rem 0.6rem;
+		background: var(--tinta);
+		color: var(--papel);
+	}
+
+	.estado-do-item.em-dia {
+		background: transparent;
+		color: var(--tinta);
+		box-shadow: inset 0 0 0 2px var(--tinta);
+	}
+
+	.ficha-do-item > .subtitulo-condensado {
+		--letra: clamp(1.625rem, 1.3rem + 1.5vw, 2.5rem);
+		max-width: 14em;
+		margin-top: 0.75rem;
+	}
+
+	/* O item que sai da edição: o título riscado e apagado, sem os campos. */
+	.sai-da-edicao > .subtitulo-condensado {
+		color: var(--tinta-suave);
+		text-decoration: line-through;
+		text-decoration-thickness: 3px;
+	}
+
+	.ficha-do-item > .falta-no-campo {
+		max-width: 39rem;
+		margin-top: 1rem;
+	}
+
+	/* Os avisos da API: um quadro com o fio grosso do lado. */
+	.avisos-do-item {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+		max-width: 39rem;
+		margin-top: 1rem;
+	}
+
+	.avisos-do-item > li {
+		padding: 0.75rem 1rem;
+		border: 2px solid var(--tinta);
+		border-left-width: 6px;
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 500;
+		line-height: 1.45;
+	}
+
+	.avisos-do-item .rotulo {
+		margin-right: 0.4rem;
+		font-weight: 800;
+	}
+
+	.publicacao-do-ato {
+		max-width: 39rem;
+		margin-top: 1.25rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.5;
+	}
+
+	.proposicoes-do-item {
+		max-width: 39rem;
+		margin-top: 1.25rem;
+	}
+
+	.proposicoes-do-item > .rotulo {
+		margin-bottom: 0.6rem;
+	}
+
+	.proposicoes-do-item li {
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.5;
+	}
+
+	.proposicoes-do-item li + li {
+		margin-top: 0.5rem;
+	}
+
+	.proposicoes-do-item strong {
+		font-family: var(--font-sans);
+		font-weight: 800;
+	}
+
+	.descricao-da-votacao {
+		margin-bottom: 0.75rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.5;
+	}
+
+	/* A decisão sobre o ato retido: o quadro de fio grosso, antes do texto. */
+	.privacidade-do-ato {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.6rem;
+		max-width: 39rem;
+		margin-top: 1.75rem;
+		padding: 1rem;
+		border: 2px solid var(--tinta);
+		border-left-width: 6px;
+	}
+
+	.privacidade-do-ato > legend {
+		float: left;
+		width: 100%;
+		margin-bottom: 0.2rem;
+		padding: 0;
+	}
+
+	.privacidade-do-ato > p {
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.5;
+	}
+
+	.campos-do-item {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem;
+		margin-top: 1.75rem;
+		padding-top: 1.25rem;
+		border-top: 2px solid var(--tinta);
+	}
+
+	.campos-do-item > h4 {
+		color: var(--tinta-suave);
+	}
+
+	.tirar-o-item {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.6rem;
+		margin-top: 1rem;
+	}
+
+	/* ───── O pé ───── */
+
+	/*
+	 * O pé da revisão: a frase do estado e as duas ações, no fim da folha. Numa
+	 * tela com altura para isso, ele fica preso embaixo enquanto a pessoa rola os
+	 * itens, como o pé do quiz. Com a letra grande, a tela fica baixa em rem, e
+	 * ele fica no lugar dele, sem tomar o espaço da leitura.
+	 */
+	.pe-da-revisao {
+		z-index: 3;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+		margin: clamp(2.5rem, 6vw, 4rem) calc(var(--respiro-da-folha) * -1) 0;
+		padding: 0.9rem var(--respiro-da-folha) 1rem;
+		border-top: 2px solid var(--tinta);
+		background: var(--folha);
+	}
+
+	.frase-do-pe {
+		max-width: 46rem;
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 600;
+		line-height: 1.4;
+	}
+
+	/* As mensagens focadas são exceção à regra do #conteudo [tabindex="-1"]. */
+	#conteudo
+		.revisao
+		:is(.falta-no-campo, .frase-do-pe, [aria-invalid="true"]):focus {
+		outline: 3px solid var(--ring);
+		outline-offset: 3px;
+	}
+
+	/* A falha e o rascunho que mudou: em negrito, como o "Ainda não deu". */
+	.frase-do-pe.chama-atencao {
+		font-weight: 800;
+	}
+
+	.acoes-do-pe {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem 1rem;
+	}
+
+	/* No celular, as duas ações dividem a linha, numa letra um pouco menor. */
+	@media (width < 40rem) {
+		.acoes-do-pe {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 0.6rem;
+		}
+
+		.acoes-do-pe > .botao {
+			min-height: 3rem;
+			padding-inline: 0.6rem;
+			font-size: 0.875rem;
+			text-wrap: balance;
+		}
+	}
+
+	@media (width < 20rem) {
+		.acoes-do-pe {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+
+	@media (height >= 40rem) {
+		.pe-da-revisao {
+			position: sticky;
+			bottom: 0;
+		}
+
+		/* O que recebe o foco, ou é levado para a tela, fica acima do pé. */
+		html:has(.pe-da-revisao) {
+			scroll-padding-bottom: var(--altura-do-pe-da-revisao, 0px);
+		}
+
+		.explicacao-do-item {
+			max-height: calc(100dvh - var(--altura-do-pe-da-revisao, 0px) - 12px);
+		}
+
+		.pagina-do-painel .ao-lado-do-artigo {
+			max-height: calc(100svh - 4rem - var(--altura-do-pe-da-revisao, 0px));
+		}
+	}
+
+	/* ───── As folhas por cima ───── */
+
+	/*
+	 * Publicar e sair sem salvar: a folha clara com fio de tinta, no meio da
+	 * tela, sobre o véu de tinta da busca. A que confirma é o botão cheio; a que
+	 * volta, o vazado, e é ela que recebe o foco.
+	 */
+	.folha-por-cima {
+		width: min(34rem, 100% - 2 * var(--margem));
+		max-width: none;
+		max-height: calc(100dvh - 2rem);
+		margin: auto;
+		padding: var(--respiro);
+		overflow-y: auto;
+		border: 2px solid var(--tinta);
+		border-radius: 0;
+		background: var(--folha);
+		color: var(--tinta);
+	}
+
+	.folha-por-cima[open] {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem;
+	}
+
+	/* A tinta escrita: o ::backdrop não herdava as variáveis (estilos/busca.css). */
+	.folha-por-cima::backdrop {
+		background: rgb(20 22 28 / 0.72);
+	}
+
+	.folha-por-cima > h2 {
+		font-size: clamp(1.625rem, 1.3rem + 1.5vw, 2.5rem);
+	}
+
+	.folha-por-cima > p {
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.55;
+	}
+
+	.acoes-da-folha {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem 1rem;
+		margin-top: 0.5rem;
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		.folha-por-cima[open] {
+			animation: busca-sobe 0.2s var(--ease-suave);
+		}
+
+		.folha-por-cima[open]::backdrop {
+			animation: busca-veu 0.2s var(--ease-suave);
+		}
+	}
+}

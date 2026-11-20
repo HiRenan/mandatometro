@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { sairConta } from "@/client";
 import { encerrarProgressoNaConta } from "@/lib/progresso";
@@ -46,6 +46,12 @@ function Perfil() {
 			{sessao.estado === "autenticada" ? (
 				<>
 					<p>{sessao.nome}</p>
+					{/* A revisão da edição da semana só aparece para a administradora. */}
+					{sessao.papel === "administradora" && (
+						<Link to="/painel" className="acao-de-texto">
+							<span>Revisar a edição da semana</span>
+						</Link>
+					)}
 					<button
 						type="button"
 						className="acao-de-texto"
