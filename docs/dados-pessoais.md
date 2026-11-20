@@ -26,6 +26,8 @@ A newsletter pede só o e-mail, que fica no banco e só sai para o envio. Site, 
 
 A conta é opcional e pede nome completo, e-mail e senha. Os dados da conta, incluindo os campos opcionais do cadastro, servem só à conta e ficam no banco: a API, os logs e os fixtures de teste não os levam, fora a resposta à própria pessoa. A senha nunca é guardada em texto puro e não sai do banco, nem na resposta à própria pessoa. Nos testes, os dados da conta são inventados.
 
+O termo de consentimento, na página `/termo` do site, conta as regras desta seção a quem cria a conta: quando uma delas mudar, mude também o texto e a versão do termo, como em [Quando o texto do termo mudar](hospedagem.md#quando-o-texto-do-termo-mudar).
+
 O papel da conta (`comum` ou `administradora`) serve para controlar o acesso à revisão de edições. A API entrega esse campo exclusivamente à própria pessoa em `GET /contas/me`, com `Cache-Control: no-store`. O papel fica fora dos logs, dos e-mails, da API pública de edições e da medição do piloto. O CLI recebe o endereço da conta e usa mensagens fixas de resultado e de erro que omitem o endereço, inclusive quando os argumentos estão fora de ordem.
 
 O progresso das trilhas guarda a referência da conta, o id de cada artigo lido e a data e hora em que foi marcado, para a pessoa continuar de onde parou em outro aparelho. A API entrega somente a lista de ids de artigos à própria pessoa, pela sessão e com `Cache-Control: no-store`. O progresso fica fora dos logs, dos e-mails, da API pública e da medição do piloto. Desmarcar ou recomeçar apaga as marcas correspondentes. Sair limpa a cópia do navegador. Excluir a conta apaga a cópia do navegador e todas as marcas no banco.

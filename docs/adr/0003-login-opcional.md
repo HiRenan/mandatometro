@@ -31,3 +31,11 @@ Gênero, estado e nascimento são opcionais e servem para entender o público. O
 O Resend envia os links de confirmação e recuperação. Abrir um link mostra a tela da operação. A pessoa confirma o e-mail ou define a nova senha no formulário. Redefinir a senha encerra as sessões.
 
 Para excluir a conta, a pessoa entra e confirma a senha atual. A exclusão remove as credenciais e o progresso associado e gera um comprovante por e-mail. A inscrição na newsletter é independente. O quiz continua anônimo.
+
+## Decisões da #112
+
+Em 20/11/2026, o Renan decidiu que a conta é para quem tem 12 anos ou mais, no lugar de "O cadastro aceita todas as idades", da #110. Para quem tem menos de 12, a LGPD pede a autorização de quem é responsável (art. 14, § 1º), e o site não tem como recebê-la. A caixa de aceite do cadastro diz "Tenho 12 anos ou mais e li e aceito o termo de consentimento.". A API não muda, e o site não confere a data de nascimento.
+
+O termo fica numa página pública do site, em `/termo`, que abre sem conta, sem a API e sem JavaScript. O rodapé de todas as páginas leva até ela. Quem responde pelos dados das contas é o Renan, pelo time, e o contato do termo é o `contato@mandatometro.com.br`.
+
+A versão do termo é a data do texto e fica num lugar só: a `VERSAO_DO_TERMO`, em `apps/web/src/lib/termo.ts`. A API recebe o mesmo valor em `CONTA_TERMO_VERSAO`, e o cadastro só abre quando as duas versões são iguais. Com outra, a pessoa aceitaria um texto que não leu. O passo a passo de quando o texto muda fica no [guia de hospedagem](../hospedagem.md#quando-o-texto-do-termo-mudar).

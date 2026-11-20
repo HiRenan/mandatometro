@@ -106,6 +106,34 @@ Confira o commit no passo **Registrar o código executado** e os três resumos J
 
 Conclua a recuperação das coletas antes da revisão sempre que possível. A agenda devolve o mesmo `edicao_id` para `rascunho_existente` ou `ja_publicada` e preserva as edições e revisões gravadas. Se uma recoleta trocar uma fonte usada no rascunho, a conferência dos fatos pede que a pessoa decida como refazer e revisar. Use o ID para exportar, revisar e publicar antes do envio de domingo. [Como preparar a edição](newsletter.md#como-preparar-a-edição).
 
+## Abrir o cadastro de contas
+
+O cadastro fica fechado enquanto a API não tem `CONTA_CHAVE`, `CONTA_TERMO_VERSAO` e `CONTA_TERMO_URL`: o `GET /contas/termo` responde `503`, e o `/cadastro` mostra "O cadastro está indisponível no momento.". Ele também fica fechado quando a versão da API não é a da página do termo, a `VERSAO_DO_TERMO` do `apps/web/src/lib/termo.ts` (hoje `2026-11-20`). Faça os passos primeiro no desenvolvimento e depois na produção, quando a `main` já tiver a página `/termo`.
+
+| Na API | Desenvolvimento | Produção |
+| --- | --- | --- |
+| Ambiente na Vercel | Preview, branch `develop` | Production |
+| `CONTA_TERMO_URL` | `https://dev.mandatometro.com.br/termo` | `https://mandatometro.com.br/termo` |
+| `CONTA_TERMO_VERSAO` | a `VERSAO_DO_TERMO` da `develop` | a `VERSAO_DO_TERMO` da `main` |
+| `CONTA_CHAVE` | uma chave só deste ambiente | outra chave, só da produção |
+
+1. **O contato do termo.** Mande um e-mail de teste para `contato@mandatometro.com.br` e confira se ele chega. O termo dá esse endereço a quem quer ver, corrigir ou apagar os próprios dados: abra o cadastro só com ele recebendo.
+2. **As migrations.** Em **GitHub → Actions → Migrar banco**, confira que a última execução na branch do ambiente aplicou até a `0011`. As contas vêm da `0008`, o papel, da `0010`, e o progresso, da `0011`. **Confira:** o passo **Aplicar as migrations** terminou com "Migration concluída até head".
+3. **A chave.** Num terminal local, em `apps/backend`, gere a chave com `uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`. Em **API → Settings → Environment Variables → Add**, cadastre-a como segredo, com o nome `CONTA_CHAVE`, no ambiente da tabela. Na produção, cadastre a mesma chave também em **GitHub → Settings → Environments → producao → Environment secrets**, para o workflow **Retomar avisos de conta**: com outra chave, ele não abre os avisos que a API deixou na fila. **Confira:** a chave não está no projeto do site, em conversas, issues ou PRs.
+4. **O termo.** No mesmo lugar, cadastre `CONTA_TERMO_URL` e `CONTA_TERMO_VERSAO` como **Config**, com os valores da tabela. Copie a versão do `apps/web/src/lib/termo.ts` da branch publicada no ambiente. **Confira:** o `APP_BASE_URL` da API é o endereço do site do ambiente, sem barra no fim. A API monta os links dos e-mails com ele, e entrar, sair e excluir a conta só funcionam a partir desse endereço.
+5. **Os e-mails.** A API manda pelo Resend o link que confirma o cadastro, o de troca de senha e o comprovante da exclusão. Na produção, `RESEND_API_KEY` (segredo) e `RESEND_FROM` (**Config**) já entram na API no passo 3 da produção e no GitHub no envio de domingo: confira se estão nos dois. No desenvolvimento, o passo 5 deixa a API sem a chave do Resend. Assim, o cadastro abre, mas o e-mail de confirmação não sai, e a conta nova não chega a entrar. Sem uma conta confirmada, esse ambiente também fica sem administradora para o painel. Pôr a chave do Resend na API do desenvolvimento liga também o e-mail de inscrição da newsletter dele: a decisão é do Renan.
+6. **A fila dos avisos, só na produção.** Em **Settings → Secrets and variables → Actions → Variables**, crie `AVISOS_CONTA_ATIVOS` com o valor `true`. O workflow **Retomar avisos de conta** passa a rodar a cada 5 minutos e tenta de novo os avisos que não saíram na hora, com os segredos `DATABASE_URL`, `CONTA_CHAVE` e `RESEND_API_KEY` e a variável `RESEND_FROM` do ambiente `producao`. **Confira:** a próxima execução agendada termina verde.
+7. **Publique a API.** Em **API → Deployments actions → Create Deployment**, publique a branch do ambiente (`develop` ou `main`): as variáveis novas só valem numa publicação nova. **Confira:** `GET /contas/termo`, na API do ambiente, devolve a versão e o endereço da tabela, como `{"versao":"2026-11-20","url":"https://mandatometro.com.br/termo"}`.
+8. **O cadastro.** Abra `/cadastro` no site do ambiente. **Confira:** a caixa diz "Tenho 12 anos ou mais e li e aceito o termo de consentimento.", o link abre o termo em outra aba, e o botão **Criar conta** fica ligado. Se aparecer "O cadastro está indisponível no momento.", compare a versão do `GET /contas/termo` com a data que a página `/termo` mostra.
+9. **Uma conta de teste, só na produção.** Com um endereço que o Renan controla, crie uma conta, confirme pelo e-mail, entre e veja o nome em `/perfil`. Depois, exclua a conta em **Meu perfil → Excluir conta** e confira o comprovante. O endereço não vai para relatos, issues ou PRs.
+
+## Quando o texto do termo mudar
+
+1. **No mesmo PR,** mude o texto em `apps/web/src/components/pagina-do-termo.tsx` e a `VERSAO_DO_TERMO` em `apps/web/src/lib/termo.ts`, com a data do texto novo em `AAAA-MM-DD`. Se o tempo de leitura mudar, o teste do componente mostra o número novo para o `MINUTOS_DE_LEITURA`. Cada frase do termo tem que valer no código e no [`dados-pessoais.md`](dados-pessoais.md#inscrição-e-conta): o termo não promete o que o código não faz.
+2. **Publique o site** do ambiente. Até o passo 3, o cadastro fica fechado, com "O cadastro está indisponível no momento.": a página mostra a versão nova, e a API ainda pede a antiga.
+3. **Troque a `CONTA_TERMO_VERSAO`** da API do mesmo ambiente pela data nova e faça uma publicação nova da API. Quem estava com o formulário aberto na troca recebe "O termo mudou. Recarregue a página para ler a versão atual.". **Confira:** o `GET /contas/termo` devolve a versão nova, e o `/cadastro` abre.
+4. **As contas que já existem** continuam com a versão que aceitaram, guardada no banco. O site não avisa essas pessoas. Quando a mudança toca a finalidade dos dados, a forma e a duração do uso, quem responde por eles ou com quem são compartilhados, a LGPD pede que elas sejam avisadas, com destaque para o que mudou (art. 8º, § 6º, e art. 9º, § 2º). Esse aviso ainda não existe no código: como fazê-lo é uma decisão do Renan.
+
 ## Conceder e revogar o papel de administradora
 
 1. Confira se o workflow **Migrar banco** aplicou a revisão `0010` no ambiente escolhido e se a API desse ambiente já lê o papel. A pessoa que vai receber o papel cria a conta e confirma o e-mail nesse ambiente.

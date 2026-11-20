@@ -16,9 +16,9 @@ type Parte = { id: string; titulo: string; texto: ReactNode };
 
 /**
  * As nove partes do termo, na ordem: o índice e a folha saem desta lista. Cada
- * frase sai do que o código faz, e a origem de cada uma está no relato da #112 e
- * em docs/dados-pessoais.md ("Inscrição e conta"). Quem muda o texto muda também a
- * VERSAO_DO_TERMO (lib/termo.ts), no mesmo PR.
+ * frase sai do que o código faz e das regras de docs/dados-pessoais.md
+ * ("Inscrição e conta"). Quem muda o texto muda também a VERSAO_DO_TERMO
+ * (lib/termo.ts), no mesmo PR.
  */
 const PARTES: Parte[] = [
 	{
