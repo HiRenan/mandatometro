@@ -54,9 +54,20 @@ def test_cli_altera_so_o_papel_de_conta_confirmada(engine_de_teste, monkeypatch,
     assert email not in caplog.text and email_pendente not in caplog.text
 
 
-def test_cli_oculta_argumento_inesperado(capsys):
+@pytest.mark.parametrize(
+    "argumentos",
+    [
+        pytest.param(["conta", "promover", "--email", "alvo@example.com", "extra"], id="extra"),
+        pytest.param(["--email", "alvo@example.com", "conta", "promover"], id="email-antes"),
+        pytest.param(["--email=alvo@example.com", "conta", "revogar"], id="email-igual-antes"),
+        pytest.param(["alvo@example.com", "conta", "revogar"], id="conta-fora-de-ordem"),
+        pytest.param(["--email", "alvo@example.com"], id="email-sem-comando"),
+        pytest.param(["--email=alvo@example.com"], id="email-igual-sem-comando"),
+    ],
+)
+def test_cli_oculta_argumentos_invalidos(argumentos, capsys):
     with pytest.raises(SystemExit) as erro:
-        main(["conta", "promover", "--email", "alvo@example.com", "extra@example.com"])
+        main(argumentos)
     assert erro.value.code == 2
     assert capsys.readouterr() == ("", "Argumentos inválidos.\n")
 

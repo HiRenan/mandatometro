@@ -14,6 +14,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from mandatometro.config import config
 from mandatometro.contas import agendar, agora, consumir_cota, entregar_pendentes, resumo, senhas
@@ -301,6 +302,7 @@ def conta_da_sessao(db: Session, sessao_conta: str | None) -> Conta:
 
 
 def exigir_administradora(sessao_conta: Annotated[str | None, Cookie()] = None) -> Conta:
+    # A dependência é chamada após a leitura do corpo da requisição.
     with sessao() as db:
         try:
             conta = conta_da_sessao(db, sessao_conta)
@@ -310,8 +312,8 @@ def exigir_administradora(sessao_conta: Annotated[str | None, Cookie()] = None) 
         else:
             if conta.papel == "administradora":
                 return conta
-    # Usa o mesmo status e corpo de uma rota inexistente.
-    raise HTTPException(404)
+    # Usa o tratamento padrão do roteador também em uma RotaConta.
+    raise StarletteHTTPException(404)
 
 
 @router.post("/confirmacao", status_code=204)
@@ -341,6 +343,8 @@ class PerfilConta(BaseModel):
 
 @router.get("/me")
 def consultar_perfil(sessao_conta: Annotated[str | None, Cookie()] = None) -> PerfilConta:
+    if not sessao_conta:
+        raise HTTPException(401, "Entre na sua conta.")
     with sessao() as db:
         conta = conta_da_sessao(db, sessao_conta)
         return PerfilConta(nome=conta.nome, papel=conta.papel)

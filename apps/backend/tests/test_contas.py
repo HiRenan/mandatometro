@@ -1,13 +1,17 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
+from secrets import token_urlsafe
 from typing import Annotated
+from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
 from cryptography.fernet import Fernet
 from fastapi import APIRouter, Depends, FastAPI
+from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from sqlalchemy import select
+from sqlalchemy.exc import ArgumentError
 from sqlalchemy.orm import sessionmaker
 
 from mandatometro import contas, db
@@ -141,6 +145,22 @@ def api_secret():
     return SecretStr(Fernet.generate_key().decode())
 
 
+def test_perfil_sem_cookie_responde_antes_de_abrir_o_banco(monkeypatch):
+    engine = Mock(side_effect=ArgumentError("Falha simulada na criação do engine."))
+    monkeypatch.setattr(db, "engine", engine)
+    cliente = TestClient(app)
+
+    resposta = cliente.get("/contas/me")
+    assert resposta.status_code == 401
+    assert resposta.json() == {"detail": "Entre na sua conta."}
+    assert resposta.headers["cache-control"] == "no-store"
+    engine.assert_not_called()
+
+    resposta = cliente.get("/contas/me", headers={"Cookie": "sessao_conta=inventado"})
+    assert resposta.status_code == 503
+    engine.assert_called_once_with()
+
+
 @pytest.fixture
 def sessoes_conta(engine_de_teste, monkeypatch):
     monkeypatch.setattr(db, "engine", lambda: engine_de_teste)
@@ -176,21 +196,30 @@ def _criar_sessao(sessoes_conta, senha_hash="hash-ficticio"):
     return id_conta, email, token
 
 
-def test_guarda_de_administradora_consulta_o_papel_a_cada_pedido(sessoes_conta):
+@pytest.mark.parametrize("classe_rota", [APIRoute, api.RotaConta], ids=["padrao", "rota-conta"])
+def test_guarda_de_administradora_consulta_o_papel_a_cada_pedido(sessoes_conta, classe_rota):
     id_conta, email, token = _criar_sessao(sessoes_conta)
-    token_vencido = uuid4().hex
+    token_vencido = token_urlsafe(32)
+    codigo_confirmacao = token_urlsafe(32)
+    codigo_recuperacao = token_urlsafe(32)
+    instante = contas.agora()
     with sessoes_conta.begin() as sessao:
-        sessao.add(
-            CredencialConta(
-                resumo=contas.resumo(token_vencido),
-                conta_id=id_conta,
-                finalidade="sessao",
-                expira=contas.agora() - timedelta(seconds=1),
+        for segredo, finalidade, validade in (
+            (token_vencido, "sessao", -timedelta(seconds=1)),
+            (codigo_confirmacao, "confirmacao", timedelta(hours=1)),
+            (codigo_recuperacao, "recuperacao", timedelta(hours=1)),
+        ):
+            sessao.add(
+                CredencialConta(
+                    resumo=contas.resumo(segredo),
+                    conta_id=id_conta,
+                    finalidade=finalidade,
+                    expira=instante + validade,
+                )
             )
-        )
 
     app_teste = FastAPI()
-    router = APIRouter(route_class=api.RotaConta)
+    router = APIRouter(route_class=classe_rota)
 
     @router.get("/revisao-de-teste", status_code=204)
     def protegido(conta: Annotated[Conta, Depends(api.exigir_administradora)]) -> None:
@@ -200,30 +229,41 @@ def test_guarda_de_administradora_consulta_o_papel_a_cada_pedido(sessoes_conta):
     app_teste.include_router(router)
     app_teste.include_router(api.router)
     cliente = TestClient(app_teste)
-    inexistente = cliente.get("/rota-inexistente")
 
-    def negar():
-        resposta = cliente.get("/revisao-de-teste")
+    def negar(cookie=None):
+        cabecalhos = {} if cookie is None else {"Cookie": f"sessao_conta={cookie}"}
+        inexistente = cliente.get("/rota-inexistente", headers=cabecalhos)
+        resposta = cliente.get("/revisao-de-teste", headers=cabecalhos)
         assert resposta.status_code == inexistente.status_code == 404
-        assert resposta.json() == inexistente.json()
-        assert resposta.headers["cache-control"] == "no-store"
+        assert resposta.content == inexistente.content
+        assert sorted(resposta.headers.multi_items()) == sorted(inexistente.headers.multi_items())
 
     negar()
-    cliente.cookies.set("sessao_conta", token)
-    negar()
+    negar("")
+    negar(token_urlsafe(32))
+    negar(token)
     assert main(["conta", "promover", "--email", email]) == 0
 
-    cliente.cookies.set("sessao_conta", token_vencido)
-    negar()
+    negar(token_vencido)
+    negar(codigo_confirmacao)
+    negar(codigo_recuperacao)
     cliente.cookies.set("sessao_conta", token)
-    assert cliente.get("/revisao-de-teste").status_code == 204
+    resposta = cliente.get("/revisao-de-teste")
+    assert resposta.status_code == 204
+    if classe_rota is api.RotaConta:
+        assert resposta.headers["cache-control"] == "no-store"
     perfil = cliente.get("/contas/me")
     assert perfil.json()["papel"] == "administradora"
     assert perfil.headers["cache-control"] == "no-store"
 
     assert main(["conta", "revogar", "--email", email]) == 0
-    negar()
+    negar(token)
     assert cliente.get("/contas/me").json()["papel"] == "comum"
+
+    assert main(["conta", "promover", "--email", email]) == 0
+    with sessoes_conta.begin() as sessao:
+        sessao.delete(sessao.get(Conta, id_conta))
+    negar(token)
 
 
 def test_administradora_pode_excluir_a_propria_conta(sessoes_conta, monkeypatch):

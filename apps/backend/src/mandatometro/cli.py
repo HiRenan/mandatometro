@@ -29,7 +29,9 @@ def _openapi(args: argparse.Namespace) -> None:
 def main(argv: list[str] | None = None) -> int:
     argumentos = sys.argv[1:] if argv is None else argv
     tipo_parser = argparse.ArgumentParser
-    if argumentos[:1] == ["conta"]:
+    if "conta" in argumentos or any(
+        arg == "--email" or arg.startswith("--email=") for arg in argumentos
+    ):
         tipo_parser = contas_cli.ParserConta
     elif argumentos[:2] == ["edicao", "enviar"]:
         tipo_parser = ParserEnvio
