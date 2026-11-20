@@ -37,6 +37,17 @@ describe("rodapé", () => {
 		);
 	});
 
+	it("leva ao termo de consentimento da conta, com a área de toque das ações em texto", () => {
+		render(<Rodape />);
+		const termo = within(screen.getByRole("contentinfo")).getByRole("link", {
+			name: "O termo de consentimento da conta",
+		});
+
+		expect(termo.getAttribute("href")).toBe("/termo");
+		expect(termo.classList.contains("acao-de-texto")).toBe(true);
+		expect(termo.firstElementChild?.tagName).toBe("SPAN");
+	});
+
 	it("tem o nome e o lema, e a fileira de azulejos fica fora do leitor de tela", () => {
 		render(<Rodape />);
 		const rodape = screen.getByRole("contentinfo");
