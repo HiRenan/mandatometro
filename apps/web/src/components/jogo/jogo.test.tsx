@@ -17,6 +17,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	acharJogo,
 	JOGO_DAS_COMISSOES,
+	type JogoNaPagina,
 	jogos,
 } from "@/lib/jogo/paginas.server";
 import { Jogo } from "./jogo";
@@ -25,10 +26,15 @@ import { Jogo } from "./jogo";
 // produto: a tela final mostra o caminho em palavras e **nunca** um total de
 // acertos (DESIGN.md e docs/jogo-das-comissoes.md).
 
-const jogo = acharJogo(jogos, JOGO_DAS_COMISSOES);
-if (!jogo) {
-	throw new Error("o roteiro do Jogo das Comissões não foi lido");
+function lerOJogo(): JogoNaPagina {
+	const lido = acharJogo(jogos, JOGO_DAS_COMISSOES);
+	if (!lido) {
+		throw new Error("o roteiro do Jogo das Comissões não foi lido");
+	}
+	return lido;
 }
+
+const jogo = lerOJogo();
 
 beforeEach(() => {
 	// O jsdom não rola a janela.
