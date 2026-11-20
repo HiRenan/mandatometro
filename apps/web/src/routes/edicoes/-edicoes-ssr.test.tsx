@@ -182,6 +182,9 @@ describe("o HTML das páginas das edições", () => {
 		// O trecho da fonte vai como texto: o <b> da fonte chega escapado.
 		expect(html).toContain("&lt;b&gt;emenda&lt;/b&gt;");
 		expect(html).not.toContain("<b>emenda</b>");
+		expect(html.replaceAll("<!-- -->", "")).toContain(
+			'<a href="https://www.camara.leg.br/votacoes/exemplo-1">Fonte oficial <span class="sr-only">do item 1</span></a>',
+		);
 	});
 
 	it("a edição mista agrupa e ordena os itens na folha e no índice", async () => {
