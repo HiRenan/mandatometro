@@ -37,6 +37,7 @@ Mandatômetro teaches how Brazilian politics works through what Congress is voti
 - Keep server-only code in `*.server.ts`. Loaders reach it through `createServerFn` in `*.functions.ts`. Importing a server-only file in browser code fails the build.
 - A server function that calls the API logs one fixed line with a short reason and throws an error with a fixed message. The router puts the error’s `message` in the HTML and the function response. The original message can contain an internal address, SQL, or an email address, as seen in the review of PR #44. Follow the [editions server function](apps/web/src/lib/edicoes/edicoes.server.ts) and the [test for the 500 HTML](apps/web/src/routes/edicoes/-edicoes-ssr.test.tsx).
 - Declare site variables in varlock’s [`.env.schema`](apps/web/.env.schema). Variables marked `@public` go into the browser bundle.
+- Draw with CSS and SVG written in code, and generate the few images in `apps/web/public/` from HTML with `apps/web/imagens/`. The [Jogo das Comissões](docs/jogo-das-comissoes.md) is the one exception: its scenery, portraits, and props are WebP files in `apps/web/public/jogo/`, and its sound is OGG. Treat them as decoration — outside the screen reader, with the meaning in the words on screen — and load only the current scene. Sound stays off until the player turns it on.
 - Use the Compose host port for local PostgreSQL to avoid a conflict with an installation on port 5432.
 
 ## Conventions
@@ -74,6 +75,7 @@ Apply the [personal data rules](docs/dados-pessoais.md) before storing, exposing
 | Work on data collection, including calls to the Câmara, Senado, or TSE APIs | [docs/dicionario-de-dados.md](docs/dicionario-de-dados.md) |
 | Draft the newsletter, handle subscriptions, or send an edition | [docs/newsletter.md](docs/newsletter.md) |
 | Work on the pilot | [docs/medicao-do-piloto.md](docs/medicao-do-piloto.md) |
+| Write or check a scene, decision, or asset of the game | [docs/jogo-das-comissoes.md](docs/jogo-das-comissoes.md) |
 | Work on hosting workflows, deployments, or variables | [docs/hospedagem.md](docs/hospedagem.md) |
 | Decide what belongs in the product | [PRODUCT.md](PRODUCT.md) and [docs/adr/](docs/adr/) |
 
