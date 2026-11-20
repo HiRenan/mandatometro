@@ -9,6 +9,7 @@ import json
 import sys
 from pathlib import Path
 
+from mandatometro import contas_cli
 from mandatometro.avisos.cli import ParserEnvio
 from mandatometro.coleta import camara, destaques, legislacao
 from mandatometro.coleta.senado import registrar as registrar_senado
@@ -27,7 +28,11 @@ def _openapi(args: argparse.Namespace) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     argumentos = sys.argv[1:] if argv is None else argv
-    tipo_parser = ParserEnvio if argumentos[:2] == ["edicao", "enviar"] else argparse.ArgumentParser
+    tipo_parser = argparse.ArgumentParser
+    if argumentos[:1] == ["conta"]:
+        tipo_parser = contas_cli.ParserConta
+    elif argumentos[:2] == ["edicao", "enviar"]:
+        tipo_parser = ParserEnvio
     parser = tipo_parser(prog="mandatometro", description="Mandatômetro: backend.")
     comandos = parser.add_subparsers(dest="comando", required=True)
 
@@ -46,6 +51,7 @@ def main(argv: list[str] | None = None) -> int:
     destaques.registrar(casas)
     edicao.registrar_comando(comandos)
     registrar_piloto(comandos)
+    contas_cli.registrar_comando(comandos)
 
     args = parser.parse_args(argumentos)
     return args.rodar(args) or 0

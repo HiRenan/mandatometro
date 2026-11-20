@@ -80,6 +80,23 @@ O rascunho da #22 tem lugar proposto no domingo às **06h37**, depois da coleta,
 
 A coleta de destaques do DOU usa `FIRECRAWL_API_KEY` como segredo no ambiente que executa o comando. [Coleta dos destaques](../README.md#como-rodar).
 
+## Conceder e revogar o papel de administradora
+
+1. Confira se o workflow **Migrar banco** aplicou a revisão `0010` no ambiente escolhido e se a API desse ambiente já lê o papel. A pessoa que vai receber o papel cria a conta e confirma o e-mail nesse ambiente.
+2. Em um terminal local privado, entre em `apps/backend` de uma cópia do código com o comando `conta` e rode `uv sync --frozen`. Use a URL autorizada com permissão de escrita e confira o servidor e o banco. No Bash, leia os valores no terminal e passe `DATABASE_URL` na linha do comando:
+
+   ```bash
+   IFS= read -rs -p 'URL do banco: ' url_banco
+   printf '\n'
+   IFS= read -rs -p 'E-mail da conta confirmada: ' email_conta
+   printf '\n'
+   DATABASE_URL="$url_banco" uv run mandatometro conta promover --email="$email_conta"
+   ```
+
+3. A mensagem `Conta promovida a administradora.` com saída `0` confirma a gravação. Para retirar o papel, use `DATABASE_URL="$url_banco" uv run mandatometro conta revogar --email="$email_conta"`. Ao acabar, limpe os valores com `unset url_banco email_conta`.
+
+Execute as duas operações somente à mão. Os registros do GitHub Actions são públicos. O e-mail e a URL ficam no terminal privado. A mudança de papel vale na requisição seguinte, inclusive para sessões já abertas. Se a última administradora excluir a própria conta, o ambiente fica sem administradoras até que uma conta confirmada seja promovida pelo CLI.
+
 ## Ativar e recuperar o envio de domingo
 
 1. Depois da migration `0007` e da publicação da API nova, confira `GET /edicoes` e `GET /edicoes/{id}` com uma edição revisada. Não use a edição local de prova em produção. O envio antigo da inscrição não grava o marcador: ative a agenda somente depois de toda a API usar a versão nova. Se já houve envios reais antes da migration, concilie-os antes de iniciar a primeira rodada; marcador nulo não prova ausência de envio anterior.
