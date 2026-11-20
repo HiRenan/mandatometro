@@ -1,8 +1,13 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from "@testing-library/react";
+import {
+	act,
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { termoConta } from "@/client";
 import { VERSAO_DO_TERMO } from "@/lib/termo";
 import { FormularioConta } from "./formulario-conta";
 
@@ -11,39 +16,48 @@ import { FormularioConta } from "./formulario-conta";
 // cadastro só abre com a versão da API igual à da página do termo: com outra, a
 // pessoa aceitaria um texto que não leu.
 vi.mock("@/env", () => ({ ENV: { API_URL: "https://api.example.com" } }));
-vi.mock("@/client", () => ({
-	cadastrarConta: vi.fn(),
-	confirmarConta: vi.fn(),
-	entrarConta: vi.fn(),
-	excluirConta: vi.fn(),
-	recuperarConta: vi.fn(),
-	redefinirSenha: vi.fn(),
-	reenviarConfirmacao: vi.fn(),
-	termoConta: vi.fn(),
-}));
 
-const termo = vi.mocked(termoConta);
+const pedidosAApi = vi.fn<(pedido: Request) => Promise<Response>>();
 
 /** O endereço do termo na API: outro que o da página, para o link vir dela. */
 const ENDERECO_NA_API = "https://termo.example.com/termo";
 
 /** A API responde ao GET /contas/termo com esta versão. */
 function versaoNaApi(versao: string) {
-	termo.mockResolvedValue({
-		data: { versao, url: ENDERECO_NA_API },
-		request: new Request("https://api.example.com/contas/termo"),
-		response: new Response(null, { status: 200 }),
-	} as never);
+	pedidosAApi.mockResolvedValueOnce(
+		Response.json({ versao, url: ENDERECO_NA_API }),
+	);
 }
 
 const botao = () =>
 	screen.getByRole("button", { name: "Criar conta" }) as HTMLButtonElement;
 
+function preencherCadastro() {
+	const senha = "Senha fictícia de cadastro";
+	fireEvent.change(screen.getByLabelText("Nome completo"), {
+		target: { value: "Pessoa fictícia" },
+	});
+	fireEvent.change(screen.getByLabelText("E-mail"), {
+		target: { value: "pessoa@example.com" },
+	});
+	fireEvent.change(screen.getByLabelText("Senha (12 a 128 caracteres)"), {
+		target: { value: senha },
+	});
+	fireEvent.change(screen.getByLabelText("Confirmar senha"), {
+		target: { value: senha },
+	});
+	fireEvent.click(screen.getByRole("checkbox", { name: /li e aceito/ }));
+}
+
 beforeEach(() => {
-	vi.clearAllMocks();
+	pedidosAApi.mockReset();
+	vi.stubGlobal("fetch", pedidosAApi);
 });
 
-afterEach(cleanup);
+afterEach(() => {
+	cleanup();
+	vi.unstubAllGlobals();
+});
 
 describe("o termo no cadastro", () => {
 	it("leva ao endereço que a API devolve, em outra aba", async () => {
@@ -71,6 +85,29 @@ describe("o termo no cadastro", () => {
 		).toBeTruthy();
 	});
 
+	it("manda no POST a versão que a API devolveu no GET", async () => {
+		const versao = VERSAO_DO_TERMO;
+		versaoNaApi(versao);
+		pedidosAApi.mockResolvedValueOnce(new Response(null, { status: 204 }));
+		render(<FormularioConta modo="cadastro" />);
+		await screen.findByRole("link", { name: "o termo de consentimento" });
+
+		preencherCadastro();
+		fireEvent.click(botao());
+		await screen.findByText(
+			"Confira sua caixa de entrada para confirmar o cadastro.",
+		);
+
+		expect(
+			pedidosAApi.mock.calls.map(([pedido]) => [pedido.method, pedido.url]),
+		).toEqual([
+			["GET", "https://api.example.com/contas/termo"],
+			["POST", "https://api.example.com/contas"],
+		]);
+		const [[_get], [post]] = pedidosAApi.mock.calls;
+		expect(await post.json()).toMatchObject({ aceite: true, termo: versao });
+	});
+
 	it("fica fechado quando a versão da API não é a da página do termo", async () => {
 		versaoNaApi("2026-01-01");
 		render(<FormularioConta modo="cadastro" />);
@@ -82,5 +119,20 @@ describe("o termo no cadastro", () => {
 			screen.queryByRole("link", { name: "o termo de consentimento" }),
 		).toBeNull();
 		expect(botao().disabled).toBe(true);
+	});
+
+	it("faz zero POSTs mesmo se o formulário com versão divergente for enviado", async () => {
+		versaoNaApi("2026-01-01");
+		render(<FormularioConta modo="cadastro" />);
+		await screen.findByText("O cadastro está indisponível no momento.");
+
+		preencherCadastro();
+		await act(async () => {
+			fireEvent.submit(botao().form as HTMLFormElement);
+		});
+
+		expect(
+			pedidosAApi.mock.calls.map(([pedido]) => [pedido.method, pedido.url]),
+		).toEqual([["GET", "https://api.example.com/contas/termo"]]);
 	});
 });
