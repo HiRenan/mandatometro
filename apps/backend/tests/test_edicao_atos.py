@@ -9,7 +9,7 @@ from test_edicao_selecao import dados as dados
 
 from mandatometro.db.modelos import Ato, Edicao, Fonte, ItemEdicao
 from mandatometro.ia.redacao import RespostaRedator
-from mandatometro.ia.servico import ErroEdicao, exportar, gerar, publicar, revisar
+from mandatometro.ia.servico import ErroEdicao, exportar, gerar, mostrar, publicar, revisar
 
 HASH_ATO = "e4db65667762864c995baaefd735df69824c3db2bd7958325adb8e1803e00b18"
 ERRO_DADOS = "Item 1: os dados usados mudaram. Refaça e revise o rascunho."
@@ -123,9 +123,26 @@ def test_gerar_exportar_revisar_e_publicar_ato(abrir, dados, ato, com_votacao):
     item_ato["explicacao"] = [so_removeu_o_rotulo]
     with pytest.raises(ErroEdicao, match="escreva a explicação"):
         revisar(abrir, edicao_id, arquivo)
+    item_ato["titulo"] = "Publicação fictícia"
     item_ato["explicacao"] = ["O ato fictício foi publicado em 12 de novembro."]
+    if com_votacao:
+        arquivo["itens"][0]["titulo"] = "Votação fictícia"
+        arquivo["itens"].reverse()
     assert revisar(abrir, edicao_id, arquivo)["pendencias"] == []
+    assert exportar(abrir, edicao_id)["itens"][0]["fatos"]["versao"] == 2
+    previa = mostrar(abrir, edicao_id, app_base_url="https://example.com")
     assert publicar(abrir, edicao_id)["situacao"] == "publicada"
+    assert mostrar(abrir, edicao_id, app_base_url="https://example.com") == previa
+    assert previa.index("O que saiu no Diário Oficial") < previa.index("Publicação fictícia")
+    assert "Fonte oficial: https://www.in.gov.br/ato-exemplo" in previa
+    if com_votacao:
+        assert (
+            previa.index("O que o Congresso votou")
+            < previa.index("Votação fictícia")
+            < previa.index("O que saiu no Diário Oficial")
+        )
+    else:
+        assert "O que o Congresso votou" not in previa
 
 
 def test_revisar_ato_aceita_numeros_da_linha_e_das_datas(abrir, sessao, ato):

@@ -9,9 +9,9 @@ from uuid import UUID
 
 from pydantic import ValidationError
 
-from mandatometro.db.modelos import Edicao, Fonte
+from mandatometro.db.modelos import Edicao, Fonte, ItemEdicao
 from mandatometro.ia.artigos import CATALOGO
-from mandatometro.ia.esquemas import Fatos, FatosAto
+from mandatometro.ia.esquemas import Fatos, FatosAto, FatosItem
 
 DOMINIOS_OFICIAIS = ("gov.br", "leg.br", "jus.br", "mp.br", "def.br")
 FONTE_OCULTA_NA_PREVIA = "Fonte oficial disponível no arquivo de revisão."
@@ -78,25 +78,62 @@ def formatar_edicao(
     """Não lê banco, não publica e não envia. A prévia admite endereço local do site."""
     if not edicao.titulo.strip() or any(ord(c) < 32 for c in edicao.titulo):
         raise MensagemInvalida("Título inadequado para o e-mail.")
-    fontes = fontes or {}
-    html, texto = [f"<h1>{escape(edicao.titulo)}</h1>"], [edicao.titulo]
+    votacoes, atos = [], []
     for item in sorted(edicao.itens, key=lambda item: item.ordem):
+        try:
+            fatos = Fatos.ler(item.fatos) if item.fatos is not None else None
+        except (ValidationError, ValueError, TypeError):
+            raise MensagemInvalida("Item com fatos inválidos.") from None
+        secao = atos if isinstance(fatos, FatosAto) else votacoes
+        secao.append((item, fatos))
+
+    html, texto = [f"<h1>{escape(edicao.titulo)}</h1>"], [edicao.titulo]
+    secoes = [
+        ("O que o Congresso votou" if atos else None, votacoes),
+        ("O que saiu no Diário Oficial", atos),
+    ]
+    for titulo, itens in secoes:
+        if not itens:
+            continue
+        conteudo = _formatar_secao(
+            itens,
+            titulo=titulo,
+            app_base_url=app_base_url,
+            fontes=fontes or {},
+            previa=previa,
+            itens_sem_link=itens_sem_link,
+        )
+        html.append(conteudo.html)
+        texto.append(conteudo.texto)
+    return Conteudo("\n".join(html), "\n\n".join(texto))
+
+
+def _formatar_secao(
+    itens: list[tuple[ItemEdicao, FatosItem | None]],
+    *,
+    titulo: str | None,
+    app_base_url: str,
+    fontes: dict[int, Fonte],
+    previa: bool,
+    itens_sem_link: Collection[int],
+) -> Conteudo:
+    html, texto = [], []
+    if titulo:
+        html.append(f"<h2>{escape(titulo)}</h2>")
+        texto.append(titulo)
+    nivel_titulo = "h3" if titulo else "h2"
+    for item, fatos in itens:
         if item.fonte is None:
             raise MensagemInvalida("Item sem fonte completa.")
         referencias, linhas = [item.fonte], []
-        de_ato = False
-        if item.fatos is not None:
-            try:
-                fatos = Fatos.ler(item.fatos)
-            except (ValidationError, ValueError, TypeError):
-                raise MensagemInvalida("Item com fatos inválidos.") from None
+        de_ato = isinstance(fatos, FatosAto)
+        if fatos is not None:
             if item.fonte.id not in fatos.fontes:
                 raise MensagemInvalida("A fonte principal não está nas referências do item.")
             referencias.extend(
                 fontes.get(i) for i in dict.fromkeys(fatos.fontes) if i != item.fonte.id
             )
-            if isinstance(fatos, FatosAto):
-                de_ato = True
+            if de_ato:
                 linhas.append(f"Publicado no Diário Oficial em {fatos.data_publicacao:%d/%m/%Y}.")
             else:
                 for votacao in fatos.votacoes:
@@ -118,7 +155,7 @@ def formatar_edicao(
         corpo = "\n\n".join([item.texto, *linhas])
         html.extend(
             [
-                f"<h2>{escape(item.titulo)}</h2>",
+                f"<{nivel_titulo}>{escape(item.titulo)}</{nivel_titulo}>",
                 "<p>" + escape(corpo).replace("\n", "<br>") + "</p>",
             ]
         )
