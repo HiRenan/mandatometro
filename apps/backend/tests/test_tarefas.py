@@ -5,12 +5,15 @@ import logging
 import runpy
 import sys
 from datetime import UTC, date, datetime
+from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from sqlalchemy.orm import Session
 
 from mandatometro.coleta.tipos import ResumoColeta
+from mandatometro.db.modelos import Edicao, Fonte, ItemEdicao
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "tarefas.py"
 
@@ -23,6 +26,7 @@ def tarefa(monkeypatch, tmp_path):
         "COLETA_INICIO",
         "COLETA_FIM",
         "AGENDA_SABADO_ATIVA",
+        "AGENDA_REFAZER",
     ):
         monkeypatch.delenv(nome, raising=False)
     monkeypatch.setenv("GITHUB_OUTPUT", str(tmp_path / "saida"))
@@ -196,6 +200,120 @@ def test_agenda_usa_o_mesmo_periodo_na_ordem_e_sem_refazer(
         {"etapa": etapa, "codigo": 0} for etapa in ("legislacao", "destaques", "rascunho")
     ]
     assert saida.err == ""
+
+
+@pytest.mark.parametrize(
+    "evento,refazer,falha,refaz,ignorado",
+    [
+        ("workflow_dispatch", "true", None, True, False),
+        ("workflow_dispatch", "true", "legislacao", False, True),
+        ("workflow_dispatch", "true", "destaques", False, True),
+        ("schedule", "true", None, False, False),
+        ("push", "true", None, False, False),
+        ("workflow_dispatch", "", None, False, False),
+        ("workflow_dispatch", "false", None, False, False),
+        ("workflow_dispatch", "True", None, False, False),
+        ("workflow_dispatch", "1", None, False, False),
+    ],
+)
+def test_agenda_refaz_so_no_manual_com_as_duas_coletas_completas(
+    tarefa, monkeypatch, capsys, evento, refazer, falha, refaz, ignorado
+):
+    monkeypatch.setenv("DATABASE_URL", "banco-ficticio")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", evento)
+    monkeypatch.setenv("AGENDA_SABADO_ATIVA", "true")
+    monkeypatch.setenv("AGENDA_REFAZER", refazer)
+    monkeypatch.setenv("COLETA_INICIO", "2026-11-14")
+    monkeypatch.setenv("COLETA_FIM", "2026-11-20")
+    comandos = []
+
+    def executar(argv):
+        comandos.append(argv)
+        print("{}")
+        return int(argv[1] == falha)
+
+    monkeypatch.setattr("mandatometro.cli.main", executar)
+
+    assert tarefa(["agenda"]) == int(falha is not None)
+    periodo = ["--inicio", "2026-11-14", "--fim", "2026-11-20"]
+    rascunho = ["edicao", "rascunho", *periodo]
+    if refaz:
+        rascunho.append("--refazer")
+    assert comandos == [
+        ["coleta", "legislacao", *periodo],
+        ["coleta", "destaques", *periodo],
+        rascunho,
+    ]
+    saida = capsys.readouterr()
+    legislacao, destaques, resumo = map(json.loads, saida.out.splitlines())
+    assert legislacao == {"etapa": "legislacao", "codigo": int(falha == "legislacao")}
+    assert destaques == {"etapa": "destaques", "codigo": int(falha == "destaques")}
+    esperado = {"etapa": "rascunho", "codigo": 0}
+    if ignorado:
+        esperado["refazer_ignorado"] = "coleta_incompleta"
+    assert resumo == esperado
+    assert saida.err == ""
+
+
+def test_agenda_com_refazer_preserva_edicao_publicada(tarefa, monkeypatch, capsys, sessao):
+    from mandatometro.cli import main as cli
+    from mandatometro.ia import cli as edicao_cli
+
+    publicada_em = datetime(2026, 11, 21, tzinfo=UTC)
+    edicao = Edicao(
+        titulo="Edição fictícia",
+        inicio=date(2026, 11, 14),
+        fim=date(2026, 11, 20),
+        estado="publicada",
+        publicada_em=publicada_em,
+        itens=[
+            ItemEdicao(
+                ordem=1,
+                titulo="Item fictício",
+                texto="Texto fictício revisado.",
+                fonte=Fonte(url="https://example.com/fonte", coletado_em=publicada_em),
+            )
+        ],
+    )
+    sessao.add(edicao)
+    sessao.flush()
+    edicao_id = edicao.id
+    itens = [(item.id, item.texto) for item in edicao.itens]
+
+    monkeypatch.setenv("DATABASE_URL", "banco-ficticio")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
+    monkeypatch.setenv("AGENDA_REFAZER", "true")
+    monkeypatch.setenv("COLETA_INICIO", edicao.inicio.isoformat())
+    monkeypatch.setenv("COLETA_FIM", edicao.fim.isoformat())
+    monkeypatch.setattr(edicao_cli, "config", lambda: SimpleNamespace(llm_provider=None))
+    monkeypatch.setattr(
+        edicao_cli,
+        "sessao_do_banco",
+        partial(Session, bind=sessao.connection(), join_transaction_mode="create_savepoint"),
+    )
+    comandos_edicao = []
+
+    def executar(argv):
+        if argv[0] == "coleta":
+            print('{"completa": true}')
+            return 0
+        comandos_edicao.append(argv)
+        return cli(argv)
+
+    monkeypatch.setattr("mandatometro.cli.main", executar)
+
+    assert tarefa(["agenda"]) == 0
+    saida = capsys.readouterr()
+    rascunho = json.loads(saida.out.splitlines()[-1])
+    assert (rascunho["situacao"], rascunho["edicao_id"]) == ("ja_publicada", edicao_id)
+    sessao.expire_all()
+    assert (edicao.estado, edicao.publicada_em, edicao.titulo) == (
+        "publicada",
+        publicada_em,
+        "Edição fictícia",
+    )
+    assert [(item.id, item.texto) for item in edicao.itens] == itens
+    assert len(comandos_edicao) == 1 and "--refazer" in comandos_edicao[0]
 
 
 @pytest.mark.parametrize("ativo", ["", "false", "TRUE", "true "])

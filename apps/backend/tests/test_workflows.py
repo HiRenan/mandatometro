@@ -46,7 +46,9 @@ def avaliar(expressao, evento, branch, **variaveis):
                 AGENDA_SABADO_ATIVA=variaveis.get("AGENDA_SABADO_ATIVA", ""),
                 LLM_PROVIDER=variaveis.get("LLM_PROVIDER", ""),
             ),
-            "inputs": SimpleNamespace(simular=variaveis.get("simular", False)),
+            "inputs": SimpleNamespace(
+                simular=variaveis.get("simular", False), refazer=variaveis.get("refazer", False)
+            ),
             "secrets": SimpleNamespace(LLM_API_KEY=variaveis.get("LLM_API_KEY", "")),
         },
     )
@@ -233,11 +235,28 @@ def test_agenda_cron_de_sabado_e_periodo_opcional():
     gatilhos = ler("agenda-sabado.yml")["on"]
     assert set(gatilhos) == {"schedule", "workflow_dispatch"}
     assert gatilhos["schedule"] == [{"cron": "47 7 * * 6"}]
-    datas = gatilhos["workflow_dispatch"]["inputs"]
-    assert set(datas) == {"inicio", "fim"}
+    entradas = gatilhos["workflow_dispatch"]["inputs"]
+    assert set(entradas) == {"inicio", "fim", "refazer"}
     assert all(
-        dados["required"] == "false" and dados["type"] == "string" for dados in datas.values()
+        entradas[data]["required"] == "false" and entradas[data]["type"] == "string"
+        for data in ("inicio", "fim")
     )
+    assert entradas["refazer"]["required"] == entradas["refazer"]["default"] == "false"
+    assert entradas["refazer"]["type"] == "boolean"
+
+
+@pytest.mark.parametrize(
+    "evento,refazer,esperado",
+    [
+        ("workflow_dispatch", True, "true"),
+        ("workflow_dispatch", False, "false"),
+        ("schedule", False, "false"),
+        ("schedule", True, "false"),
+    ],
+)
+def test_agenda_passa_refazer_so_no_manual_marcado(evento, refazer, esperado):
+    ambiente = ler("agenda-sabado.yml")["jobs"]["preparar"]["steps"][-1]["env"]
+    assert avaliar(ambiente["AGENDA_REFAZER"], evento, "develop", refazer=refazer) == esperado
 
 
 def test_agenda_passa_os_nomes_dos_segredos_e_o_periodo_ao_roteiro():
