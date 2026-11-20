@@ -317,6 +317,10 @@ export type PerfilConta = {
      * Nome
      */
     nome: string;
+    /**
+     * Papel
+     */
+    papel: 'comum' | 'administradora';
 };
 
 /**
