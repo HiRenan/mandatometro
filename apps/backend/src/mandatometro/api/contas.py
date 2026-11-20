@@ -12,12 +12,14 @@ from pydantic import BaseModel, EmailStr, Field, model_validator
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from mandatometro.config import config
 from mandatometro.contas import agendar, agora, consumir_cota, entregar_pendentes, resumo, senhas
 from mandatometro.db import sessao
-from mandatometro.db.modelos import Conta, CredencialConta
+from mandatometro.db.modelos import Conta, CredencialConta, PapelConta
 
 ESTADOS = set(
     [
@@ -275,7 +277,7 @@ def recuperar_conta(pedido: Endereco, tarefas: BackgroundTasks) -> None:
     solicitar(pedido, tarefas, "recuperacao")
 
 
-def identificar(db, segredo, finalidade):
+def identificar(db: Session, segredo: str, finalidade: str) -> Conta:
     digest = resumo(segredo)
     criterio = (
         CredencialConta.resumo == digest,
@@ -291,6 +293,27 @@ def identificar(db, segredo, finalidade):
     if not conta or not db.scalar(select(CredencialConta.resumo).where(*criterio)):
         raise HTTPException(401, "Código ou sessão inválida.")
     return conta
+
+
+def conta_da_sessao(db: Session, sessao_conta: str | None) -> Conta:
+    if not sessao_conta:
+        raise HTTPException(401, "Entre na sua conta.")
+    return identificar(db, sessao_conta, "sessao")
+
+
+def exigir_administradora(sessao_conta: Annotated[str | None, Cookie()] = None) -> Conta:
+    # A dependência é chamada após a leitura do corpo da requisição.
+    with sessao() as db:
+        try:
+            conta = conta_da_sessao(db, sessao_conta)
+        except HTTPException as erro:
+            if erro.status_code != 401:
+                raise
+        else:
+            if conta.papel == "administradora":
+                return conta
+    # Usa o tratamento padrão do roteador também em uma RotaConta.
+    raise StarletteHTTPException(404)
 
 
 @router.post("/confirmacao", status_code=204)
@@ -315,6 +338,7 @@ def redefinir_senha(pedido: Redefinicao) -> None:
 
 class PerfilConta(BaseModel):
     nome: str
+    papel: PapelConta
 
 
 @router.get("/me")
@@ -322,8 +346,8 @@ def consultar_perfil(sessao_conta: Annotated[str | None, Cookie()] = None) -> Pe
     if not sessao_conta:
         raise HTTPException(401, "Entre na sua conta.")
     with sessao() as db:
-        conta = identificar(db, sessao_conta, "sessao")
-        return PerfilConta(nome=conta.nome)
+        conta = conta_da_sessao(db, sessao_conta)
+        return PerfilConta(nome=conta.nome, papel=conta.papel)
 
 
 @router.delete("/me", status_code=204)
@@ -335,10 +359,8 @@ def excluir_conta(
     sessao_conta: Annotated[str | None, Cookie()] = None,
 ) -> None:
     validar_origem(request)
-    if not sessao_conta:
-        raise HTTPException(401, "Entre na sua conta.")
     with sessao() as db, db.begin():
-        conta = identificar(db, sessao_conta, "sessao")
+        conta = conta_da_sessao(db, sessao_conta)
         limitar(str(conta.id))
         try:
             senhas.verify(conta.senha_hash, pedido.senha)

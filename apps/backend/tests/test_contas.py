@@ -1,17 +1,24 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
+from secrets import token_urlsafe
+from typing import Annotated
+from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
 from cryptography.fernet import Fernet
+from fastapi import APIRouter, Depends, FastAPI
+from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from sqlalchemy import select
+from sqlalchemy.exc import ArgumentError
 from sqlalchemy.orm import sessionmaker
 
-from mandatometro import contas
+from mandatometro import contas, db
 from mandatometro.api import contas as api
 from mandatometro.api.app import app
 from mandatometro.avisos.resend import EnvioIndisponivel
+from mandatometro.cli import main
 from mandatometro.config import config
 from mandatometro.db.modelos import AvisoConta, Conta, CredencialConta
 
@@ -34,7 +41,7 @@ def test_ciclo_completo(engine_de_teste, monkeypatch):
     monkeypatch.setattr(contas.Resend, "enviar", enviar)
     cliente = TestClient(app)
     senha = "Uma senha fictícia longa"
-    email = f"{uuid4().hex}@example.org"
+    email = f"{uuid4().hex}@example.com"
     dados = dict(
         nome="Pessoa Fictícia",
         email=email,
@@ -42,6 +49,7 @@ def test_ciclo_completo(engine_de_teste, monkeypatch):
         confirmar_senha=senha,
         aceite=True,
         termo="teste",
+        papel="administradora",
     )
     resposta = cliente.post("/contas", json={**dados, "confirmar_senha": "inconsistente"})
     assert resposta.status_code == 422 and senha not in resposta.text
@@ -65,7 +73,7 @@ def test_ciclo_completo(engine_de_teste, monkeypatch):
     with ThreadPoolExecutor(max_workers=2) as pool:
         assert sorted(pool.map(confirmar, range(2))) == [204, 401]
     quantidade = len(mensagens)
-    desconhecido = {"email": "outro@example.org"}
+    desconhecido = {"email": "outro@example.com"}
     for _ in range(5):
         assert cliente.post("/contas/recuperacao", json=desconhecido).status_code == 204
     assert cliente.post("/contas/recuperacao", json=desconhecido).status_code == 429
@@ -102,7 +110,10 @@ def test_ciclo_completo(engine_de_teste, monkeypatch):
             )
         )
     cliente.cookies.set("sessao_conta", "sessao-nova")
-    assert cliente.get("/contas/me").json() == {"nome": "Pessoa Fictícia"}
+    perfil = cliente.get("/contas/me")
+    assert perfil.status_code == 200
+    assert perfil.headers["cache-control"] == "no-store"
+    assert perfil.json() == {"nome": dados["nome"], "papel": "comum"}
 
     def excluir(senha_atual, origem):
         return cliente.request(
@@ -132,6 +143,153 @@ def api_secret():
     from pydantic import SecretStr
 
     return SecretStr(Fernet.generate_key().decode())
+
+
+def test_perfil_sem_cookie_responde_antes_de_abrir_o_banco(monkeypatch):
+    engine = Mock(side_effect=ArgumentError("Falha simulada na criação do engine."))
+    monkeypatch.setattr(db, "engine", engine)
+    cliente = TestClient(app)
+
+    resposta = cliente.get("/contas/me")
+    assert resposta.status_code == 401
+    assert resposta.json() == {"detail": "Entre na sua conta."}
+    assert resposta.headers["cache-control"] == "no-store"
+    engine.assert_not_called()
+
+    resposta = cliente.get("/contas/me", headers={"Cookie": "sessao_conta=inventado"})
+    assert resposta.status_code == 503
+    engine.assert_called_once_with()
+
+
+@pytest.fixture
+def sessoes_conta(engine_de_teste, monkeypatch):
+    monkeypatch.setattr(db, "engine", lambda: engine_de_teste)
+    return sessionmaker(engine_de_teste)
+
+
+def _criar_sessao(sessoes_conta, senha_hash="hash-ficticio"):
+    id_conta = uuid4()
+    email = f"{id_conta.hex}@example.com"
+    token = uuid4().hex
+    instante = contas.agora()
+    with sessoes_conta.begin() as sessao:
+        sessao.add(
+            Conta(
+                id=id_conta,
+                email=email,
+                nome="Conta de teste",
+                senha_hash=senha_hash,
+                termo="teste",
+                aceite_em=instante,
+                criada_em=instante,
+                confirmada_em=instante,
+            )
+        )
+        sessao.add(
+            CredencialConta(
+                resumo=contas.resumo(token),
+                conta_id=id_conta,
+                finalidade="sessao",
+                expira=instante + timedelta(days=7),
+            )
+        )
+    return id_conta, email, token
+
+
+@pytest.mark.parametrize("classe_rota", [APIRoute, api.RotaConta], ids=["padrao", "rota-conta"])
+def test_guarda_de_administradora_consulta_o_papel_a_cada_pedido(sessoes_conta, classe_rota):
+    id_conta, email, token = _criar_sessao(sessoes_conta)
+    token_vencido = token_urlsafe(32)
+    codigo_confirmacao = token_urlsafe(32)
+    codigo_recuperacao = token_urlsafe(32)
+    instante = contas.agora()
+    with sessoes_conta.begin() as sessao:
+        for segredo, finalidade, validade in (
+            (token_vencido, "sessao", -timedelta(seconds=1)),
+            (codigo_confirmacao, "confirmacao", timedelta(hours=1)),
+            (codigo_recuperacao, "recuperacao", timedelta(hours=1)),
+        ):
+            sessao.add(
+                CredencialConta(
+                    resumo=contas.resumo(segredo),
+                    conta_id=id_conta,
+                    finalidade=finalidade,
+                    expira=instante + validade,
+                )
+            )
+
+    app_teste = FastAPI()
+    router = APIRouter(route_class=classe_rota)
+
+    @router.get("/revisao-de-teste", status_code=204)
+    def protegido(conta: Annotated[Conta, Depends(api.exigir_administradora)]) -> None:
+        assert conta.id == id_conta
+        assert conta.papel == "administradora"
+
+    app_teste.include_router(router)
+    app_teste.include_router(api.router)
+    cliente = TestClient(app_teste)
+
+    def negar(cookie=None):
+        cabecalhos = {} if cookie is None else {"Cookie": f"sessao_conta={cookie}"}
+        inexistente = cliente.get("/rota-inexistente", headers=cabecalhos)
+        resposta = cliente.get("/revisao-de-teste", headers=cabecalhos)
+        assert resposta.status_code == inexistente.status_code == 404
+        assert resposta.content == inexistente.content
+        assert sorted(resposta.headers.multi_items()) == sorted(inexistente.headers.multi_items())
+
+    negar()
+    negar("")
+    negar(token_urlsafe(32))
+    negar(token)
+    assert main(["conta", "promover", "--email", email]) == 0
+
+    negar(token_vencido)
+    negar(codigo_confirmacao)
+    negar(codigo_recuperacao)
+    cliente.cookies.set("sessao_conta", token)
+    resposta = cliente.get("/revisao-de-teste")
+    assert resposta.status_code == 204
+    if classe_rota is api.RotaConta:
+        assert resposta.headers["cache-control"] == "no-store"
+    perfil = cliente.get("/contas/me")
+    assert perfil.json()["papel"] == "administradora"
+    assert perfil.headers["cache-control"] == "no-store"
+
+    assert main(["conta", "revogar", "--email", email]) == 0
+    negar(token)
+    assert cliente.get("/contas/me").json()["papel"] == "comum"
+
+    assert main(["conta", "promover", "--email", email]) == 0
+    with sessoes_conta.begin() as sessao:
+        sessao.delete(sessao.get(Conta, id_conta))
+    negar(token)
+
+
+def test_administradora_pode_excluir_a_propria_conta(sessoes_conta, monkeypatch):
+    monkeypatch.setattr(config(), "conta_chave", api_secret())
+    mensagens = []
+
+    async def enviar(self, email, mensagem, idempotencia):
+        mensagens.append(mensagem.texto)
+
+    monkeypatch.setattr(contas.Resend, "enviar", enviar)
+    senha = uuid4().hex
+    id_conta, email, token = _criar_sessao(sessoes_conta, contas.senhas.hash(senha))
+    assert main(["conta", "promover", "--email", email]) == 0
+    cliente = TestClient(app)
+    cliente.cookies.set("sessao_conta", token)
+    assert cliente.get("/contas/me").json()["papel"] == "administradora"
+    resposta = cliente.request(
+        "DELETE", "/contas/me", headers={"Origin": config().app_base_url}, json={"senha": senha}
+    )
+    assert resposta.status_code == 204
+    assert cliente.get("/contas/me").status_code == 401
+    with sessoes_conta() as sessao:
+        assert sessao.get(Conta, id_conta) is None
+        assert sessao.get(CredencialConta, contas.resumo(token)) is None
+    assert len(mensagens) == 1 and "excluída" in mensagens[0]
+    assert "administradora" not in mensagens[0] and "papel" not in mensagens[0]
 
 
 def test_login_e_saida(engine_de_teste, monkeypatch):

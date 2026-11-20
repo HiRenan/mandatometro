@@ -17,6 +17,7 @@
 
 import logging
 from datetime import date, datetime
+from typing import Literal
 from uuid import UUID
 
 from sqlalchemy import (
@@ -40,9 +41,12 @@ logger = logging.getLogger(__name__)
 
 CASAS = ("camara", "senado")
 
+PapelConta = Literal["comum", "administradora"]
+
 
 class Conta(Base):
     __tablename__ = "conta"
+    __table_args__ = (CheckConstraint("papel in ('comum', 'administradora')", name="papel"),)
     id: Mapped[UUID] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(unique=True)
     nome: Mapped[str]
@@ -55,6 +59,7 @@ class Conta(Base):
     aceite_em: Mapped[datetime]
     criada_em: Mapped[datetime]
     confirmada_em: Mapped[datetime | None]
+    papel: Mapped[PapelConta] = mapped_column(String, server_default="comum")
 
 
 class CredencialConta(Base):

@@ -1797,11 +1797,20 @@
           "nome": {
             "type": "string",
             "title": "Nome"
+          },
+          "papel": {
+            "type": "string",
+            "enum": [
+              "comum",
+              "administradora"
+            ],
+            "title": "Papel"
           }
         },
         "type": "object",
         "required": [
-          "nome"
+          "nome",
+          "papel"
         ],
         "title": "PerfilConta"
       },

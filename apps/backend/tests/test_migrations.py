@@ -1,6 +1,10 @@
 """As migrations sobem do zero, descem até o começo e batem com os modelos."""
 
+from uuid import uuid4
+
+import pytest
 from sqlalchemy import Connection, Engine, inspect, text
+from sqlalchemy.exc import IntegrityError
 
 import mandatometro.db.modelos  # noqa: F401  (registra as tabelas no Base.metadata)
 from mandatometro.db import Base
@@ -208,4 +212,59 @@ def test_ultima_edicao_preserva_inscrito_antigo_e_codigo_anterior(engine_de_test
                     "delete from inscrito where email in"
                     " ('migracao@example.com', 'versao-anterior@example.com')"
                 )
+            )
+
+
+def test_papel_preserva_conta_e_insert_da_versao_anterior(engine_de_teste, alembic):
+    antiga, nova = uuid4(), uuid4()
+    inserir = text(
+        "insert into conta (id, email, nome, senha_hash, termo, aceite_em, criada_em)"
+        " values (:id, :email, 'Conta de teste', 'hash-ficticio', 'teste', now(), now())"
+    )
+    alembic("downgrade", "0009")
+    try:
+        with engine_de_teste.begin() as c:
+            c.execute(inserir, {"id": antiga, "email": f"{antiga.hex}@example.com"})
+        alembic("upgrade", "head")
+        colunas = {
+            coluna["name"]: coluna for coluna in inspect(engine_de_teste).get_columns("conta")
+        }
+        assert "papel" in colunas
+        assert not colunas["papel"]["nullable"]
+        with engine_de_teste.begin() as c:
+            c.execute(inserir, {"id": nova, "email": f"{nova.hex}@example.com"})
+            papeis = c.execute(
+                text("select id, papel from conta where id in (:antiga, :nova)"),
+                {"antiga": antiga, "nova": nova},
+            )
+            assert {id_conta: papel for id_conta, papel in papeis} == {
+                antiga: "comum",
+                nova: "comum",
+            }
+            with pytest.raises(IntegrityError) as erro, c.begin_nested():
+                c.execute(
+                    text("update conta set papel = 'desconhecido' where id = :id"), {"id": nova}
+                )
+            assert erro.value.orig.diag.constraint_name == "ck_conta_papel"
+            c.execute(
+                text("update conta set papel = 'administradora' where id = :id"), {"id": nova}
+            )
+
+        alembic("downgrade", "0009")
+        assert "papel" not in {
+            coluna["name"] for coluna in inspect(engine_de_teste).get_columns("conta")
+        }
+        with engine_de_teste.connect() as c:
+            assert set(
+                c.execute(
+                    text("select id from conta where id in (:antiga, :nova)"),
+                    {"antiga": antiga, "nova": nova},
+                ).scalars()
+            ) == {antiga, nova}
+    finally:
+        alembic("upgrade", "head")
+        with engine_de_teste.begin() as c:
+            c.execute(
+                text("delete from conta where id in (:antiga, :nova)"),
+                {"antiga": antiga, "nova": nova},
             )
