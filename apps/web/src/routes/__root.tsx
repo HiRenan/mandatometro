@@ -24,6 +24,7 @@ import {
 	TITULO_DE_ERRO,
 	TITULO_NAO_ENCONTRADA,
 } from "../lib/meta";
+import { acompanharProgressoDaConta } from "../lib/progresso";
 
 export interface RouterAppContext {
 	queryClient: QueryClient;
@@ -90,6 +91,8 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 });
 
 function Documento({ children }: { children: ReactNode }) {
+	useEffect(acompanharProgressoDaConta, []);
+
 	return (
 		<html lang="pt-BR">
 			<head>

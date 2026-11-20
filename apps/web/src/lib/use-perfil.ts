@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { consultarPerfil } from "@/client";
 import { ENV } from "@/env";
+import { reconhecerSessaoDoProgresso } from "./progresso";
 
 type Sessao =
 	| { estado: "verificando" | "visitante" | "indisponivel" }
@@ -26,7 +27,10 @@ export function usePerfil(pagina: "login" | "perfil") {
 				else setSessao({ estado: "visitante" });
 			} else if (data) {
 				if (pagina === "login") window.location.replace("/perfil");
-				else setSessao({ estado: "autenticada", nome: data.nome });
+				else {
+					reconhecerSessaoDoProgresso();
+					setSessao({ estado: "autenticada", nome: data.nome });
+				}
 			} else setSessao({ estado: "indisponivel" });
 		}
 		void verificar().catch(() => {
