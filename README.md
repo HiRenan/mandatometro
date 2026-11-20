@@ -20,11 +20,12 @@ O DataSenado encontrou mais apoio à democracia entre pessoas com mais escolarid
 
 - **Trilhas.** Artigos curtos explicam como a política funciona com exemplos reais. Na trilha do processo legislativo, um infográfico mostra como uma ideia vira lei. Há um quiz no meio e outro no fim.
 - **Newsletter semanal.** O jornal legislativo pode reunir o que o Congresso votou na semana e os destaques do Diário Oficial da União. Cada item traz uma explicação simples e a fonte oficial. As edições publicadas ficam no site e o envio semanal é programado para domingo. Se já houver uma edição publicada, o sistema tenta enviá-la logo depois da inscrição. [Diário Oficial na newsletter](docs/adr/0004-newsletter-do-dou.md)
+- **Jogo das Comissões.** Em `/jogos`, cinco cenas contam a tramitação real do projeto que virou a Lei 15.100/2025, a do celular na escola. Em cada cena você decide o próximo passo e depois vê o que aconteceu de verdade, com o link da fonte oficial. O jogo fica fora da trilha, e o fim do quiz final leva até ele. [Roteiro e regras](docs/jogo-das-comissoes.md)
 - **Busca.** Use Ctrl+K ou a busca no alto da página para procurar nas trilhas, nos artigos e nas edições publicadas mais recentes. Você pode digitar só o começo da palavra, com ou sem acento. A busca ignora maiúsculas, funciona sem IA e mantém no navegador o que você digita.
 
 As trilhas são abertas e a newsletter pede só o e-mail. O navegador guarda os artigos lidos. Se você criar uma conta, o progresso também fica no perfil para continuar em outro aparelho.
 
-**Depois do MVP:** a página de cada deputado federal e senador, com o que prometeu na campanha, o que fez no mandato e o patrimônio que declarou ao TSE. Também ficam para depois o "fake ou fato" e o jogo das comissões, em que a pessoa acompanha um projeto real e decide como se fosse parlamentar.
+**Depois do MVP:** a página de cada deputado federal e senador, com o que prometeu na campanha, o que fez no mandato e o patrimônio que declarou ao TSE. O "fake ou fato" também fica para depois.
 
 O porquê dessas escolhas está no [ADR 0002](docs/adr/0002-mvp.md) e no [ADR 0003](docs/adr/0003-login-opcional.md).
 

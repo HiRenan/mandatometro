@@ -6,6 +6,7 @@ import { classes } from "@/lib/classes";
 import { semCliqueDuplo } from "@/lib/clique";
 import type { QuizNaPagina } from "@/lib/conteudo";
 import { classeDaFita } from "@/lib/formatar";
+import { TRILHA_DO_JOGO } from "@/lib/jogo/trilha";
 import {
 	comecarComoOutraPessoa,
 	comecarPiloto,
@@ -550,6 +551,22 @@ export function QuizFinal({
 				noDepois ? (acertos) => concluirEtapa("depois", acertos) : undefined
 			}
 			linha={linha}
+			depoisDoFim={
+				pagina.trilha.slug === TRILHA_DO_JOGO ? <ChamadaDoJogo /> : undefined
+			}
 		/>
+	);
+}
+
+/**
+ * O convite para o Jogo das Comissões, no fim do quiz final da trilha do
+ * processo legislativo: o jogo continua a trilha, fora dela, e nada do que a
+ * pessoa faz ali muda a medição do piloto (docs/jogo-das-comissoes.md).
+ */
+function ChamadaDoJogo() {
+	return (
+		<Link to="/jogos" className={classes(BOTAO_CONTINUAR, "vazado")}>
+			Jogar o Jogo das Comissões
+		</Link>
 	);
 }

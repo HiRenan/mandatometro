@@ -7,6 +7,7 @@
 @import "./estilos/edicoes.css";
 @import "./estilos/termo.css";
 @import "./estilos/busca.css";
+@import "./estilos/jogo.css";
 @import "./estilos/painel.css";
 
 @theme {
@@ -688,53 +689,52 @@
 	}
 
 	/*
-	 * Com as edições, são três links (o data-com-edicoes, onde o site tem a API).
-	 * Abaixo de 32rem, eles não cabem na linha do nome, e o Início sai: o nome
-	 * leva ao início (o Renan, na #39). Com a letra grande, a linha ainda pode
-	 * quebrar, e os links descem, como antes.
+	 * São quatro links — Início, Trilhas, Jogos e Conta — e cinco com as edições
+	 * (o data-com-edicoes, onde o site tem a API). Abaixo de 32rem, eles não
+	 * cabem na linha do nome, e o Início sai: o nome leva ao início (o Renan, na
+	 * #39). Com a letra grande, a linha ainda pode quebrar, e os links descem,
+	 * como antes. Com a aba do jogo, isso passou a valer também sem a API.
 	 */
 	@media (width < 32rem) {
-		.topo-links[data-com-edicoes] > li:first-child {
+		.topo-links > li:first-child {
 			display: none;
 		}
 	}
 
 	/*
-	 * Mesmo sem o Início, Trilhas e Edições só cabiam na linha do nome a partir de
-	 * 375 px, com 1 px de folga. Abaixo de 26rem, com as edições, os dois links se
-	 * apertam: o respiro de cada um cai para 6 px, sem o vão entre eles, e o vão
-	 * mínimo entre o nome e os links fica em 12 px. Assim, a linha cabe a partir
-	 * de 355 px. O cabeçalho sem a API não muda.
+	 * Mesmo sem o Início, os links só cabiam na linha do nome a partir de 375 px,
+	 * com 1 px de folga. Abaixo de 26rem eles se apertam: o respiro de cada um
+	 * cai para 6 px, sem o vão entre eles, e o vão mínimo entre o nome e os links
+	 * fica em 12 px.
 	 */
 	@media (width < 26rem) {
-		.topo-dentro:has(.topo-links[data-com-edicoes]) {
+		.topo-dentro:has(.topo-links) {
 			column-gap: 12px;
 		}
 
-		.topo-links[data-com-edicoes] {
+		.topo-links {
 			gap: 0;
 			margin-right: -6px;
 		}
 
-		.topo-links[data-com-edicoes] a {
+		.topo-links a {
 			padding: 0 6px;
 		}
 
-		.topo-links[data-com-edicoes] a::after {
+		.topo-links a::after {
 			right: 6px;
 			left: 6px;
 		}
 	}
 
 	/*
-	 * Com a letra grande numa tela estreita, Trilhas e Edições podem não caber
-	 * juntos nem na linha de baixo: a 320 px, com a letra a 200%, eles pedem uns
-	 * 296 px. A lista quebra, e Edições desce para baixo de Trilhas, em vez de
-	 * passar da página (no computador, a barra de rolagem toma 15 px, e a página
-	 * rolava de lado) ou de entrar na margem (no celular). Onde os dois cabem,
-	 * nada muda.
+	 * Com a letra grande numa tela estreita, os links não cabem juntos nem na
+	 * linha de baixo: a 320 px, com a letra a 200%, Trilhas e Edições pedem uns
+	 * 296 px. A lista quebra, e o que não cabe desce, em vez de passar da página
+	 * (no computador, a barra de rolagem toma 15 px, e a página rolava de lado)
+	 * ou de entrar na margem (no celular). Onde todos cabem, nada muda.
 	 */
-	.topo-links[data-com-edicoes] {
+	.topo-links {
 		flex-wrap: wrap;
 	}
 
