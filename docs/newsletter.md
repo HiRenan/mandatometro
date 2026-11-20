@@ -45,7 +45,7 @@ O arquivo de revisão mostra `fatos.selecao` como consulta. O campo guarda a ord
 
 ### Como preparar a edição
 
-Sem datas, `edicao rascunho` usa os sete dias completos anteriores. Uma pessoa do time revisa e publica a edição, inclusive quando o modelo escreveu o texto.
+A agenda de sábado prepara o rascunho com as votações e os atos dos sete dias completos anteriores ao sábado. Uma pessoa do time revisa e publica a edição, inclusive quando o modelo escreveu o texto. Para entrar no envio automático de domingo, publique a edição na semana do envio em Brasília, entre a segunda-feira à meia-noite e o horário da rodada. [Agenda e recuperação](hospedagem.md#ativar-e-recuperar-a-agenda-de-sábado).
 
 **Preparação do ambiente.** Peça ao time a URL autorizada do banco com as migrations aplicadas e os resumos das coletas das duas Casas, da legislação federal e dos destaques do Diário Oficial. Confira servidor, porta e nome do banco antes de usar. Abra um terminal PowerShell na raiz do repositório pelo Orca, entre na pasta abaixo e substitua o valor de exemplo pela URL recebida. A variável vale nesse terminal. Configure-a novamente se abrir outro.
 
@@ -63,16 +63,16 @@ Prepare uma pasta **fora do repositório**, por exemplo `$HOME\Documents\mandato
 
 **Rotina de toda semana.** Uma pessoa opera por vez.
 
-1. Gere o rascunho com as datas da semana e leia o resumo, inclusive as exclusões. Anote o `edicao_id` retornado: nos comandos seguintes, substitua `1` por ele.
+1. Leia os resumos da agenda, inclusive as lacunas e exclusões. Use o `edicao_id` do passo de rascunho nos comandos abaixo, no lugar de `1`. Para gerar à mão com os dados já coletados, informe as datas da edição como no exemplo. Sem datas, o CLI usa os sete dias completos anteriores à execução.
 
    ```powershell
-   uv run mandatometro edicao rascunho --inicio 2026-11-09 --fim 2026-11-15 --teto 8 --teto-atos 5
+   uv run mandatometro edicao rascunho --inicio 2026-11-14 --fim 2026-11-20 --teto 8 --teto-atos 5
    ```
 
 2. Exporte para a pasta externa preparada acima. Escolha um nome novo por edição ou rodada de revisão; a exportação recusa sobrescrever arquivos.
 
    ```powershell
-   uv run mandatometro edicao exportar 1 --arquivo "$HOME\Documents\mandatometro-revisoes\edicao-2026-11-15.json"
+   uv run mandatometro edicao exportar 1 --arquivo "$HOME\Documents\mandatometro-revisoes\edicao-2026-11-20.json"
    ```
 
 3. Abra o JSON no editor e salve em UTF-8. Confira os fatos e as fontes de cada item, substitua a redação pendente e confirme a revisão e o artigo escolhido. Se um item falar da licença, do afastamento ou da saúde de um parlamentar, exclua-o com `excluir: true` e preencha `motivo_exclusao`. O aviso em `contexto.avisos` indica esses termos no texto oficial: confira se tratam de uma pessoa ou de política pública antes de confirmar o item. Confirme a cobertura uma única vez, depois de ler os resumos das duas coletas e conhecer suas lacunas: o banco não certifica a cobertura de todo o Congresso.
@@ -107,7 +107,7 @@ Prepare uma pasta **fora do repositório**, por exemplo `$HOME\Documents\mandato
 4. Importe a revisão. O comando rejeita fatos alterados e salva as confirmações. Se houver erro, corrija o campo indicado e repita; o rascunho anterior fica preservado. Depois de uma atualização, um arquivo exportado antes pode ser recusado: exporte novamente e refaça os ajustes.
 
    ```powershell
-   uv run mandatometro edicao revisar 1 --arquivo "$HOME\Documents\mandatometro-revisoes\edicao-2026-11-15.json"
+   uv run mandatometro edicao revisar 1 --arquivo "$HOME\Documents\mandatometro-revisoes\edicao-2026-11-20.json"
    ```
 
 5. Leia a prévia, com fatos, fontes e link da trilha, no formato de texto do e-mail. Enquanto falta a confirmação válida de privacidade de um ato retido, a prévia mostra “Fonte oficial disponível no arquivo de revisão.” no lugar do endereço. Com a confirmação gravada e os dados conferidos, o endereço volta à prévia. O `mostrar` exibe a fotografia gravada do rascunho e verifica a retenção no ato atual. Exportação, revisão e publicação exigem que a fotografia corresponda aos dados atuais. Mantenha a saída fora do log do job. A prévia admite `APP_BASE_URL` local. O envio real exige HTTPS.

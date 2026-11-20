@@ -8,9 +8,10 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import httpx2
+import psycopg
 import pytest
 from pydantic import SecretStr
-from sqlalchemy import func, select
+from sqlalchemy import create_engine, func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -311,13 +312,11 @@ def test_abertura_de_xml_em_cdata_nao_divide_o_cartao(executar):
     assert resumo.descartes == {}
 
 
-def test_teto_da_excecao_tem_seis_paginas_e_sinaliza_coleta_incompleta(firecrawl):
-    http, respostas, pedidos = firecrawl
-    respostas.extend(pagina(cartao(f"{n}00", pubDate="19/11/2026")) for n in range(1, 7))
+def test_teto_da_excecao_tem_seis_paginas_e_sinaliza_coleta_incompleta(executar):
+    paginas = [pagina(cartao(f"{n}00", pubDate="19/11/2026")) for n in range(1, 7)]
+    resumo, pedidos = executar(*paginas, fim=date(2026, 11, 18))
 
-    resumo = destaques.coletar(INICIO, date(2026, 11, 18), http=http, hoje=FIM)
-
-    assert alvos(pedidos) == [PAGINA, *(PAGINACAO + str(n) for n in range(2, 7))]
+    assert pedidos == [PAGINA, *(PAGINACAO + str(n) for n in range(2, 7))]
     assert (resumo.atos, resumo.chamadas, resumo.completa) == (0, 6, False)
     assert resumo.descartes == {"fora_do_periodo": 6}
     assert resumo.erro == "Limite de páginas dos destaques atingido."
@@ -544,7 +543,7 @@ def atender_cli(atender, monkeypatch):
     ],
 )
 def test_cli_resolve_sete_dias_e_emite_uma_linha_json(
-    atender_cli, monkeypatch, capsys, status, motivo
+    atender_cli, engine_de_teste, monkeypatch, capsys, status, motivo
 ):
     class Relogio:
         @staticmethod
@@ -560,6 +559,7 @@ def test_cli_resolve_sete_dias_e_emite_uma_linha_json(
             httpx2.Response(status, text=MARCADOR_PRIVADO, headers={"Retry-After": "3600"})
         )
     monkeypatch.setattr(cli, "datetime", Relogio)
+    monkeypatch.setattr("mandatometro.db.engine", lambda: engine_de_teste)
 
     assert main(["coleta", "destaques"]) == 1
 
@@ -572,6 +572,35 @@ def test_cli_resolve_sete_dias_e_emite_uma_linha_json(
     assert resumo["erro"] == f"Falha na coleta de destaques pelo Firecrawl ({motivo})."
     assert alvos(pedidos) == [PAGINA]
     assert not {"titulo", "ementa", "assina", "cargo", "texto"}.intersection(resumo)
+    assert CHAVE not in saida.out and MARCADOR_PRIVADO not in saida.out
+
+
+def test_cli_banco_indisponivel_falha_sem_pedir_ao_firecrawl(atender_cli, monkeypatch, capsys):
+    respostas, pedidos = atender_cli
+    respostas.append(httpx2.Response(401))
+    tentativas = []
+
+    def conectar():
+        tentativas.append(1)
+        raise psycopg.OperationalError(MARCADOR_PRIVADO)
+
+    banco = create_engine("postgresql+psycopg://", creator=conectar)
+    monkeypatch.setattr("mandatometro.db.engine", lambda: banco)
+
+    try:
+        assert main(["coleta", "destaques", "--inicio", str(INICIO), "--fim", str(FIM)]) == 1
+    finally:
+        banco.dispose()
+
+    assert tentativas == [1]
+    assert pedidos == []
+    saida = capsys.readouterr()
+    assert saida.err == ""
+    resumo = json.loads(saida.out)
+    assert resumo["completa"] is False
+    assert (resumo["atos"], resumo["chamadas"], resumo["tentativas_extras"]) == (0, 0, 0)
+    assert resumo["descartes"] == {}
+    assert resumo["erro"] == "O banco não respondeu antes da coleta dos destaques."
     assert CHAVE not in saida.out and MARCADOR_PRIVADO not in saida.out
 
 
