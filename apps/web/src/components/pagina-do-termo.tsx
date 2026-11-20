@@ -10,7 +10,7 @@ import { FaixaDeInformacoes } from "./faixa-de-informacoes";
  * e das nove partes, a 200 por minuto. O pagina-do-termo.test.tsx refaz a conta
  * com o texto da página e avisa quando o texto muda e o número fica para trás.
  */
-const MINUTOS_DE_LEITURA = 5;
+const MINUTOS_DE_LEITURA = 6;
 
 type Parte = { id: string; titulo: string; texto: ReactNode };
 
@@ -64,7 +64,8 @@ const PARTES: Parte[] = [
 					Outros três dados são opcionais: gênero, estado onde você mora e data
 					de nascimento. Eles servem para o time entender, em números gerais,
 					quem usa o Mandatômetro, como quantas pessoas são de cada estado. Se
-					preferir, deixe em branco.
+					preferir, deixe em branco. Se você escolher descrever o seu gênero,
+					guardamos também o que você escrever.
 				</p>
 				<p>A conta guarda também:</p>
 				<ul role="list">
@@ -122,8 +123,10 @@ const PARTES: Parte[] = [
 				</p>
 				<p>
 					A senha e os dados opcionais não saem do banco: não aparecem no site,
-					não saem pela API e não vão em nenhum e-mail. Os registros técnicos do
-					site e da API também não levam os dados da conta.
+					não saem pela API e não vão em nenhum e-mail. Os registros de erro do
+					site e da API não levam o nome, o e-mail, a senha nem os dados
+					opcionais. Os registros de acesso guardam dados do pedido, como o
+					endereço de internet (IP).
 				</p>
 				<p>
 					Para barrar abusos, como alguém tentando adivinhar uma senha, a API
@@ -144,7 +147,7 @@ const PARTES: Parte[] = [
 		titulo: "Os serviços que usamos",
 		texto: (
 			<>
-				<p>Três empresas fazem parte do trabalho por nós:</p>
+				<p>Quatro empresas fazem parte do trabalho por nós:</p>
 				<ul role="list">
 					<li>
 						a <strong>Vercel</strong> hospeda o site e a API e, como todo
@@ -158,14 +161,23 @@ const PARTES: Parte[] = [
 						o <strong>Resend</strong> envia os e-mails da conta e, para isso,
 						recebe o seu e-mail e o texto de cada mensagem.
 					</li>
+					<li>
+						o <strong>GitHub</strong> roda a rotina que tenta de novo os e-mails
+						da conta que não saíram e, para isso, lê do banco o endereço e a
+						mensagem, que ficam cifrados, e os entrega ao Resend.
+					</li>
 				</ul>
 				<p>
-					As três são empresas dos Estados Unidos, e os seus dados podem ser
+					As quatro são empresas dos Estados Unidos, e os seus dados podem ser
 					tratados nos servidores delas, também fora do Brasil. Cada uma explica
 					na própria política de privacidade como cuida dos dados:{" "}
 					<a href="https://vercel.com/legal/privacy-notice">Vercel</a>,{" "}
-					<a href="https://www.databricks.com/legal/privacynotice">Neon</a> e{" "}
-					<a href="https://resend.com/legal/privacy-policy">Resend</a>.
+					<a href="https://www.databricks.com/legal/privacynotice">Neon</a>,{" "}
+					<a href="https://resend.com/legal/privacy-policy">Resend</a> e{" "}
+					<a href="https://docs.github.com/pt/site-policy/privacy-policies/github-general-privacy-statement">
+						GitHub
+					</a>
+					.
 				</p>
 			</>
 		),
@@ -183,9 +195,10 @@ const PARTES: Parte[] = [
 					sessões e o progresso, no banco e neste navegador.
 				</p>
 				<p>
-					Depois, mandamos um comprovante para o seu e-mail. Até ele sair, o
-					endereço fica guardado, cifrado, só para esse envio. Se o envio não
-					der certo em um dia, o endereço é apagado sem o comprovante.
+					Depois, tentamos mandar um comprovante para o seu e-mail, por até um
+					dia. Até ele sair, o endereço fica guardado, cifrado, só para esse
+					envio. Se o envio não der certo nesse prazo, paramos de tentar, e a
+					limpeza automática apaga o endereço, sem o comprovante.
 				</p>
 				<p>
 					O provedor do banco guarda, por pouco tempo, um histórico para
@@ -209,7 +222,9 @@ const PARTES: Parte[] = [
 				<p>
 					Você pode, quando quiser, saber quais dados a conta guarda, corrigir
 					um dado errado, apagar tudo e retirar o seu consentimento. Excluir a
-					conta apaga tudo e retira o consentimento de uma vez.
+					conta apaga os dados dela e retira o consentimento de uma vez. O que
+					ainda fica por um tempo, o endereço do comprovante e o histórico do
+					banco, está na <a href="#apagar">parte 6</a>.
 				</p>
 				<p>
 					Para ver ou corrigir os seus dados, ou para tirar uma dúvida sobre
@@ -280,8 +295,8 @@ const PARTES: Parte[] = [
  * edição, sem o azulejo do canto, sem migalha e sem a barra de leitura, porque é
  * um documento calmo. No alto, o título, a faixa com a versão e o tempo de
  * leitura e a abertura; embaixo, o índice "Neste termo" e as nove partes. Tudo
- * vem no HTML do servidor: a página não pede nada à API e funciona sem
- * JavaScript.
+ * vem no HTML do servidor e funciona sem JavaScript. A rota não consulta a API.
+ * No navegador, a moldura compartilhada consulta o progresso com sessão anotada.
  */
 export function PaginaDoTermo() {
 	return (

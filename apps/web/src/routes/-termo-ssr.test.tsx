@@ -16,8 +16,8 @@ import { Route as RotaDoTermo } from "./termo";
 
 // A página do termo pelo servidor do roteador, com o documento de verdade (o
 // <html>, o cabeçalho e o rodapé): é o HTML que o cadastro abre em outra aba e o
-// que chega a quem está sem JavaScript. Ela não pede nada à API: com a API fora
-// do ar, ou sem o API_URL, o termo abre igual, sem conta.
+// que chega a quem está sem JavaScript. A rota é independente da API, e a
+// leitura de progresso da moldura só roda no navegador com sessão anotada.
 
 const ambiente = vi.hoisted(() => ({ API_URL: "https://api.exemplo.test" }));
 vi.mock("@/env", () => ({ ENV: ambiente }));
@@ -90,17 +90,25 @@ describe("o HTML da página do termo", () => {
 			ambiente.API_URL = endereco;
 			const { status, pagina } = await pedirOTermo();
 			const folha = pagina.querySelector("article");
-			const versao = folha?.querySelector("time");
+			const datas = folha?.querySelectorAll("time") ?? [];
 
 			expect(status).toBe(200);
 			expect(pagina.title).toBe("Termo de consentimento · Mandatômetro");
 			expect(folha?.querySelector("h1")?.textContent).toBe(
 				"Termo de consentimento",
 			);
-			// A versão é a data do texto: a mesma que a API pede no cadastro.
-			expect(versao?.getAttribute("datetime")).toBe(VERSAO_DO_TERMO);
-			expect(versao?.textContent).toBe(formatarData(VERSAO_DO_TERMO));
-			expect(versao?.closest(".faixa")?.textContent).toMatch(
+			// A faixa e a parte 9 mostram a mesma versão que a API pede no cadastro.
+			const versao = {
+				datetime: VERSAO_DO_TERMO,
+				texto: formatarData(VERSAO_DO_TERMO),
+			};
+			expect(
+				Array.from(datas, (data) => ({
+					datetime: data.getAttribute("datetime"),
+					texto: data.textContent,
+				})),
+			).toEqual([versao, versao]);
+			expect(datas[0]?.closest(".faixa")?.textContent).toMatch(
 				/^Versão de \d+º? de [a-zç]+ de \d{4}Leitura de \d+ min$/,
 			);
 			expect(
@@ -119,4 +127,31 @@ describe("o HTML da página do termo", () => {
 			expect(pedidosAApi).not.toHaveBeenCalled();
 		},
 	);
+
+	it.each([
+		[
+			"o-que-guarda",
+			"Se você escolher descrever o seu gênero, guardamos também o que você escrever.",
+		],
+		[
+			"quem-ve",
+			"Os registros de erro do site e da API não levam o nome, o e-mail, a senha nem os dados opcionais. Os registros de acesso guardam dados do pedido, como o endereço de internet (IP).",
+		],
+		[
+			"servicos",
+			"o GitHub roda a rotina que tenta de novo os e-mails da conta que não saíram",
+		],
+		[
+			"apagar",
+			"Se o envio não der certo nesse prazo, paramos de tentar, e a limpeza automática apaga o endereço, sem o comprovante.",
+		],
+		[
+			"contato",
+			"O que ainda fica por um tempo, o endereço do comprovante e o histórico do banco, está na parte 6.",
+		],
+	])("traz no HTML o trecho de #%s", async (id, trecho) => {
+		const { pagina } = await pedirOTermo();
+
+		expect(pagina.getElementById(id)?.textContent).toContain(trecho);
+	});
 });
