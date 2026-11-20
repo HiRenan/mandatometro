@@ -42,11 +42,13 @@ function cenaMd({
 	passos = `  - tipo: fala
     id: c1-01
     quem: narracao
+    emocao: neutro
     texto: Brasília. Primeira semana de mandato.
   - tipo: fala
     id: c1-02
     quem: lia
     expressao: confiante
+    emocao: neutro
     texto: Por onde a gente começa?
 `,
 	corpo = "",
@@ -115,6 +117,7 @@ describe("lerJogos", () => {
     id: c2-01
     quem: arnaldo
     expressao: neutro
+    emocao: neutro
     texto: Agora vem a comissão.
 `,
 			}),
@@ -135,6 +138,7 @@ describe("lerJogos", () => {
 			id: "c1-02",
 			quem: "lia",
 			expressao: "confiante",
+			emocao: "neutro",
 			texto: "Por onde a gente começa?",
 		});
 		expect(jogo.personagens.lia.nome).toBe("Lia Moraes");
@@ -171,6 +175,7 @@ describe("lerJogos", () => {
     id: c1-01
     quem: lia
     expressao: furiosa
+    emocao: neutro
     texto: Uma fala.
 `,
 				}),
@@ -183,11 +188,13 @@ describe("lerJogos", () => {
     id: c1-01
     quem: narracao
     expressao: neutro
+    emocao: neutro
     texto: Uma fala.
 `;
 		const semExpressao = `  - tipo: fala
     id: c1-01
     quem: arnaldo
+    emocao: neutro
     texto: Uma fala.
 `;
 		expect(() =>
@@ -221,15 +228,18 @@ describe("lerJogos", () => {
 		const repetida = `  - tipo: fala
     id: c1-01
     quem: narracao
+    emocao: neutro
     texto: Uma fala.
   - tipo: fala
     id: c1-01
     quem: narracao
+    emocao: neutro
     texto: Outra fala.
 `;
 		const deOutraCena = `  - tipo: fala
     id: c3-01
     quem: narracao
+    emocao: neutro
     texto: Uma fala.
 `;
 		expect(() =>
@@ -244,6 +254,31 @@ describe("lerJogos", () => {
 				[`${pasta}/1-cena.md`]: cenaMd({ passos: deOutraCena }),
 			}),
 		).toThrow(/a fala "c3-01" não é da cena 1/);
+	});
+
+	it("recusa a fala sem emoção e a emoção que não existe", () => {
+		const semEmocao = `  - tipo: fala
+    id: c1-01
+    quem: narracao
+    texto: Uma fala.
+`;
+		expect(() =>
+			lerUm({
+				[`${pasta}/jogo.md`]: jogoMd,
+				[`${pasta}/1-cena.md`]: cenaMd({ passos: semEmocao }),
+			}),
+		).toThrow(/campo "passos.0.emocao": falta este campo/);
+		expect(() =>
+			lerUm({
+				[`${pasta}/jogo.md`]: jogoMd,
+				[`${pasta}/1-cena.md`]: cenaMd({
+					passos: semEmocao.replace(
+						"    texto:",
+						"    emocao: furioso\n    texto:",
+					),
+				}),
+			}),
+		).toThrow(/campo "passos.0.emocao"/);
 	});
 
 	it("recusa a casa fora do caminho do jogo.md", () => {
@@ -295,6 +330,7 @@ describe("lerJogos", () => {
 					passos: `  - tipo: fala
     id: c2-01
     quem: narracao
+    emocao: neutro
     texto: Uma fala.
 `,
 				}),

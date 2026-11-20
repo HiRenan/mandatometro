@@ -60,7 +60,7 @@ Mandatômetro teaches how Brazilian politics works through what Congress is voti
 
 ## Secrets and personal data
 
-Keep Firecrawl, Resend, Devin, and LLM keys only in the local `.env` created from `.env.example` and in hosting secrets. Refer to keys by variable name in code, issues, PRs, and logs. Add new variables to `.env.example` with an empty value and a comment.
+Keep Firecrawl, Resend, Devin, ElevenLabs, and LLM keys only in the local `.env` created from `.env.example` and in hosting secrets. Refer to keys by variable name in code, issues, PRs, and logs. Add new variables to `.env.example` with an empty value and a comment.
 
 Apply the [personal data rules](docs/dados-pessoais.md) before storing, exposing, logging, or using data about a person in a fixture.
 

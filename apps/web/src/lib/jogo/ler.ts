@@ -49,6 +49,29 @@ const SELOS = [
 /** O carimbo que entra na tela, por nome. */
 export type Selo = (typeof SELOS)[number];
 
+/**
+ * A direção de voz de cada fala, para a narração gravada (`vozes/gerar.mjs`).
+ * Ela não muda nada na tela: diz como a frase é dita, e o retrato continua
+ * vindo da `expressao`.
+ */
+const EMOCOES = [
+	"solene",
+	"neutro",
+	"didatico",
+	"curioso",
+	"surpreso",
+	"preocupado",
+	"pensativo",
+	"confiante",
+	"caloroso",
+	"serio",
+	"firme",
+	"respeitoso",
+	"aliviado",
+] as const;
+
+export type Emocao = (typeof EMOCOES)[number];
+
 const PERSONAGENS = ["lia", "arnaldo", "caio"] as const;
 
 // A narração não tem retrato nem placa de nome.
@@ -82,6 +105,8 @@ const falaSchema = z
 			quem: z.enum(QUEM, exigido(`precisa ser ${QUEM.join(", ")}`)),
 			// Só quem tem retrato leva expressão.
 			expressao: texto.optional(),
+			// Como a fala é dita, para a narração gravada.
+			emocao: z.enum(EMOCOES, exigido(`precisa ser ${EMOCOES.join(", ")}`)),
 			texto,
 			// O item de cena que aparece junto da fala, com a etiqueta escrita no
 			// código: a imagem não tem texto.
@@ -90,7 +115,9 @@ const falaSchema = z
 				.optional(),
 			etiqueta: texto.optional(),
 		},
-		exigido("precisa ser uma fala com os campos tipo, id, quem e texto"),
+		exigido(
+			"precisa ser uma fala com os campos tipo, id, quem, emocao e texto",
+		),
 	)
 	.superRefine((fala, ctx) => {
 		if (fala.quem === "narracao") {

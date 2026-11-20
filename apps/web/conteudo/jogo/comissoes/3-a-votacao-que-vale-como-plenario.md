@@ -8,26 +8,31 @@ passos:
   - tipo: fala
     id: c3-01
     quem: narracao
+    emocao: solene
     texto: Comissão de Constituição e Justiça. Dezembro de 2024.
   - tipo: fala
     id: c3-02
     quem: arnaldo
     expressao: explicando
+    emocao: didatico
     texto: "A CCJ aprovou o texto da Educação com mudanças: o aluno pode levar o celular, mas não pode usar na aula nem no recreio, salvo para fins pedagógicos."
   - tipo: fala
     id: c3-03
     quem: caio
     expressao: argumentando
+    emocao: respeitoso
     texto: "Tem gente do meu lado com outra preocupação: sem o celular, quem garante que o aluno pode registrar o que acontece em sala?"
   - tipo: fala
     id: c3-04
     quem: lia
     expressao: pensativa
+    emocao: pensativo
     texto: E quem defende diz que é atenção e saúde mental. A lei manda a escola falar disso com os alunos.
   - tipo: fala
     id: c3-05
     quem: arnaldo
     expressao: serio
+    emocao: serio
     texto: "E repare: o tema dividiu até quem costuma votar junto. Hora do painel."
   - tipo: decisao
     id: "3.1"
@@ -49,11 +54,13 @@ passos:
     id: c3-06
     quem: lia
     expressao: confiante
+    emocao: confiante
     texto: Aprovado! Agora vai para o Plenário da Câmara, né?
   - tipo: fala
     id: c3-07
     quem: arnaldo
     expressao: sorrindo
+    emocao: caloroso
     texto: Talvez não.
   - tipo: decisao
     id: "3.2"
@@ -83,11 +90,13 @@ passos:
     id: c3-08
     quem: arnaldo
     expressao: explicando
+    emocao: didatico
     texto: "Detalhe de vocabulário: na Câmara isso se chama poder conclusivo. No Senado, decisão terminativa. A imprensa costuma misturar."
   - tipo: fala
     id: c3-09
     quem: caio
     expressao: cumprimentando
+    emocao: caloroso
     texto: Perdi essa, deputada. Nos vemos no Senado.
 revelacao:
   paragrafos:

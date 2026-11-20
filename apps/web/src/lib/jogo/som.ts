@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { enderecoDaVoz, temVoz } from "./vozes";
 
 /**
  * O som do jogo vem ligado, e quem não quiser desliga no botão do pé do palco.
@@ -96,6 +97,40 @@ function comoNasce(): boolean {
  */
 export function useSom(): boolean {
 	return useSyncExternalStore(assinar, lerSom, comoNasce);
+}
+
+// A narração da fala da vez. É uma por vez: a fala nova para a anterior, para
+// duas vozes não falarem juntas.
+let narrando: HTMLAudioElement | undefined;
+
+const VOLUME_DA_VOZ = 1;
+
+/**
+ * Toca a narração de uma fala, se ela foi gravada e o som está ligado. A lista
+ * do que tem voz vem de vozes.ts, que o `pnpm --filter web vozes` refaz.
+ */
+export function tocarVoz(id: string): void {
+	pararVoz();
+	if (!lerSom() || !temVoz(id) || typeof Audio !== "function") {
+		return;
+	}
+	try {
+		narrando = new Audio(enderecoDaVoz(id));
+		narrando.volume = VOLUME_DA_VOZ;
+		void narrando.play()?.catch(() => undefined);
+	} catch {
+		// Sem a narração, a fala continua escrita na tela.
+	}
+}
+
+/** Para a narração da fala, quando a pessoa avança ou sai da página. */
+export function pararVoz(): void {
+	try {
+		narrando?.pause();
+	} catch {
+		// O navegador já pode ter soltado o áudio.
+	}
+	narrando = undefined;
 }
 
 /**

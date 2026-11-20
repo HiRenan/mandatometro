@@ -8,6 +8,7 @@ import { lerTrilhas } from "../conteudo/ler.ts";
 import { tetoDoTitulo } from "../conteudo/regua.ts";
 import { lerJogos } from "./ler.ts";
 import { TRILHA_DO_JOGO } from "./trilha.ts";
+import { VOZES } from "./vozes.ts";
 
 // O roteiro de verdade, lido da pasta de conteúdo. O teste prende o que o
 // roteiro combinou (docs/jogo-das-comissoes.md): as 46 falas, as seis decisões
@@ -134,6 +135,29 @@ describe("o roteiro do Jogo das Comissões", () => {
 		// titulos.test.ts confere a conta. Mudou o título: meça de novo.
 		expect(jogo.titulo).toBe("Jogo das Comissões");
 		expect(tetoDoTitulo(jogo.titulo, "titulo-condensado")).toBe(4.49);
+	});
+
+	it("marca a emoção de cada fala, para a narração gravada", () => {
+		const semEmocao = falas.filter((fala) => !fala.emocao);
+
+		expect(semEmocao.map((fala) => fala.id)).toEqual([]);
+		// A direção de voz não se confunde com o retrato: a narração não tem
+		// expressão, e mesmo assim tem emoção.
+		const narracao = falas.filter((fala) => fala.quem === "narracao");
+		expect(narracao.length).toBeGreaterThan(0);
+		expect(narracao.every((fala) => Boolean(fala.emocao))).toBe(true);
+	});
+
+	it("só anuncia voz para as falas que têm o arquivo gravado", () => {
+		const ids = new Set(falas.map((fala) => fala.id));
+
+		for (const id of VOZES) {
+			expect(ids.has(id), `${id} não é uma fala do roteiro`).toBe(true);
+			expect(
+				existsSync(`${RAIZ_DO_SITE}public/jogo/vo/${id}.mp3`),
+				`falta public/jogo/vo/${id}.mp3`,
+			).toBe(true);
+		}
 	});
 
 	it("deixa a pendência do art. 105 escrita no roteiro", () => {

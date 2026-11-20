@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { BOTAO_CONTINUAR } from "@/components/botao-continuar";
 import { classes } from "@/lib/classes";
 import { semCliqueDuplo } from "@/lib/clique";
-import { tocar } from "@/lib/jogo/som";
+import { pararVoz, tocar, tocarVoz } from "@/lib/jogo/som";
+import { temVoz } from "@/lib/jogo/vozes";
 import { movimentoReduzido } from "@/lib/painel-vivo";
 
 /**
@@ -17,12 +18,15 @@ import { movimentoReduzido } from "@/lib/painel-vivo";
 const MS_POR_LETRA = 22;
 
 export function CaixaDeDialogo({
+	id,
 	nome,
 	quem,
 	texto,
 	aoAvancar,
 	rotulo = "Continuar",
 }: {
+	/** O id da fala, que é o nome do arquivo da narração (vo/c1-03.mp3). */
+	id: string;
 	/** O nome na placa. A narração não tem placa. */
 	nome?: string;
 	/** Quem fala, para o estilo da caixa. */
@@ -38,6 +42,13 @@ export function CaixaDeDialogo({
 
 	const completa = letras >= texto.length;
 
+	// A narração da fala, quando ela foi gravada. Ela para quando a fala sai da
+	// tela: duas vozes nunca falam juntas.
+	useEffect(() => {
+		tocarVoz(id);
+		return pararVoz;
+	}, [id]);
+
 	useEffect(() => {
 		const semMovimento =
 			movimentoReduzido() || typeof Element.prototype.animate !== "function";
@@ -45,7 +56,10 @@ export function CaixaDeDialogo({
 			setLetras(texto.length);
 			return;
 		}
-		tocar("texto");
+		// Com a fala narrada, o bipe da máquina de escrever só atrapalharia.
+		if (!temVoz(id)) {
+			tocar("texto");
+		}
 		relogio.current = setInterval(() => {
 			setLetras((quantas) => {
 				if (quantas >= texto.length) {
@@ -56,7 +70,7 @@ export function CaixaDeDialogo({
 			});
 		}, MS_POR_LETRA);
 		return () => clearInterval(relogio.current);
-	}, [texto]);
+	}, [texto, id]);
 
 	function agir() {
 		if (!completa) {

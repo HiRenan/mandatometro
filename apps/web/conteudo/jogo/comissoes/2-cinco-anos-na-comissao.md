@@ -8,26 +8,31 @@ passos:
   - tipo: fala
     id: c2-01
     quem: narracao
+    emocao: solene
     texto: Comissão de Educação. Setembro de 2023, quatro anos depois do desarquivamento.
   - tipo: fala
     id: c2-02
     quem: lia
     expressao: surpresa
+    emocao: surpreso
     texto: Quatro anos aqui dentro?
   - tipo: fala
     id: c2-03
     quem: arnaldo
     expressao: explicando
+    emocao: didatico
     texto: Passou por cinco relatores. O relator é quem estuda o projeto e propõe o texto. Quando um sai da comissão, o projeto espera o próximo.
   - tipo: fala
     id: c2-04
     quem: arnaldo
     expressao: neutro
+    emocao: neutro
     texto: "E o parecer de hoje vai longe: nos primeiros anos da escola, o aluno nem levaria o celular."
   - tipo: fala
     id: c2-05
     quem: caio
     expressao: desafiando
+    emocao: firme
     texto: Esse parecer novo eu não li inteiro. Não dá para votar hoje.
   - tipo: decisao
     id: "2.1"
@@ -50,25 +55,30 @@ passos:
     id: c2-06
     quem: arnaldo
     expressao: sorrindo
+    emocao: caloroso
     texto: "Foi isso mesmo: quatro deputados de partidos diferentes pediram vista juntos. Pedido de vista é regra do jogo, não golpe."
   - tipo: fala
     id: c2-07
     quem: narracao
+    emocao: solene
     texto: Outubro de 2024. Depois de mais três pareceres, o texto volta à pauta.
   - tipo: fala
     id: c2-08
     quem: caio
     expressao: argumentando
+    emocao: respeitoso
     texto: "Com todo respeito, deputada: quem decide isso não deveria ser cada escola, com as famílias? Uma regra nacional para todas é pesada."
   - tipo: fala
     id: c2-09
     quem: lia
     expressao: pensativa
+    emocao: pensativo
     texto: E do outro lado tem professor dizendo que não consegue dar aula disputando com o celular.
   - tipo: fala
     id: c2-10
     quem: arnaldo
     expressao: neutro
+    emocao: neutro
     texto: Os dois pontos são legítimos. O seu voto é seu.
   - tipo: decisao
     id: "2.2"
@@ -85,6 +95,7 @@ passos:
     id: c2-11
     quem: arnaldo
     expressao: serio
+    emocao: serio
     texto: Agora vem a CCJ. Ela confere se o projeto respeita a Constituição e, desta vez, também vai julgar o mérito.
 revelacao:
   paragrafos:

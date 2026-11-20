@@ -76,10 +76,38 @@ O som **vem ligado**, e quem não quiser desliga no botão do pé do palco; a es
 
 As folhas de referência de arte (`ref-lia`, `ref-arnaldo` e `ref-caio`) e o PDF do roteiro são material de produção e ficam fora do repositório.
 
+## A narração
+
+Cada fala leva uma `emocao`, que é a direção de voz — como a frase é dita. Ela não muda nada na tela: o retrato continua vindo da `expressao`, e as duas podem diferir (a Lia pensativa pergunta "E se ele concordar com quase tudo, menos um artigo?" com curiosidade). São treze: `solene`, `neutro`, `didatico`, `curioso`, `surpreso`, `preocupado`, `pensativo`, `confiante`, `caloroso`, `serio`, `firme`, `respeitoso` e `aliviado`. O leitor recusa uma fala sem emoção ou com uma que não esteja na lista.
+
+As vozes são do catálogo da ElevenLabs, todas brasileiras, uma por personagem:
+
+| Quem | Voz |
+| --- | --- |
+| Narração | Carlos — Resonant & Majestic Storyteller |
+| Lia | Raquel — Expressive and Energetic |
+| Arnaldo | Leonardo — Deep & Resonant |
+| Caio | Will — Deep, Smooth and Affectionate |
+
+Nenhuma delas imita pessoa real, como o roteiro pede.
+
+**Para gravar**, com a `ELEVENLABS_API_KEY` no `.env` da raiz:
+
+```bash
+pnpm --filter web vozes                 # grava o que ainda não tem arquivo
+pnpm --filter web vozes -- --so c1-01   # só uma fala, para ouvir antes
+pnpm --filter web vozes -- --refazer    # regrava tudo
+pnpm --filter web vozes -- --modelo eleven_v3
+```
+
+O script lê o roteiro, manda cada fala com a voz do personagem e a direção da emoção — estabilidade e estilo nos modelos de hoje, e a marca entre colchetes (`[curious]`) no `eleven_v3` —, grava `public/jogo/vo/<id>.mp3` e refaz a lista de `src/lib/jogo/vozes.ts`. **A tela só toca o que está nessa lista**, então o jogo roda igual com narração parcial ou nenhuma: a fala sem arquivo simplesmente não tem voz, e o bipe da máquina de escrever volta no lugar dela. A chave vem do ambiente e não aparece no log.
+
+**O plano gratuito da ElevenLabs não sintetiza pela API** (`402 paid_plan_required`, inclusive com as vozes nativas): a gravação precisa de uma conta paga.
+
 ## Pendências
 
 - Ler a redação atual completa do art. 105 do Regimento Interno da Câmara antes de publicar a explicação da decisão 1.1 palavra por palavra. O Regimento não tem texto no normas.leg.br, e a versão em vigor é o arquivo "atualizado até a Resolução nº 34, de 2026", em `www2.camara.leg.br` ([conteúdo das trilhas](conteudo-das-trilhas.md)).
-- A narração por voz (um arquivo por fala, com o id no nome) fica para depois do texto congelado.
+- Gravar a narração: o roteiro já está marcado com a emoção de cada fala e o script pronto, e falta uma conta paga da ElevenLabs para rodar o `pnpm --filter web vozes`.
 
 ## Fontes conferidas em 20/11/2026
 

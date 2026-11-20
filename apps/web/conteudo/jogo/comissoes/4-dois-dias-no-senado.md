@@ -8,21 +8,25 @@ passos:
   - tipo: fala
     id: c4-01
     quem: narracao
+    emocao: solene
     texto: Terça-feira, 17 de dezembro de 2024. O projeto chega ao Senado.
   - tipo: fala
     id: c4-02
     quem: lia
     expressao: surpresa
+    emocao: surpreso
     texto: Espera, aqui ele é o PL 4.932 de 2024?
   - tipo: fala
     id: c4-03
     quem: arnaldo
     expressao: explicando
+    emocao: didatico
     texto: Cada Casa dá o seu número. É o mesmo projeto. Agora o Senado revisa.
   - tipo: fala
     id: c4-04
     quem: lia
     expressao: preocupada
+    emocao: preocupado
     texto: O recesso começa em dias, e o governo quer a lei valendo no ano letivo de 2025.
   - tipo: decisao
     id: "4.1"
@@ -45,6 +49,7 @@ passos:
     id: c4-05
     quem: arnaldo
     expressao: neutro
+    emocao: neutro
     texto: O relator pode manter o texto ou mudar. Isso decide o caminho.
   - tipo: decisao
     id: "4.2"
@@ -65,10 +70,12 @@ passos:
   - tipo: fala
     id: c4-06
     quem: narracao
+    emocao: solene
     texto: Quarta-feira, 18 de dezembro. O relator rejeita as duas emendas e mantém o texto da Câmara.
   - tipo: fala
     id: c4-07
     quem: narracao
+    emocao: solene
     texto: '"Os senadores que aprovam permaneçam como se encontram."'
   - tipo: painel
     modo: simbolico
@@ -78,21 +85,25 @@ passos:
     id: c4-08
     quem: lia
     expressao: surpresa
+    emocao: surpreso
     texto: Ué, cadê o placar?
   - tipo: fala
     id: c4-09
     quem: arnaldo
     expressao: sorrindo
+    emocao: caloroso
     texto: "Votação simbólica: quem concorda fica parado, e ninguém aperta botão. Passou o texto principal, ressalvados os destaques."
   - tipo: fala
     id: c4-10
     quem: lia
     expressao: pensativa
+    emocao: curioso
     texto: Destaques?
   - tipo: fala
     id: c4-11
     quem: arnaldo
     expressao: explicando
+    emocao: didatico
     texto: É quando alguém pede para votar uma parte separada. Uma emenda queria começar só pelo ensino fundamental, aos poucos, e deixar o ensino médio de fora. Essa vai ao painel.
   - tipo: decisao
     id: "4.3"
@@ -114,6 +125,7 @@ passos:
     id: c4-12
     quem: arnaldo
     expressao: neutro
+    emocao: neutro
     texto: Outra emenda pedia câmeras nas salas de aula. O autor retirou o destaque e propôs discutir o tema em outro projeto. O texto da Câmara passou inteiro.
 revelacao:
   paragrafos:

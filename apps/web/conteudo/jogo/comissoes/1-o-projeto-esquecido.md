@@ -8,16 +8,19 @@ passos:
   - tipo: fala
     id: c1-01
     quem: narracao
+    emocao: solene
     texto: Brasília. Primeira semana de mandato.
   - tipo: fala
     id: c1-02
     quem: lia
     expressao: confiante
+    emocao: confiante
     texto: Pronto, gabinete montado. Por onde a gente começa?
   - tipo: fala
     id: c1-03
     quem: arnaldo
     expressao: neutro
+    emocao: neutro
     texto: "Por uma pasta velha. O PL 104 de 2015: restringe o celular nas escolas. Apresentado por um deputado do Rio Grande do Sul."
     item: item-pasta
     etiqueta: PL 104/2015
@@ -25,16 +28,19 @@ passos:
     id: c1-04
     quem: lia
     expressao: surpresa
+    emocao: surpreso
     texto: De 2015? Por que ninguém votou isso?
   - tipo: fala
     id: c1-05
     quem: arnaldo
     expressao: explicando
+    emocao: didatico
     texto: Porque em 2019 ele foi arquivado. Toda vez que a legislatura acaba, o que não andou vai para a gaveta.
   - tipo: fala
     id: c1-06
     quem: lia
     expressao: preocupada
+    emocao: preocupado
     texto: E agora?
   - tipo: decisao
     id: "1.1"
@@ -56,6 +62,7 @@ passos:
     id: c1-07
     quem: arnaldo
     expressao: sorrindo
+    emocao: caloroso
     texto: "Foi o que aconteceu, em fevereiro de 2019. A primeira parada é a Comissão de Educação. Prepare-se: ele vai ficar lá mais de cinco anos."
 revelacao:
   paragrafos:

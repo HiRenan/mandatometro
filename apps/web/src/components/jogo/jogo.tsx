@@ -168,6 +168,7 @@ export function Jogo({
 				{naCena && fala ? (
 					<CaixaDeDialogo
 						key={fala.id}
+						id={fala.id}
 						quem={fala.quem}
 						nome={
 							fala.quem === "narracao"

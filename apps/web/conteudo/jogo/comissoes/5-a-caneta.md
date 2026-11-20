@@ -8,6 +8,7 @@ passos:
   - tipo: fala
     id: c5-01
     quem: narracao
+    emocao: solene
     texto: O texto aprovado pelas duas Casas chega ao presidente da República.
     item: item-documento
     etiqueta: PL 4.932/2024
@@ -15,11 +16,13 @@ passos:
     id: c5-02
     quem: arnaldo
     expressao: explicando
+    emocao: didatico
     texto: "Ele tem 15 dias úteis para decidir. Se ficar calado, o projeto vira lei do mesmo jeito: é a sanção tácita."
   - tipo: fala
     id: c5-03
     quem: lia
     expressao: pensativa
+    emocao: curioso
     texto: E se ele concordar com quase tudo, menos um artigo?
   - tipo: decisao
     id: "5.1"
@@ -41,6 +44,7 @@ passos:
     id: c5-04
     quem: arnaldo
     expressao: serio
+    emocao: serio
     texto: E se ele vetar, o Congresso ainda pode derrubar o veto numa sessão conjunta. A última palavra pode voltar para lá.
   - tipo: decisao
     id: "5.2"
@@ -59,17 +63,20 @@ passos:
   - tipo: fala
     id: c5-05
     quem: narracao
+    emocao: solene
     texto: 13 de janeiro de 2025. Sancionado, sem vetos. No dia seguinte, a Lei 15.100 sai no Diário Oficial.
     item: item-caneta
   - tipo: fala
     id: c5-06
     quem: lia
     expressao: sorrindo
+    emocao: aliviado
     texto: Dez anos entre a pasta velha e a lei.
   - tipo: fala
     id: c5-07
     quem: arnaldo
     expressao: sorrindo
+    emocao: caloroso
     texto: E toda semana tem projeto andando assim. A diferença é que agora você sabe ler o caminho.
 revelacao:
   paragrafos:
