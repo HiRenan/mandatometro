@@ -305,10 +305,10 @@ function FormularioDaRevisao({
 	const erroDaEdicao = erros.edicao;
 
 	useLayoutEffect(() => {
-		const rodape = pe.current;
-		if (!rodape) {
+		if (!pe.current) {
 			return;
 		}
+		const rodape = pe.current;
 		const raiz = document.documentElement;
 		const folha = rodape.closest("article");
 
