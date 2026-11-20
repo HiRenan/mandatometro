@@ -12,6 +12,7 @@ from mandatometro.db import Base
 TABELAS_DO_MVP = {
     "conta",
     "credencial_conta",
+    "artigo_lido",
     "aviso_conta",
     "limite_conta",
     "fonte",

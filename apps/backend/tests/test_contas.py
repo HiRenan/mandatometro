@@ -10,8 +10,8 @@ from cryptography.fernet import Fernet
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
-from sqlalchemy import select
-from sqlalchemy.exc import ArgumentError
+from sqlalchemy import select, text
+from sqlalchemy.exc import ArgumentError, IntegrityError
 from sqlalchemy.orm import sessionmaker
 
 from mandatometro import contas, db
@@ -114,6 +114,10 @@ def test_ciclo_completo(engine_de_teste, monkeypatch):
     assert perfil.status_code == 200
     assert perfil.headers["cache-control"] == "no-store"
     assert perfil.json() == {"nome": dados["nome"], "papel": "comum"}
+    artigo = "trilha/artigo-da-exclusao"
+    assert cliente.post(
+        "/contas/progresso", headers={"Origin": config().app_base_url}, json={"marcar": [artigo]}
+    ).json() == {"lidos": [artigo]}
 
     def excluir(senha_atual, origem):
         return cliente.request(
@@ -129,14 +133,22 @@ def test_ciclo_completo(engine_de_teste, monkeypatch):
     monkeypatch.setattr(contas.Resend, "enviar", indisponivel)
     assert excluir(nova, config().app_base_url) == 204
     assert cliente.get("/contas/me").status_code == 401
+    assert cliente.get("/contas/progresso").status_code == 401
     with sessoes.begin() as db:
         assert db.get(Conta, conta_id) is None
+        assert (
+            db.scalar(
+                text("select count(*) from artigo_lido where conta_id = :id"), {"id": conta_id}
+            )
+            == 0
+        )
         aviso = db.scalars(select(AvisoConta)).one()
         assert email.encode() not in aviso.conteudo
         aviso.proxima = contas.agora()
     monkeypatch.setattr(contas.Resend, "enviar", enviar)
     contas.entregar_pendentes()
     assert "excluída" in mensagens[-1][0]
+    assert artigo not in mensagens[-1][0]
 
 
 def api_secret():
@@ -194,6 +206,171 @@ def _criar_sessao(sessoes_conta, senha_hash="hash-ficticio"):
             )
         )
     return id_conta, email, token
+
+
+PROGRESSO = "/contas/progresso"
+
+
+@pytest.fixture
+def cliente_progresso(sessoes_conta, monkeypatch):
+    monkeypatch.setattr(config(), "conta_chave", api_secret())
+
+    def abrir(token=None):
+        cliente = TestClient(app, client=(uuid4().hex, 50000))
+        cliente.headers["Origin"] = config().app_base_url
+        if token:
+            cliente.cookies.set("sessao_conta", token)
+        return cliente
+
+    return abrir
+
+
+def test_progresso_sem_sessao_e_falha_do_banco(monkeypatch):
+    engine = Mock(side_effect=ArgumentError("dado-interno@example.com"))
+    monkeypatch.setattr(db, "engine", engine)
+    monkeypatch.setattr(config(), "conta_chave", api_secret())
+    monkeypatch.setattr(api, "consumir_cota", lambda *_: True)
+    cliente = TestClient(app, headers={"Origin": config().app_base_url})
+
+    for resposta in (cliente.get(PROGRESSO), cliente.post(PROGRESSO, json={"marcar": ["a/b"]})):
+        assert resposta.status_code == 401
+        assert resposta.json() == {"detail": "Entre na sua conta."}
+        assert resposta.headers["cache-control"] == "no-store"
+    engine.assert_not_called()
+
+    cliente.cookies.set("sessao_conta", "sessao-inventada")
+    resposta = cliente.get(PROGRESSO)
+    assert resposta.status_code == 503
+    assert resposta.json() == {"detail": "Serviço indisponível."}
+    assert resposta.headers["cache-control"] == "no-store"
+
+
+def test_progresso_isolado_por_conta_e_mutacoes_idempotentes(
+    sessoes_conta, cliente_progresso, caplog
+):
+    id_conta, email, token = _criar_sessao(sessoes_conta)
+    _, _, outro_token = _criar_sessao(sessoes_conta)
+    cliente = cliente_progresso(token)
+    outro = cliente_progresso(outro_token)
+    a, b = "trilha-a/lido-2", "trilha-b/artigo"
+    assert cliente.get(PROGRESSO).json() == {"lidos": []}
+
+    def marcacoes():
+        with sessoes_conta() as sessao:
+            return sessao.execute(
+                text("select artigo_id, marcado_em from artigo_lido where conta_id = :id"),
+                {"id": id_conta},
+            ).all()
+
+    resposta = cliente.post(PROGRESSO, json={"marcar": [b, a, a]})
+    assert resposta.status_code == 200
+    assert resposta.headers["cache-control"] == "no-store"
+    assert resposta.json() == {"lidos": [a, b]}
+    gravadas = dict(marcacoes())
+    assert gravadas.keys() == {a, b}
+    assert all(instante.tzinfo for instante in gravadas.values())
+
+    assert cliente.post(PROGRESSO, json={"marcar": [a]}).json() == {"lidos": [a, b]}
+    assert dict(marcacoes()) == gravadas
+    assert outro.get(PROGRESSO).json() == {"lidos": []}
+    assert outro.post(PROGRESSO, json={"marcar": [a]}).json() == {"lidos": [a]}
+
+    for _ in range(2):
+        assert cliente.post(PROGRESSO, json={"desmarcar": [a, b]}).json() == {"lidos": []}
+    assert outro.get(PROGRESSO).json() == {"lidos": [a]}
+    assert outro.get("/contas/me").json().keys() == {"nome", "papel"}
+    assert cliente_progresso("sessao-inventada").get(PROGRESSO).status_code == 401
+    assert all(dado not in caplog.text for dado in (email, str(id_conta), token, a, b))
+
+
+def test_progresso_rejeita_origem_e_respeita_a_cota(sessoes_conta, cliente_progresso, monkeypatch):
+    instante = contas.agora()
+    monkeypatch.setattr(contas, "agora", lambda: instante)
+    _, _, token = _criar_sessao(sessoes_conta)
+    cliente = cliente_progresso(token)
+    pedido = {"marcar": ["trilha/artigo"]}
+    for origem in ("https://origem.example.com", ""):
+        resposta = cliente.post(PROGRESSO, json=pedido, headers={"Origin": origem})
+        assert resposta.status_code == 403
+        assert resposta.json() == {"detail": "Origem inválida."}
+        assert resposta.headers["cache-control"] == "no-store"
+    cliente.headers.pop("Origin")
+    assert cliente.post(PROGRESSO, json=pedido).status_code == 403
+    assert cliente.get(PROGRESSO).json() == {"lidos": []}
+    cliente.headers["Origin"] = config().app_base_url
+    for _ in range(27):
+        assert cliente.post(PROGRESSO, json=pedido).status_code == 200
+    resposta = cliente.post(PROGRESSO, json=pedido)
+    assert resposta.status_code == 429
+    assert resposta.json() == {"detail": "Tente novamente em um minuto."}
+    assert resposta.headers["cache-control"] == "no-store"
+
+
+@pytest.mark.parametrize(
+    "pedido",
+    [
+        {"marcar": ["ruim@example.com"]},
+        {"desmarcar": ["Trilha/artigo"]},
+        {"marcar": ["trilha/a/b"]},
+        {"marcar": ["/artigo"]},
+        {"marcar": ["trilha/"]},
+        {"marcar": ["trilha/a\n"]},
+        {"marcar": ["x/" + "a" * 127]},
+        {"marcar": [123]},
+        {"marcar": ["x/a"] * 257},
+        {"marcar": ["x/a"] * 128, "desmarcar": ["x/b"] * 129},
+        {"marcar": ["x/a"], "desmarcar": ["x/a"]},
+        {"conta_id": "outro@example.com"},
+    ],
+)
+def test_progresso_rejeita_pedido_invalido_sem_expor_entrada(
+    sessoes_conta, cliente_progresso, pedido
+):
+    _, _, token = _criar_sessao(sessoes_conta)
+    cliente = cliente_progresso(token)
+    resposta = cliente.post(PROGRESSO, json=pedido)
+    assert resposta.status_code == 422
+    assert resposta.headers["cache-control"] == "no-store"
+    assert resposta.json() == {"detail": "Confira os campos informados."}
+    assert cliente.get(PROGRESSO).json() == {"lidos": []}
+
+
+def test_progresso_respeita_o_teto_ate_com_duas_gravacoes_simultaneas(
+    sessoes_conta, cliente_progresso
+):
+    _, _, token = _criar_sessao(sessoes_conta)
+    cliente = cliente_progresso(token)
+    ids = [f"trilha/artigo-{i}" for i in range(254)] + ["x/" + "a" * 126]
+    assert cliente.post(PROGRESSO, json={"marcar": ids}).status_code == 200
+
+    def marcar(id_artigo):
+        return cliente_progresso(token).post(PROGRESSO, json={"marcar": [id_artigo]})
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        respostas = sorted(pool.map(marcar, ("x/a", "x/b")), key=lambda r: r.status_code)
+    assert [r.status_code for r in respostas] == [200, 409]
+    assert respostas[1].json() == {"detail": "Limite de artigos lidos atingido."}
+    assert respostas[1].headers["cache-control"] == "no-store"
+    lidos = respostas[0].json()["lidos"]
+    assert len(lidos) == 256 and set(ids).issubset(lidos)
+
+    resposta = cliente.post(PROGRESSO, json={"desmarcar": [ids[0]], "marcar": ["nova/a", "nova/b"]})
+    assert resposta.status_code == 409
+    assert cliente.get(PROGRESSO).json() == {"lidos": lidos}
+    resposta = cliente.post(PROGRESSO, json={"desmarcar": [ids[0]], "marcar": ["nova/a"]})
+    assert resposta.status_code == 200
+    assert set(resposta.json()["lidos"]) == set(lidos) - {ids[0]} | {"nova/a"}
+
+
+def test_banco_recusa_artigo_invalido_e_repetido(sessoes_conta):
+    conta_id, _, _ = _criar_sessao(sessoes_conta)
+    inserir = text("insert into artigo_lido (conta_id, artigo_id) values (:conta, :artigo)")
+    with sessoes_conta.begin() as sessao:
+        assert sessao.scalar(text("select to_regclass('artigo_lido')")) is not None
+        sessao.execute(inserir, {"conta": conta_id, "artigo": "x/a"})
+        for artigo in ("x/a", "x/INVÁLIDO", "x/a\n"):
+            with pytest.raises(IntegrityError), sessao.begin_nested():
+                sessao.execute(inserir, {"conta": conta_id, "artigo": artigo})
 
 
 @pytest.mark.parametrize("classe_rota", [APIRoute, api.RotaConta], ids=["padrao", "rota-conta"])

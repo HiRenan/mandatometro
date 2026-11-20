@@ -70,6 +70,7 @@ O banco guarda os dados da Câmara e do Senado, os atos do Diário Oficial, as e
 ```mermaid
 erDiagram
     conta ||--o{ credencial_conta : "autoriza"
+    conta ||--o{ artigo_lido : "guarda"
     conta |o--o{ aviso_conta : "gera"
     conta {
         uuid id PK
@@ -91,6 +92,11 @@ erDiagram
         uuid conta_id FK
         string finalidade
         timestamptz expira
+    }
+    artigo_lido {
+        uuid conta_id PK,FK
+        string artigo_id PK
+        timestamptz marcado_em
     }
     aviso_conta {
         uuid id PK

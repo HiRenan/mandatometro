@@ -8,7 +8,7 @@ from fastapi import APIRouter, BackgroundTasks, Cookie, HTTPException, Request, 
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
@@ -19,7 +19,14 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from mandatometro.config import config
 from mandatometro.contas import agendar, agora, consumir_cota, entregar_pendentes, resumo, senhas
 from mandatometro.db import sessao
-from mandatometro.db.modelos import Conta, CredencialConta, PapelConta
+from mandatometro.db.modelos import (
+    PADRAO_ID_ARTIGO,
+    TAMANHO_ID_ARTIGO,
+    ArtigoLido,
+    Conta,
+    CredencialConta,
+    PapelConta,
+)
 
 ESTADOS = set(
     [
@@ -349,6 +356,72 @@ def consultar_perfil(sessao_conta: Annotated[str | None, Cookie()] = None) -> Pe
     with sessao() as db:
         conta = conta_da_sessao(db, sessao_conta)
         return PerfilConta(nome=conta.nome, papel=conta.papel)
+
+
+MAX_IDS_POR_PEDIDO = 256
+MAX_ARTIGOS_LIDOS = 256
+IdArtigo = Annotated[str, Field(max_length=TAMANHO_ID_ARTIGO, pattern=PADRAO_ID_ARTIGO)]
+LoteDeArtigos = Annotated[list[IdArtigo], Field(max_length=MAX_IDS_POR_PEDIDO)]
+
+
+class PedidoProgresso(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    marcar: LoteDeArtigos = Field(default_factory=list)
+    desmarcar: LoteDeArtigos = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validar_lote(self):
+        if len(self.marcar) + len(self.desmarcar) > MAX_IDS_POR_PEDIDO or not set(
+            self.marcar
+        ).isdisjoint(self.desmarcar):
+            raise ValueError("Lote de progresso inválido.")
+        return self
+
+
+class ProgressoConta(BaseModel):
+    lidos: list[IdArtigo]
+
+
+def _ids_lidos(db: Session, conta: Conta) -> set[str]:
+    return set(db.scalars(select(ArtigoLido.artigo_id).where(ArtigoLido.conta_id == conta.id)))
+
+
+@router.get("/progresso")
+def consultar_progresso_conta(
+    sessao_conta: Annotated[str | None, Cookie()] = None,
+) -> ProgressoConta:
+    if not sessao_conta:
+        raise HTTPException(401, "Entre na sua conta.")
+    with sessao() as db:
+        conta = conta_da_sessao(db, sessao_conta)
+        return ProgressoConta(lidos=sorted(_ids_lidos(db, conta)))
+
+
+@router.post("/progresso")
+def alterar_progresso_conta(
+    pedido: PedidoProgresso, request: Request, sessao_conta: Annotated[str | None, Cookie()] = None
+) -> ProgressoConta:
+    validar_origem(request)
+    if not sessao_conta:
+        raise HTTPException(401, "Entre na sua conta.")
+    with sessao() as db, db.begin():
+        # O lock da conta serializa alterações e a exclusão, inclusive a checagem do teto.
+        conta = conta_da_sessao(db, sessao_conta)
+        lidos = _ids_lidos(db, conta)
+        marcar = set(pedido.marcar) - lidos
+        desmarcar = lidos.intersection(pedido.desmarcar)
+        resultado = (lidos - desmarcar) | marcar
+        if len(resultado) > MAX_ARTIGOS_LIDOS:
+            raise HTTPException(409, "Limite de artigos lidos atingido.")
+        if desmarcar:
+            db.execute(
+                delete(ArtigoLido).where(
+                    ArtigoLido.conta_id == conta.id, ArtigoLido.artigo_id.in_(desmarcar)
+                )
+            )
+        db.add_all([ArtigoLido(conta_id=conta.id, artigo_id=id) for id in marcar])
+    return ProgressoConta(lidos=sorted(resultado))
 
 
 @router.delete("/me", status_code=204)
