@@ -1344,6 +1344,10 @@ export type SalvarRevisaoErrors = {
      * Falha inesperada na operação.
      */
     500: ErroPainel;
+    /**
+     * Outra gravação da edição está em andamento.
+     */
+    503: ErroPainel;
 };
 
 export type SalvarRevisaoError = SalvarRevisaoErrors[keyof SalvarRevisaoErrors];
@@ -1386,6 +1390,10 @@ export type PublicarEdicaoErrors = {
      * Falha inesperada na operação.
      */
     500: ErroPainel;
+    /**
+     * Outra gravação da edição está em andamento.
+     */
+    503: ErroPainel;
 };
 
 export type PublicarEdicaoError = PublicarEdicaoErrors[keyof PublicarEdicaoErrors];
