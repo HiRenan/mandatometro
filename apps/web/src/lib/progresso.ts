@@ -5,6 +5,7 @@ import { ENV } from "@/env";
 const CHAVE = "mandatometro:artigos-lidos";
 const CHAVE_CONTA = "mandatometro:artigos-lidos-na-conta";
 const CHAVE_SESSAO = "mandatometro:sessao-do-progresso";
+const CHAVE_ACOES = "mandatometro:acoes-do-progresso";
 const TRAVA = "mandatometro:sincronizar-progresso";
 const INTERVALO_DE_RELEITURA = 30_000;
 
@@ -14,10 +15,11 @@ const ID_ARTIGO = /^[a-z0-9-]+\/[a-z0-9-]+$/;
 type ArtigoComId = { trilha: string; slug: string };
 type Contexto = { sessao: string | null };
 type Leitura = "documento" | "releitura";
+type Acao = { marcado: boolean; versao: string };
 type Sincronia = {
 	chave: string;
 	controle: AbortController;
-	pendentes: Map<string, boolean>;
+	pendentes: Map<string, Acao>;
 	leitura?: Leitura;
 	ultimaReleitura: number;
 	agendada: boolean;
@@ -32,6 +34,7 @@ let ultimo: { bruto: string | null; lidos: ReadonlySet<string> } = {
 	bruto: null,
 	lidos: VAZIO,
 };
+let ultimoComAcoes: ReadonlySet<string> = VAZIO;
 const ouvintes = new Set<() => void>();
 const reinicios = new WeakMap<readonly string[], Contexto>();
 const VISITANTE: Contexto = { sessao: null };
@@ -90,14 +93,33 @@ function interpretar(bruto: string | null): ReadonlySet<string> {
 	}
 }
 
-/** Lê os ids dos artigos lidos. Devolve o mesmo objeto enquanto nada muda. */
-export function lerLidos(): ReadonlySet<string> {
-	const daConta = chaveDaSessao() ? lerBruto(CHAVE_CONTA) : null;
+function lidosNoArmazenamento(chave: string | null): ReadonlySet<string> {
+	const daConta = chave ? lerBruto(CHAVE_CONTA) : null;
 	const bruto = daConta ?? lerBruto(CHAVE);
 	if (bruto !== ultimo.bruto) {
 		ultimo = { bruto, lidos: interpretar(bruto) };
 	}
 	return ultimo.lidos;
+}
+
+/** Lê os ids dos artigos lidos. Devolve o mesmo objeto enquanto nada muda. */
+export function lerLidos(): ReadonlySet<string> {
+	const chave = chaveDaSessao();
+	const base = lidosNoArmazenamento(chave);
+	if (!sincronia || sincronia.chave !== chave || sincronia.pendentes.size === 0)
+		return base;
+
+	// Outra aba pode ter atualizado a cópia compartilhada enquanto este
+	// documento ainda tem uma ação pendente de uma falha temporária.
+	const lidos = new Set(base);
+	if (!aplicarAcoes(lidos, acoesVigentes(sincronia))) return base;
+	if (
+		lidos.size !== ultimoComAcoes.size ||
+		[...lidos].some((id) => !ultimoComAcoes.has(id))
+	) {
+		ultimoComAcoes = lidos;
+	}
+	return ultimoComAcoes;
 }
 
 function avisarTodos(): void {
@@ -116,6 +138,7 @@ function esquecerSessao(apagarDoVisitante: boolean): void {
 	cancelarSincronia();
 	if (apagarDoVisitante) gravarBruto(CHAVE, null);
 	gravarBruto(CHAVE_CONTA, null);
+	gravarBruto(CHAVE_ACOES, null);
 	gravarBruto(CHAVE_SESSAO, null);
 	avisarTodos();
 }
@@ -131,8 +154,7 @@ export function anotarEntradaNaConta(): void {
 	if (chaveDaSessao()) esquecerSessao(true);
 	// Sorteado no navegador a cada entrada para reconhecer respostas de uma
 	// sessão anterior, sem usar dado da conta e sem enviar a chave à API.
-	const chave = crypto.getRandomValues(new Uint32Array(4)).join("-");
-	gravarBruto(CHAVE_SESSAO, chave);
+	gravarBruto(CHAVE_SESSAO, sortearChave());
 	avisarTodos();
 }
 
@@ -193,21 +215,77 @@ function idAceito(id: string): boolean {
 	return id.length <= 128 && ID_ARTIGO.test(id);
 }
 
+function sortearChave(): string {
+	return crypto.getRandomValues(new Uint32Array(4)).join("-");
+}
+
+function ultimasAcoes(): Map<string, string> {
+	try {
+		const valor: unknown = JSON.parse(lerBruto(CHAVE_ACOES) ?? "{}");
+		if (valor && typeof valor === "object" && !Array.isArray(valor)) {
+			return new Map(
+				Object.entries(valor).filter(
+					(entrada): entrada is [string, string] =>
+						typeof entrada[1] === "string",
+				),
+			);
+		}
+	} catch {
+		// O armazenamento pode vir de uma versão anterior ou estar corrompido.
+	}
+	return new Map();
+}
+
+function guardarVersoes(versoes: ReadonlyMap<string, string>): void {
+	gravarBruto(
+		CHAVE_ACOES,
+		versoes.size ? JSON.stringify(Object.fromEntries(versoes)) : null,
+	);
+}
+
+function acoesVigentes(estado: Sincronia): Map<string, Acao> {
+	const versoes = ultimasAcoes();
+	return new Map(
+		[...estado.pendentes].filter(
+			([id, acao]) => versoes.get(id) === acao.versao,
+		),
+	);
+}
+
+function dispensarVersoes(acoes: ReadonlyMap<string, Acao>): void {
+	if (!acoes.size) return;
+	const versoes = ultimasAcoes();
+	for (const [id, acao] of acoes) {
+		if (versoes.get(id) === acao.versao) versoes.delete(id);
+	}
+	guardarVersoes(versoes);
+}
+
+function aplicarAcoes(
+	lidos: Set<string>,
+	acoes: ReadonlyMap<string, Acao>,
+): boolean {
+	let mudou = false;
+	for (const [id, { marcado }] of acoes) {
+		if (lidos.has(id) === marcado) continue;
+		if (marcado) lidos.add(id);
+		else lidos.delete(id);
+		mudou = true;
+	}
+	return mudou;
+}
+
 function espelharLeitura(
 	estado: Sincronia,
 	lidosNaConta: readonly string[],
 	antes: ReadonlySet<string>,
 ): void {
 	const lidos = new Set(lidosNaConta);
-	const atuais = lerLidos();
+	const atuais = lidosNoArmazenamento(estado.chave);
 	// A outra aba também mostra a ação assim que ela entra na fila.
 	for (const id of antes) if (!atuais.has(id)) lidos.delete(id);
 	for (const id of atuais) if (!antes.has(id)) lidos.add(id);
-	for (const [id, marcado] of estado.pendentes) {
-		if (atuais.has(id) !== marcado) continue;
-		if (marcado) lidos.add(id);
-		else lidos.delete(id);
-	}
+	aplicarAcoes(lidos, acoesVigentes(estado));
 	gravarBruto(CHAVE_CONTA, JSON.stringify([...lidos]));
 }
 
@@ -224,17 +302,20 @@ async function enviarPedido(
 	// pode conter marcas antigas e nunca entra na união.
 	const visitante = lerBruto(CHAVE);
 	const importar = [...interpretar(visitante)].filter(idAceito);
-	const alteracoes = new Map<string, boolean>();
+	let alteracoes = new Map<string, Acao>();
 	if (!leitura || importar.length) {
-		const lidos = lerLidos();
-		for (const [id, marcado] of estado.pendentes) {
-			if (lidos.has(id) === marcado) alteracoes.set(id, marcado);
-		}
+		alteracoes = acoesVigentes(estado);
 		estado.pendentes.clear();
+		// Outra aba pode ter consultado o banco desde uma falha temporária.
+		const lidos = new Set(lidosNoArmazenamento(estado.chave));
+		if (aplicarAcoes(lidos, alteracoes)) {
+			gravarBruto(CHAVE_CONTA, JSON.stringify([...lidos]));
+			avisarTodos();
+		}
 	}
 	const marcar = new Set(importar);
 	const desmarcar: string[] = [];
-	for (const [id, marcado] of alteracoes) {
+	for (const [id, { marcado }] of alteracoes) {
 		if (marcado) marcar.add(id);
 		else {
 			marcar.delete(id);
@@ -261,6 +342,7 @@ async function enviarPedido(
 		espelharLeitura(estado, dados.lidos, antesDaEspera);
 	}
 	if (!retentar || dados) {
+		dispensarVersoes(alteracoes);
 		if (visitante !== null && lerBruto(CHAVE) === visitante)
 			gravarBruto(CHAVE, null);
 		if (leitura || importar.length) avisarTodos();
@@ -275,7 +357,7 @@ function agendarPedido(estado: Sincronia): void {
 	if (estado.agendada || (!estado.leitura && estado.pendentes.size === 0))
 		return;
 	estado.agendada = true;
-	const antesDaEspera = lerLidos();
+	const antesDaEspera = lidosNoArmazenamento(estado.chave);
 	const revisao = estado.revisaoDoEspelho;
 	const trabalho = () => {
 		estado.agendada = false;
@@ -321,8 +403,16 @@ function sincronizar(
 	)
 		return;
 	if (leitura) sincronia.leitura = leitura;
-	for (const id of ids) {
-		if (idAceito(id)) sincronia.pendentes.set(id, marcado);
+	if (ids.length) {
+		const versoes = ultimasAcoes();
+		const acao = { marcado, versao: sortearChave() };
+		for (const id of ids) {
+			if (!idAceito(id)) continue;
+			versoes.set(id, acao.versao);
+			sincronia.pendentes.set(id, acao);
+		}
+		// Só a versão da ação fica compartilhada. O lote a enviar fica em memória.
+		guardarVersoes(versoes);
 	}
 	agendarPedido(sincronia);
 }
@@ -358,8 +448,8 @@ function gravar(
 	marcado: boolean,
 ): void {
 	gravarBruto(chaveDaSessao() ? CHAVE_CONTA : CHAVE, JSON.stringify(ids));
-	avisarTodos();
 	sincronizar(alterados, marcado);
+	avisarTodos();
 }
 
 export function marcarLido(id: string): void {
@@ -421,6 +511,7 @@ export function apagarLidos(): void {
 	gravarBruto(CHAVE, null);
 	if (chaveDaSessao()) {
 		gravarBruto(CHAVE_CONTA, null);
+		gravarBruto(CHAVE_ACOES, null);
 		// Uma resposta que já estava a caminho não desfaz a limpeza do piloto.
 		if (sincronia) sincronia.revisaoDoEspelho += 1;
 	}
@@ -436,7 +527,10 @@ function aoMudarEmOutraAba(evento: StorageEvent): void {
 	if (
 		evento.key === CHAVE ||
 		evento.key === null ||
-		(ENV.API_URL && (evento.key === CHAVE_CONTA || evento.key === CHAVE_SESSAO))
+		(ENV.API_URL &&
+			(evento.key === CHAVE_CONTA ||
+				evento.key === CHAVE_SESSAO ||
+				evento.key === CHAVE_ACOES))
 	)
 		avisarTodos();
 }

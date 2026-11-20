@@ -543,6 +543,49 @@ describe("progresso com conta opcional", () => {
 		expect(progresso.lerLidos()).toEqual(new Set([PRIMEIRO]));
 	});
 
+	it.each([
+		{
+			caso: "uma releitura de outra aba não cancela a nova tentativa do artigo",
+			substituiu: false,
+		},
+		{
+			caso: "uma ação mais nova de outra aba substitui a retentativa do artigo",
+			substituiu: true,
+		},
+	])("$caso", async ({ substituiu }) => {
+		instalarTravaEntreAbas();
+		vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+		progresso.anotarEntradaNaConta();
+		await visitar();
+		const primeiraAba = progresso;
+		await visitar();
+		await vi.waitFor(() => expect(consultar).toHaveBeenCalledTimes(2));
+		alterar.mockResolvedValueOnce(falha(503));
+		primeiraAba.marcarLido(PRIMEIRO);
+		await vi.waitFor(() => expect(alterar).toHaveBeenCalledTimes(1));
+		await aguardarTurno();
+		if (substituiu) {
+			progresso.desmarcarLido(PRIMEIRO);
+			await vi.waitFor(() => expect(alterar).toHaveBeenCalledTimes(2));
+		}
+		voltarParaAba();
+		await vi.waitFor(() => expect(consultar).toHaveBeenCalledTimes(3));
+		await aguardarTurno();
+		const esperados = substituiu ? [] : [PRIMEIRO];
+		expect(primeiraAba.lerLidos()).toEqual(new Set(esperados));
+		primeiraAba.marcarLido(SEGUNDO);
+		esperados.push(SEGUNDO);
+		await vi.waitFor(() => {
+			expect(alterar).toHaveBeenNthCalledWith(
+				substituiu ? 3 : 2,
+				expect.objectContaining({
+					body: { marcar: esperados, desmarcar: [] },
+				}),
+			);
+		});
+		expect(primeiraAba.lerLidos()).toEqual(new Set(esperados));
+	});
+
 	it("mantém o clique durante a falha e na próxima visita reconcilia pela conta", async () => {
 		const erro = vi.spyOn(console, "error").mockImplementation(() => {});
 		const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
