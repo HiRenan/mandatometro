@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from secrets import token_urlsafe
+from time import monotonic
 from typing import Annotated
 from unittest.mock import Mock
 from uuid import uuid4
@@ -332,6 +333,66 @@ def test_progresso_rejeita_pedido_invalido_sem_expor_entrada(
     assert resposta.status_code == 422
     assert resposta.headers["cache-control"] == "no-store"
     assert resposta.json() == {"detail": "Confira os campos informados."}
+    assert cliente.get(PROGRESSO).json() == {"lidos": []}
+
+
+@pytest.mark.parametrize("metodo", ["GET", "POST"])
+def test_progresso_tem_prazo_para_travar_a_conta(sessoes_conta, cliente_progresso, caplog, metodo):
+    conta_id, email, token = _criar_sessao(sessoes_conta)
+    cliente = cliente_progresso(token)
+    artigo = "trilha/artigo-do-teste"
+    pedido = {"json": {"marcar": [artigo]}} if metodo == "POST" else {}
+    with ThreadPoolExecutor(max_workers=1) as pool, sessoes_conta.begin() as sessao:
+        sessao.get(Conta, conta_id, with_for_update=True)
+        inicio = monotonic()
+        resposta = pool.submit(cliente.request, metodo, PROGRESSO, **pedido).result(timeout=6)
+        assert 2.5 <= monotonic() - inicio < 6
+        assert resposta.status_code == 503
+        assert resposta.json() == {"detail": "O progresso está ocupado. Tente novamente."}
+        assert resposta.headers["retry-after"] == "3"
+        assert resposta.headers["cache-control"] == "no-store"
+    assert cliente.get(PROGRESSO).json() == {"lidos": []}
+    assert all(dado not in caplog.text for dado in (email, str(conta_id), token, artigo))
+
+
+@pytest.mark.parametrize("declarado", [True, False], ids=["content-length", "stream"])
+def test_progresso_limita_bytes_antes_de_interpretar_o_corpo(
+    sessoes_conta, cliente_progresso, declarado
+):
+    _, _, token = _criar_sessao(sessoes_conta)
+    cliente = cliente_progresso(token)
+    json = b'{"marcar":["trilha/artigo"]}'
+    no_limite = json.ljust(64 * 1024, b" ")
+    alem_do_limite = no_limite + b" "
+    resposta = cliente.post(
+        PROGRESSO,
+        headers={"Content-Type": "application/json"},
+        content=alem_do_limite if declarado else iter((no_limite, b" ")),
+    )
+    assert resposta.status_code == 413
+    assert resposta.json() == {"detail": "O pedido de progresso excede 64 KiB."}
+    assert resposta.headers["cache-control"] == "no-store"
+    assert cliente.get(PROGRESSO).json() == {"lidos": []}
+    resposta = cliente.post(
+        PROGRESSO, headers={"Content-Type": "application/json"}, content=no_limite
+    )
+    assert resposta.json() == {"lidos": ["trilha/artigo"]}
+
+
+@pytest.mark.parametrize(
+    "corpo",
+    [b'\xff{"marcar":[]}', '{"marcar":["trilha/artigo"]}'.encode("utf-16-le"), b'{"marcar":['],
+    ids=["utf8-invalido", "utf16", "json-invalido"],
+)
+def test_progresso_recusa_corpo_malformado_com_mensagem_fixa(
+    sessoes_conta, cliente_progresso, corpo
+):
+    _, _, token = _criar_sessao(sessoes_conta)
+    cliente = cliente_progresso(token)
+    resposta = cliente.post(PROGRESSO, headers={"Content-Type": "application/json"}, content=corpo)
+    assert resposta.status_code == 422
+    assert resposta.json() == {"detail": "Confira os campos informados."}
+    assert resposta.headers["cache-control"] == "no-store"
     assert cliente.get(PROGRESSO).json() == {"lidos": []}
 
 
