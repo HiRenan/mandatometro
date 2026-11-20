@@ -45,7 +45,20 @@ O arquivo de revisão mostra `fatos.selecao` como consulta. O campo guarda a ord
 
 ### Revisão pelo painel
 
-A API do painel oferece a revisão a quem entrou com uma conta administradora. A interface em `/painel` é a #209. A sessão é conferida a cada pedido, e a API exige a origem do site para salvar ou publicar.
+A revisão também se faz no site, em `/painel`, por quem entrou com uma conta administradora (a #207). A entrada é o link "Revisar a edição da semana", no `/perfil`, que só a administradora vê. A conta comum vê "Página não encontrada". Gerar ou refazer o rascunho, mudar a ordem dos itens e enviar continuam no CLI.
+
+**Pela tela:**
+
+1. Entre com a conta administradora e abra "Revisar a edição da semana", no `/perfil`. A tela carrega o rascunho mais recente. Sem rascunho, ela diz "Não há rascunho para revisar.".
+2. Confira nos resumos das coletas que as votações e os atos da semana chegaram e marque "Confirmo a cobertura da semana". Ajuste o título da edição, se quiser.
+3. Em cada item, leia os avisos e os textos oficiais, que ficam acima dos campos. Na votação, eles são a proposição, o quadro de cada votação e as fontes, com o trecho. No ato, são a data e a fonte. Ajuste o título e a explicação, com uma linha em branco entre os parágrafos, até 12. Se um artigo da trilha explicar o assunto, escolha-o e confirme. Marque "Confirmo a revisão deste item".
+4. Num ato retido pelo filtro de pessoal, abra o texto oficial. Se ele tratar de uma pessoa, marque "Tirar este item da edição" e escreva o motivo. Se não tratar, marque "Conferi a privacidade, e o ato fica na edição". O item tirado sai do rascunho ao salvar e não volta pela tela. Para trazê-lo de volta, refaça o rascunho pelo CLI.
+5. Use "Salvar a revisão". O pé da tela diz o que falta para publicar, e o índice "Itens da edição" mostra o estado de cada item. Uma recusa leva ao item ou ao campo, com a mensagem. "Há outra gravação em andamento. Tente de novo." pede só outra tentativa, e as alterações continuam na tela.
+6. Quando o pé disser "A edição está pronta para publicar.", use "Publicar a edição" e confirme em "Publicar agora". A edição fica pública na hora. Ela só entra no envio automático de domingo se for publicada antes da rodada (veja "Como preparar a edição").
+
+A tela relê o rascunho depois de salvar. Se o rascunho mudar enquanto você revisa, por outra aba ou pelo CLI, ela carrega a versão atual e mantém só os campos que você mudou: confira e salve de novo. Se a edição foi publicada ou trocada nesse meio-tempo, o que não foi salvo fica de fora. Com alterações por salvar, a tela avisa antes de sair da página. O rascunho fica só na memória da página: fechar a aba sem salvar perde as alterações.
+
+**Pela API,** que é o que a tela usa: a sessão é conferida a cada pedido, e a API exige a origem do site para salvar ou publicar.
 
 1. Leia o rascunho mais recente em `GET /painel/edicoes/rascunho`. A resposta é o mesmo arquivo de `edicao exportar` ou `null` quando não há rascunho.
 2. Confira as fontes e os avisos, edite os textos, confirme os itens ou marque a exclusão com motivo. Envie o arquivo inteiro em `POST /painel/edicoes/{id}/revisao`, com o id e a versão que leu. Valem as regras de `edicao revisar`, inclusive para campos de consulta e a confirmação de privacidade de atos retidos. Após salvar, carregue o rascunho de novo para obter a versão atual.

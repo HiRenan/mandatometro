@@ -13,7 +13,7 @@ Falta aos eleitores conhecimento sobre o sistema político brasileiro: como nasc
 ## O que ele faz
 
 - **Trilhas:** artigos curtos e infográficos que explicam com casos reais como funciona a política, com um quiz no meio e outro no fim. A primeira é a do processo legislativo: como nasce uma lei.
-- **Newsletter semanal:** o jornal legislativo chega todo domingo com o que o Congresso votou na semana, explicado em linguagem simples. Quem se inscreve recebe na hora a última edição, e todas ficam no site. Em construção: uma segunda seção, com os destaques do Diário Oficial da União, e a revisão num painel ([ADR 0004](docs/adr/0004-newsletter-do-dou.md)).
+- **Newsletter semanal:** o jornal legislativo chega todo domingo com o que o Congresso votou na semana, explicado em linguagem simples. Quem se inscreve recebe na hora a última edição, e todas ficam no site. A conta administradora revisa e publica cada edição no painel do site, em `/painel`. Em construção: uma segunda seção, com os destaques do Diário Oficial da União ([ADR 0004](docs/adr/0004-newsletter-do-dou.md)).
 - **Busca:** o Ctrl+K, ou a barra no alto de qualquer página, procura nas trilhas, nos artigos e nas edições publicadas, sem IA. A busca não liga para acento nem para maiúscula e acha a palavra pelo começo. O que a pessoa digita fica no navegador.
 
 Cada explicação leva a fonte oficial: a lei, o regimento ou a página da Câmara, do Senado ou do TSE. Não precisa de conta: as trilhas são abertas, e a newsletter pede só o e-mail. A conta é opcional e guarda o progresso no perfil, para ele passar de um aparelho para outro.
@@ -256,7 +256,7 @@ Marcar, desmarcar, recomeçar e desfazer atualizam a tela na hora e gravam na co
 
 `GET /contas/progresso` devolve `{"lidos": [...]}` da sessão atual. `POST /contas/progresso` aceita as listas opcionais `marcar` e `desmarcar` e devolve os ids após a alteração. Cada id segue o formato `trilha/slug` e tem até 128 caracteres. O servidor aceita até 256 ids somados por pedido e até 256 marcas por conta. O POST aceita até 64 KiB de corpo em JSON UTF-8 e responde `413` acima desse tamanho. Nas duas rotas de progresso, cada espera pela trava da conta tem prazo de 3 segundos. Quando vence, a API devolve `503` com `Retry-After: 3`.
 
-Toda conta nasce com o papel `comum`. Quem opera o banco pode [conceder ou revogar o papel de administradora](docs/hospedagem.md#conceder-e-revogar-o-papel-de-administradora) pelo CLI depois da confirmação do e-mail.
+Toda conta nasce com o papel `comum`. Quem opera o banco pode [conceder ou revogar o papel de administradora](docs/hospedagem.md#conceder-e-revogar-o-papel-de-administradora) pelo CLI depois da confirmação do e-mail. Com o papel, o `/perfil` mostra o link "Revisar a edição da semana", que leva à revisão em `/painel`. [Revisão pelo painel](docs/newsletter.md#revisão-pelo-painel)
 
 Precisa de [Node.js](https://nodejs.org/) 24, [pnpm](https://pnpm.io/) (ele mesmo troca para a versão do `packageManager`, no `package.json`), [uv](https://docs.astral.sh/uv/) (ele instala o Python 3.13) e [Docker](https://www.docker.com/).
 
