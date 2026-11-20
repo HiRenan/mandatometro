@@ -702,6 +702,7 @@ def test_revisao_exige_explicacao_e_confirmacao_e_preserva_a_sugestao(
     resposta = TestClient(app).get(f"/edicoes/{edicao_id}")
     assert resposta.status_code == 200
     assert [item["ordem"] for item in resposta.json()["itens"]] == [1, 2]
+    assert [item["tipo"] for item in resposta.json()["itens"]] == ["ato", "ato"]
     assert all(
         item["fatos"] == {"votacoes": [], "data_publicacao": str(INICIO)}
         for item in resposta.json()["itens"]
@@ -716,7 +717,9 @@ def test_revisao_exige_explicacao_e_confirmacao_e_preserva_a_sugestao(
         api_url="https://api.example.com",
         fontes=fontes,
     )
-    _sem_conteudo((resposta.text, previa, email.texto, email.html), MOTIVO)
+    _sem_conteudo(
+        (resposta.text, previa, email.texto, email.html), MOTIVO, "modelo", '"origem"', '"selecao"'
+    )
 
 
 def test_repetir_preserva_revisao_e_refazer_substitui_so_rascunho(abrir, gravar_ato):

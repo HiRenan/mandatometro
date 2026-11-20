@@ -63,7 +63,8 @@ def _fonte(fonte: Fonte, *, de_ato: bool = False) -> FontePublica:
 def _item(item: ItemEdicao, fontes: dict[int, Fonte]) -> ItemPublico:
     fatos = Fatos.ler(item.fatos) if item.fatos is not None else None
     fatos_publicos: FatosPublicos | FatosAtoPublicos | None
-    if isinstance(fatos, FatosAto):
+    de_ato = isinstance(fatos, FatosAto)
+    if de_ato:
         fatos_publicos = FatosAtoPublicos(votacoes=[], data_publicacao=fatos.data_publicacao)
         fontes_publicas = [
             _fonte(fontes[i], de_ato=True) for i in dict.fromkeys([item.fonte_id, *fatos.fontes])
@@ -86,6 +87,7 @@ def _item(item: ItemEdicao, fontes: dict[int, Fonte]) -> ItemPublico:
         fontes_publicas = [_fonte(item.fonte)]
     return ItemPublico(
         ordem=item.ordem,
+        tipo="ato" if de_ato else "votacao",
         titulo=item.titulo,
         texto=item.texto,
         fatos=fatos_publicos,

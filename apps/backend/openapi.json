@@ -2021,6 +2021,14 @@
             "type": "integer",
             "title": "Ordem"
           },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "votacao",
+              "ato"
+            ],
+            "title": "Tipo"
+          },
           "titulo": {
             "type": "string",
             "title": "Titulo"
@@ -2064,6 +2072,7 @@
         "type": "object",
         "required": [
           "ordem",
+          "tipo",
           "titulo",
           "texto",
           "fatos",

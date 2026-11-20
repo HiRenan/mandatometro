@@ -32,6 +32,9 @@ vi.mock("@/env", () => ({ ENV: ambiente }));
 const SEGREDOS = ["10.0.0.5", "SELECT", "fulano@example.com"];
 const MENSAGEM_DA_FALHA =
 	"connect ECONNREFUSED http://10.0.0.5:8000/edicoes/7: SELECT email FROM inscrito WHERE email = 'fulano@example.com'";
+const TITULO_CONGRESSO = "O que o Congresso votou";
+const TITULO_DIARIO = "O que saiu no Diário Oficial";
+const FONTE_DO_ATO = "https://www.in.gov.br/ato-ficticio";
 
 beforeEach(() => {
 	ambiente.API_URL = "https://api.exemplo.test";
@@ -99,6 +102,31 @@ async function pedir(caminho: string) {
 	return { status: resposta.status, html: await resposta.text() };
 }
 
+function atoDeExemplo(ordem: number, titulo: string) {
+	return {
+		ordem,
+		tipo: "ato" as const,
+		titulo,
+		texto: "Explicação editorial fictícia.",
+		fatos: { votacoes: [], data_publicacao: "2026-11-12" },
+		fontes: [
+			{ url: FONTE_DO_ATO, coletado_em: "2026-11-16T00:00:00Z", trecho: null },
+			{
+				url: "https://www.in.gov.br/referencia-ficticia",
+				coletado_em: "2026-11-16T01:00:00Z",
+				trecho: null,
+			},
+		],
+		artigo: null,
+	};
+}
+
+function titulosDaFolha(html: string, titulos: string[]) {
+	return [...html.matchAll(/<h([23])\b[^>]*>([^<]+)<\/h[23]>/g)]
+		.filter(([, , titulo]) => titulos.includes(titulo))
+		.map(([, nivel, titulo]) => [Number(nivel), titulo]);
+}
+
 describe("o HTML das páginas das edições", () => {
 	it("com a API fora do ar, a página de erro, com 500 e sem nada da falha", async () => {
 		api(() => {
@@ -147,33 +175,144 @@ describe("o HTML das páginas das edições", () => {
 		expect(status).toBe(200);
 		expect(html).toContain("Câmara aprova a semana das bibliotecas escolares");
 		expect(html).toContain('href="#item-3"');
+		const legado = "Um item de uma edição antiga";
+		expect(
+			titulosDaFolha(html, [TITULO_CONGRESSO, TITULO_DIARIO, legado]),
+		).toEqual([[2, legado]]);
 		// O trecho da fonte vai como texto: o <b> da fonte chega escapado.
 		expect(html).toContain("&lt;b&gt;emenda&lt;/b&gt;");
 		expect(html).not.toContain("<b>emenda</b>");
 	});
 
-	it("a edição com um ato mostra seu texto e o link do Diário Oficial", async () => {
+	it("a edição mista agrupa e ordena os itens na folha e no índice", async () => {
 		const edicao = edicaoDeExemplo();
-		const fonte = "https://www.in.gov.br/ato-ficticio";
-		edicao.itens[2] = {
-			ordem: 3,
-			titulo: "Ato de exemplo",
-			texto: "Explicação editorial fictícia.",
-			fatos: { votacoes: [], data_publicacao: "2026-11-12" },
-			fontes: [
-				{ url: fonte, coletado_em: "2026-11-16T00:00:00Z", trecho: null },
-			],
-			artigo: null,
-		};
+		const [primeira, segunda] = edicao.itens;
+		const primeiroAto = atoDeExemplo(1, "Primeiro ato fictício");
+		const segundoAto = atoDeExemplo(3, "Segundo ato fictício");
+		edicao.itens = [
+			segundoAto,
+			{ ...segunda, ordem: 4 },
+			primeiroAto,
+			{ ...primeira, ordem: 2 },
+		];
 		api(() => json(200, edicao));
 
 		const { status, html } = await pedir("/edicoes/7");
 
 		expect(status).toBe(200);
-		expect(html).toContain("Ato de exemplo");
-		expect(html).toContain("Explicação editorial fictícia.");
-		expect(html).toContain(`href="${fonte}"`);
+		const titulos = [
+			TITULO_CONGRESSO,
+			primeira.titulo,
+			segunda.titulo,
+			TITULO_DIARIO,
+			primeiroAto.titulo,
+			segundoAto.titulo,
+		];
+		expect(titulosDaFolha(html, titulos)).toEqual([
+			[2, TITULO_CONGRESSO],
+			[3, primeira.titulo],
+			[3, segunda.titulo],
+			[2, TITULO_DIARIO],
+			[3, primeiroAto.titulo],
+			[3, segundoAto.titulo],
+		]);
+		const posicoes = [
+			["item-2", "fita-verde", "1"],
+			["item-4", "fita-amarela", "2"],
+			["item-1", "fita-azul", "3"],
+			["item-3", "fita-rosa", "4"],
+		];
+		expect(
+			[
+				...html.matchAll(
+					/<section id="(item-\d+)"[^>]* class="item-da-edicao (fita-\w+)"><span aria-hidden="true" class="numeral">(\d+)<\/span>/g,
+				),
+			].map(([, id, fita, numero]) => [id, fita, numero]),
+		).toEqual(posicoes);
+		expect(
+			[
+				...html.matchAll(
+					/<li class="(fita-\w+)"><a href="#(item-\d+)"><span aria-hidden="true" class="numeral[^"]*">(\d+)<\/span>/g,
+				),
+			].map(([, fita, id, numero]) => [id, fita, numero]),
+		).toEqual([...posicoes, ...posicoes]);
+		expect(
+			[
+				...html
+					.replaceAll("<!-- -->", "")
+					.matchAll(/Fontes <span class="sr-only">do item (\d+)<\/span>/g),
+			].map(([, numero]) => numero),
+		).toEqual(["1", "2", "3", "4"]);
+		expect(html).toMatch(/<h4 class="rotulo">Votação de /);
+		expect(html).toMatch(/<h4 class="rotulo">Fontes /);
+		expect(html).toContain("4 itens");
+		expect(html).toContain("Os destaques da semana");
 		expect(html.match(/class="votacao"/g)).toHaveLength(2);
+	});
+
+	it("uma edição só com atos mostra apenas a seção do Diário Oficial", async () => {
+		const ato = atoDeExemplo(1, "Ato de exemplo");
+		api(() => json(200, { ...edicaoDeExemplo(), itens: [ato] }));
+
+		const { status, html } = await pedir("/edicoes/7");
+
+		expect(status).toBe(200);
+		expect(
+			titulosDaFolha(html, [TITULO_CONGRESSO, TITULO_DIARIO, ato.titulo]),
+		).toEqual([
+			[2, TITULO_DIARIO],
+			[3, ato.titulo],
+		]);
+		expect(html).toContain("Explicação editorial fictícia.");
+		expect(html).toContain(`href="${FONTE_DO_ATO}">Fonte oficial`);
+		expect(html).toContain(
+			'href="https://www.in.gov.br/referencia-ficticia">Outra referência oficial',
+		);
+		expect(html).not.toContain('class="votacao"');
+		expect(html).not.toContain("<blockquote");
+	});
+
+	it.each([undefined, "tipo-invalido"])(
+		"um tipo ausente ou inválido (%s) dá 500 sem expor dados da seleção",
+		async (tipo) => {
+			const motivo = "motivo-ficticio-reservado";
+			const origem = "origem-ficticia-reservada";
+			const item = {
+				...atoDeExemplo(1, "Ato de exemplo"),
+				tipo,
+				selecao: { motivo, origem },
+			};
+			api(() => json(200, { ...edicaoDeExemplo(), itens: [item] }));
+
+			const { status, html } = await pedir("/edicoes/7");
+
+			expect(status).toBe(500);
+			expect(html).toContain("As edições não carregaram.");
+			expect(html).not.toContain(motivo);
+			expect(html).not.toContain(origem);
+			expect(
+				vi
+					.mocked(console.error)
+					.mock.calls.filter(
+						([linha]) =>
+							typeof linha === "string" && linha.startsWith("[edicoes]"),
+					),
+			).toEqual([
+				["[edicoes] A leitura das edições na API falhou: resposta-invalida."],
+			]);
+		},
+	);
+
+	it("a lista apresenta o conteúdo das edições do Congresso e do Diário Oficial", async () => {
+		api(() => json(200, listaDeExemplo(3)));
+
+		const { status, html } = await pedir("/edicoes");
+
+		expect(status).toBe(200);
+		expect(html).toMatch(
+			/<p class="abertura">As votações do Congresso e os destaques do Diário Oficial/,
+		);
+		expect(html).toContain("3 edições");
 	});
 
 	it("o cabeçalho leva às edições só onde o site tem o API_URL", async () => {

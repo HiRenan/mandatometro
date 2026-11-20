@@ -30,7 +30,7 @@ export const Route = createFileRoute("/edicoes/")({
 });
 
 const DESCRICAO =
-	"O que o Congresso votou em cada semana, em linguagem simples, com a fonte oficial de cada item.";
+	"As votações do Congresso e os destaques do Diário Oficial, em linguagem simples, com a fonte oficial de cada item.";
 
 /** O título da aba: a partir da segunda página, com o número dela. */
 function tituloDaLista(lista: PaginaDaLista): string {

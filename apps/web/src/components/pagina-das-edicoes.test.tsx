@@ -216,7 +216,7 @@ describe("a lista sem edição", () => {
 			}),
 		).toBeTruthy();
 		expect(document.body.textContent).toContain(
-			"Ela sai num domingo, com o que o Congresso votou na semana. Inscreva-se e ela chega no seu e-mail assim que for publicada.",
+			"Inscreva-se e receba a primeira edição por e-mail assim que ela sair.",
 		);
 		expect(
 			screen
@@ -284,7 +284,7 @@ describe("o cabeçalho da página", () => {
 		expect(meta).toContainEqual({
 			name: "description",
 			content:
-				"O que o Congresso votou em cada semana, em linguagem simples, com a fonte oficial de cada item.",
+				"As votações do Congresso e os destaques do Diário Oficial, em linguagem simples, com a fonte oficial de cada item.",
 		});
 	});
 

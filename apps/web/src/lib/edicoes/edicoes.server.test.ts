@@ -209,7 +209,11 @@ describe("uma edição", () => {
 
 	it("uma edição com um ato volta com os fatos do ato", async () => {
 		const edicao = edicaoDeExemplo();
-		edicao.itens[1].fatos = { data_publicacao: "2026-11-12", votacoes: [] };
+		edicao.itens[1] = {
+			...edicao.itens[1],
+			tipo: "ato",
+			fatos: { data_publicacao: "2026-11-12", votacoes: [] },
+		};
 		api(() => json(200, edicao));
 
 		expect(await lerEdicao("7")).toEqual({ tipo: "edicao", edicao });

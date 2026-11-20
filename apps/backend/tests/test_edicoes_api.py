@@ -87,6 +87,7 @@ def publicadas(engine_de_teste, monkeypatch):
                 ],
             )
             if com_ato:
+                edicao.itens[0].ordem = 3
                 fonte_ato = Fonte(
                     url="https://www.senado.leg.br/dados/ato-ficticio",
                     url_publica="https://www.in.gov.br/ato-ficticio",
@@ -98,7 +99,7 @@ def publicadas(engine_de_teste, monkeypatch):
                 fontes.append(fonte_ato.id)
                 edicao.itens.append(
                     ItemEdicao(
-                        ordem=3,
+                        ordem=2,
                         titulo="Ato fictício",
                         texto="Explicação editorial fictícia.",
                         fonte=fonte_ato,
@@ -152,6 +153,7 @@ def test_detalhe_preserva_fotografia_fontes_artigo_e_legado(publicadas):
     dados = resposta.json()
     primeiro, antigo = dados["itens"]
     assert [i["ordem"] for i in dados["itens"]] == [1, 2]
+    assert [i["tipo"] for i in dados["itens"]] == ["votacao", "votacao"]
     assert primeiro["texto"] == "Um parágrafo.\n\nOutro parágrafo."
     assert primeiro["artigo"] == {
         "caminho": next(iter(CATALOGO)),
@@ -172,7 +174,7 @@ def test_detalhe_preserva_fotografia_fontes_artigo_e_legado(publicadas):
     assert primeiro["fontes"][0]["coletado_em"] == "2026-11-14T00:00:00Z"
     assert primeiro["fontes"][0]["trecho"] == "Trecho fictício <b>sem HTML executável</b>."
     assert antigo["fatos"] is None and antigo["artigo"] is None
-    assert set(primeiro) == {"ordem", "titulo", "texto", "fatos", "fontes", "artigo"}
+    assert set(primeiro) == {"ordem", "tipo", "titulo", "texto", "fatos", "fontes", "artigo"}
     assert set(nominal) == {"data", "resultado", "placar", "fontes"}
     assert set(primeiro["fontes"][0]) == {"url", "coletado_em", "trecho"}
     for proibido in (
@@ -202,11 +204,17 @@ def test_detalhe_publica_fotografia_do_ato_com_a_pagina_oficial(publicadas):
     resposta = TestClient(app).get(f"/edicoes/{edicao.id}")
 
     assert resposta.status_code == 200
-    votacao, antigo, ato = resposta.json()["itens"]
+    votacao, ato, antigo = resposta.json()["itens"]
+    assert [(item["ordem"], item["tipo"]) for item in (votacao, ato, antigo)] == [
+        (1, "votacao"),
+        (2, "ato"),
+        (3, "votacao"),
+    ]
     assert set(votacao["fatos"]) == {"votacoes"}
     assert antigo["fatos"] is None
     assert ato == {
-        "ordem": 3,
+        "ordem": 2,
+        "tipo": "ato",
         "titulo": "Ato fictício",
         "texto": "Explicação editorial fictícia.",
         "fatos": {"votacoes": [], "data_publicacao": "2026-11-12"},

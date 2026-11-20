@@ -269,6 +269,10 @@ export type ItemPublico = {
      */
     ordem: number;
     /**
+     * Tipo
+     */
+    tipo: 'votacao' | 'ato';
+    /**
      * Titulo
      */
     titulo: string;

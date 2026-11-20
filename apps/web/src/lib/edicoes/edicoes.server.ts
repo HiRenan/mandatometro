@@ -249,6 +249,7 @@ function pareceItem(dados: unknown): boolean {
 	return (
 		ehObjeto(dados) &&
 		Number.isSafeInteger(dados.ordem) &&
+		(dados.tipo === "votacao" || dados.tipo === "ato") &&
 		typeof dados.titulo === "string" &&
 		typeof dados.texto === "string" &&
 		Array.isArray(dados.fontes) &&

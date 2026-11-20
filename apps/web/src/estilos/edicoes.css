@@ -158,11 +158,20 @@
 		scroll-margin-top: 1rem;
 	}
 
+	/* O rótulo introduz o primeiro item de cada seção. */
+	.secao-da-edicao {
+		margin-top: clamp(2.5rem, 6vw, 4rem);
+	}
+
+	.secao-da-edicao > h2 + .item-da-edicao {
+		margin-top: 0.75rem;
+	}
+
 	.item-da-edicao > .numeral {
 		font-size: clamp(3.5rem, 2.5rem + 4vw, 5.5rem);
 	}
 
-	.item-da-edicao > h2 {
+	.item-da-edicao > .subtitulo-condensado {
 		--letra: clamp(1.875rem, 1.4rem + 2vw, 3rem);
 		--recuo: var(--recuo-de-fora);
 		max-width: 14em;
@@ -192,7 +201,7 @@
 		margin-top: 1.75rem;
 	}
 
-	.votacao > h3 {
+	.votacao > .rotulo {
 		margin-bottom: 0.6rem;
 	}
 
@@ -280,7 +289,7 @@
 		margin-top: 1.75rem;
 	}
 
-	.fontes-do-item > h3 {
+	.fontes-do-item > .rotulo {
 		margin-bottom: 0.75rem;
 	}
 

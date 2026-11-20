@@ -27,14 +27,17 @@ function metaDaEdicao(pagina: EdicaoDaPagina) {
 		return metaDaPagina({
 			titulo: "Edições",
 			descricao:
-				"O que o Congresso votou em cada semana, em linguagem simples, com a fonte oficial de cada item.",
+				"As votações do Congresso e os destaques do Diário Oficial, em linguagem simples, com a fonte oficial de cada item.",
 		});
 	}
 	const { edicao } = pagina;
 	const itens = edicao.itens.length;
+	const assunto = edicao.itens.some((item) => item.tipo === "ato")
+		? "Os destaques"
+		: "O que o Congresso votou";
 	return metaDaPagina({
 		titulo: edicao.titulo,
-		descricao: `O que o Congresso votou de ${formatarPeriodo(edicao.inicio, edicao.fim)}, em ${plural(itens, "item", "itens")} em linguagem simples, com a fonte oficial${itens === 1 ? "" : " de cada um"}.`,
+		descricao: `${assunto} de ${formatarPeriodo(edicao.inicio, edicao.fim)}, em ${plural(itens, "item", "itens")} em linguagem simples, com a fonte oficial${itens === 1 ? "" : " de cada um"}.`,
 		tipo: "article",
 	});
 }
