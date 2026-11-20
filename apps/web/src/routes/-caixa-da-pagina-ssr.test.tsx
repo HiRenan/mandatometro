@@ -47,6 +47,7 @@ import { Route as Login } from "@/routes/login";
 import { Route as RotaDeSair } from "@/routes/newsletter/sair";
 import { Route as Perfil } from "@/routes/perfil";
 import { Route as RotaDoPiloto } from "@/routes/piloto";
+import { Route as RotaDoTermo } from "@/routes/termo";
 import { Route as RotaDoArtigo } from "@/routes/trilhas/$trilha/$artigo";
 import { Route as RotaDaTrilha } from "@/routes/trilhas/$trilha/index";
 import { Route as RotaDoQuiz } from "@/routes/trilhas/$trilha/quiz";
@@ -321,6 +322,7 @@ function criarRouter() {
 			ContaRecuperar.update(naRaiz("/cadastro/recuperar")),
 			ContaRedefinir.update(naRaiz("/cadastro/redefinir")),
 			RotaDeSair.update(naRaiz("/newsletter/sair")),
+			RotaDoTermo.update(naRaiz("/termo")),
 			// O layout do painel roda só no navegador, com a guarda: aqui, ele roda no
 			// servidor, sem a guarda, e a página mostra o título e o carregando.
 			RotaAutenticada.update({
@@ -405,6 +407,7 @@ const QUE_ABREM = [
 	]),
 	"/piloto",
 	"/newsletter/sair",
+	"/termo",
 	"/edicoes",
 	"/edicoes/7",
 	"/painel",
