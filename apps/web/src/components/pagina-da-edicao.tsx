@@ -20,6 +20,8 @@ import { FaixaDeInformacoes } from "./faixa-de-informacoes";
 import { ItemDaEdicao } from "./item-da-edicao";
 import { EdicoesIndisponiveis } from "./pagina-das-edicoes";
 
+type ItemNaPagina = { item: ItemPublico; posicao: number };
+
 /**
  * A página de uma edição publicada, em /edicoes/7: a folha de leitura da página
  * do artigo, com a cor da semana (a mesma da lista), o título que a API manda, o
@@ -37,7 +39,18 @@ export function PaginaDaEdicao({ pagina }: { pagina: EdicaoDaPagina }) {
 
 function FolhaDaEdicao({ edicao }: { edicao: EdicaoPublica }) {
 	const semana = posicaoDaSemana(edicao.fim);
-	const itens = [...edicao.itens].sort((um, outro) => um.ordem - outro.ordem);
+	const emOrdem = [...edicao.itens].sort((um, outro) => um.ordem - outro.ordem);
+	const votacoes = emOrdem
+		.filter((item) => item.tipo === "votacao")
+		.map((item, indice) => ({ item, posicao: indice + 1 }));
+	const atos = emOrdem
+		.filter((item) => item.tipo === "ato")
+		.map((item, indice) => ({ item, posicao: votacoes.length + indice + 1 }));
+	const itens = [...votacoes, ...atos];
+	const assunto =
+		atos.length > 0
+			? "Os destaques da semana"
+			: "O que o Congresso votou na semana";
 	// O período, na faixa, já diz o ano: a publicação só leva o dela quando é outro.
 	const publicada = dataEmBrasilia(edicao.publicada_em);
 	const publicacao =
@@ -90,13 +103,27 @@ function FolhaDaEdicao({ edicao }: { edicao: EdicaoPublica }) {
 							<span>{plural(itens.length, "item", "itens")}</span>
 						</FaixaDeInformacoes>
 						<p className="lide">
-							O que o Congresso votou na semana, em linguagem simples. Cada item
-							traz a fonte oficial e a data em que ela foi coletada.
+							{`${assunto}, em linguagem simples. Cada item traz a fonte oficial e a data em que ela foi coletada.`}
 						</p>
 						<NestaEdicao itens={itens} onde="na-folha" />
-						{itens.map((item) => (
-							<ItemDaEdicao key={item.ordem} item={item} />
-						))}
+						{atos.length > 0 ? (
+							<>
+								<SecaoDaEdicao
+									id="congresso"
+									titulo="O que o Congresso votou"
+									itens={votacoes}
+								/>
+								<SecaoDaEdicao
+									id="diario-oficial"
+									titulo="O que saiu no Diário Oficial"
+									itens={atos}
+								/>
+							</>
+						) : (
+							votacoes.map(({ item, posicao }) => (
+								<ItemDaEdicao key={item.ordem} item={item} posicao={posicao} />
+							))
+						)}
 						<nav aria-label="Mais edições" className="fim-da-edicao">
 							<ul className="acoes-da-pagina">
 								<li>
@@ -122,6 +149,30 @@ function FolhaDaEdicao({ edicao }: { edicao: EdicaoPublica }) {
 	);
 }
 
+function SecaoDaEdicao({
+	id,
+	titulo,
+	itens,
+}: {
+	id: string;
+	titulo: string;
+	itens: ItemNaPagina[];
+}) {
+	if (itens.length === 0) {
+		return null;
+	}
+	return (
+		<section aria-labelledby={id} className="secao-da-edicao">
+			<h2 id={id} className="rotulo text-tinta-suave">
+				{titulo}
+			</h2>
+			{itens.map(({ item, posicao }) => (
+				<ItemDaEdicao key={item.ordem} item={item} posicao={posicao} comSecao />
+			))}
+		</section>
+	);
+}
+
 /**
  * O índice "Nesta edição", com o número na fita da posição e o título de cada
  * item, como o "Nesta trilha". Ele aparece em dois lugares, e o CSS mostra um
@@ -133,7 +184,7 @@ function NestaEdicao({
 	itens,
 	onde,
 }: {
-	itens: ItemPublico[];
+	itens: ItemNaPagina[];
 	onde: "na-folha" | "ao-lado";
 }) {
 	const id = `nesta-edicao-${onde}`;
@@ -143,11 +194,11 @@ function NestaEdicao({
 				Nesta edição
 			</h2>
 			<ol role="list" className="folhas-da-trilha">
-				{itens.map((item) => (
-					<li key={item.ordem} className={classeDaFita(item.ordem)}>
+				{itens.map(({ item, posicao }) => (
+					<li key={item.ordem} className={classeDaFita(posicao)}>
 						<a href={`#item-${item.ordem}`}>
 							<span aria-hidden="true" className="numeral letra-grande:mb-4">
-								{item.ordem}
+								{posicao}
 							</span>
 							<span className="letra-grande:col-span-full">
 								<span className="titulo">{item.titulo}</span>

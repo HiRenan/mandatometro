@@ -22,31 +22,42 @@ const RESULTADOS: Record<VotacaoPublica["resultado"], string> = {
 /**
  * Um item da edição, na ordem dela: o número na fita da posição, o título, o
  * texto, o quadro de cada votação, as fontes e, quando há, o artigo da trilha que
- * explica o assunto. O `id` leva o índice "Nesta edição" até o item. O texto vem
- * da API e vai sempre como texto.
+ * explica o assunto. O número segue a posição na página, e o `id` usa a ordem
+ * gravada para os links do índice e da busca. O texto vem da API e vai sempre
+ * como texto.
  *
  * O item não sobe com a rolagem (o revelar), como o texto do artigo: o índice
  * leva até ele, e o navegador calcularia o lugar com o item ainda deslocado.
  */
-export function ItemDaEdicao({ item }: { item: ItemPublico }) {
+export function ItemDaEdicao({
+	item,
+	posicao,
+	comSecao = false,
+}: {
+	item: ItemPublico;
+	posicao: number;
+	comSecao?: boolean;
+}) {
 	const id = `item-${item.ordem}`;
 	const artigo = caminhoDaTrilha(item.artigo);
+	const Titulo = comSecao ? "h3" : "h2";
+	const Subtitulo = comSecao ? "h4" : "h3";
 	return (
 		<section
 			id={id}
 			aria-labelledby={`${id}-titulo`}
-			className={classes("item-da-edicao", classeDaFita(item.ordem))}
+			className={classes("item-da-edicao", classeDaFita(posicao))}
 		>
 			<span aria-hidden="true" className="numeral">
-				{item.ordem}
+				{posicao}
 			</span>
-			<h2
+			<Titulo
 				id={`${id}-titulo`}
 				className="subtitulo-condensado letra-com-teto teto-pela-caixa"
 				style={estiloDoTeto(item.titulo, "subtitulo-condensado")}
 			>
 				{item.titulo}
-			</h2>
+			</Titulo>
 			<div className="texto">
 				{paragrafos(item.texto).map((paragrafo, posicao) => (
 					// biome-ignore lint/suspicious/noArrayIndexKey: os parágrafos ficam fixos, na ordem do texto da edição publicada.
@@ -55,9 +66,9 @@ export function ItemDaEdicao({ item }: { item: ItemPublico }) {
 			</div>
 			{item.fatos?.votacoes.map((votacao, posicao) => (
 				// biome-ignore lint/suspicious/noArrayIndexKey: as votações ficam fixas, na ordem da edição publicada.
-				<QuadroDaVotacao key={posicao} votacao={votacao} />
+				<QuadroDaVotacao key={posicao} votacao={votacao} Titulo={Subtitulo} />
 			))}
-			<FontesDoItem ordem={item.ordem} fontes={item.fontes} />
+			<FontesDoItem posicao={posicao} fontes={item.fontes} Titulo={Subtitulo} />
 			{artigo && item.artigo && (
 				<p className="na-trilha">
 					<Link
@@ -81,13 +92,19 @@ export function ItemDaEdicao({ item }: { item: ItemPublico }) {
  * lista de termos só: o leitor de tela lê "Sim, 312", e a tela põe o número em
  * cima do nome.
  */
-function QuadroDaVotacao({ votacao }: { votacao: VotacaoPublica }) {
+function QuadroDaVotacao({
+	votacao,
+	Titulo,
+}: {
+	votacao: VotacaoPublica;
+	Titulo: "h3" | "h4";
+}) {
 	const { placar } = votacao;
 	return (
 		<div className="votacao">
-			<h3 className="rotulo">
+			<Titulo className="rotulo">
 				Votação de {formatarData(votacao.data.slice(0, 10))}
-			</h3>
+			</Titulo>
 			<dl>
 				<div className="resultado">
 					<dt>Resultado registrado</dt>
@@ -142,25 +159,27 @@ function QuadroDaVotacao({ votacao }: { votacao: VotacaoPublica }) {
  * em parte dos leitores.
  */
 function FontesDoItem({
-	ordem,
+	posicao,
 	fontes,
+	Titulo,
 }: {
-	ordem: number;
+	posicao: number;
 	fontes: FontePublica[];
+	Titulo: "h3" | "h4";
 }) {
 	return (
 		<div className="fontes-do-item">
-			<h3 className="rotulo">
-				Fontes <span className="sr-only">do item {ordem}</span>
-			</h3>
+			<Titulo className="rotulo">
+				Fontes <span className="sr-only">do item {posicao}</span>
+			</Titulo>
 			<ol role="list" className="lista-de-fontes">
 				{fontesPorEndereco(fontes).map(({ url, coletas }, indice) => {
 					const nome =
 						indice === 0 ? "Fonte oficial" : "Outra referência oficial";
 					const soParaOLeitor =
 						indice === 0
-							? `do item ${ordem}`
-							: `${indice + 1} do item ${ordem}`;
+							? `do item ${posicao}`
+							: `${indice + 1} do item ${posicao}`;
 					const endereco = enderecoSeguro(url);
 					const [primeira, ...outras] = coletas;
 					return (

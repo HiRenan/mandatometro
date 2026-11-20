@@ -93,6 +93,7 @@ class ArtigoDaEdicao(BaseModel):
 
 class ItemPublico(BaseModel):
     ordem: int
+    tipo: Literal["votacao", "ato"]
     titulo: str
     texto: str
     fatos: FatosPublicos | FatosAtoPublicos | None

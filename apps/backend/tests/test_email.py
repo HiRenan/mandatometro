@@ -1,3 +1,4 @@
+import re
 from datetime import UTC, date, datetime
 from uuid import UUID
 
@@ -55,6 +56,9 @@ def test_texto_html_fontes_data_trecho_e_ordem(edicao):
     assert "&lt;script&gt;" in mensagem.html
     assert "&lt;&amp;&gt;" in mensagem.html
     assert "&lt;para teste&gt;" in mensagem.html
+    assert re.findall(r"<h2>(.*?)</h2>", mensagem.html) == ["Primeiro", "Segundo"]
+    assert "O que o Congresso votou" not in mensagem.texto
+    assert "O que saiu no Diário Oficial" not in mensagem.texto
 
 
 def test_saida_tem_url_https_e_os_dois_cabecalhos(edicao):
@@ -181,21 +185,31 @@ def test_sem_placar_nao_inventa_modalidade_e_resultado_outro_nao_vira_aprovacao(
 
 
 @pytest.fixture
-def edicao_com_ato(edicao):
-    item = edicao.itens[0]
-    item.fonte.id = 110
-    item.fonte.url = "https://www.senado.leg.br/dados/ato-ficticio"
-    item.fonte.url_publica = "https://www.in.gov.br/ato-ficticio"
-    item.fatos = FatosAto(
+def ato_da_edicao():
+    fonte = Fonte(
+        id=110,
+        url="https://www.senado.leg.br/dados/ato-ficticio",
+        url_publica="https://www.in.gov.br/ato-ficticio",
+        coletado_em=datetime(2026, 11, 15, 12, tzinfo=UTC),
+        trecho="Trecho fictício reservado do ato.",
+    )
+    fatos = FatosAto(
         versao=2,
         ato_id=989898,
         data_publicacao=date(2026, 11, 12),
-        fontes=[item.fonte.id],
+        fontes=[fonte.id],
         hash_ato="b" * 64,
         origem="revisao",
         pendencias=[],
     ).model_dump(mode="json")
-    edicao.itens = [item]
+    return ItemEdicao(
+        ordem=1, titulo="Primeiro ato", texto="Ato fictício.", fonte=fonte, fatos=fatos
+    )
+
+
+@pytest.fixture
+def edicao_com_ato(edicao, ato_da_edicao):
+    edicao.itens = [ato_da_edicao]
     return edicao
 
 
@@ -203,7 +217,13 @@ def test_formatar_ato_mostra_data_e_pagina_oficial_sem_campos_internos(edicao_co
     previa = formatar_edicao(edicao_com_ato, app_base_url="http://localhost:3001", previa=True)
     mensagem = montar(edicao_com_ato)
 
+    assert re.findall(r"<h([23])>(.*?)</h[23]>", mensagem.html) == [
+        ("2", "O que saiu no Diário Oficial"),
+        ("3", "Primeiro ato"),
+    ]
     for corpo in (previa.texto, previa.html, mensagem.texto, mensagem.html):
+        assert corpo.index("O que saiu no Diário Oficial") < corpo.index("Primeiro ato")
+        assert "O que o Congresso votou" not in corpo
         assert "Publicado no Diário Oficial em 12/11/2026." in corpo
         assert "https://www.in.gov.br/ato-ficticio" in corpo
         assert all(
@@ -219,6 +239,42 @@ def test_formatar_ato_mostra_data_e_pagina_oficial_sem_campos_internos(edicao_co
                 "placar",
             )
         )
+
+
+def test_edicao_mista_agrupa_as_votacoes_e_os_atos_na_ordem_de_cada_secao(edicao, ato_da_edicao):
+    segunda_votacao, primeira_votacao = edicao.itens
+    primeira_votacao.ordem, segunda_votacao.ordem = 2, 4
+    segundo_ato = ItemEdicao(
+        ordem=3,
+        titulo="Segundo ato",
+        texto="Outro ato fictício.",
+        fonte=ato_da_edicao.fonte,
+        fatos=ato_da_edicao.fatos,
+    )
+    edicao.itens = [segundo_ato, segunda_votacao, ato_da_edicao, primeira_votacao]
+    titulos = [
+        ("2", "O que o Congresso votou"),
+        ("3", "Primeiro"),
+        ("3", "Segundo"),
+        ("2", "O que saiu no Diário Oficial"),
+        ("3", "Primeiro ato"),
+        ("3", "Segundo ato"),
+    ]
+
+    previa = formatar_edicao(edicao, app_base_url="http://localhost:3001", previa=True)
+    mensagem = montar(edicao)
+
+    for html in (previa.html, mensagem.html):
+        assert re.findall(r"<h([23])>(.*?)</h[23]>", html) == titulos
+    textos_dos_titulos = [titulo for _, titulo in titulos]
+    for texto in (previa.texto, mensagem.texto):
+        assert [linha for linha in texto.splitlines() if linha in textos_dos_titulos] == (
+            textos_dos_titulos
+        )
+        votacoes, atos = texto.split("O que saiu no Diário Oficial")
+        assert votacoes.count(f"Fonte oficial: {primeira_votacao.fonte.url_publica}") == 2
+        assert atos.count(f"Fonte oficial: {ato_da_edicao.fonte.url_publica}") == 2
+        assert "Trecho fictício reservado do ato." not in texto
 
 
 def test_formatar_ato_exige_pagina_oficial(edicao_com_ato):

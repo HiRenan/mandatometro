@@ -56,6 +56,7 @@ export function edicaoDeExemplo(): EdicaoPublica {
 		itens: [
 			{
 				ordem: 1,
+				tipo: "votacao",
 				titulo: "Câmara aprova a semana das bibliotecas escolares",
 				texto:
 					"O projeto cria uma semana dedicada às bibliotecas das escolas públicas.\n\nAgora o texto segue para o Senado, que pode aprovar, mudar ou rejeitar.",
@@ -87,6 +88,7 @@ export function edicaoDeExemplo(): EdicaoPublica {
 			},
 			{
 				ordem: 2,
+				tipo: "votacao",
 				titulo: "Senado vota um requerimento",
 				texto:
 					"O Senado votou um pedido sobre a ordem dos trabalhos da semana.",
@@ -105,6 +107,7 @@ export function edicaoDeExemplo(): EdicaoPublica {
 			},
 			{
 				ordem: 3,
+				tipo: "votacao",
 				titulo: "Um item de uma edição antiga",
 				texto: "Este item saiu antes de a edição guardar os fatos da votação.",
 				fatos: null,

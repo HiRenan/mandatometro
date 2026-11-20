@@ -44,7 +44,7 @@ export function PaginaDasEdicoes({ lista }: { lista: PaginaDaLista }) {
 				}
 			>
 				<p className="abertura">
-					O que o Congresso votou em cada semana, explicado em linguagem
+					As votações do Congresso e os destaques do Diário Oficial em linguagem
 					simples. Cada item traz a fonte oficial.
 				</p>
 				<p className="para-quem">
@@ -206,8 +206,7 @@ function SemEdicoes() {
 				A primeira edição ainda não saiu
 			</h2>
 			<p>
-				Ela sai num domingo, com o que o Congresso votou na semana. Inscreva-se
-				e ela chega no seu e-mail assim que for publicada.
+				Inscreva-se e receba a primeira edição por e-mail assim que ela sair.
 			</p>
 			<Link to="/" hash="newsletter" className={BOTAO_CONTINUAR}>
 				Receber por e-mail
