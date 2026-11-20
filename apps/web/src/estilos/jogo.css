@@ -1,0 +1,599 @@
+/*
+ * O Jogo das Comissões (DESIGN.md e docs/jogo-das-comissoes.md): o palco com o
+ * cenário e o retrato de quem fala, a caixa de diálogo com a placa do nome, as
+ * decisões, os carimbos, o painel do plenário, o prazo em sessões, o cartão "O
+ * que aconteceu de verdade" e o fim. As telas ficam em components/jogo/.
+ *
+ * O cenário é a única imagem do site, e é desenho: ele cobre o papel de
+ * propósito, dentro do palco. Fora dele, a página continua no papel com o grão
+ * e o mapa. Nenhum texto fica em cima de uma cor de fita: o carimbo tem o
+ * texto em tinta, e a cor fica no contorno.
+ */
+@layer components {
+	.jogo {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1.5rem;
+		margin-inline: var(--margem);
+		padding-block: clamp(1.5rem, 4vw, 3rem);
+	}
+
+	/* O palco: o cenário atrás e o passo da vez na frente. */
+	.jogo-palco {
+		position: relative;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem;
+		border: 2px solid var(--tinta);
+		background: var(--papel-2);
+	}
+
+	.jogo-cena {
+		position: relative;
+		overflow: hidden;
+		aspect-ratio: 16 / 9;
+		max-height: 52svh;
+		border-bottom: 2px solid var(--tinta);
+	}
+
+	/*
+	 * No celular, o cenário recorta o centro: a arte foi desenhada com o que
+	 * importa nos 1080 px do meio.
+	 */
+	.jogo-cenario {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: center;
+	}
+
+	/* O retrato entra da direita, com a altura do palco. */
+	.jogo-retrato {
+		position: absolute;
+		right: clamp(-2rem, -2vw, 0rem);
+		bottom: 0;
+		width: auto;
+		height: 104%;
+		max-width: 62%;
+		object-fit: contain;
+		object-position: bottom right;
+	}
+
+	.jogo-item {
+		position: absolute;
+		bottom: 0.75rem;
+		left: 0.75rem;
+		width: clamp(5rem, 16vw, 9rem);
+	}
+
+	.jogo-item img {
+		width: 100%;
+		height: auto;
+	}
+
+	/* A etiqueta do item vem do roteiro, não da imagem. */
+	.jogo-etiqueta-do-item {
+		margin-top: 0.25rem;
+		padding: 0.125rem 0.375rem;
+		background: var(--tinta);
+		color: var(--papel);
+		font-family: var(--font-sans);
+		font-size: 0.6875rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-align: center;
+		text-transform: uppercase;
+	}
+
+	.jogo-frente {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem;
+		padding: 0 var(--respiro) 1rem;
+	}
+
+	/* A abertura: o resumo, o aviso dos personagens e o botão de começar. */
+	.jogo-abertura {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+		justify-items: start;
+		padding-top: 1rem;
+	}
+
+	.jogo-resumo {
+		max-width: 46ch;
+		font-size: 1.0625rem;
+		line-height: 1.6;
+	}
+
+	.jogo-aviso,
+	.jogo-sem-script {
+		max-width: 52ch;
+		border-left: 3px solid var(--tinta);
+		padding-left: 0.75rem;
+		color: var(--tinta-suave);
+		font-size: 0.9375rem;
+		line-height: 1.55;
+	}
+
+	/* A caixa de diálogo, com a placa do nome. */
+	.jogo-caixa {
+		position: relative;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.5rem;
+		border: 2px solid var(--tinta);
+		padding: 0.875rem var(--respiro) 1rem;
+		background: var(--folha);
+	}
+
+	.jogo-placa {
+		justify-self: start;
+		padding: 0.1875rem 0.5rem;
+		background: var(--tinta);
+		color: var(--papel);
+		font-family: var(--font-sans);
+		font-size: 0.75rem;
+		font-weight: 800;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.jogo-placa[data-narracao="true"] {
+		background: none;
+		border: 1px solid var(--tinta-suave);
+		color: var(--tinta-suave);
+	}
+
+	/*
+	 * A fala guarda a altura de três linhas: a caixa não muda de tamanho de uma
+	 * fala para a outra, e o botão fica no mesmo lugar (como as Reservas do
+	 * quiz).
+	 */
+	.jogo-fala {
+		min-height: 5.25em;
+		font-size: 1.0625rem;
+		line-height: 1.65;
+	}
+
+	.jogo-fala:focus-visible {
+		outline: none;
+	}
+
+	.jogo-cursor {
+		display: inline-block;
+		width: 0.5em;
+		border-bottom: 2px solid var(--tinta);
+		animation: pisca 900ms steps(1, end) infinite;
+	}
+
+	@keyframes pisca {
+		50% {
+			opacity: 0;
+		}
+	}
+
+	/*
+	 * O toque na caixa faz o mesmo que o botão. Ele cobre a caixa, e o botão
+	 * fica por cima dele.
+	 */
+	.jogo-toque {
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		cursor: pointer;
+		background: none;
+	}
+
+	.jogo-acoes {
+		position: relative;
+		z-index: 2;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.5rem;
+		justify-items: start;
+		padding-top: 0.25rem;
+	}
+
+	.jogo-acoes-do-fim {
+		gap: 0.75rem;
+	}
+
+	/* A decisão: a etiqueta da natureza, a pergunta e as opções. */
+	.jogo-decisao {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+		border: 2px solid var(--tinta);
+		padding: 1rem var(--respiro) 1.25rem;
+		background: var(--folha);
+	}
+
+	.jogo-etiqueta > span {
+		display: inline-block;
+		padding: 0.1875rem 0.5rem;
+		background: var(--tinta);
+		color: var(--papel);
+		font-family: var(--font-sans);
+		font-size: 0.6875rem;
+		font-weight: 800;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+
+	.jogo-pergunta {
+		font-family: var(--font-sans);
+		font-size: 1.125rem;
+		font-weight: 800;
+		line-height: 1.4;
+	}
+
+	.jogo-pergunta:focus-visible {
+		outline: none;
+	}
+
+	.jogo-natureza {
+		color: var(--tinta-suave);
+		font-size: 0.875rem;
+	}
+
+	.jogo-opcoes {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.625rem;
+	}
+
+	.jogo-opcao {
+		width: 100%;
+		border: 2px solid var(--tinta);
+		padding: 0.75rem 0.875rem;
+		background: var(--papel);
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 700;
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.jogo-opcao:hover:not(:disabled) {
+		background: var(--papel-2);
+	}
+
+	.jogo-opcao:disabled {
+		cursor: default;
+		opacity: 1;
+	}
+
+	.jogo-opcao[data-escolhida="true"] {
+		background: var(--tinta);
+		color: var(--papel);
+	}
+
+	/*
+	 * A explicação de cada opção. O resultado aparece em palavras, e a barra da
+	 * esquerda muda de espessura: a informação não fica só na cor.
+	 */
+	.jogo-explicacao {
+		margin-top: 0.375rem;
+		border-left: 3px solid var(--tinta-suave);
+		padding-left: 0.75rem;
+		font-size: 0.9375rem;
+		line-height: 1.55;
+	}
+
+	.jogo-explicacao[data-resultado="certa"] {
+		border-left-width: 6px;
+		border-left-color: var(--tinta);
+	}
+
+	.jogo-resultado {
+		font-family: var(--font-sans);
+		font-size: 0.75rem;
+		font-weight: 800;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+
+	.jogo-feedback {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.5rem;
+		border-top: 2px solid var(--tinta);
+		padding-top: 0.875rem;
+	}
+
+	.jogo-feedback:focus-visible {
+		outline: none;
+	}
+
+	.jogo-eco {
+		font-family: var(--font-sans);
+		font-weight: 700;
+	}
+
+	.jogo-fundamento {
+		color: var(--tinta-suave);
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+
+	/*
+	 * O carimbo: o texto em tinta, em maiúsculas, com o contorno na cor da fita.
+	 * Ele entra grande e torto, com a tremida; com o movimento reduzido, entra
+	 * no lugar.
+	 */
+	.jogo-carimbo {
+		justify-self: center;
+		margin: 0.5rem 0;
+		transform: rotate(-6deg);
+		animation: carimba 420ms var(--ease-golpe) both;
+	}
+
+	.jogo-carimbo > span {
+		display: inline-block;
+		border: 3px double var(--carimbo, var(--tinta));
+		padding: 0.375rem 0.875rem;
+		color: var(--tinta);
+		font-family: var(--font-sans);
+		font-size: min(2rem, calc(100cqi / 12));
+		font-weight: 900;
+		letter-spacing: 0.04em;
+		line-height: 1.15;
+		text-transform: uppercase;
+	}
+
+	.jogo-carimbo[data-cor="amarela"] {
+		--carimbo: var(--fita-amarela);
+	}
+
+	.jogo-carimbo[data-cor="vermelha"] {
+		--carimbo: var(--fita-vermelha);
+	}
+
+	.jogo-carimbo[data-cor="verde"] {
+		--carimbo: var(--fita-verde);
+	}
+
+	@keyframes carimba {
+		0% {
+			transform: rotate(-14deg) scale(2.4);
+			opacity: 0;
+		}
+
+		60% {
+			transform: rotate(-6deg) scale(1);
+			opacity: 1;
+		}
+
+		75% {
+			transform: rotate(-6deg) translateX(3px);
+		}
+
+		88% {
+			transform: rotate(-6deg) translateX(-2px);
+		}
+
+		100% {
+			transform: rotate(-6deg) translateX(0);
+		}
+	}
+
+	.jogo-carimbo-solto,
+	.jogo-painel,
+	.jogo-relogio {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.625rem;
+		border: 2px solid var(--tinta);
+		padding: 1rem var(--respiro) 1.25rem;
+		background: var(--folha);
+	}
+
+	/* O painel do plenário: o placar em tinta, nunca em verde e vermelho. */
+	.jogo-votos {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.75rem;
+		border: 2px solid var(--tinta);
+		padding: 0.875rem;
+		background: var(--papel-2);
+		text-align: center;
+	}
+
+	.jogo-votos dt {
+		font-family: var(--font-sans);
+		font-size: 0.75rem;
+		font-weight: 800;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+
+	.jogo-votos dd {
+		font-family: var(--font-sans);
+		font-size: clamp(2.5rem, 12vw, 4rem);
+		font-variant-numeric: lining-nums tabular-nums;
+		font-weight: 900;
+		line-height: 1;
+	}
+
+	.jogo-sem-placar,
+	.jogo-legenda {
+		font-size: 0.9375rem;
+		line-height: 1.55;
+	}
+
+	.jogo-legenda:focus-visible {
+		outline: none;
+	}
+
+	/* As sessões do prazo, em quadradinhos que acendem um a um. */
+	.jogo-sessao {
+		display: inline-block;
+		width: 1.25rem;
+		height: 1.25rem;
+		margin-right: 0.375rem;
+		border: 2px solid var(--tinta);
+		background: var(--papel);
+	}
+
+	.jogo-sessao[data-corrida="true"] {
+		background: var(--tinta);
+	}
+
+	/* O caminho do projeto, nas casas do infográfico. */
+	.jogo-caminho ol {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.375rem;
+	}
+
+	.jogo-caminho li {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: baseline;
+		gap: 0.5rem;
+		border-top: 2px solid var(--papel-3);
+		padding-top: 0.375rem;
+	}
+
+	.jogo-caminho li[data-estado="agora"] {
+		border-top-color: var(--tinta);
+	}
+
+	.jogo-casa {
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+
+	.jogo-caminho li[data-estado="adiante"] .jogo-casa {
+		color: var(--tinta-suave);
+	}
+
+	.jogo-aqui {
+		padding: 0.125rem 0.375rem;
+		background: var(--tinta);
+		color: var(--papel);
+		font-family: var(--font-sans);
+		font-size: 0.625rem;
+		font-weight: 800;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	@media (width >= 48rem) {
+		.jogo-caminho ol {
+			grid-template-columns: repeat(5, minmax(0, 1fr));
+		}
+
+		.jogo-caminho li {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+
+	/* O pé do palco: o caminho, o som e onde a cena está. */
+	.jogo-pe {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+		border-top: 2px solid var(--tinta);
+		padding: 0.875rem var(--respiro) 1rem;
+		background: var(--papel) var(--grao);
+	}
+
+	.jogo-onde {
+		color: var(--tinta-suave);
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+	}
+
+	/* O cartão "O que aconteceu de verdade" e o fim do jogo. */
+	.jogo-cartao,
+	.jogo-fim {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem;
+		border: 2px solid var(--tinta);
+		padding: 1.25rem var(--respiro) 1.5rem;
+		background: var(--folha);
+	}
+
+	.jogo-cartao-texto {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+		max-width: 62ch;
+		line-height: 1.65;
+	}
+
+	.jogo-cartao-trilha {
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+	}
+
+	.jogo-regras ol,
+	.jogo-epilogo-itens {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+		margin-top: 0.75rem;
+	}
+
+	.jogo-regras li {
+		border-left: 3px solid var(--papel-3);
+		padding-left: 0.75rem;
+	}
+
+	.jogo-regras li[data-como-no-regimento="true"] {
+		border-left-width: 6px;
+		border-left-color: var(--tinta);
+	}
+
+	.jogo-regra-nome {
+		font-family: var(--font-sans);
+		font-weight: 800;
+	}
+
+	.jogo-regra-nome .jogo-fundamento {
+		display: block;
+		font-weight: 700;
+	}
+
+	.jogo-regra-escolha {
+		font-size: 0.9375rem;
+		line-height: 1.55;
+	}
+
+	.jogo-epilogo-itens li {
+		border-top: 2px solid var(--papel-3);
+		padding-top: 0.625rem;
+	}
+
+	.jogo-dispositivo {
+		display: block;
+		margin-top: 0.25rem;
+		color: var(--tinta-suave);
+		font-family: var(--font-sans);
+		font-size: 0.75rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+
+	@media (width >= 48rem) {
+		.jogo-cena {
+			max-height: 60svh;
+		}
+
+		.jogo-frente,
+		.jogo-pe {
+			padding-inline: clamp(1.5rem, 3vw, 2.5rem);
+		}
+	}
+}

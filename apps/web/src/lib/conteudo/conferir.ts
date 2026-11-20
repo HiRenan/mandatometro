@@ -1,7 +1,8 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { Plugin } from "vite";
-import { lerJogos, TRILHA_DO_JOGO } from "../jogo/ler.ts";
+import { lerJogos } from "../jogo/ler.ts";
+import { TRILHA_DO_JOGO } from "../jogo/trilha.ts";
 import { TRILHA_DA_INICIAL, trilhaDaInicial } from "./inicial.ts";
 import { ErroDeConteudo, lerTrilhas } from "./ler.ts";
 

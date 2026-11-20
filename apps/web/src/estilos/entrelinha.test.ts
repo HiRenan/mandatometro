@@ -327,6 +327,9 @@ function cartazesDoTsx(arquivo: string) {
 			no.expression.getText() === "fraseDoAndamento"
 		)
 			return frasesDoFim;
+		// O título do jogo também vem do Markdown, mas é um só: o roteiro.test.ts
+		// prende o texto, e aqui ele é medido como os escritos no código.
+		if (no.getText() === "jogo.titulo") return ["Jogo das Comissões"];
 		// Os títulos de trilha e de passo são lidos do Markdown. Os das edições e
 		// dos artigos aparecem na folha de leitura, que aceita qualquer texto.
 		if (

@@ -5,6 +5,7 @@ import { NOME_DO_SITE } from "./nome-do-site";
 const LINKS = [
 	{ to: "/", label: "Início" },
 	{ to: "/trilhas", label: "Trilhas" },
+	{ to: "/jogos", label: "Jogos" },
 ] as const;
 
 /** As edições da newsletter, que só aparecem onde o site tem a API. */
@@ -25,8 +26,8 @@ function estaNaSecao(caminho: string, secao: string): boolean {
  * busca encolhe para a lupa e o "Buscar".
  *
  * Onde o site tem a API (o API_URL), as edições entram nos links. No celular, os
- * três não cabem na linha do nome: o Início sai (o CSS, pelo data-com-edicoes), e
- * o nome leva ao início (o Renan, na #39).
+ * links não cabem na linha do nome: o Início sai (o CSS), e o nome leva ao
+ * início (o Renan, na #39).
  */
 export default function Header({
 	comEdicoes = false,

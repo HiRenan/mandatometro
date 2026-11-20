@@ -67,7 +67,7 @@ function temAsClasses(elemento: Element, classes: string) {
 }
 
 describe("cabeçalho", () => {
-	it("tem o pulo para o conteúdo, o nome, o lema e os dois links", async () => {
+	it("tem o pulo para o conteúdo, o nome, o lema e os três links", async () => {
 		const cabecalho = await mostrar();
 		const principal = within(cabecalho).getByRole("navigation", {
 			name: "Principal",
@@ -93,6 +93,7 @@ describe("cabeçalho", () => {
 		).toEqual([
 			["Início", "/"],
 			["Trilhas", "/trilhas"],
+			["Jogos", "/jogos"],
 			["Conta", "/perfil"],
 		]);
 	});
@@ -110,6 +111,7 @@ describe("cabeçalho", () => {
 		).toEqual([
 			["Início", "/"],
 			["Trilhas", "/trilhas"],
+			["Jogos", "/jogos"],
 			["Edições", "/edicoes"],
 			["Conta", "/perfil"],
 		]);
@@ -118,7 +120,7 @@ describe("cabeçalho", () => {
 		).toBe(true);
 	});
 
-	it("sem a API, ficam os dois links, sem a marca das edições", async () => {
+	it("sem a API, ficam os três links, sem a marca das edições", async () => {
 		const cabecalho = await mostrar();
 		const lista = cabecalho.querySelector(".topo-links");
 

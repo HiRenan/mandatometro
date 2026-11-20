@@ -14,9 +14,6 @@ import {
 // (lib/conteudo/ler.ts) e reaproveita os ajudantes dela: o cabeçalho em YAML, o
 // zod estrito, as fontes oficiais e as mensagens de erro em português.
 
-/** A trilha cujos artigos as cenas apontam, e de onde o jogo é a continuação. */
-export const TRILHA_DO_JOGO = "processo-legislativo";
-
 // Os retratos de cada personagem, pelos arquivos de public/jogo/personagens/.
 // Uma expressão que não está aqui não tem desenho, e a cena abriria sem o
 // retrato.
@@ -49,10 +46,16 @@ const SELOS = [
 	"sancionado",
 ] as const;
 
+/** O carimbo que entra na tela, por nome. */
+export type Selo = (typeof SELOS)[number];
+
 const PERSONAGENS = ["lia", "arnaldo", "caio"] as const;
 
 // A narração não tem retrato nem placa de nome.
 const QUEM = ["narracao", ...PERSONAGENS] as const;
+
+/** Quem fala: a narração ou um dos três personagens. */
+export type Quem = (typeof QUEM)[number];
 
 // O id da fala vira o nome do arquivo de narração, e o número é o da cena.
 const ID_DE_FALA = /^c([1-9])-(\d{2})$/;
@@ -154,7 +157,7 @@ const opcaoDeOpiniaoSchema = z.strictObject(
 
 const MAXIMO_DE_OPCOES = 4;
 
-function opcoes<T extends z.ZodType>(schema: T) {
+function opcoes<T extends z.ZodType<{ texto: string }>>(schema: T) {
 	return z
 		.array(schema, exigido("precisa ser uma lista de opções"))
 		.min(2, "precisa de pelo menos 2 opções")

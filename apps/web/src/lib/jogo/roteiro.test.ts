@@ -5,7 +5,9 @@ import {
 	lerArquivosDoJogo,
 } from "../conteudo/conferir.ts";
 import { lerTrilhas } from "../conteudo/ler.ts";
-import { lerJogos, TRILHA_DO_JOGO } from "./ler.ts";
+import { tetoDoTitulo } from "../conteudo/regua.ts";
+import { lerJogos } from "./ler.ts";
+import { TRILHA_DO_JOGO } from "./trilha.ts";
 
 // O roteiro de verdade, lido da pasta de conteúdo. O teste prende o que o
 // roteiro combinou (docs/jogo-das-comissoes.md): as 46 falas, as seis decisões
@@ -125,6 +127,13 @@ describe("o roteiro do Jogo das Comissões", () => {
 		for (const cena of jogo.cenas) {
 			expect(artigosDaTrilha.has(cena.artigo)).toBe(true);
 		}
+	});
+
+	it("tem o título que a página mede no teto da letra", () => {
+		// O [--palavra:N] de routes/jogos.tsx foi medido para este título, e o
+		// titulos.test.ts confere a conta. Mudou o título: meça de novo.
+		expect(jogo.titulo).toBe("Jogo das Comissões");
+		expect(tetoDoTitulo(jogo.titulo, "titulo-condensado")).toBe(4.49);
 	});
 
 	it("deixa a pendência do art. 105 escrita no roteiro", () => {

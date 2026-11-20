@@ -25,6 +25,7 @@ const passoAPasso = codigo("components/infografico-em-linha.tsx");
 const caminhoDaTrilha = codigo("components/infografico.tsx");
 const outrosArtigos = codigo("components/outros-artigos.tsx");
 const paginaDasEdicoes = codigo("components/pagina-das-edicoes.tsx");
+const paginaDosJogos = codigo("routes/jogos.tsx");
 const css = codigo("index.css");
 
 // A régua (largura, palavras e a FOLGA) mora em regua.ts, que também dá o teto dos
@@ -140,6 +141,14 @@ const TETOS = {
 			"components/pagina-das-edicoes.tsx",
 			["<h2", "titulo-condensado", "letra-com-teto"],
 		),
+	},
+	jogo: {
+		lugar: "no título da página do jogo",
+		estilo: "titulo-condensado",
+		palavra: tetoNoCodigo(paginaDosJogos, "routes/jogos.tsx", [
+			"titulo-condensado",
+			"letra-com-teto",
+		]),
 	},
 	passo: {
 		lugar: "no título do passo, na página inicial",
@@ -346,6 +355,14 @@ describe("as palavras dos títulos", () => {
 		expect(
 			largas,
 			"Troque a palavra por uma mais curta, ou meça o teto de novo: veja docs/conteudo-das-trilhas.md",
+		).toEqual([]);
+	});
+
+	it("o título da página do jogo cabe no teto", () => {
+		// O título vem do conteudo/jogo/comissoes/jogo.md, e o roteiro.test.ts
+		// prende o texto: o teto fica escrito no código, com o [--palavra:N] dele.
+		expect(
+			largasDe("routes/jogos.tsx", "Jogo das Comissões", [TETOS.jogo]),
 		).toEqual([]);
 	});
 

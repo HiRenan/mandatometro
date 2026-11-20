@@ -142,6 +142,7 @@ export function Quiz({
 	linha,
 	abertura,
 	fim,
+	depoisDoFim,
 	soOPalco = false,
 }: QuizNaPagina & {
 	/** O título da página: o do quiz da trilha, o do quiz final ou o do antes. */
@@ -164,6 +165,12 @@ export function Quiz({
 	abertura?: (partes: PartesDoQuiz) => ReactNode;
 	/** O fim do piloto, no lugar do do quiz, numa .quiz-fim com o título num h2. */
 	fim?: (partes: PartesDoQuiz) => ReactNode;
+	/**
+	 * Uma ação a mais nas do fim do quiz, depois do "Rever as respostas": é por
+	 * ela que o fim do quiz final leva ao Jogo das Comissões (routes/jogos.tsx).
+	 * O fim do piloto, que vem no `fim`, fica sem ela.
+	 */
+	depoisDoFim?: ReactNode;
 	/**
 	 * Só o palco: sem as perguntas abertas do noscript e sem o artigo anterior e
 	 * o próximo embaixo dele, como na página do piloto.
@@ -702,6 +709,7 @@ export function Quiz({
 									/>
 								</Link>
 								{comeco(true)}
+								{depoisDoFim}
 							</div>
 						</div>
 					)}
