@@ -13,6 +13,7 @@ vi.mock("@/client", () => ({
 vi.mock("@/env", () => ({ ENV: env }));
 
 const CHAVE_VISITANTE = "mandatometro:artigos-lidos";
+const CHAVE_CONTA = "mandatometro:artigos-lidos-na-conta";
 const PRIMEIRO = "leis/primeiro";
 const SEGUNDO = "leis/segundo";
 const OUTRA_TRILHA = "eleicoes/voto";
@@ -25,6 +26,42 @@ const resposta = (...lidos: string[]) => ({
 	data: { lidos },
 	response: new Response(null, { status: 200 }),
 });
+
+const falha = (status: number) => ({
+	response: new Response(null, { status }),
+});
+
+function aguardarTurno() {
+	return new Promise((resolver) => setTimeout(resolver, 0));
+}
+
+function voltarParaAba() {
+	document.dispatchEvent(new Event("visibilitychange"));
+}
+
+function instalarTravaEntreAbas() {
+	let fim = Promise.resolve();
+	Object.defineProperty(navigator, "locks", {
+		configurable: true,
+		value: {
+			request<T>(
+				_nome: string,
+				{ signal }: { signal: AbortSignal },
+				trabalho: () => Promise<T>,
+			) {
+				const proximo = fim.then(() => {
+					signal.throwIfAborted();
+					return trabalho();
+				});
+				fim = proximo.then(
+					() => {},
+					() => {},
+				);
+				return proximo;
+			},
+		},
+	});
+}
 
 function adiarResposta() {
 	type Resposta = ReturnType<typeof resposta>;
@@ -54,6 +91,8 @@ beforeEach(async () => {
 afterEach(() => {
 	parar?.();
 	parar = undefined;
+	Reflect.deleteProperty(navigator, "locks");
+	vi.restoreAllMocks();
 });
 
 describe("progresso com conta opcional", () => {
@@ -206,6 +245,304 @@ describe("progresso com conta opcional", () => {
 		});
 	});
 
+	it("descarta o Desfazer de um recomeço de visitante ao entrar numa conta", async () => {
+		progresso.marcarLido(PRIMEIRO);
+		const apagadas = progresso.recomecarTrilha("leis");
+		progresso.anotarEntradaNaConta();
+		progresso.restaurarLidos(apagadas);
+		await vi.dynamicImportSettled();
+		expect(progresso.lerLidos().size).toBe(0);
+		expect(localStorage.getItem(CHAVE_CONTA)).toBeNull();
+		expect(alterar).not.toHaveBeenCalled();
+	});
+
+	it("invalida o Desfazer de visitante mesmo depois de entrar e voltar a sair", () => {
+		progresso.marcarLido(PRIMEIRO);
+		const apagadas = progresso.recomecarTrilha("leis");
+		progresso.anotarEntradaNaConta();
+		progresso.encerrarProgressoNaConta();
+		progresso.restaurarLidos(apagadas);
+		expect(progresso.lerLidos().size).toBe(0);
+		expect(localStorage.length).toBe(0);
+	});
+
+	it("aguarda o POST de outra aba antes de enviar o recomeço", async () => {
+		instalarTravaEntreAbas();
+		progresso.anotarEntradaNaConta();
+		await visitar();
+		const primeiraAba = progresso;
+		await visitar();
+		await vi.waitFor(() => expect(consultar).toHaveBeenCalledTimes(2));
+		const gravacao = adiarResposta();
+		alterar.mockReturnValueOnce(gravacao.promise);
+		primeiraAba.marcarLido(PRIMEIRO);
+		await vi.waitFor(() => expect(alterar).toHaveBeenCalledTimes(1));
+		expect(progresso.lerLidos()).toEqual(new Set([PRIMEIRO]));
+		progresso.recomecarTrilha("leis");
+		try {
+			expect(progresso.lerLidos().size).toBe(0);
+			await aguardarTurno();
+			expect(alterar).toHaveBeenCalledTimes(1);
+		} finally {
+			gravacao.resolve(resposta(PRIMEIRO));
+		}
+		await vi.waitFor(() => {
+			expect(alterar).toHaveBeenNthCalledWith(
+				2,
+				expect.objectContaining({
+					body: { marcar: [], desmarcar: [PRIMEIRO] },
+				}),
+			);
+		});
+		expect(progresso.lerLidos().size).toBe(0);
+	});
+
+	it("lê e consome a união de visitante sob a mesma trava nas duas abas", async () => {
+		instalarTravaEntreAbas();
+		progresso.marcarLido(PRIMEIRO);
+		progresso.anotarEntradaNaConta();
+		const uniao = adiarResposta();
+		alterar.mockReturnValueOnce(uniao.promise);
+		await visitar();
+		await vi.waitFor(() => expect(alterar).toHaveBeenCalledTimes(1));
+		consultar.mockResolvedValueOnce(resposta(PRIMEIRO));
+		await visitar();
+		try {
+			await aguardarTurno();
+			expect(alterar).toHaveBeenCalledTimes(1);
+			expect(consultar).not.toHaveBeenCalled();
+			expect(localStorage.getItem(CHAVE_VISITANTE)).not.toBeNull();
+		} finally {
+			uniao.resolve(resposta(PRIMEIRO));
+		}
+		await vi.waitFor(() => expect(consultar).toHaveBeenCalledTimes(1));
+		expect(alterar).toHaveBeenCalledTimes(1);
+		expect(localStorage.getItem(CHAVE_VISITANTE)).toBeNull();
+	});
+
+	it("libera a trava para outra aba quando o prazo do pedido acaba", async () => {
+		instalarTravaEntreAbas();
+		progresso.anotarEntradaNaConta();
+		await visitar();
+		const primeiraAba = progresso;
+		await visitar();
+		await vi.waitFor(() => expect(consultar).toHaveBeenCalledTimes(2));
+		const prazo = new AbortController();
+		const prazoDePedido = vi
+			.spyOn(AbortSignal, "timeout")
+			.mockReturnValueOnce(prazo.signal);
+		alterar.mockImplementationOnce(
+			({ signal }: { signal: AbortSignal }) =>
+				new Promise((_, rejeitar) => {
+					signal.addEventListener("abort", () => rejeitar(signal.reason), {
+						once: true,
+					});
+				}),
+		);
+		primeiraAba.marcarLido(PRIMEIRO);
+		await vi.waitFor(() => expect(alterar).toHaveBeenCalledTimes(1));
+		expect(prazoDePedido).toHaveBeenCalledWith(10_000);
+		progresso.marcarLido(SEGUNDO);
+		try {
+			await aguardarTurno();
+			expect(alterar).toHaveBeenCalledTimes(1);
+		} finally {
+			prazo.abort(new DOMException("Prazo do teste", "TimeoutError"));
+		}
+		await vi.waitFor(() => expect(alterar).toHaveBeenCalledTimes(2));
+	});
+
+	it("relê ao voltar à aba e conserva as ações da aba enquanto a resposta está pendente", async () => {
+		const visibilidade = vi.spyOn(document, "visibilityState", "get");
+		progresso.anotarEntradaNaConta();
+		await visitar();
+		await vi.waitFor(() => expect(consultar).toHaveBeenCalledTimes(1));
+		const leitura = adiarResposta();
+		const gravacao = adiarResposta();
+		consultar.mockReturnValueOnce(leitura.promise);
+		alterar.mockReturnValueOnce(gravacao.promise);
+		visibilidade.mockReturnValue("hidden");
+		voltarParaAba();
+		await aguardarTurno();
+		expect(consultar).toHaveBeenCalledTimes(1);
+		visibilidade.mockReturnValue("visible");
+		voltarParaAba();
+		await vi.waitFor(() => expect(consultar).toHaveBeenCalledTimes(2));
+		progresso.marcarLido(PRIMEIRO);
+		leitura.resolve(resposta(OUTRA_TRILHA));
+		try {
+			await vi.waitFor(() => {
+				expect(progresso.lerLidos()).toEqual(new Set([OUTRA_TRILHA, PRIMEIRO]));
+				expect(alterar).toHaveBeenCalledTimes(1);
+			});
+		} finally {
+			gravacao.resolve(resposta(OUTRA_TRILHA, PRIMEIRO));
+		}
+	});
+
+	it("uma releitura espera o POST da outra aba e mantém a marca enquanto espera", async () => {
+		instalarTravaEntreAbas();
+		vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+		progresso.anotarEntradaNaConta();
+		await visitar();
+		const primeiraAba = progresso;
+		await visitar();
+		await vi.waitFor(() => expect(consultar).toHaveBeenCalledTimes(2));
+		const gravacao = adiarResposta();
+		alterar.mockReturnValueOnce(gravacao.promise);
+		consultar.mockResolvedValueOnce(resposta(PRIMEIRO, OUTRA_TRILHA));
+		primeiraAba.marcarLido(PRIMEIRO);
+		await vi.waitFor(() => expect(alterar).toHaveBeenCalledTimes(1));
+		voltarParaAba();
+		try {
+			await aguardarTurno();
+			expect(consultar).toHaveBeenCalledTimes(2);
+			expect(progresso.lerLidos()).toEqual(new Set([PRIMEIRO]));
+		} finally {
+			gravacao.resolve(resposta(PRIMEIRO));
+		}
+		await vi.waitFor(() => {
+			expect(progresso.lerLidos()).toEqual(new Set([PRIMEIRO, OUTRA_TRILHA]));
+			expect(consultar).toHaveBeenCalledTimes(3);
+		});
+	});
+
+	it.each(["antes", "depois"])(
+		"a segunda aba relê sem apagar uma ação enfileirada %s do gatilho",
+		async (quando) => {
+			instalarTravaEntreAbas();
+			vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+			progresso.anotarEntradaNaConta();
+			await visitar();
+			const primeiraAba = progresso;
+			await visitar();
+			await vi.waitFor(() => expect(consultar).toHaveBeenCalledTimes(2));
+			const primeira = adiarResposta();
+			const proxima = adiarResposta();
+			const leitura = adiarResposta();
+			alterar
+				.mockReturnValueOnce(primeira.promise)
+				.mockReturnValueOnce(proxima.promise);
+			consultar.mockReturnValueOnce(leitura.promise);
+			primeiraAba.marcarLido(PRIMEIRO);
+			await vi.waitFor(() => expect(alterar).toHaveBeenCalledTimes(1));
+			if (quando === "antes") primeiraAba.marcarLido(SEGUNDO);
+			voltarParaAba();
+			if (quando === "depois") primeiraAba.marcarLido(SEGUNDO);
+			primeira.resolve(resposta(PRIMEIRO));
+			try {
+				if (quando === "antes") {
+					await vi.waitFor(() => expect(alterar).toHaveBeenCalledTimes(2));
+					expect(consultar).toHaveBeenCalledTimes(2);
+					proxima.resolve(resposta(PRIMEIRO, SEGUNDO));
+				}
+				await vi.waitFor(() => expect(consultar).toHaveBeenCalledTimes(3));
+				leitura.resolve(
+					quando === "antes" ? resposta(PRIMEIRO, SEGUNDO) : resposta(PRIMEIRO),
+				);
+				await vi.waitFor(() => expect(alterar).toHaveBeenCalledTimes(2));
+				expect(progresso.lerLidos()).toEqual(new Set([PRIMEIRO, SEGUNDO]));
+			} finally {
+				proxima.resolve(resposta(PRIMEIRO, SEGUNDO));
+				leitura.resolve(resposta(PRIMEIRO, SEGUNDO));
+			}
+		},
+	);
+
+	it.each([429, 500, 503, "rede", "prazo"])(
+		"guarda uma falha %s até a próxima ação e envia os dois artigos",
+		async (erro) => {
+			progresso.anotarEntradaNaConta();
+			await visitar();
+			await vi.waitFor(() => expect(consultar).toHaveBeenCalledTimes(1));
+			if (typeof erro === "number") alterar.mockResolvedValueOnce(falha(erro));
+			else if (erro === "rede")
+				alterar.mockRejectedValueOnce(new TypeError("Falha de rede"));
+			else
+				alterar.mockRejectedValueOnce(
+					new DOMException("Prazo", "TimeoutError"),
+				);
+			progresso.marcarLido(PRIMEIRO);
+			await vi.waitFor(() => expect(alterar).toHaveBeenCalledTimes(1));
+			await aguardarTurno();
+			expect(alterar).toHaveBeenCalledTimes(1);
+			progresso.marcarLido(SEGUNDO);
+			await vi.waitFor(() => {
+				expect(alterar).toHaveBeenNthCalledWith(
+					2,
+					expect.objectContaining({
+						body: { marcar: [PRIMEIRO, SEGUNDO], desmarcar: [] },
+					}),
+				);
+			});
+		},
+	);
+
+	it.each([409, 422])(
+		"descarta o lote recusado (%s) e envia a ação seguinte",
+		async (status) => {
+			progresso.anotarEntradaNaConta();
+			await visitar();
+			await vi.waitFor(() => expect(consultar).toHaveBeenCalledTimes(1));
+			alterar.mockResolvedValueOnce(falha(status));
+			progresso.marcarLido(PRIMEIRO);
+			await vi.waitFor(() => expect(alterar).toHaveBeenCalledTimes(1));
+			await aguardarTurno();
+			progresso.marcarLido(SEGUNDO);
+			await vi.waitFor(() => {
+				expect(alterar).toHaveBeenNthCalledWith(
+					2,
+					expect.objectContaining({
+						body: { marcar: [SEGUNDO], desmarcar: [] },
+					}),
+				);
+			});
+		},
+	);
+
+	it("uma ação mais nova no mesmo artigo substitui a que falhou enquanto estava em voo", async () => {
+		progresso.anotarEntradaNaConta();
+		await visitar();
+		await vi.waitFor(() => expect(consultar).toHaveBeenCalledTimes(1));
+		let rejeitar!: (erro: Error) => void;
+		alterar.mockReturnValueOnce(
+			new Promise((_, rejeita) => {
+				rejeitar = rejeita;
+			}),
+		);
+		progresso.marcarLido(PRIMEIRO);
+		await vi.waitFor(() => expect(alterar).toHaveBeenCalledTimes(1));
+		progresso.desmarcarLido(PRIMEIRO);
+		rejeitar(new Error("Falha de rede"));
+		await vi.waitFor(() => {
+			expect(alterar).toHaveBeenNthCalledWith(
+				2,
+				expect.objectContaining({
+					body: { marcar: [], desmarcar: [PRIMEIRO] },
+				}),
+			);
+		});
+	});
+
+	it("a releitura é um gatilho para tentar a escrita que falhou", async () => {
+		vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+		progresso.anotarEntradaNaConta();
+		await visitar();
+		await vi.waitFor(() => expect(consultar).toHaveBeenCalledTimes(1));
+		alterar
+			.mockResolvedValueOnce(falha(503))
+			.mockResolvedValueOnce(resposta(PRIMEIRO));
+		progresso.marcarLido(PRIMEIRO);
+		await vi.waitFor(() => expect(alterar).toHaveBeenCalledTimes(1));
+		await aguardarTurno();
+		voltarParaAba();
+		await vi.waitFor(() => {
+			expect(consultar).toHaveBeenCalledTimes(2);
+			expect(alterar).toHaveBeenCalledTimes(2);
+		});
+		expect(progresso.lerLidos()).toEqual(new Set([PRIMEIRO]));
+	});
+
 	it("mantém o clique durante a falha e na próxima visita reconcilia pela conta", async () => {
 		const erro = vi.spyOn(console, "error").mockImplementation(() => {});
 		const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -298,7 +635,7 @@ describe("progresso com conta opcional", () => {
 		expect(progresso.lerLidos()).toEqual(new Set([PRIMEIRO]));
 		comecarComoOutraPessoa();
 		leitura.resolve(resposta(PRIMEIRO, OUTRA_TRILHA));
-		await leitura.promise;
+		await aguardarTurno();
 		expect(progresso.lerLidos().size).toBe(0);
 		expect(alterar).toHaveBeenCalledTimes(1);
 

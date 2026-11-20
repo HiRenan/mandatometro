@@ -5,18 +5,24 @@ import { ENV } from "@/env";
 const CHAVE = "mandatometro:artigos-lidos";
 const CHAVE_CONTA = "mandatometro:artigos-lidos-na-conta";
 const CHAVE_SESSAO = "mandatometro:sessao-do-progresso";
+const TRAVA = "mandatometro:sincronizar-progresso";
+const INTERVALO_DE_RELEITURA = 30_000;
 
 const VAZIO: ReadonlySet<string> = new Set();
 const ID_ARTIGO = /^[a-z0-9-]+\/[a-z0-9-]+$/;
 
 type ArtigoComId = { trilha: string; slug: string };
+type Contexto = { sessao: string | null };
+type Leitura = "documento" | "releitura";
 type Sincronia = {
 	chave: string;
 	controle: AbortController;
 	pendentes: Map<string, boolean>;
-	inicial: boolean;
-	ocupada: boolean;
-	espelhar: boolean;
+	leitura?: Leitura;
+	ultimaReleitura: number;
+	agendada: boolean;
+	ordemLocal: Promise<void>;
+	revisaoDoEspelho: number;
 };
 
 // Quando o navegador não deixa gravar no localStorage, o que a página gravou
@@ -27,7 +33,9 @@ let ultimo: { bruto: string | null; lidos: ReadonlySet<string> } = {
 	lidos: VAZIO,
 };
 const ouvintes = new Set<() => void>();
-const reiniciosDaConta = new WeakMap<readonly string[], string>();
+const reinicios = new WeakMap<readonly string[], Contexto>();
+const VISITANTE: Contexto = { sessao: null };
+let contextoAtual = VISITANTE;
 let sincronia: Sincronia | undefined;
 
 export function idDoArtigo(artigo: ArtigoComId): string {
@@ -61,6 +69,12 @@ function chaveDaSessao(): string | null {
 	return ENV.API_URL ? lerBruto(CHAVE_SESSAO) : null;
 }
 
+export function contextoDoProgresso(): Contexto {
+	const sessao = chaveDaSessao();
+	if (contextoAtual.sessao !== sessao) contextoAtual = { sessao };
+	return contextoAtual;
+}
+
 function interpretar(bruto: string | null): ReadonlySet<string> {
 	if (bruto === null) {
 		return VAZIO;
@@ -87,6 +101,7 @@ export function lerLidos(): ReadonlySet<string> {
 }
 
 function avisarTodos(): void {
+	contextoDoProgresso();
 	for (const avisar of ouvintes) {
 		avisar();
 	}
@@ -124,7 +139,7 @@ export function anotarEntradaNaConta(): void {
 /** Reconhece também uma sessão iniciada antes de o site anotar as entradas. */
 export function reconhecerSessaoDoProgresso(): void {
 	if (!chaveDaSessao()) anotarEntradaNaConta();
-	sincronizar();
+	if (sincronia?.chave !== chaveDaSessao()) sincronizar();
 }
 
 function emSessao(estado: Sincronia): boolean {
@@ -132,124 +147,207 @@ function emSessao(estado: Sincronia): boolean {
 }
 
 async function pedirProgresso(estado: Sincronia, body?: PedidoProgresso) {
-	const { alterarProgressoConta, consultarProgressoConta } = await import(
-		"@/client"
-	);
-	if (!emSessao(estado)) return;
-	const opcoes = {
-		credentials: "include",
-		cache: "no-store",
-		signal: AbortSignal.any([
-			estado.controle.signal,
-			AbortSignal.timeout(10000),
-		]),
-	} as const;
-	const { data, response } = body
-		? await alterarProgressoConta({ ...opcoes, body, keepalive: true })
-		: await consultarProgressoConta(opcoes);
-	if (!emSessao(estado)) return;
-	if (response?.status === 401) esquecerSessao(false);
-	else if (!data) estado.controle.abort();
-	return data;
+	const signal = AbortSignal.any([
+		estado.controle.signal,
+		AbortSignal.timeout(10_000),
+	]);
+	async function fazerPedido() {
+		const { alterarProgressoConta, consultarProgressoConta } = await import(
+			"@/client"
+		);
+		signal.throwIfAborted();
+		if (!emSessao(estado)) return;
+		const opcoes = {
+			credentials: "include",
+			cache: "no-store",
+			signal,
+		} as const;
+		return body
+			? alterarProgressoConta({ ...opcoes, body, keepalive: true })
+			: consultarProgressoConta(opcoes);
+	}
+
+	// O prazo também solta a trava se o carregamento do cliente ficar pendente.
+	let abortar!: () => void;
+	const cancelado = new Promise<never>((_, rejeitar) => {
+		abortar = () => rejeitar(signal.reason);
+		signal.addEventListener("abort", abortar, { once: true });
+	});
+	try {
+		const resultado = await Promise.race([fazerPedido(), cancelado]);
+		if (!resultado || !emSessao(estado)) return { retentar: false };
+		const status = resultado.response?.status;
+		if (status === 401) esquecerSessao(false);
+		return {
+			dados: resultado.data,
+			retentar: status === undefined || status === 429 || status >= 500,
+		};
+	} catch {
+		return { retentar: emSessao(estado) };
+	} finally {
+		signal.removeEventListener("abort", abortar);
+	}
 }
 
 function idAceito(id: string): boolean {
 	return id.length <= 128 && ID_ARTIGO.test(id);
 }
 
-async function enviar(estado: Sincronia): Promise<void> {
-	estado.ocupada = true;
-	try {
-		if (estado.inicial) {
-			// Só o progresso de visitante entra na união. O espelho da conta pode
-			// estar atrasado e trazer de volta uma marca removida em outro aparelho.
-			const visitante = lerBruto(CHAVE);
-			const importar = [...interpretar(visitante)].filter(idAceito);
-			const dados = await pedirProgresso(
-				estado,
-				importar.length ? { marcar: importar } : undefined,
-			);
-			if (!dados || !emSessao(estado)) return;
-			estado.inicial = false;
-			if (estado.espelhar) {
-				const lidos = new Set(dados.lidos);
-				for (const [id, marcado] of estado.pendentes) {
-					if (marcado) lidos.add(id);
-					else lidos.delete(id);
-				}
-				gravarBruto(CHAVE_CONTA, JSON.stringify([...lidos]));
-			}
-			if (visitante !== null && lerBruto(CHAVE) === visitante) {
-				gravarBruto(CHAVE, null);
-			}
-			avisarTodos();
-		}
+function espelharLeitura(
+	estado: Sincronia,
+	lidosNaConta: readonly string[],
+	antes: ReadonlySet<string>,
+): void {
+	const lidos = new Set(lidosNaConta);
+	const atuais = lerLidos();
+	// A outra aba também mostra a ação assim que ela entra na fila.
+	for (const id of antes) if (!atuais.has(id)) lidos.delete(id);
+	for (const id of atuais) if (!antes.has(id)) lidos.add(id);
+	for (const [id, marcado] of estado.pendentes) {
+		if (atuais.has(id) !== marcado) continue;
+		if (marcado) lidos.add(id);
+		else lidos.delete(id);
+	}
+	gravarBruto(CHAVE_CONTA, JSON.stringify([...lidos]));
+}
 
-		// Cada pedido termina antes de começar o próximo. Entre pedidos, só
-		// importa a última ação que a pessoa fez em cada artigo.
-		while (emSessao(estado) && estado.pendentes.size > 0) {
-			const marcar: string[] = [];
-			const desmarcar: string[] = [];
-			for (const [id, marcado] of estado.pendentes) {
-				(marcado ? marcar : desmarcar).push(id);
-			}
-			estado.pendentes.clear();
-			if (!(await pedirProgresso(estado, { marcar, desmarcar }))) return;
+async function enviarPedido(
+	estado: Sincronia,
+	revisaoDoEspelho: number,
+	antesDaEspera: ReadonlySet<string>,
+): Promise<void> {
+	if (!emSessao(estado)) return;
+	const leitura = estado.leitura;
+	estado.leitura = undefined;
+	if (leitura === "releitura") estado.ultimaReleitura = performance.now();
+	// Leia e consuma a chave de visitante com a trava adquirida. O espelho
+	// pode conter marcas antigas e nunca entra na união.
+	const visitante = lerBruto(CHAVE);
+	const importar = [...interpretar(visitante)].filter(idAceito);
+	const alteracoes = new Map<string, boolean>();
+	if (!leitura || importar.length) {
+		const lidos = lerLidos();
+		for (const [id, marcado] of estado.pendentes) {
+			if (lidos.has(id) === marcado) alteracoes.set(id, marcado);
 		}
-	} catch {
-		estado.controle.abort();
-	} finally {
-		estado.ocupada = false;
+		estado.pendentes.clear();
+	}
+	const marcar = new Set(importar);
+	const desmarcar: string[] = [];
+	for (const [id, marcado] of alteracoes) {
+		if (marcado) marcar.add(id);
+		else {
+			marcar.delete(id);
+			desmarcar.push(id);
+		}
+	}
+	const body = alteracoes.size
+		? { marcar: [...marcar], desmarcar }
+		: marcar.size
+			? { marcar: [...marcar] }
+			: undefined;
+	if (!leitura && !body) return;
+	// Ao abrir com ações já na fila, a leitura vem antes da escrita. Reserve
+	// a vez da escrita antes de esperar a resposta da leitura.
+	agendarPedido(estado);
+
+	const { dados, retentar } = await pedirProgresso(estado, body);
+	if (!emSessao(estado)) return;
+	if (
+		dados &&
+		(leitura || importar.length) &&
+		estado.revisaoDoEspelho === revisaoDoEspelho
+	) {
+		espelharLeitura(estado, dados.lidos, antesDaEspera);
+	}
+	if (!retentar || dados) {
+		if (visitante !== null && lerBruto(CHAVE) === visitante)
+			gravarBruto(CHAVE, null);
+		if (leitura || importar.length) avisarTodos();
+		return;
+	}
+	// As ações que chegaram durante o pedido já reservaram uma nova vez.
+	// Sem novo gatilho, o lote devolvido à fila fica só em memória.
+	if (body) estado.pendentes = new Map([...alteracoes, ...estado.pendentes]);
+}
+
+function agendarPedido(estado: Sincronia): void {
+	if (estado.agendada || (!estado.leitura && estado.pendentes.size === 0))
+		return;
+	estado.agendada = true;
+	const antesDaEspera = lerLidos();
+	const revisao = estado.revisaoDoEspelho;
+	const trabalho = () => {
+		estado.agendada = false;
+		return enviarPedido(estado, revisao, antesDaEspera);
+	};
+	if (navigator.locks) {
+		void navigator.locks
+			.request(TRAVA, { signal: estado.controle.signal }, trabalho)
+			.catch(() => {
+				// Uma espera pela trava pode ser cancelada ao trocar de sessão.
+				if (emSessao(estado)) estado.agendada = false;
+			});
+	} else {
+		estado.ordemLocal = estado.ordemLocal.then(trabalho).catch(() => {});
 	}
 }
 
-function sincronizar(ids: readonly string[] = [], marcado = true): void {
+function sincronizar(
+	ids: readonly string[] = [],
+	marcado = true,
+	leituraPedida?: Leitura,
+): void {
 	const chave = chaveDaSessao();
 	if (!chave) return;
+	let leitura = leituraPedida;
 	if (sincronia?.chave !== chave) {
 		cancelarSincronia();
 		sincronia = {
 			chave,
 			controle: new AbortController(),
 			pendentes: new Map(),
-			inicial: true,
-			ocupada: false,
-			espelhar: true,
+			ultimaReleitura: Number.NEGATIVE_INFINITY,
+			agendada: false,
+			ordemLocal: Promise.resolve(),
+			revisaoDoEspelho: 0,
 		};
+		leitura ??= "documento";
 	}
-	if (!emSessao(sincronia)) return;
+	if (
+		leitura === "releitura" &&
+		(sincronia.leitura ||
+			performance.now() - sincronia.ultimaReleitura < INTERVALO_DE_RELEITURA)
+	)
+		return;
+	if (leitura) sincronia.leitura = leitura;
 	for (const id of ids) {
 		if (idAceito(id)) sincronia.pendentes.set(id, marcado);
 	}
-	if (
-		!sincronia.ocupada &&
-		(sincronia.inicial || sincronia.pendentes.size > 0)
-	) {
-		void enviar(sincronia);
-	}
+	agendarPedido(sincronia);
+}
+
+export function relerProgressoDaConta(): void {
+	sincronizar([], true, "releitura");
 }
 
 export function acompanharProgressoDaConta(): (() => void) | undefined {
 	if (!ENV.API_URL) return;
-	sincronizar();
-	const aoMudarSessao = (evento: StorageEvent) => {
-		if (
-			(evento.key === CHAVE_SESSAO || evento.key === null) &&
-			sincronia?.chave !== chaveDaSessao()
-		) {
-			cancelarSincronia();
-		}
-	};
+	sincronizar([], true, "documento");
+	const parar = assinar(() => {
+		if (sincronia && sincronia.chave !== chaveDaSessao()) cancelarSincronia();
+	});
 	const aoVoltar = (evento: PageTransitionEvent) => {
-		if (evento.persisted && !sincronia?.ocupada) {
-			cancelarSincronia();
-			sincronizar();
-		}
+		if (evento.persisted) sincronizar([], true, "documento");
 	};
-	window.addEventListener("storage", aoMudarSessao);
+	const aoFicarVisivel = () => {
+		if (document.visibilityState === "visible") relerProgressoDaConta();
+	};
+	document.addEventListener("visibilitychange", aoFicarVisivel);
 	window.addEventListener("pageshow", aoVoltar);
 	return () => {
-		window.removeEventListener("storage", aoMudarSessao);
+		parar();
+		document.removeEventListener("visibilitychange", aoFicarVisivel);
 		window.removeEventListener("pageshow", aoVoltar);
 	};
 }
@@ -288,8 +386,7 @@ export function recomecarTrilha(trilha: string): string[] {
 	const daTrilha = (id: string) => id.startsWith(`${trilha}/`);
 	const apagadas = lidos.filter(daTrilha);
 	if (apagadas.length > 0) {
-		const chave = chaveDaSessao();
-		if (chave) reiniciosDaConta.set(apagadas, chave);
+		reinicios.set(apagadas, contextoDoProgresso());
 		gravar(
 			lidos.filter((id) => !daTrilha(id)),
 			apagadas,
@@ -299,10 +396,16 @@ export function recomecarTrilha(trilha: string): string[] {
 	return apagadas;
 }
 
+export function podeRestaurarLidos(
+	ids: readonly string[],
+	contexto: Contexto,
+): boolean {
+	return reinicios.get(ids) === contexto;
+}
+
 /** Põe de volta as marcas apagadas, sem perder o que foi lido depois. */
 export function restaurarLidos(ids: readonly string[]): void {
-	const chave = reiniciosDaConta.get(ids);
-	if (chave && chave !== chaveDaSessao()) return;
+	if (!podeRestaurarLidos(ids, contextoDoProgresso())) return;
 	const lidos = lerLidos();
 	const faltam = ids.filter((id) => !lidos.has(id));
 	if (faltam.length > 0) {
@@ -319,28 +422,38 @@ export function apagarLidos(): void {
 	if (chaveDaSessao()) {
 		gravarBruto(CHAVE_CONTA, null);
 		// Uma resposta que já estava a caminho não desfaz a limpeza do piloto.
-		if (sincronia) sincronia.espelhar = false;
+		if (sincronia) sincronia.revisaoDoEspelho += 1;
 	}
 	avisarTodos();
 }
 
+function aoMudarEmOutraAba(evento: StorageEvent): void {
+	if (ENV.API_URL && (evento.key === CHAVE_SESSAO || evento.key === null)) {
+		const { sessao } = contextoDoProgresso();
+		// A entrada e a saída podem ter acontecido antes de receber este evento.
+		if (!sessao) contextoAtual = { sessao };
+	}
+	if (
+		evento.key === CHAVE ||
+		evento.key === null ||
+		(ENV.API_URL && (evento.key === CHAVE_CONTA || evento.key === CHAVE_SESSAO))
+	)
+		avisarTodos();
+}
+
 function assinar(avisar: () => void): () => void {
-	const aoMudarEmOutraAba = (evento: StorageEvent) => {
-		if (
-			evento.key === CHAVE ||
-			evento.key === null ||
-			(ENV.API_URL &&
-				(evento.key === CHAVE_CONTA || evento.key === CHAVE_SESSAO))
-		) {
-			avisar();
-		}
-	};
+	if (ouvintes.size === 0)
+		window.addEventListener("storage", aoMudarEmOutraAba);
 	ouvintes.add(avisar);
-	window.addEventListener("storage", aoMudarEmOutraAba);
 	return () => {
 		ouvintes.delete(avisar);
-		window.removeEventListener("storage", aoMudarEmOutraAba);
+		if (ouvintes.size === 0)
+			window.removeEventListener("storage", aoMudarEmOutraAba);
 	};
+}
+
+export function useContextoDoProgresso(): Contexto {
+	return useSyncExternalStore(assinar, contextoDoProgresso, () => VISITANTE);
 }
 
 /**
