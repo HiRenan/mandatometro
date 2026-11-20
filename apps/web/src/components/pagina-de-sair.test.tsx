@@ -328,7 +328,7 @@ describe("a página de sair", () => {
 		sair.mockResolvedValue({ tipo: "saiu" });
 		const router = await mostrar();
 		await confirmar();
-		const edicoes = screen.getByRole("link", { name: "Edições", exact: true });
+		const edicoes = screen.getByRole("link", { name: "Edições" });
 
 		for (const detail of [2, 3]) {
 			await act(async () => {
