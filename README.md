@@ -406,9 +406,9 @@ A agenda de sábado coleta a legislação e os destaques do Diário Oficial e pr
 
 ## Time
 
-- Renan Mocelin
-- Pedro Vinicius Meerholz
-- Nathan Arrais
+- [Renan Mocelin](https://github.com/HiRenan)
+- [Pedro Vinicius Meerholz](https://github.com/PedroMeerholz)
+- [Nathan Arrais](https://github.com/nathan-arrais)
 
 ## Licença
 
