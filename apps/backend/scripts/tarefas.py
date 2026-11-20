@@ -54,7 +54,9 @@ def coletar(casa: str) -> int:
         logging.disable(anterior)
 
 
-def _rodar_etapa(cli: Callable[[list[str]], int], argumentos: list[str]) -> int:
+def _rodar_etapa(
+    cli: Callable[[list[str]], int], argumentos: list[str], *, refazer_ignorado: bool = False
+) -> int:
     etapa = argumentos[1]
     saida = StringIO()
     try:
@@ -70,6 +72,8 @@ def _rodar_etapa(cli: Callable[[list[str]], int], argumentos: list[str]) -> int:
     except (Exception, SystemExit):
         codigo = 1
         resumo = {"falhas_gerais": 1}
+    if refazer_ignorado:
+        resumo["refazer_ignorado"] = "coleta_incompleta"
     print(json.dumps({"etapa": etapa, "codigo": codigo, **resumo}, ensure_ascii=False))
     return codigo
 
@@ -77,7 +81,8 @@ def _rodar_etapa(cli: Callable[[list[str]], int], argumentos: list[str]) -> int:
 def agenda() -> int:
     from mandatometro.coleta.cli import resolver_periodo
 
-    agendada = os.environ.get("GITHUB_EVENT_NAME") == "schedule"
+    evento = os.environ.get("GITHUB_EVENT_NAME")
+    agendada = evento == "schedule"
     # A comparação de strings do Actions ignora maiúsculas e minúsculas.
     if agendada and os.environ.get("AGENDA_SABADO_ATIVA") != "true":
         return 0
@@ -99,6 +104,7 @@ def agenda() -> int:
         return 2
 
     periodo = ["--inicio", inicio.isoformat(), "--fim", fim.isoformat()]
+    refazer = evento == "workflow_dispatch" and os.environ.get("AGENDA_REFAZER") == "true"
     anterior = logging.root.manager.disable
     logging.disable(logging.CRITICAL)
     try:
@@ -107,7 +113,11 @@ def agenda() -> int:
         # Cada coleta confirma suas próprias gravações. O rascunho usa o que ficou no banco.
         legislacao = _rodar_etapa(cli, ["coleta", "legislacao", *periodo])
         destaques = _rodar_etapa(cli, ["coleta", "destaques", *periodo])
-        rascunho = _rodar_etapa(cli, ["edicao", "rascunho", *periodo])
+        coleta_completa = legislacao == destaques == 0
+        argumentos = ["edicao", "rascunho", *periodo]
+        if refazer and coleta_completa:
+            argumentos.append("--refazer")
+        rascunho = _rodar_etapa(cli, argumentos, refazer_ignorado=refazer and not coleta_completa)
         return int(any((legislacao, destaques, rascunho)))
     finally:
         logging.disable(anterior)

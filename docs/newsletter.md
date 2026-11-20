@@ -45,7 +45,7 @@ O arquivo de revisão mostra `fatos.selecao` como consulta. O campo guarda a ord
 
 ### Revisão pelo painel
 
-A revisão também se faz no site, em `/painel`, por quem entrou com uma conta administradora (a #207). A entrada é o link "Revisar a edição da semana", no `/perfil`, que só a administradora vê. A conta comum vê "Página não encontrada". Gerar ou refazer o rascunho, mudar a ordem dos itens e enviar continuam no CLI.
+A revisão também se faz no site, em `/painel`, por quem entrou com uma conta administradora (a #207). A entrada é o link "Revisar a edição da semana", no `/perfil`, que só a administradora vê. A conta comum vê "Página não encontrada". Use o workflow da agenda ou o CLI para gerar ou refazer o rascunho. O CLI também permite mudar a ordem dos itens e enviar a edição.
 
 **Pela tela:**
 
@@ -151,7 +151,7 @@ Escolha `artigo_caminho` entre os seis artigos do catálogo e marque `artigo_con
 
 A prévia e o e-mail compartilham `formatar_edicao`, que escapa o texto, acrescenta fatos, fontes e link da trilha. Reutilize `formatar_edicao`/`montar_email` e carregue as fontes pelos ids de `fatos.fontes`, além da fonte principal. Renderizar apenas `texto` perderia os blocos factuais. Item antigo sem os novos campos continua válido.
 
-Repetir o rascunho no mesmo período retorna a edição existente sem sobrescrever ajustes. `--refazer` recompõe **só um rascunho**, descarta a revisão anterior e invalida os arquivos exportados; use-o também se a coleta mudou os dados usados. Depois de salvar uma revisão, exporte outro arquivo para fazer novos ajustes. Edição publicada permanece intocada, inclusive ao repetir geração ou publicação. Mais de uma edição no período é erro a resolver.
+Repetir o rascunho no mesmo período retorna a edição existente sem sobrescrever ajustes. Para recompor o rascunho, use `--refazer` no CLI ou marque **refazer** no **Run workflow** da agenda de sábado. A agenda só aplica a opção quando as duas coletas da rodada terminam com código 0. Refazer descarta a revisão já salva e invalida os arquivos exportados. Use a opção também se a coleta mudou os dados usados. Depois de salvar uma revisão, exporte outro arquivo para fazer novos ajustes. Edição publicada permanece intocada, inclusive ao repetir geração ou publicação. Mais de uma edição no período é erro a resolver. [Recuperação pela agenda](hospedagem.md#recuperar-a-coleta-dos-destaques).
 
 O banco serializa as gravações sobre a mesma edição antes de conferir o estado e a versão. A espera pela trava da edição tem limite de três segundos, aplicado à transação. Se o prazo vencer, a transação é desfeita. A API responde com HTTP 503 ao salvar ou publicar. O CLI termina com saída 1. Ambos mostram “Há outra gravação em andamento. Tente de novo.”
 
