@@ -129,6 +129,8 @@ def _interpretar_resposta(resposta: httpx2.Response, url: str) -> Resposta:
         raise _FalhaFirecrawl("chave_recusada")
     if status == 402:
         raise _FalhaFirecrawl("sem_credito")
+    if status == 429:
+        raise _FalhaFirecrawl("limite_pedidos")
     if 500 <= status < 600:
         raise _FalhaFirecrawl("servidor_firecrawl")
     if status != 200:
@@ -197,7 +199,8 @@ class ClienteFirecrawl:
                 raise _FalhaFirecrawl("tempo_esgotado") from None
             except (httpx2.RequestError, UnicodeError):
                 raise _FalhaFirecrawl("falha_rede") from None
-            if resposta.status_code != 429:
+            status = resposta.status_code
+            if status != 429 and not 500 <= status < 600:
                 return _interpretar_resposta(resposta, url)
             if tentativa + 1 == _TENTATIVAS:
                 break
@@ -205,7 +208,7 @@ class ClienteFirecrawl:
             if espera > _MAX_ESPERA_S:
                 break
             time.sleep(espera)
-        raise _FalhaFirecrawl("limite_pedidos")
+        return _interpretar_resposta(resposta, url)
 
 
 class _DescartarAto(Exception):

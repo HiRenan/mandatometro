@@ -112,8 +112,6 @@ def test_recusa_url_fora_da_excecao_antes_do_post(firecrawl, url):
         (httpx2.Response(401, text=MARCADOR_PRIVADO), "chave_recusada"),
         (httpx2.Response(403), "chave_recusada"),
         (httpx2.Response(402), "sem_credito"),
-        (httpx2.Response(500, text=MARCADOR_PRIVADO), "servidor_firecrawl"),
-        (httpx2.Response(503), "servidor_firecrawl"),
         (httpx2.Response(302, headers={"Location": "https://example.com/"}), "http_inesperado"),
         (httpx2.ReadTimeout(MARCADOR_PRIVADO), "tempo_esgotado"),
         (httpx2.ConnectError(MARCADOR_PRIVADO), "falha_rede"),
@@ -147,8 +145,9 @@ def test_recusa_pagina_redirecionada_pelo_provedor(firecrawl):
         http.ler_pagina(PAGINA)
 
 
+@pytest.mark.parametrize("status", [429, 503, 599])
 @pytest.mark.parametrize("retry_after", ["11", "Thu, 19 Nov 2026 15:00:11 GMT"])
-def test_429_respeita_retry_after_e_repete_a_mesma_pagina(firecrawl, monkeypatch, retry_after):
+def test_retry_after_repete_a_mesma_pagina(firecrawl, monkeypatch, status, retry_after):
     http, respostas, pedidos = firecrawl
     esperas = []
 
@@ -161,33 +160,47 @@ def test_429_respeita_retry_after_e_repete_a_mesma_pagina(firecrawl, monkeypatch
     monkeypatch.setattr(destaques.time, "sleep", esperas.append)
     respostas.extend(
         [
-            httpx2.Response(429, headers={"Retry-After": retry_after}),
+            httpx2.Response(status, headers={"Retry-After": retry_after}),
             httpx2.Response(200, json=envelope()),
         ]
     )
 
-    http.ler_pagina(PAGINA)
+    assert http.ler_pagina(PAGINA).url == PAGINA
 
     assert esperas == [11]
     assert (http.chamadas, http.tentativas_extras) == (2, 1)
     assert len(pedidos) == 2 and pedidos[0].content == pedidos[1].content
 
 
-@pytest.mark.parametrize(("retry_after", "esperas"), [("2", [2, 2]), ("3600", [])])
-def test_429_tem_poucas_tentativas_e_nao_antecipa_espera(
-    firecrawl, monkeypatch, retry_after, esperas
+@pytest.mark.parametrize("status,motivo", [(429, "limite_pedidos"), (500, "servidor_firecrawl")])
+@pytest.mark.parametrize(
+    "retry_after,esperas",
+    [
+        ("", [1, 2]),
+        ("2", [2, 2]),
+        (str(destaques._MAX_ESPERA_S), [destaques._MAX_ESPERA_S] * 2),
+        (str(destaques._MAX_ESPERA_S + 1), []),
+    ],
+)
+def test_limita_tentativas_e_espera_do_firecrawl(
+    firecrawl, monkeypatch, status, motivo, retry_after, esperas, caplog
 ):
     http, respostas, pedidos = firecrawl
     pausas = []
     monkeypatch.setattr(destaques.time, "sleep", pausas.append)
-    respostas.extend(httpx2.Response(429, headers={"Retry-After": retry_after}) for _ in range(3))
+    respostas.extend(
+        httpx2.Response(status, headers={"Retry-After": retry_after}, text=MARCADOR_PRIVADO)
+        for _ in range(destaques._TENTATIVAS)
+    )
 
-    with pytest.raises(ErroColeta, match="limite_pedidos"):
+    with pytest.raises(ErroColeta, match=rf"\({motivo}\)\.$") as erro:
         http.ler_pagina(PAGINA)
 
     assert pausas == esperas
-    assert len(pedidos) == http.chamadas == 1 + len(esperas)
+    assert len(pedidos) == http.chamadas == (destaques._TENTATIVAS if esperas else 1)
     assert http.tentativas_extras == len(esperas)
+    assert MARCADOR_PRIVADO not in str(erro.value) + caplog.text
+    assert CHAVE not in str(erro.value) + caplog.text
 
 
 def recorte(numero):
@@ -490,12 +503,15 @@ def test_recoleta_atualiza_mesma_linha_sem_juntar_origens(sessao, executar):
     assert sessao.scalar(select(func.count()).select_from(Ato)) == 5
 
 
-def test_falha_na_segunda_pagina_preserva_os_atos_e_as_fontes(sessao, executar):
+def test_falha_na_segunda_pagina_preserva_os_atos_e_as_fontes(sessao, executar, monkeypatch):
+    monkeypatch.setattr(destaques.time, "sleep", lambda _: None)
     resumo, consultadas = executar(
-        httpx2.Response(200, json=recorte(1)), httpx2.Response(503, text=MARCADOR_PRIVADO)
+        httpx2.Response(200, json=recorte(1)),
+        *(httpx2.Response(503, text=MARCADOR_PRIVADO) for _ in range(destaques._TENTATIVAS)),
     )
 
-    assert consultadas == [PAGINA, PAGINACAO + "2"]
+    assert consultadas == [PAGINA] + [PAGINACAO + "2"] * destaques._TENTATIVAS
+    assert (resumo.chamadas, resumo.tentativas_extras) == (len(consultadas), len(consultadas) - 2)
     assert not resumo.completa and resumo.atos == 4
     assert resumo.erro == "Falha na coleta de destaques pelo Firecrawl (servidor_firecrawl)."
     assert sessao.scalar(select(func.count()).select_from(Ato)) == 4
@@ -604,10 +620,13 @@ def test_cli_banco_indisponivel_falha_sem_pedir_ao_firecrawl(atender_cli, monkey
     assert CHAVE not in saida.out and MARCADOR_PRIVADO not in saida.out
 
 
-def test_cli_resume_coleta_com_ato_sem_expor_conteudo(atender_cli, sessao, monkeypatch, capsys):
+def test_cli_resume_coleta_com_ato_apos_falha_passageira(atender_cli, sessao, monkeypatch, capsys):
     titulo, ementa = "Título fictício do teste", "Ementa fictícia do teste"
     respostas, pedidos = atender_cli
-    respostas.extend((pagina(cartao("100", titulo=titulo, ementa=ementa)), pagina()))
+    respostas.extend(
+        (httpx2.Response(503), pagina(cartao("100", titulo=titulo, ementa=ementa)), pagina())
+    )
+    monkeypatch.setattr(destaques.time, "sleep", lambda _: None)
     abrir_sessao = partial(
         Session, bind=sessao.connection(), join_transaction_mode="create_savepoint"
     )
@@ -634,9 +653,10 @@ def test_cli_resume_coleta_com_ato_sem_expor_conteudo(atender_cli, sessao, monke
         "assinaturas_ignoradas",
     }
     assert (resumo["atos"], resumo["completa"], resumo["erro"]) == (1, True, None)
+    assert (resumo["chamadas"], resumo["tentativas_extras"]) == (3, 1)
     assert all(marcador not in saida.out for marcador in (titulo, ementa, CHAVE))
     assert sessao.scalars(select(Ato.id_externo)).all() == ["100"]
-    assert alvos(pedidos) == [PAGINA, PAGINACAO + "2"]
+    assert alvos(pedidos) == [PAGINA, PAGINA, PAGINACAO + "2"]
 
 
 @pytest.mark.online
