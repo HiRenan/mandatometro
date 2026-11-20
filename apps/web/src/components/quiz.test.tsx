@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
 	createMemoryHistory,
 	createRootRoute,
@@ -239,6 +242,33 @@ function naTela(texto: string): HTMLElement {
 	});
 }
 
+/**
+ * O seletor do separador entre o nome do quiz e a frase do andamento, a regra
+ * do ::before no estilos/quiz.css (a #162), sem o ::before.
+ */
+function seletorDoSeparador(): string {
+	const css = readFileSync(
+		join(dirname(fileURLToPath(import.meta.url)), "../estilos/quiz.css"),
+		"utf8",
+	).replace(/\/\*[\s\S]*?\*\//g, "");
+	const regras = [
+		...css.matchAll(/([^{}]*\.quiz-andamento-texto[^{}]*)::before\s*\{/g),
+	];
+	if (regras.length !== 1) {
+		throw new Error(
+			`esperava uma regra do separador, e vieram ${regras.length}`,
+		);
+	}
+	return regras[0]?.[1]?.trim() ?? "";
+}
+
+/** O texto das frases do andamento que levam o separador antes delas. */
+function comSeparador(): string[] {
+	return [...document.querySelectorAll(seletorDoSeparador())].map(
+		(frase) => frase.textContent ?? "",
+	);
+}
+
 /** A linha do "Recomeçar o quiz": os controles que estão nela. */
 function controlesDaLinha(botao: HTMLElement): Element[] {
 	const linha = botao.closest(".recomeco");
@@ -431,6 +461,14 @@ describe("o quiz, no HTML do servidor", () => {
 });
 
 describe("o quiz", () => {
+	it("reúne as informações da abertura em um parágrafo", async () => {
+		await mostrar();
+		const faixa = screen
+			.getByText("Fonte oficial em cada resposta")
+			.closest("p:not(.faixa)");
+		expect(faixa?.textContent).toContain("2 perguntas");
+	});
+
 	it("abre com o Começar e o mosaico, um azulejo por pergunta, fora do leitor de tela", async () => {
 		await mostrar();
 
@@ -697,6 +735,12 @@ describe("o quiz", () => {
 		if (!fim) {
 			throw new Error("o título do fim saiu da tela do fim");
 		}
+		const voltar = within(fim).getByRole("link", {
+			name: "Voltar para Processo legislativo",
+		});
+		const acoes = voltar.closest(".quiz-fim-acoes");
+		expect(acoes?.tagName).toBe("DIV");
+		expect(acoes?.contains(botaoDeComecar())).toBe(true);
 		expect(
 			within(fim)
 				.getAllByRole("link")
@@ -713,6 +757,202 @@ describe("o quiz", () => {
 			["/trilhas/processo-legislativo", "Voltar para Processo legislativo"],
 		]);
 	});
+
+	// Fora da abertura, o título do palco sai da vista (estilos/quiz.css), mas fica
+	// no HTML: em todas as telas, o leitor de tela tem o h1, o nome do palco e a
+	// mesma ordem dos títulos (a #136).
+	it("em todas as telas, o palco tem o nome do quiz e começa pelo título dele", async () => {
+		await mostrar();
+		/**
+		 * Os títulos do palco, na ordem do HTML: o nível e o texto, sem as frases
+		 * escondidas que guardam o tamanho do título do fim.
+		 */
+		const titulos = () =>
+			within(screen.getByRole("region", { name: "Quiz da trilha" }))
+				.getAllByRole("heading")
+				.map((titulo) => {
+					const visivel = titulo.cloneNode(true) as HTMLElement;
+					for (const escondida of visivel.querySelectorAll(
+						"[aria-hidden=true]",
+					)) {
+						escondida.remove();
+					}
+					return `${titulo.tagName} ${visivel.textContent}`;
+				});
+
+		expect(titulos()).toEqual(["H1 Quiz da trilha"]);
+
+		comecar();
+		expect(titulos()).toEqual(["H1 Quiz da trilha", `H2 ${INICIATIVA}`]);
+
+		escolherEResponder("Pode, pela iniciativa popular.");
+		expect(titulos()).toEqual(["H1 Quiz da trilha", `H2 ${INICIATIVA}`]);
+
+		seguir();
+		escolherEResponder("Pelo Senado Federal.");
+		seguir();
+		expect(titulos()).toEqual([
+			"H1 Quiz da trilha",
+			"H2 Você terminou o quiz.",
+		]);
+	});
+
+	// Quem vê lê o nome do quiz no pé, com o andamento, e não acima do título (a
+	// #136). A abertura já tem o título gigante, e o pé dela fica sem o nome. O
+	// leitor de tela já tem o h1, e o nome do pé fica fora dele.
+	it("fora da abertura, o pé diz qual é o quiz, antes da frase do andamento", async () => {
+		await mostrar();
+		const pe = () => {
+			const elemento = document.querySelector<HTMLElement>(".quiz-pe");
+			if (!elemento) {
+				throw new Error("o palco ficou sem o pé");
+			}
+			return elemento;
+		};
+		const nomeNoPe = () => within(pe()).queryByText("Quiz da trilha");
+		const fraseNoPe = () => pe().querySelector(".quiz-andamento-texto > p");
+
+		expect(nomeNoPe()).toBeNull();
+		expect(fraseNoPe()).toBeNull();
+
+		comecar();
+		const nome = nomeNoPe();
+		expect(fraseNoPe()).toBeNull();
+		expect(nome?.getAttribute("aria-hidden")).toBe("true");
+		// Na linha da frase do andamento, antes dela.
+		expect(nome?.nextElementSibling).toBe(
+			pe().querySelector(".quiz-andamento-texto"),
+		);
+
+		escolherEResponder("Pode, pela iniciativa popular.");
+		expect(naTela("Você respondeu 1 de 2.")).toBeTruthy();
+		expect(fraseNoPe()?.textContent).toBe("Você respondeu 1 de 2.");
+		expect(nomeNoPe()?.getAttribute("aria-hidden")).toBe("true");
+
+		seguir();
+		escolherEResponder("Pelo Senado Federal.");
+		seguir();
+		expect(
+			screen.getByRole("heading", { level: 2, name: "Você terminou o quiz." }),
+		).toBeTruthy();
+		expect(nomeNoPe()?.getAttribute("aria-hidden")).toBe("true");
+		expect(fraseNoPe()).toBeNull();
+	});
+
+	// O separador entre o nome do quiz e a frase do andamento (a #162) é um
+	// ::before no parágrafo da frase, no estilos/quiz.css, abaixo de 22rem. O
+	// jsdom não desenha o ::before, mas o seletor da regra diz em que telas ele
+	// aparece: com o nome antes de uma frase com texto. Com o nome sozinho, na
+	// primeira pergunta e no fim, ele não aparece.
+	it("o separador do pé só fica entre o nome do quiz e uma frase do andamento", async () => {
+		await mostrar();
+		expect(comSeparador()).toEqual([]);
+
+		comecar();
+		expect(pergunta(1)).toBeTruthy();
+		expect(comSeparador()).toEqual([]);
+
+		escolherEResponder("Pode, pela iniciativa popular.");
+		expect(comSeparador()).toEqual(["Você respondeu 1 de 2."]);
+
+		seguir();
+		expect(pergunta(2)).toBeTruthy();
+		expect(comSeparador()).toEqual(["Você respondeu 1 de 2."]);
+
+		escolherEResponder("Pelo Senado Federal.");
+		expect(comSeparador()).toEqual(["Você terminou o quiz."]);
+
+		seguir();
+		expect(
+			screen.getByRole("heading", { level: 2, name: "Você terminou o quiz." }),
+		).toBeTruthy();
+		expect(comSeparador()).toEqual([]);
+	});
+
+	// A abertura tem a frase, com o quiz pela metade ou depois do recomeço, mas
+	// não tem o nome: o título gigante já diz qual é o quiz.
+	it("na abertura, a frase do andamento fica sem o separador", async () => {
+		guardarRespostas(AS_DUAS);
+		await mostrar();
+		expect(naTela("Você terminou o quiz.")).toBeTruthy();
+		expect(comSeparador()).toEqual([]);
+
+		fireEvent.click(screen.getByRole("button", { name: "Recomeçar o quiz" }), {
+			detail: 1,
+		});
+		expect(naTela("Você recomeçou o quiz.")).toBeTruthy();
+		expect(comSeparador()).toEqual([]);
+	});
+
+	// A frase do andamento é um parágrafo só com ela, em bloco. O Chromium tira da
+	// árvore de acessibilidade um <p> em grade, e quem anda pelos parágrafos
+	// pulava a frase (a #152, pelo CDP): a grade que guarda a altura da frase
+	// mais comprida fica num elemento em volta dele, com as frases guardadas.
+	it.each([
+		[
+			"depois da primeira resposta",
+			async () => {
+				await mostrar();
+				comecar();
+				escolherEResponder("Pode, pela iniciativa popular.");
+			},
+			"Você respondeu 1 de 2.",
+		],
+		[
+			"depois da última resposta",
+			async () => {
+				await mostrar();
+				comecar();
+				escolherEResponder("Pode, pela iniciativa popular.");
+				seguir();
+				escolherEResponder("Pelo Senado Federal.");
+			},
+			"Você terminou o quiz.",
+		],
+		[
+			"na volta, com o quiz pela metade",
+			async () => {
+				guardarRespostas({ [INICIATIVA]: "Pode, pela iniciativa popular." });
+				await mostrar();
+			},
+			"Você respondeu 1 de 2.",
+		],
+		[
+			"depois de recomeçar",
+			async () => {
+				guardarRespostas(AS_DUAS);
+				await mostrar();
+				fireEvent.click(
+					screen.getByRole("button", { name: "Recomeçar o quiz" }),
+					{ detail: 1 },
+				);
+			},
+			"Você recomeçou o quiz.",
+		],
+	])(
+		"%s, a frase do andamento é um parágrafo em bloco, só com ela",
+		async (_, preparar, frase) => {
+			await preparar();
+			const pe = document.querySelector(".quiz-pe") as HTMLElement;
+			const paragrafo = within(pe).getByText(frase, {
+				selector: "p",
+				ignore: "[role=status], [aria-hidden=true], script, style",
+			});
+
+			expect(
+				[...paragrafo.classList].filter((classe) =>
+					/^(inline-)?(grid|flex)$/.test(classe),
+				),
+			).toEqual([]);
+			const linha = paragrafo.parentElement;
+			expect(linha?.classList.contains("quiz-andamento-texto")).toBe(true);
+			expect(
+				[...(linha?.children ?? [])]
+					.filter((filho) => filho.getAttribute("aria-hidden") === "true")
+					.map((reserva) => reserva.textContent),
+			).toEqual(frasesDoAndamento(2));
+		},
+	);
 
 	it("na volta à página com o quiz pela metade, continua da primeira pergunta sem resposta", async () => {
 		guardarRespostas({ [INICIATIVA]: "Pode, pela iniciativa popular." });
@@ -831,6 +1071,7 @@ describe("o quiz", () => {
 		await mostrar();
 		const naAbertura = screen.getByRole("button", { name: "Recomeçar o quiz" });
 		const linha = naAbertura.closest(".recomeco");
+		expect(linha?.tagName).toBe("DIV");
 		expect(controlesDaLinha(naAbertura)).toEqual([naAbertura]);
 
 		fireEvent.click(naAbertura, { detail: 1 });
@@ -964,6 +1205,75 @@ describe("o quiz", () => {
 	});
 });
 
+describe("o quiz final", () => {
+	const QUIZ_FINAL = "processo-legislativo/quiz-final";
+
+	/** O quiz final, com o JavaScript já carregado: a abertura. */
+	async function mostrarOQuizFinal(
+		conteudo: ReactNode = (
+			<Quiz {...pagina} titulo="Quiz final" quiz={QUIZ_FINAL} />
+		),
+	) {
+		render(<RouterProvider router={criarRouter(conteudo)} />);
+		await screen.findByRole("heading", { level: 1, name: "Quiz final" });
+	}
+
+	it("tem o título dele e guarda as respostas à parte das do quiz da trilha", async () => {
+		await mostrarOQuizFinal();
+
+		comecar();
+		escolherEResponder("Pode, pela iniciativa popular.");
+
+		const guardado = JSON.parse(localStorage.getItem(CHAVE) ?? "{}");
+		expect(guardado[QUIZ_FINAL]).toEqual({
+			tentativas: [
+				{ respostas: { [INICIATIVA]: "Pode, pela iniciativa popular." } },
+			],
+		});
+		expect(guardado).not.toHaveProperty("processo-legislativo/quiz");
+	});
+
+	it("não conta as respostas do quiz da trilha", async () => {
+		guardarRespostas(AS_DUAS);
+		await mostrarOQuizFinal();
+
+		expect(botaoDeComecar().textContent?.trim()).toBe("Começar");
+		expect(
+			screen.queryByRole("button", { name: "Recomeçar o quiz" }),
+		).toBeNull();
+	});
+
+	// O mosaico tem a largura da capa (estilos/quiz.css): com doze perguntas, em
+	// três colunas, ele ficaria alto demais na primeira tela do celular.
+	it("com mais de seis perguntas, põe o mosaico em quatro colunas", async () => {
+		const doze = Array.from({ length: 12 }, (_, indice) => ({
+			...pagina.perguntas[indice % 2],
+			enunciado: `Pergunta de número ${indice + 1}?`,
+		}));
+		await mostrarOQuizFinal(
+			<Quiz
+				{...pagina}
+				perguntas={doze}
+				titulo="Quiz final"
+				quiz={QUIZ_FINAL}
+			/>,
+		);
+		const palco = document.querySelector<HTMLElement>("section.quiz");
+
+		expect(document.querySelectorAll(".quiz-cena .grande")).toHaveLength(12);
+		expect(palco?.style.getPropertyValue("--colunas")).toBe("4");
+		expect(palco?.style.getPropertyValue("--fileiras")).toBe("3");
+	});
+
+	it("com seis perguntas ou menos, deixa o mosaico em três colunas", async () => {
+		await mostrarOQuizFinal();
+		const palco = document.querySelector<HTMLElement>("section.quiz");
+
+		expect(palco?.style.getPropertyValue("--colunas")).toBe("3");
+		expect(palco?.style.getPropertyValue("--fileiras")).toBe("1");
+	});
+});
+
 describe("a chamada do quiz", () => {
 	it("diz quantas perguntas e de quais artigos, e leva à página do quiz", async () => {
 		render(
@@ -995,5 +1305,43 @@ describe("a chamada do quiz", () => {
 		const azulejos = chamada.querySelector(".chamada-azulejos");
 		expect(azulejos?.getAttribute("aria-hidden")).toBe("true");
 		expect(azulejos?.children).toHaveLength(6);
+	});
+
+	// Na página da trilha, as duas chamadas ficam uma embaixo da outra, e cada
+	// região tem o nome do próprio título.
+	it("chama para o quiz final, com o título dele, um azulejo por pergunta e o link para a página dele", async () => {
+		render(
+			<RouterProvider
+				router={criarRouter(
+					<>
+						<ChamadaDoQuiz
+							trilha="processo-legislativo"
+							quiz={{ perguntas: 6, artigos: [1, 2, 3] }}
+						/>
+						<ChamadaDoQuiz
+							trilha="processo-legislativo"
+							quiz={{ perguntas: 12, artigos: [1, 2, 3, 4, 5, 6] }}
+							final
+						/>
+					</>,
+				)}
+			/>,
+		);
+		const chamada = await screen.findByRole("region", { name: "Quiz final" });
+
+		expect(screen.getByRole("region", { name: "Quiz da trilha" })).toBeTruthy();
+		expect(
+			within(chamada).getByText(
+				"12 perguntas sobre os artigos 1 a 6, com a resposta certa, a explicação e a fonte oficial de cada uma.",
+			),
+		).toBeTruthy();
+		expect(
+			within(chamada)
+				.getByRole("link", { name: "Responder o quiz final" })
+				.getAttribute("href"),
+		).toBe("/trilhas/processo-legislativo/quiz-final");
+		const azulejos = chamada.querySelector<HTMLElement>(".chamada-azulejos");
+		expect(azulejos?.children).toHaveLength(12);
+		expect(azulejos?.style.getPropertyValue("--colunas")).toBe("4");
 	});
 });

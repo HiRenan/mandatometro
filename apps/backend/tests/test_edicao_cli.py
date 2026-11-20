@@ -1,0 +1,264 @@
+import json
+from pathlib import Path
+from unittest.mock import Mock
+
+import httpx2
+import pytest
+from test_edicao_provedor import CHAVE, MODELO, REDACAO, configuracao, mensagem
+from test_edicao_revisao import abrir as abrir
+from test_edicao_revisao import pronto
+from test_edicao_selecao import FIM, INICIO
+from test_edicao_selecao import dados as dados
+
+from mandatometro.cli import main
+from mandatometro.config import Config
+from mandatometro.ia import cli
+from mandatometro.ia.artigos import CATALOGO
+from mandatometro.ia.servico import ErroEdicao, exportar, gerar
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        ["--inicio", "2026-11-09"],
+        ["--teto", "0"],
+        ["--teto", "-1"],
+        ["--inicio", "2026-11-15", "--fim", "2026-11-09"],
+    ],
+)
+def test_argumentos_invalidos_antes_de_abrir_banco(monkeypatch, args):
+    monkeypatch.setattr(cli, "sessao_do_banco", lambda: pytest.fail("Não deve abrir banco."))
+    assert main(["edicao", "rascunho", *args]) == 2
+
+
+def test_cli_do_rascunho_a_publicacao_sem_rede(monkeypatch, abrir, dados, tmp_path, capsys):
+    dados(10)
+    monkeypatch.setattr(cli, "sessao_do_banco", abrir)
+    monkeypatch.setattr(
+        cli,
+        "config",
+        lambda: Config(_env_file=None, llm_provider="", llm_model=MODELO, llm_api_key=CHAVE),
+    )
+    assert (
+        main(["edicao", "rascunho", "--inicio", "2026-11-09", "--fim", "2026-11-15", "--teto", "1"])
+        == 0
+    )
+    resumo = json.loads(capsys.readouterr().out)
+    assert resumo["textos_do_modelo"] == 0 and resumo["textos_do_codigo"] == 1
+    assert resumo["motivos_texto_do_codigo"] == {"sem_provedor": 1}
+    edicao_id = str(resumo["edicao_id"])
+    caminho = tmp_path / "revisao.json"
+    assert main(["edicao", "exportar", edicao_id, "--arquivo", str(caminho)]) == 0
+    capsys.readouterr()
+    conteudo = caminho.read_text("utf-8")
+    assert "Redação" in conteudo and "\\u00e7" not in conteudo
+    assert main(["edicao", "exportar", edicao_id, "--arquivo", str(caminho)]) == 1
+    capsys.readouterr()
+    caminho.write_text(json.dumps(pronto(json.loads(conteudo)), ensure_ascii=False), "utf-8")
+    assert main(["edicao", "revisar", edicao_id, "--arquivo", str(caminho)]) == 0
+    capsys.readouterr()
+    caminho.unlink()
+    assert main(["edicao", "publicar", edicao_id]) == 0
+    capsys.readouterr()
+    assert main(["edicao", "mostrar", edicao_id]) == 0
+    assert "A proposta organiza" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("provedor", "modelo", "chave"),
+    [
+        ("servico-ficticio", MODELO, CHAVE),
+        ("anthropic", None, CHAVE),
+        ("anthropic", " ", CHAVE),
+        ("anthropic", MODELO, None),
+        ("anthropic", MODELO, "   "),
+    ],
+    ids=["provedor", "sem-modelo", "modelo-em-branco", "sem-chave", "chave-em-branco"],
+)
+def test_configuracao_invalida_da_saida_dois_antes_do_banco(
+    monkeypatch, capsys, provedor, modelo, chave
+):
+    conf = Config(_env_file=None, llm_provider=provedor, llm_model=modelo, llm_api_key=chave)
+    monkeypatch.setattr(cli, "config", lambda: conf)
+    monkeypatch.setattr(cli, "sessao_do_banco", lambda: pytest.fail("Não deve abrir banco."))
+    assert main(["edicao", "rascunho"]) == 2
+    saida = capsys.readouterr()
+    assert saida.err == ""
+    assert json.loads(saida.out) == {"erro": "Confira LLM_PROVIDER, LLM_MODEL e LLM_API_KEY."}
+
+
+def test_proxy_invalido_da_saida_um_com_erro_fixo(monkeypatch, capsys):
+    monkeypatch.setattr(cli, "config", configuracao)
+    monkeypatch.setattr(cli, "sessao_do_banco", lambda: pytest.fail("Não deve abrir banco."))
+    monkeypatch.setenv("HTTPS_PROXY", "ftp://proxy-ficticio.invalid")
+    monkeypatch.setenv("NO_PROXY", "")
+    monkeypatch.setenv("ANTHROPIC_LOG", "debug")
+    assert main(["edicao", "rascunho"]) == 1
+    saida = capsys.readouterr()
+    assert saida.err == ""
+    (linha,) = saida.out.splitlines()
+    assert json.loads(linha) == {"erro": "Falha no serviço de redação."}
+
+
+def test_interrupcao_do_rascunho_da_saida_130_com_uma_linha_fixa(monkeypatch, capsys):
+    monkeypatch.setattr(cli, "config", lambda: Config(_env_file=None, llm_provider=""))
+    monkeypatch.setattr(cli, "gerar", Mock(side_effect=KeyboardInterrupt(CHAVE)))
+    try:
+        codigo = main(["edicao", "rascunho"])
+    except KeyboardInterrupt:
+        pytest.fail("A interrupção escapou do CLI.", pytrace=False)
+    assert codigo == 130
+    saida = capsys.readouterr()
+    assert saida.out == '{"erro": "Rascunho interrompido."}\n'
+    assert saida.err == ""
+
+
+def test_rascunho_preserva_os_outros_erros_de_gerar(monkeypatch, capsys):
+    inesperado = RuntimeError("Erro inesperado.")
+    monkeypatch.setattr(cli, "config", lambda: Config(_env_file=None, llm_provider=""))
+    erros = [ErroEdicao("Edição indisponível."), inesperado]
+    monkeypatch.setattr(cli, "gerar", Mock(side_effect=erros))
+    assert main(["edicao", "rascunho"]) == 1
+    saida = capsys.readouterr()
+    assert json.loads(saida.out) == {"erro": "Edição indisponível."}
+    assert saida.err == ""
+
+    with pytest.raises(RuntimeError) as erro:
+        main(["edicao", "rascunho"])
+    assert erro.value is inesperado
+
+
+def test_cli_redige_itens_e_exige_revisao_antes_de_publicar(monkeypatch, capsys, abrir, dados):
+    from mandatometro.ia.provedor import abrir_redator
+
+    dados(10)
+    dados(20, ementa="Um programa para hospitais.")
+    dados(30, ementa=" ")
+    dados(40, descricao="Ato fictício de Dep. Pessoa.")
+    dados(50)
+    pedidos = []
+
+    def responder(pedido):
+        pedidos.append(pedido)
+        if len(pedidos) == 1:
+            return mensagem({"type": "text", "text": json.dumps(REDACAO)})
+        return mensagem({"type": "text", "text": "Resposta privada."}, motivo="refusal")
+
+    monkeypatch.setenv("LLM_PROVIDER", "anthropic")
+    monkeypatch.setenv("LLM_MODEL", MODELO)
+    monkeypatch.setenv("LLM_API_KEY", CHAVE)
+    cli.config.cache_clear()
+    monkeypatch.setattr(cli, "sessao_do_banco", abrir)
+    monkeypatch.setattr(
+        cli,
+        "abrir_redator",
+        lambda conf: abrir_redator(conf, transporte=httpx2.MockTransport(responder)),
+    )
+    args = ["edicao", "rascunho", "--inicio", str(INICIO), "--fim", str(FIM)]
+    try:
+        assert main(args) == 0
+        saida = capsys.readouterr()
+        assert saida.err == "" and REDACAO["titulo"] not in saida.out
+        assert "Resposta privada" not in saida.out and CHAVE not in saida.out
+        resumo = json.loads(saida.out)
+        assert resumo["textos_do_modelo"] == 1 and resumo["textos_do_codigo"] == 4
+        assert resumo["motivos_texto_do_codigo"] == {
+            "termo_pessoal": 1,
+            "ementa_ausente": 1,
+            "texto_retido": 1,
+            "resposta_interrompida": 1,
+        }
+        assert len(pedidos) == 2
+        edicao_id = resumo["edicao_id"]
+        itens = exportar(abrir, edicao_id)["itens"]
+        (gerado,) = (item for item in itens if item["fatos"]["origem"] == "modelo")
+        assert (
+            gerado["titulo"] == REDACAO["titulo"] and gerado["explicacao"] == REDACAO["explicacao"]
+        )
+        assert "revisao" in gerado["fatos"]["pendencias"] and not gerado["revisado"]
+        assert main(["edicao", "publicar", str(edicao_id)]) == 1
+        capsys.readouterr()
+        assert main(args) == 0
+        repetido = json.loads(capsys.readouterr().out)
+        assert repetido["situacao"] == "rascunho_existente" and len(pedidos) == 2
+        assert repetido["textos_do_modelo"] == repetido["textos_do_codigo"] == 0
+    finally:
+        cli.config.cache_clear()
+
+
+def test_arquivo_invalido_nao_repete_conteudo(monkeypatch, tmp_path, capsys):
+    caminho = tmp_path / "erro.json"
+    caminho.write_text("segredo-ficticio", encoding="utf-8")
+    monkeypatch.setattr(cli, "sessao_do_banco", lambda: pytest.fail("Não deve abrir banco."))
+    assert main(["edicao", "revisar", "1", "--arquivo", str(caminho)]) == 1
+    assert "segredo-ficticio" not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("quebrado", "corrigido"),
+    [
+        ("A gest?o fictícia organiza o serviço.", "A gestão fictícia organiza o serviço."),
+        ("Ã‰ regra fictícia do serviço.", "É regra fictícia do serviço."),
+        ("Congresso â€” resumo fictício.", "Congresso — resumo fictício."),
+    ],
+    ids=["interrogacao", "maiuscula", "pontuacao"],
+)
+@pytest.mark.parametrize(
+    ("campo", "prefixo", "nome_campo"),
+    [
+        ("edicao", "Edição", "título"),
+        ("item", "Item 2", "título"),
+        ("explicacao", "Item 2", "explicação"),
+    ],
+)
+def test_revisar_recusa_acento_quebrado_sem_alterar_banco(
+    monkeypatch, abrir, dados, tmp_path, capsys, campo, prefixo, nome_campo, quebrado, corrigido
+):
+    dados(10)
+    dados(20)
+    monkeypatch.setattr(cli, "sessao_do_banco", abrir)
+    edicao_id = gerar(abrir, INICIO, FIM)["edicao_id"]
+    antes = exportar(abrir, edicao_id)
+    arquivo = pronto(exportar(abrir, edicao_id))
+    if campo == "edicao":
+        alvo, chave = arquivo, "titulo"
+    elif campo == "item":
+        alvo, chave = arquivo["itens"][1], "titulo"
+    else:
+        alvo, chave = arquivo["itens"][1]["explicacao"], 1
+    alvo[chave] = quebrado
+    caminho = tmp_path / "revisao.json"
+    caminho.write_text(json.dumps(arquivo, ensure_ascii=False), encoding="utf-8")
+
+    assert main(["edicao", "revisar", str(edicao_id), "--arquivo", str(caminho)]) == 1
+    saida = capsys.readouterr()
+    assert saida.err == ""
+    assert json.loads(saida.out) == {
+        "erro": (
+            f'{prefixo}: o campo {nome_campo} tem acentos quebrados, como "?" ou "Ã£" '
+            "no lugar de uma letra. Confira os acentos e salve o arquivo em UTF-8."
+        )
+    }
+    assert exportar(abrir, edicao_id) == antes
+
+    alvo[chave] = corrigido
+    caminho.write_text(json.dumps(arquivo, ensure_ascii=False), encoding="utf-8")
+    assert main(["edicao", "revisar", str(edicao_id), "--arquivo", str(caminho)]) == 0
+    assert json.loads(capsys.readouterr().out)["situacao"] == "revisao_salva"
+    salvo = exportar(abrir, edicao_id)
+    if campo == "edicao":
+        assert salvo["titulo"] == corrigido
+    elif campo == "item":
+        assert salvo["itens"][1]["titulo"] == corrigido
+    else:
+        assert salvo["itens"][1]["explicacao"][1] == corrigido
+
+
+def test_chave_tem_repr_protegida_e_catalogo_so_tem_artigos_existentes():
+    configuracao = Config(_env_file=None, llm_api_key="chave-ficticia")
+    assert "chave-ficticia" not in repr(configuracao)
+    raiz = Path(__file__).resolve().parents[3] / "apps/web/conteudo"
+    assert len(CATALOGO) == 6
+    for caminho, titulo in CATALOGO.items():
+        artigo = raiz / (caminho.lstrip("/") + ".md")
+        assert f"titulo: {titulo}" in artigo.read_text("utf-8").splitlines()

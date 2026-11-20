@@ -2,10 +2,12 @@
  * A troca de página: a página nova aparece azulejo por azulejo, num giro de
  * relógio em cada peça; quem volta vê o giro ao contrário. As páginas ficam em
  * ordem, como as folhas de um bloco: a inicial em cima, depois a lista das
- * trilhas, cada trilha e os artigos dela, com o quiz no lugar dele entre os
- * artigos. Aqui ficam o sentido de cada troca, que o router passa ao navegador
- * como tipo da View Transition (router.tsx), o clique feito durante a troca e a
- * troca que o navegador pula. O movimento fica em estilos/movimento.css.
+ * trilhas, ao lado dela a página do piloto e a lista das edições, cada trilha e
+ * cada edição, e os artigos da trilha, com o quiz no lugar dele entre os
+ * artigos e o quiz final depois do último. Aqui ficam o sentido de cada troca e
+ * se o cabeçalho fica na tela, que o router passa ao navegador como tipos da
+ * View Transition (router.tsx), o clique feito durante a troca e a troca que o
+ * navegador pula. O movimento fica em estilos/movimento.css.
  */
 
 export type Sentido = "avancar" | "voltar";
@@ -21,6 +23,15 @@ export type TrilhaAberta = {
 /** O fim do endereço do quiz de uma trilha: /trilhas/{trilha}/quiz. */
 const QUIZ = "quiz";
 
+/** O fim do endereço do quiz final, que vem depois do último artigo. */
+const QUIZ_FINAL = "quiz-final";
+
+/** A página do piloto, que vem antes da trilha dele: fica com a lista. */
+const PILOTO = "piloto";
+
+/** O começo do endereço das edições da newsletter: /edicoes e /edicoes/{id}. */
+const EDICOES = "edicoes";
+
 /** O que o router diz de cada troca (o `locationChangeInfo` do TanStack Router). */
 export type Troca = {
 	fromLocation?: { pathname: string };
@@ -31,14 +42,23 @@ export type Troca = {
 type Lugar = { fundura: number; trilha?: string; artigo?: string };
 
 /**
- * Onde a página fica no bloco: a inicial em cima, depois a lista das trilhas,
- * cada trilha e os artigos dela. Um endereço que não é de nenhuma, como o da
- * página não encontrada, fica no fundo.
+ * Onde a página fica no bloco: a inicial em cima, depois a lista das trilhas, a
+ * do piloto e a das edições, cada trilha e cada edição, e os artigos da trilha.
+ * Um endereço que não é de nenhuma, como o da página não encontrada, fica no
+ * fundo.
  */
 function lugarNoBloco(caminho: string): Lugar {
 	const partes = caminho.split("/").filter(Boolean);
 	if (partes.length === 0) {
 		return { fundura: 0 };
+	}
+	if (partes.length === 1 && partes[0] === PILOTO) {
+		return { fundura: 1 };
+	}
+	// A lista das edições e cada edição, sem trilha: de uma edição para outra é
+	// avançar, como entre duas trilhas.
+	if (partes[0] === EDICOES && partes.length <= 2) {
+		return { fundura: partes.length };
 	}
 	if (partes[0] !== "trilhas" || partes.length > 3) {
 		return { fundura: 4 };
@@ -49,9 +69,10 @@ function lugarNoBloco(caminho: string): Lugar {
 /**
  * Ir mais para dentro do bloco, ou para um artigo mais adiante na mesma trilha,
  * é avançar; o contrário é voltar. O quiz fica entre o artigo depois do qual
- * aparece e o seguinte: do quiz para o "Artigo anterior" é voltar. O botão
- * voltar do navegador segue a mesma regra: o que vale é o lugar da página no
- * bloco, e não a ordem da visita. Sem a ordem da trilha, duas páginas dela
+ * aparece e o seguinte: do quiz para o "Artigo anterior" é voltar. O quiz
+ * final fica depois do último artigo, e dele para qualquer artigo é voltar. O
+ * botão voltar do navegador segue a mesma regra: o que vale é o lugar da página
+ * no bloco, e não a ordem da visita. Sem a ordem da trilha, duas páginas dela
  * contam como avançar.
  */
 export function sentidoDaTroca(
@@ -74,6 +95,9 @@ export function sentidoDaTroca(
 		const doArtigo = (slug: string) =>
 			trilhaAberta.artigos.findIndex((artigo) => artigo.slug === slug);
 		const posicao = (slug: string) => {
+			if (slug === QUIZ_FINAL) {
+				return trilhaAberta.artigos.length - 0.5;
+			}
 			if (slug !== QUIZ) {
 				return doArtigo(slug);
 			}
@@ -94,8 +118,8 @@ export function sentidoDaTroca(
 
 /**
  * Os tipos da View Transition de uma troca: `folha`, o sentido e, quando o
- * cabeçalho está na tela, `moldura-na-tela`, para ele ficar parado enquanto a
- * página troca. Sem página de origem (a primeira carga) ou sem
+ * cabeçalho está na tela nas duas páginas, `moldura-na-tela`, para ele ficar
+ * parado enquanto a página troca. Sem página de origem (a primeira carga) ou sem
  * mudar de página (um link para um trecho da mesma página, como #caminho), não
  * há troca de folha, e o `false` diz ao router para não animar.
  */
@@ -124,9 +148,9 @@ export function tiposDaTroca(
 }
 
 /**
- * A trilha do artigo ou do quiz que está na tela, pelos dados que o router já
- * carregou para a página, para comparar a posição de duas páginas da trilha.
- * Fora de um artigo e do quiz, não há.
+ * A trilha do artigo, do quiz ou do quiz final que está na tela, pelos dados
+ * que o router já carregou para a página, para comparar a posição de duas
+ * páginas da trilha. Fora deles, não há.
  */
 export function trilhaDaPaginaAberta(
 	matches: ReadonlyArray<{ routeId: string; loaderData?: unknown }>,
@@ -134,18 +158,100 @@ export function trilhaDaPaginaAberta(
 	const daPagina = matches.find(
 		(match) =>
 			match.routeId === "/trilhas/$trilha/$artigo" ||
-			match.routeId === "/trilhas/$trilha/quiz",
+			match.routeId === "/trilhas/$trilha/quiz" ||
+			match.routeId === "/trilhas/$trilha/quiz-final",
 	);
-	// Os dois loaders devolvem a trilha como nas listas (lib/conteudo), com os
+	// Os três loaders devolvem a trilha como nas listas (lib/conteudo), com os
 	// artigos na ordem e o lugar do quiz.
 	return (daPagina?.loaderData as { trilha?: TrilhaAberta } | undefined)
 		?.trilha;
 }
 
-/** Se o cabeçalho aparece na tela, nem que seja um pedaço. */
-export function molduraNaTela(): boolean {
+/**
+ * Se o cabeçalho aparece na tela nas duas páginas da troca, nem que seja um
+ * pedaço: na de antes, que está na tela, e na nova, que abre rolada
+ * `rolagemDaNova` (rolagemDasPaginas). O cabeçalho fica no alto de toda página.
+ * Quando não se sabe onde a nova abre (`null`), fica a dúvida, e a resposta é
+ * não: sem o nome, o cabeçalho vai com a página de antes, coberto pelos
+ * azulejos junto com ela, como na troca comum.
+ */
+export function molduraNaTela(rolagemDaNova: number | null = 0): boolean {
 	const moldura = document.querySelector("header.moldura");
-	return moldura ? moldura.getBoundingClientRect().bottom > 0 : false;
+	if (!moldura || rolagemDaNova === null) {
+		return false;
+	}
+	// O fundo do cabeçalho na tela: nesta página e na nova, rolada a mais ou a menos.
+	const embaixo = moldura.getBoundingClientRect().bottom;
+	return embaixo > 0 && embaixo + window.scrollY - rolagemDaNova > 0;
+}
+
+/** Uma página no histórico do navegador: o endereço e a chave da visita. */
+type Visita = { href: string; state: { __TSR_key?: string } };
+
+/**
+ * A página aonde a troca vai: a visita e o trecho do endereço, o que vem depois
+ * do #, que o router dá sem o # (vazio quando não há).
+ */
+type Destino = Visita & { hash: string };
+
+/** As mudanças do histórico que vêm do navegador: a volta, o avançar e o `go`. */
+const PELO_NAVEGADOR = new Set(["BACK", "FORWARD", "GO"]);
+
+/** A chave da visita, a mesma do `scrollRestoration` do router. */
+function chaveDaVisita(visita: Visita): string {
+	return visita.state.__TSR_key || visita.href;
+}
+
+/**
+ * Onde a página nova abre, para saber, antes de ela chegar, se o cabeçalho dela
+ * fica na tela. Num link sem trecho (`#`), ela abre no alto. Na volta e no
+ * avançar do navegador, o router devolve a rolagem que ela tinha (o
+ * `scrollRestoration`), mas só depois de a troca fotografar a página de antes:
+ * com o nome, o cabeçalho de antes voava até o da nova, lá no alto, e deixava
+ * uma faixa de papel no lugar.
+ *
+ * Como o router, guarda a rolagem de cada página pela chave da visita no
+ * histórico, quando a pessoa sai dela (o `onBeforeLoad`), e anota as mudanças
+ * do histórico que vêm do navegador. A memória é a da página: depois de
+ * recarregar, ou na volta de outro site quando o navegador abre a página de
+ * novo, a volta para uma visita de antes chega sem a rolagem guardada, e aí não
+ * se sabe (`null`).
+ *
+ * Num endereço com trecho, como o /#newsletter do "Receber por e-mail" das
+ * edições, o router abre a página no trecho, e não no alto, e também só dentro
+ * da troca: sem a rolagem guardada, também não se sabe (a #172). Com ela, como
+ * na volta para a página que abriu no trecho, vale a guardada, que o router
+ * devolve no lugar do trecho.
+ */
+export function rolagemDasPaginas() {
+	const guardadas = new Map<string, number>();
+	let peloNavegador: string | undefined;
+	return {
+		/** Antes de a página nova carregar: guarda a rolagem da que sai. */
+		guardar({ fromLocation }: { fromLocation?: Visita }): void {
+			if (fromLocation) {
+				guardadas.set(chaveDaVisita(fromLocation), window.scrollY);
+			}
+		},
+		/** A cada mudança no histórico: anota a visita aonde o navegador foi. */
+		anotar({
+			location,
+			action,
+		}: {
+			location: Visita;
+			action: { type: string };
+		}): void {
+			peloNavegador = PELO_NAVEGADOR.has(action.type)
+				? chaveDaVisita(location)
+				: undefined;
+		},
+		/** Onde a página nova abre: a rolagem guardada, o alto, ou `null`. */
+		daPaginaNova({ toLocation }: { toLocation: Destino }): number | null {
+			const chave = chaveDaVisita(toLocation);
+			const naoSeSabe = chave === peloNavegador || toLocation.hash !== "";
+			return guardadas.get(chave) ?? (naoSeSabe ? null : 0);
+		},
+	};
 }
 
 /**

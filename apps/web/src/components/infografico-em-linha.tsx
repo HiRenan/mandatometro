@@ -6,6 +6,7 @@ import { azulejoGrande } from "@/lib/azulejos";
 import { classes } from "@/lib/classes";
 import type { ArtigoNaLista, CaminhoNaInicial } from "@/lib/conteudo";
 import { classeDaFita, idDoPasso, semQuebrarCitacao } from "@/lib/formatar";
+import { simboloDoPasso } from "@/lib/simbolos";
 import { Aviso, useAviso } from "./aviso";
 import { AzulejoGrande } from "./azulejo";
 import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "./botao-continuar";
@@ -86,6 +87,7 @@ export function InfograficoEmLinha({
 									    fila, um depois do outro. */}
 									<AzulejoGrande
 										pecas={azulejoGrande(indice, indice % 5)}
+										simbolo={simboloDoPasso(doPasso.titulo)}
 										cru={numero > passo}
 										atraso={Math.max(0, Math.abs(numero - antes) - 1) * 110}
 									/>

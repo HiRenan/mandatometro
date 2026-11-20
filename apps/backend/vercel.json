@@ -1,0 +1,12 @@
+{
+	"$schema": "https://openapi.vercel.sh/vercel.json",
+	"framework": "fastapi",
+	"installCommand": "uv sync --active --locked --no-dev --no-editable",
+	"regions": ["gru1"],
+	"functions": {
+		"app.py": {
+			"maxDuration": 30,
+			"excludeFiles": "{tests/**,migrations/**,scripts/**,.pytest_cache/**,.ruff_cache/**}"
+		}
+	}
+}

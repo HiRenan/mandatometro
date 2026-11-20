@@ -10,17 +10,17 @@ import {
 } from "@tanstack/react-router";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { NaoEncontrado } from "./nao-encontrado";
+import { EdicaoNaoEncontrada, NaoEncontrado } from "./nao-encontrado";
 
 afterEach(cleanup);
 
 /** A página de não encontrado num site de mentira, com as páginas dos links dela. */
-async function mostrar() {
+async function mostrar(componente = NaoEncontrado) {
 	const raiz = createRootRoute({ component: () => <Outlet /> });
 	const pagina = createRoute({
 		getParentRoute: () => raiz,
 		path: "/nao-existe",
-		component: NaoEncontrado,
+		component: componente,
 	});
 	const inicio = createRoute({
 		getParentRoute: () => raiz,
@@ -32,8 +32,13 @@ async function mostrar() {
 		path: "/trilhas",
 		component: () => null,
 	});
+	const edicoes = createRoute({
+		getParentRoute: () => raiz,
+		path: "/edicoes",
+		component: () => null,
+	});
 	const router = createRouter({
-		routeTree: raiz.addChildren([pagina, inicio, trilhas]),
+		routeTree: raiz.addChildren([pagina, inicio, trilhas, edicoes]),
 		history: createMemoryHistory({ initialEntries: ["/nao-existe"] }),
 	});
 	render(<RouterProvider router={router} />);
@@ -48,6 +53,21 @@ describe("não encontrado", () => {
 		expect(
 			screen.getByRole("link", { name: "Ver as trilhas" }).getAttribute("href"),
 		).toBe("/trilhas");
+		expect(
+			screen
+				.getByRole("link", { name: "Ir para o início" })
+				.getAttribute("href"),
+		).toBe("/");
+	});
+
+	it("nas páginas das edições, leva à lista das edições e ao início", async () => {
+		const titulo = await mostrar(EdicaoNaoEncontrada);
+
+		expect(titulo.textContent).toBe("Página não encontrada");
+		expect(
+			screen.getByRole("link", { name: "Ver as edições" }).getAttribute("href"),
+		).toBe("/edicoes");
+		expect(screen.queryByRole("link", { name: "Ver as trilhas" })).toBeNull();
 		expect(
 			screen
 				.getByRole("link", { name: "Ir para o início" })

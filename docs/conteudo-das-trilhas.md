@@ -10,13 +10,14 @@ apps/web/conteudo/trilhas/
     trilha.md                      título, descrição e ordem da trilha
     infografico.md                 o caminho da trilha num infográfico (opcional)
     quiz.md                        as perguntas do quiz da trilha (opcional)
+    quiz-final.md                  as perguntas do quiz final, no fim da trilha (opcional)
     quem-pode-propor-uma-lei.md    um arquivo por artigo
     onde-o-projeto-comeca.md
 ```
 
 - **O nome da pasta e o do arquivo viram o endereço da página:** `processo-legislativo/onde-o-projeto-comeca.md` aparece em `/trilhas/processo-legislativo/onde-o-projeto-comeca`. Os nomes só podem ter letras minúsculas sem acento, números e hífens.
 - **Renomear um arquivo muda o endereço** e apaga a marca de lido desse artigo para quem já tinha lido, porque o navegador guarda o progresso pelo par `trilha/artigo`.
-- **`trilha.md`, `infografico.md` e `quiz.md` são nomes reservados:** um artigo não pode ter esses nomes.
+- **`trilha.md`, `infografico.md`, `quiz.md` e `quiz-final.md` são nomes reservados:** um artigo não pode ter esses nomes.
 
 ## A trilha: `trilha.md`
 
@@ -67,7 +68,7 @@ Em regra, o projeto começa na Câmara dos Deputados, a não ser que...
 - `ordem`: a posição na trilha, um número inteiro a partir de 1, sem repetir dentro da trilha. Os números podem pular (10, 20, 30), o que deixa espaço para encaixar um artigo no meio depois.
 - `fontes`: pelo menos uma. Cada fonte tem:
   - `titulo`: o nome que aparece na lista de fontes, como "Constituição Federal, art. 64";
-  - `url`: um link `https` de um site oficial, com o domínio terminado em `gov.br`, `leg.br`, `jus.br`, `mp.br` ou `def.br`;
+  - `url`: um link `https` de um site oficial. O validador aceita `gov.br`, `leg.br`, `jus.br`, `mp.br` e `def.br`. As referências planejadas do Ministério Público e da Defensoria Pública usam os dois últimos; mantenha esses links oficiais ao escrever os artigos.
   - `consultadoEm`: o dia em que a fonte foi conferida, no formato `AAAA-MM-DD`.
 - Um campo a mais, ou com o nome errado, também é erro.
 
@@ -76,7 +77,7 @@ Em regra, o projeto começa na Câmara dos Deputados, a não ser que...
 - **As seções começam com `##`.** O título do artigo vem do cabeçalho, então o texto não usa `#`.
 - Parágrafos, listas (`-` ou `1.`), negrito (`**assim**`) e links funcionam. HTML no meio do texto não é interpretado.
 - O tempo de leitura é calculado com 200 palavras por minuto, e o mínimo é 1 minuto.
-- **Valem as regras de conteúdo do `AGENTS.md`:** tom neutro e apartidário, a fonte oficial em cada explicação e nenhum dado pessoal. A voz é a do `PRODUCT.md`: um professor paciente, que trata a pessoa por "você" e dá o exemplo antes da regra.
+- **Texto para o leitor.** Siga as regras de [fonte e tom](../PRODUCT.md#capabilities-and-constraints), de [voz](../PRODUCT.md#brand-commitments) e de [dados pessoais](dados-pessoais.md#trilhas-e-piloto).
 - Quando o texto cita um artigo de lei, como "(art. 61)", essa lei entra nas fontes.
 
 ## O infográfico: `infografico.md`
@@ -160,7 +161,7 @@ perguntas:
   - `fontes`: pelo menos uma, no mesmo formato das fontes do artigo.
 - **A resposta certa está no artigo e na fonte.** Confira a resposta no texto do artigo e abra a fonte oficial antes de escrever a pergunta: o `consultadoEm` é o dia dessa conferência. Quando a explicação cita um artigo de lei, como "(art. 65)", essa lei entra nas fontes da pergunta.
 - **As opções aparecem na ordem do arquivo,** sem sorteio. Varie a posição da certa de uma pergunta para outra.
-- **Valem as regras de conteúdo do `AGENTS.md`:** o quiz pergunta sobre fatos e regras, em tom neutro, e nunca dá nota a político ou partido.
+- **Perguntas do quiz.** Siga as [regras de conteúdo do PRODUCT.md](../PRODUCT.md#capabilities-and-constraints).
 - **Um artigo que não existe na pasta, ou que vem depois do `depoisDe`, é erro,** com a posição da pergunta, que conta a partir do 0:
 
   ```text
@@ -178,17 +179,53 @@ perguntas:
 - **Onde aparece:** o quiz tem a página dele, em `/trilhas/<trilha>/quiz`, e a chamada "Quiz da trilha" fica no fim do artigo do `depoisDe` e na página da trilha. A página mostra uma pergunta por vez, na ordem do arquivo; sem JavaScript, mostra todas, uma embaixo da outra.
 - **Mudar o texto de uma pergunta ou de uma opção apaga a resposta de quem já tinha respondido,** porque o navegador guarda a resposta pelo enunciado e pelo texto da opção escolhida. Corrigir uma vírgula também conta.
 
+## O quiz final: `quiz-final.md`
+
+Perguntas de múltipla escolha sobre a trilha toda, para depois do último artigo. É opcional. O site mostra o quiz final em `/trilhas/<trilha>/quiz-final`, com a chamada na página da trilha e no fim do último artigo, e guarda as respostas à parte das do quiz da trilha.
+
+**O quiz final do processo legislativo também mede o piloto.** A medição do piloto (#40) usa as 12 perguntas dele, antes e depois da trilha, na versão `processo-legislativo-final-v1`, e o teste `apps/web/src/lib/piloto-versao.test.ts` prende o enunciado, as opções e a resposta certa de cada uma. Mudou um deles, o teste falha: ou o arquivo volta ao que era, ou a mudança pede uma versão nova, combinada entre o conteúdo, a API e a tela ([docs/medicao-do-piloto.md](medicao-do-piloto.md)). A explicação e as fontes mudam sem versão nova.
+
+O formato é o do `quiz.md`, sem o `depoisDe`: só o cabeçalho, com as `perguntas`. Um quiz final de uma pergunta só ficaria assim:
+
+```markdown
+---
+perguntas:
+  - artigo: o-presidente-sanciona-ou-veta
+    enunciado: O presidente da República recebe um projeto aprovado pelo Congresso e não se manifesta em 15 dias úteis. O que acontece?
+    opcoes:
+      - texto: O projeto é arquivado.
+      - texto: O projeto volta ao Congresso para uma nova votação.
+      - texto: "O projeto é sancionado: o silêncio vale como sanção."
+        certa: true
+    explicacao: "O presidente tem 15 dias úteis para sancionar ou vetar o projeto. Se o prazo passa sem resposta, o silêncio vale como sanção (art. 66, §§ 1º e 3º)."
+    fontes:
+      - titulo: Constituição Federal, art. 66
+        url: https://normas.leg.br/?urn=urn:lex:br:federal:constituicao:1988-10-05;1988!art66
+        consultadoEm: 2026-11-16
+---
+```
+
+- **Cada pergunta segue as regras das perguntas do `quiz.md`:** o artigo, o enunciado sem repetir no quiz final, de 2 a 5 opções com uma certa só, a explicação e as fontes oficiais. A resposta certa está no artigo e na fonte.
+- **A pergunta pode ser de qualquer artigo da trilha,** porque o quiz final vem depois do último. Um artigo que não existe na pasta é erro:
+
+  ```text
+  conteudo/trilhas/processo-legislativo/quiz-final.md: campo "perguntas.11.artigo": o artigo "o-veto" não existe nesta trilha
+  ```
+
+- **Um `depoisDe` é erro,** como qualquer campo a mais, e um texto embaixo do cabeçalho também.
+- **Congele o texto antes do piloto (#40).** Se a tela guardar as respostas como a do `quiz.md`, pelo enunciado e pelo texto da opção, mudar uma vírgula de uma pergunta apaga a resposta de quem já respondeu e muda o que o piloto mede.
+
 ## Pegadinhas do YAML
 
 - **Um valor com `: ` (dois-pontos seguido de espaço) vai entre aspas:** `titulo: "Lei 14.133: o que muda"`. Sem as aspas, o cabeçalho deixa de ser YAML válido, e o teste aponta o arquivo.
 - **Um ` #` (espaço e cerquilha) começa um comentário:** em `titulo: O projeto #1 da trilha`, o título vira só "O projeto", sem aviso nenhum. Um valor com ` #` também vai entre aspas.
 - **As fontes ficam recuadas com dois espaços,** com um `-` na frente de cada uma e os três campos alinhados.
 - **No infográfico, cada nível recua mais dois espaços:** os passos debaixo de `passos:`, e os desvios, os artigos e as fontes debaixo do passo deles, como no exemplo.
-- **No quiz também:** as perguntas debaixo de `perguntas:`, e as opções e as fontes debaixo da pergunta delas. O `certa: true` fica alinhado com o `texto` da opção, sem o `-`. Uma explicação com `: ` vai entre aspas, como no exemplo.
+- **No quiz e no quiz final também:** as perguntas debaixo de `perguntas:`, e as opções e as fontes debaixo da pergunta delas. O `certa: true` fica alinhado com o `texto` da opção, sem o `-`. Uma explicação com `: ` vai entre aspas, como no exemplo.
 
 ## Palavras compridas nos títulos
 
-Muita gente aumenta a letra do navegador no celular, até 200%. Com a letra grande, cada título diminui só o bastante para a palavra mais larga dele caber na tela inteira, sem se partir no meio. Os títulos aparecem em maiúsculas no site, e a medida é a da palavra em maiúsculas. Esse limite foi medido com os títulos de hoje:
+Muita gente aumenta a letra do navegador no celular, até 200%. Com a letra grande, cada título diminui só o bastante para a palavra mais larga dele caber na tela inteira, sem se partir no meio. Os títulos aparecem em maiúsculas no site, e a medida é a da palavra em maiúsculas. A exceção é o título de cada passo na sanfona da página da trilha: com a letra grande, ele aparece como foi escrito, e o teste mede a palavra dos dois jeitos. Esse limite foi medido com os títulos de hoje:
 
 | Onde | A palavra mais larga hoje |
 |---|---|
@@ -196,7 +233,9 @@ Muita gente aumenta a letra do navegador no celular, até 200%. Com a letra gran
 | O título do artigo (o `titulo:` do artigo) | "fundamentais?" |
 | O intertítulo (cada `##` do texto) | "constitucionalidade" |
 | O título do infográfico (o `titulo:` do `infografico.md`) | "caminho" |
-| O título de cada passo do infográfico | "Apresentação" |
+| O título de cada passo do infográfico, na página inicial | "Apresentação" |
+| O título de cada passo, na sanfona da página da trilha | "Apresentação" |
+| O mesmo título da sanfona com a letra grande, como foi escrito | "Apresentação" |
 
 Uma palavra mais larga que a da tabela não cabe nem no título menor e se parte no meio com a letra grande. A pontuação colada conta: "fundamentais?" é mais larga que "fundamentais". O que conta é a largura, e não o número de letras: "Participação" tem as mesmas 12 letras de "Constituição" e, mesmo assim, passa do limite do título da trilha, por pouco.
 
@@ -213,6 +252,20 @@ Quando o teste falhar, há duas saídas:
 
 Essa medida fica só no teste: ela não derruba o build nem o deploy.
 
+## Acentos nos títulos curtos
+
+O título da trilha, o do infográfico e o de cada passo aparecem com as linhas bem juntas, como num cartaz. A cedilha, a vírgula, o ponto e vírgula, a perna do Q e os parênteses descem abaixo da linha, e o acento da maiúscula sobe acima dela: se a quebra puser uma letra que desce sobre um acento da linha de baixo, as duas se encostam. Por isso, nesses títulos, uma palavra com uma letra que desce não vem antes de outra com maiúscula acentuada ou com parênteses. "A Constituição" pode, porque a cedilha e o til estão na mesma palavra; "Ação é dever" não pode. O título do infográfico tem as linhas ainda mais juntas: nele, só a primeira palavra leva acento, e a cedilha, a vírgula, o ponto e vírgula e os parênteses só vão na última.
+
+Os títulos dos artigos e os intertítulos aceitam qualquer texto: as linhas deles são mais abertas.
+
+O `pnpm --filter web test` confere e falha com o arquivo e as duas palavras:
+
+```text
+conteudo/trilhas/direitos-e-deveres/trilha.md: em "Ação é dever", AÇÃO pode ficar sobre É
+```
+
+Quando o teste falhar, escreva o título de outro jeito, com a palavra acentuada antes ou com outra palavra no lugar. Se o título precisa ficar, quem cuida do site sobe a altura de linha do título no código e mede a tinta de novo, como na #158.
+
 ## Como conferir
 
 - **`pnpm --filter web test`** lê a pasta de conteúdo de verdade. Se algo estiver errado, o teste falha com a lista de problemas, cada um com o nome do arquivo:
@@ -223,7 +276,13 @@ Essa medida fica só no teste: ela não derruba o build nem o deploy.
 
   O CI roda o mesmo teste, então um artigo com problema não passa no PR.
 - **`pnpm build`** confere a pasta antes de montar o site e para com a mesma lista. Por isso um artigo com problema também derruba o deploy na Vercel e a imagem do Docker, e o site no ar continua na versão anterior.
-- **`pnpm dev`** sobe o site em http://localhost:3001, e o artigo aparece em `/trilhas/<trilha>/<artigo>`. O infográfico aparece em `/trilhas/<trilha>`, e o quiz, em `/trilhas/<trilha>/quiz`. Um arquivo novo ou mudado aparece ao recarregar a página, sem reiniciar o `pnpm dev`.
+- **`pnpm dev`** sobe o site em http://localhost:3001, e o artigo aparece em `/trilhas/<trilha>/<artigo>`. O infográfico aparece em `/trilhas/<trilha>`, o quiz, em `/trilhas/<trilha>/quiz`, e o quiz final, em `/trilhas/<trilha>/quiz-final`. Um arquivo novo ou mudado aparece ao recarregar a página, sem reiniciar o `pnpm dev`.
+
+### Conferir as fontes oficiais
+
+- A referência do Programa Cidadania Fiscal da Receita Federal no planejamento pode redirecionar para autenticação. Em 11/11/2026, o trecho explicativo foi consultado no índice de busca da própria URL; não trate a tela de login como conteúdo da fonte e confira o acesso público antes de publicar o artigo 3.5.
+- O normas.leg.br, onde os artigos das trilhas citam a Constituição, monta a página no navegador: o `curl` do link não traz o texto. Para conferir por HTTP, peça a norma inteira em `https://normas.leg.br/api/public/normas?urn=<urn>&tipo_documento=maior-detalhe`, com a URN sem o `!art61` do fim (com ele, a resposta só repete a URN). Cada dispositivo vem num `hasPart`, com a URN em `legislationIdentifier` e as versões em `workExample`; o texto em vigor é o `text` da versão com a `legislationDate` mais recente. Quando mais de uma versão tem a data mais recente, vale a que vem sem `legislationLegalForce: NotInForce`: em 18/11/2026, o caput do art. 134 (`!art134_cpt,emc-80-2014-06-04`) tinha duas versões de 04/06/2014, e só a substituída trazia o `NotInForce`, como em outros sete dispositivos da Constituição. Em 13/11/2026, o Regimento Comum e o Regimento Interno da Câmara (RICD) não tinham texto no normas.leg.br: a resposta da API vinha sem `hasPart`. A compilação mais nova do Regimento Comum é a do Senado, o `RCCN.rtf` que `https://www25.senado.leg.br/web/atividade/legislacao/regimento-interno` lista em "Regimento Comum (ver texto compilado até 31/7/2025)"; o site da Câmara traz a republicação de 2023, e o art. 4º já difere entre as duas. O RICD em vigor é o DOCX ou o PDF "atualizado até a Resolução nº 34, de 2026", em `https://www2.camara.leg.br/atividade-legislativa/legislacao/regimento-interno-da-camara-dos-deputados`. O `workExample` de um dispositivo às vezes vem como objeto, e não como lista.
+- No normas.leg.br, o artigo (`!art47`) vem com o `text` vazio: o texto do caput fica no dispositivo `!art47_cpt`, e cada parágrafo no seu, como `!art58_par1`. Um dispositivo acrescentado por emenda leva a emenda no fim da URN: em 17/11/2026, o § 8º do art. 62 da Constituição, que veio da Emenda Constitucional nº 32, de 2001, vinha como `!art62_par8,emc-32-2001-09-11`, e `!art62_par8` não existia na resposta. Para achar um dispositivo, compare a URN inteira até a vírgula que abre o sufixo da emenda e confira o `name` da versão mais nova, que é o rótulo dele. Se duas URNs batem, a versão mais nova de uma delas pode ser só "(Reposicionado)", com o mesmo `name`: o texto em vigor está na outra (em 18/11/2026, o caput e os §§ 1º a 3º do art. 134 e o caput do art. 135, na URN com `,emc-80-2014-06-04`). Em 17/11/2026, `!art37_par1` também era o começo dos §§ 10 a 16 do art. 37, como `!art37_par10,emc-20-1998-12-15`, e o `!art53_par1` era o § 2º do art. 53, renumerado pela Emenda Constitucional nº 35, de 2001: o § 1º em vigor vinha como `!art53_par1,emc-35-2001-12-20`. O Regimento Interno do Senado tem texto lá, mas, em 16/11/2026, a versão mais nova de um dispositivo era de 07/06/2023, e a página do Senado, a mesma do Regimento Comum, lista o texto compilado até 22/8/2025: um dispositivo mudado depois de 2023 se confere na compilação do Senado. A Lei de Introdução às Normas do Direito Brasileiro (Decreto-Lei nº 4.657, de 1942) não tem texto no normas.leg.br, porque a resposta da API vem sem `hasPart`: o texto em vigor é o compilado do planalto.gov.br. Em 16/11/2026, o `curl` para o planalto.gov.br caiu com `Recv failure: Connection was reset`, e a página só abriu por um leitor de páginas.
 
 ## Como o site lê os arquivos
 

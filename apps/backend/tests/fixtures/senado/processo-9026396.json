@@ -1,0 +1,762 @@
+{
+  "id": 9026396,
+  "codigoMateria": 173452,
+  "identificacao": "MSF 7/2026",
+  "sigla": "MSF",
+  "descricaoSigla": "Mensagem (SF)",
+  "numero": "7",
+  "ano": 2026,
+  "casaIdentificadora": "SF",
+  "siglaEnteIdentificador": "PLEN",
+  "identificacaoExterna": {
+    "identificacao": "MSG 1714/2025",
+    "sigla": "MSG",
+    "numero": "1714",
+    "ano": 2025,
+    "siglaEnte": "PR",
+    "nomeEnte": "Presidência da República"
+  },
+  "conteudo": {
+    "id": 7652684,
+    "idTipo": 32,
+    "siglaTipo": "INDICACAO_AUTORIDADE",
+    "tipo": "Indicação de Autoridade",
+    "ementa": "Submete à apreciação do Senado Federal, nos termos do art. 52, inciso III, alínea “a”, e o art. 101, parágrafo único, da Constituição, o nome do Senhor JORGE RODRIGO ARAÚJO MESSIAS, para exercer o cargo de Ministro do Supremo Tribunal Federal, na vaga decorrente da aposentadoria do Ministro Luís Roberto Barroso."
+  },
+  "documento": {
+    "id": 10194965,
+    "siglaTipo": "MENSAGEM",
+    "tipo": "Mensagem",
+    "data": "2025-11-20",
+    "dataApresentacao": "2026-04-01",
+    "indexacao": " INDICAÇÃO ,  SENADO ,  ESCOLHA ,  NOME ,  AUTORIDADE ,  CARGO PUBLICO ,  JORGE RODRIGO ARAUJO MESSIAS ,  MINISTRO ,  SUPREMO TRIBUNAL FEDERAL (STF) .",
+    "url": "https://legis.senado.gov.br/sdleg-getter/dadosabertos/documento/e63c7a38-d2d4-448f-8ec5-85b5356472eb",
+    "autoria": [
+      {
+        "autor": "Presidência da República",
+        "siglaTipo": "PRESIDENTE_REPUBLICA",
+        "descricaoTipo": "PRESIDENTE_REPUBLICA",
+        "ordem": 1,
+        "outrosAutoresNaoInformados": "Não",
+        "idEnte": 55126,
+        "siglaEnte": "PR",
+        "ente": "Presidência da República"
+      }
+    ],
+    "resumoAutoria": "Presidência da República"
+  },
+  "tramitando": "Não",
+  "dataInicioEfetivo": "2026-04-01",
+  "situacaoAtual": "REJEITADA",
+  "siglaSituacaoAtual": "RJTDA",
+  "dataSituacaoAtual": "2026-04-29",
+  "autoriaIniciativa": [
+    {
+      "autor": "Presidência da República",
+      "siglaTipo": "PRESIDENTE_REPUBLICA",
+      "descricaoTipo": "PRESIDENTE_REPUBLICA",
+      "ordem": 1,
+      "outrosAutoresNaoInformados": "Não",
+      "idEnte": 55126,
+      "siglaEnte": "PR",
+      "ente": "Presidência da República"
+    }
+  ],
+  "comissaoMpv": "{}",
+  "outrosNumeros": [
+    {
+      "idOutroProcesso": 9026396,
+      "sigla": "MSG",
+      "numero": "01714",
+      "ano": 2025,
+      "tramitando": "Não",
+      "externaAoCongresso": "Sim",
+      "siglaEnteIdentificador": "PR",
+      "enteIdentificador": "Presidência da República"
+    }
+  ],
+  "processosRelacionados": [
+    {
+      "idOutroProcesso": 9038738,
+      "tipoRelacao": "REFERENCIA",
+      "sigla": "REQ",
+      "numero": "12",
+      "ano": 2026,
+      "tramitando": "Não",
+      "casaIdentificadora": "SF",
+      "siglaEnteIdentificador": "CCJ",
+      "enteIdentificador": "Comissão de Constituição, Justiça e Cidadania"
+    }
+  ],
+  "despachos": [
+    {
+      "id": 10201348,
+      "data": "2026-04-09",
+      "siglaTipoMotivacao": "DECISAO_PRESID",
+      "tipoMotivacao": "Decisão da Presidência",
+      "cancelado": "Não",
+      "encontroLegislativo": {
+        "id": 9030550,
+        "numero": 1,
+        "data": "2026-04-09",
+        "casa": "SF",
+        "tipo": "SES",
+        "descricao": "Eventos Independentes de Sessão",
+        "colegiado": {
+          "codigo": 1998,
+          "casa": "SF",
+          "sigla": "PLEN",
+          "nome": "Plenário do Senado Federal"
+        }
+      },
+      "providencias": [
+        {
+          "id": 9030687,
+          "tipo": "ANALISE",
+          "descricao": "Análise",
+          "ordem": 1,
+          "analiseTempo": "SUCESSIVA",
+          "analiseConteudo": "MATERIA",
+          "reexame": "Não",
+          "unidadesDestinatarias": [
+            {
+              "ordem": 1,
+              "tipoAnaliseDeliberacao": "NAO_TERMINATIVA",
+              "colegiado": {
+                "codigo": 34,
+                "sigla": "CCJ",
+                "casa": "SF",
+                "nome": "Comissão de Constituição, Justiça e Cidadania"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "autuacoes": [
+    {
+      "numero": 1,
+      "descricao": "Autuação Principal",
+      "idEnteControleAtual": 55304,
+      "siglaEnteControleAtual": "SEXPE",
+      "nomeEnteControleAtual": "Secretaria de Expediente",
+      "situacoes": [
+        {
+          "idTipo": 175,
+          "sigla": "AGDESP",
+          "descricao": "AGUARDANDO DESPACHO",
+          "inicio": "2026-04-01",
+          "fim": "2026-04-09",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          }
+        },
+        {
+          "idTipo": 177,
+          "sigla": "MATDESP",
+          "descricao": "MATÉRIA DESPACHADA",
+          "inicio": "2026-04-09",
+          "fim": "2026-04-09",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          }
+        },
+        {
+          "idTipo": 87,
+          "sigla": "AGDREL",
+          "descricao": "AGUARDANDO DESIGNAÇÃO DO RELATOR",
+          "inicio": "2026-04-09",
+          "fim": "2026-04-09",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          }
+        },
+        {
+          "idTipo": 91,
+          "sigla": "RELATOR",
+          "descricao": "MATÉRIA COM A RELATORIA",
+          "inicio": "2026-04-09",
+          "fim": "2026-04-12",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          }
+        },
+        {
+          "idTipo": 138,
+          "sigla": "INPAUTA",
+          "descricao": "INCLUÍDA NA PAUTA DA REUNIÃO",
+          "inicio": "2026-04-12",
+          "fim": "2026-04-15",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          }
+        },
+        {
+          "idTipo": 90,
+          "sigla": "PEDVISTA",
+          "descricao": "PEDIDO DE VISTA CONCEDIDO",
+          "inicio": "2026-04-15",
+          "fim": "2026-04-29",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          }
+        },
+        {
+          "idTipo": 89,
+          "sigla": "APRVPAR",
+          "descricao": "APROVADO PARECER NA COMISSÃO",
+          "inicio": "2026-04-29",
+          "fim": "2026-04-29",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          }
+        },
+        {
+          "idTipo": 49,
+          "sigla": "RJTDA",
+          "descricao": "REJEITADA",
+          "inicio": "2026-04-29",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          }
+        }
+      ],
+      "informesLegislativos": [
+        {
+          "id": 2280309,
+          "data": "2026-04-01 16:19:02",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "descricao": "Autuada a Mensagem nº 7/2026. A matéria vai à publicação.",
+          "idSituacaoIniciada": 175,
+          "siglaSituacaoIniciada": "AGDESP",
+          "documentosAssociados": [
+            {
+              "id": 10194965,
+              "tipo": "Mensagem",
+              "siglaTipo": "MENSAGEM",
+              "identificacao": "MSF 7/2026",
+              "descricao": "Submete à apreciação do Senado Federal, nos termos do art. 52, inciso III, alínea “a”, e o art. 101, parágrafo único, da Constituição, o nome do Senhor JORGE RODRIGO ARAÚJO MESSIAS, para exercer o cargo de Ministro do Supremo Tribunal Federal, na vaga decorrente da aposentadoria do Ministro Luís Roberto Barroso.",
+              "data": "2025-11-20T00:00:00",
+              "autoria": "Presidência da República",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/e63c7a38-d2d4-448f-8ec5-85b5356472eb"
+            }
+          ]
+        },
+        {
+          "id": 2281459,
+          "data": "2026-04-09 15:19:04",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "descricao": "A mensagem vai à Comissão de Constituição, Justiça e Cidadania.",
+          "idSituacaoIniciada": 177,
+          "siglaSituacaoIniciada": "MATDESP"
+        },
+        {
+          "id": 2281460,
+          "data": "2026-04-09 15:25:10",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebido nesta Comissão. Matéria aguardando designação de relator.",
+          "idSituacaoIniciada": 87,
+          "siglaSituacaoIniciada": "AGDREL"
+        },
+        {
+          "id": 2281461,
+          "data": "2026-04-09 15:25:41",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Distribuído ao Senador Weverton, para emitir relatório.",
+          "idSituacaoIniciada": 91,
+          "siglaSituacaoIniciada": "RELATOR"
+        },
+        {
+          "id": 2281885,
+          "data": "2026-04-12 08:51:06",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Matéria constante da Pauta da 5ª Reunião da Comissão de Constituição, Justiça e Cidadania, agendada para o dia 15/04/2026.",
+          "idSituacaoIniciada": 138,
+          "siglaSituacaoIniciada": "INPAUTA"
+        },
+        {
+          "id": 2282482,
+          "data": "2026-04-14 21:15:11",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Recebido, nesta Comissão, o relatório do Senador Weverton.",
+          "documentosAssociados": [
+            {
+              "id": 10206075,
+              "tipo": "Relatório Legislativo",
+              "siglaTipo": "RELATORIO",
+              "identificacao": "Relatório Legislativo - SF264505014852",
+              "descricao": "Da COMISSÃO DE CONSTITUIÇÃO, JUSTIÇA E CIDADANIA, sobre a Mensagem (SF) n° 7, de 2026, que Submete à apreciação do Senado Federal, nos termos do art. 52, inciso III, alínea “a”, e o art. 101, parágrafo único, da Constituição, o nome do Senhor JORGE RODRIGO ARAÚJO MESSIAS, para exercer o cargo de Ministro do Supremo Tribunal Federal, na vaga decorrente da aposentadoria do Ministro Luís Roberto Barroso.",
+              "data": "2026-04-14T21:17:14",
+              "autoria": "Senador Weverton (PDT/MA)",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/a69e308e-684f-4203-a7f9-9e36506cc38e"
+            }
+          ]
+        },
+        {
+          "id": 2282534,
+          "data": "2026-04-15 10:25:58",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Na 5ª Reunião Extraordinária, realizada nesta data, o Senador Weverton lê o Relatório e a matéria é submetida à primeira etapa do processo de apreciação de escolha de autoridades nesta Comissão, conforme disposto no art. 383 do Regimento Interno do Senado Federal.\r\n\r\nA Presidência concede vista coletiva, nos termos regimentais.",
+          "idSituacaoIniciada": 90,
+          "siglaSituacaoIniciada": "PEDVISTA"
+        },
+        {
+          "id": 2283877,
+          "data": "2026-04-29 17:59:55",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Na 6ª Reunião Extraordinária, realizada nesta data, a Comissão aprova o Parecer da CCJ, após arguição pública, em escrutínio secreto, que conclui pela escolha do nome do Senhor JORGE RODRIGO ARAÚJO MESSIAS para exercer o cargo de Ministro do Supremo Tribunal Federal, nos termos do art. 52, inciso III, alínea “a”, e do art. 101, parágrafo único, da Constituição Federal, com 16 (dezesseis) votos favoráveis e 11(onze) votos contrários.\r\n\r\nA Comissão aprova o Requerimento nº 12, de 2026-CCJ, de autoria do Senador Eduardo Braga, de URGÊNCIA para a matéria.\r\n\r\nUsam da palavra os Senadores, Magno Malta, Jaques Wagner, Camilo Santana, Eliziane Gama, Fabiano Contarato, Weverton, Vanderlan Cardoso, Flávio Bolsonaro, Márcio Bittar, Sergio Moro, Rogério Carvalho, Jayme Campos, Eduardo Girão, Rogério Marinho, Esperidião Amin, Teresa Leitão, Renan Filho, Jaime Bagattoli, Dr. Hiran, Hamilton Mourão, Izalci Lucas, Carlos Portinho, Marcos Rogério, Soraya Thronicke, Dr. Hiran, Jorge Seif, Roberta Acioly, Marcos Rogério, Alessandro Vieira, Eduardo Braga, Randolfe Rodrigues, Cleitinho e o Senador Otto Alencar, Presidente da CCJ.\r\n\r\nÉ consignado o voto do Senador Otto Alencar, Presidente da CCJ.\r\n\r\nAnexei o Relatório do Senador Weverton.",
+          "idSituacaoIniciada": 89,
+          "siglaSituacaoIniciada": "APRVPAR",
+          "documentosAssociados": [
+            {
+              "id": 10212543,
+              "tipo": "Parecer",
+              "siglaTipo": "PARECER",
+              "identificacao": "P.S 30/2026 - CCJ",
+              "descricao": "Da COMISSÃO DE CONSTITUIÇÃO, JUSTIÇA E CIDADANIA, sobre a Mensagem (SF) n° 7, de 2026, que Submete à apreciação do Senado Federal, nos termos do art. 52, inciso III, alínea “a”, e o art. 101, parágrafo único, da Constituição, o nome do Senhor JORGE RODRIGO ARAÚJO MESSIAS, para exercer o cargo de Ministro do Supremo Tribunal Federal, na vaga decorrente da aposentadoria do Ministro Luís Roberto Barroso.",
+              "data": "2026-04-29T00:00:00",
+              "autoria": "Comissão de Constituição, Justiça e Cidadania",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/39dbbd29-4522-4a51-818b-a61a5eb9a3c1"
+            },
+            {
+              "id": 10212523,
+              "tipo": "Requerimento",
+              "siglaTipo": "REQUERIMENTO",
+              "identificacao": "REQ 12/2026 - CCJ",
+              "descricao": "Requer, nos termos do artigo 338 inciso IV, do Regimento Interno do Senado Federal, urgência para Mensagem (SF) n° 7, de 2026.",
+              "data": "2026-04-29T00:00:00",
+              "autoria": "Comissão de Constituição, Justiça e Cidadania",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/01950997-6b63-4bfc-8589-993dc366186e"
+            }
+          ]
+        },
+        {
+          "id": 2283861,
+          "data": "2026-04-29 18:22:48",
+          "colegiado": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          },
+          "enteAdministrativo": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "descricao": "Encerrada a relatoria do Senador Weverton por deliberação da matéria.\nÀ SLSF, para prosseguimento da tramitação."
+        },
+        {
+          "id": 2283891,
+          "data": "2026-04-29 19:41:03",
+          "colegiado": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          },
+          "enteAdministrativo": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "descricao": "(Sessão Deliberativa Ordinária de 29 de abril de 2026) \r\nEncerrada a votação, com o seguinte resultado: Sim - 34, Não - 42 , Abstenções -1 , Total -77. \r\nRejeitada a indicação. A matéria vai ao Arquivo. \r\nSerá feita a devida comunicação à Presidência da República.",
+          "idSituacaoIniciada": 49,
+          "siglaSituacaoIniciada": "RJTDA"
+        },
+        {
+          "id": 2284262,
+          "data": "2026-05-04 22:22:46",
+          "colegiado": {},
+          "enteAdministrativo": {
+            "id": 55304,
+            "casa": "SF",
+            "sigla": "SEXPE",
+            "nome": "Secretaria de Expediente"
+          },
+          "descricao": "Remetido Ofício SF nº 336, de 2026, à Ministra de Estado Chefe da Casa Civil da Presidência da República, encaminhando a Mensagem SF nº 86, de 2026, ao Excelentíssimo Senhor Presidente da República, Com referência à Mensagem nº 7, de 2026 (nº 1.714, de 2025, nessa Presidência), participo a Vossa Excelência que o Senado Federal rejeitou, em sessão realizada no dia 29 de abril de 2026, a escolha do Senhor Jorge Rodrigo Araújo Messias, para exercer o cargo de Ministro do Supremo Tribunal Federal, em vaga decorrente da aposentadoria do Ministro Luís Roberto Barroso.  Recebido no destino em 04/05/2026 às 22:22:46.\r\n\r\nRemetido Mensagem SF nº 87, de 2026, ao Presidente do Supremo Tribunal Federal, participando a Vossa Excelência que o Senado Federal rejeitou o nome do Senhor Jorge Rodrigo Araújo Messias, para exercer o cargo de Ministro do Supremo Tribunal Federal, em vaga decorrente da aposentadoria do Ministro Luís Roberto Barroso, em sessão realizada em 29 de abril de 2026.",
+          "documentosAssociados": [
+            {
+              "id": 10212248,
+              "tipo": "Ofício",
+              "siglaTipo": "OFICIO",
+              "identificacao": "OFSF 336/2026",
+              "descricao": "Encaminha a Mensagem da Presidência do Senado Federal participando a rejeição da indicação do nome do Senhor JORGE RODRIGO ARAÚJO MESSIAS, para exercer o cargo de Ministro do Supremo Tribunal Federal, na vaga decorrente da aposentadoria do Ministro Luís Roberto Barroso.",
+              "data": "2026-04-29T00:00:00",
+              "autoria": "Primeiro-Secretário do Senado Federal",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/af37d640-3dff-445a-a32d-c40e9db0b297"
+            },
+            {
+              "id": 10212251,
+              "tipo": "Mensagem",
+              "siglaTipo": "MENSAGEM",
+              "identificacao": "MPSF 87/2026",
+              "descricao": "Comunica ao Supremo Tribunal Federal a rejeição da indicação do nome do Senhor JORGE RODRIGO ARAÚJO MESSIAS, para exercer o cargo de Ministro do Supremo Tribunal Federal, na vaga decorrente da aposentadoria do Ministro Luís Roberto Barroso.",
+              "data": "2026-04-29T00:00:00",
+              "autoria": "Presidente do Senado Federal",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/462c6463-5a7a-4f83-a7d0-6eda2c72ce2c"
+            },
+            {
+              "id": 10212274,
+              "tipo": "Mensagem",
+              "siglaTipo": "MENSAGEM",
+              "identificacao": "MPSF 86/2026",
+              "descricao": "Comunica à Presidência da República a rejeição da indicação do nome do Senhor JORGE RODRIGO ARAÚJO MESSIAS, para exercer o cargo de Ministro do Supremo Tribunal Federal, na vaga decorrente da aposentadoria do Ministro Luís Roberto Barroso.",
+              "data": "2026-04-29T00:00:00",
+              "autoria": "Presidente do Senado Federal",
+              "url": "https://legis.senado.leg.br/sdleg-getter/dadosabertos/documento/8640da78-f23f-422d-8663-8195a9063df2"
+            }
+          ]
+        }
+      ],
+      "movimentacoes": [
+        {
+          "id": 10195024,
+          "dataEnvio": "2026-04-01 16:36:41",
+          "enteOrigem": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "dataRecebimento": "2026-04-09 15:18:47",
+          "enteDestino": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "colegiadoDestino": {}
+        },
+        {
+          "id": 10201349,
+          "dataEnvio": "2026-04-09 15:21:33",
+          "enteOrigem": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "dataRecebimento": "2026-04-09 15:24:28",
+          "enteDestino": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "colegiadoDestino": {
+            "codigo": 34,
+            "casa": "SF",
+            "sigla": "CCJ",
+            "nome": "Comissão de Constituição, Justiça e Cidadania"
+          }
+        },
+        {
+          "id": 10212579,
+          "dataEnvio": "2026-04-29 18:48:24",
+          "enteOrigem": {
+            "id": 13565,
+            "casa": "SF",
+            "sigla": "SACCJ",
+            "nome": "Secretaria de Apoio à Comissão de Constituição, Justiça e Cidadania"
+          },
+          "dataRecebimento": "2026-04-29 18:49:44",
+          "enteDestino": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "colegiadoDestino": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          }
+        },
+        {
+          "id": 10212674,
+          "dataEnvio": "2026-04-29 19:35:15",
+          "enteOrigem": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "dataRecebimento": "2026-04-29 19:38:41",
+          "enteDestino": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "colegiadoDestino": {}
+        },
+        {
+          "id": 10212683,
+          "dataEnvio": "2026-04-29 19:43:27",
+          "enteOrigem": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "dataRecebimento": null,
+          "enteDestino": {
+            "id": 55304,
+            "casa": "SF",
+            "sigla": "SEXPE",
+            "nome": "Secretaria de Expediente"
+          },
+          "colegiadoDestino": {}
+        },
+        {
+          "id": 10212700,
+          "dataEnvio": "2026-04-29 19:43:55",
+          "enteOrigem": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "dataRecebimento": null,
+          "enteDestino": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "colegiadoDestino": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          }
+        },
+        {
+          "id": 10212687,
+          "dataEnvio": "2026-04-29 19:45:02",
+          "enteOrigem": {
+            "id": 13594,
+            "casa": "SF",
+            "sigla": "SEADI",
+            "nome": "Secretaria de Atas e Diários"
+          },
+          "dataRecebimento": "2026-04-29 19:45:17",
+          "enteDestino": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "colegiadoDestino": {
+            "codigo": 1998,
+            "casa": "SF",
+            "sigla": "PLEN",
+            "nome": "Plenário do Senado Federal"
+          }
+        },
+        {
+          "id": 10212689,
+          "dataEnvio": "2026-04-29 19:48:30",
+          "enteOrigem": {
+            "id": 55312,
+            "casa": "SF",
+            "sigla": "SLSF",
+            "nome": "Secretaria Legislativa do Senado Federal"
+          },
+          "dataRecebimento": "2026-04-30 09:30:49",
+          "enteDestino": {
+            "id": 55304,
+            "casa": "SF",
+            "sigla": "SEXPE",
+            "nome": "Secretaria de Expediente"
+          },
+          "colegiadoDestino": {}
+        }
+      ]
+    }
+  ],
+  "ordensDoDia": [
+    {
+      "codigoSessao": 550751,
+      "dataSessao": "2026-04-29T14:00:00",
+      "casaSessao": "SF",
+      "codigoSessaoLegislativa": 874,
+      "siglaTipoSessao": "DOR",
+      "numeroSessao": "44",
+      "tipoApreciacao": "Votação, em turno único"
+    }
+  ],
+  "deliberacao": {
+    "data": "2026-04-29",
+    "siglaTipo": "REJEITADO_PLENARIO",
+    "tipoDeliberacao": "Rejeitada pelo Plenário"
+  },
+  "normaGerada": {},
+  "ultimaInformacaoAtualizada": "PUBLICACAO_OFICIAL",
+  "dthUltimaAtualizacao": "2026-08-31T14:38:30.609000"
+}

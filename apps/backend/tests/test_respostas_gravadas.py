@@ -2,8 +2,8 @@
 
 Não é o conector (#10 e #11): o teste só mostra que cada dado tem onde ficar, com as armadilhas que
 a revisão do dicionário de dados confirmou na API. As asserções usam ids, não nomes. O CPF e a data
-de nascimento do deputado, fictícios na resposta gravada, não entram no modelo. O último teste
-confere que os motivos de afastamento da lista de senadores gravada são fictícios.
+de nascimento do deputado, fictícios na resposta gravada, não entram no modelo. Os testes de
+privacidade conferem os motivos fictícios e o processo do Senado e os novos fixtures da Câmara.
 """
 
 import json
@@ -11,6 +11,7 @@ from collections import Counter
 from datetime import date, datetime
 from pathlib import Path
 
+import pytest
 from sqlalchemy import func, select
 
 from mandatometro.db.modelos import (
@@ -262,8 +263,8 @@ def test_os_votos_do_senado(sessao):
     _gravar_senado(sessao)
     sessao.flush()
 
-    # Os seis códigos da amostra. O AP ("atividade parlamentar") entra sem o código, como toda
-    # ausência, para a licença saúde ficar igual a ela; o P-NRV, de quem estava presente, fica.
+    # Os motivos sanitizados são XXX: código desconhecido, normalizado como outro sem bruto.
+    # Ausências conhecidas são testadas com dados inventados em test_modelo.py; P-NRV fica.
     assert _votos(sessao, "senado", Voto.valor_bruto) == {
         "Sim": 253,
         "Não": 36,
@@ -275,11 +276,12 @@ def test_os_votos_do_senado(sessao):
     assert _votos(sessao, "senado", Voto.valor) == {
         "sim": 253,
         "nao": 36,
-        "nao_votou": 30,
+        "nao_votou": 26,
+        "outro": 4,
         "presidente": 4,
         "abstencao": 1,
     }
-    # Os totais do Senado vêm null: o total se conta pelos votos, 81 em cada votação.
+    # Nas quatro nominais desta amostra, os totais vêm null: conte os 81 registros de cada lista.
     votacoes = sessao.scalars(select(Votacao).where(Votacao.casa == "senado")).all()
     assert sorted(v.id_externo for v in votacoes) == ["7109", "7110", "7111", "7112"]
     assert {(len(v.votos), v.resultado, v.resultado_bruto) for v in votacoes} == {
@@ -324,12 +326,101 @@ def _valores(dado, chave: str) -> list:
     return []
 
 
-def test_os_motivos_de_afastamento_dos_senadores_sao_ficticios():
+@pytest.mark.parametrize(
+    "caminho",
+    [
+        "camara/deputados-atuais-pagina-curta.json",
+        "camara/votacao-2236186-60.json",
+        "camara/proposicao-2236186.json",
+    ],
+)
+@pytest.mark.parametrize(
+    "campo,permitidos",
+    [("cpf", ()), ("dataNascimento", ()), ("email", ("parlamentar@example.com",))],
+)
+def test_dados_pessoais_dos_novos_fixtures_da_camara(caminho, campo, permitidos):
+    # O README exige CPF/nascimento ausentes e somente este e-mail fictício, em qualquer nível.
+    # A asserção mostra só o arquivo e o campo; nunca o valor encontrado na resposta.
+    valores_validos = all(valor in permitidos for valor in _valores(_ler(caminho), campo))
+    assert valores_validos, f"Refaça a sanitização de {campo} em {caminho} conforme o README."
+
+
+def _campos(dado) -> set[str]:
+    """Os nomes dos campos em todos os objetos e listas, sem seus valores."""
+    if isinstance(dado, dict):
+        return set(dado).union(*(_campos(filho) for filho in dado.values()))
+    if isinstance(dado, list):
+        return set().union(*(_campos(filho) for filho in dado))
+    return set()
+
+
+@pytest.mark.parametrize(
+    "fragmentos,exatos",
+    [
+        pytest.param(
+            (
+                "cpf",
+                "identidade",
+                "registrogeral",
+                "tituloeleitor",
+                "titulodeeleitor",
+                "nascimento",
+            ),
+            {"rg", "numerorg"},
+            id="identificacao",
+        ),
+        pytest.param(("email", "endereco", "telefone", "celular"), {"fax", "cep"}, id="contato"),
+        pytest.param(("afastamento", "ausencia"), set(), id="afastamento"),
+    ],
+)
+def test_processo_do_senado_nao_contem_campos_pessoais(fragmentos, exatos):
+    caminho = "senado/processo-9026396.json"
+    campos = {
+        campo.casefold().replace("_", "").replace("-", "") for campo in _campos(_ler(caminho))
+    }
+    # Mesmo um campo vazio exige revisão; o erro não imprime o payload nem dados pessoais.
+    campos_validos = all(
+        campo not in exatos and not any(fragmento in campo for fragmento in fragmentos)
+        for campo in campos
+    )
+    assert campos_validos, f"Refaça a sanitização dos campos de {caminho} conforme o README."
+
+
+@pytest.mark.parametrize("caminho", sorted((FIXTURES / "senado").glob("senador-*.json")))
+def test_os_motivos_de_afastamento_dos_senadores_sao_ficticios(caminho):
     # Um motivo de afastamento pode ser de saúde: na lista gravada, todos levam o mesmo valor
     # fictício (README de tests/fixtures). Gravou a lista de novo? Refaça a troca.
-    lista = _ler("senado/senador-lista-atual.json")
+    lista = json.loads(caminho.read_text(encoding="utf-8"))
     siglas = _valores(lista, "SiglaCausaAfastamento")
     descricoes = _valores(lista, "DescricaoCausaAfastamento")
-    assert siglas and descricoes, "a lista gravada não tem os campos do motivo de afastamento"
-    assert set(siglas) == {"XXX"}
-    assert set(descricoes) == {"Motivo fictício"}
+    if caminho.name == "senador-lista-atual.json":
+        assert siglas and descricoes, "a lista gravada não tem os campos do motivo de afastamento"
+    assert len(siglas) == len(descricoes)
+    assert set(siglas) <= {"XXX"}
+    assert set(descricoes) <= {"Motivo fictício"}
+
+
+@pytest.mark.parametrize(
+    "caminho",
+    sorted((FIXTURES / "senado").glob("votacao-*.json")),
+    ids=lambda caminho: caminho.name,
+)
+def test_os_motivos_de_ausencia_das_votacoes_gravadas_sao_ficticios(caminho):
+    resposta = json.loads(caminho.read_text(encoding="utf-8"))
+    permitidos = {
+        ("Sim", None),
+        ("Não", None),
+        ("Abstenção", None),
+        ("Presidente (art. 51 RISF)", None),
+        ("Votou", None),
+        ("P-NRV", "Presente – Não registrou voto"),
+        ("XXX", "Motivo fictício"),
+    }
+    # Confira o par inteiro: nenhuma descrição pessoal pode voltar sob um código permitido.
+    # A asserção mostra só o arquivo, nunca o código, a descrição ou a pessoa.
+    pares_validos = all(
+        (voto["siglaVotoParlamentar"], voto["descricaoVotoParlamentar"]) in permitidos
+        for votacao in resposta
+        for voto in votacao["votos"]
+    )
+    assert pares_validos, f"Refaça a sanitização dos votos de {caminho.name} conforme o README."

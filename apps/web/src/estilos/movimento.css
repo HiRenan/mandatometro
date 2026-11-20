@@ -104,6 +104,28 @@
 	}
 
 	/*
+	 * O azulejo do símbolo não gira de lado, que deixaria o desenho deitado: as
+	 * quatro peças viram em onda, uma volta inteira, e o símbolo termina de pé.
+	 * Ele vira quando o ponteiro passa pela trilha, na lista das trilhas, e quando
+	 * o passo da sanfona abre.
+	 */
+	.com-simbolo .az {
+		transition: rotate 0.6s var(--ease-mola);
+	}
+
+	.com-simbolo .az:nth-child(2) {
+		transition-delay: 70ms;
+	}
+
+	.com-simbolo .az:nth-child(3) {
+		transition-delay: 140ms;
+	}
+
+	.com-simbolo .az:nth-child(4) {
+		transition-delay: 210ms;
+	}
+
+	/*
 	 * A página de erro que volta depois de uma tentativa que falha (o data-de-novo,
 	 * em pagina-de-erro.tsx) fica parada: ela já estava na tela antes do
 	 * carregando, e os azulejos virando e o pé subindo de novo pareceriam uma
@@ -119,20 +141,25 @@
 	}
 
 	a:hover .seta,
-	button:hover .seta {
+	button:hover:not(:disabled, [aria-disabled="true"]) .seta {
 		translate: 0.3em 0;
 	}
 
 	/*
 	 * Os azulejos giram um quarto de volta quando o ponteiro passa pela folha, pela
-	 * faixa ou pela chamada deles, e quando o passo da sanfona abre. Na chamada do
-	 * quiz, giram em fila, um depois do outro.
+	 * faixa ou pela chamada deles. Na lista e na sanfona, o quarto de volta é
+	 * dos azulejos da posição. Na chamada do quiz e na folha da newsletter,
+	 * giram em fila, um depois do outro.
 	 */
 	.da-linha,
 	.chamada-azulejos .grande,
-	.sanfona .grande,
-	.outros-artigos .grande {
+	.outros-artigos .grande,
+	.sanfona .grande:not(.com-simbolo) {
 		transition: rotate 0.5s var(--ease-mola);
+	}
+
+	.outros-artigos a:focus-visible .grande {
+		transition: none;
 	}
 
 	.chamada-azulejos .grande:nth-child(2) {
@@ -151,8 +178,33 @@
 		transition-delay: 200ms;
 	}
 
-	.chamada-azulejos .grande:nth-child(n + 6) {
+	/* A chamada do quiz final tem doze azulejos, e a fila vai até o último. */
+	.chamada-azulejos .grande:nth-child(6) {
 		transition-delay: 250ms;
+	}
+
+	.chamada-azulejos .grande:nth-child(7) {
+		transition-delay: 300ms;
+	}
+
+	.chamada-azulejos .grande:nth-child(8) {
+		transition-delay: 350ms;
+	}
+
+	.chamada-azulejos .grande:nth-child(9) {
+		transition-delay: 400ms;
+	}
+
+	.chamada-azulejos .grande:nth-child(10) {
+		transition-delay: 450ms;
+	}
+
+	.chamada-azulejos .grande:nth-child(11) {
+		transition-delay: 500ms;
+	}
+
+	.chamada-azulejos .grande:nth-child(n + 12) {
+		transition-delay: 550ms;
 	}
 
 	/*
@@ -169,11 +221,18 @@
 	}
 
 	.linha:hover .da-linha,
-	.trilha-da-lista:hover .da-linha,
 	.outros-artigos a:hover .grande,
-	.sanfona details[open] .grande,
-	.chamada-quiz:hover .chamada-azulejos .grande {
+	.chamada-quiz:hover .chamada-azulejos .grande,
+	.newsletter-folha:hover .chamada-azulejos .grande,
+	.trilha-da-lista:hover .trilha-cabeca > .da-linha:not(.com-simbolo),
+	.sanfona details[open] .grande:not(.com-simbolo) {
 		rotate: 90deg;
+	}
+
+	/* O azulejo do símbolo vira em onda, e o desenho termina de pé (mais acima). */
+	.trilha-da-lista:hover .com-simbolo .az,
+	.sanfona details[open] .com-simbolo .az {
+		rotate: y 360deg;
 	}
 
 	/* Na folha do artigo, o número chega um pouco para o lado. */
@@ -200,6 +259,17 @@
 	}
 
 	/*
+	 * A barra da leitura (o desenho fica no index.css) começa desligada e só liga
+	 * no @supports logo abaixo, onde o navegador tem a animação de rolagem. As duas
+	 * regras ficam aqui, na mesma camada, uma depois da outra: até a #149, o
+	 * display: none ficava no index.css, que vem depois deste arquivo no CSS do
+	 * site, e vencia a regra que liga a barra.
+	 */
+	.leitura-barra {
+		display: none;
+	}
+
+	/*
 	 * O que entra na tela com a rolagem sobe e aparece, pela animação de rolagem do
 	 * CSS. Sem ela (e sem JavaScript), a peça já está no lugar: nada fica escondido
 	 * à espera de um script.
@@ -216,22 +286,28 @@
 			animation-range: entry 0 entry 7rem;
 		}
 
-		/* A barra da leitura acompanha o texto do artigo: a linha da leitura fica a
-		   60% da altura da tela. */
+		/*
+		 * A barra da leitura acompanha o texto do artigo, numa janela que vai da
+		 * linha a 60% da altura da tela à linha a 90%, a do visto (o rootMargin de
+		 * −10%, em routes/trilhas/$trilha/$artigo.tsx). O texto é mais alto que a
+		 * janela: no trecho contain, a barra começa quando o alto do texto passa da
+		 * linha de 60% e fica cheia quando o fim dele passa da de 90%, um pouco
+		 * antes de o lido, 2rem abaixo do texto, chegar lá e o visto aparecer.
+		 */
 		.pagina-do-artigo {
 			timeline-scope: --leitura;
 		}
 
 		.pagina-do-artigo .texto {
 			view-timeline: --leitura block;
-			view-timeline-inset: 60% 40%;
+			view-timeline-inset: 60% 10%;
 		}
 
 		.leitura-barra {
 			display: block;
 			animation: enche linear both;
 			animation-timeline: --leitura;
-			animation-range: cover 0% cover 100%;
+			animation-range: contain;
 		}
 	}
 
@@ -265,8 +341,11 @@
  * e depois da troca (View Transitions), e a máscara da foto nova é uma grade de
  * azulejos que se abre com o ângulo --vt.
  *
- * O cabeçalho, quando aparece na tela, vai numa foto à parte, por cima, e não
- * sai do lugar. Com a página rolada, ele vem com a página nova.
+ * O cabeçalho, quando aparece na tela nas duas páginas, vai numa foto à parte,
+ * por cima, e não sai do lugar. Quando uma delas está rolada para baixo dele (a
+ * de antes, ou a nova, que volta rolada pelo navegador ou abre no trecho de um
+ * link, como o /#newsletter), ele fica na foto da página dele, e o de antes é
+ * coberto pelos azulejos junto com ela.
  */
 @property --vt {
 	syntax: "<angle>";
@@ -353,8 +432,9 @@ html:active-view-transition-type(folha)::view-transition-new(moldura) {
 
 /*
  * Menos movimento: nada vira, tomba nem sobe, e as peças aparecem no lugar. A
- * página troca num esmaecer curto, nos dois sentidos, e o cabeçalho vai direto
- * para o lugar. A barra da leitura sai.
+ * página troca num esmaecer curto, nos dois sentidos, e o cabeçalho, quando
+ * aparece nas duas páginas, vai direto para o lugar; senão, esmaece com a
+ * página de antes. A barra da leitura sai.
  */
 @media (prefers-reduced-motion: reduce) {
 	*,

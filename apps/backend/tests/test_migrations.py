@@ -1,11 +1,20 @@
 """As migrations sobem do zero, descem até o começo e batem com os modelos."""
 
+from uuid import uuid4
+
+import pytest
 from sqlalchemy import Connection, Engine, inspect, text
+from sqlalchemy.exc import IntegrityError
 
 import mandatometro.db.modelos  # noqa: F401  (registra as tabelas no Base.metadata)
 from mandatometro.db import Base
 
 TABELAS_DO_MVP = {
+    "conta",
+    "credencial_conta",
+    "artigo_lido",
+    "aviso_conta",
+    "limite_conta",
     "fonte",
     "parlamentar",
     "mandato",
@@ -13,9 +22,13 @@ TABELAS_DO_MVP = {
     "votacao",
     "votacao_proposicao",
     "voto",
+    "ato",
     "edicao",
     "item_edicao",
     "inscrito",
+    "limite_inscricao",
+    "tentativa_piloto",
+    "limite_piloto",
 }
 
 
@@ -103,3 +116,156 @@ def test_os_checks_os_valores_padrao_e_os_tamanhos_batem_com_os_modelos(engine_d
     assert das_migrations["checks"]
     assert das_migrations["tamanhos"]
     assert das_migrations == dos_modelos
+
+
+def test_fatos_e_artigo_sao_opcionais_e_preservam_item_antigo(engine_de_teste, alembic):
+    alembic("downgrade", "0004")
+    with engine_de_teste.begin() as c:
+        fonte = c.execute(
+            text(
+                "insert into fonte (url) values ('https://www.camara.leg.br/exemplo') returning id"
+            )
+        ).scalar_one()
+        edicao = c.execute(
+            text(
+                "insert into edicao (titulo, inicio, fim)"
+                " values ('Edicao ficticia', '2026-11-09', '2026-11-15') returning id"
+            )
+        ).scalar_one()
+        item = c.execute(
+            text(
+                "insert into item_edicao (edicao_id, ordem, titulo, texto, fonte_id)"
+                " values (:edicao, 1, 'Item ficticio', 'Texto preservado', :fonte) returning id"
+            ),
+            {"edicao": edicao, "fonte": fonte},
+        ).scalar_one()
+    try:
+        alembic("upgrade", "head")
+        colunas = {c["name"]: c for c in inspect(engine_de_teste).get_columns("item_edicao")}
+        assert str(colunas["fatos"]["type"]) == "JSONB"
+        assert colunas["fatos"]["nullable"] and colunas["artigo_caminho"]["nullable"]
+        with engine_de_teste.connect() as c:
+            registro = c.execute(
+                text("select texto, fatos, artigo_caminho from item_edicao where id=:id"),
+                {"id": item},
+            ).one()
+            assert registro == ("Texto preservado", None, None)
+        alembic("downgrade", "0004")
+        assert "fatos" not in {
+            c["name"] for c in inspect(engine_de_teste).get_columns("item_edicao")
+        }
+    finally:
+        alembic("upgrade", "head")
+        with engine_de_teste.begin() as c:
+            c.execute(text("delete from edicao where id=:id"), {"id": edicao})
+            c.execute(text("delete from fonte where id=:id"), {"id": fonte})
+
+
+def test_ultima_edicao_preserva_inscrito_antigo_e_codigo_anterior(engine_de_teste, alembic):
+    alembic("downgrade", "0006")
+    with engine_de_teste.begin() as c:
+        antes = c.execute(
+            text(
+                "insert into inscrito (email) values ('migracao@example.com')"
+                " returning id, codigo_saida, inscrito_em"
+            )
+        ).one()
+    try:
+        alembic("upgrade", "head")
+        colunas = {c["name"]: c for c in inspect(engine_de_teste).get_columns("inscrito")}
+        assert colunas["ultima_edicao_enviada_id"]["nullable"]
+        with engine_de_teste.begin() as c:
+            depois = c.execute(
+                text(
+                    "select id, codigo_saida, inscrito_em, ultima_edicao_enviada_id"
+                    " from inscrito where id=:id"
+                ),
+                {"id": antes.id},
+            ).one()
+            assert tuple(depois) == (*antes, None)
+            # O INSERT do código anterior continua válido durante a troca de versões.
+            assert (
+                c.execute(
+                    text(
+                        "insert into inscrito (email) values ('versao-anterior@example.com')"
+                        " returning ultima_edicao_enviada_id"
+                    )
+                ).scalar_one()
+                is None
+            )
+        alembic("downgrade", "0006")
+        assert "ultima_edicao_enviada_id" not in {
+            c["name"] for c in inspect(engine_de_teste).get_columns("inscrito")
+        }
+        with engine_de_teste.connect() as c:
+            assert (
+                c.execute(
+                    text("select id, codigo_saida, inscrito_em from inscrito where id=:id"),
+                    {"id": antes.id},
+                ).one()
+                == antes
+            )
+    finally:
+        alembic("upgrade", "head")
+        with engine_de_teste.begin() as c:
+            c.execute(
+                text(
+                    "delete from inscrito where email in"
+                    " ('migracao@example.com', 'versao-anterior@example.com')"
+                )
+            )
+
+
+def test_papel_preserva_conta_e_insert_da_versao_anterior(engine_de_teste, alembic):
+    antiga, nova = uuid4(), uuid4()
+    inserir = text(
+        "insert into conta (id, email, nome, senha_hash, termo, aceite_em, criada_em)"
+        " values (:id, :email, 'Conta de teste', 'hash-ficticio', 'teste', now(), now())"
+    )
+    alembic("downgrade", "0009")
+    try:
+        with engine_de_teste.begin() as c:
+            c.execute(inserir, {"id": antiga, "email": f"{antiga.hex}@example.com"})
+        alembic("upgrade", "head")
+        colunas = {
+            coluna["name"]: coluna for coluna in inspect(engine_de_teste).get_columns("conta")
+        }
+        assert "papel" in colunas
+        assert not colunas["papel"]["nullable"]
+        with engine_de_teste.begin() as c:
+            c.execute(inserir, {"id": nova, "email": f"{nova.hex}@example.com"})
+            papeis = c.execute(
+                text("select id, papel from conta where id in (:antiga, :nova)"),
+                {"antiga": antiga, "nova": nova},
+            )
+            assert {id_conta: papel for id_conta, papel in papeis} == {
+                antiga: "comum",
+                nova: "comum",
+            }
+            with pytest.raises(IntegrityError) as erro, c.begin_nested():
+                c.execute(
+                    text("update conta set papel = 'desconhecido' where id = :id"), {"id": nova}
+                )
+            assert erro.value.orig.diag.constraint_name == "ck_conta_papel"
+            c.execute(
+                text("update conta set papel = 'administradora' where id = :id"), {"id": nova}
+            )
+
+        alembic("downgrade", "0009")
+        assert "papel" not in {
+            coluna["name"] for coluna in inspect(engine_de_teste).get_columns("conta")
+        }
+        with engine_de_teste.connect() as c:
+            assert set(
+                c.execute(
+                    text("select id from conta where id in (:antiga, :nova)"),
+                    {"antiga": antiga, "nova": nova},
+                ).scalars()
+            ) == {antiga, nova}
+    finally:
+        alembic("upgrade", "head")
+        with engine_de_teste.begin() as c:
+            c.execute(
+                text("delete from conta where id in (:antiga, :nova)"),
+                {"antiga": antiga, "nova": nova},
+            )

@@ -9,6 +9,7 @@ from functools import lru_cache
 
 from sqlalchemy import DateTime, Engine, MetaData, create_engine
 from sqlalchemy.orm import DeclarativeBase, Session
+from sqlalchemy.pool import NullPool
 
 from mandatometro.config import config
 
@@ -32,7 +33,17 @@ class Base(DeclarativeBase):
 
 @lru_cache
 def engine() -> Engine:
-    return create_engine(config().database_url, pool_pre_ping=True)
+    configuracao = config()
+    if configuracao.vercel:
+        # O pool fica no Neon (URL com -pooler). Cada transação devolve sua conexão,
+        # inclusive quando a plataforma congela ou multiplica as instâncias da função.
+        return create_engine(
+            configuracao.database_url,
+            poolclass=NullPool,
+            hide_parameters=True,
+            connect_args={"connect_timeout": 5, "prepare_threshold": None},
+        )
+    return create_engine(configuracao.database_url, pool_pre_ping=True, hide_parameters=True)
 
 
 def sessao() -> Session:

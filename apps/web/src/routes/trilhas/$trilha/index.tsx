@@ -7,6 +7,7 @@ import { AzulejoGrande, Painel } from "@/components/azulejo";
 import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "@/components/botao-continuar";
 import { Caminho } from "@/components/caminho";
 import { ChamadaDoQuiz } from "@/components/chamada-do-quiz";
+import { FaixaDeInformacoes } from "@/components/faixa-de-informacoes";
 import { Infografico } from "@/components/infografico";
 import { LugarDoBotao } from "@/components/lugar-do-botao";
 import { MarcaDeLido } from "@/components/marca-de-lido";
@@ -19,15 +20,22 @@ import { classeDaFita, fraseDoProgresso, plural } from "@/lib/formatar";
 import { metaDaPagina, metaSemPagina } from "@/lib/meta";
 import {
 	contarLidos,
+	contextoDoProgresso,
 	idDoArtigo,
 	lerLidos,
+	podeRestaurarLidos,
 	primeiroNaoLido,
 	recomecarTrilha,
 	restaurarLidos,
 	useArtigosLidos,
+	useContextoDoProgresso,
 } from "@/lib/progresso";
 import { contarRespondidas } from "@/lib/quiz";
-import { idDoQuiz, useRespostasDoQuiz } from "@/lib/respostas-do-quiz";
+import {
+	idDoQuiz,
+	idDoQuizFinal,
+	useRespostasDoQuiz,
+} from "@/lib/respostas-do-quiz";
 
 export const Route = createFileRoute("/trilhas/$trilha/")({
 	loader: ({ params }) => buscarTrilha({ data: { trilha: params.trilha } }),
@@ -40,11 +48,12 @@ export const Route = createFileRoute("/trilhas/$trilha/")({
 });
 
 // Os textos do botão de continuar: o da primeira visita, o de quem já leu algum
-// artigo da trilha e os da trilha terminada. Ela leva ao quiz e, com o quiz
-// respondido ou numa trilha sem quiz, às outras trilhas.
+// artigo da trilha e os da trilha terminada. Ela leva ao quiz, depois ao quiz
+// final e, com os dois respondidos ou numa trilha sem quiz, às outras trilhas.
 const COMECAR = "Começar pelo primeiro artigo";
 const continuarEm = (titulo: string) => `Continuar de onde parou: ${titulo}`;
 const RESPONDER_O_QUIZ = "Responder o quiz da trilha";
+const RESPONDER_O_QUIZ_FINAL = "Responder o quiz final";
 const VER_AS_TRILHAS = "Ver as outras trilhas";
 
 /**
@@ -67,10 +76,16 @@ function ComSeta({ children }: { children: string }) {
 function PaginaDaTrilha() {
 	const trilha = Route.useLoaderData();
 	const lidos = useArtigosLidos();
+	const contexto = useContextoDoProgresso();
 	const respostas = useRespostasDoQuiz(idDoQuiz(trilha.slug));
+	const doQuizFinal = useRespostasDoQuiz(idDoQuizFinal(trilha.slug));
 	// As marcas que o "Recomeçar a trilha" apagou, para o "Desfazer". Valem até a
-	// pessoa sair da página.
-	const [apagadas, setApagadas] = useState<string[] | null>(null);
+	// pessoa sair da página ou trocar de sessão.
+	const [marcasDoRecomeco, setApagadas] = useState<string[] | null>(null);
+	const apagadas =
+		marcasDoRecomeco && podeRestaurarLidos(marcasDoRecomeco, contexto)
+			? marcasDoRecomeco
+			: null;
 	const { aviso, avisar } = useAviso();
 	const total = trilha.artigos.length;
 	const quantosLidos = contarLidos(trilha.artigos, lidos);
@@ -80,18 +95,24 @@ function PaginaDaTrilha() {
 		0,
 	);
 	// Com a trilha terminada, o botão leva ao quiz enquanto falta alguma resposta,
-	// contada como na página do quiz.
+	// contada como na página do quiz, e depois ao quiz final, do mesmo jeito.
 	const faltaOQuiz =
 		trilha.quiz !== undefined &&
 		contarRespondidas(trilha.quiz.perguntasSemACerta, respostas) <
 			trilha.quiz.perguntasSemACerta.length;
+	const faltaOQuizFinal =
+		trilha.quizFinal !== undefined &&
+		contarRespondidas(trilha.quizFinal.perguntasSemACerta, doQuizFinal) <
+			trilha.quizFinal.perguntasSemACerta.length;
 	// Os textos que o botão de continuar pode ter nesta trilha: o servidor manda
 	// o primeiro, e o navegador troca pelo do artigo em que a pessoa parou ou,
-	// com a trilha terminada, pelo do quiz ou o das outras trilhas.
+	// com a trilha terminada, pelo do quiz, o do quiz final ou o das outras
+	// trilhas.
 	const textosDoBotao = [
 		COMECAR,
 		...trilha.artigos.map((artigo) => continuarEm(artigo.titulo)),
 		...(trilha.quiz ? [RESPONDER_O_QUIZ] : []),
+		...(trilha.quizFinal ? [RESPONDER_O_QUIZ_FINAL] : []),
 		VER_AS_TRILHAS,
 	];
 	const progresso =
@@ -100,12 +121,15 @@ function PaginaDaTrilha() {
 			: fraseDoProgresso(quantosLidos, total);
 
 	function recomecar() {
+		if (contexto !== contextoDoProgresso()) return;
 		setApagadas(recomecarTrilha(trilha.slug));
 		avisar("Você recomeçou a trilha.");
 	}
 
 	function desfazer() {
-		restaurarLidos(apagadas ?? []);
+		if (!apagadas || !podeRestaurarLidos(apagadas, contextoDoProgresso()))
+			return;
+		restaurarLidos(apagadas);
 		setApagadas(null);
 		avisar(fraseDoProgresso(contarLidos(trilha.artigos, lerLidos()), total));
 	}
@@ -157,7 +181,7 @@ function PaginaDaTrilha() {
 					    continuar, que muda de texto, fica na outra coluna e, no celular,
 					    embaixo. Num clique duplo, o segundo clique fica de fora
 					    (lib/clique.ts) e, se passasse, cairia no mesmo botão. */}
-					<p className="recomeco">
+					<div className="recomeco text-pretty">
 						{acao && (
 							<button
 								type="button"
@@ -167,7 +191,7 @@ function PaginaDaTrilha() {
 								{acao.texto}
 							</button>
 						)}
-					</p>
+					</div>
 					<div className="cartaz-acao">
 						{/* A linha do progresso tem a altura reservada desde o HTML do
 						    servidor: quando o progresso aparece, depois da hidratação, o
@@ -195,6 +219,14 @@ function PaginaDaTrilha() {
 								>
 									<ComSeta>{RESPONDER_O_QUIZ}</ComSeta>
 								</Link>
+							) : faltaOQuizFinal ? (
+								<Link
+									to="/trilhas/$trilha/quiz-final"
+									params={{ trilha: trilha.slug }}
+									className={BOTAO_CONTINUAR}
+								>
+									<ComSeta>{RESPONDER_O_QUIZ_FINAL}</ComSeta>
+								</Link>
 							) : (
 								<Link to="/trilhas" className={BOTAO_CONTINUAR}>
 									<ComSeta>{VER_AS_TRILHAS}</ComSeta>
@@ -203,11 +235,11 @@ function PaginaDaTrilha() {
 						</LugarDoBotao>
 					</div>
 				</div>
-				<p className="faixa rotulo">
+				<FaixaDeInformacoes>
 					<span>{plural(total, "artigo", "artigos")}</span>
 					<span>{minutos} min de leitura</span>
 					<span>Fonte oficial em cada explicação</span>
-				</p>
+				</FaixaDeInformacoes>
 				<Aviso texto={aviso} />
 			</section>
 
@@ -272,6 +304,14 @@ function PaginaDaTrilha() {
 					<ChamadaDoQuiz
 						trilha={trilha.slug}
 						quiz={trilha.quiz}
+						className="revelar"
+					/>
+				)}
+				{trilha.quizFinal && (
+					<ChamadaDoQuiz
+						trilha={trilha.slug}
+						quiz={trilha.quizFinal}
+						final
 						className="revelar"
 					/>
 				)}

@@ -1,0 +1,732 @@
+"""Rascunho e revisão explícita, sem envio, com fotografias e arquivos verificáveis."""
+
+import hashlib
+import json
+import re
+from collections import Counter
+from collections.abc import Callable
+from dataclasses import asdict
+from datetime import UTC, date, datetime
+from typing import Annotated, Literal
+
+from psycopg.errors import LockNotAvailable
+from pydantic import BeforeValidator, Field, ValidationError
+from sqlalchemy import select, text
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import Session, joinedload, selectinload
+
+from mandatometro.avisos.email import MensagemInvalida, _url, formatar_edicao
+from mandatometro.db.modelos import Ato, Edicao, Fonte, ItemEdicao, Voto
+from mandatometro.ia.artigos import CATALOGO, sugerir
+from mandatometro.ia.esquemas import Estrito, Fatos, FatosAto, FatosItem, Id
+from mandatometro.ia.privacidade import (
+    MotivoRetencaoAto,
+    assunto_pessoal,
+    identificacao,
+    motivo_retencao_ato,
+    normalizar,
+)
+from mandatometro.ia.redacao import (
+    AVISO_TERMO_PESSOAL,
+    PENDENTE,
+    Redator,
+    TextoGerado,
+    redigir,
+    requer_conferencia_pessoal,
+)
+from mandatometro.ia.relevancia import ordenar_atos
+from mandatometro.ia.selecao import (
+    TETO_ATOS,
+    ItemAtoBase,
+    ItemBase,
+    pagina_publica,
+    selecionar,
+    selecionar_atos,
+)
+
+AbrirSessao = Callable[[], Session]
+PENDENTE_ATO = "Redação pendente: escreva a explicação do ato."
+AVISO_ATO_RETIDO = (
+    "Confira a privacidade do ato. Exclua o item com motivo ou confirme que ele fica."
+)
+
+# O Windows-1252 leva bytes de continuação a caracteres fora de U+0080–U+00BF.
+_CONTINUACOES_WINDOWS_1252 = bytes(range(0x80, 0xA0)).decode("cp1252", errors="ignore")
+# Limite aceito: também recusa palavra terminada em Ã/Â junto desses caracteres (AMANHÃ…).
+_ACENTO_QUEBRADO = re.compile(
+    rf"[ÃÂ][\u0080-\u00bf{re.escape(_CONTINUACOES_WINDOWS_1252)}]|â€|\ufffd"
+)
+
+
+class ErroEdicao(Exception):
+    """Mensagem editorial segura, sem texto de fonte ou exceção de terceiros."""
+
+
+class EdicaoNaoEncontrada(ErroEdicao):
+    """Nenhuma edição corresponde ao id informado."""
+
+
+class ConflitoEdicao(ErroEdicao):
+    """O conteúdo ou o estado da edição mudou."""
+
+
+class EdicaoOcupada(ErroEdicao):
+    """O prazo para obter a trava da edição se esgotou."""
+
+
+class ItemRevisao(Estrito):
+    id: Id
+    titulo: Annotated[str, Field(min_length=1, max_length=180)]
+    explicacao: Annotated[list[str], Field(min_length=1, max_length=12)]
+    artigo_caminho: str | None
+    revisado: bool
+    artigo_confirmado: bool
+    excluir: bool
+    motivo_exclusao: Annotated[str, Field(max_length=500)] = ""
+    # Só o booleano true é uma decisão. Os demais valores recebem a mensagem editorial do ato.
+    privacidade_confirmada: Annotated[bool, BeforeValidator(lambda valor: valor is True)] = False
+    fatos: dict
+    fontes: list[dict]
+    contexto: dict
+
+
+class ArquivoRevisao(Estrito):
+    versao: Literal[1]
+    edicao_id: Id
+    versao_rascunho: str
+    inicio: str
+    fim: str
+    titulo: Annotated[str, Field(min_length=1, max_length=180)]
+    cobertura_confirmada: bool
+    artigos_disponiveis: dict[str, str]
+    itens: list[ItemRevisao]
+
+
+def titulo_periodo(inicio: date, fim: date) -> str:
+    formato = "%d" if (inicio.year, inicio.month) == (fim.year, fim.month) else "%d/%m"
+    if inicio.year != fim.year:
+        formato = "%d/%m/%Y"
+    return f"Jornal legislativo — {inicio.strftime(formato)} a {fim:%d/%m/%Y}"
+
+
+def _carregar(sessao: Session, edicao_id: int, *, bloquear: bool = False) -> Edicao:
+    consulta = (
+        select(Edicao)
+        .where(Edicao.id == edicao_id)
+        .options(selectinload(Edicao.itens).joinedload(ItemEdicao.fonte))
+    )
+    # Escritas conferem o estado e a versão depois de obter o bloqueio da edição.
+    if bloquear:
+        sessao.execute(text("SET LOCAL lock_timeout = '3s'"))
+    try:
+        edicao = sessao.scalar(consulta.with_for_update() if bloquear else consulta)
+    except OperationalError as erro:
+        if bloquear and isinstance(erro.orig, LockNotAvailable):
+            raise EdicaoOcupada("Há outra gravação em andamento. Tente de novo.") from None
+        raise
+    if edicao is None:
+        raise EdicaoNaoEncontrada("Não encontramos essa edição. Confira o número informado.")
+    return edicao
+
+
+def _periodo(sessao: Session, inicio: date, fim: date, *, bloquear: bool = False) -> Edicao | None:
+    edicoes = list(
+        sessao.scalars(select(Edicao.id).where(Edicao.inicio == inicio, Edicao.fim == fim))
+    )
+    if len(edicoes) > 1:
+        raise ErroEdicao(
+            "Há mais de uma edição nesse período. Resolva a duplicação antes de continuar."
+        )
+    return _carregar(sessao, edicoes[0], bloquear=bloquear) if edicoes else None
+
+
+def _hash(edicao: Edicao) -> str:
+    dados = {
+        "id": edicao.id,
+        "titulo": edicao.titulo,
+        "inicio": str(edicao.inicio),
+        "fim": str(edicao.fim),
+        "estado": edicao.estado,
+        "publicada_em": str(edicao.publicada_em),
+        "itens": [
+            {
+                "id": i.id,
+                "ordem": i.ordem,
+                "titulo": i.titulo,
+                "texto": i.texto,
+                "fonte": i.fonte_id,
+                "fatos": i.fatos,
+                "artigo": i.artigo_caminho,
+            }
+            for i in sorted(edicao.itens, key=lambda item: item.ordem)
+        ],
+    }
+    return hashlib.sha256(
+        json.dumps(dados, sort_keys=True, ensure_ascii=False).encode()
+    ).hexdigest()
+
+
+def _fatos(item: ItemEdicao) -> FatosItem:
+    try:
+        if item.fatos is None:
+            raise ValueError
+        return Fatos.ler(item.fatos)
+    except (ValueError, TypeError):
+        raise ErroEdicao(
+            f"Item {item.ordem}: fatos ausentes ou inválidos. Refaça o rascunho."
+        ) from None
+
+
+def _fontes(sessao: Session, edicao: Edicao) -> dict[int, Fonte]:
+    ids = {item.fonte_id for item in edicao.itens}
+    for item in edicao.itens:
+        if item.fatos is not None:
+            ids.update(_fatos(item).fontes)
+    fontes = {f.id: f for f in sessao.scalars(select(Fonte).where(Fonte.id.in_(ids)))}
+    if len(fontes) != len(ids):
+        raise ErroEdicao("Uma referência oficial não está mais no banco. Refaça o rascunho.")
+    for fonte in fontes.values():
+        try:
+            _url(fonte.url)
+            if fonte.url_publica:
+                _url(fonte.url_publica)
+            if fonte.coletado_em is None:
+                raise MensagemInvalida
+        except MensagemInvalida:
+            raise ErroEdicao(
+                "Uma referência está sem endereço oficial ou data de coleta."
+            ) from None
+    return fontes
+
+
+def _dados_fatuais(fatos: FatosItem) -> dict:
+    return fatos.model_dump(
+        mode="json", exclude={"origem", "pendencias", "privacidade_confirmada", "selecao"}
+    )
+
+
+def _aviso_ato(numero: int, motivo: MotivoRetencaoAto) -> str:
+    return f"Item {numero} ({motivo}). {AVISO_ATO_RETIDO}"
+
+
+def _erro_confirmacao_ato(numero: int, motivo: MotivoRetencaoAto) -> ErroEdicao:
+    return ErroEdicao(
+        f"Item {numero} ({motivo}). Marque privacidade_confirmada "
+        "ou use excluir com motivo_exclusao."
+    )
+
+
+def _carregar_atos(sessao: Session, ids: set[int]) -> dict[int, Ato]:
+    if not ids:
+        return {}
+    linhas = sessao.scalars(select(Ato).where(Ato.id.in_(ids)).options(joinedload(Ato.fonte)))
+    return {ato.id: ato for ato in linhas}
+
+
+def _conferir(
+    sessao: Session, edicao: Edicao
+) -> tuple[dict[int, ItemBase | ItemAtoBase], list[str]]:
+    if not edicao.itens:
+        raise ErroEdicao("A edição precisa ter ao menos um item.")
+    fatos_itens = [(item, _fatos(item)) for item in edicao.itens]
+    selecao = selecionar(sessao, edicao.inicio, edicao.fim, teto=2**31 - 1)
+    votacoes = {frozenset(v.id for v in i.fatos.votacoes): i for i in selecao.itens}
+    ids_atos = {fatos.ato_id for _, fatos in fatos_itens if isinstance(fatos, FatosAto)}
+    atos = {
+        id_: ItemAtoBase.de_ato(ato)
+        for id_, ato in _carregar_atos(sessao, ids_atos).items()
+        if pagina_publica(ato.fonte)
+    }
+    bases = {}
+    for item, fatos in fatos_itens:
+        atual = (
+            atos.get(fatos.ato_id)
+            if isinstance(fatos, FatosAto)
+            else votacoes.get(frozenset(v.id for v in fatos.votacoes))
+        )
+        if (
+            atual is None
+            or _dados_fatuais(atual.fatos) != _dados_fatuais(fatos)
+            or atual.principal.id != item.fonte_id
+        ):
+            raise ErroEdicao(
+                f"Item {item.ordem}: os dados usados mudaram. Refaça e revise o rascunho."
+            )
+        bases[item.id] = atual
+    return bases, selecao.nomes
+
+
+def gerar(
+    abrir: AbrirSessao,
+    inicio: date,
+    fim: date,
+    *,
+    teto: int = 8,
+    teto_atos: int = TETO_ATOS,
+    refazer: bool = False,
+    redator: Redator | None = None,
+) -> dict:
+    if type(teto_atos) is not int or teto_atos < 1:
+        raise ValueError("O teto de atos precisa ser um número inteiro maior que zero.")
+    redacao = {"textos_do_modelo": 0, "textos_do_codigo": 0, "motivos_texto_do_codigo": {}}
+    siglas = set()
+    with abrir() as sessao:
+        anterior = _periodo(sessao, inicio, fim)
+        if anterior and (anterior.estado == "publicada" or not refazer):
+            return {
+                "situacao": "ja_publicada"
+                if anterior.estado == "publicada"
+                else "rascunho_existente",
+                "edicao_id": anterior.id,
+                **redacao,
+            }
+        versao = _hash(anterior) if anterior else None
+        selecao = selecionar(sessao, inicio, fim, teto=teto)
+        atos, resumo_atos = selecionar_atos(sessao, inicio, fim)
+        if atos and redator is not None:
+            siglas = {sigla for sigla in sessao.scalars(select(Voto.partido).distinct()) if sigla}
+
+    # Durante as chamadas ao redator, não há transação aberta nem conexão do banco em uso.
+    atos_escolhidos, origem_ordem, codigo_fallback = ordenar_atos(
+        atos, selecao.nomes, redator, siglas=siglas, teto=teto_atos
+    )
+    itens = [*selecao.itens, *atos_escolhidos]
+    resumo = asdict(selecao.resumo)
+    resumo["atos"] = {
+        **asdict(resumo_atos),
+        "elegiveis": len(atos),
+        "selecionados": len(atos_escolhidos),
+        "cortados_pelo_teto": len(atos) - len(atos_escolhidos),
+        "teto": teto_atos,
+        "origem_ordem": origem_ordem,
+        "codigo_fallback": codigo_fallback,
+    }
+    resumo["itens_com_termo_pessoal"] = sum(
+        requer_conferencia_pessoal(item) for item in selecao.itens
+    )
+    for campo in ("sem_proposicao", "sem_pagina_publica", "cortadas_pelo_teto"):
+        resumo[f"quantidade_{campo}"] = len(resumo[campo])
+    if not itens:
+        return {
+            "situacao": "sem_votacoes_no_banco"
+            if not resumo["votacoes_no_banco"] and not resumo_atos.no_banco
+            else "sem_itens_elegiveis",
+            **redacao,
+            **resumo,
+        }
+    preparados = []
+    motivos = Counter()
+    for base in itens:
+        fatos = base.fatos.model_copy(deep=True)
+        if isinstance(base, ItemAtoBase):
+            texto = TextoGerado(
+                "Ato do Diário Oficial", PENDENTE_ATO, "codigo", "sem_redacao_do_ato"
+            )
+            artigo = None
+        else:
+            texto = redigir(base, selecao.nomes, redator)
+            artigo = sugerir(base)
+        fatos.origem = texto.origem
+        if texto.origem == "codigo":
+            fatos.pendencias.append("redacao")
+            motivos[texto.motivo] += 1
+        if artigo:
+            fatos.pendencias.append("artigo")
+        preparados.append((base.principal.id, texto, fatos.model_dump(mode="json"), artigo))
+    with abrir() as sessao, sessao.begin():
+        edicao = _periodo(sessao, inicio, fim, bloquear=True)
+        if edicao and edicao.estado == "publicada":
+            return {"situacao": "ja_publicada", "edicao_id": edicao.id, **redacao}
+        if (edicao is not None and _hash(edicao) != versao) or (
+            edicao is None and versao is not None
+        ):
+            raise ErroEdicao("O rascunho mudou durante a geração. Execute novamente.")
+        if edicao is None:
+            edicao = Edicao(titulo=titulo_periodo(inicio, fim), inicio=inicio, fim=fim)
+            sessao.add(edicao)
+        else:
+            edicao.itens.clear()
+            sessao.flush()
+            edicao.titulo = titulo_periodo(inicio, fim)
+        for ordem, (fonte_id, texto, fatos, artigo) in enumerate(preparados, 1):
+            edicao.itens.append(
+                ItemEdicao(
+                    ordem=ordem,
+                    titulo=texto.titulo,
+                    texto=texto.texto,
+                    fonte_id=fonte_id,
+                    fatos=fatos,
+                    artigo_caminho=artigo,
+                )
+            )
+        sessao.flush()
+        # A coleta pode mudar entre leitura e gravação, mesmo com um único editor.
+        _conferir(sessao, edicao)
+        edicao_id = edicao.id
+    return {
+        "situacao": "rascunho_refeito" if versao else "rascunho_criado",
+        "edicao_id": edicao_id,
+        "itens": len(preparados),
+        "textos_do_modelo": len(preparados) - motivos.total(),
+        "textos_do_codigo": motivos.total(),
+        "motivos_texto_do_codigo": dict(motivos),
+        **resumo,
+    }
+
+
+def _contexto(base: ItemBase | ItemAtoBase, numero: int) -> dict:
+    if isinstance(base, ItemAtoBase):
+        motivo = motivo_retencao_ato(base.ato)
+        return {"avisos": [_aviso_ato(numero, motivo)], "motivo_retencao": motivo} if motivo else {}
+    return {
+        **({"avisos": [AVISO_TERMO_PESSOAL]} if requer_conferencia_pessoal(base) else {}),
+        "proposicoes": [
+            {"id": p.id, "sigla": p.sigla, "numero": p.numero, "ano": p.ano, "ementa": p.ementa}
+            for p in base.proposicoes
+        ],
+        "votacoes": [
+            {"id": v.id, "casa": v.casa, "id_externo": v.id_externo, "descricao": v.descricao}
+            for v in base.votacoes
+        ],
+    }
+
+
+def _arquivo(sessao: Session, edicao: Edicao, bases: dict[int, ItemBase | ItemAtoBase]) -> dict:
+    fontes = _fontes(sessao, edicao)
+    itens = []
+    for item in edicao.itens:
+        fatos, base = _fatos(item), bases[item.id]
+        contexto = _contexto(base, item.ordem)
+        itens.append(
+            {
+                "id": item.id,
+                "titulo": item.titulo,
+                "explicacao": item.texto.split("\n\n"),
+                "artigo_caminho": item.artigo_caminho,
+                "revisado": "revisao" not in fatos.pendencias,
+                "artigo_confirmado": "artigo" not in fatos.pendencias,
+                "excluir": False,
+                "motivo_exclusao": "",
+                "fatos": item.fatos,
+                "fontes": [
+                    {
+                        "id": i,
+                        "url": fontes[i].url,
+                        "url_publica": fontes[i].url_publica,
+                        "coletado_em": fontes[i].coletado_em.isoformat(),
+                        "trecho": fontes[i].trecho if isinstance(base, ItemBase) else None,
+                    }
+                    for i in fatos.fontes
+                ],
+                "contexto": contexto,
+                **(
+                    {"privacidade_confirmada": fatos.privacidade_confirmada is True}
+                    if isinstance(fatos, FatosAto) and "motivo_retencao" in contexto
+                    else {}
+                ),
+            }
+        )
+    return {
+        "versao": 1,
+        "edicao_id": edicao.id,
+        "versao_rascunho": _hash(edicao),
+        "inicio": str(edicao.inicio),
+        "fim": str(edicao.fim),
+        "titulo": edicao.titulo,
+        # Um único campo para quem revisa. A pendência é persistida nos itens para que qualquer
+        # item novo/refeito exija novamente a confirmação, sem outra coluna no banco.
+        "cobertura_confirmada": all("cobertura" not in _fatos(i).pendencias for i in edicao.itens),
+        "artigos_disponiveis": CATALOGO,
+        "itens": itens,
+    }
+
+
+def exportar(abrir: AbrirSessao, edicao_id: int) -> dict:
+    with abrir() as sessao:
+        edicao = _carregar(sessao, edicao_id)
+        if edicao.estado == "publicada":
+            raise ConflitoEdicao("A edição está publicada. Use mostrar para consultá-la.")
+        bases, _ = _conferir(sessao, edicao)
+        return _arquivo(sessao, edicao, bases)
+
+
+def _ler_arquivo(dados: dict) -> ArquivoRevisao:
+    try:
+        return ArquivoRevisao.model_validate(dados)
+    except ValidationError as erro:
+        local = erro.errors(include_input=False, include_context=False)[0]["loc"]
+        prefixo = (
+            f"Item {local[1] + 1}: "
+            if len(local) > 1 and local[0] == "itens" and type(local[1]) is int
+            else "Edição: "
+        )
+        campos = {
+            "titulo": "título",
+            "explicacao": "explicação em parágrafos",
+            "revisado": "confirmação da revisão",
+            "artigo_confirmado": "confirmação do artigo",
+            "cobertura_confirmada": "confirmação da cobertura",
+            "artigo_caminho": "artigo",
+            "motivo_exclusao": "motivo_exclusao",
+        }
+        campo = next((campos[c] for c in reversed(local) if c in campos), "formato do arquivo")
+        raise ErroEdicao(prefixo + f"confira o campo {campo}.") from None
+
+
+def _numeros(texto: str) -> set[str]:
+    return {t.replace(".", "").replace(",", ".") for t in re.findall(r"\d+(?:[.,]\d+)*", texto)}
+
+
+def _numeros_permitidos(base: ItemBase | ItemAtoBase, edicao: Edicao) -> set[str]:
+    if isinstance(base, ItemAtoBase):
+        ato = base.ato
+        dados = [ato.numero or "", ato.titulo, ato.ementa or ""]
+        for data in (edicao.inicio, edicao.fim, ato.data_publicacao, ato.data_assinatura):
+            if data is not None:
+                # Aceita o dia e o mês sem zero à esquerda no texto editorial.
+                dados.extend([data.isoformat(), str(data.day), str(data.month)])
+        return _numeros(" ".join(dados))
+    dados = [str(edicao.inicio), str(edicao.fim)]
+    for p in base.proposicoes:
+        dados.extend([str(p.numero), str(p.ano), p.ementa or ""])
+    for v, fato in zip(base.votacoes, base.fatos.votacoes, strict=True):
+        dados.extend([v.descricao, str(fato.data)])
+        if fato.placar:
+            dados.extend(str(n) for n in fato.placar.model_dump().values())
+    return _numeros(" ".join(dados))
+
+
+def _tem_acento_quebrado(texto: str) -> bool:
+    if _ACENTO_QUEBRADO.search(texto):
+        return True
+    for indice, caractere in enumerate(texto):
+        if caractere != "?":
+            continue
+        seguinte = texto[indice + 1 : indice + 2]
+        # Antes de uma letra, está no meio ou no começo de uma palavra.
+        if seguinte.isalpha():
+            return True
+        if (indice == 0 or texto[indice - 1].isspace()) and (not seguinte or seguinte.isspace()):
+            return True
+    return False
+
+
+def _texto_valido(texto: str, campo: str, prefixo: str, numeros: set[str]) -> None:
+    if (
+        not texto.strip()
+        or len(texto) > 10000
+        or any(ord(c) < 32 and c not in "\n\t" for c in texto)
+    ):
+        raise ErroEdicao(
+            f"{prefixo}: confira o campo {campo}; use texto preenchido e sem controles."
+        )
+    if _tem_acento_quebrado(texto):
+        raise ErroEdicao(
+            f'{prefixo}: o campo {campo} tem acentos quebrados, como "?" ou "Ã£" '
+            "no lugar de uma letra. Confira os acentos e salve o arquivo em UTF-8."
+        )
+    if _numeros(texto) - numeros:
+        raise ErroEdicao(f"{prefixo}: o campo {campo} tem número que não está nos fatos enviados.")
+
+
+def revisar(abrir: AbrirSessao, edicao_id: int, dados: dict) -> dict:
+    arquivo = _ler_arquivo(dados)
+    with abrir() as sessao, sessao.begin():
+        edicao = _carregar(sessao, edicao_id, bloquear=True)
+        if edicao.estado == "publicada":
+            raise ConflitoEdicao("A edição publicada não pode ser revisada.")
+        if arquivo.edicao_id != edicao.id or arquivo.versao_rascunho != _hash(edicao):
+            raise ConflitoEdicao(
+                "Esse arquivo é antigo ou de outra edição. Exporte o rascunho atual."
+            )
+        bases, nomes = _conferir(sessao, edicao)
+        original = _arquivo(sessao, edicao, bases)
+        if (
+            arquivo.inicio != original["inicio"]
+            or arquivo.fim != original["fim"]
+            or arquivo.artigos_disponiveis != CATALOGO
+        ):
+            raise ErroEdicao(
+                "Datas e catálogo são campos de consulta. Exporte o rascunho novamente."
+            )
+        existentes = {i.id: i for i in edicao.itens}
+        recebidos = [i.id for i in arquivo.itens]
+        if len(set(recebidos)) != len(recebidos) or set(recebidos) != set(existentes):
+            raise ErroEdicao(
+                "Não acrescente nem remova linhas de itens. Para retirar, use excluir."
+            )
+        referencias = {i["id"]: i for i in original["itens"]}
+        novos, avisos, numeros_edicao = [], [], set()
+        for numero, revisao in enumerate(arquivo.itens, 1):
+            item, base = existentes[revisao.id], bases[revisao.id]
+            referencia = referencias[item.id]
+            motivo = referencia["contexto"].get("motivo_retencao")
+            prefixo = f"Item {numero} ({motivo})" if motivo else f"Item {numero}"
+            for campo in ("fatos", "fontes", "contexto"):
+                if getattr(revisao, campo) != referencia[campo]:
+                    raise ErroEdicao(
+                        f"{prefixo}: o campo {campo} é de consulta e não pode mudar. "
+                        "Exporte o rascunho novamente e refaça os ajustes."
+                    )
+            if revisao.excluir:
+                if not revisao.motivo_exclusao.strip():
+                    if motivo:
+                        raise ErroEdicao(f"{prefixo}. Preencha o campo motivo_exclusao.")
+                    raise ErroEdicao(f"Item {numero}: preencha o motivo da exclusão.")
+                continue
+            if motivo:
+                if not revisao.privacidade_confirmada:
+                    raise _erro_confirmacao_ato(numero, motivo)
+                avisos.append(_aviso_ato(numero, motivo))
+            if isinstance(base, ItemBase) and requer_conferencia_pessoal(base):
+                avisos.append(f"Confira o item {numero}: {AVISO_TERMO_PESSOAL}")
+            numeros = _numeros_permitidos(base, edicao)
+            numeros_edicao.update(numeros)
+            texto = "\n\n".join(p.strip() for p in revisao.explicacao)
+            _texto_valido(revisao.titulo, "título", f"Item {numero}", numeros)
+            for p in revisao.explicacao:
+                _texto_valido(p, "explicação", f"Item {numero}", numeros)
+            if any(
+                assunto_pessoal(t, nomes, siglas=()) for t in (revisao.titulo, *revisao.explicacao)
+            ):
+                raise ErroEdicao(
+                    f"Item {numero}: a explicação trata de assunto pessoal fora da edição."
+                )
+            if revisao.artigo_caminho is not None and revisao.artigo_caminho not in CATALOGO:
+                raise ErroEdicao(f"Item {numero}: escolha um artigo do catálogo ou use null.")
+            marcador = PENDENTE_ATO if isinstance(base, ItemAtoBase) else PENDENTE
+            texto_normalizado = normalizar(texto)
+            pendente = "redacao pendente" in texto_normalizado or (
+                texto_normalizado.strip() == normalizar(marcador.split(":", 1)[1]).strip()
+            )
+            if revisao.revisado and pendente:
+                raise ErroEdicao(
+                    f"Item {numero}: escreva a explicação antes de confirmar a revisão."
+                )
+            fatos = _fatos(item)
+            if isinstance(fatos, FatosAto) and motivo:
+                fatos.privacidade_confirmada = True
+            fatos.pendencias = []
+            if pendente:
+                fatos.pendencias.append("redacao")
+            if not revisao.revisado:
+                fatos.pendencias.append("revisao")
+            if not arquivo.cobertura_confirmada:
+                fatos.pendencias.append("cobertura")
+            if revisao.artigo_caminho and not revisao.artigo_confirmado:
+                fatos.pendencias.append("artigo")
+            if texto != item.texto or revisao.titulo.strip() != item.titulo:
+                fatos.origem = "revisao"
+            if identificacao(revisao.titulo + " " + texto, nomes):
+                avisos.append(
+                    f"Confira o item {numero}: o texto pode citar parlamentar ou partido."
+                )
+            novos.append(
+                ItemEdicao(
+                    ordem=len(novos) + 1,
+                    titulo=revisao.titulo.strip(),
+                    texto=texto,
+                    fonte_id=item.fonte_id,
+                    fatos=fatos.model_dump(mode="json"),
+                    artigo_caminho=revisao.artigo_caminho,
+                )
+            )
+        if not novos:
+            raise ErroEdicao("Mantenha ao menos um item na edição.")
+        _texto_valido(arquivo.titulo, "título", "Edição", numeros_edicao)
+        if "\n" in arquivo.titulo or "\t" in arquivo.titulo:
+            raise ErroEdicao("Edição: o título precisa ficar em uma linha.")
+        if assunto_pessoal(arquivo.titulo, nomes, siglas=()):
+            raise ErroEdicao("Edição: o título trata de assunto pessoal fora da edição.")
+        if identificacao(arquivo.titulo, nomes):
+            avisos.append("Confira o título da edição: o texto pode citar parlamentar ou partido.")
+        edicao.titulo = arquivo.titulo.strip()
+        edicao.itens.clear()
+        sessao.flush()
+        edicao.itens.extend(novos)
+        sessao.flush()
+        pendencias = sorted({p for i in edicao.itens for p in _fatos(i).pendencias})
+    return {
+        "situacao": "revisao_salva",
+        "edicao_id": edicao_id,
+        "itens": len(novos),
+        "pendencias": pendencias,
+        "avisos": avisos,
+    }
+
+
+def publicar(abrir: AbrirSessao, edicao_id: int) -> dict:
+    with abrir() as sessao, sessao.begin():
+        edicao = _carregar(sessao, edicao_id, bloquear=True)
+        if edicao.estado == "publicada":
+            return {"situacao": "ja_publicada", "edicao_id": edicao_id}
+        _periodo(sessao, edicao.inicio, edicao.fim)
+        bases, _ = _conferir(sessao, edicao)
+        for item in edicao.itens:
+            fatos = _fatos(item)
+            if isinstance(fatos, FatosAto) and fatos.privacidade_confirmada is not True:
+                base = bases[item.id]
+                if isinstance(base, ItemAtoBase) and (motivo := motivo_retencao_ato(base.ato)):
+                    raise _erro_confirmacao_ato(item.ordem, motivo)
+            pendencias = fatos.pendencias
+            if pendencias:
+                raise ErroEdicao(
+                    f"Item {item.ordem}: há pendência de {', '.join(pendencias)}. Exporte e revise."
+                )
+            marcador = PENDENTE_ATO if isinstance(fatos, FatosAto) else PENDENTE
+            if not item.titulo.strip() or not item.texto.strip() or marcador in item.texto:
+                raise ErroEdicao(
+                    f"Item {item.ordem}: preencha título e explicação antes de publicar."
+                )
+        try:
+            formatar_edicao(
+                edicao, app_base_url="https://mandatometro.com.br", fontes=_fontes(sessao, edicao)
+            )
+        except MensagemInvalida:
+            raise ErroEdicao(
+                "Confira os textos, os artigos e as referências antes de publicar."
+            ) from None
+        edicao.estado, edicao.publicada_em = "publicada", datetime.now(UTC)
+    return {"situacao": "publicada", "edicao_id": edicao_id}
+
+
+def _privacidade_previa(sessao: Session, edicao: Edicao) -> tuple[set[int], list[str]]:
+    if edicao.estado != "rascunho":
+        return set(), []
+    itens_atos = [
+        (item, fatos)
+        for item in edicao.itens
+        if item.fatos is not None and isinstance(fatos := _fatos(item), FatosAto)
+    ]
+    atos = _carregar_atos(sessao, {fatos.ato_id for _, fatos in itens_atos})
+    sem_link, avisos = set(), []
+    for item, fatos in itens_atos:
+        ato = atos.get(fatos.ato_id)
+        if ato is None or fatos.privacidade_confirmada is False:
+            sem_link.add(item.id)
+        if ato is not None and (motivo := motivo_retencao_ato(ato)):
+            avisos.append(_aviso_ato(item.ordem, motivo))
+            if fatos.privacidade_confirmada is not True or (
+                _dados_fatuais(ItemAtoBase.de_ato(ato).fatos) != _dados_fatuais(fatos)
+            ):
+                sem_link.add(item.id)
+    return sem_link, avisos
+
+
+def mostrar(abrir: AbrirSessao, edicao_id: int, *, app_base_url: str) -> str:
+    with abrir() as sessao:
+        edicao = _carregar(sessao, edicao_id)
+        sem_link, avisos = _privacidade_previa(sessao, edicao)
+        try:
+            texto = formatar_edicao(
+                edicao,
+                app_base_url=app_base_url,
+                fontes=_fontes(sessao, edicao),
+                previa=True,
+                itens_sem_link=sem_link,
+            ).texto
+        except MensagemInvalida:
+            raise ErroEdicao("Confira os textos, os artigos e as referências da edição.") from None
+        if avisos:
+            texto += "\n\n" + "\n".join(avisos)
+        return texto

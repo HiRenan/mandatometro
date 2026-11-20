@@ -116,13 +116,16 @@ const pagina: Dados = {
 	},
 };
 
-/** Mostra a página num site de mentira, com as rotas da trilha e dos artigos para os links. */
-async function mostrar(dados: Dados = pagina) {
+/**
+ * Mostra a página num site de mentira, com as rotas da trilha e dos artigos para
+ * os links. A folha da newsletter só aparece com a API (o `newsletter`).
+ */
+async function mostrar(dados: Dados = pagina, { newsletter = false } = {}) {
 	const raiz = createRootRoute({ component: () => <Outlet /> });
 	const inicio = createRoute({
 		getParentRoute: () => raiz,
 		path: "/",
-		component: () => <PaginaInicial pagina={dados} />,
+		component: () => <PaginaInicial pagina={dados} newsletter={newsletter} />,
 	});
 	const trilha = createRoute({
 		getParentRoute: () => raiz,
@@ -134,8 +137,13 @@ async function mostrar(dados: Dados = pagina) {
 		path: "/trilhas/$trilha/$artigo",
 		component: () => null,
 	});
+	const edicoes = createRoute({
+		getParentRoute: () => raiz,
+		path: "/edicoes",
+		component: () => null,
+	});
 	const router = createRouter({
-		routeTree: raiz.addChildren([inicio, trilha, artigoDaTrilha]),
+		routeTree: raiz.addChildren([inicio, trilha, artigoDaTrilha, edicoes]),
 		history: createMemoryHistory({ initialEntries: ["/"] }),
 	});
 	const { container } = render(<RouterProvider router={router} />);
@@ -314,6 +322,28 @@ describe("página inicial", () => {
 		]);
 	});
 
+	it("o azulejo de cada passo desenha o assunto dele", async () => {
+		await mostrar();
+		const caminho = screen.getByRole("region", {
+			name: "O caminho de um projeto de lei",
+		});
+		const azulejos = [
+			...caminho.querySelectorAll<HTMLElement>("ol.passos-abas .grande"),
+		];
+
+		// O símbolo do passo (lib/simbolos.ts), dividido nas quatro peças.
+		expect(azulejos.map((azulejo) => azulejo.dataset.simbolo)).toEqual([
+			"folha",
+			"mesa",
+			"hemiciclo",
+			"duas-casas",
+			"caneta",
+		]);
+		for (const azulejo of azulejos) {
+			expect(azulejo.querySelectorAll(".az > svg")).toHaveLength(4);
+		}
+	});
+
 	it("mostra um passo de cada vez e avisa o leitor de tela na troca", async () => {
 		await mostrar();
 		const caminho = screen.getByRole("region", {
@@ -464,13 +494,48 @@ describe("página inicial", () => {
 		}
 	});
 
-	it("não pede dado nenhum e não fala do que ainda não existe", async () => {
+	it("sem a API, não pede dado nenhum e não fala do que ainda não existe", async () => {
 		const tela = await mostrar();
 
 		expect(tela.querySelector("form, input, select, textarea")).toBeNull();
+		expect(tela.querySelector('a[href^="/edicoes"]')).toBeNull();
 		expect(tela.textContent).not.toMatch(
-			/status da api|newsletter|inscri|quiz|em breve|em construção/i,
+			/status da api|newsletter|inscri|edições|quiz|em breve|em construção/i,
 		);
+	});
+
+	it("com a API, pede só o e-mail, na folha da newsletter depois do caminho", async () => {
+		const tela = await mostrar(pagina, { newsletter: true });
+
+		const folha = screen.getByRole("region", { name: "O jornal legislativo" });
+		expect(tela.querySelectorAll("form")).toHaveLength(1);
+		expect(
+			[...tela.querySelectorAll("input, select, textarea")].map((campo) =>
+				campo.getAttribute("type"),
+			),
+		).toEqual(["email"]);
+		expect(folha.querySelector("form")).not.toBeNull();
+		expect(
+			vemDepois(
+				screen.getByRole("region", { name: pagina.caminho?.titulo }),
+				folha,
+			),
+		).toBe(true);
+		expect(folha.classList.contains("revelar")).toBe(true);
+		expect(tela.textContent).not.toMatch(
+			/status da api|quiz|em breve|em construção/i,
+		);
+	});
+
+	it("na folha da newsletter, depois da nota, o link leva às edições", async () => {
+		await mostrar(pagina, { newsletter: true });
+		const folha = screen.getByRole("region", { name: "O jornal legislativo" });
+		const link = within(folha).getByRole("link", { name: "Ler as edições" });
+		const nota = folha.querySelector(".newsletter-nota");
+
+		expect(link.getAttribute("href")).toBe("/edicoes");
+		expect(link.classList.contains("acao-de-texto")).toBe(true);
+		expect(nota && vemDepois(nota, link)).toBe(true);
 	});
 
 	it("com a letra grande, o título tem teto, dentro do cartaz", async () => {

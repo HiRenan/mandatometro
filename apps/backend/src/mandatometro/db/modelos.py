@@ -2,10 +2,12 @@
 
 - A coleta da Câmara (#10) e do Senado (#11) grava parlamentar, mandato, proposição, votação e
   voto. Os campos de cada API estão em docs/dicionario-de-dados.md.
+- Os atos do Diário Oficial se identificam pela origem e pelo id que ela fornece.
 - A newsletter: a edição da semana, com os itens, que a IA rascunha e o time revisa (#22), e
   quem assina, que se inscreve pela #21 e recebe as edições pelo envio da #39.
-- Fonte em tudo (AGENTS.md): cada dado coletado e cada item da edição aponta para uma fonte, com
-  o endereço e a data da coleta. Sem fonte, o banco não grava.
+- Fonte em tudo (docs/dicionario-de-dados.md#fonte-dos-dados-coletados): cada dado coletado e cada
+  item da edição aponta para uma fonte, com o endereço e a data da coleta. Sem fonte, o banco
+  não grava.
 - Cada Casa tem os seus números: a chave de parlamentar, proposição e votação é a Casa com o id da
   Casa (casa, id_externo).
 - Os valores fixos são texto com CHECK, sem enum do PostgreSQL: um valor novo entra trocando o
@@ -15,6 +17,7 @@
 
 import logging
 from datetime import date, datetime
+from typing import Literal
 from uuid import UUID
 
 from sqlalchemy import (
@@ -22,12 +25,14 @@ from sqlalchemy import (
     Column,
     ForeignKey,
     Index,
+    SmallInteger,
     String,
     Table,
     UniqueConstraint,
     func,
     text,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from mandatometro.db import Base
@@ -35,6 +40,70 @@ from mandatometro.db import Base
 logger = logging.getLogger(__name__)
 
 CASAS = ("camara", "senado")
+
+PapelConta = Literal["comum", "administradora"]
+PADRAO_ID_ARTIGO = r"^[a-z0-9-]+/[a-z0-9-]+$"
+TAMANHO_ID_ARTIGO = 128
+
+
+class Conta(Base):
+    __tablename__ = "conta"
+    __table_args__ = (CheckConstraint("papel in ('comum', 'administradora')", name="papel"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(unique=True)
+    nome: Mapped[str]
+    senha_hash: Mapped[str]
+    genero: Mapped[str | None]
+    autodescricao: Mapped[str | None]
+    estado: Mapped[str | None]
+    nascimento: Mapped[date | None]
+    termo: Mapped[str]
+    aceite_em: Mapped[datetime]
+    criada_em: Mapped[datetime]
+    confirmada_em: Mapped[datetime | None]
+    papel: Mapped[PapelConta] = mapped_column(String, server_default="comum")
+
+
+class CredencialConta(Base):
+    """Confirmação, recuperação e sessão usam segredos opacos com validade."""
+
+    __tablename__ = "credencial_conta"
+    resumo: Mapped[str] = mapped_column(primary_key=True)
+    conta_id: Mapped[UUID] = mapped_column(ForeignKey("conta.id", ondelete="CASCADE"), index=True)
+    finalidade: Mapped[str]
+    expira: Mapped[datetime]
+
+
+class ArtigoLido(Base):
+    """Marca privada de leitura. A conta e o artigo juntos identificam a marca."""
+
+    __tablename__ = "artigo_lido"
+    __table_args__ = (
+        CheckConstraint(f"""artigo_id COLLATE "C" ~ '{PADRAO_ID_ARTIGO}'""", name="artigo_id"),
+    )
+
+    conta_id: Mapped[UUID] = mapped_column(
+        ForeignKey("conta.id", ondelete="CASCADE"), primary_key=True
+    )
+    artigo_id: Mapped[str] = mapped_column(String(TAMANHO_ID_ARTIGO), primary_key=True)
+    marcado_em: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class AvisoConta(Base):
+    __tablename__ = "aviso_conta"
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    conta_id: Mapped[UUID | None] = mapped_column(ForeignKey("conta.id", ondelete="CASCADE"))
+    conteudo: Mapped[bytes]
+    proxima: Mapped[datetime] = mapped_column(index=True)
+    expira: Mapped[datetime]
+
+
+class LimiteConta(Base):
+    __tablename__ = "limite_conta"
+    chave: Mapped[str] = mapped_column(primary_key=True)
+    minuto: Mapped[int]
+    tentativas: Mapped[int]
+
 
 # --- O voto e o resultado: o valor num conjunto nosso e, se pode, o código da Casa ---
 
@@ -60,13 +129,17 @@ CODIGOS_GRAVADOS = {
 CODIGOS_DE_AUSENCIA = {
     "AP",  # "Atividade parlamentar"
     "LS",  # "Licença saúde"
+    "LAP",  # "Licença paternidade ou ao adotante"
+    "LP",  # "Licença Particular"
+    "MIS",  # "Missão da Casa no País/exterior"
+    "NCOM",  # "Não Compareceu"; publicado como NCom, comparado em maiúsculas
 }
 
 RESULTADOS = ("aprovada", "rejeitada", "outro")
-# Câmara: aprovacao 1 ou 0. Senado: resultadoVotacao "A" nas 7 votações que a revisão do PR #79
-# viu; nas 4 gravadas em tests/fixtures, o informeLegislativo da sessão diz que cada uma foi
-# aprovada. As outras letras ainda não apareceram e viram "outro".
-_RESULTADOS_CONHECIDOS = {"1": "aprovada", "0": "rejeitada", "A": "aprovada"}
+# Câmara: aprovacao 1 ou 0. Senado: A é aprovação; R é rejeição, conferida no informeLegislativo
+# das votações 7081, 7099 e 7100 em /votacao de 01/01 a 15/11/2026. A 7081, secreta, também está
+# gravada em tests/fixtures. Letras ainda não classificadas viram outro, com o resultado bruto.
+_RESULTADOS_CONHECIDOS = {"1": "aprovada", "0": "rejeitada", "A": "aprovada", "R": "rejeitada"}
 
 
 def normalizar_voto(bruto: str) -> tuple[str, str | None]:
@@ -111,8 +184,7 @@ class Fonte(Base):
     """De onde veio um dado: o endereço coletado, a página que o leitor abre, a data e o trecho.
 
     - url: o que a coleta leu (a API, ou a página e o PDF lidos pelo Firecrawl).
-    - url_publica: a página da Câmara ou do Senado que o leitor abre, quando houver. É a que a
-      newsletter mostra.
+    - url_publica: a página oficial que o leitor abre, quando houver. É a que a newsletter mostra.
     - trecho: o trecho literal, quando a afirmação vier de texto.
 
     Registros da mesma resposta dividem a fonte: os votos de uma votação apontam todos para a fonte
@@ -238,9 +310,12 @@ class Votacao(Base):
       codigoSessaoVotacao ("7109"), que sozinho é único.
     - resultado e resultado_bruto: saem de normalizar_resultado.
 
-    Não há colunas de total: no Senado elas vêm null, e na Câmara não existem. O total se conta
-    pelos votos. Na Câmara, o /votos só traz quem votou, e só nas votações nominais: quem não
-    aparece não vira linha, e a conta "X dos 513 votaram" sai dos votos gravados.
+    Não há colunas de total nem de modalidade. No Senado, os totais vêm null nas nominais: conte
+    os votos. Nas secretas, a API traz o placar nos totais e Votou na lista; a coleta guarda somente
+    matéria, votação e resultado, sem votos individuais. Lista vazia no banco não prova segredo.
+    Na Câmara, não há totais na API: consulte /votos nas nominais e nas simbólicas, pois algumas
+    simbólicas também publicam registros. Quem não aparece não vira linha. A lista pode incluir
+    a presidência (Artigo 17): separe os valores normalizados ao contar votos e presença.
     """
 
     __tablename__ = "votacao"
@@ -299,6 +374,40 @@ class Voto(Base):
     fonte: Mapped[Fonte] = relationship()
 
 
+# --- Os atos do Diário Oficial ---
+
+TIPOS_DE_ATO = ("decreto", "lei", "medida_provisoria", "outro")
+
+
+class Ato(Base):
+    """Um ato publicado no Diário Oficial, identificado pela origem e pelo id que ela fornece.
+
+    A data de publicação delimita o período da coleta. A data de assinatura, quando informada,
+    é a que veio da fonte. A página oficial do ato fica em fonte.url_publica.
+    """
+
+    __tablename__ = "ato"
+    __table_args__ = (
+        UniqueConstraint("origem", "id_externo"),
+        CheckConstraint(_um_de("tipo", TIPOS_DE_ATO), name="tipo"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    origem: Mapped[str]
+    id_externo: Mapped[str]
+    tipo: Mapped[str]
+    titulo: Mapped[str]
+    ementa: Mapped[str | None]
+    data_publicacao: Mapped[date] = mapped_column(index=True)
+    data_assinatura: Mapped[date | None]
+    secao: Mapped[str | None]
+    orgao: Mapped[str | None]
+    numero: Mapped[str | None]
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
+    fonte: Mapped[Fonte] = relationship()
+
+
 # --- A newsletter: a edição da semana e quem assina ---
 
 ESTADOS_DA_EDICAO = ("rascunho", "publicada")
@@ -338,7 +447,7 @@ class ItemEdicao(Base):
     """Uma notícia da edição, na ordem em que aparece, com a fonte obrigatória.
 
     A fonte é a da afirmação: a newsletter mostra a url_publica dela, quando houver, e a data da
-    coleta. Sem fonte, o item não grava (AGENTS.md: o que não tem fonte fica fora da newsletter).
+    coleta. Sem fonte, o item não grava (PRODUCT.md: o que não tem fonte fica fora da newsletter).
     """
 
     __tablename__ = "item_edicao"
@@ -350,13 +459,16 @@ class ItemEdicao(Base):
     titulo: Mapped[str]
     texto: Mapped[str]
     fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+    # Fotografia versionada: ids de matérias/votações/fontes e contagens, sem dados de pessoas.
+    fatos: Mapped[dict | None] = mapped_column(JSONB)
+    artigo_caminho: Mapped[str | None]
 
     edicao: Mapped[Edicao] = relationship(back_populates="itens")
     fonte: Mapped[Fonte] = relationship()
 
 
 class Inscrito(Base):
-    """Quem assina a newsletter: só o e-mail, a data da inscrição e o código do link de sair.
+    """Quem assina: e-mail, data, código de saída e última edição aceita pelo provedor.
 
     - email: único e em minúsculas. A inscrição (#21) converte antes de gravar; o banco recusa
       maiúscula, para "Pessoa@" e "pessoa@" não virarem duas inscrições.
@@ -367,8 +479,8 @@ class Inscrito(Base):
     codigo_saida, testado em tests/test_modelo.py). Tabela nova que aponte para o inscrito, como
     um registro de envios, apaga junto (ondelete CASCADE).
 
-    O e-mail é dado pessoal (AGENTS.md): só sai do banco para o envio, e a API, os logs e os
-    fixtures citam o inscrito pelo id.
+    O e-mail é dado pessoal (docs/dados-pessoais.md): só sai do banco para o envio. A API, os logs
+    e os fixtures citam o inscrito pelo id.
     """
 
     __tablename__ = "inscrito"
@@ -380,3 +492,50 @@ class Inscrito(Base):
         unique=True, server_default=text("gen_random_uuid()")
     )
     inscrito_em: Mapped[datetime] = mapped_column(server_default=func.now())
+    # Só avança pela ordem de publicação; não é histórico nem confirmação de entrega.
+    ultima_edicao_enviada_id: Mapped[int | None] = mapped_column(ForeignKey("edicao.id"))
+
+
+class LimiteInscricao(Base):
+    """Cota global por minuto: sem identificar quem tentou se inscrever."""
+
+    __tablename__ = "limite_inscricao"
+    __table_args__ = (
+        CheckConstraint("quantidade > 0", name="quantidade_positiva"),
+        CheckConstraint("janela = date_trunc('minute', janela)", name="janela_minuto"),
+    )
+
+    janela: Mapped[datetime] = mapped_column(primary_key=True)
+    quantidade: Mapped[int]
+
+
+class TentativaPiloto(Base):
+    """Primeira conclusão por etapa; o código aleatório só liga respostas do piloto.
+
+    Não há hora, turma, conta ou id sequencial. A tela pode usar o mesmo código nas duas
+    etapas ou códigos diferentes; só o primeiro caso produz pares no relatório.
+    """
+
+    __tablename__ = "tentativa_piloto"
+    __table_args__ = (
+        CheckConstraint("etapa IN ('antes', 'depois')", name="etapa_valida"),
+        CheckConstraint("acertos >= 0 AND acertos <= 12", name="acertos_validos"),
+    )
+
+    participacao: Mapped[UUID] = mapped_column(primary_key=True)
+    versao_quiz: Mapped[str] = mapped_column(String(40), primary_key=True)
+    etapa: Mapped[str] = mapped_column(primary_key=True)
+    acertos: Mapped[int] = mapped_column(SmallInteger)
+
+
+class LimitePiloto(Base):
+    """Cota global do piloto, sem relação com a tentativa ou com a newsletter."""
+
+    __tablename__ = "limite_piloto"
+    __table_args__ = (
+        CheckConstraint("quantidade > 0", name="quantidade_positiva"),
+        CheckConstraint("janela = date_trunc('minute', janela)", name="janela_minuto"),
+    )
+
+    janela: Mapped[datetime] = mapped_column(primary_key=True)
+    quantidade: Mapped[int]

@@ -5,7 +5,12 @@ description = "Backend do Mandatômetro: coleta, IA, e-mails e API."
 requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.20.1",
+    "anthropic>=2.10.0,<3",
+    "argon2-cffi>=25.1.0",
+    "cryptography>=50.0.2",
+    "email-validator>=2,<3",
     "fastapi>=0.162.0",
+    "httpx2>=2.16.0",
     "pgvector>=0.5.1",
     "psycopg[binary]>=3.3.8",
     "pydantic-settings>=2.16.2",
@@ -22,7 +27,6 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    "httpx2>=2.16.0",
     "pytest>=9.2.0",
     "ruff>=0.17.4",
 ]
@@ -35,6 +39,9 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# O traceback longo abre os argumentos do teste, e as respostas gravadas trazem nome e código de pessoa.
+addopts = "--tb=short -m 'not online'"
+markers = ["online: consulta uma fonte externa ao vivo"]
 
 # A URL do banco vem do DATABASE_URL, lido em migrations/env.py. O alembic.ini só tem o logging.
 [tool.alembic]

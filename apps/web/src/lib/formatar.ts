@@ -18,8 +18,84 @@ const MESES = [
  * para o servidor e o navegador escreverem igual na hidratação.
  */
 export function formatarData(data: string): string {
+	return `${formatarDia(data)} de ${Number(data.split("-")[0])}`;
+}
+
+/**
+ * "2026-11-09" vira "9 de novembro", sem o ano: para quando o texto ao lado já
+ * diz o ano, como a publicação na faixa da edição, ao lado do período.
+ */
+export function formatarDia(data: string): string {
+	const [, mes, dia] = data.split("-").map(Number);
+	return `${dia === 1 ? "1º" : dia} de ${MESES[mes - 1]}`;
+}
+
+/**
+ * O período de uma edição, do primeiro ao último dia: "9 a 15 de novembro de
+ * 2026", "30 de novembro a 6 de dezembro de 2026" ou, na virada do ano, as duas
+ * datas inteiras. Um dia só é a data. À mão, como o formatarData.
+ */
+export function formatarPeriodo(inicio: string, fim: string): string {
+	const [anoDoInicio, mesDoInicio, diaDoInicio] = inicio.split("-").map(Number);
+	const [anoDoFim, mesDoFim] = fim.split("-").map(Number);
+	if (anoDoInicio !== anoDoFim) {
+		return `${formatarData(inicio)} a ${formatarData(fim)}`;
+	}
+	const ultimo = formatarData(fim);
+	if (inicio === fim) {
+		return ultimo;
+	}
+	const primeiro = diaDoInicio === 1 ? "1º" : String(diaDoInicio);
+	if (mesDoInicio !== mesDoFim) {
+		return `${primeiro} de ${MESES[mesDoInicio - 1]} a ${ultimo}`;
+	}
+	return `${primeiro} a ${ultimo}`;
+}
+
+/** Três horas, em milissegundos: Brasília fica no UTC−3 o ano todo desde 2019. */
+const FUSO_DE_BRASILIA = 3 * 60 * 60 * 1000;
+
+/**
+ * O dia em Brasília de um horário da API ("2026-11-14T01:30:00+00:00" vira
+ * "2026-11-13"), para o formatarData. A conta é à mão, com o UTC−3 fixo (o Brasil
+ * não tem horário de verão desde 2019), para o servidor e o navegador escreverem
+ * igual na hidratação, em qualquer fuso. Um horário que não se lê fica com os dez
+ * primeiros caracteres.
+ */
+export function dataEmBrasilia(horario: string): string {
+	const instante = Date.parse(horario);
+	if (Number.isNaN(instante)) {
+		return horario.slice(0, 10);
+	}
+	return new Date(instante - FUSO_DE_BRASILIA).toISOString().slice(0, 10);
+}
+
+const MESES_CURTOS = MESES.map((mes) => mes.slice(0, 3));
+
+/**
+ * O dia com dois algarismos e o mês abreviado, como na folhinha: "2026-11-08"
+ * vira { dia: "08", mes: "nov" }. O CSS põe o mês em maiúsculas.
+ */
+export function diaEMes(data: string): { dia: string; mes: string } {
+	const [, mes, dia] = data.split("-").map(Number);
+	return {
+		dia: String(dia).padStart(2, "0"),
+		mes: MESES_CURTOS[mes - 1],
+	};
+}
+
+/**
+ * A posição da semana de um dia no calendário, de segunda a domingo, a partir
+ * de 1: as semanas seguidas ficam em posições seguidas. É a posição de cada
+ * edição para o classeDaFita e o azulejoDaPosicao: a cor muda de uma semana para
+ * a outra nas cinco fitas, igual na lista e na página, e ninguém escolhe a cor
+ * de uma edição (o Renan, na #39: sem vermelho de domingo).
+ */
+export function posicaoDaSemana(data: string): number {
 	const [ano, mes, dia] = data.split("-").map(Number);
-	return `${dia === 1 ? "1º" : dia} de ${MESES[mes - 1]} de ${ano}`;
+	const dias = Date.UTC(ano, mes - 1, dia) / 86_400_000;
+	// 1º/1/1970 foi uma quinta: a segunda daquela semana é o dia -3.
+	return Math.floor((dias + 3) / 7) + 1;
 }
 
 export function plural(

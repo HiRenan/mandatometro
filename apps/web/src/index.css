@@ -3,6 +3,11 @@
 @import "./estilos/azulejos.css";
 @import "./estilos/movimento.css";
 @import "./estilos/quiz.css";
+@import "./estilos/newsletter.css";
+@import "./estilos/edicoes.css";
+@import "./estilos/termo.css";
+@import "./estilos/busca.css";
+@import "./estilos/painel.css";
 
 @theme {
 	/*
@@ -88,12 +93,19 @@
 		text-wrap: balance;
 	}
 
+	/*
+	 * Duas alturas de linha, pelo papel do título (a #158). No cartaz, curto, o
+	 * acento da maiúscula (0,885 em) passa por cima da letra de cima com 0,95. Na
+	 * leitura, que aceita qualquer texto, uma cedilha pode cair sobre um acento, e
+	 * as duas só se separam com 1,15. O estilos/entrelinha.test.ts confere cada
+	 * título com a tinta da letra.
+	 */
 	.titulo-condensado {
-		line-height: 0.86;
+		line-height: 0.95;
 	}
 
 	.titulo-de-folha {
-		line-height: 0.92;
+		line-height: 1.15;
 	}
 
 	/* O título menor, um pouco mais largo: o intertítulo, as fontes, o nome do site. */
@@ -101,7 +113,7 @@
 		font-family: var(--font-sans);
 		font-stretch: 68%;
 		font-weight: 900;
-		line-height: 0.95;
+		line-height: 1.15;
 		text-transform: uppercase;
 		text-wrap: balance;
 	}
@@ -114,13 +126,40 @@
 	 * caixa do título até as margens da página. Não é vw puro: até a tela acabar, a
 	 * letra segue a configuração do navegador. O titulos.test.ts mede as palavras dos
 	 * títulos do conteúdo contra cada --palavra.
+	 *
+	 * A largura da página vem da caixa do teto em volta do cabeçalho, do main e do
+	 * rodapé (a caixa da página, no __root.tsx), pelo 100cqi. Ela não conta a
+	 * barra de rolagem, que o 100vw conta (15 px no Edge e no Chrome do Windows):
+	 * numa janela de computador estreita, a palavra encostada no teto passava da
+	 * página e se partia (a #139). No celular e no Mac, a barra não toma espaço, e
+	 * as duas contas dão o mesmo. Os recuos que dependem da largura da página
+	 * também a medem pelo 100cqi.
 	 */
 	.letra-com-teto,
 	.texto h2 {
 		font-size: min(
 			var(--letra),
-			calc((100vw - 2 * var(--margem) - var(--recuo, 0px)) / var(--palavra))
+			calc((100cqi - 2 * var(--margem) - var(--recuo, 0px)) / var(--palavra))
 		);
+	}
+
+	/*
+	 * A caixa do teto: um contêiner da largura, que o 100cqi dos títulos mede. É a
+	 * caixa da página e, nos títulos que vêm da API (o da edição, o de cada item e
+	 * o da edição na lista), a caixa em volta deles: a folha da edição e o texto da
+	 * folha na lista. Esses títulos medem só a caixa deles (o teto-pela-caixa), sem
+	 * margens nem recuo: pela página, a conta não via a folha parar de crescer (a
+	 * edição, a partir de uns 1440 px), e uma palavra comprida passava da caixa e se
+	 * partia. O min-width segura o max-width do título (10 em na edição, 14 em no
+	 * item) na largura da palavra mais larga, com a letra que o teto der.
+	 */
+	.caixa-do-teto {
+		container-type: inline-size;
+	}
+
+	.letra-com-teto.teto-pela-caixa {
+		min-width: calc(var(--palavra) * 1em);
+		font-size: min(var(--letra), calc(100cqi / var(--palavra)));
 	}
 
 	/*
@@ -185,13 +224,17 @@
 	}
 
 	.faixa > span:not(:last-child)::after {
-		content: "";
+		content: "" / "";
 		display: inline-block;
 		width: 0.3em;
 		height: 0.3em;
 		margin: 0 0.8em;
 		vertical-align: 0.2em;
 		background: currentColor;
+
+		@media (forced-colors: active) {
+			background: CanvasText;
+		}
 	}
 
 	/* O texto corrido das telas: a serifa de leitura. */
@@ -280,13 +323,17 @@
 		color: var(--tinta);
 	}
 
-	.botao:disabled {
+	/* O desligado. Enquanto um envio espera a resposta, o botão fica com este
+	   desenho pelo aria-disabled, e não pelo disabled, que tirava o foco dele. */
+	.botao:disabled,
+	.botao[aria-disabled="true"] {
 		opacity: 0.35;
 		cursor: default;
 		translate: none;
 	}
 
-	.botao:disabled::after {
+	.botao:disabled::after,
+	.botao[aria-disabled="true"]::after {
 		display: none;
 	}
 
@@ -307,6 +354,33 @@
 			display: inline;
 			vertical-align: -0.2em;
 		}
+	}
+
+	/*
+	 * O campo de texto (DESIGN.md): o retângulo reto da folha, com o fio de tinta de
+	 * 2 px e a altura do botão. A letra tem 17 px: abaixo de 16 px, o iPhone aumenta
+	 * a tela quando o campo ganha o foco. O cursor e a seleção vêm do papel (o
+	 * globals.css); o preenchimento automático do navegador troca o azul dele pelo
+	 * papel mais escuro, e o texto continua de tinta.
+	 */
+	.campo {
+		width: 100%;
+		min-width: 0;
+		min-height: 3.25rem;
+		padding: 0.6rem 0.9rem;
+		border: 2px solid var(--tinta);
+		border-radius: 0;
+		background: var(--folha);
+		color: var(--tinta);
+		font-family: var(--font-sans);
+		font-size: 1.0625rem;
+		font-weight: 500;
+		line-height: 1.3;
+	}
+
+	.campo:is(:autofill, :-webkit-autofill) {
+		-webkit-text-fill-color: var(--tinta);
+		box-shadow: inset 0 0 0 3.25rem var(--papel-2);
 	}
 
 	/*
@@ -374,18 +448,37 @@
 	}
 
 	/*
+	 * A ação desligada, como o "Tentar de novo" do piloto enquanto o pedido
+	 * espera: com o aria-disabled, e não o disabled, ela guarda o foco. Passa
+	 * para a tinta suave, que continua legível, em vez de ficar meio
+	 * transparente; nas cores forçadas, para a cor do desligado do sistema.
+	 */
+	.acao-de-texto[aria-disabled="true"] {
+		cursor: default;
+		color: var(--tinta-suave);
+	}
+
+	@media (forced-colors: active) {
+		.acao-de-texto[aria-disabled="true"] {
+			color: GrayText;
+		}
+	}
+
+	/*
 	 * As ações em texto que são links ("O código é aberto, no GitHub") ficam em
 	 * linha, como texto, e a caixa de um link em linha tem a altura da letra, e não a
 	 * da linha. No link, o padding faz a área: 15 px em cima e embaixo da letra, em
-	 * cada linha quando o link quebra, e 4 px no começo e no fim, que a margem negativa
-	 * devolve. O anel de foco contorna o texto (o span), e não a área, na cor do anel
-	 * do lugar: azul no papel e amarelo no cabeçalho. Um link sem o span fica com o
-	 * anel no próprio link. Num navegador sem o :has(), a regra que tira o anel do
-	 * link cai, e o link com o span fica com dois anéis: o foco continua visível.
+	 * cada linha quando o link quebra. Dos lados, a área é a do texto, sem padding:
+	 * com 4 px de cada lado, devolvidos por uma margem negativa, o Firefox quebrava o
+	 * link num item da largura do texto ("IR PARA O" numa linha e "INÍCIO" na outra),
+	 * porque conta a margem ao medir o item, e não ao decidir a quebra (#173). O anel
+	 * de foco contorna o texto (o span), e não a área, na cor do anel do lugar: azul
+	 * no papel e amarelo no cabeçalho. Um link sem o span fica com o anel no próprio
+	 * link. Num navegador sem o :has(), a regra que tira o anel do link cai, e o link
+	 * com o span fica com dois anéis: o foco continua visível.
 	 */
 	a.acao-de-texto {
-		margin-inline: -0.25rem;
-		padding: 0.9375rem 0.25rem;
+		padding-block: 0.9375rem;
 	}
 
 	a.acao-de-texto::before {
@@ -554,10 +647,11 @@
 	}
 
 	/*
-	 * O lema, em letra de máquina, é largo: abaixo de 864 px ele não cabe na linha
-	 * do nome e dos links, e sai do cabeçalho (ele está no rodapé).
+	 * O lema, em letra de máquina, é largo: abaixo de 1344 px ele não cabe na
+	 * linha do nome, da barra da busca e dos links, e sai do cabeçalho (ele está
+	 * no rodapé). A barra fica com o espaço dele (o Renan, na #233).
 	 */
-	@media (width < 54rem) {
+	@media (width < 84rem) {
 		.moldura .marca-lema {
 			display: none;
 		}
@@ -591,6 +685,57 @@
 		.topo-links a {
 			letter-spacing: 0.05em;
 		}
+	}
+
+	/*
+	 * Com as edições, são três links (o data-com-edicoes, onde o site tem a API).
+	 * Abaixo de 32rem, eles não cabem na linha do nome, e o Início sai: o nome
+	 * leva ao início (o Renan, na #39). Com a letra grande, a linha ainda pode
+	 * quebrar, e os links descem, como antes.
+	 */
+	@media (width < 32rem) {
+		.topo-links[data-com-edicoes] > li:first-child {
+			display: none;
+		}
+	}
+
+	/*
+	 * Mesmo sem o Início, Trilhas e Edições só cabiam na linha do nome a partir de
+	 * 375 px, com 1 px de folga. Abaixo de 26rem, com as edições, os dois links se
+	 * apertam: o respiro de cada um cai para 6 px, sem o vão entre eles, e o vão
+	 * mínimo entre o nome e os links fica em 12 px. Assim, a linha cabe a partir
+	 * de 355 px. O cabeçalho sem a API não muda.
+	 */
+	@media (width < 26rem) {
+		.topo-dentro:has(.topo-links[data-com-edicoes]) {
+			column-gap: 12px;
+		}
+
+		.topo-links[data-com-edicoes] {
+			gap: 0;
+			margin-right: -6px;
+		}
+
+		.topo-links[data-com-edicoes] a {
+			padding: 0 6px;
+		}
+
+		.topo-links[data-com-edicoes] a::after {
+			right: 6px;
+			left: 6px;
+		}
+	}
+
+	/*
+	 * Com a letra grande numa tela estreita, Trilhas e Edições podem não caber
+	 * juntos nem na linha de baixo: a 320 px, com a letra a 200%, eles pedem uns
+	 * 296 px. A lista quebra, e Edições desce para baixo de Trilhas, em vez de
+	 * passar da página (no computador, a barra de rolagem toma 15 px, e a página
+	 * rolava de lado) ou de entrar na margem (no celular). Onde os dois cabem,
+	 * nada muda.
+	 */
+	.topo-links[data-com-edicoes] {
+		flex-wrap: wrap;
 	}
 
 	/* ───── O cartaz ───── */
@@ -788,13 +933,14 @@
 	}
 
 	@media (width >= 62rem) {
-		/* O painel ocupa os 30% da direita, de cima a baixo, e o título para antes dele. */
+		/* O painel ocupa os 30% da direita, de cima a baixo, e o título para antes dele.
+		   Os 30% são da largura da página, que o teto mede pelo 100cqi. */
 		.cartaz {
 			padding-right: calc(30% + var(--margem));
 		}
 
 		.cartaz h1 {
-			--recuo: 30vw;
+			--recuo: 30cqi;
 		}
 
 		.mural {
@@ -999,7 +1145,6 @@
 
 	.passo h3 {
 		--letra: clamp(2.25rem, 1.6rem + 2.4vw, 3.75rem);
-		line-height: 0.9;
 	}
 
 	.passo-texto > p:not(.rotulo),
@@ -1380,7 +1525,11 @@
 		}
 	}
 
-	/* A chamada do quiz: uma folha com seis azulejos, um por pergunta. */
+	/*
+	 * A chamada do quiz: uma folha com um azulejo por pergunta, seis no quiz da
+	 * trilha e doze no quiz final. Na coluna ao lado do texto, eles vão em três
+	 * colunas, ou quatro com mais de seis (o --colunas, de lib/quiz.ts).
+	 */
 	.chamada-quiz {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
@@ -1389,6 +1538,15 @@
 		padding: clamp(1.5rem, 4vw, 3rem) var(--respiro);
 		border: 2px solid var(--tinta);
 		background: var(--folha);
+	}
+
+	/*
+	 * Na página da trilha, a chamada do quiz final vem logo depois da do quiz da
+	 * trilha: cada uma é uma folha, a 0,75rem da outra, como as folhas dos
+	 * artigos, e os fios não se somam numa barra.
+	 */
+	.chamada-quiz + .chamada-quiz {
+		margin-top: 0.75rem;
 	}
 
 	.chamada-texto {
@@ -1433,7 +1591,7 @@
 		}
 
 		.chamada-azulejos {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
+			grid-template-columns: repeat(var(--colunas, 3), minmax(0, 1fr));
 		}
 	}
 
@@ -1498,10 +1656,18 @@
 		rotate: 45deg;
 	}
 
+	/*
+	 * O título do passo é uma etiqueta em maiúsculas espaçadas. Abaixo de 22rem,
+	 * fica como escrito. A letra de 1rem diminui até a palavra mais larga caber na
+	 * linha do título, ao lado do "+". A partir de 22rem, o azulejo também ocupa
+	 * essa linha. O recuo conta essas peças e os vãos. O infografico.tsx traz um
+	 * --palavra para as maiúsculas e outro para o título como escrito (#148).
+	 */
 	.sanfona h3 {
+		--letra: 1rem;
+		--recuo: calc(var(--recuo-de-fora, 0px) + 2.5rem + 2 * 0.9rem + 1.25rem);
 		min-width: 0;
 		font-family: var(--font-sans);
-		font-size: 1rem;
 		font-weight: 750;
 		line-height: 1.15;
 		letter-spacing: calc(0.05em * var(--espacado));
@@ -1530,6 +1696,11 @@
 			display: none;
 		}
 
+		/* Sem o azulejo, a linha do título fica com um vão só e o "+". */
+		.sanfona h3 {
+			--recuo: calc(var(--recuo-de-fora, 0px) + 0.9rem + 1.25rem);
+		}
+
 		.sanfona-texto {
 			padding-left: 0;
 		}
@@ -1553,7 +1724,10 @@
 			padding-right: 1.5rem;
 		}
 
+		/* O caminho fica na coluna de 24 rem, depois do vão de 1,5 rem: o resto da
+		   página sai da largura do título de cada passo, no teto da letra. */
 		.pagina-da-trilha.com-caminho > .ao-lado {
+			--recuo-de-fora: calc(100cqi - var(--margem) - 22.5rem);
 			padding: clamp(1.5rem, 4vw, 3rem) var(--margem) 4rem 1.5rem;
 		}
 	}
@@ -1779,9 +1953,9 @@
 	 * telas bem largas, as duas colunas ficam iguais. O recuo do título conta a
 	 * coluna da direita com os 42rem dela: quando ela cresce, a do título já passou
 	 * de 42rem, e o título parou antes, no --letra (4,5rem × 5,66 = 25,5rem). Até
-	 * uns 1500 px, é o teto que dá o tamanho do título, e ele mede a página pelo
-	 * 100vw, que conta a barra de rolagem (15 px no Windows): o recuo leva 1rem a
-	 * mais por ela, e o título cabe na coluna com a barra à vista ou sem ela.
+	 * uns 1500 px, é o teto que dá o tamanho do título. Ele mede a página pelo
+	 * 100cqi, sem a barra de rolagem, e o título encosta na coluna com a barra à
+	 * vista ou sem ela.
 	 */
 	@media (width >= 88rem) {
 		.trilha-cabeca-texto {
@@ -1809,7 +1983,7 @@
 		}
 
 		.trilha-da-lista .titulo-de-folha {
-			--recuo: calc(4 * var(--respiro) + 4px + 49.5rem + 1rem);
+			--recuo: calc(4 * var(--respiro) + 4px + 49.5rem);
 		}
 	}
 
@@ -1892,13 +2066,18 @@
 
 	/* ───── O artigo ───── */
 
-	/* A barra da leitura, no alto da tela: a tira das cinco fitas, que enche com o
-	   texto (estilos/movimento.css). Sem a animação de rolagem, ela não aparece. */
+	/*
+	 * A barra da leitura, no alto da tela: a tira das cinco fitas, que enche com o
+	 * texto. Quem liga e desliga é o estilos/movimento.css: ela só aparece onde o
+	 * navegador tem a animação de rolagem, e sai com o movimento reduzido. Fica
+	 * embaixo do cabeçalho (o z-index 5 da .moldura): enquanto o cabeçalho está na
+	 * tela, ele cobre a barra, com o "Pular para o conteúdo" dentro dele, e a barra
+	 * aparece quando ele sai, na rolagem.
+	 */
 	.leitura-barra {
 		position: fixed;
 		inset: 0 0 auto;
-		z-index: 20;
-		display: none;
+		z-index: 4;
 		height: 6px;
 		background: var(--tira);
 		transform: scaleX(0);
@@ -1978,10 +2157,10 @@
 		--recuo: var(--recuo-de-fora);
 		max-width: 10em;
 		margin-top: 1rem;
-		line-height: 0.88;
+		line-height: 1.15;
 	}
 
-	.artigo-folha > .faixa {
+	.artigo-folha > p > .faixa {
 		margin-top: 1.5rem;
 		padding: 0.7rem 0;
 		border-block: 2px solid var(--tinta);
@@ -2073,7 +2252,7 @@
 		font-family: var(--font-sans);
 		font-stretch: 68%;
 		font-weight: 900;
-		line-height: 0.95;
+		line-height: 1.15;
 		text-transform: uppercase;
 		text-wrap: balance;
 	}
@@ -2266,6 +2445,10 @@
 		background-color: var(--papel-2);
 	}
 
+	.outros-artigos a:focus-visible {
+		outline-offset: -6px;
+	}
+
 	.outros-artigos-cabeca {
 		display: flex;
 		align-items: center;
@@ -2339,7 +2522,7 @@
 		/* Lado a lado, cada faixa tem metade da folha: a outra metade entra no recuo. */
 		.outros-artigos.dois strong {
 			--recuo: calc(
-				(100vw - 2 * var(--margem) + var(--recuo-de-fora)) /
+				(100cqi - 2 * var(--margem) + var(--recuo-de-fora)) /
 				2 +
 				var(--respiro-da-folha)
 			);

@@ -4,6 +4,7 @@ import { Aviso, useAviso } from "@/components/aviso";
 import { AzulejoGrande } from "@/components/azulejo";
 import { Caminho } from "@/components/caminho";
 import { ChamadaDoQuiz } from "@/components/chamada-do-quiz";
+import { FaixaDeInformacoes } from "@/components/faixa-de-informacoes";
 import { Fontes } from "@/components/fontes";
 import { MarcaDeLido } from "@/components/marca-de-lido";
 import { NestaTrilha } from "@/components/nesta-trilha";
@@ -16,11 +17,13 @@ import { type ArtigoNaTrilha, buscarArtigo } from "@/lib/conteudo";
 import { classeDaFita, plural } from "@/lib/formatar";
 import { metaDaPagina, metaSemPagina } from "@/lib/meta";
 import {
+	contextoDoProgresso,
 	desmarcarLido,
 	idDoArtigo,
 	lerLidos,
 	marcarLido,
 	useArtigosLidos,
+	useContextoDoProgresso,
 } from "@/lib/progresso";
 
 export const Route = createFileRoute("/trilhas/$trilha/$artigo")({
@@ -51,12 +54,16 @@ function Folha({
 	anterior,
 	proximo,
 	quiz,
+	quizFinal,
 }: ArtigoNaTrilha) {
 	const id = idDoArtigo(artigo);
 	const lidos = useArtigosLidos();
 	const lido = lidos.has(id);
-	const [leuAgora, setLeuAgora] = useState(false);
-	const [desmarcou, setDesmarcou] = useState(false);
+	const contexto = useContextoDoProgresso();
+	const [leuEm, setLeuEm] = useState<typeof contexto | null>(null);
+	const [desmarcouEm, setDesmarcouEm] = useState<typeof contexto | null>(null);
+	const leuAgora = leuEm === contexto;
+	const desmarcou = desmarcouEm === contexto;
 	const { aviso, avisar } = useAviso();
 	const fimDoTexto = useRef<HTMLDivElement>(null);
 	// Depois do "Desmarcar", o fim do texto na tela não marca de novo nesta visita.
@@ -71,16 +78,21 @@ function Folha({
 		if (lerLidos().has(id)) {
 			return;
 		}
+		const contextoAoAbrir = contextoDoProgresso();
 		const observador = new IntersectionObserver(
 			([entrada]) => {
 				if (!entrada?.isIntersecting) {
 					return;
 				}
 				observador.disconnect();
-				if (!podeMarcar.current || lerLidos().has(id)) {
+				if (
+					contextoAoAbrir !== contextoDoProgresso() ||
+					!podeMarcar.current ||
+					lerLidos().has(id)
+				) {
 					return;
 				}
-				setLeuAgora(true);
+				setLeuEm(contextoAoAbrir);
 				marcarLido(id);
 				avisar("Você leu este artigo.");
 			},
@@ -91,14 +103,16 @@ function Folha({
 	}, [id, avisar]);
 
 	function desmarcar() {
+		if (contexto !== contextoDoProgresso()) return;
 		podeMarcar.current = false;
 		desmarcarLido(id);
-		setLeuAgora(false);
-		setDesmarcou(true);
+		setLeuEm(null);
+		setDesmarcouEm(contexto);
 		avisar("Você desmarcou o artigo.");
 	}
 
 	function desfazer() {
+		if (desmarcouEm !== contextoDoProgresso()) return;
 		marcarLido(id);
 		avisar("Você leu este artigo.");
 	}
@@ -124,27 +138,27 @@ function Folha({
 							className="do-artigo"
 						/>
 						<Caminho trilha={trilha} />
-						<p className="sobretitulo">
+						<div className="sobretitulo">
 							<span aria-hidden="true" className="numeral">
 								{posicao}
 							</span>
-							<span className="rotulo">
+							<p className="rotulo">
 								Artigo {posicao}{" "}
 								<span className="de-tantos">
 									de {plural(total, "artigo", "artigos")}
 								</span>
-							</span>
-						</p>
+							</p>
+						</div>
 						{/* Com a letra grande, o título cresce até "FUNDAMENTAIS?", a palavra
 						    mais larga dos títulos dos artigos, encostar nas bordas da folha
 						    (o letra-com-teto do index.css). */}
 						<h1 className="titulo-condensado letra-com-teto [--palavra:6.34]">
 							{artigo.titulo}
 						</h1>
-						<p className="faixa rotulo">
+						<FaixaDeInformacoes>
 							<span>Leitura de {artigo.minutos} min</span>
 							<span>{fontes}</span>
-						</p>
+						</FaixaDeInformacoes>
 						<p className="lide">{artigo.resumo}</p>
 						<TextoDoArtigo html={artigo.html} />
 
@@ -190,6 +204,16 @@ function Folha({
 							<ChamadaDoQuiz
 								trilha={trilha.slug}
 								quiz={quiz}
+								className="revelar"
+							/>
+						)}
+
+						{/* Só no último artigo: o quiz final vem depois dele. */}
+						{quizFinal && (
+							<ChamadaDoQuiz
+								trilha={trilha.slug}
+								quiz={quizFinal}
+								final
 								className="revelar"
 							/>
 						)}

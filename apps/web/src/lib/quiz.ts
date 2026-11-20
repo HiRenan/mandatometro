@@ -48,6 +48,20 @@ export function contarRespondidas(
 	).length;
 }
 
+/**
+ * Quantas respostas são a certa. A tela nunca mostra esse total: ele só vai à
+ * API no piloto, ao fim de cada etapa (lib/piloto.ts).
+ */
+export function contarAcertos(
+	perguntas: readonly PerguntaDoQuiz[],
+	respostas: Respostas,
+): number {
+	return perguntas.filter((pergunta) => {
+		const opcao = opcaoRespondida(pergunta, respostas);
+		return opcao !== undefined && acertou(pergunta, opcao);
+	}).length;
+}
+
 /** O andamento, sem contar acertos: o quiz não dá nota. */
 export function fraseDoAndamento(respondidas: number, total: number): string {
 	if (respondidas === 0) {
@@ -82,6 +96,15 @@ export function avisoDaResposta(
 	return acertou(pergunta, opcao)
 		? `Pergunta ${numero}: você acertou.`
 		: `Pergunta ${numero}: você errou. A resposta certa é: ${pergunta.opcoes[pergunta.certa]}`;
+}
+
+/**
+ * As colunas do mosaico de um quiz, que tem um azulejo por pergunta: três até
+ * seis perguntas e quatro com mais, para o mosaico do quiz final, de doze, não
+ * ficar alto demais na primeira tela do celular.
+ */
+export function colunasDoMosaico(perguntas: number): number {
+	return perguntas > 6 ? 4 : 3;
 }
 
 /** "o artigo 1", "os artigos 2 e 3", "os artigos 1, 2 e 4", "os artigos 1 a 3". */

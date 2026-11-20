@@ -1,0 +1,51 @@
+{
+  "ListaDocumento": {
+    "noNamespaceSchemaLocation": "https://legis.senado.leg.br/dadosabertos/dados/ListaDocumentov3.xsd",
+    "Metadados": {
+      "Versao": "Texto fict?cio de exemplo",
+      "VersaoServico": "Texto fict?cio de exemplo",
+      "DataVersaoServico": "Texto fict?cio de exemplo",
+      "DescricaoDataSet": "Texto fict?cio de exemplo"
+    },
+    "documentos": {
+      "documento": [
+        {
+          "id": "44427519",
+          "tipo": "DEC-n",
+          "descricao": "Identifica??o oficial fict?cia",
+          "numero": "13168",
+          "norma": "Identifica??o oficial fict?cia",
+          "normaNome": "Identifica??o oficial fict?cia",
+          "ementa": "Disp?e sobre a nomea??o de Pessoa Fict?cia de Exemplo (CPF 000.000.000-00).",
+          "dataassinatura": "16/11/2026",
+          "anoassinatura": "2026",
+          "apelido": "Texto fict?cio de exemplo"
+        },
+        {
+          "id": "44392566",
+          "tipo": "DEC-n",
+          "descricao": "Identifica??o oficial fict?cia",
+          "numero": "13162",
+          "norma": "Identifica??o oficial fict?cia",
+          "normaNome": "Identifica??o oficial fict?cia",
+          "ementa": "Disp?e sobre a nomea??o de Pessoa Fict?cia de Exemplo (CPF 000.000.000-00).",
+          "dataassinatura": "13/12/2026",
+          "anoassinatura": "2026",
+          "apelido": "Texto fict?cio de exemplo"
+        },
+        {
+          "id": "44332135",
+          "tipo": "DEC-n",
+          "descricao": "Identifica??o oficial fict?cia",
+          "numero": "13146",
+          "norma": "Identifica??o oficial fict?cia",
+          "normaNome": "Identifica??o oficial fict?cia",
+          "ementa": "Disp?e sobre a nomea??o de Pessoa Fict?cia de Exemplo (CPF 000.000.000-00).",
+          "dataassinatura": "04/11/2026",
+          "anoassinatura": "2026",
+          "apelido": "Texto fict?cio de exemplo"
+        }
+      ]
+    }
+  }
+}

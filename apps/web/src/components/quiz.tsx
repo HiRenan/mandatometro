@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import {
 	type CSSProperties,
 	type FormEvent,
+	type ReactNode,
 	useEffect,
 	useId,
 	useRef,
@@ -19,6 +20,8 @@ import { movimentoReduzido, virar } from "@/lib/painel-vivo";
 import {
 	acertou,
 	avisoDaResposta,
+	colunasDoMosaico,
+	contarAcertos,
 	contarRespondidas,
 	FRASE_DO_RECOMECO,
 	fraseDoAndamento,
@@ -37,9 +40,11 @@ import { Aviso, useAviso } from "./aviso";
 import { AzulejoGrande } from "./azulejo";
 import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "./botao-continuar";
 import { Caminho } from "./caminho";
+import { FaixaDeInformacoes } from "./faixa-de-informacoes";
 import { ListaDeFontes } from "./fontes";
 import { LugarDoBotao } from "./lugar-do-botao";
 import { OutrosArtigos } from "./outros-artigos";
+import { Reservas } from "./reservas";
 
 /*
  * A tela do quiz (DESIGN.md): uma pergunta por vez. A abertura tem o título
@@ -50,6 +55,10 @@ import { OutrosArtigos } from "./outros-artigos";
  *
  * A correção e as frases ficam em lib/quiz.ts, e o que o navegador guarda, em
  * lib/respostas-do-quiz.ts. O desenho está em estilos/quiz.css.
+ *
+ * O piloto (components/piloto.tsx) usa este mesmo palco nas duas etapas: o
+ * antes, na página /piloto, com a abertura e o fim dela e sem a resposta
+ * certa, e o depois, no próprio quiz final, em que vale a primeira resposta.
  */
 
 /** As telas do quiz. A resposta de uma pergunta aparece na tela da pergunta. */
@@ -78,6 +87,26 @@ const TITULOS = {
 	fim: ".quiz-fim h2",
 };
 
+/**
+ * A etapa do piloto que as respostas medem agora. No antes, a resposta certa
+ * não aparece: o "Responder" guarda a resposta e passa à próxima pergunta. No
+ * depois, vale a primeira resposta de cada pergunta, e o "Recomeçar o quiz" não
+ * aparece. Concluída a etapa, o quiz volta a ser o de sempre.
+ */
+export type EtapaDoQuiz = "antes" | "depois";
+
+/** O que a abertura e o fim de fora, os do piloto, recebem do quiz. */
+export type PartesDoQuiz = {
+	/** Leva às perguntas: à primeira sem resposta ou, com todas respondidas, à primeira. */
+	comecar: () => void;
+	/** Quantas perguntas já têm resposta. */
+	respondidas: number;
+	/** Se o JavaScript já carregou: antes dele, os botões não aparecem. */
+	hidratado: boolean;
+	/** Avisa o leitor de tela, na região de avisos do palco. */
+	avisar: (texto: string) => void;
+};
+
 function semAssinatura(): () => void {
 	return () => {};
 }
@@ -86,7 +115,7 @@ function semAssinatura(): () => void {
  * Se o JavaScript já carregou. No servidor e na hidratação, não: o HTML do
  * servidor fica sem o que só funciona com JavaScript, como o "Começar".
  */
-function useHidratado(): boolean {
+export function useHidratado(): boolean {
 	return useSyncExternalStore(
 		semAssinatura,
 		() => true,
@@ -95,30 +124,52 @@ function useHidratado(): boolean {
 }
 
 /**
- * As frases que uma linha pode mostrar, uma sobre a outra e invisíveis: a linha
- * já tem o tamanho da maior desde o HTML do servidor, e nada sai do lugar
- * quando a frase aparece ou muda. Quem usa põe a frase da vez no mesmo lugar
- * da grade.
+ * O quiz da trilha ou o quiz final, a página inteira: o palco, com a abertura,
+ * as perguntas e o fim, e, embaixo, o artigo anterior e o próximo. A resposta
+ * fica só no navegador (lib/respostas-do-quiz.ts): responder não faz
+ * requisição nenhuma. No piloto, quem usa o quiz recebe os acertos de cada
+ * etapa no `aoTerminar` e manda à API (components/piloto.tsx).
  */
-function Reservas({ frases }: { frases: readonly string[] }) {
-	return frases.map((frase) => (
-		<span
-			key={frase}
-			aria-hidden="true"
-			className="invisible col-start-1 row-start-1"
-		>
-			{frase}
-		</span>
-	));
-}
-
-/**
- * O quiz da trilha, a página inteira: o palco, com a abertura, as perguntas e
- * o fim, e, embaixo, o artigo anterior e o próximo. A resposta fica só no
- * navegador (lib/respostas-do-quiz.ts): responder não faz requisição nenhuma.
- */
-export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
-	const quiz = idDoQuiz(trilha.slug);
+export function Quiz({
+	trilha,
+	anterior,
+	proximo,
+	perguntas,
+	titulo = "Quiz da trilha",
+	quiz = idDoQuiz(trilha.slug),
+	etapa,
+	aoTerminar,
+	linha,
+	abertura,
+	fim,
+	soOPalco = false,
+}: QuizNaPagina & {
+	/** O título da página: o do quiz da trilha, o do quiz final ou o do antes. */
+	titulo?: string;
+	/** Onde o navegador guarda as respostas (lib/respostas-do-quiz.ts). */
+	quiz?: string;
+	/** A etapa do piloto que as respostas medem agora, se medem. */
+	etapa?: EtapaDoQuiz;
+	/**
+	 * Chamada quando a pessoa responde a última pergunta que faltava, com o
+	 * total de acertos, que a tela não mostra.
+	 */
+	aoTerminar?: (acertos: number) => void;
+	/**
+	 * Uma linha do piloto, embaixo do título, na abertura e no fim do quiz. Como
+	 * função, ela recebe as partes do quiz, como o aviso ao leitor de tela.
+	 */
+	linha?: ReactNode | ((partes: PartesDoQuiz) => ReactNode);
+	/** A abertura do piloto, no lugar da do quiz. */
+	abertura?: (partes: PartesDoQuiz) => ReactNode;
+	/** O fim do piloto, no lugar do do quiz, numa .quiz-fim com o título num h2. */
+	fim?: (partes: PartesDoQuiz) => ReactNode;
+	/**
+	 * Só o palco: sem as perguntas abertas do noscript e sem o artigo anterior e
+	 * o próximo embaixo dele, como na página do piloto.
+	 */
+	soOPalco?: boolean;
+}) {
 	const respostas = useRespostasDoQuiz(quiz);
 	const hidratado = useHidratado();
 	const { aviso, avisar } = useAviso();
@@ -144,10 +195,13 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 	const foco = useRef<keyof typeof TITULOS>(undefined);
 
 	const total = perguntas.length;
+	const colunas = colunasDoMosaico(total);
 	const respondidas = contarRespondidas(perguntas, respostas);
 	const pergunta = perguntas[atual];
 	const respondida = opcaoRespondida(pergunta, respostas);
 	const marcada = escolhida ?? respondida;
+	// No depois do piloto, a resposta dada não muda mais: as opções travam.
+	const travada = etapa === "depois" && respondida !== undefined;
 	const naResposta = tela === "pergunta" && aberta && respondida !== undefined;
 	const certa = naResposta && acertou(pergunta, respondida);
 	// Na abertura, o mosaico é a capa, inteiro e em cor. Dali em diante, cada
@@ -211,13 +265,18 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 		}, espera);
 	}
 
-	/** Abre uma pergunta. A que já tem resposta guardada abre com a resposta à vista. */
+	/**
+	 * Abre uma pergunta. A que já tem resposta guardada abre com a resposta à
+	 * vista, menos no antes do piloto, que nunca mostra a certa: lá, ela abre com a
+	 * opção guardada marcada, como numa outra aba que respondeu primeiro.
+	 */
 	function abrirPergunta(indice: number) {
 		setAtual(indice);
 		setEscolhida(undefined);
 		setSemEscolha(false);
 		setAberta(
-			opcaoRespondida(perguntas[indice], lerRespostas(quiz)) !== undefined,
+			etapa !== "antes" &&
+				opcaoRespondida(perguntas[indice], lerRespostas(quiz)) !== undefined,
 		);
 		setTela("pergunta");
 		foco.current = "enunciado";
@@ -249,7 +308,7 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 
 	function responderAgora(evento: FormEvent) {
 		evento.preventDefault();
-		if (naResposta || saindo) {
+		if (naResposta || travada || saindo) {
 			return;
 		}
 		if (marcada === undefined) {
@@ -258,6 +317,22 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 			return;
 		}
 		responder(quiz, pergunta.enunciado, pergunta.opcoes[marcada]);
+		// A última pergunta que faltava: a etapa do piloto, se houver, termina
+		// aqui, mesmo que a pessoa saia antes do "Terminar".
+		const guardadas = lerRespostas(quiz);
+		if (
+			respondidas < total &&
+			contarRespondidas(perguntas, guardadas) === total
+		) {
+			aoTerminar?.(contarAcertos(perguntas, guardadas));
+		}
+		if (etapa === "antes") {
+			// No antes, a resposta certa fica para o quiz final: a resposta só é
+			// guardada, e a próxima pergunta vem logo.
+			avisar(`Pergunta ${atual + 1}: resposta guardada.`);
+			seguir();
+			return;
+		}
 		setAberta(true);
 		avisar(avisoDaResposta(atual + 1, pergunta, marcada));
 		foco.current = "veredito";
@@ -325,8 +400,13 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 		: respondidas > 0
 			? { texto: "Recomeçar o quiz", fazer: recomecar }
 			: undefined;
-	const recomeco = (
-		<p className="recomeco">
+	const partes: PartesDoQuiz = { comecar, respondidas, hidratado, avisar };
+	const linhaNaTela = typeof linha === "function" ? linha(partes) : linha;
+	// Enquanto uma etapa do piloto mede as respostas, o botão não aparece, e a
+	// linha dele não guarda lugar: na abertura do depois, a linha vazia só
+	// empurrava o "Começar" para baixo da primeira tela do celular.
+	const recomeco = etapa === undefined && (
+		<div className="recomeco text-pretty">
 			{acao && (
 				<button
 					type="button"
@@ -336,7 +416,7 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 					{acao.texto}
 				</button>
 			)}
-		</p>
+		</div>
 	);
 
 	// O botão que leva às perguntas, na abertura e no fim. Ele também deixa de
@@ -372,14 +452,23 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 
 	return (
 		<div className="pagina-do-quiz">
+			{/* Com a linha do piloto, a abertura fica mais alta, e o pé dela não
+			    prende embaixo (estilos/quiz.css): no celular pequeno, ele cobria o
+			    "Começar". */}
 			<section
 				ref={palco}
 				aria-labelledby="quiz-titulo"
 				className="quiz"
 				data-fase={naResposta ? "resposta" : tela}
 				data-saindo={saindo || undefined}
+				data-linha={Boolean(linhaNaTela) || undefined}
 				data-resultado={naResposta ? (certa ? "certa" : "errada") : undefined}
-				style={{ "--fileiras": Math.ceil(total / 3) } as CSSProperties}
+				style={
+					{
+						"--colunas": colunas,
+						"--fileiras": Math.ceil(total / colunas),
+					} as CSSProperties
+				}
 			>
 				<Caminho trilha={trilha} />
 				{/* O mosaico: um azulejo por pergunta, na ordem delas. É só desenho, e
@@ -404,36 +493,48 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 					</div>
 				</div>
 
-				{/* Na abertura, o título é gigante; nas outras telas, vira a etiqueta do
-				    alto (estilos/quiz.css). Com a letra grande, ele cresce até "TRILHA"
-				    encostar nas margens (o letra-com-teto do index.css). */}
+				{/* Na abertura, o título é gigante. Nas outras telas, ele sai da vista
+				    e fica para o leitor de tela, com o nome do palco (estilos/quiz.css),
+				    e quem vê lê o nome do quiz no pé. Com a letra grande, ele cresce até
+				    "TRILHA", a palavra mais larga dos títulos dos quizzes, encostar nas
+				    margens (o letra-com-teto do index.css). */}
 				<h1
 					id="quiz-titulo"
 					className="quiz-titulo titulo-condensado letra-com-teto [--palavra:2.74]"
 				>
-					Quiz da trilha
+					{titulo}
 				</h1>
 
 				<div className="quiz-palco">
 					{tela === "abertura" && (
 						<div className="quiz-abertura">
-							<p className="abertura">
-								Em cada pergunta, escolha uma opção e responda. Você vê se
-								acertou, a resposta certa, a explicação e a fonte oficial.
-							</p>
-							<p className="faixa rotulo">
-								<span>{plural(total, "pergunta", "perguntas")}</span>
-								<span>Fonte oficial em cada resposta</span>
-							</p>
-							{recomeco}
-							{/* O "Começar" só funciona com JavaScript, e por isso só aparece
-							    depois que ele carrega. O lugar dele guarda, desde o HTML do
-							    servidor, a altura do texto mais alto que o botão pode ter
-							    ("Rever as respostas" vai em duas linhas no celular, com a
-							    letra grande), e nada sai do lugar. */}
-							<LugarDoBotao textos={TEXTOS_DO_COMECO} className="quiz-comeco">
-								{hidratado && comeco(false)}
-							</LugarDoBotao>
+							{abertura ? (
+								abertura(partes)
+							) : (
+								<>
+									{linhaNaTela}
+									<p className="abertura">
+										Em cada pergunta, escolha uma opção e responda. Você vê se
+										acertou, a resposta certa, a explicação e a fonte oficial.
+									</p>
+									<FaixaDeInformacoes>
+										<span>{plural(total, "pergunta", "perguntas")}</span>
+										<span>Fonte oficial em cada resposta</span>
+									</FaixaDeInformacoes>
+									{recomeco}
+									{/* O "Começar" só funciona com JavaScript, e por isso só
+									    aparece depois que ele carrega. O lugar dele guarda, desde
+									    o HTML do servidor, a altura do texto mais alto que o
+									    botão pode ter ("Rever as respostas" vai em duas linhas no
+									    celular, com a letra grande), e nada sai do lugar. */}
+									<LugarDoBotao
+										textos={TEXTOS_DO_COMECO}
+										className="quiz-comeco"
+									>
+										{hidratado && comeco(false)}
+									</LugarDoBotao>
+								</>
+							)}
 						</div>
 					)}
 
@@ -449,8 +550,10 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 							<div className="quiz-lado">
 								{/* Sem o min-width: 0 (estilos/quiz.css), o fieldset não
 								    encolhe, e a página rola de lado no celular com a letra
-								    grande. */}
-								<fieldset>
+								    grande. Travado, no depois do piloto, ele desliga as
+								    opções, e o leitor de tela diz que elas estão
+								    indisponíveis. */}
+								<fieldset disabled={travada || undefined}>
 									<legend>
 										<span className="quiz-contagem rotulo">{`Pergunta ${atual + 1} de ${total}`}</span>{" "}
 										<h2 tabIndex={-1} className="quiz-enunciado">
@@ -545,7 +648,9 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 						</form>
 					)}
 
-					{tela === "fim" && (
+					{tela === "fim" && fim?.(partes)}
+
+					{tela === "fim" && !fim && (
 						<div className="quiz-fim">
 							{/* Com a letra grande, o título cresce até "RECOMEÇOU" encostar
 							    nas margens (o letra-com-teto do index.css). Ele guarda o
@@ -562,6 +667,7 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 										: fraseDoAndamento(respondidas, total)}
 								</span>
 							</h2>
+							{linhaNaTela}
 							{recomeco}
 							<p className="quiz-fim-texto">
 								{artigos.length === 1
@@ -581,7 +687,7 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 									</li>
 								))}
 							</ul>
-							<p className="quiz-fim-acoes">
+							<div className="quiz-fim-acoes text-pretty">
 								<Link
 									to="/trilhas/$trilha"
 									params={{ trilha: trilha.slug }}
@@ -596,7 +702,7 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 									/>
 								</Link>
 								{comeco(true)}
-							</p>
+							</div>
 						</div>
 					)}
 				</div>
@@ -605,7 +711,14 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 				    respondida, e a frase, sem contar acertos. A linha da frase guarda o
 				    tamanho da mais comprida desde o HTML do servidor: no celular com a
 				    letra grande, ela quebra em duas linhas. No fim, a frase já está no
-				    título da tela. */}
+				    título da tela.
+				    Fora da abertura, o nome do quiz vem antes da frase: é ali que quem
+				    vê descobre em que quiz está, e não numa etiqueta acima do título (a
+				    #136). O leitor de tela já tem o h1, e o nome fica fora dele.
+				    A grade da linha fica num div em volta do parágrafo da frase: o
+				    Chromium tira da árvore de acessibilidade um <p> em grade (a #152).
+				    As guardadas quebram as linhas como ela, com o text-pretty que o
+				    <p> já tem. */}
 				<div className="quiz-pe">
 					<ol aria-hidden="true" className="quiz-andamento">
 						{perguntas.map((outra, indice) => (
@@ -622,25 +735,38 @@ export function Quiz({ trilha, anterior, proximo, perguntas }: QuizNaPagina) {
 							/>
 						))}
 					</ol>
-					<p className="quiz-andamento-texto rotulo grid">
-						<Reservas frases={frasesDoAndamento(total)} />
-						<span className="col-start-1 row-start-1">
-							{tela === "fim" ? "" : andamento}
-						</span>
-					</p>
+					<div className="quiz-pe-linha">
+						{tela !== "abertura" && (
+							<span aria-hidden="true" className="quiz-nome rotulo">
+								{titulo}
+							</span>
+						)}
+						<div className="quiz-andamento-texto rotulo grid text-pretty">
+							<Reservas frases={frasesDoAndamento(total)} />
+							{tela !== "fim" && andamento && (
+								<p className="col-start-1 row-start-1">{andamento}</p>
+							)}
+						</div>
+					</div>
 				</div>
 				<Aviso texto={aviso} />
 			</section>
 
-			<SemJavaScript trilha={trilha.slug} perguntas={perguntas} />
+			{!soOPalco && (
+				<>
+					<SemJavaScript trilha={trilha.slug} perguntas={perguntas} />
 
-			<OutrosArtigos
-				trilha={trilha}
-				anterior={{ ...anterior, posicao: posicaoDe(anterior.slug) }}
-				proximo={proximo && { ...proximo, posicao: posicaoDe(proximo.slug) }}
-				nome="Artigos da trilha"
-				fim="Fim da trilha"
-			/>
+					<OutrosArtigos
+						trilha={trilha}
+						anterior={{ ...anterior, posicao: posicaoDe(anterior.slug) }}
+						proximo={
+							proximo && { ...proximo, posicao: posicaoDe(proximo.slug) }
+						}
+						nome="Artigos da trilha"
+						fim="Fim da trilha"
+					/>
+				</>
+			)}
 		</div>
 	);
 }

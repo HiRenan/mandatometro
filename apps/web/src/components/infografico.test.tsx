@@ -272,17 +272,33 @@ describe("infográfico", () => {
 		}
 	});
 
+	it("o azulejo de cada passo desenha o assunto dele", async () => {
+		const secao = await mostrar();
+		const azulejos = [
+			...secao.querySelectorAll<HTMLElement>("summary > .grande"),
+		];
+
+		// O símbolo do passo (lib/simbolos.ts), dividido nas quatro peças.
+		expect(azulejos.map((azulejo) => azulejo.dataset.simbolo)).toEqual([
+			"folha",
+			"duas-casas",
+		]);
+		for (const azulejo of azulejos) {
+			expect(azulejo.querySelectorAll(".az > svg")).toHaveLength(4);
+		}
+	});
+
 	it("deixa as cores e os desenhos fora do leitor de tela", async () => {
 		const secao = await mostrar();
 		const comCor = [...secao.querySelectorAll<HTMLElement>("[style]")];
 		const desenhos = [
-			...secao.querySelectorAll<HTMLElement>(".grande, span:empty"),
+			...secao.querySelectorAll<HTMLElement>(".grande, .az, .grande svg"),
 		];
 
 		expect(comCor.length).toBeGreaterThan(0);
-		// O azulejo de cada passo, com as quatro peças dele, e o azulejinho de cada
-		// artigo.
-		expect(desenhos).toHaveLength(12);
+		// O azulejo, as quatro peças e o desenho inteiro e em quartos de cada
+		// passo, além do azulejinho de cada artigo.
+		expect(desenhos).toHaveLength(22);
 		for (const elemento of [...comCor, ...desenhos]) {
 			expect(elemento.getAttribute("aria-hidden")).toBe("true");
 		}

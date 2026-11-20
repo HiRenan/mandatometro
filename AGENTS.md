@@ -1,102 +1,84 @@
 # AGENTS.md
 
-Contexto e convenções do Mandatômetro para agentes de código (Claude Code, Codex e Devin) e para o time. É a fonte única: o `CLAUDE.md` só importa este arquivo.
+This file describes how coding agents (Claude Code, Codex, and Devin) work on Mandatômetro. `CLAUDE.md` simply imports it, and the table below points to each topic’s rules.
 
-## Produto
+## How to work
 
-O Mandatômetro é um site que ensina como funciona a política brasileira, a partir do que o Congresso está votando. Público: eleitores, principalmente de 20 a 40 anos. Problema: falta aos eleitores conhecimento sobre o sistema político brasileiro. Lema: o diário oficial político, simplificado.
+**Think before you code.** Make the assumptions that affect the result explicit.
 
-- **Trilhas:** artigos curtos com infográficos, um quiz de múltipla escolha no meio e outro no fim. A primeira é a do processo legislativo. Não tem login: o navegador guarda os artigos lidos.
-- **Newsletter semanal (o jornal legislativo):** todo domingo, o que o Congresso votou na semana, em linguagem simples. A inscrição pede só o e-mail e já manda a última edição, e cada edição também fica no site.
-- **Fora do MVP:** pontos, ranking e certificado saíram. As páginas de cada parlamentar (promessas × atos e patrimônio declarado ao TSE), o login, o "fake ou fato" e o jogo das comissões ficam no marco "Depois do MVP".
-- **Piloto:** cerca de 50 pessoas (uma turma do Senai e o Instagram) fazem a trilha antes da entrega, e o quiz mede quanto elas acertam antes e depois.
-- **Dados:** Câmara e Senado, com deputados federais e senadores do Brasil todo e Santa Catarina como amostra para testar cada etapa primeiro.
-- **Trilha do hackathon:** Acesso à educação. O regulamento (item 5.4) exige que o problema e o público estejam dentro da trilha, por isso aprender é a função principal do site.
-- **Prazo:** projeto do Hack Brasil 2026, com entrega em 30/11/2026 (repositório público, demo no ar e vídeo de até 3 minutos). Prefira a solução simples que chega na demo.
+- When plausible readings lead to different results, spell them out and ask about the decision that affects the work.
+- If there’s a simpler approach or a choice with a meaningful cost, explain the tradeoff and recommend a path.
 
-O porquê do MVP está no [ADR 0002](docs/adr/0002-mvp.md).
+**Start simple.** Build the smallest solution that satisfies the request.
 
-## Ferramentas parceiras
+- Cover the cases the project needs. Add an abstraction or a configuration option when there’s a concrete use for it.
+- Prefer the simple solution that makes it to the Hack Brasil demo.
 
-- **Firecrawl** lê páginas e PDFs. No MVP, está em teste para o inteiro teor das proposições votadas e as notícias da Câmara e do Senado (#9); depois, lê os sites de campanha.
-- **Resend** manda todos os e-mails.
-- **Devin** pode pegar as issues com o label `devin`, com PR neste repositório.
+**Make surgical changes.** Tie each changed line to the request.
 
-As APIs oficiais e os arquivos de dados abertos (Câmara, Senado e TSE) são lidos direto, por HTTP.
+- Match local style and remove any imports, variables, and functions your change leaves unused.
+- Report relevant issues you find outside the scope and leave their fixes for the corresponding tasks.
 
-## Arquitetura
+**Set a verifiable goal.** Define what needs to work and how to check it.
 
-1. **Coleta em lote, agendada:** as APIs da Câmara e do Senado, todo dia. O site só lê o banco: a coleta roda em jobs, fora do caminho das requisições de usuário.
-2. **PostgreSQL com pgvector** guarda tudo.
-3. **LLM** escreve o rascunho da edição semanal com as votações da semana, e uma pessoa do time revisa antes de publicar.
-4. **FastAPI** expõe os dados, o **site** mostra as trilhas e as edições, e o **Resend** manda a última edição para quem se inscreve e a edição nova todo domingo.
+- Turn a bug into a test. See the test fail with the bug and pass with the fix.
+- For a behavior change, exercise the new case. For a refactor, run the same check before and after.
+- Give each step of a multi-step task a check. Use the results to revise the change and verify the full outcome.
 
-## Estrutura e stack
+Use your judgment for trivial tasks. These principles draw inspiration from the [andrej-karpathy-skills CLAUDE.md](https://github.com/forrestchang/andrej-karpathy-skills/blob/main/CLAUDE.md).
 
-Monorepo com pnpm e Turborepo. O porquê de cada escolha está no [ADR 0001](docs/adr/0001-stack.md).
+## The project
 
-- `apps/backend/`: Python 3.13 com uv, num pacote só (`src/mandatometro`): FastAPI, SQLAlchemy 2 com Alembic, psycopg 3, pgvector, Ruff e pytest. Módulos `db` (modelos e sessão), `coleta`, `ia`, `avisos` (e-mails) e `api`. Coleta e IA entram como subcomandos de `cli.py` e gravam no banco; a API só lê o banco e recebe inscrições. O `package.json` só repassa as tarefas do Turborepo para o uv.
-- `apps/web/`: TanStack Start (React com SSR), Tailwind e shadcn/ui, gerado pelo Better-T-Stack. As variáveis do site ficam em `.env.schema` (varlock), e as marcadas `@public` entram no bundle do navegador. Código que só roda no servidor fica em arquivos `*.server.ts`, e o build falha se o navegador importar um deles; os loaders chegam a esse código por `createServerFn`, em arquivos `*.functions.ts`.
-- `apps/web/conteudo/`: os textos das trilhas, em Markdown, com uma pasta por trilha e um arquivo por artigo. O formato e como conferir estão em [docs/conteudo-das-trilhas.md](docs/conteudo-das-trilhas.md); um teste do Vitest lê a pasta, e o CI falha se um artigo estiver mal formado.
-- `apps/web/imagens/`: o HTML do ícone da aba e da prévia do link. O `pnpm --filter web imagens` grava o `favicon.ico`, o `apple-touch-icon.png` e o `previa.png` em `apps/web/public/`. Para mudar uma imagem, mude o HTML e gere de novo, sem editar o PNG. O `mapa.mjs` desenha o mapa do fundo: o `pnpm --filter web mapa` grava o `apps/web/src/estilos/mapa.svg`, e vale a mesma regra, mude o roteiro e gere de novo.
-- `apps/web/src/index.css` e `apps/web/src/estilos/`: o visual do site. As cores e as fontes ficam em `packages/ui/src/styles/globals.css`; as peças, no `index.css`; o fundo de papel (o grão e o mapa da trilha), em `estilos/fundo.css`; os azulejos, em `estilos/azulejos.css`; o quiz, em `estilos/quiz.css`; as animações, a troca de página e o movimento reduzido, em `estilos/movimento.css`.
-- `packages/ui/` (componentes shadcn/ui) e `packages/config/` (tsconfig base): gerados pelo Better-T-Stack.
-- `docker-compose.yml`: serviços `db` (imagem `pgvector/pgvector:pg17`), `api` e `web`. O banco atende na porta 5433 do computador, para não brigar com um PostgreSQL instalado na 5432.
-- `docs/`: decisões do time em `docs/adr/`, o formato do conteúdo das trilhas e o dicionário de dados (issue #4).
-- `PRODUCT.md` e `DESIGN.md`, na raiz: o produto (público, voz e princípios) e o visual do site (cores, letras, peças e movimento), no formato do Impeccable. O `DESIGN.md` descreve o que o código faz: mudou o visual, atualize ele e o `apps/web/.impeccable/design.json`, que mostra as mesmas peças no painel do Impeccable.
-- **Hospedagem:** o site vai para a Vercel, que monta a pasta `apps/web` com o `apps/web/vercel.json`: a `main` publica em mandatometro.com.br, a `develop` no endereço do time, e cada PR ganha uma prévia. A configuração fica no repositório, sem variável no painel. O build da Vercel grava as variáveis do site na função, em texto puro (`ssrInjectMode: "resolved-env"`, no `vite.config.ts`), porque a função não tem o CLI do varlock nem o `.env.schema`: por isso o `buildCommand` fixa o `NODE_ENV=production`, e uma variável sensível no site pede antes o `@encryptInjectedEnv` do varlock.
-- **Contrato da API:** o cliente TypeScript em `apps/web/src/client/` sai do `apps/backend/openapi.json`. Mudou a API, rode `pnpm generate:client` e faça commit dos dois; o CI falha se um deles ficar desatualizado.
-- **Migrations:** numeradas em sequência (`--rev-id 0002`, `0003`...), com a mensagem sem acento, porque ela vira o nome do arquivo. O autogenerate não vê mudança de CHECK nem de valor padrão: um valor novo num conjunto (o do voto, o do resultado, o estado da edição, os códigos gravados do voto) pede essa parte da migration escrita à mão, e o teste de migrations acusa o que faltar. Mudou uma tabela, atualize o diagrama do README, que um teste confere com os modelos.
+Mandatômetro teaches how Brazilian politics works through what Congress is voting on, mainly for voters aged 20 to 40. The Hack Brasil 2026 submission is due November 30, 2026, with a public repository, a live demo, and a video up to three minutes long. See the [product definition](PRODUCT.md) and the [ADRs](docs/adr/) for scope and decisions, including the [stack](docs/adr/0001-stack.md), the [MVP](docs/adr/0002-mvp.md), [optional login](docs/adr/0003-login-opcional.md), and the [Official Gazette in the newsletter](docs/adr/0004-newsletter-do-dou.md).
 
-Os comandos de instalação, teste e lint ficam no README, seção "Como rodar". Quem mudar um comando atualiza lá.
+## Stack and structure
 
-## Regras de conteúdo
+- The site reads collected data only from the database through the API. Collection and AI run as jobs outside the user request path and write to the database through [`cli.py` subcommands](apps/backend/src/mandatometro/cli.py). The API also accepts subscriptions and pilot attempts.
+- Keep server-only code in `*.server.ts`. Loaders reach it through `createServerFn` in `*.functions.ts`. Importing a server-only file in browser code fails the build.
+- A server function that calls the API logs one fixed line with a short reason and throws an error with a fixed message. The router puts the error’s `message` in the HTML and the function response. The original message can contain an internal address, SQL, or an email address, as seen in the review of PR #44. Follow the [editions server function](apps/web/src/lib/edicoes/edicoes.server.ts) and the [test for the 500 HTML](apps/web/src/routes/edicoes/-edicoes-ssr.test.tsx).
+- Declare site variables in varlock’s [`.env.schema`](apps/web/.env.schema). Variables marked `@public` go into the browser bundle.
+- Use the Compose host port for local PostgreSQL to avoid a conflict with an installation on port 5432.
 
-O produto fala de pessoas reais. Estas regras valem para a interface, as trilhas, o quiz, a newsletter, a API e os prompts do LLM.
+## Conventions
 
-- **Fonte em tudo:** cada afirmação sobre um político ou uma votação leva o link oficial, a data da coleta e, quando vier de texto, o trecho literal. O que não tem fonte fica fora do banco e da newsletter.
-- **Tom neutro:** o texto descreve o que o dado mostra e deixa o julgamento para o leitor.
-- **Trilhas, quiz e newsletter:** neutros e apartidários, com os mesmos critérios para todos os partidos e parlamentares. Cada explicação de como o Congresso e as eleições funcionam leva a fonte oficial (lei, regimento ou página da Câmara, do Senado ou do TSE). O quiz pergunta sobre fatos e regras e nunca dá nota a político ou partido.
-- **Domínios das fontes das trilhas:** o validador aceita `gov.br`, `leg.br`, `jus.br`, `mp.br` e `def.br`. As referências planejadas do Ministério Público e da Defensoria Pública usam os dois últimos; mantenha esses links oficiais ao escrever os artigos.
-- **Promessas e patrimônio (depois do MVP):** a ligação entre promessa e ato tem um destes status: `ato a favor`, `ato contra` ou `nenhum ato encontrado`. Deputado e senador não são obrigados a entregar proposta ao TSE (só prefeito, governador e presidente): sem promessa, escreva "Não encontramos promessas públicas nas fontes consultadas" e liste as fontes. O patrimônio se chama "patrimônio declarado ao TSE", vem corrigido pelo IPCA, com o aviso de que o valor declarado costuma ser o de compra, e aparece só nos anos em que a pessoa concorreu, em tom descritivo.
-- **Dados pessoais:** CPF, título de eleitor e data de nascimento servem só para ligar registros entre bases e ficam no banco. A API, o front, os logs e os fixtures de teste identificam pessoas pelo id interno. O e-mail de quem se inscreve segue a mesma regra, e as respostas do quiz não identificam quem respondeu. Motivo de ausência fica fora do banco, para a licença saúde não ser deduzida: toda ausência do Senado (AP, LS e as que entrarem em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, igual às outras, e o motivo de afastamento do senador não é gravado. O voto só guarda os códigos de voto e de presença de `CODIGOS_GRAVADOS`, o que o CHECK do banco garante, e um código novo entra como `outro`, sem o código. O log também não leva o código nem a pessoa, porque o log junto com o banco apontaria quem recebeu um código que pode ser de saúde: a coleta (#10 e #11) registra a votação e quantos códigos desconhecidos vieram nela, e quem for classificar o código o lê na fonte pública. O regulamento do hackathon (item 6.9) também proíbe a demo de expor dados pessoais reais de terceiros.
+- **Branches.** Target `develop`, the default GitHub branch, for PRs. Merge only stable `develop` into `main`, such as before the demo and submission. Each merge to `main` publishes the site on its domain.
+- **One issue per PR.** Start a `tipo/NN-descricao` branch from `develop` (e.g. `feat/10-conector-camara`). Write Conventional Commits in Portuguese (e.g. `feat(camara): conector de proposições`).
+- **PR description.** In Portuguese, describe what changed and how to test it, and include `Closes #NN`. Devin can take issues labeled `devin` and open PRs in this repository. Apply the `devin` label to those PRs.
+- **Attribution.** Commits and PRs contain the work itself, without AI attribution such as “Generated with Claude Code” or an agent’s `Co-Authored-By` line. [`.claude/settings.json`](.claude/settings.json) disables that attribution in Claude Code.
+- **Language.** Use Portuguese without accents for domain names: `parlamentar`, `mandato`, `candidatura`, `proposicao`, `votacao`, `votacao_proposicao`, `voto`, `promessa`, `ligacao`, `bem_declarado`, `fonte`, `inscrito`, `trilha`, `artigo`, `ato`, `edicao`, and `item_edicao`. Write user-facing text in Brazilian Portuguese (pt-BR).
+- **Commands.** Find installation, test, and lint commands under [Como rodar in the README](README.md#como-rodar).
+- **API contract.** The TypeScript client in `apps/web/src/client/` is generated from `apps/backend/openapi.json`. When the API changes, run `pnpm generate:client` and commit both outputs. CI fails if either is out of date.
+- **Migrations.** Use sequential revision IDs (`--rev-id 0002`, `0003`, and so on) and an unaccented message because it becomes the file name. Write changes to CHECK constraints and defaults by hand. Autogenerate misses them, including new values for votes, results, edition states, and stored vote codes. The migration test catches missing changes. When you change a table, update the [README diagram](README.md#modelo-de-dados), which a test checks against the models. In hosted environments, apply migrations only through the workflow. Keep the schema compatible with both the old and the new code.
 
-## Regras do visual
+## Tests
 
-O desenho inteiro está no [DESIGN.md](DESIGN.md). O que mais pega quem mexe numa tela:
+- Run unit tests offline with recorded responses in [`apps/backend/tests/fixtures/`](apps/backend/tests/fixtures/). Replace real personal data, including CPF, voter ID, and reasons for leave, with fictional values. In Senate fixtures use the same pair, `XXX` / `Motivo fictício`, for all absence and leave codes and descriptions so that no reason stands out. Use invented data in tests of the absence codes themselves.
+- Mark tests that use the network `online`. CI skips them.
+- Use pytest’s short traceback. A long traceback exposes recorded responses in public logs. Assert on IDs and counts for those responses.
+- Database tests erase the data in their database. Use a separate database whose name ends in `_teste` and pass `TEST_DATABASE_URL` on the command line. The URL comes only from that explicit variable. Without it, database tests skip locally and fail in CI, which starts its own database. Use invented data and `@example.com` addresses.
 
-- **Azulejos são desenho:** ficam fora do leitor de tela (`aria-hidden`) e não dizem nada sobre o assunto. A cor de cada artigo, trilha e passo vem da posição (`classeDaFita`, em `lib/formatar.ts`), na ordem verde, amarela, azul, rosa e vermelha: ninguém escolhe cor por assunto ou partido. Nenhum texto fica em cima de uma cor de fita.
-- **Títulos em maiúsculas, com teto:** o `[--palavra:N]` de um título é a largura da palavra mais comprida dele, medida em maiúsculas. Ele fica na mesma linha do TSX que as classes do título, porque o `titulos.test.ts` lê o número dali. A tabela dos tetos está em [docs/conteudo-das-trilhas.md](docs/conteudo-das-trilhas.md).
-- **Movimento:** é CSS e a animação nativa do navegador, sem biblioteca. O conteúdo já vem no HTML do servidor, e cada animação chega ao estado normal da peça; com `prefers-reduced-motion`, nada vira nem sobe. Enquanto a troca de página roda, nada da página responde ao ponteiro (o `pointer-events: none` nas fotos não muda isso): o `cliqueDuranteATroca`, em `lib/troca-de-pagina.ts`, encerra a troca no toque e manda o clique para a página nova.
-- **Fundo:** o papel tem o grão e o mapa da trilha, numa camada fixa atrás da página (o `body::before`, em `estilos/fundo.css`). Uma peça com fundo próprio cobre o mapa: deixe sem fundo o que fica direto no papel, e use `var(--papel) var(--grao)` no que precisa cobrir a página, como o pé do quiz e as faixas do anterior e do próximo. O mapa sobe um décimo da rolagem, num trecho fixo (`animation-range: 0 600vh`): assim, ele não salta quando a página muda de altura.
-- **Classes montadas:** junte os nomes com `classes()`, de `lib/classes.ts`. Num texto montado com `${}`, a ordenação de classes do Biome mexe nos espaços.
+## Secrets and personal data
 
-## Fontes de dados
+Keep Firecrawl, Resend, Devin, and LLM keys only in the local `.env` created from `.env.example` and in hosting secrets. Refer to keys by variable name in code, issues, PRs, and logs. Add new variables to `.env.example` with an empty value and a comment.
 
-Endpoints, campos, chaves de ligação e exemplos reais de cada fonte estão em [docs/dicionario-de-dados.md](docs/dicionario-de-dados.md), com as respostas gravadas em `apps/backend/tests/fixtures/`. O TSE entra depois do MVP (#12 e #13). Regras que valem para todas:
+Apply the [personal data rules](docs/dados-pessoais.md) before storing, exposing, logging, or using data about a person in a fixture.
 
-- Toda chamada externa tem timeout e nova tentativa com backoff. A API da Câmara devolve 504 de vez em quando.
-- O User-Agent identifica o projeto (`mandatometro (Hack Brasil 2026)`), e a coleta respeita o robots.txt dos sites.
-- As respostas da Câmara e do Senado são UTF-8, e a Câmara não declara o charset no `content-type`: decodifique explicitamente como UTF-8, ou os acentos embaralham no Windows.
-- **No Senado, data vai com hífen:** `dataInicio=2026-11-03`. No formato `20261103`, a API devolve HTTP 400.
-- **No Senado, `/processo?id={id}` ignora o filtro** e responde HTTP 200 com uma lista arbitrária de matérias, em vez de erro. Use sempre o id no caminho, `/processo/{id}`. A forma com query string vem com o `ementa` do primeiro nível preenchido, o que faz um conector errado parecer funcionar; em `/processo/{id}`, esse `ementa` vem `null` e a ementa de verdade está em `conteudo.ementa`.
-- **Os totais do Senado não são confiáveis:** em `/votacao`, `totalVotosSim`, `totalVotosNao` e `totalVotosAbstencao` vieram `null` nas quatro votações testadas em 11/11/2026, com os 81 votos presentes. Conte a lista `votos`.
-- A referência do Programa Cidadania Fiscal da Receita Federal no planejamento pode redirecionar para autenticação. Em 11/11/2026, o trecho explicativo foi consultado no índice de busca da própria URL; não trate a tela de login como conteúdo da fonte e confira o acesso público antes de publicar o artigo 3.5.
-- O normas.leg.br, onde os artigos das trilhas citam a Constituição, monta a página no navegador: o `curl` do link não traz o texto. Para conferir por HTTP, peça a norma inteira em `https://normas.leg.br/api/public/normas?urn=<urn>&tipo_documento=maior-detalhe`, com a URN sem o `!art61` do fim (com ele, a resposta só repete a URN). Cada dispositivo vem num `hasPart`, com a URN em `legislationIdentifier` e as versões em `workExample`; o texto em vigor é o `text` da versão com a `legislationDate` mais recente. Em 13/11/2026, o Regimento Comum e o Regimento Interno da Câmara (RICD) não tinham texto no normas.leg.br: a resposta da API vinha sem `hasPart`. A compilação mais nova do Regimento Comum é a do Senado, o `RCCN.rtf` que `https://www25.senado.leg.br/web/atividade/legislacao/regimento-interno` lista em "Regimento Comum (ver texto compilado até 31/7/2025)"; o site da Câmara traz a republicação de 2023, e o art. 4º já difere entre as duas. O RICD em vigor é o DOCX ou o PDF "atualizado até a Resolução nº 34, de 2026", em `https://www2.camara.leg.br/atividade-legislativa/legislacao/regimento-interno-da-camara-dos-deputados`. O `workExample` de um dispositivo às vezes vem como objeto, e não como lista.
-- Os CSVs do TSE vêm em latin-1, separados por `;`, um por UF dentro de cada ZIP.
-- A mesma pessoa se liga entre eleições do TSE pelo CPF. Em 2024 o CPF vem vazio e em 2012 falta em parte das linhas: nesses anos, use o título de eleitor e confira a data de nascimento.
+## Where to look
 
-## Segredos
+| Before you… | Read… |
+| --- | --- |
+| Write copy for a learning track, quiz, or newsletter, or write an LLM prompt | [PRODUCT.md](PRODUCT.md) |
+| Handle personal data in storage, logs, an API, or a fixture | [docs/dados-pessoais.md](docs/dados-pessoais.md) |
+| Work on the site, including a screen, stylesheet, image, or test | [DESIGN.md](DESIGN.md) and [docs/codigo-do-site.md](docs/codigo-do-site.md) |
+| Write or check an article for a learning track | [docs/conteudo-das-trilhas.md](docs/conteudo-das-trilhas.md) |
+| Work on data collection, including calls to the Câmara, Senado, or TSE APIs | [docs/dicionario-de-dados.md](docs/dicionario-de-dados.md) |
+| Draft the newsletter, handle subscriptions, or send an edition | [docs/newsletter.md](docs/newsletter.md) |
+| Work on the pilot | [docs/medicao-do-piloto.md](docs/medicao-do-piloto.md) |
+| Work on hosting workflows, deployments, or variables | [docs/hospedagem.md](docs/hospedagem.md) |
+| Decide what belongs in the product | [PRODUCT.md](PRODUCT.md) and [docs/adr/](docs/adr/) |
 
-As chaves (Firecrawl, Resend, Devin e LLM) ficam só no `.env` local, criado a partir do `.env.example`, e nos secrets da hospedagem. Código, issues, PRs e logs citam a chave pelo nome da variável. Variável nova entra no `.env.example` com valor vazio e um comentário.
+## Before you finish
 
-## Como trabalhar
-
-- **Branches:** todo PR vai para a `develop`, que é a branch padrão do GitHub. A `main` só recebe merge da `develop`, quando ela estiver estável, como antes da demo e da entrega: cada merge nela publica o site no domínio.
-- **Uma issue por PR.** Branch `tipo/NN-descricao` criado a partir da `develop` (ex.: `feat/10-conector-camara`); commits no padrão Conventional Commits, em português (ex.: `feat(camara): conector de proposições`).
-- **Descrição do PR:** o que mudou, como testar e `Closes #NN`. PR do Devin leva o label `devin`.
-- **Sem assinatura de IA:** commits e PRs levam só o conteúdo do trabalho, sem linha de autoria de ferramenta de IA, como "Generated with Claude Code" ou `Co-Authored-By` de um agente. No Claude Code, o `.claude/settings.json` já desliga essa assinatura.
-- **Testes de unidade rodam offline,** com respostas reais gravadas em `tests/fixtures/`, com CPF, título de eleitor e motivo de afastamento trocados por valores fictícios. Testes que usam a rede levam o marcador `online` e ficam fora do CI.
-- **Testes de banco** rodam num banco à parte, terminado em `_teste`, porque apagam tudo nele. O endereço vai no `TEST_DATABASE_URL`, na linha do comando: ele não vem do `.env` nem do `DATABASE_URL`, para nenhum teste apagar o banco de desenvolvimento. Sem a variável, esses testes pulam; no CI, que sobe o próprio banco, falham. Os dados são inventados, e e-mail de teste usa `@example.com`.
-- **Nomes do domínio em português, sem acento:** `parlamentar`, `mandato`, `candidatura`, `proposicao`, `votacao`, `votacao_proposicao`, `voto`, `promessa`, `ligacao`, `bem_declarado`, `fonte`, `inscrito`, `trilha`, `artigo`, `edicao` e `item_edicao`. Texto para o usuário em pt-BR.
-- **Ao terminar:** se mudou como rodar, atualize o README; se surgiu uma convenção ou uma pegadinha de fonte, atualize este arquivo.
+- Update the README when a command or setup step changes.
+- Add new working conventions to this file.
+- Record a newly discovered gotcha in the document for that topic.

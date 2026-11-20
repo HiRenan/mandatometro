@@ -52,8 +52,10 @@
 	 * a migalha, o título, a tela da vez e, no pé, o andamento.
 	 *
 	 * O mosaico tem a largura da capa (--capa) e, nas perguntas, encolhe até o
-	 * canto de cima (--canto é a largura que sobra dele ali). As fileiras dele
-	 * (--fileiras) vêm do número de perguntas, três por fileira.
+	 * canto de cima (--canto é a largura que sobra dele ali). As colunas
+	 * (--colunas) e as fileiras (--fileiras) dele vêm do número de perguntas:
+	 * três por fileira, ou quatro com mais de seis, como as doze do quiz final
+	 * (o colunasDoMosaico, em lib/quiz.ts).
 	 */
 	.quiz {
 		--alto: clamp(0.75rem, 2vw, 1.5rem);
@@ -85,7 +87,7 @@
 		top: 0;
 		right: 0;
 		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-columns: repeat(var(--colunas, 3), minmax(0, 1fr));
 		gap: 2px;
 		width: var(--capa);
 		transform-origin: 100% 0;
@@ -99,24 +101,29 @@
 	}
 
 	/*
-	 * O título da página. Na abertura, é a letra gigante do cartaz, no pé do palco;
-	 * nas outras telas, a etiqueta do alto.
+	 * O título da página. Na abertura, é a letra gigante do cartaz, no pé do palco.
+	 * Nas outras telas, ele sai da vista, e quem vê lê o nome do quiz no pé, com o
+	 * andamento: antes, ele virava uma etiqueta acima da contagem e do título do
+	 * fim (a #136). O h1 continua no HTML, e o leitor de tela fica com ele, o nome
+	 * do palco e a mesma ordem dos títulos.
 	 */
 	.quiz[data-fase="abertura"] .quiz-titulo {
 		--letra: clamp(4rem, 1.5rem + 11vw, 12.5rem);
 		margin-top: auto;
-		line-height: 0.82;
+		line-height: 0.86;
 		animation: sobe 0.8s var(--ease-suave) both;
 	}
 
 	.quiz:not([data-fase="abertura"]) .quiz-titulo {
-		font-size: 0.875rem;
-		font-stretch: 100%;
-		font-weight: 700;
-		line-height: 1.2;
-		letter-spacing: calc(0.1em * var(--espacado));
-		text-transform: var(--caixa-alta);
-		color: var(--tinta-suave);
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+		border: 0;
 	}
 
 	.quiz-palco {
@@ -430,7 +437,7 @@
 		font-family: var(--font-sans);
 		font-size: min(
 			var(--letra),
-			calc((100vw - 2 * var(--margem) - var(--recuo)) / var(--palavra))
+			calc((100cqi - 2 * var(--margem) - var(--recuo)) / var(--palavra))
 		);
 		font-stretch: 62%;
 		font-weight: 900;
@@ -614,6 +621,16 @@
 			bottom: 0;
 		}
 
+		/*
+		 * Na abertura com a linha do piloto (no quiz final, o depois e o antes pela
+		 * metade), a abertura fica mais alta, e o pé preso cobria o "Começar" no
+		 * celular pequeno, como a 375 × 667. Ali o pé fica no lugar dele, depois do
+		 * botão, e volta a prender nas perguntas. Sem a linha, nada muda.
+		 */
+		.quiz[data-linha][data-fase="abertura"] .quiz-pe {
+			position: static;
+		}
+
 		/* O que recebe o foco, ou é levado para a tela, para acima do pé. */
 		html:has(.quiz-pe) {
 			scroll-padding-bottom: 5rem;
@@ -625,6 +642,27 @@
 		flex-wrap: wrap;
 		gap: 0.4rem;
 		perspective: 20rem;
+	}
+
+	/*
+	 * Os quadradinhos ficam numa fileira enquanto cabem: os doze do quiz final pedem
+	 * 17.6rem (1.1rem cada um e os vãos de 0.4rem), e o celular tem 40 px de
+	 * margens. Abaixo de 20.1rem, como a 320 px, eles vão em fileiras de seis, e
+	 * nenhum fica sozinho embaixo (antes, a fileira quebrava em 11 e 1). Os seis do
+	 * quiz da trilha continuam numa fileira. A conta está no estilos/quiz.test.ts.
+	 */
+	@media (width < 20.1rem) {
+		.quiz-andamento {
+			display: grid;
+			grid-template-columns: repeat(6, 1.1rem);
+		}
+	}
+
+	/* Com a letra acima de 200%, nem seis cabem a 320 px: as fileiras ficam de três. */
+	@media (width < 9.85rem) {
+		.quiz-andamento {
+			grid-template-columns: repeat(3, 1.1rem);
+		}
 	}
 
 	/* O quadradinho vira e ganha a cor da posição dele quando a pergunta é
@@ -675,6 +713,165 @@
 		font-size: 0.875rem;
 		letter-spacing: 0;
 		text-transform: none;
+	}
+
+	/*
+	 * A linha do pé: fora da abertura, o nome do quiz, em Label, e a frase do
+	 * andamento, na mesma linha de base (a #136). Os dois andam juntos ao lado dos
+	 * quadradinhos ou embaixo deles. Onde não cabem lado a lado, como com a letra a
+	 * 200% a 320 e a 360 px, a frase desce inteira, sem virar uma coluna estreita.
+	 */
+	.quiz-pe-linha {
+		--vao-do-nome: 0.75rem;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem var(--vao-do-nome);
+		align-items: baseline;
+	}
+
+	/* ───── O piloto ───── */
+
+	/*
+	 * A linha do piloto no quiz final, embaixo do título: a segunda etapa, ou o
+	 * pedido para terminar a primeira. É frase, na letra das mensagens da folha
+	 * da newsletter, sem cor (components/piloto.tsx).
+	 */
+	.piloto-linha,
+	.piloto-situacao {
+		max-width: 34rem;
+		font-family: var(--font-sans);
+		font-size: 1.0625rem;
+		font-weight: 600;
+		line-height: 1.4;
+	}
+
+	/*
+	 * A linha do envio de cada etapa, como a da folha da newsletter
+	 * (estilos/newsletter.css): "Enviando…" na letra pequena, em tinta suave; a
+	 * resposta numa frase (a .piloto-linha); o erro em negrito, sem cor (o
+	 * .ainda-nao), com o "Tentar de novo" embaixo, em ação de texto.
+	 */
+	.piloto-envio {
+		display: grid;
+		justify-items: start;
+		gap: 0.75rem;
+		max-width: 34rem;
+	}
+
+	.piloto-enviando {
+		color: var(--tinta-suave);
+	}
+
+	.quiz-fim .piloto-linha,
+	.quiz-fim .piloto-envio {
+		margin-top: 1.25rem;
+	}
+
+	/*
+	 * Os passos do piloto, na abertura de /piloto: a lista entre fios das folhas
+	 * da trilha (index.css), sem link. O número pequeno fica na fita da posição;
+	 * o feito leva o visto, e o da vez, o fio grosso de tinta do lado.
+	 */
+	.piloto-passos {
+		justify-self: stretch;
+		max-width: 34rem;
+		margin-block: 0.25rem;
+	}
+
+	.piloto-passos > li {
+		display: grid;
+		grid-template-columns: 1.75rem minmax(0, 1fr);
+		grid-template-areas:
+			"numero titulo"
+			"numero detalhe";
+		gap: 0.25rem 0.9rem;
+		align-content: center;
+		align-items: center;
+		min-height: 4rem;
+		padding: 0.7rem 0;
+		border-top: 2px solid var(--tinta);
+	}
+
+	.piloto-passos > li:last-child {
+		border-bottom: 2px solid var(--tinta);
+	}
+
+	.piloto-passos .numeral {
+		grid-area: numero;
+		justify-self: center;
+		font-size: 2.75rem;
+		-webkit-text-stroke-width: 2px;
+	}
+
+	.piloto-passos .titulo {
+		grid-area: titulo;
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 700;
+		line-height: 1.2;
+		letter-spacing: calc(0.03em * var(--espacado));
+		text-transform: var(--caixa-alta);
+	}
+
+	.piloto-passos .detalhe {
+		grid-area: detalhe;
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		font-weight: 700;
+		line-height: 1.2;
+		letter-spacing: calc(0.06em * var(--espacado));
+		text-transform: var(--caixa-alta);
+		color: var(--tinta-suave);
+	}
+
+	.piloto-passos > li.aqui {
+		padding-left: 1rem;
+		box-shadow: inset 6px 0 0 var(--tinta);
+	}
+
+	.piloto-passos > li.aqui .detalhe {
+		color: var(--tinta);
+	}
+
+	/* As notas: o que vale saber antes de começar, na letra de leitura. */
+	.piloto-notas {
+		display: grid;
+		gap: 0.5rem;
+		max-width: 34rem;
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.5;
+		color: var(--tinta-suave);
+	}
+
+	/*
+	 * O "Começar como outra pessoa" fecha a abertura, depois de um fio: é para
+	 * quem senta depois de outra pessoa, e não o caminho de quem chega.
+	 */
+	.piloto-outra-pessoa {
+		justify-self: stretch;
+		max-width: 34rem;
+		margin-top: 0.75rem;
+		padding-top: 1.25rem;
+		border-top: 2px solid var(--tinta);
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		line-height: 1.5;
+	}
+
+	.piloto-pronto {
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		font-weight: 700;
+		line-height: 1.375;
+	}
+
+	/* Sem JavaScript, nada do piloto funciona, e o noscript explica. */
+	@media (scripting: none) {
+		.piloto-outra-pessoa,
+		.piloto-recomeco {
+			display: none;
+		}
 	}
 
 	/* ───── A saída de cada tela ───── */
@@ -742,28 +939,45 @@
 
 	@media (width < 62rem) {
 		/*
-		 * Nas perguntas, o mosaico se recolhe no canto, embaixo da migalha. As duas
-		 * etiquetas que ficam ao lado dele param antes, e a de cima guarda a altura
-		 * dele: nenhum texto passa por cima de um azulejo, com quantas fileiras o
-		 * mosaico tiver.
+		 * Nas perguntas, o mosaico se recolhe no canto, embaixo da migalha. A
+		 * contagem, ao lado dele, para antes, e o palco guarda a altura dele: o
+		 * enunciado começa embaixo, e nenhum texto passa por cima de um azulejo, com
+		 * quantas fileiras o mosaico tiver. A contagem fica onde ficava quando o
+		 * título, ainda etiqueta, guardava essa altura (a #136).
 		 */
 		.quiz:is([data-fase="pergunta"], [data-fase="resposta"]) .mosaico {
 			transform: scale(0.44);
 		}
 
-		.quiz:is([data-fase="pergunta"], [data-fase="resposta"])
-			:is(.quiz-titulo, .quiz-contagem) {
+		.quiz:is([data-fase="pergunta"], [data-fase="resposta"]) .quiz-contagem {
 			max-width: calc(100% - var(--canto) - 0.75rem);
 		}
 
-		.quiz:is([data-fase="pergunta"], [data-fase="resposta"]) .quiz-titulo {
-			min-height: calc(var(--canto) / 3 * var(--fileiras, 2) - 2rem);
+		.quiz:is([data-fase="pergunta"], [data-fase="resposta"]) .quiz-palco {
+			padding-top: max(
+				1.25rem,
+				calc(var(--canto) / var(--colunas, 3) * var(--fileiras, 2) - 0.75rem)
+			);
 		}
 
-		/* Na abertura e no fim, o mosaico fica inteiro embaixo da migalha, e o
-		   título desce para baixo dele. */
-		.quiz:is([data-fase="abertura"], [data-fase="fim"]) .quiz-titulo {
-			padding-top: calc(var(--capa) / 3 * var(--fileiras, 2) + 1rem);
+		/* Na abertura e no fim, o mosaico fica inteiro embaixo da migalha: na
+		   abertura, o título desce para baixo dele, e, no fim, o palco. */
+		.quiz[data-fase="abertura"] .quiz-titulo {
+			padding-top: calc(
+				var(--capa) /
+				var(--colunas, 3) *
+				var(--fileiras, 2) +
+				1rem
+			);
+		}
+
+		.quiz[data-fase="fim"] .quiz-palco {
+			padding-top: calc(
+				var(--capa) /
+				var(--colunas, 3) *
+				var(--fileiras, 2) +
+				2.25rem
+			);
 		}
 
 		/* O pé fica mais baixo, para tomar pouco da tela do celular. */
@@ -792,13 +1006,59 @@
 		.quiz-fim-lista a {
 			grid-template-columns: minmax(0, 1fr);
 		}
+
+		/*
+		 * Aqui a etiqueta sai das maiúsculas, e o nome do quiz fica com quase a
+		 * letra da frase do andamento: "Quiz final Você respondeu 1 de 12." se lia
+		 * como uma frase só. Entre os dois vai o quadradinho da faixa de
+		 * informações, que o Renan escolheu em 18/11/2026 (a #162).
+		 * - É desenho: o texto alternativo vazio do content (o / "") o tira da
+		 *   árvore de acessibilidade. No navegador que não lê o texto alternativo,
+		 *   a declaração cai, e o pé fica como antes, sem o quadradinho.
+		 * - Não toma lugar na linha, que quebra como antes: a margem da esquerda
+		 *   devolve a largura dele, com o mesmo arredondamento, e a frase não sai
+		 *   do lugar nem 1/64 de px. O left, que não mexe na linha, o leva ao meio
+		 *   do vão entre o nome e a frase.
+		 * - Com o nome sozinho (a frase vazia, na primeira pergunta e no fim), ele
+		 *   não aparece.
+		 * - Quando a frase desce para a linha de baixo, ele fica antes da beirada
+		 *   da linha, que o corta: o clip, e não o hidden, que faria da linha uma
+		 *   caixa de rolagem, que o flex encolhe. O recuo da esquerda, devolvido
+		 *   pela margem, põe a beirada do corte um pouco antes do texto, sem
+		 *   mexer nele: a tinta do A de "Antes da trilha", que passa da beirada,
+		 *   fica inteira, e o quadradinho, mais longe, some. O
+		 *   overflow-clip-margin faria isso, mas o Chromium não o aplica com o
+		 *   corte só na horizontal.
+		 */
+		.quiz-pe-linha {
+			overflow-x: clip;
+			padding-left: 0.125rem;
+			margin-left: -0.125rem;
+		}
+
+		.quiz-nome + .quiz-andamento-texto > p:not(:empty)::before {
+			content: "" / "";
+			position: relative;
+			left: calc((var(--vao-do-nome) - 0.3em) / -2);
+			display: inline-block;
+			width: 0.3em;
+			height: 0.3em;
+			margin-left: -0.3em;
+			vertical-align: 0.2em;
+			background: currentColor;
+
+			@media (forced-colors: active) {
+				background: CanvasText;
+			}
+		}
 	}
 
 	@media (width >= 62rem) {
 		/*
 		 * O mosaico fica grande no meio do papel, à direita; respondida a pergunta,
 		 * ele se recolhe no canto de cima, e a folha da resposta toma o lugar. A
-		 * largura dá peças de pixel inteiro.
+		 * largura dá peças de pixel inteiro: tirados os vãos de 2 px, ela se
+		 * divide por 2 px em cada coluna.
 		 */
 		.quiz {
 			--capa: min(34vw, 30rem);
@@ -812,7 +1072,11 @@
 		.mosaico {
 			top: calc(50svh - 3.25rem);
 			right: var(--margem);
-			width: calc(round(down, var(--capa) - 4px, 6px) + 4px);
+			--vaos: calc((var(--colunas, 3) - 1) * 2px);
+			width: calc(
+				round(down, var(--capa) - var(--vaos), var(--colunas, 3) * 2px) +
+				var(--vaos)
+			);
 			translate: 0 -50%;
 		}
 
@@ -835,18 +1099,27 @@
 		}
 
 		.quiz-fim h2 {
-			--recuo: calc((100vw - 2 * var(--margem)) * 0.42);
+			--recuo: calc((100cqi - 2 * var(--margem)) * 0.42);
 		}
 
 		.quiz-pergunta {
 			grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
 		}
 
-		/* Ao lado das opções, a resposta certa já está marcada nelas. */
+		/*
+		 * A folha da resposta começa embaixo do mosaico recolhido no canto de cima.
+		 * A margem de cima dela soma ao vão de 1rem a linha da etiqueta que ficava
+		 * acima da contagem até a #136 (a letra de 0.875rem, com a altura de linha
+		 * de 1.2): sem essa linha, a folha subia e cobria a base do mosaico de três
+		 * fileiras do quiz final. Só a folha desce; a contagem e as opções, na
+		 * coluna da esquerda, ficam onde estão. O estilos/quiz.test.ts confere a
+		 * folga em todas as larguras do computador.
+		 */
 		.quiz-retorno {
-			margin-top: 1rem;
+			margin-top: calc(1rem + 0.875rem * 1.2);
 		}
 
+		/* Ao lado das opções, a resposta certa já está marcada nelas. */
 		.quiz-retorno .quiz-certa {
 			display: none;
 		}

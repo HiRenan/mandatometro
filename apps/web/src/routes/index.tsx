@@ -1,6 +1,7 @@
 import { fontes } from "@mandatometro/ui/lib/fontes";
 import { createFileRoute } from "@tanstack/react-router";
 import { PaginaInicial } from "@/components/pagina-inicial";
+import { ENV } from "@/env";
 import { buscarInicio } from "@/lib/conteudo";
 import { metaDaInicial, metaSemPagina, preloadDaFonte } from "@/lib/meta";
 
@@ -8,14 +9,19 @@ export const Route = createFileRoute("/")({
 	loader: () => buscarInicio(),
 	head: ({ loaderData, match }) => ({
 		meta: loaderData ? metaDaInicial() : metaSemPagina(match),
-		// A frase do título usa a letra de máquina do lema. A partir de 864 px, a
+		// A frase do título usa a letra de máquina do lema. A partir de 1344 px, a
 		// rota raiz já adianta essa fonte, para o cabeçalho; abaixo disso, só esta
 		// página a adianta, porque nas outras ela só aparece no rodapé.
-		links: [preloadDaFonte(fontes.maquina, "(max-width: 53.99rem)")],
+		links: [preloadDaFonte(fontes.maquina, "(max-width: 83.99rem)")],
 	}),
 	component: Inicio,
 });
 
 function Inicio() {
-	return <PaginaInicial pagina={Route.useLoaderData()} />;
+	return (
+		<PaginaInicial
+			pagina={Route.useLoaderData()}
+			newsletter={Boolean(ENV.API_URL)}
+		/>
+	);
 }

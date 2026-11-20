@@ -16,12 +16,18 @@ import { Rodape } from "./rodape";
 
 afterEach(cleanup);
 
-/** O cabeçalho num site de mentira, com as páginas dos dois links dele. */
-async function mostrar() {
+/** O cabeçalho num site de mentira, com as páginas dos links dele. */
+async function mostrar({
+	comEdicoes = false,
+	endereco = "/",
+}: {
+	comEdicoes?: boolean;
+	endereco?: string;
+} = {}) {
 	const raiz = createRootRoute({
 		component: () => (
 			<>
-				<Header />
+				<Header comEdicoes={comEdicoes} />
 				<Outlet />
 			</>
 		),
@@ -36,9 +42,19 @@ async function mostrar() {
 		path: "/trilhas",
 		component: () => null,
 	});
+	const edicoes = createRoute({
+		getParentRoute: () => raiz,
+		path: "/edicoes",
+		component: () => null,
+	});
+	const edicao = createRoute({
+		getParentRoute: () => raiz,
+		path: "/edicoes/$id",
+		component: () => null,
+	});
 	const router = createRouter({
-		routeTree: raiz.addChildren([inicio, trilhas]),
-		history: createMemoryHistory({ initialEntries: ["/"] }),
+		routeTree: raiz.addChildren([inicio, trilhas, edicoes, edicao]),
+		history: createMemoryHistory({ initialEntries: [endereco] }),
 	});
 	render(<RouterProvider router={router} />);
 	return screen.findByRole("banner");
@@ -77,7 +93,55 @@ describe("cabeçalho", () => {
 		).toEqual([
 			["Início", "/"],
 			["Trilhas", "/trilhas"],
+			["Conta", "/perfil"],
 		]);
+	});
+
+	it("onde o site tem a API, as edições entram nos links, e a lista diz isso ao CSS", async () => {
+		const cabecalho = await mostrar({ comEdicoes: true });
+		const principal = within(cabecalho).getByRole("navigation", {
+			name: "Principal",
+		});
+
+		expect(
+			within(principal)
+				.getAllByRole("link")
+				.map((link) => [link.textContent, link.getAttribute("href")]),
+		).toEqual([
+			["Início", "/"],
+			["Trilhas", "/trilhas"],
+			["Edições", "/edicoes"],
+			["Conta", "/perfil"],
+		]);
+		expect(
+			principal.querySelector("ul")?.hasAttribute("data-com-edicoes"),
+		).toBe(true);
+	});
+
+	it("sem a API, ficam os dois links, sem a marca das edições", async () => {
+		const cabecalho = await mostrar();
+		const lista = cabecalho.querySelector(".topo-links");
+
+		expect(lista?.hasAttribute("data-com-edicoes")).toBe(false);
+		expect(within(cabecalho).queryByRole("link", { name: "Edições" })).toBe(
+			null,
+		);
+	});
+
+	it("numa edição, o traço fica nas edições, e o link não é a página atual", async () => {
+		const cabecalho = await mostrar({
+			comEdicoes: true,
+			endereco: "/edicoes/7",
+		});
+		const edicoes = within(cabecalho).getByRole("link", { name: "Edições" });
+
+		expect(edicoes.hasAttribute("data-na-secao")).toBe(true);
+		expect(edicoes.hasAttribute("aria-current")).toBe(false);
+		expect(
+			within(cabecalho)
+				.getByRole("link", { name: "Início" })
+				.hasAttribute("data-na-secao"),
+		).toBe(false);
 	});
 
 	it("o nome tem a mesma letra no rodapé, com o teto da letra grande", async () => {
@@ -124,5 +188,29 @@ describe("cabeçalho", () => {
 		expect(inicio.getAttribute("aria-current")).toBe("page");
 		expect(trilhas.hasAttribute("data-na-secao")).toBe(false);
 		expect(trilhas.hasAttribute("aria-current")).toBe(false);
+	});
+
+	it("tem a entrada da busca entre o nome e os links, com o atalho para o leitor de tela", async () => {
+		const cabecalho = await mostrar();
+		const nome = within(cabecalho).getByRole("link", { name: "Mandatômetro" });
+		const entrada = within(cabecalho).getByRole("button", {
+			name: "Buscar no site",
+		});
+		const principal = within(cabecalho).getByRole("navigation", {
+			name: "Principal",
+		});
+
+		expect(
+			nome.compareDocumentPosition(entrada) & Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+		expect(
+			entrada.compareDocumentPosition(principal) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+		expect(entrada.getAttribute("aria-haspopup")).toBe("dialog");
+		expect(entrada.getAttribute("aria-keyshortcuts")).toBe("Control+K Meta+K");
+		expect(entrada.querySelector("kbd")?.getAttribute("aria-hidden")).toBe(
+			"true",
+		);
 	});
 });

@@ -1,0 +1,235 @@
+"""A rede retém termos para conferência humana, sem ampliar as exclusões."""
+
+import json
+import re
+from dataclasses import asdict
+
+import pytest
+from test_edicao_redacao import Falso
+from test_edicao_revisao import abrir as abrir
+from test_edicao_revisao import pronto
+from test_edicao_selecao import FIM, INICIO
+from test_edicao_selecao import dados as dados
+
+from mandatometro.ia import redacao
+from mandatometro.ia.privacidade import TERMO_PESSOAL, assunto_pessoal, normalizar
+from mandatometro.ia.redacao import PENDENTE, redigir
+from mandatometro.ia.selecao import selecionar
+from mandatometro.ia.servico import ErroEdicao, exportar, gerar, publicar, revisar
+
+AVISO = (
+    "O texto oficial fala de licença, afastamento ou saúde. Confira se é de uma pessoa; "
+    "se for, exclua o item com excluir: true."
+)
+
+
+@pytest.mark.parametrize("campo", ["descricao", "ementa"])
+@pytest.mark.parametrize(
+    "texto",
+    [
+        "Dispõe sobre o licenciamento ambiental.",
+        "Amplia a licença parental de trabalhadores.",
+        "Garante o afastamento de trabalhadoras vítimas de violência.",
+        "Institui a política nacional de saúde mental.",
+        "Prevê apoio a quem se internou.",
+        "Amplia o apoio a quem adoeceu.",
+        "Amplia o apoio a pessoas adoentadas.",
+        "Amplia o apoio a pessoas convalescentes.",
+        "Amplia os atendimentos médicos à população.",
+        "A Câmara dos Deputados aprova o programa de saúde pública.",
+        "O parlamentar foi operado.",
+        "A parlamentar foi operada.",
+        "Os parlamentares foram operados.",
+        "As parlamentares foram operadas.",
+        "O parlamentar está no hospital.",
+        "O deputado propõe recursos para hospitais.",
+        "O parlamentar defende o programa hospitalar.",
+        "A senadora requer equipamentos hospitalares.",
+        "O parlamentar consulta um médico.",
+        "O parlamentar consulta uma médica.",
+        "O deputado requer vagas para médicos.",
+        "A senadora propõe vagas para médicas.",
+        "O parlamentar anunciou que, após reunião com toda a equipe, ficará afastado.",
+        "O parlamentar apresentou o pedido. Deverá iniciar tratamento médico.",
+        "Informe sobre a saúde de quem ocupa a cadeira.",
+    ],
+)
+def test_termo_na_fonte_retem_item_inteiro_e_avisa_ate_a_confirmacao(
+    abrir, dados, campo, texto, caplog
+):
+    dados(100, **{campo: texto})
+    falso = Falso()
+    resultado = gerar(abrir, INICIO, FIM, redator=falso)
+    assert resultado["assunto_pessoal"] == 0
+    assert resultado["itens"] == resultado["itens_com_termo_pessoal"] == 1
+    assert resultado["motivos_texto_do_codigo"] == {"termo_pessoal": 1}
+    assert falso.entradas == []
+    edicao_id = resultado["edicao_id"]
+    arquivo = exportar(abrir, edicao_id)
+    item = arquivo["itens"][0]
+    assert item["explicacao"] == [PENDENTE]
+    assert item["titulo"] == "PL 100/2026"
+    assert item["fatos"]["origem"] == "codigo"
+    assert "redacao" in item["fatos"]["pendencias"]
+    assert item["contexto"]["avisos"] == [AVISO]
+    assert texto in json.dumps(arquivo, ensure_ascii=False)
+    with pytest.raises(ErroEdicao, match="pendência"):
+        publicar(abrir, edicao_id)
+
+    arquivo = pronto(arquivo)
+    item["revisado"] = False
+    revisao = revisar(abrir, edicao_id, arquivo)
+    assert revisao["avisos"] == [f"Confira o item 1: {AVISO}"]
+    with pytest.raises(ErroEdicao, match="revisao"):
+        publicar(abrir, edicao_id)
+    atual = exportar(abrir, edicao_id)
+    assert atual["itens"][0]["contexto"]["avisos"] == [AVISO]
+    atual["itens"][0]["revisado"] = True
+    assert revisar(abrir, edicao_id, atual)["avisos"] == revisao["avisos"]
+    assert publicar(abrir, edicao_id)["situacao"] == "publicada"
+    assert texto not in json.dumps(resultado, ensure_ascii=False)
+    assert texto not in json.dumps(revisao, ensure_ascii=False)
+    assert texto not in caplog.text
+
+
+@pytest.mark.parametrize("provedor", [True, False])
+@pytest.mark.parametrize(
+    "ementa",
+    [
+        "Requer debates sobre a saúde pública.",
+        "Requer a aquisição de equipamentos hospitalares.",
+        "Requer debates sobre vagas para médicos.",
+        "Requer debates sobre apoio a pessoas operadas.",
+    ],
+)
+def test_ementa_de_proposicao_ligada_fora_das_principais_tambem_retem(
+    sessao, abrir, dados, provedor, ementa
+):
+    principal = dados(100)
+    requerimento = dados(200, sigla="REQ", ementa=ementa)
+    requerimento.proposicoes.extend(principal.proposicoes)
+    sessao.flush()
+    selecao = selecionar(sessao, INICIO, FIM)
+    assert len(selecao.itens) == 1
+    assert [p.numero for p in selecao.itens[0].proposicoes] == [100]
+    falso = Falso() if provedor else None
+    texto = redigir(selecao.itens[0], selecao.nomes, falso)
+    assert texto.motivo == "termo_pessoal" and texto.origem == "codigo"
+    assert falso is None or falso.entradas == []
+    resultado = gerar(abrir, INICIO, FIM, redator=falso)
+    assert resultado["itens_com_termo_pessoal"] == 1
+    assert exportar(abrir, resultado["edicao_id"])["itens"][0]["contexto"]["avisos"] == [AVISO]
+
+
+def test_rede_conta_grupos_sem_alterar_ordem_teto_fatos_ou_fontes(abrir, sessao, dados):
+    dados(100, dia=9, descricao="Licença ambiental.", ementa="Política de saúde.", valores=("sim",))
+    dados(200, dia=15)
+    dados(300, dia=14, ementa="Política de saúde pública.")
+    dados(400, dia=13, ementa="Concede licença ao parlamentar.")
+    antes = selecionar(sessao, INICIO, FIM, teto=2)
+    falso = Falso()
+    resultado = gerar(abrir, INICIO, FIM, teto=2, redator=falso)
+    for campo, esperado in asdict(antes.resumo).items():
+        assert resultado[campo] == esperado
+    assert resultado["itens_com_termo_pessoal"] == 1
+    assert len(falso.entradas) == 1
+    assert resultado["assunto_pessoal"] == 1
+    arquivo = exportar(abrir, resultado["edicao_id"])
+    for base, item in zip(antes.itens, arquivo["itens"], strict=True):
+        fatos = base.fatos.model_dump(mode="json")
+        for campo in ("proposicoes", "votacoes", "fontes"):
+            assert fatos[campo] == item["fatos"][campo]
+    assert "avisos" not in arquivo["itens"][1]["contexto"]
+
+
+@pytest.mark.parametrize("campo", ["descricao", "ementa"])
+def test_arquivo_anterior_a_lista_nova_orienta_reexportar_e_refazer_ajustes(
+    abrir, dados, campo, monkeypatch
+):
+    dados(100, **{campo: "O parlamentar está no hospital."})
+    edicao_id = gerar(abrir, INICIO, FIM, redator=Falso())["edicao_id"]
+    # Simula a exportação anterior à lista adicional, sem editar os campos de consulta.
+    with monkeypatch.context() as anterior:
+        anterior.setattr(redacao, "TERMO_ADICIONAL_DA_REDE", re.compile(r"(?!)"))
+        arquivo = exportar(abrir, edicao_id)
+    assert "avisos" not in arquivo["itens"][0]["contexto"]
+    atual = exportar(abrir, edicao_id)
+    assert atual["versao_rascunho"] == arquivo["versao_rascunho"]
+    assert atual["itens"][0]["contexto"]["avisos"] == [AVISO]
+
+    with pytest.raises(ErroEdicao) as erro:
+        revisar(abrir, edicao_id, pronto(arquivo))
+    assert str(erro.value) == (
+        "Item 1: o campo contexto é de consulta e não pode mudar. "
+        "Exporte o rascunho novamente e refaça os ajustes."
+    )
+    novo = exportar(abrir, edicao_id)
+    assert novo == atual
+    revisao = revisar(abrir, edicao_id, pronto(novo))
+    assert revisao["situacao"] == "revisao_salva"
+    assert revisao["pendencias"] == []
+    assert revisao["avisos"] == [f"Confira o item 1: {AVISO}"]
+    salvo = exportar(abrir, edicao_id)["itens"][0]
+    assert salvo["titulo"] == arquivo["itens"][0]["titulo"]
+    assert salvo["explicacao"] == arquivo["itens"][0]["explicacao"]
+    assert salvo["contexto"]["avisos"] == [AVISO]
+
+
+@pytest.mark.parametrize("campo", ["descricao", "ementa"])
+def test_aviso_e_de_consulta_e_pessoa_pode_excluir_item(abrir, dados, campo):
+    dados(100, **{campo: "Concede licença ao titular."})
+    dados(200)
+    falso = Falso()
+    resultado = gerar(abrir, INICIO, FIM, redator=falso)
+    assert resultado["assunto_pessoal"] == 0
+    assert resultado["itens"] == 2 and resultado["itens_com_termo_pessoal"] == 1
+    assert resultado["motivos_texto_do_codigo"] == {"termo_pessoal": 1}
+    assert len(falso.entradas) == 1
+    edicao_id = resultado["edicao_id"]
+    arquivo = pronto(exportar(abrir, edicao_id))
+    assert arquivo["itens"][0]["contexto"]["avisos"] == [AVISO]
+    assert revisar(abrir, edicao_id, arquivo)["avisos"] == [f"Confira o item 1: {AVISO}"]
+    arquivo = pronto(exportar(abrir, edicao_id))
+    arquivo["itens"][0]["contexto"]["avisos"] = []
+    with pytest.raises(ErroEdicao, match="contexto"):
+        revisar(abrir, edicao_id, arquivo)
+    arquivo = pronto(exportar(abrir, edicao_id))
+    arquivo["itens"][0]["excluir"] = True
+    arquivo["itens"][0]["motivo_exclusao"] = "Assunto pessoal fora da edição."
+    revisao = revisar(abrir, edicao_id, arquivo)
+    assert revisao["itens"] == 1 and revisao["avisos"] == []
+    assert "100-1" not in json.dumps(exportar(abrir, edicao_id))
+    assert publicar(abrir, edicao_id)["situacao"] == "publicada"
+
+
+@pytest.mark.parametrize("campo", ["descricao", "ementa"])
+@pytest.mark.parametrize(
+    "texto",
+    [
+        "O parlamentar propõe alterar o Regimento Interno.",
+        "O parlamentar participa de evento internacional.",
+        "O parlamentar propõe ampliar o acesso à internet.",
+        "O parlamentar propõe valorizar a enfermagem.",
+        "O parlamentar discute uma operação de crédito.",
+        "O parlamentar propõe melhorar a segurança interna.",
+        "O parlamentar propõe regras de organização interna.",
+        "O parlamentar propõe alterar as normas internas.",
+        "O parlamentar propõe uma auditoria interna.",
+        "O parlamentar discute operações de crédito.",
+        "O parlamentar propõe valorizar o operador.",
+        "O parlamentar discute o acesso à medicação.",
+        "O parlamentar propõe cursos de hospitalidade.",
+    ],
+)
+def test_palavras_proximas_dos_radicais_nao_disparam_filtro_nem_rede(abrir, dados, campo, texto):
+    assert not TERMO_PESSOAL.search(normalizar(texto))
+    assert not assunto_pessoal(texto, [])
+    dados(100, **{campo: texto})
+    falso = Falso()
+    resultado = gerar(abrir, INICIO, FIM, redator=falso)
+    assert resultado["assunto_pessoal"] == resultado["itens_com_termo_pessoal"] == 0
+    assert resultado["itens"] == 1 and len(falso.entradas) == 1
+    assert resultado["motivos_texto_do_codigo"] == {}
+    arquivo = pronto(exportar(abrir, resultado["edicao_id"]))
+    assert "avisos" not in arquivo["itens"][0]["contexto"]
+    assert revisar(abrir, resultado["edicao_id"], arquivo)["avisos"] == []

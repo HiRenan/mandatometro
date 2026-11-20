@@ -41,30 +41,40 @@ export function ListaDeFontes({
 					</span>
 					<p>
 						<a href={fonte.url}>{fonte.titulo}</a>
-						{/* Com a letra grande, o endereço que não cabe na linha quebra
-						    antes de um ponto (o Renan, na #76: "Nos pontos"), e um
-						    pedaço maior que a linha se parte numa letra. Ele só deixa
-						    de caber abaixo de 20rem, e é só ali que vai em pedaços: o
-						    endereço partido muda o desenho das letras mesmo sem
-						    quebrar (o <wbr> desfaz o ajuste entre o "v" e o ponto de
-						    "gov.br", e cada pedaço anda uma fração de pixel). Dali
-						    para cima, ele vai inteiro, como antes da #76. */}
 						<span className="endereco">
-							<span className="max-[20rem]:hidden">{dominio(fonte.url)}</span>
-							<span className="hidden max-[20rem]:inline">
-								{pedacosDoDominio(fonte.url).map((pedaco, posicao) => (
-									// biome-ignore lint/suspicious/noArrayIndexKey: os pedaços ficam fixos, na ordem do endereço, e só a posição não se repete (um pedaço pode, como em ".leg.leg.br").
-									<Fragment key={posicao}>
-										{posicao > 0 && <wbr />}
-										{pedaco}
-									</Fragment>
-								))}
-							</span>
-							, consultada em {formatarData(fonte.consultadoEm)}
+							<SiteDaFonte url={fonte.url} />, consultada em{" "}
+							{formatarData(fonte.consultadoEm)}
 						</span>
 					</p>
 				</li>
 			))}
 		</ol>
+	);
+}
+
+/**
+ * O site de uma fonte, como a pessoa reconhece: camara.leg.br. Com a letra
+ * grande, o endereço que não cabe na linha quebra antes de um ponto (o Renan, na
+ * #76: "Nos pontos"), e um pedaço maior que a linha se parte numa letra. Ele só
+ * deixa de caber abaixo de 20rem, e é só ali que vai em pedaços: o endereço
+ * partido muda o desenho das letras mesmo sem quebrar (o <wbr> desfaz o ajuste
+ * entre o "v" e o ponto de "gov.br", e cada pedaço anda uma fração de pixel).
+ * Dali para cima, ele vai inteiro, como antes da #76. As fontes das trilhas e as
+ * das edições usam o mesmo.
+ */
+export function SiteDaFonte({ url }: { url: string }) {
+	return (
+		<>
+			<span className="max-[20rem]:hidden">{dominio(url)}</span>
+			<span className="hidden max-[20rem]:inline">
+				{pedacosDoDominio(url).map((pedaco, posicao) => (
+					// biome-ignore lint/suspicious/noArrayIndexKey: os pedaços ficam fixos, na ordem do endereço, e só a posição não se repete (um pedaço pode, como em ".leg.leg.br").
+					<Fragment key={posicao}>
+						{posicao > 0 && <wbr />}
+						{pedaco}
+					</Fragment>
+				))}
+			</span>
+		</>
 	);
 }

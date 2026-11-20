@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 
 from mandatometro.db.modelos import (
     CODIGOS_GRAVADOS,
+    Ato,
     Edicao,
     Fonte,
     Inscrito,
@@ -71,6 +72,18 @@ def _voto(votacao: Votacao, parlamentar: Parlamentar, valor: str, valor_bruto: s
         uf="SC",
         fonte=votacao.fonte,
     )
+
+
+def _ato(**campos) -> Ato:
+    dados = {
+        "origem": "origem_a",
+        "id_externo": "ato-1",
+        "tipo": "decreto",
+        "titulo": "Ato fictício",
+        "data_publicacao": date(2026, 11, 6),
+        "fonte": Fonte(url="https://example.com/coleta", url_publica="https://example.com/ato"),
+    }
+    return Ato(**(dados | campos))
 
 
 def _nao_grava(sessao, *objetos, regra: str) -> None:
@@ -136,8 +149,9 @@ def test_a_fonte_tem_o_endereco_e_a_data_da_coleta(sessao, campo):
         _proposicao,
         _votacao,
         lambda: _voto(_votacao(), _parlamentar(), "sim", "Sim"),
+        _ato,
     ],
-    ids=["parlamentar", "mandato", "proposicao", "votacao", "voto"],
+    ids=["parlamentar", "mandato", "proposicao", "votacao", "voto", "ato"],
 )
 def test_dado_coletado_sem_fonte_nao_grava(sessao, criar):
     dado = criar()
@@ -171,13 +185,13 @@ def test_o_voto_fica_no_conjunto(sessao):
 def test_a_licenca_saude_fica_igual_a_outra_ausencia(sessao):
     # Decisão do Renan (12/11/2026): nenhuma consulta separa a licença saúde de outra ausência.
     votacao = _votacao()
-    for numero, codigo in enumerate(["LS", "AP"], start=1):
+    for numero, codigo in enumerate(["LS", "AP", "MIS", "NCom", "LAP", "LP"], start=1):
         sessao.add(_voto(votacao, _parlamentar(numero), *normalizar_voto(codigo)))
     sessao.flush()
 
     colunas = [coluna for coluna in Voto.__table__.columns if coluna.name != "parlamentar_id"]
-    licenca_saude, atividade_parlamentar = sessao.execute(select(*colunas)).all()
-    assert licenca_saude == atividade_parlamentar
+    ausencias = sessao.execute(select(*colunas)).all()
+    assert all(ausencia == ausencias[0] for ausencia in ausencias)
 
 
 def test_o_banco_guarda_os_codigos_da_lista(sessao):
@@ -187,7 +201,7 @@ def test_o_banco_guarda_os_codigos_da_lista(sessao):
     sessao.flush()
 
 
-@pytest.mark.parametrize("codigo", ["LS", "AP", "XYZ"])
+@pytest.mark.parametrize("codigo", ["LS", "AP", "MIS", "NCom", "NCOM", "LAP", "LP", "XYZ"])
 def test_o_banco_recusa_codigo_fora_da_lista(sessao, codigo):
     # Nem um conector que pule o normalizar_voto grava a ausência ou um código novo cru.
     _nao_grava(
@@ -217,6 +231,20 @@ def test_o_banco_recusa_codigo_fora_da_lista(sessao, codigo):
         # A ausência vale com qualquer caixa: um "ls" não vira outro, que a separaria das outras.
         ("ls", ("nao_votou", None)),
         ("Ls ", ("nao_votou", None)),
+        ("MIS", ("nao_votou", None)),
+        ("mis", ("nao_votou", None)),
+        ("MiS ", ("nao_votou", None)),
+        ("NCom", ("nao_votou", None)),
+        ("NCOM", ("nao_votou", None)),
+        ("ncom", ("nao_votou", None)),
+        (" nCoM ", ("nao_votou", None)),
+        ("LAP", ("nao_votou", None)),
+        ("lap", ("nao_votou", None)),
+        ("LaP ", ("nao_votou", None)),
+        ("LP", ("nao_votou", None)),
+        ("lp", ("nao_votou", None)),
+        ("lP ", ("nao_votou", None)),
+        ("NA", ("outro", None)),
         # Um código novo pode ser outro motivo pessoal: entra como outro, sem o código.
         ("XYZ", ("outro", None)),
     ],
@@ -243,12 +271,58 @@ def test_o_aviso_do_codigo_novo_nao_leva_o_codigo(caplog):
         (1, ("aprovada", "1")),
         (0, ("rejeitada", "0")),
         ("A", ("aprovada", "A")),
+        ("R", ("rejeitada", "R")),
+        (" R ", ("rejeitada", "R")),
         ("Z", ("outro", "Z")),
         (None, ("outro", None)),
     ],
 )
 def test_normalizar_resultado(bruto, esperado):
     assert normalizar_resultado(bruto) == esperado
+
+
+# --- Os atos do Diário Oficial ---
+
+
+@pytest.mark.parametrize("tipo", ["decreto", "lei", "medida_provisoria", "outro"])
+def test_o_ato_grava_com_os_campos_comuns(sessao, tipo):
+    ato = _ato(tipo=tipo)
+    sessao.add(ato)
+    sessao.flush()
+    sessao.expire(ato)
+    assert (ato.secao, ato.orgao, ato.numero, ato.ementa, ato.data_assinatura) == (None,) * 5
+    assert ato.fonte.url_publica == "https://example.com/ato"
+
+
+def test_o_ato_recusa_tipo_fora_do_conjunto(sessao):
+    _nao_grava(sessao, _ato(tipo="inventado"), regra='"ck_ato_tipo"')
+
+
+def test_o_mesmo_id_vale_em_origens_distintas(sessao):
+    sessao.add_all([_ato(), _ato(origem="origem_b")])
+    sessao.flush()
+
+
+def test_o_id_do_ato_nao_se_repete_na_mesma_origem_com_outra_fonte(sessao):
+    primeiro = _ato()
+    sessao.add(primeiro)
+    sessao.flush()
+
+    _nao_grava(sessao, _ato(), regra='"uq_ato_origem_id_externo"')
+
+
+def test_o_ato_exige_data_de_publicacao(sessao):
+    _nao_grava(sessao, _ato(data_publicacao=None), regra='"data_publicacao" of relation "ato"')
+
+
+def test_o_ato_preserva_a_data_de_assinatura_informada(sessao):
+    assinatura = date(2026, 11, 7)
+    ato = _ato(data_assinatura=assinatura)
+    sessao.add(ato)
+    sessao.flush()
+    sessao.expire(ato)
+    assert ato.data_assinatura == assinatura
+    assert ato.data_publicacao == date(2026, 11, 6)
 
 
 # --- A edição da semana e os itens ---
@@ -270,6 +344,19 @@ def test_a_edicao_nasce_rascunho(sessao):
     sessao.add(edicao)
     sessao.flush()
     assert (edicao.estado, edicao.publicada_em) == ("rascunho", None)
+
+
+def test_a_fotografia_editorial_volta_do_banco_sem_alterar_o_texto(sessao):
+    item = _item(_edicao(), 1, _fonte())
+    item.fatos = {"versao": 1, "proposicoes": [10], "fontes": [20], "pendencias": ["revisao"]}
+    item.artigo_caminho = "/trilhas/processo-legislativo/onde-o-projeto-comeca"
+    sessao.add(item)
+    sessao.flush()
+    sessao.expire(item)
+    assert item.fatos["proposicoes"] == [10]
+    assert item.fatos["pendencias"] == ["revisao"]
+    assert item.texto == "Texto de exemplo."
+    assert item.artigo_caminho.endswith("/onde-o-projeto-comeca")
 
 
 def test_o_estado_e_rascunho_ou_publicada(sessao):
@@ -321,8 +408,15 @@ def test_apagar_a_edicao_apaga_os_itens(sessao):
 
 
 def test_o_inscrito_guarda_so_o_minimo():
-    # A inscrição pede só o e-mail (AGENTS.md). Coluna nova aqui é dado pessoal novo: decida antes.
-    assert set(Inscrito.__table__.columns.keys()) == {"id", "email", "codigo_saida", "inscrito_em"}
+    # A inscrição pede só o e-mail (docs/dados-pessoais.md). Coluna nova aqui é dado pessoal novo:
+    # decida antes.
+    assert set(Inscrito.__table__.columns.keys()) == {
+        "id",
+        "email",
+        "codigo_saida",
+        "inscrito_em",
+        "ultima_edicao_enviada_id",
+    }
 
 
 def test_o_email_nao_se_repete(sessao):

@@ -17,36 +17,40 @@ web
 
 O Mandatômetro ensina como funciona a política brasileira, em linguagem simples e de forma interativa, a partir do que o Congresso vota (Renan, 09/11/2026). Ele tem duas partes:
 
-- **Trilhas:** artigos curtos com infográficos e, se der tempo, vídeos curtos, com um quiz de múltipla escolha no meio e outro no fim. A primeira, e a principal, é a do processo legislativo: como nasce uma lei.
-- **Newsletter semanal, o jornal legislativo:** todo domingo, o que o Congresso votou na semana, em linguagem simples e com o link oficial de cada item. Cada edição também fica no site.
+- **Trilhas:** artigos curtos e, se der tempo, vídeos curtos. A principal é a do processo legislativo, sobre como nasce uma lei. Ela tem um infográfico, um quiz de múltipla escolha no meio e outro no fim.
+- **Newsletter semanal, o jornal legislativo:** todo domingo, o que o Congresso votou na semana e os destaques do Diário Oficial da União, em duas seções (ADR 0004), em linguagem simples e com o link oficial de cada item. A inscrição pede só o e-mail e já manda a última edição publicada. Cada edição também fica no site.
 
-O projeto concorre na trilha Acesso à educação do Hack Brasil 2026, com entrega em 30/11/2026: aprender é a função principal do site. O sucesso se mede no piloto, com cerca de 50 pessoas, pelo quanto elas acertam no quiz antes e depois da trilha.
+O projeto concorre na trilha Acesso à educação do Hack Brasil 2026. O regulamento (item 5.4) exige que o problema e o público estejam dentro dessa trilha. Aprender é a função principal do site. A entrega em 30/11/2026 pede repositório público, demo no ar e vídeo de até 3 minutos.
+
+O sucesso se mede no piloto, com cerca de 50 pessoas (uma turma do Senai e o Instagram), pelo quanto elas acertam no quiz antes e depois da trilha. O porquê do MVP está no [ADR 0002](docs/adr/0002-mvp.md); o do login opcional, no [ADR 0003](docs/adr/0003-login-opcional.md); e o do Diário Oficial na newsletter, no [ADR 0004](docs/adr/0004-newsletter-do-dou.md). As fontes dos atos estão no [ADR 0005](docs/adr/0005-legislacao-federal-na-newsletter.md) e no [ADR 0006](docs/adr/0006-destaques-do-dou.md).
 
 ## Positioning
 
-A política explicada em linguagem simples e de forma interativa, a partir de casos reais e recentes do Congresso, com a fonte oficial em cada explicação: a lei, o regimento ou a página da Câmara, do Senado ou do TSE. As trilhas ensinam as regras, e a newsletter mostra o Congresso da semana. O lema: "o diário oficial político, simplificado".
+A política explicada em linguagem simples e de forma interativa, a partir de casos reais e recentes do Congresso. As trilhas ensinam as regras, e a newsletter mostra a semana no Congresso e os destaques do Diário Oficial. O lema: "o diário oficial político, simplificado".
 
 ## Operating Context
 
-- **Sem conta:** o navegador guarda os artigos lidos, e o progresso não passa de um aparelho para outro.
-- **Os textos das trilhas ficam em Markdown no repositório.** Mudar um texto vira um PR, que também é a revisão do conteúdo.
-- **A edição da semana sai da coleta diária da Câmara e do Senado.** O LLM escreve o rascunho, e uma pessoa do time revisa antes de publicar. Os e-mails saem pelo Resend.
+- **Conta opcional:** o login, o cadastro com o termo de consentimento e o progresso no perfil fazem parte do MVP (#109 a #112). Dá para ler as trilhas, responder aos quizzes e assinar a newsletter sem conta. Sem ela, o navegador guarda os artigos lidos; com ela, o progresso fica no perfil e passa de um aparelho para outro.
+- **Cadastro:** os dados demográficos opcionais servem para entender o público. Confirmação e recuperação usam links com o token no fragmento e uma ação explícita na página. A exclusão exige sessão e senha atual e gera um comprovante via Resend. O contrato de sessão está no [README, em "Cadastro de contas"](README.md#cadastro-de-contas).
+- **Dados:** Câmara e Senado, com deputados federais e senadores do Brasil todo e Santa Catarina como amostra para testar cada etapa primeiro.
+- **Textos das trilhas.** Cada mudança em Markdown vira um PR, que também é a revisão do conteúdo. O formato está no [guia de conteúdo das trilhas](docs/conteudo-das-trilhas.md).
+- **Edição da semana.** As votações vêm da coleta diária da Câmara e do Senado. Os atos vêm da legislação federal nos dados abertos do Senado (ADR 0005) e dos destaques do Diário Oficial (ADR 0006). A agenda de sábado prepara o rascunho.
+- **Revisão da edição.** No painel (`/painel`), quem tem uma conta administradora confere os itens e as fontes, ajusta os textos e publica a edição. O [guia da newsletter](docs/newsletter.md) descreve a redação, a revisão e o envio.
 - **As páginas aparecem no Google e têm prévia de link no WhatsApp** (ADR 0001).
 
 ## Capabilities and Constraints
 
-- **MVP:** as trilhas (artigos, infográfico e quiz), a newsletter semanal com as edições no site e a inscrição só com o e-mail.
-- **Sem login no MVP.** O login está planejado para depois (#30). Também ficam para depois:
+- **MVP:** as trilhas (artigos, infográfico e quiz), a newsletter semanal com as edições no site e a conta opcional.
+- **Depois do MVP:**
   - as páginas de cada parlamentar, com as promessas, os atos e o patrimônio declarado ao TSE;
   - o "fake ou fato";
   - o jogo das comissões.
 - **Sem pontos, ranking nem certificado.** O quiz mostra a resposta certa e a fonte, sem nota.
-- **Dados pessoais:**
-  - as trilhas não pedem nada;
-  - a newsletter pede só o e-mail, que fica no banco e nunca aparece no site, na API nem nos logs;
-  - as respostas do quiz não identificam quem respondeu.
-- **Fonte em tudo:** cada afirmação sobre um político ou uma votação leva o link oficial, a data da coleta e, quando vier de texto, o trecho literal. O que não tem fonte fica fora do site e da newsletter.
-- **Neutro e apartidário:** o texto descreve o que o dado mostra e deixa o julgamento para o leitor, com os mesmos critérios para todos os partidos e parlamentares. O quiz pergunta sobre fatos e regras e nunca dá nota a político ou partido.
+- O produto fala de pessoas reais. Estas regras valem para a interface, as trilhas, o quiz, a newsletter, a API e os prompts do LLM.
+- **Fonte em tudo:** cada afirmação sobre um político ou uma votação leva o link oficial, a data da coleta e, quando vier de texto, o trecho literal. O que não tem fonte fica fora do banco, do site e da newsletter.
+- **Neutro e apartidário:** o texto descreve o que o dado mostra e deixa o julgamento para o leitor, com os mesmos critérios para todos os partidos e parlamentares. Cada explicação leva a fonte oficial (lei, regimento ou página da Câmara, do Senado ou do TSE). O quiz pergunta sobre fatos e regras e nunca dá nota a político ou partido.
+- **Promessas e patrimônio (depois do MVP):** a ligação entre promessa e ato tem um destes status: `ato a favor`, `ato contra` ou `nenhum ato encontrado`. Deputado e senador não são obrigados a entregar proposta ao TSE (só prefeito, governador e presidente): sem promessa, escreva "Não encontramos promessas públicas nas fontes consultadas" e liste as fontes. O patrimônio se chama "patrimônio declarado ao TSE", vem corrigido pelo IPCA, com o aviso de que o valor declarado costuma ser o de compra, e aparece só nos anos em que a pessoa concorreu, em tom descritivo.
+- **Dados pessoais.** A coleta, a conta, a newsletter e o quiz seguem as regras de [dados pessoais](docs/dados-pessoais.md).
 - **Termos:** trilha, artigo, quiz, edição, inscrito, proposição, votação e parlamentar. O texto para o usuário é em pt-BR.
 
 ## Brand Commitments
@@ -58,7 +62,7 @@ A política explicada em linguagem simples e de forma interativa, a partir de ca
 
 ## Evidence on Hand
 
-- **Os textos das trilhas ainda não existem.** Os tópicos saem na #31, e os artigos e as perguntas do quiz, na #34. Até lá, o site usa artigos de exemplo, com a fonte oficial real.
+- **O site tem quatro trilhas e 28 artigos.** Os textos ficam em Markdown na pasta `apps/web/conteudo/trilhas/`.
 - **A pesquisa sobre o que o eleitor sabe de política está no `docs/problema.md`.** Nenhuma tela afirma números sobre o eleitor sem essa fonte.
 - **O piloto ainda não aconteceu (#40).** Não há depoimentos, números de uso nem resultados para mostrar.
 
@@ -67,7 +71,7 @@ A política explicada em linguagem simples e de forma interativa, a partir de ca
 1. **Aprender vem primeiro:** cada tela ajuda a pessoa a entender um passo da política, e o resto serve a isso.
 2. **Tudo conferível:** nenhuma explicação sem a fonte oficial.
 3. **Sem lado:** os mesmos critérios para todos, e quem tira a conclusão é o leitor.
-4. **Simples de verdade:** linguagem do dia a dia, artigos curtos, sem conta e sem barreira de entrada.
+4. **Simples de verdade:** linguagem do dia a dia, artigos curtos e sem barreira de entrada: nada pede conta.
 5. **Interativo para fixar:** o quiz, o infográfico e o progresso existem para a pessoa aprender, nunca para pontuar.
 
 ## Accessibility & Inclusion

@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { HealthData, HealthResponses } from './types.gen';
+import type { AbrirSaidaData, AbrirSaidaErrors, AlterarProgressoContaData, AlterarProgressoContaErrors, AlterarProgressoContaResponses, CadastrarContaData, CadastrarContaErrors, CadastrarContaResponses, ConfirmarContaData, ConfirmarContaErrors, ConfirmarContaResponses, ConsultarPerfilData, ConsultarPerfilErrors, ConsultarPerfilResponses, ConsultarProgressoContaData, ConsultarProgressoContaErrors, ConsultarProgressoContaResponses, EntrarContaData, EntrarContaErrors, EntrarContaResponses, ExcluirContaData, ExcluirContaErrors, ExcluirContaResponses, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, LerRascunhoData, LerRascunhoErrors, LerRascunhoResponses, ListarEdicoesData, ListarEdicoesErrors, ListarEdicoesResponses, ObterEdicaoData, ObterEdicaoErrors, ObterEdicaoResponses, PublicarEdicaoData, PublicarEdicaoErrors, PublicarEdicaoResponses, RecuperarContaData, RecuperarContaErrors, RecuperarContaResponses, RedefinirSenhaData, RedefinirSenhaErrors, RedefinirSenhaResponses, ReenviarConfirmacaoData, ReenviarConfirmacaoErrors, ReenviarConfirmacaoResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, SairContaData, SairContaErrors, SairContaResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses, SalvarRevisaoData, SalvarRevisaoErrors, SalvarRevisaoResponses, TermoContaData, TermoContaErrors, TermoContaResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -17,6 +17,198 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
+
+/**
+ * Receber a inscrição e enviar a última edição publicada
+ *
+ * Novo e repetido têm a mesma resposta. edicao_enviada confirma a aceitação pelo Resend, não a entrega na caixa postal. Nas outras situações a inscrição também fica gravada.
+ */
+export const inscreverNewsletter = <ThrowOnError extends boolean = false>(options: Options<InscreverNewsletterData, ThrowOnError>): RequestResult<InscreverNewsletterResponses, InscreverNewsletterErrors, ThrowOnError> => (options.client ?? client).post<InscreverNewsletterResponses, InscreverNewsletterErrors, ThrowOnError>({
+    url: '/newsletter/inscricoes',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Abrir a página de confirmação de saída, sem apagar a inscrição
+ */
+export const abrirSaida = <ThrowOnError extends boolean = false>(options: Options<AbrirSaidaData, ThrowOnError>): RequestResult<unknown, AbrirSaidaErrors, ThrowOnError> => (options.client ?? client).get<unknown, AbrirSaidaErrors, ThrowOnError>({ url: '/newsletter/saida/{codigo_saida}', ...options });
+
+/**
+ * Apagar a inscrição pelo código de saída
+ *
+ * POST idempotente, sem autenticação ou corpo obrigatório. Aceita RFC 8058 e a confirmação no site; o corpo é ignorado. Código desconhecido também recebe 200 vazio.
+ */
+export const sairDaNewsletter = <ThrowOnError extends boolean = false>(options: Options<SairDaNewsletterData, ThrowOnError>): RequestResult<SairDaNewsletterResponses, SairDaNewsletterErrors, ThrowOnError> => (options.client ?? client).post<SairDaNewsletterResponses, SairDaNewsletterErrors, ThrowOnError>({ url: '/newsletter/saida/{codigo_saida}', ...options });
+
+/**
+ * Termo Conta
+ */
+export const termoConta = <ThrowOnError extends boolean = false>(options?: Options<TermoContaData, ThrowOnError>): RequestResult<TermoContaResponses, TermoContaErrors, ThrowOnError> => (options?.client ?? client).get<TermoContaResponses, TermoContaErrors, ThrowOnError>({ url: '/contas/termo', ...options });
+
+/**
+ * Entrar Conta
+ */
+export const entrarConta = <ThrowOnError extends boolean = false>(options: Options<EntrarContaData, ThrowOnError>): RequestResult<EntrarContaResponses, EntrarContaErrors, ThrowOnError> => (options.client ?? client).post<EntrarContaResponses, EntrarContaErrors, ThrowOnError>({
+    url: '/contas/login',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Sair Conta
+ */
+export const sairConta = <ThrowOnError extends boolean = false>(options?: Options<SairContaData, ThrowOnError>): RequestResult<SairContaResponses, SairContaErrors, ThrowOnError> => (options?.client ?? client).post<SairContaResponses, SairContaErrors, ThrowOnError>({ url: '/contas/logout', ...options });
+
+/**
+ * Cadastrar Conta
+ */
+export const cadastrarConta = <ThrowOnError extends boolean = false>(options: Options<CadastrarContaData, ThrowOnError>): RequestResult<CadastrarContaResponses, CadastrarContaErrors, ThrowOnError> => (options.client ?? client).post<CadastrarContaResponses, CadastrarContaErrors, ThrowOnError>({
+    url: '/contas',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Reenviar Confirmacao
+ */
+export const reenviarConfirmacao = <ThrowOnError extends boolean = false>(options: Options<ReenviarConfirmacaoData, ThrowOnError>): RequestResult<ReenviarConfirmacaoResponses, ReenviarConfirmacaoErrors, ThrowOnError> => (options.client ?? client).post<ReenviarConfirmacaoResponses, ReenviarConfirmacaoErrors, ThrowOnError>({
+    url: '/contas/reenvio',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Recuperar Conta
+ */
+export const recuperarConta = <ThrowOnError extends boolean = false>(options: Options<RecuperarContaData, ThrowOnError>): RequestResult<RecuperarContaResponses, RecuperarContaErrors, ThrowOnError> => (options.client ?? client).post<RecuperarContaResponses, RecuperarContaErrors, ThrowOnError>({
+    url: '/contas/recuperacao',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Confirmar Conta
+ */
+export const confirmarConta = <ThrowOnError extends boolean = false>(options: Options<ConfirmarContaData, ThrowOnError>): RequestResult<ConfirmarContaResponses, ConfirmarContaErrors, ThrowOnError> => (options.client ?? client).post<ConfirmarContaResponses, ConfirmarContaErrors, ThrowOnError>({
+    url: '/contas/confirmacao',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Redefinir Senha
+ */
+export const redefinirSenha = <ThrowOnError extends boolean = false>(options: Options<RedefinirSenhaData, ThrowOnError>): RequestResult<RedefinirSenhaResponses, RedefinirSenhaErrors, ThrowOnError> => (options.client ?? client).post<RedefinirSenhaResponses, RedefinirSenhaErrors, ThrowOnError>({
+    url: '/contas/redefinicao',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Excluir Conta
+ */
+export const excluirConta = <ThrowOnError extends boolean = false>(options: Options<ExcluirContaData, ThrowOnError>): RequestResult<ExcluirContaResponses, ExcluirContaErrors, ThrowOnError> => (options.client ?? client).delete<ExcluirContaResponses, ExcluirContaErrors, ThrowOnError>({
+    url: '/contas/me',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Consultar Perfil
+ */
+export const consultarPerfil = <ThrowOnError extends boolean = false>(options?: Options<ConsultarPerfilData, ThrowOnError>): RequestResult<ConsultarPerfilResponses, ConsultarPerfilErrors, ThrowOnError> => (options?.client ?? client).get<ConsultarPerfilResponses, ConsultarPerfilErrors, ThrowOnError>({ url: '/contas/me', ...options });
+
+/**
+ * Consultar Progresso Conta
+ */
+export const consultarProgressoConta = <ThrowOnError extends boolean = false>(options?: Options<ConsultarProgressoContaData, ThrowOnError>): RequestResult<ConsultarProgressoContaResponses, ConsultarProgressoContaErrors, ThrowOnError> => (options?.client ?? client).get<ConsultarProgressoContaResponses, ConsultarProgressoContaErrors, ThrowOnError>({ url: '/contas/progresso', ...options });
+
+/**
+ * Alterar Progresso Conta
+ */
+export const alterarProgressoConta = <ThrowOnError extends boolean = false>(options: Options<AlterarProgressoContaData, ThrowOnError>): RequestResult<AlterarProgressoContaResponses, AlterarProgressoContaErrors, ThrowOnError> => (options.client ?? client).post<AlterarProgressoContaResponses, AlterarProgressoContaErrors, ThrowOnError>({
+    url: '/contas/progresso',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Listar as edições publicadas
+ */
+export const listarEdicoes = <ThrowOnError extends boolean = false>(options?: Options<ListarEdicoesData, ThrowOnError>): RequestResult<ListarEdicoesResponses, ListarEdicoesErrors, ThrowOnError> => (options?.client ?? client).get<ListarEdicoesResponses, ListarEdicoesErrors, ThrowOnError>({ url: '/edicoes', ...options });
+
+/**
+ * Ler uma edição publicada com fatos, fontes e artigos da trilha
+ */
+export const obterEdicao = <ThrowOnError extends boolean = false>(options: Options<ObterEdicaoData, ThrowOnError>): RequestResult<ObterEdicaoResponses, ObterEdicaoErrors, ThrowOnError> => (options.client ?? client).get<ObterEdicaoResponses, ObterEdicaoErrors, ThrowOnError>({ url: '/edicoes/{id}', ...options });
+
+/**
+ * Ler o rascunho da edição mais recente
+ *
+ * Devolve o mesmo arquivo do CLI edicao exportar, ou null se não há rascunho.
+ */
+export const lerRascunho = <ThrowOnError extends boolean = false>(options?: Options<LerRascunhoData, ThrowOnError>): RequestResult<LerRascunhoResponses, LerRascunhoErrors, ThrowOnError> => (options?.client ?? client).get<LerRascunhoResponses, LerRascunhoErrors, ThrowOnError>({ url: '/painel/edicoes/rascunho', ...options });
+
+/**
+ * Salvar a revisão da edição
+ */
+export const salvarRevisao = <ThrowOnError extends boolean = false>(options: Options<SalvarRevisaoData, ThrowOnError>): RequestResult<SalvarRevisaoResponses, SalvarRevisaoErrors, ThrowOnError> => (options.client ?? client).post<SalvarRevisaoResponses, SalvarRevisaoErrors, ThrowOnError>({
+    url: '/painel/edicoes/{id}/revisao',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Publicar a edição revisada
+ *
+ * Publica a edição sem disparar o envio da newsletter.
+ */
+export const publicarEdicao = <ThrowOnError extends boolean = false>(options: Options<PublicarEdicaoData, ThrowOnError>): RequestResult<PublicarEdicaoResponses, PublicarEdicaoErrors, ThrowOnError> => (options.client ?? client).post<PublicarEdicaoResponses, PublicarEdicaoErrors, ThrowOnError>({ url: '/painel/edicoes/{id}/publicar', ...options });
+
+/**
+ * Receber a primeira conclusão de uma etapa do piloto
+ *
+ * O mesmo código nas duas etapas permite parear resultados; códigos diferentes permitem apenas médias independentes. Reenvios não alteram a primeira conclusão. Novo e repetido recebem a mesma resposta, sem revelar acertos ou existência anterior.
+ */
+export const registrarTentativaPiloto = <ThrowOnError extends boolean = false>(options: Options<RegistrarTentativaPilotoData, ThrowOnError>): RequestResult<RegistrarTentativaPilotoResponses, RegistrarTentativaPilotoErrors, ThrowOnError> => (options.client ?? client).post<RegistrarTentativaPilotoResponses, RegistrarTentativaPilotoErrors, ThrowOnError>({
+    url: '/piloto/tentativas',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Health

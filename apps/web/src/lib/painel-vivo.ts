@@ -1,4 +1,10 @@
-import { type RefObject, useEffect, useRef } from "react";
+import {
+	type RefObject,
+	useEffect,
+	useRef,
+	useState,
+	useSyncExternalStore,
+} from "react";
 import { fitaDaPeca, type Peca, pecaSorteada, sorteio } from "./azulejos";
 
 /**
@@ -7,23 +13,37 @@ import { fitaDaPeca, type Peca, pecaSorteada, sorteio } from "./azulejos";
  * o movimento reduzido, e onde o navegador não anima, a peça troca no lugar.
  */
 
+const MENOS_MOVIMENTO = "(prefers-reduced-motion: reduce)";
+
 /** Se a pessoa pediu menos movimento ao sistema. */
 export function movimentoReduzido(): boolean {
 	return (
 		typeof window !== "undefined" &&
 		typeof window.matchMedia === "function" &&
-		window.matchMedia("(prefers-reduced-motion: reduce)").matches
+		window.matchMedia(MENOS_MOVIMENTO).matches
 	);
+}
+
+/** Avisa quando a pessoa muda a preferência com a página aberta. */
+function assinar(avisar: () => void): () => void {
+	if (typeof window.matchMedia !== "function") {
+		return () => {};
+	}
+	const consulta = window.matchMedia(MENOS_MOVIMENTO);
+	consulta.addEventListener("change", avisar);
+	return () => consulta.removeEventListener("change", avisar);
 }
 
 /**
  * Vira uma peça: ela gira até ficar de lado, o `mudar` troca o desenho, e ela
  * volta. Devolve a função que desiste da virada, se ela ainda não começou.
+ * O `aoMudarOMovimento` avisa no começo e no fim da animação.
  */
 export function virar(
 	peca: Element,
 	mudar: () => void,
 	atraso = 0,
+	aoMudarOMovimento?: () => void,
 ): () => void {
 	if (movimentoReduzido() || typeof peca.animate !== "function") {
 		mudar();
@@ -38,27 +58,55 @@ export function virar(
 			],
 			{ duration: 200, easing: "ease-in", fill: "forwards" },
 		);
+		aoMudarOMovimento?.();
 		ida.finished
 			.then(() => {
 				if (!desistiu) {
 					mudar();
 				}
 				ida.cancel();
-				peca.animate(
+				const volta = peca.animate(
 					[
 						{ transform: "rotateY(-90deg)", filter: "brightness(0.75)" },
 						{ transform: "rotateY(0deg)" },
 					],
 					{ duration: 380, easing: "cubic-bezier(0.2, 0.8, 0.3, 1.25)" },
 				);
+				if (aoMudarOMovimento) return volta.finished.then(aoMudarOMovimento);
 			})
 			// A animação cancelada (a página trocou no meio) rejeita a promessa.
-			.catch(() => {});
+			.catch(() => aoMudarOMovimento?.());
 	}, atraso);
 	return () => {
 		desistiu = true;
 		clearTimeout(relogio);
 	};
+}
+
+/**
+ * Vira a peça como o `virar`, e a desistência fica no `pendentes` até a peça
+ * trocar: quem guarda o conjunto desiste das viradas que sobraram, como o
+ * painel quando sai da página. Sem animação, o `virar` troca a peça na hora,
+ * antes de devolver a desistência: por isso a virada entra no conjunto antes, e
+ * o `mudar` já a tira dali.
+ */
+export function virarPendente(
+	pendentes: Set<() => void>,
+	peca: Element,
+	mudar: () => void,
+	atraso = 0,
+): void {
+	let desiste = () => {};
+	const pendente = () => desiste();
+	pendentes.add(pendente);
+	desiste = virar(
+		peca,
+		() => {
+			pendentes.delete(pendente);
+			mudar();
+		},
+		atraso,
+	);
 }
 
 /** As posições das peças do painel que aparecem na tela (a sobra fica cortada). */
@@ -79,7 +127,9 @@ function aVista(painel: HTMLElement): number[] {
  * tocada para fora, e, com o `sozinho`, de tempos em tempos uma peça vira
  * sozinha. Com o `ondaAoChegar`, o painel faz a onda uma vez, quando entra na
  * tela. Só entram as peças que estão à vista, e o painel para quando a aba está
- * escondida ou ele saiu da tela. Com o movimento reduzido, nada disso acontece.
+ * escondida ou ele saiu da tela. Com o movimento reduzido, nada disso acontece:
+ * se a pessoa liga a preferência com a página aberta, o painel para e desiste
+ * das viradas pendentes, e, se desliga, ele volta a virar.
  *
  * Cada peça que vira ganha um desenho novo pelo sorteio. As cinco fitas
  * continuam juntas: a peça que é a única da cor dela à vista muda de desenho, e
@@ -99,13 +149,18 @@ export function usePainelVivo(
 	atuais.current = pecas;
 	const trocar = useRef(trocarPeca);
 	trocar.current = trocarPeca;
+	// A preferência pode mudar com a página aberta. No servidor, nada vira.
+	const reduzido = useSyncExternalStore(assinar, movimentoReduzido, () => true);
+	// Quando o painel para e volta a virar, o sorteio segue de onde parou, e a
+	// onda da chegada não se repete.
+	const [sorte] = useState(() => sorteio(99));
+	const chegou = useRef(false);
 
 	useEffect(() => {
 		const elemento = painel.current;
-		if (!elemento || movimentoReduzido()) {
+		if (!elemento || reduzido) {
 			return;
 		}
-		const sorte = sorteio(99);
 		const desistir = new Set<() => void>();
 
 		const redesenhar = (indice: number, atraso = 0) => {
@@ -113,10 +168,10 @@ export function usePainelVivo(
 			if (!peca) {
 				return;
 			}
-			const desiste = virar(
+			virarPendente(
+				desistir,
 				peca,
 				() => {
-					desistir.delete(desiste);
 					const dela = fitaDaPeca(atuais.current[indice]);
 					const unicaDaCor =
 						dela !== undefined &&
@@ -130,7 +185,6 @@ export function usePainelVivo(
 				},
 				atraso,
 			);
-			desistir.add(desiste);
 		};
 
 		const onda = (centro: number) => {
@@ -176,15 +230,14 @@ export function usePainelVivo(
 		elemento.addEventListener("click", aoClicar);
 
 		let naTela = false;
-		let jaChegou = false;
 		const olho =
 			typeof IntersectionObserver === "undefined"
 				? undefined
 				: new IntersectionObserver(
 						([entrada]) => {
 							naTela = Boolean(entrada?.isIntersecting);
-							if (naTela && ondaAoChegar && !jaChegou) {
-								jaChegou = true;
+							if (naTela && ondaAoChegar && !chegou.current) {
+								chegou.current = true;
 								onda(aVista(elemento)[0] ?? 0);
 							}
 						},
@@ -213,5 +266,5 @@ export function usePainelVivo(
 				desiste();
 			}
 		};
-	}, [painel, sozinho, ondaAoChegar]);
+	}, [painel, sozinho, ondaAoChegar, reduzido, sorte]);
 }

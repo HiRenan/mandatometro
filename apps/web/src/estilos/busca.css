@@ -1,0 +1,357 @@
+/*
+ * A busca do site (DESIGN.md, "Busca"): a caixa por cima da página, aberta pelo
+ * Ctrl+K ou pela entrada do cabeçalho. É uma folha clara com o fio de tinta,
+ * sobre um véu de tinta chapado, sem desfoque. A cabeça fica parada, e os
+ * resultados rolam dentro da folha, em linhas entre fios, como as de "Nesta
+ * trilha". Abaixo de 40 rem, a folha ocupa a tela inteira. A tela fica em
+ * components/busca.tsx.
+ */
+@layer components {
+	/*
+	 * A entrada da busca no cabeçalho, entre o nome e os links: a barra com a
+	 * lupa, "Buscar no site" e a tecla do atalho, com o fio de 2 px em papel 3
+	 * sobre a tinta. Com o ponteiro, o fio e a letra vão para o papel, e o foco é
+	 * o amarelo do cabeçalho (o .moldura). Ela cresce até 20rem no espaço entre
+	 * o nome e os links e fica no meio dele. A base é de 14rem, o que a lupa, o
+	 * "Buscar no site" e a tecla pedem: a linha do cabeçalho quebra pela base, e,
+	 * com a base de 20rem, os links desciam para a linha de baixo.
+	 */
+	.entrada-da-busca {
+		display: flex;
+		flex: 1 1 14rem;
+		align-items: center;
+		gap: 0.6rem;
+		min-width: 0;
+		max-width: 20rem;
+		min-height: 2.75rem;
+		margin-inline: auto;
+		padding: 0 0.5rem 0 0.75rem;
+		border: 2px solid var(--papel-3);
+		color: var(--papel-3);
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		font-weight: 500;
+		line-height: 1;
+		white-space: nowrap;
+		cursor: pointer;
+		transition:
+			border-color 0.2s,
+			color 0.2s;
+	}
+
+	.entrada-da-busca:hover {
+		border-color: var(--papel);
+		color: var(--papel);
+	}
+
+	.entrada-da-busca > svg {
+		flex: none;
+		width: 1.125rem;
+		height: 1.125rem;
+	}
+
+	/* A tecla do atalho, à direita; a largura guarda o lugar do "⌘ K" do Mac. */
+	.entrada-da-busca kbd {
+		min-width: 3.5rem;
+		margin-left: auto;
+		padding: 0.3rem 0.4rem;
+		border: 2px solid var(--tinta-suave);
+		font-family: var(--font-sans);
+		font-size: 0.75rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-align: center;
+		text-transform: uppercase;
+	}
+
+	/* Abaixo de 960 px, a barra encolhe para a lupa e o "Buscar". */
+	@media (width < 60rem) {
+		.entrada-da-busca {
+			flex: none;
+		}
+
+		.entrada-da-busca-resto,
+		.entrada-da-busca kbd {
+			display: none;
+		}
+	}
+
+	/*
+	 * No celular, quando os links descem para a linha de baixo, a entrada fica na
+	 * ponta direita da linha do nome.
+	 */
+	@media (width < 48rem) {
+		.entrada-da-busca {
+			margin-right: 0;
+		}
+	}
+
+	/* Sem JavaScript, a entrada não abriria nada: ela sai do cabeçalho. */
+	@media (scripting: none) {
+		.entrada-da-busca {
+			display: none;
+		}
+	}
+
+	/*
+	 * A folha, no alto da tela, com o respiro em cima: ela cresce para baixo com
+	 * os resultados, e a cabeça não pula enquanto a pessoa digita. Sem o
+	 * [open], a <dialog> fica escondida pelo navegador.
+	 */
+	.busca {
+		--respiro-da-busca: clamp(1.5rem, 8vh, 6rem);
+		width: min(44rem, 100% - 2 * var(--margem));
+		max-width: none;
+		max-height: calc(100dvh - 2 * var(--respiro-da-busca));
+		margin: var(--respiro-da-busca) auto auto;
+		padding: 0;
+		overflow: hidden;
+		border: 2px solid var(--tinta);
+		border-radius: 0;
+		background: var(--folha);
+		color: var(--tinta);
+	}
+
+	.busca[open] {
+		display: flex;
+		flex-direction: column;
+	}
+
+	/*
+	 * A tinta escrita, e não o var(--tinta): até o começo de 2024 (Chrome 122,
+	 * Firefox 120 e Safari 17.4), o ::backdrop não herdava as variáveis da
+	 * página, e o véu ficaria sem cor.
+	 */
+	.busca::backdrop {
+		background: rgb(20 22 28 / 0.72);
+	}
+
+	/* Abaixo de 40 rem, a folha é a tela inteira, sem o fio. */
+	@media (width < 40rem) {
+		.busca {
+			width: 100%;
+			height: 100dvh;
+			max-height: none;
+			margin: 0;
+			border: 0;
+		}
+	}
+
+	/* A cabeça: o título e o "Fechar", o campo e a contagem. */
+	.busca-cabeca {
+		display: grid;
+		flex: none;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 0.75rem 1rem;
+		padding: var(--respiro) var(--respiro) 1rem;
+		border-bottom: 2px solid var(--tinta);
+	}
+
+	.busca-cabeca > h2 {
+		color: var(--tinta-suave);
+	}
+
+	.busca-campo {
+		position: relative;
+		grid-column: 1 / -1;
+	}
+
+	/* A lupa dentro do campo, à esquerda do texto. */
+	.busca-lupa {
+		position: absolute;
+		top: 50%;
+		left: 0.9rem;
+		width: 1.25rem;
+		height: 1.25rem;
+		translate: 0 -50%;
+		pointer-events: none;
+	}
+
+	/*
+	 * O campo de busca é o .campo, reto. Sem a aparência do navegador: no Safari,
+	 * o campo de busca vem arredondado, e o "x" de apagar, desenhado por cada
+	 * navegador, fica de fora (o Esc fecha a caixa, e a busca volta ao reabrir).
+	 */
+	.busca-campo .campo {
+		padding-left: 2.75rem;
+		appearance: none;
+	}
+
+	.busca-campo .campo::-webkit-search-cancel-button,
+	.busca-campo .campo::-webkit-search-decoration {
+		appearance: none;
+	}
+
+	.busca-contagem {
+		grid-column: 1 / -1;
+		color: var(--tinta-suave);
+	}
+
+	/* O corpo rola dentro da folha, sem levar a página junto. */
+	.busca-corpo {
+		flex: 1 1 auto;
+		min-height: 0;
+		padding: 0 var(--respiro) var(--respiro);
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		scrollbar-color: var(--tinta) var(--folha);
+	}
+
+	/* A dica, o carregando, o nenhum resultado e o erro: texto, sem ícone e sem giro. */
+	.busca-aviso,
+	.busca-nota {
+		padding-top: 1.25rem;
+	}
+
+	/*
+	 * O aviso com o "Tentar de novo": a frase e a ação, uma embaixo da outra. A
+	 * grade fica na caixa em volta, e não no <p>: no Chromium, o parágrafo em
+	 * grade sai da árvore de acessibilidade (#152).
+	 */
+	.busca-com-acao {
+		display: grid;
+		justify-items: start;
+		gap: 0.75rem;
+	}
+
+	.busca-aviso.prosa,
+	.busca-aviso > .prosa,
+	.busca-nota > .prosa {
+		max-width: 36rem;
+		font-size: 1.0625rem;
+		line-height: 1.5;
+	}
+
+	.busca-carregando,
+	.busca-nota {
+		color: var(--tinta-suave);
+	}
+
+	/*
+	 * Os resultados: as linhas vão de um lado ao outro da folha, entre fios. O
+	 * link é o título, e a área dele cobre a linha; com o ponteiro, a linha vai
+	 * para o papel mais escuro, e com o foco do teclado, o anel fica na linha.
+	 */
+	.busca-resultados {
+		margin-inline: calc(-1 * var(--respiro));
+	}
+
+	.busca-resultado {
+		position: relative;
+		display: grid;
+		grid-template-columns: 2.5rem minmax(0, 1fr);
+		gap: 0 0.9rem;
+		padding: 1rem var(--respiro);
+		border-bottom: 2px solid var(--tinta);
+	}
+
+	.busca-resultado:hover {
+		background: var(--papel-2);
+	}
+
+	.busca-resultado:has(a:focus-visible) {
+		outline: 3px solid var(--ring);
+		outline-offset: -3px;
+	}
+
+	/* O número pequeno, na fita da posição: a do artigo, da trilha ou da semana. */
+	.busca-resultado > .numeral {
+		justify-self: center;
+		font-size: 2.25rem;
+		-webkit-text-stroke-width: 2px;
+		font-variant-numeric: lining-nums tabular-nums;
+	}
+
+	.busca-resultado-texto {
+		min-width: 0;
+	}
+
+	.busca-resultado-titulo {
+		font-family: var(--font-sans);
+		font-size: 1.0625rem;
+		font-weight: 750;
+		line-height: 1.2;
+		letter-spacing: calc(0.03em * var(--espacado));
+		text-transform: var(--caixa-alta);
+		text-decoration: none;
+	}
+
+	.busca-resultado-titulo::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+	}
+
+	.busca-resultado-titulo:focus-visible {
+		outline: none;
+	}
+
+	.busca-resultado:hover .busca-resultado-titulo {
+		text-decoration-line: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 0.2em;
+	}
+
+	.busca-resultado-tipo {
+		margin-top: 0.35rem;
+		color: var(--tinta-suave);
+	}
+
+	.busca-resultado-trecho {
+		max-width: 36rem;
+		margin-top: 0.5rem;
+		font-family: var(--font-serif);
+		font-size: 0.9375rem;
+		line-height: 1.5;
+	}
+
+	/* A palavra achada vai em negrito, sem cor. */
+	.busca-resultado-trecho mark {
+		background: none;
+		color: inherit;
+		font-weight: 700;
+	}
+
+	/*
+	 * Nas cores forçadas, o navegador dá ao <mark> a letra do realce do sistema
+	 * sobre o fundo sem cor, e a palavra sumia na folha escura: aqui, ela fica
+	 * com o realce inteiro.
+	 */
+	@media (forced-colors: active) {
+		.busca-resultado-trecho mark {
+			background: Mark;
+			color: MarkText;
+		}
+	}
+
+	/* O intertítulo para onde o link leva, antes do trecho. */
+	.busca-resultado-secao {
+		font-family: var(--font-sans);
+		font-weight: 650;
+	}
+
+	/* A folha sobe um pouco e aparece; com o movimento reduzido, aparece pronta. */
+	@media (prefers-reduced-motion: no-preference) {
+		.busca[open] {
+			animation: busca-sobe 0.2s var(--ease-suave);
+		}
+
+		.busca[open]::backdrop {
+			animation: busca-veu 0.2s var(--ease-suave);
+		}
+	}
+}
+
+@keyframes busca-sobe {
+	from {
+		opacity: 0;
+		translate: 0 0.75rem;
+	}
+}
+
+@keyframes busca-veu {
+	from {
+		opacity: 0;
+	}
+}

@@ -1,0 +1,62 @@
+/*
+ * A página do termo de consentimento, em /termo (DESIGN.md, "Página do termo").
+ * Ela usa a folha de leitura do artigo e o índice da página da edição: daqui,
+ * ela leva só o índice nos dois lugares, a cabeça de cada parte e o respiro do
+ * pé da folha. A tela fica em components/pagina-do-termo.tsx.
+ */
+@layer components {
+	/* Sem o anterior e o próximo no pé, a folha do termo tem o respiro embaixo. */
+	.pagina-do-termo .artigo-folha {
+		padding-bottom: clamp(1.75rem, 4vw, 3rem);
+	}
+
+	/*
+	 * "Neste termo", como "Nesta edição": abaixo de 1200 px, dentro da folha,
+	 * depois da abertura; daí para cima, na coluna ao lado, que para na tela
+	 * durante a rolagem. Uma cópia fica escondida em cada largura, e o leitor de
+	 * tela só encontra a outra.
+	 */
+	.neste-termo-na-folha {
+		max-width: 39rem;
+		margin-top: clamp(1.75rem, 4vw, 2.5rem);
+	}
+
+	@media (width < 75rem) {
+		.pagina-do-termo .ao-lado-do-artigo {
+			display: none;
+		}
+	}
+
+	@media (width >= 75rem) {
+		.neste-termo-na-folha {
+			display: none;
+		}
+	}
+
+	/*
+	 * Cada parte, como o item da edição: um fio de tinta em cima, o número na
+	 * fita da posição, o título com o teto e o texto do artigo. O índice leva até
+	 * a parte, e o respiro de cima fica na tela quando ela chega.
+	 */
+	.parte-do-termo {
+		margin-top: clamp(2.5rem, 6vw, 4rem);
+		padding-top: 1.5rem;
+		border-top: 2px solid var(--tinta);
+		scroll-margin-top: 1rem;
+	}
+
+	.parte-do-termo > .numeral {
+		font-size: clamp(3.5rem, 2.5rem + 4vw, 5.5rem);
+	}
+
+	.parte-do-termo > .subtitulo-condensado {
+		--letra: clamp(1.875rem, 1.4rem + 2vw, 3rem);
+		--recuo: var(--recuo-de-fora);
+		max-width: 14em;
+		margin-top: 0.75rem;
+	}
+
+	.parte-do-termo > .texto {
+		margin-top: 1rem;
+	}
+}

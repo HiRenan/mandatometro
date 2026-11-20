@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	acertou,
 	avisoDaResposta,
+	contarAcertos,
 	contarRespondidas,
 	FRASE_DO_RECOMECO,
 	fraseDaChamada,
@@ -72,6 +73,22 @@ describe("a correção do quiz", () => {
 				"Uma pergunta que saiu do quiz?": "Uma opção dela.",
 			}),
 		).toBe(1);
+	});
+
+	it("conta os acertos só pela opção certa, sem as perguntas sem resposta", () => {
+		expect(
+			contarAcertos([ondeComeca, recurso], {
+				[ondeComeca.enunciado]: ondeComeca.opcoes[0],
+				[recurso.enunciado]: recurso.opcoes[0],
+			}),
+		).toBe(1);
+		expect(
+			contarAcertos([ondeComeca, recurso], {
+				[ondeComeca.enunciado]: ondeComeca.opcoes[0],
+				[recurso.enunciado]: recurso.opcoes[1],
+			}),
+		).toBe(2);
+		expect(contarAcertos([ondeComeca, recurso], {})).toBe(0);
 	});
 });
 
