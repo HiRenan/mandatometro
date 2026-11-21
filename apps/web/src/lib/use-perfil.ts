@@ -1,14 +1,36 @@
 import { useEffect, useState } from "react";
 import { consultarPerfil, type PerfilConta } from "@/client";
 import { ENV } from "@/env";
-import { reconhecerSessaoDoProgresso } from "./progresso";
+import {
+	contextoDoProgresso,
+	reconhecerSessaoDoProgresso,
+	useContextoDoProgresso,
+} from "./progresso";
 
 type Sessao =
 	| { estado: "verificando" | "visitante" | "indisponivel" }
-	| { estado: "autenticada"; nome: string; papel: PerfilConta["papel"] };
+	| {
+			estado: "autenticada";
+			nome: string;
+			papel: PerfilConta["papel"];
+			/** A chave da sessão do progresso neste navegador quando a conta respondeu. */
+			chave: string | null;
+	  };
+
+const VERIFICANDO: Sessao = { estado: "verificando" };
 
 export function usePerfil(pagina: "login" | "perfil") {
-	const [sessao, setSessao] = useState<Sessao>({ estado: "verificando" });
+	const [sessao, setSessao] = useState<Sessao>(VERIFICANDO);
+	// A saída e a exclusão da conta apagam a chave da sessão do progresso em
+	// todas as abas deste navegador, como o 401 da sincronização, e uma entrada
+	// nova troca a chave (lib/progresso.ts). Se a chave muda depois de a conta
+	// responder, a sessão desta página acabou: o perfil sai da tela e vai para o
+	// /login, sem pedido novo à API.
+	const { sessao: chave } = useContextoDoProgresso();
+	const encerrada = sessao.estado === "autenticada" && sessao.chave !== chave;
+	useEffect(() => {
+		if (encerrada) window.location.replace("/login");
+	}, [encerrada]);
 	useEffect(() => {
 		const controle = new AbortController();
 		async function verificar() {
@@ -33,6 +55,7 @@ export function usePerfil(pagina: "login" | "perfil") {
 						estado: "autenticada",
 						nome: data.nome,
 						papel: data.papel,
+						chave: contextoDoProgresso().sessao,
 					});
 				}
 			} else setSessao({ estado: "indisponivel" });
@@ -42,5 +65,5 @@ export function usePerfil(pagina: "login" | "perfil") {
 		});
 		return () => controle.abort();
 	}, [pagina]);
-	return sessao;
+	return encerrada ? VERIFICANDO : sessao;
 }

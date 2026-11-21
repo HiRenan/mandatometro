@@ -137,9 +137,12 @@ function cancelarSincronia(): void {
 function esquecerSessao(apagarDoVisitante: boolean): void {
 	cancelarSincronia();
 	if (apagarDoVisitante) gravarBruto(CHAVE, null);
+	// A outra aba recebe um evento por chave, na ordem destas gravações: a chave
+	// da sessão sai antes da cópia da conta, e o perfil aberto lá vai para o
+	// login sem mostrar, antes, a leitura vazia ao lado do nome.
+	gravarBruto(CHAVE_SESSAO, null);
 	gravarBruto(CHAVE_CONTA, null);
 	gravarBruto(CHAVE_ACOES, null);
-	gravarBruto(CHAVE_SESSAO, null);
 	avisarTodos();
 }
 
