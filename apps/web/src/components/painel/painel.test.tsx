@@ -548,7 +548,7 @@ describe("salvar a revisão", () => {
 				"O rascunho mudou enquanto você revisava. Carregamos a versão atual e mantivemos o que você alterou. Confira e salve de novo.",
 			),
 		);
-		expect(document.activeElement).toBe(frase());
+		await waitFor(() => expect(document.activeElement).toBe(frase()));
 		expect(
 			within(ficha(1)).getByLabelText<HTMLInputElement>("Título").value,
 		).toBe("Meu título");
@@ -594,7 +594,7 @@ describe("salvar a revisão", () => {
 			expect(
 				screen.queryByRole("region", { name: /Título que saiu/ }),
 			).toBeNull();
-			expect(document.activeElement).toBe(frase());
+			await waitFor(() => expect(document.activeElement).toBe(frase()));
 		},
 	);
 
@@ -686,7 +686,7 @@ describe("salvar a revisão", () => {
 				"A revisão não foi salva. Há outra gravação em andamento. Tente de novo.",
 			),
 		);
-		expect(document.activeElement).toBe(frase());
+		await waitFor(() => expect(document.activeElement).toBe(frase()));
 		expect(privacidade.checked).toBe(true);
 
 		fireEvent.click(botao("Salvar a revisão"));
@@ -754,7 +754,7 @@ describe("publicar a edição", () => {
 			within(folha).getByRole("button", { name: "Voltar à revisão" }),
 		);
 		await waitFor(() => expect(folha.hasAttribute("open")).toBe(false));
-		expect(document.activeElement).toBe(publicarBotao);
+		await waitFor(() => expect(document.activeElement).toBe(publicarBotao));
 		expect(publicar).not.toHaveBeenCalled();
 
 		fireEvent.click(publicarBotao);
@@ -848,8 +848,10 @@ describe("ao sair com alterações por salvar", () => {
 		const folha = await screen.findByRole("dialog", {
 			name: "Sair sem salvar?",
 		});
-		expect(document.activeElement).toBe(
-			within(folha).getByRole("button", { name: "Continuar a revisão" }),
+		await waitFor(() =>
+			expect(document.activeElement).toBe(
+				within(folha).getByRole("button", { name: "Continuar a revisão" }),
+			),
 		);
 		fireEvent.click(
 			within(folha).getByRole("button", { name: "Continuar a revisão" }),
