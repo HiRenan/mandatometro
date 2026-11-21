@@ -15,8 +15,14 @@ import {
 	waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { consultarPerfil, consultarProgressoConta, sairConta } from "@/client";
+import {
+	alterarProgressoConta,
+	consultarPerfil,
+	consultarProgressoConta,
+	sairConta,
+} from "@/client";
 import type { TrilhaNaLista } from "@/lib/conteudo";
+import { lerLidos, marcarLido } from "@/lib/progresso";
 import { Route as Perfil } from "./perfil";
 
 // O perfil da conta (DESIGN.md, "Perfil da conta"), com duas trilhas inventadas.
@@ -40,6 +46,7 @@ const leitura = vi.mocked(consultarProgressoConta);
 
 const SESSAO = "mandatometro:sessao-do-progresso";
 const ESPELHO = "mandatometro:artigos-lidos-na-conta";
+const LEITURA = "mandatometro:leitura-da-conta";
 
 const ABERTURA =
 	"A sua conta guarda os artigos que você leu. Comece uma trilha no celular e continue no computador, de onde parou.";
@@ -86,9 +93,10 @@ const TODOS = TRILHAS.flatMap((trilha) =>
 );
 
 const MARIA = { nome: "Maria Fictícia de Exemplo", papel: "comum" } as const;
+const ANA = { nome: "Ana Fictícia de Exemplo", papel: "comum" } as const;
 
 beforeEach(() => {
-	vi.clearAllMocks();
+	vi.resetAllMocks();
 	localStorage.clear();
 	ambiente.API_URL = "https://api.example.com";
 	// A sincronia do progresso pede a leitura da conta e fica esperando: o
@@ -121,31 +129,31 @@ function lidosNaConta(status: number, lidos?: string[]) {
 	} as never;
 }
 
-/** A leitura da conta que espera o teste responder ou fazer a rede falhar. */
-type LeituraPendente = {
-	responder: (valor: never) => void;
-	recusar: (erro: Error) => void;
-};
-
-function esperarLeitura(): LeituraPendente {
-	let responder: LeituraPendente["responder"] = () => {};
-	let recusar: LeituraPendente["recusar"] = () => {};
-	leitura.mockReturnValue(
-		new Promise<never>((resolver, rejeitar) => {
-			responder = resolver;
-			recusar = rejeitar;
-		}),
-	);
-	return {
-		responder: (valor) => responder(valor),
-		recusar: (erro) => recusar(erro),
-	};
+/** Um pedido da API que espera o teste responder ou fazer a rede falhar. */
+function pedidoPendente() {
+	let resolver!: (valor: never) => void;
+	let rejeitar!: (erro: Error) => void;
+	const promessa = new Promise<never>((resolve, reject) => {
+		resolver = resolve;
+		rejeitar = reject;
+	});
+	return { promessa, responder: resolver, recusar: rejeitar };
 }
+
+function esperarLeitura() {
+	const pendente = pedidoPendente();
+	leitura.mockReturnValue(pendente.promessa);
+	return pendente;
+}
+
+type LeituraPendente = ReturnType<typeof esperarLeitura>;
 
 /** A sessão anotada neste navegador e os artigos lidos no espelho da conta. */
 function gravarLidos(ids: string[]) {
-	localStorage.setItem(SESSAO, crypto.randomUUID());
+	const chave = crypto.randomUUID();
+	localStorage.setItem(SESSAO, chave);
 	localStorage.setItem(ESPELHO, JSON.stringify(ids));
+	localStorage.setItem(LEITURA, chave);
 }
 
 /** A sessão anotada pela entrada, num navegador que ainda não tem o espelho. */
@@ -154,7 +162,7 @@ function entrarSemCopia() {
 }
 
 /** O /perfil num site de mentira, com as páginas para onde ele leva. */
-function abrir() {
+function abrir(rota = Perfil) {
 	const raiz = createRootRoute();
 	const pagina = (path: string) =>
 		createRoute({ getParentRoute: () => raiz, path, component: () => null });
@@ -164,7 +172,7 @@ function abrir() {
 				getParentRoute: () => raiz,
 				path: "/perfil",
 				loader: () => TRILHAS,
-				component: Perfil.options.component,
+				component: rota.options.component,
 			}),
 			pagina("/painel"),
 			pagina("/termo"),
@@ -226,12 +234,8 @@ describe("o perfil antes de a conta responder", () => {
 	});
 
 	it("guarda desde o começo o lugar de cada frase e do botão, e os mesmos nós recebem a conta", async () => {
-		let responderConta: (valor: never) => void = () => {};
-		perfil.mockReturnValue(
-			new Promise<never>((resolver) => {
-				responderConta = resolver;
-			}),
-		);
+		const pendente = pedidoPendente();
+		perfil.mockReturnValue(pendente.promessa);
 		gravarLidos(["alfa/primeiro"]);
 		abrir();
 
@@ -268,7 +272,7 @@ describe("o perfil antes de a conta responder", () => {
 			"Você terminou a trilha.",
 		]);
 
-		await act(async () => responderConta(resposta(200, MARIA)));
+		await act(async () => pendente.responder(resposta(200, MARIA)));
 		await screen.findByText("Você entrou como Maria Fictícia de Exemplo.");
 
 		expect(screen.getByRole("status")).toBe(status);
@@ -279,6 +283,81 @@ describe("o perfil antes de a conta responder", () => {
 		expect(lugarDoBotao.querySelector("a")?.textContent?.trim()).toBe(
 			"Continuar de onde parou: Segundo artigo",
 		);
+	});
+});
+
+describe("a sessão durante a consulta da conta", () => {
+	it.each([
+		[
+			"troca",
+			() => gravarLidos(["beta/terceiro", "beta/quarto"]),
+			resposta(200, ANA),
+		],
+		["some", () => localStorage.clear(), resposta(401)],
+	] as const)(
+		"se a chave %s com o pedido no ar, descarta o nome e confere a sessão de novo",
+		async (mudanca, mudar, novaResposta) => {
+			const trocar = vi.fn();
+			vi.stubGlobal("location", { ...window.location, replace: trocar });
+			const antiga = pedidoPendente();
+			const nova = pedidoPendente();
+			perfil
+				.mockReturnValueOnce(antiga.promessa)
+				.mockReturnValueOnce(nova.promessa);
+			entrarSemCopia();
+			abrir();
+			await waitFor(() => expect(perfil).toHaveBeenCalledTimes(1));
+
+			await act(async () => {
+				mudar();
+				window.dispatchEvent(new StorageEvent("storage", { key: SESSAO }));
+				antiga.responder(resposta(200, MARIA));
+			});
+
+			expect(saudacao()).toBe("Olá!");
+			expect(screen.queryByText(/Você entrou como/)).toBeNull();
+			expect(screen.getByRole("status").textContent).toBe(
+				"Verificando sua sessão…",
+			);
+			await waitFor(() => expect(perfil).toHaveBeenCalledTimes(2));
+			await act(async () => nova.responder(novaResposta));
+
+			if (mudanca === "troca") {
+				expect(
+					screen.getByText("Você entrou como Ana Fictícia de Exemplo."),
+				).toBeDefined();
+				expect(screen.getByRole("status").textContent).toBe(
+					"Você leu 2 de 5 artigos.",
+				);
+				expect(trocar).not.toHaveBeenCalled();
+			} else {
+				expect(trocar).toHaveBeenCalledExactlyOnceWith("/login");
+				expect(screen.queryByText(/Você entrou como/)).toBeNull();
+				expect(localStorage.getItem(SESSAO)).toBeNull();
+			}
+			expect(perfil).toHaveBeenCalledTimes(2);
+		},
+	);
+
+	it.each([
+		["com a chave da entrada", true],
+		["só com o cookie", false],
+	])("abre %s com um pedido de identidade e uma leitura", async (_, entrou) => {
+		if (entrou) entrarSemCopia();
+		const chaveDaEntrada = localStorage.getItem(SESSAO);
+		perfil.mockResolvedValue(resposta(200, MARIA));
+		leitura.mockResolvedValue(lidosNaConta(200, ["alfa/primeiro"]));
+		abrir();
+
+		await screen.findByText("Você entrou como Maria Fictícia de Exemplo.");
+		await screen.findByText("Você leu 1 de 5 artigos.", {
+			selector: '[role="status"]',
+		});
+		const chaveReconhecida = localStorage.getItem(SESSAO);
+		expect(chaveReconhecida).not.toBeNull();
+		if (entrou) expect(chaveReconhecida).toBe(chaveDaEntrada);
+		expect(perfil).toHaveBeenCalledTimes(1);
+		expect(leitura).toHaveBeenCalledTimes(1);
 	});
 });
 
@@ -492,6 +571,119 @@ describe("a primeira leitura da conta neste navegador", () => {
 				.getAttribute("href"),
 		).toBe("/trilhas/alfa/segundo");
 	});
+
+	it("mantém o perfil à espera se um artigo é marcado antes de chegar a primeira leitura", async () => {
+		perfil.mockResolvedValue(resposta(200, MARIA));
+		const pendente = esperarLeitura();
+		vi.mocked(alterarProgressoConta).mockResolvedValue(
+			lidosNaConta(200, TODOS),
+		);
+		entrarSemCopia();
+		abrir();
+		await screen.findByText("Você entrou como Maria Fictícia de Exemplo.");
+		await waitFor(() => expect(leitura).toHaveBeenCalledTimes(1));
+
+		act(() => marcarLido("alfa/segundo"));
+
+		expect(lerLidos()).toEqual(new Set(["alfa/segundo"]));
+		expect(screen.getByRole("status").textContent).toBe(
+			"Verificando sua sessão…",
+		);
+		expect(frasesDasTrilhas()).toEqual(["", ""]);
+		expect(azulejos()).toEqual([CRU, CRU, CRU, CRU, CRU]);
+		expect(
+			screen.queryByRole("link", { name: /Começar|Continuar/ }),
+		).toBeNull();
+
+		await act(async () =>
+			pendente.responder(lidosNaConta(200, ["alfa/primeiro", "beta/terceiro"])),
+		);
+		expect(screen.getByRole("status").textContent).toBe(
+			"Você leu 3 de 5 artigos.",
+		);
+		expect(
+			screen
+				.getByRole("link", { name: "Continuar de onde parou: Quarto artigo" })
+				.getAttribute("href"),
+		).toBe("/trilhas/beta/quarto");
+	});
+
+	it("continua indisponível se a primeira leitura falhou e uma marca foi gravada", async () => {
+		perfil.mockResolvedValue(resposta(200, MARIA));
+		const pendente = esperarLeitura();
+		const alterar = vi.mocked(alterarProgressoConta);
+		alterar.mockResolvedValue(lidosNaConta(200, TODOS));
+		entrarSemCopia();
+		abrir();
+		await screen.findByText("Você entrou como Maria Fictícia de Exemplo.");
+		await waitFor(() => expect(leitura).toHaveBeenCalledTimes(1));
+		await act(async () => pendente.responder(lidosNaConta(500)));
+		await screen.findByRole("link", { name: "Tentar de novo" });
+
+		await act(async () => marcarLido("alfa/segundo"));
+		await waitFor(() => expect(alterar).toHaveBeenCalledTimes(1));
+
+		expect(lerLidos()).toEqual(new Set(["alfa/segundo"]));
+		expect(screen.getByText(SEM_RESPOSTA, { selector: "p" })).toBeDefined();
+		expect(
+			screen.getByRole("link", { name: "Tentar de novo" }).getAttribute("href"),
+		).toBe("/perfil");
+		expect(screen.getByRole("status").textContent).toBe("");
+		expect(frasesDasTrilhas()).toEqual(["", ""]);
+		expect(
+			screen.queryByRole("link", { name: /Começar|Continuar/ }),
+		).toBeNull();
+	});
+
+	it("reabre num documento novo com a leitura anterior, antes de responder a nova consulta", async () => {
+		perfil.mockResolvedValue(resposta(200, MARIA));
+		leitura.mockResolvedValue(lidosNaConta(200, ["alfa/primeiro"]));
+		entrarSemCopia();
+		abrir();
+		await screen.findByRole("link", {
+			name: "Continuar de onde parou: Segundo artigo",
+		});
+		expect(leitura).toHaveBeenCalledTimes(1);
+
+		cleanup();
+		vi.resetModules();
+		const { Route: novaRota } = await import("./perfil");
+		esperarLeitura();
+		abrir(novaRota);
+		await screen.findByText("Você entrou como Maria Fictícia de Exemplo.");
+		await waitFor(() => expect(leitura).toHaveBeenCalledTimes(2));
+
+		expect(screen.getByRole("status").textContent).toBe(
+			"Você leu 1 de 5 artigos.",
+		);
+		expect(
+			screen
+				.getByRole("link", { name: "Continuar de onde parou: Segundo artigo" })
+				.getAttribute("href"),
+		).toBe("/trilhas/alfa/segundo");
+	});
+
+	it("mostra a leitura que terminou em outra aba da mesma sessão", async () => {
+		perfil.mockResolvedValue(resposta(200, MARIA));
+		entrarSemCopia();
+		abrir();
+		await screen.findByText("Você entrou como Maria Fictícia de Exemplo.");
+		await waitFor(() => expect(leitura).toHaveBeenCalledTimes(1));
+		const status = screen.getByRole("status");
+		const chave = localStorage.getItem(SESSAO) as string;
+		const outraAbaGrava = (chave: string, valor: string) =>
+			act(() => {
+				localStorage.setItem(chave, valor);
+				window.dispatchEvent(new StorageEvent("storage", { key: chave }));
+			});
+
+		outraAbaGrava(ESPELHO, JSON.stringify(["alfa/primeiro"]));
+		outraAbaGrava(LEITURA, crypto.randomUUID());
+		expect(status.textContent).toBe("Verificando sua sessão…");
+
+		outraAbaGrava(LEITURA, chave);
+		expect(status.textContent).toBe("Você leu 1 de 5 artigos.");
+	});
 });
 
 describe("a sessão que acaba depois de a conta responder", () => {
@@ -501,6 +693,26 @@ describe("a sessão que acaba depois de a conta responder", () => {
 		mudar();
 		window.dispatchEvent(new StorageEvent("storage", { key: SESSAO }));
 	}
+
+	it("deixa os azulejos crus no quadro da saída, mesmo com os giros disponíveis", async () => {
+		const trocar = vi.fn();
+		vi.stubGlobal("location", { ...window.location, replace: trocar });
+		perfil.mockResolvedValue(resposta(200, MARIA));
+		gravarLidos(["alfa/primeiro"]);
+		abrir();
+		await waitFor(() => expect(azulejos()).toEqual([LIDO, CRU, CRU, CRU, CRU]));
+
+		// Numa volta animada, a cor anterior permanece até o meio do giro.
+		for (const peca of document.querySelectorAll(".perfil-azulejos .az")) {
+			Object.assign(peca, {
+				animate: () => ({ finished: new Promise<never>(() => {}) }),
+			});
+		}
+		act(() => outraAba(() => localStorage.removeItem(SESSAO)));
+
+		expect(azulejos()).toEqual([CRU, CRU, CRU, CRU, CRU]);
+		expect(trocar).toHaveBeenCalledExactlyOnceWith("/login");
+	});
 
 	it.each<[string, (pendente: LeituraPendente) => void]>([
 		[
@@ -603,7 +815,9 @@ describe("a sessão que acaba depois de a conta responder", () => {
 		expect(frases).toEqual([
 			"Verificando sua sessão…",
 			"Verificando sua sessão…",
+			"Verificando sua sessão…",
 		]);
+		expect(localStorage.getItem(LEITURA)).toBeNull();
 		expect(trocar).toHaveBeenCalledWith("/login");
 	});
 });
