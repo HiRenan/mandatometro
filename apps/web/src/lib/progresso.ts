@@ -4,7 +4,8 @@ import { ENV } from "@/env";
 
 const CHAVE = "mandatometro:artigos-lidos";
 const CHAVE_CONTA = "mandatometro:artigos-lidos-na-conta";
-const CHAVE_SESSAO = "mandatometro:sessao-do-progresso";
+/** A chave da sessão; o cabeçalho a lê para dizer "Conta" (components/header.tsx). */
+export const CHAVE_SESSAO = "mandatometro:sessao-do-progresso";
 const CHAVE_LEITURA = "mandatometro:leitura-da-conta";
 const CHAVE_ACOES = "mandatometro:acoes-do-progresso";
 const TRAVA = "mandatometro:sincronizar-progresso";
