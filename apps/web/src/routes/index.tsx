@@ -9,10 +9,10 @@ export const Route = createFileRoute("/")({
 	loader: () => buscarInicio(),
 	head: ({ loaderData, match }) => ({
 		meta: loaderData ? metaDaInicial() : metaSemPagina(match),
-		// A frase do título usa a letra de máquina do lema. A partir de 1344 px, a
+		// A frase do título usa a letra de máquina do lema. A partir de 1312 px, a
 		// rota raiz já adianta essa fonte, para o cabeçalho; abaixo disso, só esta
 		// página a adianta, porque nas outras ela só aparece no rodapé.
-		links: [preloadDaFonte(fontes.maquina, "(max-width: 83.99rem)")],
+		links: [preloadDaFonte(fontes.maquina, "(max-width: 81.99rem)")],
 	}),
 	component: Inicio,
 });

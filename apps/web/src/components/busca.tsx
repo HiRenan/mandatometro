@@ -108,10 +108,14 @@ function teclaDoAtalho(): string {
 }
 
 /**
- * A entrada da busca no cabeçalho, entre o nome e os links: a lupa, "Buscar no
- * site" e a tecla do atalho. O servidor escreve "Ctrl K", e o Mac troca por
- * "⌘ K" no mesmo espaço. Quando o ponteiro ou o foco chega nela, os índices já
- * vêm. Sem JavaScript, ela não abriria nada, e o CSS a esconde.
+ * A entrada da busca no cabeçalho, ao lado da conta: a lupa, "Buscar no site" e
+ * a tecla do atalho. O lugar dela (o lugar-da-busca) cresce até 20rem, e a
+ * entrada mostra o que cabe nele: a lupa, "Buscar", "Buscar no site" ou a barra
+ * com a tecla, que só aparece com mouse ou trackpad. O que não cabe sai da tela
+ * e fica para o leitor: o nome do botão é sempre "Buscar no site". O servidor
+ * escreve "Ctrl K", e o Mac troca por "⌘ K" no mesmo espaço. Quando o ponteiro
+ * ou o foco chega nela, os índices já vêm. Sem JavaScript, ela não abriria
+ * nada, e o CSS a esconde.
  */
 export function EntradaDaBusca() {
 	const { abrir, carregar } = useBusca();
@@ -121,24 +125,26 @@ export function EntradaDaBusca() {
 	}, []);
 
 	return (
-		<button
-			type="button"
-			className="entrada-da-busca"
-			aria-haspopup="dialog"
-			aria-keyshortcuts="Control+K Meta+K"
-			onClick={abrir}
-			onPointerEnter={carregar}
-			onFocus={carregar}
-		>
-			<Search aria-hidden="true" />
-			{/* O espaço fica fora do span: no jsdom, o nome do botão perde o espaço
-			    do começo do texto de um elemento em linha ("Buscarno site"). */}
-			<span>
-				Buscar <span className="entrada-da-busca-resto">no site</span>
-			</span>
-			{/* biome-ignore lint/a11y/noAriaHiddenOnFocusable: o <kbd> não recebe foco; a tecla chega ao leitor de tela pelo aria-keyshortcuts do botão. */}
-			<kbd aria-hidden="true">{tecla}</kbd>
-		</button>
+		<div className="lugar-da-busca">
+			<button
+				type="button"
+				className="entrada-da-busca"
+				aria-haspopup="dialog"
+				aria-keyshortcuts="Control+K Meta+K"
+				onClick={abrir}
+				onPointerEnter={carregar}
+				onFocus={carregar}
+			>
+				<Search aria-hidden="true" />
+				{/* O espaço fica fora do span: no jsdom, o nome do botão perde o espaço
+				    do começo do texto de um elemento em linha ("Buscarno site"). */}
+				<span className="entrada-da-busca-texto">
+					Buscar <span className="entrada-da-busca-resto">no site</span>
+				</span>
+				{/* biome-ignore lint/a11y/noAriaHiddenOnFocusable: o <kbd> não recebe foco; a tecla chega ao leitor de tela pelo aria-keyshortcuts do botão. */}
+				<kbd aria-hidden="true">{tecla}</kbd>
+			</button>
+		</div>
 	);
 }
 
