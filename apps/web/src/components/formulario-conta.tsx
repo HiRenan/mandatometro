@@ -34,14 +34,15 @@ export const titulos = {
 	excluir: "Excluir conta",
 };
 type Modo = keyof typeof titulos;
+const avisoDeSpam =
+	"Se o e-mail não aparecer, procure também no spam ou no lixo eletrônico.";
 const conclusoes: Record<Exclude<Modo, "login">, string> = {
-	cadastro: "Confira sua caixa de entrada para confirmar o cadastro.",
+	cadastro: `Confira sua caixa de entrada para confirmar o cadastro. ${avisoDeSpam}`,
 	confirmar: "Seu e-mail foi confirmado.",
-	recuperar:
-		"Se houver uma conta confirmada, você receberá um link para redefinir a senha.",
+	recuperar: `Se houver uma conta confirmada, você receberá um link para redefinir a senha. ${avisoDeSpam}`,
 	redefinir: "Sua senha foi alterada. Entre novamente para continuar.",
-	reenvio: "Se houver um cadastro pendente, você receberá outro link.",
-	excluir: "Sua conta foi excluída. O comprovante será enviado por e-mail.",
+	reenvio: `Se houver um cadastro pendente, você receberá outro link. ${avisoDeSpam}`,
+	excluir: `Sua conta foi excluída. O comprovante será enviado por e-mail. ${avisoDeSpam}`,
 };
 const campo =
 	"block w-full rounded-none border border-tinta bg-papel px-3 py-2 text-tinta";

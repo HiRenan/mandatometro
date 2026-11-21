@@ -6,6 +6,7 @@ import {
 	fireEvent,
 	render,
 	screen,
+	waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { VERSAO_DO_TERMO } from "@/lib/termo";
@@ -21,6 +22,8 @@ const pedidosAApi = vi.fn<(pedido: Request) => Promise<Response>>();
 
 /** O endereço do termo na API: outro que o da página, para o link vir dela. */
 const ENDERECO_NA_API = "https://termo.example.com/termo";
+const avisoDeSpam =
+	"Se o e-mail não aparecer, procure também no spam ou no lixo eletrônico.";
 
 /** A API responde ao GET /contas/termo com esta versão. */
 function versaoNaApi(versao: string) {
@@ -94,8 +97,10 @@ describe("o termo no cadastro", () => {
 
 		preencherCadastro();
 		fireEvent.click(botao());
-		await screen.findByText(
-			"Confira sua caixa de entrada para confirmar o cadastro.",
+		await waitFor(() =>
+			expect(screen.getByRole("status").textContent).toBe(
+				`Confira sua caixa de entrada para confirmar o cadastro. ${avisoDeSpam}`,
+			),
 		);
 
 		expect(
@@ -135,4 +140,49 @@ describe("o termo no cadastro", () => {
 			pedidosAApi.mock.calls.map(([pedido]) => [pedido.method, pedido.url]),
 		).toEqual([["GET", "https://api.example.com/contas/termo"]]);
 	});
+});
+
+describe("o aviso de e-mail na conclusão", () => {
+	it.each([
+		{
+			modo: "reenvio",
+			botao: "Reenviar confirmação",
+			rotulo: "E-mail",
+			valor: "pessoa@example.com",
+			conclusao: "Se houver um cadastro pendente, você receberá outro link.",
+		},
+		{
+			modo: "recuperar",
+			botao: "Recuperar senha",
+			rotulo: "E-mail",
+			valor: "pessoa@example.com",
+			conclusao:
+				"Se houver uma conta confirmada, você receberá um link para redefinir a senha.",
+		},
+		{
+			modo: "excluir",
+			botao: "Excluir conta",
+			rotulo: "Senha atual",
+			valor: "Senha fictícia de cadastro",
+			conclusao:
+				"Sua conta foi excluída. O comprovante será enviado por e-mail.",
+		},
+	] as const)(
+		"$modo traz o aviso no status",
+		async ({ modo, botao, rotulo, valor, conclusao }) => {
+			pedidosAApi.mockResolvedValueOnce(new Response(null, { status: 204 }));
+			render(<FormularioConta modo={modo} />);
+
+			fireEvent.change(screen.getByLabelText(rotulo), {
+				target: { value: valor },
+			});
+			fireEvent.click(screen.getByRole("button", { name: botao }));
+
+			await waitFor(() =>
+				expect(screen.getByRole("status").textContent).toBe(
+					`${conclusao} ${avisoDeSpam}`,
+				),
+			);
+		},
+	);
 });
