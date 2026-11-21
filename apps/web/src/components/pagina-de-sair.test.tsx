@@ -39,7 +39,7 @@ const EXPLICA =
 const INCOMPLETO =
 	"Este link está incompleto. Abra de novo o link de saída que vem no fim de cada e-mail da newsletter.";
 const SAIU =
-	"O seu e-mail não está mais na lista, e as próximas edições não vão chegar.";
+	"O seu e-mail não está mais na lista, e as próximas edições não vão chegar. Elas continuam no site, em Edições, para ler quando quiser.";
 const FORA_DO_AR =
 	"Não conseguimos confirmar a saída agora. Espere alguns minutos e tente de novo.";
 const SEM_CONEXAO =
@@ -71,7 +71,7 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-/** A página num site de mentira, com a página inicial para os links. */
+/** A página num site de mentira, com a página inicial e a lista das edições. */
 async function mostrar(opcoes: { codigo?: string; comApi?: boolean } = {}) {
 	// Sem o `codigo` nas opções, vale o do link; com ele, mesmo vazio, vale o dado.
 	const codigo = "codigo" in opcoes ? opcoes.codigo : CODIGO;
@@ -81,6 +81,11 @@ async function mostrar(opcoes: { codigo?: string; comApi?: boolean } = {}) {
 		getParentRoute: () => raiz,
 		path: "/",
 		component: () => <h1>Início</h1>,
+	});
+	const edicoes = createRoute({
+		getParentRoute: () => raiz,
+		path: "/edicoes",
+		component: () => <h1>Edições</h1>,
 	});
 	const pagina = createRoute({
 		getParentRoute: () => raiz,
@@ -93,7 +98,7 @@ async function mostrar(opcoes: { codigo?: string; comApi?: boolean } = {}) {
 			? "/newsletter/sair"
 			: `/newsletter/sair?codigo=${encodeURIComponent(codigo)}`;
 	const router = createRouter({
-		routeTree: raiz.addChildren([inicio, pagina]),
+		routeTree: raiz.addChildren([inicio, edicoes, pagina]),
 		history: createMemoryHistory({ initialEntries: [endereco] }),
 	});
 	render(<RouterProvider router={router} />);
@@ -209,10 +214,13 @@ function celula(elemento: Element | null | undefined) {
  * Uma regra do CSS pode pôr esse elemento em grade sem aparecer aqui.
  */
 function paragrafoDe(frase: string, raiz: HTMLElement = document.body) {
-	const paragrafo = within(raiz).getByText(frase, {
-		selector: "p",
-		ignore: "[role='status'], [aria-hidden='true'], script, style",
-	});
+	const paragrafo = within(raiz).getByText(
+		(_, elemento) => elemento?.textContent === frase,
+		{
+			selector: "p",
+			ignore: "[role='status'], [aria-hidden='true'], script, style",
+		},
+	);
 	expect(
 		[...paragrafo.classList].filter((classe) =>
 			/^(inline-)?(grid|flex)$/.test(classe),
@@ -280,7 +288,7 @@ describe("a página de sair", () => {
 		expect(sair).toHaveBeenCalledTimes(1);
 	});
 
-	it("com a saída feita, o título e o texto mudam, o aviso anuncia, e o foco vai para o “Inscrever-se de novo”", async () => {
+	it("com a saída feita, o título e o texto mudam, e o foco vai para o “Inscrever-se de novo”", async () => {
 		sair.mockResolvedValue({ tipo: "saiu" });
 		await mostrar();
 
@@ -292,13 +300,71 @@ describe("a página de sair", () => {
 				name: "Você saiu da newsletter.",
 			}),
 		).toBeTruthy();
-		expect(naTela(SAIU)).toBeTruthy();
+		expect(
+			within(paragrafoDe(SAIU))
+				.getByRole("link", { name: "Edições" })
+				.getAttribute("href"),
+		).toBe("/edicoes");
 		expect(naTela(EXPLICA)).toBeNull();
-		expect(aviso()).toBe(`Você saiu da newsletter. ${SAIU}`);
 		expect(botao()).toBeNull();
 		const deNovo = screen.getByRole("link", { name: "Inscrever-se de novo" });
 		expect(deNovo.getAttribute("href")).toBe("/#newsletter");
 		expect(document.activeElement).toBe(deNovo);
+	});
+
+	it("depois da saída, um só aviso anuncia o título e a frase inteira", async () => {
+		sair.mockResolvedValue({ tipo: "saiu" });
+		await mostrar();
+		await confirmar();
+
+		expect(aviso()).toBe(`Você saiu da newsletter. ${SAIU}`);
+		expect(screen.getAllByRole("status")).toHaveLength(1);
+		expect(
+			paragrafoDe(SAIU).closest("[aria-live], [role='status'], [role='alert']"),
+		).toBeNull();
+	});
+
+	it("o segundo e o terceiro cliques não seguem o link “Edições”; um clique novo segue", async () => {
+		sair.mockResolvedValue({ tipo: "saiu" });
+		const router = await mostrar();
+		await confirmar();
+		const edicoes = screen.getByRole("link", { name: "Edições" });
+
+		for (const detail of [2, 3]) {
+			await act(async () => {
+				fireEvent.click(edicoes, { detail });
+			});
+			expect(router.state.location.pathname).toBe("/newsletter/sair");
+		}
+		await act(async () => {
+			fireEvent.click(edicoes, { detail: 1 });
+		});
+		await screen.findByRole("heading", { level: 1, name: "Edições" });
+		expect(router.state.location.pathname).toBe("/edicoes");
+	});
+
+	it("depois da saída, a ordem dos links no HTML é a do Tab do navegador", async () => {
+		sair.mockResolvedValue({ tipo: "saiu" });
+		await mostrar();
+		await confirmar();
+		const deNovo = screen.getByRole("link", { name: "Inscrever-se de novo" });
+		const edicoes = screen.getByRole("link", { name: "Edições" });
+		const links = [...document.querySelectorAll(".cartaz a[href]")];
+
+		expect(edicoes.hasAttribute("tabindex")).toBe(false);
+		expect(links.map((link) => link.textContent)).toEqual([
+			"Edições",
+			"Inscrever-se de novo",
+			"Ir para o início",
+		]);
+		expect(document.activeElement).toBe(deNovo);
+		const tab = new KeyboardEvent("keydown", {
+			key: "Tab",
+			bubbles: true,
+			cancelable: true,
+		});
+		fireEvent(deNovo, tab);
+		expect(tab.defaultPrevented).toBe(false);
 	});
 
 	it("o segundo clique de um clique duplo no botão não segue o “Inscrever-se de novo”, que surge no lugar dele", async () => {
@@ -432,10 +498,8 @@ describe("a página de sair", () => {
 	it("o pé guarda a altura de antes da saída desde o HTML do servidor: a abertura e o lugar do botão", async () => {
 		const raiz = await paginaDoServidor({ codigo: CODIGO, comApi: true });
 
-		// Com a letra grande, a frase da saída é mais curta, e os dois links
-		// cabem numa linha só: o pé encolhia, e o "Inscrever-se de novo" nascia
-		// longe do botão. A abertura guarda as duas frases, invisíveis, na
-		// mesma célula da grade; a de antes do botão fica à vista.
+		// A abertura guarda as duas frases, invisíveis, na mesma célula da
+		// grade; a de antes do botão fica à vista.
 		const abertura = raiz.querySelector(".abertura") as HTMLElement;
 		expect(reservasDe(abertura)).toEqual(FRASES_DA_ABERTURA);
 		expect(textoAVista(abertura)).toBe(EXPLICA);
@@ -464,6 +528,22 @@ describe("a página de sair", () => {
 		expect(reservasDe(espera)).toEqual([CONFIRMANDO]);
 		expect(textoAVista(espera)).toBeUndefined();
 		expect(espera.parentElement?.lastElementChild).toBe(espera);
+	});
+
+	it("no HTML do servidor, a cópia da abertura com “Edições” guarda o lugar sem expor um link", async () => {
+		const raiz = await paginaDoServidor({ codigo: CODIGO, comApi: true });
+		const copia = raiz.querySelector(".abertura > [aria-hidden='true'] > a");
+		const reserva = copia?.parentElement;
+
+		expect(copia?.textContent).toBe("Edições");
+		expect(copia?.hasAttribute("href")).toBe(false);
+		expect(reserva?.textContent).toBe(SAIU);
+		expect(reserva?.classList.contains("invisible")).toBe(true);
+		expect(celula(reserva)).toEqual(celula(paragrafoDe(EXPLICA, raiz)));
+		expect(raiz.querySelector('a[href="/edicoes"]')).toBeNull();
+		expect(
+			within(raiz).queryByRole("link", { name: "Edições", hidden: true }),
+		).toBeNull();
 	});
 
 	it("depois da saída, o pé fica com a altura de antes: a frase de antes continua guardada, e o “Inscrever-se de novo” fica no lugar do botão", async () => {
@@ -588,6 +668,9 @@ describe("a página de sair", () => {
 			// As frases guardadas continuam em volta dele, na grade da abertura.
 			expect(paragrafoDe(frase).parentElement).toBe(
 				document.querySelector(".abertura"),
+			);
+			expect(document.querySelectorAll('a[href="/edicoes"]')).toHaveLength(
+				frase === SAIU ? 1 : 0,
 			);
 		},
 	);
@@ -722,7 +805,7 @@ describe("a página de sair", () => {
 			await confirmar();
 			expect(sair).toHaveBeenCalledTimes(2);
 			expect(naTela(texto)).toBeNull();
-			expect(naTela(SAIU)).toBeTruthy();
+			expect(paragrafoDe(SAIU)).toBeTruthy();
 		},
 	);
 
@@ -1075,7 +1158,7 @@ describe("o código de saída fica só no pedido", () => {
 			await confirmar();
 
 			expect(sair.mock.calls).toEqual([[CODIGO], [CODIGO]]);
-			expect(naTela(SAIU)).toBeTruthy();
+			expect(paragrafoDe(SAIU)).toBeTruthy();
 			// O roteador dos testes é de memória: o endereço e o estado dele não
 			// chegam à janela, e cada um se confere à parte. Ele continua na entrada
 			// da chegada, sem parâmetro, trecho ou estado novo com o código.
