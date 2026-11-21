@@ -115,8 +115,9 @@ function Documento({ children }: { children: ReactNode }) {
 		// sem o suppressHydrationWarning, o React avisaria do atributo a mais.
 		<html lang="pt-BR" suppressHydrationWarning>
 			<head>
-				{/* Antes do CSS: um roteiro em linha espera as folhas de estilo que vêm
-				    antes dele. */}
+				{/* No <head>, o roteiro roda antes de o navegador ler o corpo da página.
+				    O React põe a folha de estilo antes dele, e ele espera a folha
+				    chegar, como a primeira pintura (docs/codigo-do-site.md). */}
 				{ENV.API_URL ? <MarcaDaConta /> : null}
 				<HeadContent />
 			</head>
