@@ -223,12 +223,15 @@ describe("o CSS do cabeçalho com o lema e a busca", () => {
 			/\.entrada-da-busca kbd \{\s*display: block;\s*\}/.test(corpo),
 		);
 
-		// O que cada forma pede, com a letra a 100%: "Buscar", 6,25rem; "Buscar
-		// no site", 9,22rem; a barra com a tecla, 13,84rem.
-		expect(soALupa?.largura).toBeGreaterThanOrEqual(6.25);
+		// Os limites de "A largura da entrada", no DESIGN.md, cabem nos 20rem
+		// do lugar da barra.
+		expect(soALupa?.largura).toBe(6.5);
 		expect(soALupa?.corpo).toMatch(/width: 2\.75rem;/);
-		expect(soBuscar?.largura).toBeGreaterThanOrEqual(9.22);
-		expect(comTecla?.largura).toBeGreaterThanOrEqual(13.84);
+		expect(soBuscar?.largura).toBe(9.5);
+		expect(comTecla?.largura).toBe(14.25);
+		for (const consulta of [soALupa, soBuscar, comTecla]) {
+			expect(consulta?.largura).toBeLessThan(20);
+		}
 	});
 
 	it("a tecla só aparece com mouse ou trackpad", () => {
