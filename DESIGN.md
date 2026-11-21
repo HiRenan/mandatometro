@@ -116,6 +116,11 @@ components:
     rounded: "{rounded.none}"
     height: "44px"
     padding: "0 8px 0 12px"
+  entrada-da-conta:
+    backgroundColor: "{colors.tinta}"
+    textColor: "{colors.papel}"
+    height: "44px"
+    padding: "0 14.4px"
   botao:
     backgroundColor: "{colors.tinta}"
     textColor: "{colors.papel}"
@@ -286,7 +291,7 @@ No quiz, a opção que se apaga depois da resposta passa para a tinta suave na f
 **Body Font:** Literata Variable, eixo de tamanho óptico, com itálico (com ui-serif, Georgia)
 **Accent Font:** Courier Prime 400, letra de máquina de escrever (com Courier New, ui-monospace)
 
-As três são servidas pelo próprio site, pelo `@fontsource`, com `font-display: swap`: o texto aparece na letra reserva e troca de letra quando a fonte chega. Os arquivos latinos da Archivo e da Literata são pré-carregados no `<head>` de todas as páginas, e o navegador os pede junto com o CSS. Numa rede boa, eles chegam antes de o texto aparecer, que já sai na letra certa; numa rede lenta, chegam depois, e o texto ainda pula na troca. A Courier Prime é baixada em todas as páginas, porque o lema está no rodapé de todas. O pré-carregamento dela só vale onde ela aparece na primeira tela: a partir de 1344 px, por causa do lema no cabeçalho, e, abaixo disso, só na página inicial, para a frase do título. Nas outras páginas, abaixo de 1344 px, o navegador a pede pelo CSS, para o rodapé.
+As três são servidas pelo próprio site, pelo `@fontsource`, com `font-display: swap`: o texto aparece na letra reserva e troca de letra quando a fonte chega. Os arquivos latinos da Archivo e da Literata são pré-carregados no `<head>` de todas as páginas, e o navegador os pede junto com o CSS. Numa rede boa, eles chegam antes de o texto aparecer, que já sai na letra certa; numa rede lenta, chegam depois, e o texto ainda pula na troca. A Courier Prime é baixada em todas as páginas, porque o lema está no rodapé de todas. O pré-carregamento dela só vale onde ela aparece na primeira tela: a partir de 1312 px, por causa do lema embaixo do nome no cabeçalho, e, abaixo disso, só na página inicial, para a frase do título. Nas outras páginas, abaixo de 1312 px, o navegador a pede pelo CSS, para o rodapé.
 
 A Courier Prime entrou na #89 só para a frase do cartaz e o lema: `@fontsource/courier-prime`, licença SIL OFL 1.1, 19 kB. É a única dependência nova da direção. Ela tomou o lugar da Instrument Serif itálica (22 kB), que o Renan achou com "muito cara de IA": em 13/11/2026, ele escolheu a letra de máquina num rascunho com cinco letras.
 
@@ -298,8 +303,8 @@ A Courier Prime entrou na #89 só para a frase do cartaz e o lema: `@fontsource/
 - **Enunciado** (Archivo 800, largura 72%, altura 1.02, em minúsculas): a pergunta do quiz, de 1.75rem a 2.75rem, e 1.375rem abaixo de 22rem. É o único título em minúsculas: lê-se como frase.
 - **Title** (`titulo-de-folha`: 900, largura 62%, altura 1.15, maiúsculas): o título de cada folha de uma lista. O do artigo na trilha e o da edição na lista das edições, de 1.875rem a 3.5rem; o da trilha em Trilhas, de 2.25rem a 4.5rem; o do anterior e do próximo, de 1.5rem a 2.5rem.
 - **Subtitle** (`subtitulo-condensado`: 900, largura 68%, altura 1.15, maiúsculas): os intertítulos do texto (1.75rem a 2.5rem), "Fontes oficiais" (1.5rem, altura 1), o título do caminho na trilha (1.875rem a 2.75rem, altura 0.9), o título de cada item da edição e o de cada parte do termo (1.875rem a 3rem, com no máximo 14 em de largura) e, no painel de revisão, o título de cada ficha (1.625rem a 2.5rem, com no máximo 14 em) e o das folhas por cima (1.625rem a 2.5rem).
-- **Wordmark** (900, largura 68%, maiúsculas, 0.01em entre as letras): o nome Mandatômetro. No cabeçalho, 1.625rem (1.3125rem abaixo de 480 px); no rodapé, de 2.25rem a 4.5rem. É texto, não logo.
-- **Máquina** (Courier Prime 400, em minúsculas): a segunda linha do título da página inicial ("um passo de cada vez.", a 0.4 em do título, com a tira riscada embaixo) e o lema, a 0.9375rem, no cabeçalho e no rodapé. Só isso.
+- **Wordmark** (900, largura 68%, maiúsculas, 0.01em entre as letras): o nome Mandatômetro. No cabeçalho, 1.625rem (1.3125rem abaixo de 480 px e 1.1875rem abaixo de 360 px); no rodapé, de 2.25rem a 4.5rem. É texto, não logo.
+- **Máquina** (Courier Prime 400, em minúsculas): a segunda linha do título da página inicial ("um passo de cada vez.", a 0.4 em do título, com a tira riscada embaixo) e o lema, a 0.9375rem, embaixo do nome no cabeçalho (a partir de 1312 px) e no rodapé. Só isso.
 - **Lead** (Literata 500, altura 1.45): o resumo do artigo, de 1.25rem a 1.4375rem. A abertura dos cartazes é Literata 400, de 1.0625rem a 1.25rem, com altura 1.5 e até 34rem de largura.
 - **Body** (Literata 400, altura 1.68): o texto do artigo, de 1.0625rem a 1.1875rem, com até 39rem de largura. Os resumos das folhas e os textos dos passos ficam em 1.0625rem, com altura 1.5 a 1.6.
 - **Label** (`rotulo`: Archivo 650, 0.8125rem, maiúsculas, 0.08em entre as letras): a faixa de informações, a frase do progresso, a migalha, "Artigo 2 de 6 artigos", o nome do quiz no pé, a etiqueta de estado, o rótulo "Seu e-mail", o mês embaixo do dia da edição, "Nesta edição", "Neste termo", os títulos do quadro da votação e das fontes do item e, em tinta suave, "Enviando a inscrição…", "Confirmando a saída…", os nomes do placar, "Página 2 de 3" e, na caixa da busca, o título "Buscar no site", a contagem, o tipo de cada resultado, "Carregando a busca…" e "Procurando também nas edições…". Os nomes dos links e das ações seguem a mesma ideia, um pouco maiores: o botão (800, 1rem), a ação em texto (700, 0.875rem), os links dos artigos de um passo (750, 0.9375rem), o título de cada resultado da busca (750, 1.0625rem, 0.03em entre as letras) e o título de cada passo da sanfona (750, 1rem, 0.05em entre as letras), que também tem o teto da letra grande. A tecla do atalho, na entrada da busca, é menor (700, 0.75rem, 0.06em entre as letras), dentro do fio dela.
@@ -446,35 +451,56 @@ Tudo é reto: raio zero (`--radius: 0`).
 
 ### Moldura (cabeçalho)
 - **Caráter:** um bloco de tinta na largura toda, com a tira das cinco fitas embaixo. É o que separa o cabeçalho da página clara.
-- **Forma:** 72 px de altura, com a tira de 6 px. Na linha, da esquerda para a direita:
-  - o nome e, a partir de 1344 px, o lema em letra de máquina (em Papel 3);
-  - no meio, a entrada da busca (veja "Busca");
-  - os links Início e Trilhas, Edições onde o build do site tem o `API_URL`, e Conta.
+- **A organização:** o Renan reorganizou o cabeçalho na #261, em 20/11/2026 ("tá muito mal organizado [...] o ctrl K não tá centralizado, talvez passar ele pra esquerda, e as opções para o centro"), e escolheu a "A · Busca à direita":
+  - à esquerda, o nome e, a partir de 1312 px, o lema embaixo dele, em letra de máquina (em Papel 3);
+  - no meio exato da tela, os links Início, Trilhas e Jogos, e Edições onde o build do site tem o `API_URL`;
+  - à direita, a entrada da busca (veja "Busca") e a entrada da conta.
 - **As larguras,** com as edições e a letra a 100%:
-  - **a partir de 1344 px,** tudo numa linha;
-  - **de 960 a 1344 px,** a mesma linha, sem o lema. Ele é largo na letra de máquina, não cabe com a barra da busca e está no rodapé. O Renan aceitou esse custo na #233, em 19/11/2026: antes da busca, o lema aparecia a partir de 864 px;
-  - **abaixo de 960 px,** a barra encolhe para a lupa e o "Buscar";
-  - **no celular,** quando os links não cabem na linha do nome (a 600 px, por exemplo), eles descem para a linha de baixo, e a entrada fica na ponta direita da linha do nome.
+  - **a partir de 62rem (992 px),** uma linha de 72 px, com a tira de 6 px, numa grade de três colunas. As dos lados são iguais (`minmax(0, 1fr)`), e os links ficam no meio exato da tela. A 992 px, o nome (181 px) e a lupa com o "Entrar" (143 px) cabem dos lados dos links (375 px);
+  - **a partir de 82rem (1312 px),** o lema aparece embaixo do nome, e o par cabe nos 72 px: ali, o link do nome perde a altura mínima de 44 px. Ao lado do nome, com os links no meio, o lema só caberia a partir de uns 1710 px;
+  - **abaixo de 62rem,** duas linhas (114 px com a tira): em cima, o nome, a busca e a conta; embaixo, os links, centrados, numa linha só deles;
+  - **com a letra a 200%,** as duas linhas valem até 1984 px, porque os 62rem crescem com a letra. Num celular, a busca e a conta descem para baixo do nome.
   - O respiro fica em px, sem crescer com a letra.
-- **Com as edições, no celular:**
-  - Abaixo de 32rem, o Início sai: o nome leva ao início.
-  - Abaixo de 26rem, os links se apertam: 6 px de respiro de cada lado, sem vão entre eles, e pelo menos 12 px entre o nome e os links. Antes do Conta e da busca, isso punha Trilhas e Edições na linha do nome a partir de 355 px; com os dois, os links ficam na linha de baixo.
-  - Quando os links não cabem juntos nem ali, como a 320 px com a letra a 200%, a lista quebra. Sem a quebra, o último link passava da página no computador, onde a barra de rolagem toma 15 px, e a página rolava de lado (a Atena pediu a correção em 17/11/2026). As regras valem só com a marca `data-com-edicoes`: sem a API, o cabeçalho fica como antes. O Renan escolheu em 17/11/2026, na #39: "Edições" no cabeçalho, sem o Início no celular, e o link "Ler as edições" na folha da newsletter.
-- **Navegação:** links em papel, em maiúsculas espaçadas, sem sublinhado, com um traço de 4 px em papel embaixo: ele se risca da esquerda para a direita quando o ponteiro passa e fica na seção aberta. "Trilhas" fica marcado na lista das trilhas, em cada trilha e em cada artigo, "Edições", na lista das edições e em cada edição, e "Conta", na conta, no login e no cadastro; o `aria-current="page"` só vai no link da própria página.
+- **Duas listas, uma à vista:** o HTML tem duas listas iguais dos links, com o mesmo nome ("Principal"), e o CSS mostra uma de cada vez: a do meio na linha única e a de baixo nas duas linhas. Assim, o Tab e o leitor de tela seguem a ordem da tela: no computador, o nome, os links, a busca e a conta; no celular, o nome, a busca, a conta e os links. Com uma lista só, uma das duas ordens ficaria trocada. A lista escondida (`display: none`) fica fora do Tab e do leitor de tela.
+- **No celular:**
+  - Abaixo de 32rem, o Início sai: o nome leva ao início (o Renan, na #39).
+  - Abaixo de 48rem, os links e a conta ficam com 10 px de respiro de cada lado; abaixo de 26rem, com 6 px, sem vão entre os links e com 12 px entre o nome e a busca.
+  - Abaixo de 22.5rem (360 px), o nome fica com 1.1875rem: com 1.3125rem, o nome, a lupa e o "Entrar" passavam 2 px da linha de 280 px.
+  - **Com a letra grande,** os links ficam um embaixo do outro onde não cabem numa linha (o Renan escolheu "Um embaixo do outro" na #261), cada um com 44 px de altura, em px. Quem decide é uma consulta de contêiner pela largura da lista: com as edições, abaixo de 13.75rem (Trilhas, Jogos e Edições pedem 13.45rem com a letra a 150%); sem elas, abaixo de 8.5rem. Onde a lista ainda não cabe e a coluna não entrou, ela quebra a linha em vez de passar da página: no computador, a barra de rolagem toma 15 px (a Atena pediu a quebra em 17/11/2026).
+  - De 320 a 1920 px, com a letra a 100% e a 200%, com a API e sem ela, nenhuma largura rola de lado ou deixa um link sozinho numa linha.
+- **A entrada da conta:** quem não entrou vê "Entrar", que leva ao `/login`; quem entrou vê "Conta", que leva ao `/perfil` (o Renan, na #261, em 20/11/2026). Ela toma o lugar do "Conta" igual para todos e do quadradinho verde que o Renan tinha escolhido na #258.
+  - **Os dois links ficam no HTML,** na mesma célula, e o CSS esconde um deles com `visibility: hidden`: a célula tem a largura do maior, e nada pula quando a palavra troca. O escondido sai do Tab e do leitor de tela. São links comuns (`<a>`), como era o "Conta": o perfil e o login carregam a página do zero.
+  - **A marca:** a palavra segue a marca `data-conta-aberta` no `<html>`. Onde o site tem a API, um roteiro no `<head>` lê a chave da sessão do progresso que o login grava neste navegador (um código sorteado, sem dado da conta) e põe a marca antes da primeira pintura. Depois, o cabeçalho mantém a marca em dia, sem recarregar: na saída, na exclusão da conta, no 401 da sincronização e quando outra aba sai. Nenhum pedido sai do cabeçalho, e nada novo fica guardado.
+  - **Sem JavaScript ou sem a API,** fica "Entrar". Com a chave velha, quando a sessão já acabou na API, a página abre com "Conta" e troca para "Entrar" quando a sincronização recebe o 401.
+  - **O traço:** o "Entrar" fica marcado no login e no cadastro; o "Conta", no perfil, no login e no cadastro, como o "Conta" de antes. O `aria-current="page"` vai no "Entrar" só no `/login` e no "Conta" só no `/perfil`.
+- **Navegação:** links em papel, em maiúsculas espaçadas, sem sublinhado, com um traço de 4 px em papel embaixo: ele se risca da esquerda para a direita quando o ponteiro passa e fica na seção aberta. "Trilhas" fica marcado na lista das trilhas, em cada trilha e em cada artigo, e "Edições", na lista das edições e em cada edição; o `aria-current="page"` só vai no link da própria página. Nas cores forçadas, o traço fica na cor do texto (`CanvasText`): o navegador apaga os fundos, e o traço é um fundo.
 - **Foco:** o anel de foco fica amarelo dentro do bloco. O "Pular para o conteúdo" aparece no foco, em tinta sobre papel.
 - **Na troca de página,** o cabeçalho fica parado quando aparece nas duas páginas (veja "A troca de página").
+- **O que mudou na #261:**
+  - a "Barra no meio" da #233 (19/11/2026) saiu do meio: a busca foi para a direita, junto da conta, e o meio ficou com os links;
+  - o lema, que ficava ao lado do nome a partir de 1344 px, passou para baixo do nome, a partir de 1312 px;
+  - a barra, que encolhia abaixo de 960 px, agora mostra o que cabe no lugar dela (veja "Busca");
+  - o "Conta" igual para todos virou "Entrar" e "Conta";
+  - os links do celular, que quebravam em linhas, ficam numa linha só deles ou, com a letra grande, em coluna.
 
 ### Busca
 - **O que é:** a busca do site, sem IA, nas trilhas, nos artigos e nas edições publicadas (a #233). Ela abre pela entrada do cabeçalho ou pelo Ctrl+K (⌘K no Mac), em qualquer página, numa caixa por cima da página. O Renan escolheu em 19/11/2026:
-  - a "Barra no meio" do cabeçalho;
+  - a "Barra no meio" do cabeçalho, que foi para a direita, junto da conta, na #261, em 20/11/2026 (veja "Moldura");
   - nenhum campo a mais na página inicial ("Não, só a do cabeçalho");
   - a "Caixa por cima" e, para ela, a "Folha por cima".
 - **A entrada:**
-  - **A forma:** um botão entre o nome e os links, com a lupa, "Buscar no site" e a tecla do atalho, num fio de 2 px em Papel 3, com 44 px de altura. A tecla diz "Ctrl K"; no Mac, "⌘ K", trocada depois da hidratação, no mesmo espaço.
+  - **A forma:** um botão à direita do cabeçalho, antes da conta, com a lupa, "Buscar no site" e a tecla do atalho, num fio de 2 px em Papel 3, com 44 px de altura. A tecla diz "Ctrl K"; no Mac, "⌘ K", trocada depois da hidratação, no mesmo espaço.
+  - **A tecla só no computador:** ela aparece com mouse ou trackpad (`(hover: hover) and (pointer: fine)`) e onde a barra inteira cabe. No celular, ninguém aperta Ctrl K (o Renan, na #261: "Ctrl K no computador").
   - **Ponteiro e foco:** com o ponteiro, o fio e a letra vão para o papel. O foco é o amarelo do bloco.
   - **Acessibilidade:** ela leva `aria-haspopup="dialog"` e `aria-keyshortcuts="Control+K Meta+K"`. A tecla é desenho e fica fora do leitor de tela.
   - **O índice:** quando o ponteiro ou o foco chega nela, o índice já começa a vir.
-- **A largura da entrada:** a base é de 14rem, o que a lupa, o texto e a tecla pedem. Ela cresce até 20rem, no meio do espaço entre o nome e os links. A linha do cabeçalho quebra pela base de cada peça, antes de encolher: com a base de 20rem, na primeira versão, os links desciam para a linha de baixo de 912 a 1023 px e de 1312 a 1439 px. Abaixo de 960 px, ficam só a lupa e o "Buscar".
+- **A largura da entrada:** o lugar da barra cresce até 20rem no espaço que sobra ao lado da conta e encolhe até o quadrado da lupa, de 44 px. Ele é um contêiner, e a entrada mostra o que cabe nele:
+  - a barra com a tecla, a partir de 14.25rem (a 1280 px e acima, e de 768 a 960 px, na linha do nome);
+  - "Buscar no site", a partir de 9.5rem (a 1024 px; e num celular de 600 px, que fica sem a tecla de qualquer jeito);
+  - "Buscar", a partir de 6.5rem (a 414 px);
+  - só a lupa, abaixo disso (a 360 e a 320 px).
+
+  Os limites têm folga sobre o que cada forma pede com a letra a 100%: 13.84rem, 9.22rem e 6.25rem. O que sai da tela continua no botão para o leitor de tela, e o nome dele é sempre "Buscar no site". A linha do nome quebra pelo tamanho mínimo da busca e da conta (a lupa e o "Entrar"), e não pela barra inteira: com a barra inteira, a busca descia para a linha de baixo a 360 px.
 - **O atalho:**
   - O Ctrl+K e o ⌘K abrem a busca. Com a caixa aberta, o atalho volta ao campo e seleciona o texto.
   - Com Alt ou Shift, ou no meio de uma composição (o teclado japonês, por exemplo), a tecla fica com o que ela já fazia.
@@ -538,7 +564,7 @@ Tudo é reto: raio zero (`--radius: 0`).
 ### Rodapé
 - **Caráter:** papel com um fio de tinta em cima e uma fileira de azulejos embaixo. É o `<footer>` do documento, em todas as páginas, inclusive no 404 e na de erro.
 - **Forma:** o nome em Wordmark, grande, sem link, com o lema em letra de máquina embaixo; ao lado (embaixo, até 1024 px), quatro linhas em Literata, em tinta suave: "O Mandatômetro foi feito para o Hack Brasil 2026, na trilha Acesso à educação.", "Cada explicação traz a fonte oficial: a lei, o regimento ou a página da Câmara e do Senado.", "O código é aberto, no GitHub." e "O termo de consentimento da conta.".
-- **Os links do GitHub e do termo:** ações em texto em linha, na letra do parágrafo, em tinta e negrito. A área de toque tem 12 px em cima e embaixo da letra, o tamanho do vão entre os parágrafos: um toque numa linha de texto não vai para o link de outra linha. O vão entre os dois links fica com o de baixo, que é pintado por cima: a área do GitHub fica com 36 px de altura, e a do termo, com 48 (medido a 360 px, na #112). Para os dois terem 48 px, o vão entre os parágrafos iria a 24 px, e o rodapé cresceria 36 px em todas as páginas. O do termo é um link comum (`<a>`), como o "Conta" do cabeçalho: o rodapé não depende do roteador.
+- **Os links do GitHub e do termo:** ações em texto em linha, na letra do parágrafo, em tinta e negrito. A área de toque tem 12 px em cima e embaixo da letra, o tamanho do vão entre os parágrafos: um toque numa linha de texto não vai para o link de outra linha. O vão entre os dois links fica com o de baixo, que é pintado por cima: a área do GitHub fica com 36 px de altura, e a do termo, com 48 (medido a 360 px, na #112). Para os dois terem 48 px, o vão entre os parágrafos iria a 24 px, e o rodapé cresceria 36 px em todas as páginas. O do termo é um link comum (`<a>`), como o "Entrar" e o "Conta" do cabeçalho: o rodapé não depende do roteador.
 - **A fileira de azulejos:** 16 azulejos (os 8 primeiros no celular, que já têm as cinco fitas). Ela faz a onda uma vez, quando entra na tela.
 
 ### Botão
