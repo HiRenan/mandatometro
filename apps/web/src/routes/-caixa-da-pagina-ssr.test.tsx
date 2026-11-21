@@ -323,7 +323,7 @@ function criarRouter() {
 				naRaiz("/jogos", () => acharJogo(jogos, JOGO_DAS_COMISSOES)),
 			),
 			ContaIndex.update(naRaiz("/cadastro/")),
-			Perfil.update(naRaiz("/perfil")),
+			Perfil.update(naRaiz("/perfil", () => listarTrilhas(trilhas))),
 			Login.update(naRaiz("/login")),
 			ContaConfirmar.update(naRaiz("/cadastro/confirmar")),
 			ContaReenvio.update(naRaiz("/cadastro/reenvio")),
@@ -948,5 +948,67 @@ describe("a caixa da página", () => {
 			paginasSemEndereco(declaradas, abertas),
 			"Cada rota com página abre por um endereço do QUE_ABREM deste teste: ponha nele um da rota que falta",
 		).toEqual([]);
+	});
+});
+
+// O HTML do perfil, antes de a conta responder: a página não sabe quem entrou
+// nem o que a pessoa leu, e mostra a espera com os lugares guardados
+// (DESIGN.md, "Perfil da conta").
+describe("o HTML do servidor do perfil", () => {
+	it("mostra a espera, o olá sem nome e todos os azulejos crus", async () => {
+		const { status, pagina } = await pedir("/perfil");
+		const artigos = trilhas.flatMap((trilha) => trilha.artigos);
+
+		expect(status).toBe(200);
+		expect(pagina.querySelector('[role="status"]')?.textContent).toBe(
+			"Verificando sua sessão…",
+		);
+		expect(pagina.querySelector(".saudacao .sr-only")?.textContent).toBe(
+			"Olá!",
+		);
+		expect(pagina.querySelectorAll(".perfil-azulejos > li")).toHaveLength(
+			artigos.length,
+		);
+		expect(
+			pagina.querySelectorAll(".perfil-azulejos .az:not(.cru)"),
+		).toHaveLength(0);
+		expect(pagina.querySelector(".perfil-azulejos .marca-de-lido")).toBeNull();
+		expect(pagina.querySelector(".perfil-quem")?.textContent).toBe("");
+		expect(pagina.body.textContent).not.toContain("Você entrou como");
+	});
+
+	it("sem a API, nasce sem a espera e com a frase de que a conta não funciona ali", async () => {
+		const { pagina } = await pedir("/perfil", { semApi: true });
+
+		expect(pagina.querySelector('[role="status"]')?.textContent).toBe("");
+		expect(pagina.querySelector(".cartaz-pe .abertura > p")?.textContent).toBe(
+			"A conta ainda não funciona neste endereço do site.",
+		);
+	});
+
+	it("sem JavaScript, a espera e o Sair saem pelo perfil.css, sem classe de display do Tailwind", async () => {
+		// As classes do Tailwind ficam na camada utilities, acima da components do
+		// perfil.css: um "grid" no elemento venceria o display: none, e a página
+		// sem JavaScript ficava em "Verificando sua sessão…" para sempre.
+		const css = readFileSync(join(src, "estilos", "perfil.css"), "utf8");
+		const regra = css.match(
+			/@media \(scripting: none\) \{\s*([^{]+)\{\s*display: none;\s*\}\s*\}/,
+		);
+		const seletores = regra?.[1].split(",").map((seletor) => seletor.trim());
+		expect(seletores).toEqual([".perfil-progresso", ".perfil-sair"]);
+
+		const { pagina } = await pedir("/perfil");
+		const DISPLAY =
+			/^(block|inline|inline-block|flex|inline-flex|grid|inline-grid|contents|flow-root|table|hidden)$/;
+		for (const seletor of seletores ?? []) {
+			const elemento = pagina.querySelector(seletor);
+			expect(elemento, seletor).not.toBeNull();
+			expect(
+				[...(elemento?.classList ?? [])].filter((classe) =>
+					DISPLAY.test(classe),
+				),
+				seletor,
+			).toEqual([]);
+		}
 	});
 });

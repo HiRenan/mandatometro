@@ -127,9 +127,46 @@ describe("progresso no documento e nas rotas da conta", () => {
 	});
 
 	it("Sair em /perfil limpa o progresso depois da confirmação da API", async () => {
-		const Tela = Perfil.options.component;
-		if (!Tela) throw new Error("A rota /perfil está sem tela.");
-		render(<Tela />);
+		// O perfil lê as trilhas do loader e tem links para elas: a tela abre num
+		// site de mentira, com uma trilha inventada, a do artigo lido.
+		const raiz = createRootRoute();
+		const pagina = (path: string) =>
+			createRoute({ getParentRoute: () => raiz, path, component: () => null });
+		const router = createRouter({
+			routeTree: raiz.addChildren([
+				createRoute({
+					getParentRoute: () => raiz,
+					path: "/perfil",
+					loader: () => [
+						{
+							slug: "leis",
+							titulo: "Trilha inventada",
+							descricao: "Descrição inventada.",
+							ordem: 1,
+							artigos: [
+								{
+									trilha: "leis",
+									slug: "primeiro",
+									titulo: "Artigo inventado",
+									resumo: "Resumo inventado.",
+									ordem: 1,
+									fontes: [],
+									minutos: 2,
+								},
+							],
+						},
+					],
+					component: Perfil.options.component,
+				}),
+				pagina("/trilhas"),
+				pagina("/trilhas/$trilha"),
+				pagina("/trilhas/$trilha/$artigo"),
+				pagina("/termo"),
+			]),
+			history: createMemoryHistory({ initialEntries: ["/perfil"] }),
+		});
+		vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+		render(<RouterProvider router={router} />);
 		fireEvent.click(await screen.findByRole("button", { name: "Sair" }));
 		await waitFor(() => {
 			expect(sair).toHaveBeenCalledTimes(1);

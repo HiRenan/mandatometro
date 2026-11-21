@@ -5,6 +5,7 @@ import { ENV } from "@/env";
 const CHAVE = "mandatometro:artigos-lidos";
 const CHAVE_CONTA = "mandatometro:artigos-lidos-na-conta";
 const CHAVE_SESSAO = "mandatometro:sessao-do-progresso";
+const CHAVE_LEITURA = "mandatometro:leitura-da-conta";
 const CHAVE_ACOES = "mandatometro:acoes-do-progresso";
 const TRAVA = "mandatometro:sincronizar-progresso";
 const INTERVALO_DE_RELEITURA = 30_000;
@@ -25,7 +26,16 @@ type Sincronia = {
 	agendada: boolean;
 	ordemLocal: Promise<void>;
 	revisaoDoEspelho: number;
+	falhaNaLeitura?: boolean;
 };
+
+/**
+ * A cópia da leitura da conta neste navegador, que o perfil espera antes de
+ * mostrar os lidos: "lida" quando a API já trouxe o espelho desta sessão,
+ * "falhou" quando só há uma tentativa que falhou neste documento e
+ * "esperando" enquanto aguarda a primeira resposta.
+ */
+export type CopiaDaConta = "lida" | "esperando" | "falhou";
 
 // Quando o navegador não deixa gravar no localStorage, o que a página gravou
 // vale até a pessoa sair dela.
@@ -137,9 +147,13 @@ function cancelarSincronia(): void {
 function esquecerSessao(apagarDoVisitante: boolean): void {
 	cancelarSincronia();
 	if (apagarDoVisitante) gravarBruto(CHAVE, null);
+	// A outra aba recebe um evento por chave, na ordem destas gravações: a chave
+	// da sessão sai antes da cópia da conta, e o perfil aberto lá vai para o
+	// login sem mostrar, antes, a leitura vazia ao lado do nome.
+	gravarBruto(CHAVE_SESSAO, null);
+	gravarBruto(CHAVE_LEITURA, null);
 	gravarBruto(CHAVE_CONTA, null);
 	gravarBruto(CHAVE_ACOES, null);
-	gravarBruto(CHAVE_SESSAO, null);
 	avisarTodos();
 }
 
@@ -152,16 +166,26 @@ export function encerrarProgressoNaConta(): void {
 export function anotarEntradaNaConta(): void {
 	if (!ENV.API_URL) return;
 	if (chaveDaSessao()) esquecerSessao(true);
+	gravarSessaoNova();
+}
+
+function gravarSessaoNova(): string {
 	// Sorteado no navegador a cada entrada para reconhecer respostas de uma
 	// sessão anterior, sem usar dado da conta e sem enviar a chave à API.
-	gravarBruto(CHAVE_SESSAO, sortearChave());
+	const chave = sortearChave();
+	gravarBruto(CHAVE_SESSAO, chave);
 	avisarTodos();
+	return chave;
 }
 
 /** Reconhece também uma sessão iniciada antes de o site anotar as entradas. */
-export function reconhecerSessaoDoProgresso(): void {
-	if (!chaveDaSessao()) anotarEntradaNaConta();
-	if (sincronia?.chave !== chaveDaSessao()) sincronizar();
+export function reconhecerSessaoDoProgresso(
+	esperada: string | null,
+): string | null {
+	if (chaveDaSessao() !== esperada) return null;
+	const chave = esperada ?? gravarSessaoNova();
+	if (sincronia?.chave !== chave) sincronizar();
+	return chave;
 }
 
 function emSessao(estado: Sincronia): boolean {
@@ -334,12 +358,15 @@ async function enviarPedido(
 
 	const { dados, retentar } = await pedirProgresso(estado, body);
 	if (!emSessao(estado)) return;
+	const falhaAnterior = estado.falhaNaLeitura;
+	if (leitura) estado.falhaNaLeitura = !dados;
 	if (
 		dados &&
 		(leitura || importar.length) &&
 		estado.revisaoDoEspelho === revisaoDoEspelho
 	) {
 		espelharLeitura(estado, dados.lidos, antesDaEspera);
+		gravarBruto(CHAVE_LEITURA, estado.chave);
 	}
 	if (!retentar || dados) {
 		dispensarVersoes(alteracoes);
@@ -351,6 +378,7 @@ async function enviarPedido(
 	// As ações que chegaram durante o pedido já reservaram uma nova vez.
 	// Sem novo gatilho, o lote devolvido à fila fica só em memória.
 	if (body) estado.pendentes = new Map([...alteracoes, ...estado.pendentes]);
+	if (estado.falhaNaLeitura !== falhaAnterior) avisarTodos();
 }
 
 function agendarPedido(estado: Sincronia): void {
@@ -510,6 +538,7 @@ export function restaurarLidos(ids: readonly string[]): void {
 export function apagarLidos(): void {
 	gravarBruto(CHAVE, null);
 	if (chaveDaSessao()) {
+		gravarBruto(CHAVE_LEITURA, null);
 		gravarBruto(CHAVE_CONTA, null);
 		gravarBruto(CHAVE_ACOES, null);
 		// Uma resposta que já estava a caminho não desfaz a limpeza do piloto.
@@ -530,6 +559,7 @@ function aoMudarEmOutraAba(evento: StorageEvent): void {
 		(ENV.API_URL &&
 			(evento.key === CHAVE_CONTA ||
 				evento.key === CHAVE_SESSAO ||
+				evento.key === CHAVE_LEITURA ||
 				evento.key === CHAVE_ACOES))
 	)
 		avisarTodos();
@@ -548,6 +578,22 @@ function assinar(avisar: () => void): () => void {
 
 export function useContextoDoProgresso(): Contexto {
 	return useSyncExternalStore(assinar, contextoDoProgresso, () => VISITANTE);
+}
+
+function copiaDaConta(): CopiaDaConta {
+	const chave = chaveDaSessao();
+	if (chave && lerBruto(CHAVE_LEITURA) === chave) return "lida";
+	return sincronia?.chave === chave && sincronia.falhaNaLeitura
+		? "falhou"
+		: "esperando";
+}
+
+/**
+ * Se a leitura da conta desta sessão já chegou ao navegador. No servidor e na
+ * hidratação, ela ainda está esperando.
+ */
+export function useCopiaDaConta(): CopiaDaConta {
+	return useSyncExternalStore(assinar, copiaDaConta, () => "esperando");
 }
 
 /**
