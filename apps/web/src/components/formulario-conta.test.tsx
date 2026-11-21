@@ -24,6 +24,7 @@ const pedidosAApi = vi.fn<(pedido: Request) => Promise<Response>>();
 const ENDERECO_NA_API = "https://termo.example.com/termo";
 const avisoDeSpam =
 	"Se o e-mail não aparecer, procure também no spam ou no lixo eletrônico.";
+const conclusaoDoCadastro = `Confira sua caixa de entrada para confirmar o cadastro. ${avisoDeSpam}`;
 
 /** A API responde ao GET /contas/termo com esta versão. */
 function versaoNaApi(versao: string) {
@@ -98,9 +99,7 @@ describe("o termo no cadastro", () => {
 		preencherCadastro();
 		fireEvent.click(botao());
 		await waitFor(() =>
-			expect(screen.getByRole("status").textContent).toBe(
-				`Confira sua caixa de entrada para confirmar o cadastro. ${avisoDeSpam}`,
-			),
+			expect(screen.getByRole("status").textContent).toBe(conclusaoDoCadastro),
 		);
 
 		expect(
@@ -143,6 +142,37 @@ describe("o termo no cadastro", () => {
 });
 
 describe("o aviso de e-mail na conclusão", () => {
+	it("marca o status como ocupado até concluir o pedido da newsletter", async () => {
+		let responderInscricao!: (resposta: Response) => void;
+		const inscricao = new Promise<Response>((resolver) => {
+			responderInscricao = resolver;
+		});
+		versaoNaApi(VERSAO_DO_TERMO);
+		pedidosAApi
+			.mockResolvedValueOnce(new Response(null, { status: 204 }))
+			.mockReturnValueOnce(inscricao);
+		render(<FormularioConta modo="cadastro" />);
+		await screen.findByRole("link", { name: "o termo de consentimento" });
+
+		preencherCadastro();
+		fireEvent.click(
+			screen.getByRole("checkbox", { name: /receber a newsletter/ }),
+		);
+		fireEvent.click(botao());
+
+		const status = screen.getByRole("status");
+		await waitFor(() => expect(status.textContent).toBe(conclusaoDoCadastro));
+		expect(screen.getByRole("status", { busy: true })).toBe(status);
+
+		responderInscricao(Response.json({}, { status: 503 }));
+		await waitFor(() => {
+			expect(screen.getByRole("status", { busy: false })).toBe(status);
+			expect(status.textContent).toBe(
+				`${conclusaoDoCadastro} A inscrição na newsletter precisa ser tentada novamente.`,
+			);
+		});
+	});
+
 	it.each([
 		{
 			modo: "reenvio",

@@ -434,7 +434,10 @@ export function FormularioConta({ modo }: { modo: Modo }) {
 					</button>
 				</form>
 			)}
-			<p role="status">{mensagem}</p>
+			{/* A inscrição na newsletter pode completar a mensagem do cadastro. */}
+			<p role="status" aria-busy={cadastro ? ocupado : undefined}>
+				{mensagem}
+			</p>
 			{((cadastro && concluido) ||
 				(modo === "login" && loginRecusado) ||
 				(modo === "confirmar" && !concluido)) && (
