@@ -145,6 +145,7 @@ describe("cabeçalho", () => {
 		const cabecalho = await mostrar({ comEdicoes: true });
 		const listas = asListas(cabecalho);
 
+		expect(listas).toHaveLength(2);
 		for (const lista of listas) {
 			expect(linksDe(lista)).toEqual([
 				["Início", "/"],
@@ -349,6 +350,7 @@ describe("a marca da conta aberta no <html>", () => {
 		ambiente.API_URL = "https://api.exemplo.test";
 		localStorage.setItem(CHAVE_SESSAO, "1-2-3-4");
 		await mostrar();
+		expect(marcado()).toBe(true);
 
 		localStorage.removeItem(CHAVE_SESSAO);
 		act(() => {
