@@ -12,7 +12,7 @@ import { type ReactNode, useEffect } from "react";
 
 import { ProvedorDaBusca } from "../components/busca";
 import { CliqueNaTroca } from "../components/clique-na-troca";
-import Header from "../components/header";
+import Header, { MarcaDaConta } from "../components/header";
 import { Rodape } from "../components/rodape";
 import { ENV } from "../env";
 import appCss from "../index.css?url";
@@ -75,11 +75,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 			// swap do @fontsource). Todas as páginas usam as duas primeiras. A de
 			// máquina é a do lema: todas as páginas a baixam,
 			// porque o lema está no rodapé, mas o preload só vale onde ela aparece na
-			// primeira tela. A partir de 1344 px (84rem, no index.css), é o lema do
+			// primeira tela. A partir de 1312 px (82rem, no index.css), é o lema do
 			// cabeçalho; abaixo disso, só a página inicial a adianta, para a frase do
 			// título (routes/index.tsx), e as outras a pedem pelo CSS, para o rodapé.
 			...[fontes.archivo, fontes.literata].map((href) => preloadDaFonte(href)),
-			preloadDaFonte(fontes.maquina, "(min-width: 84rem)"),
+			preloadDaFonte(fontes.maquina, "(min-width: 82rem)"),
 		],
 	}),
 
@@ -111,8 +111,13 @@ function Documento({ children }: { children: ReactNode }) {
 	}, [router]);
 
 	return (
-		<html lang="pt-BR">
+		// O roteiro da conta marca o <html> antes da hidratação (components/header.tsx):
+		// sem o suppressHydrationWarning, o React avisaria do atributo a mais.
+		<html lang="pt-BR" suppressHydrationWarning>
 			<head>
+				{/* Antes do CSS: um roteiro em linha espera as folhas de estilo que vêm
+				    antes dele. */}
+				{ENV.API_URL ? <MarcaDaConta /> : null}
 				<HeadContent />
 			</head>
 			<body>
