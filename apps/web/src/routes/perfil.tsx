@@ -108,6 +108,7 @@ function Perfil() {
 	);
 	const semApi = !ENV.API_URL;
 	const aberta = sessao.estado === "autenticada";
+	const encerrada = sessao.estado === "encerrada";
 	// Os lidos contam depois que a conta responde e a leitura dela chega a este
 	// navegador. Antes, quem não entrou veria as marcas deste navegador piscarem
 	// no caminho para o /login, e o navegador sem a cópia da conta diria que a
@@ -120,7 +121,9 @@ function Perfil() {
 	// Sem a API, não há conta a esperar: a página já nasce com a frase dela.
 	const verificando =
 		!semApi &&
-		(sessao.estado === "verificando" || (aberta && copia === "esperando"));
+		(encerrada ||
+			sessao.estado === "verificando" ||
+			(aberta && copia === "esperando"));
 	const lidos = lida ? doNavegador : NENHUM;
 	const primeiro = aberta ? primeiroNome(sessao.nome) : "";
 	const linhas = linhasDaSaudacao(primeiro);
@@ -323,6 +326,7 @@ function Perfil() {
 								posicao={indice + 1}
 								lidos={lidos}
 								lida={lida}
+								encerrada={encerrada}
 							/>
 						))}
 					</ol>
@@ -422,6 +426,7 @@ function TrilhaNoPerfil({
 	posicao,
 	lidos,
 	lida,
+	encerrada,
 }: {
 	trilha: TrilhaNaLista;
 	/** A posição da trilha na lista, a partir de 1. */
@@ -429,6 +434,7 @@ function TrilhaNoPerfil({
 	lidos: ReadonlySet<string>;
 	/** Se a leitura da conta já chegou: antes, a frase da trilha fica vazia. */
 	lida: boolean;
+	encerrada: boolean;
 }) {
 	const total = trilha.artigos.length;
 	const quantosLidos = contarLidos(trilha.artigos, lidos);
@@ -474,6 +480,8 @@ function TrilhaNoPerfil({
 							style={{ "--atraso": `${atraso}ms` } as CSSProperties}
 						>
 							<AzulejoGrande
+								// Na saída, volta ao cru já no primeiro quadro.
+								key={encerrada ? "encerrada" : undefined}
 								pecas={azulejoDaPosicao(indice + 1)}
 								cru={!virado}
 								passo={45}
