@@ -25,7 +25,16 @@ type Sincronia = {
 	agendada: boolean;
 	ordemLocal: Promise<void>;
 	revisaoDoEspelho: number;
+	/** Como terminou a leitura da conta neste documento (copiaDaConta). */
+	copia?: "lida" | "falhou";
 };
+
+/**
+ * A cópia da leitura da conta neste navegador, que o perfil espera antes de
+ * mostrar os lidos: "lida" quando a sessão já tem o espelho, "falhou" quando a
+ * leitura deste documento terminou sem resposta e "esperando" antes disso.
+ */
+export type CopiaDaConta = "lida" | "esperando" | "falhou";
 
 // Quando o navegador não deixa gravar no localStorage, o que a página gravou
 // vale até a pessoa sair dela.
@@ -337,6 +346,8 @@ async function enviarPedido(
 
 	const { dados, retentar } = await pedirProgresso(estado, body);
 	if (!emSessao(estado)) return;
+	const copia = estado.copia;
+	if (leitura) estado.copia = dados ? "lida" : (copia ?? "falhou");
 	if (
 		dados &&
 		(leitura || importar.length) &&
@@ -354,6 +365,7 @@ async function enviarPedido(
 	// As ações que chegaram durante o pedido já reservaram uma nova vez.
 	// Sem novo gatilho, o lote devolvido à fila fica só em memória.
 	if (body) estado.pendentes = new Map([...alteracoes, ...estado.pendentes]);
+	if (estado.copia !== copia) avisarTodos();
 }
 
 function agendarPedido(estado: Sincronia): void {
@@ -551,6 +563,20 @@ function assinar(avisar: () => void): () => void {
 
 export function useContextoDoProgresso(): Contexto {
 	return useSyncExternalStore(assinar, contextoDoProgresso, () => VISITANTE);
+}
+
+function copiaDaConta(): CopiaDaConta {
+	const chave = chaveDaSessao();
+	if (chave && lerBruto(CHAVE_CONTA) !== null) return "lida";
+	return (sincronia?.chave === chave && sincronia.copia) || "esperando";
+}
+
+/**
+ * Se a leitura da conta desta sessão já chegou ao navegador. No servidor e na
+ * hidratação, ela ainda está esperando.
+ */
+export function useCopiaDaConta(): CopiaDaConta {
+	return useSyncExternalStore(assinar, copiaDaConta, () => "esperando");
 }
 
 /**

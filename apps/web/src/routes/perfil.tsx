@@ -34,6 +34,7 @@ import {
 	encerrarProgressoNaConta,
 	idDoArtigo,
 	useArtigosLidos,
+	useCopiaDaConta,
 } from "@/lib/progresso";
 import { simboloDaTrilha } from "@/lib/simbolos";
 import { usePerfil } from "@/lib/use-perfil";
@@ -68,7 +69,7 @@ const COMECAR = "Começar pelo primeiro artigo";
 const continuarEm = (titulo: string) => `Continuar de onde parou: ${titulo}`;
 const VER_AS_TRILHAS = "Ver as trilhas";
 
-/** Antes de a conta responder, nenhum artigo conta como lido. */
+/** Antes de a leitura da conta chegar, nenhum artigo conta como lido. */
 const NENHUM: ReadonlySet<string> = new Set();
 
 /**
@@ -93,25 +94,34 @@ function ComSeta({ children }: { children: string }) {
  * leitura em palavras e o botão de continuar; o quadro da leitura, com um
  * azulejo por artigo, cru até a pessoa ler; e a conta, com o que ela guarda e
  * as ações. O nome e o papel vêm do GET /contas/me, e os lidos, do espelho da
- * conta no navegador, que a moldura sincroniza com a API. Tudo o que chega
- * depois do HTML do servidor tem o lugar guardado: nada pula quando a conta
- * responde.
+ * conta no navegador, que a moldura sincroniza com a API. O que chega depois
+ * do HTML do servidor tem o lugar guardado, com o limite da linha do nome que
+ * o DESIGN.md descreve.
  */
 function Perfil() {
 	const trilhas = Route.useLoaderData();
 	const sessao = usePerfil("perfil");
+	const copia = useCopiaDaConta();
 	const doNavegador = useArtigosLidos();
 	const [saida, setSaida] = useState<"pronta" | "enviando" | "falhou">(
 		"pronta",
 	);
 	const semApi = !ENV.API_URL;
 	const aberta = sessao.estado === "autenticada";
-	const indisponivel = !semApi && sessao.estado === "indisponivel";
+	// Os lidos contam depois que a conta responde e a leitura dela chega a este
+	// navegador. Antes, quem não entrou veria as marcas deste navegador piscarem
+	// no caminho para o /login, e o navegador sem a cópia da conta diria que a
+	// pessoa não leu nada.
+	const lida = aberta && copia === "lida";
+	// Se a primeira leitura falha, a página não inventa o progresso.
+	const indisponivel =
+		!semApi &&
+		(sessao.estado === "indisponivel" || (aberta && copia === "falhou"));
 	// Sem a API, não há conta a esperar: a página já nasce com a frase dela.
-	const verificando = !semApi && sessao.estado === "verificando";
-	// Os lidos só contam depois que a conta responde: antes, quem não entrou veria
-	// as marcas deste navegador piscarem no caminho para o /login.
-	const lidos = aberta ? doNavegador : NENHUM;
+	const verificando =
+		!semApi &&
+		(sessao.estado === "verificando" || (aberta && copia === "esperando"));
+	const lidos = lida ? doNavegador : NENHUM;
 	const primeiro = aberta ? primeiroNome(sessao.nome) : "";
 	const linhas = linhasDaSaudacao(primeiro);
 
@@ -131,7 +141,7 @@ function Perfil() {
 		fraseDaLeitura(total, total),
 	];
 	const abertura = semApi ? SEM_API : indisponivel ? SEM_RESPOSTA : ABERTURA;
-	const progresso = aberta
+	const progresso = lida
 		? fraseDaLeitura(quantosLidos, total)
 		: verificando
 			? VERIFICANDO
@@ -255,7 +265,7 @@ function Perfil() {
 									<p className="ainda-nao">{SEM_SCRIPT}</p>
 								</noscript>
 							)}
-							{aberta ? (
+							{lida ? (
 								proximo ? (
 									<Link
 										to="/trilhas/$trilha/$artigo"
@@ -312,7 +322,7 @@ function Perfil() {
 								trilha={trilha}
 								posicao={indice + 1}
 								lidos={lidos}
-								aberta={aberta}
+								lida={lida}
 							/>
 						))}
 					</ol>
@@ -326,8 +336,9 @@ function Perfil() {
 						Sua conta
 					</h2>
 					<div className="perfil-conta-dados">
-						{/* A linha do nome tem a altura guardada: quando a conta responde, o
-						    texto de baixo fica no lugar. */}
+						{/* A linha do nome guarda uma linha (duas abaixo de 40rem): quando a
+						    conta responde, o texto de baixo fica no lugar, a não ser que o
+						    nome ocupe mais linhas do que isso (DESIGN.md). */}
 						<p className="perfil-quem">
 							{aberta ? `Você entrou como ${sessao.nome}.` : ""}
 						</p>
@@ -402,22 +413,22 @@ function Perfil() {
  * Uma trilha no quadro da leitura: o azulejo dela, com o símbolo; o título, que
  * leva à trilha; a frase do progresso, com o lugar guardado; e um azulejo por
  * artigo, na fita da posição dele. O azulejo fica cru até a pessoa ler o
- * artigo. Os lidos viram em onda quando a conta responde e a fileira já está
- * na tela, e o visto é desenhado no canto quando o azulejo termina de virar.
- * Com o movimento reduzido, os dois trocam de uma vez.
+ * artigo. Os lidos viram em onda quando a leitura da conta chega e a fileira
+ * já está na tela, e o visto é desenhado no canto quando o azulejo termina de
+ * virar. Com o movimento reduzido, os dois trocam de uma vez.
  */
 function TrilhaNoPerfil({
 	trilha,
 	posicao,
 	lidos,
-	aberta,
+	lida,
 }: {
 	trilha: TrilhaNaLista;
 	/** A posição da trilha na lista, a partir de 1. */
 	posicao: number;
 	lidos: ReadonlySet<string>;
-	/** Se a conta já respondeu: antes, a frase da trilha fica vazia. */
-	aberta: boolean;
+	/** Se a leitura da conta já chegou: antes, a frase da trilha fica vazia. */
+	lida: boolean;
 }) {
 	const total = trilha.artigos.length;
 	const quantosLidos = contarLidos(trilha.artigos, lidos);
@@ -447,7 +458,7 @@ function TrilhaNoPerfil({
 						className="progresso rotulo"
 					/>
 					<p className="progresso rotulo col-start-1 row-start-1">
-						{aberta ? fraseDaTrilha(quantosLidos, total) : ""}
+						{lida ? fraseDaTrilha(quantosLidos, total) : ""}
 					</p>
 				</div>
 			</div>
