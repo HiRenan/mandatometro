@@ -124,20 +124,22 @@ function EntradaDaConta({ caminho }: { caminho: string }) {
  * "um header bem feito").
  *
  * O Renan reorganizou o cabeçalho na #261, em 20/11/2026 ("as opções para o
- * centro"): no computador, uma linha, com o nome à esquerda, os links no meio
- * exato da tela e a busca e a conta à direita; a partir de 1312 px, o lema fica
- * embaixo do nome. Abaixo de 992 px, duas linhas: o nome, a busca e a conta em
- * cima, e os links embaixo, no meio. A busca mostra o que cabe no lugar dela
- * (components/busca.tsx).
+ * centro"). A partir de 62rem (992 px com a letra a 100%), há uma linha com o
+ * nome à esquerda, os links no centro da grade e a busca e a conta à direita.
+ * O centro da grade é o da área da página sem a barra de rolagem vertical.
+ * A partir de 82rem (1312 px com a letra a 100%), o lema fica embaixo do nome.
+ * Abaixo de 62rem, os links ficam centrados numa linha própria embaixo.
+ * A busca mostra o que cabe no lugar dela (components/busca.tsx).
  *
  * Onde o site tem a API (o API_URL), as edições entram nos links. No celular, o
  * Início sai (o CSS), e o nome leva ao início (o Renan, na #39). Com a letra
  * grande no celular, os links ficam um embaixo do outro.
  *
- * A palavra da conta vem da marca do <html>: o roteiro do <head> (MarcaDaConta)
- * a põe antes da primeira pintura, e este cabeçalho a mantém em dia quando a
- * sessão do progresso muda, na saída, na exclusão, no 401 da sincronização ou
- * em outra aba. Sem JavaScript ou sem a API, fica "Entrar".
+ * A palavra da conta vem da marca do <html>. O roteiro do <head> (MarcaDaConta)
+ * a põe antes da primeira pintura. Nas páginas que continuam abertas, o
+ * cabeçalho acompanha a sessão na exclusão, no 401 da sincronização e na
+ * saída em outra aba. O "Sair" do perfil abre o /login num documento novo
+ * com "Entrar" (a #258). Sem JavaScript ou sem a API, fica "Entrar".
  */
 export default function Header({
 	comEdicoes = false,

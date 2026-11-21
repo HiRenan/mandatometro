@@ -38,9 +38,8 @@ const TIRA_O_INICIO = /\.topo-links > li:first-child \{\s*display: none;\s*\}/;
 
 describe("o CSS do cabeçalho", () => {
 	it("no computador, uma linha em três colunas, com as dos lados iguais", () => {
-		// Com os lados iguais, os links ficam no meio exato da tela (o Renan, na
-		// #261). A 62rem, com as edições, o nome (181 px) e a lupa com o "Entrar"
-		// (143 px) cabem dos lados dos links (375 px).
+		// As colunas laterais iguais põem os links no centro da grade, que
+		// coincide com o da área da página sem a barra de rolagem vertical.
 		const grade = desde.find(({ corpo }) =>
 			/\.topo-dentro \{\s*display: grid;\s*grid-template-columns: minmax\(0, 1fr\) auto minmax\(0, 1fr\);\s*\}/.test(
 				corpo,
@@ -150,8 +149,8 @@ describe("o CSS do cabeçalho", () => {
 		);
 	});
 
-	it("nas cores forçadas, o traço da seção fica na cor do texto", () => {
-		// O navegador apaga os fundos, e o traço, que é um fundo, sumia.
+	it("nas cores forçadas, o traço da seção usa a cor de texto do sistema", () => {
+		// O traço é um fundo. CanvasText o mantém visível nas cores forçadas.
 		expect(css).toMatch(
 			/@media \(forced-colors: active\) \{\s*\.topo-links a::after,\s*\.entrada-da-conta a::after \{\s*background: CanvasText;\s*\}\s*\}/,
 		);
