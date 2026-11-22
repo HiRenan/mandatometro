@@ -28,6 +28,7 @@ from mandatometro.coleta.persistencia import (
 )
 from mandatometro.coleta.tipos import DadosVoto, ResumoColeta
 from mandatometro.coleta.videos import (
+    URL_RECUSADA,
     VotacaoSemVideo,
     VotacoesPorSessao,
     coletar_videos,
@@ -71,7 +72,10 @@ def _inteiro(dado: object) -> int:
     return numero
 
 
-def _codigo_sessao(item: dict) -> int | None:
+def _codigo_sessao_plenaria(item: dict) -> int | None:
+    informe = item.get("informeLegislativo")
+    if not isinstance(informe, dict) or informe.get("siglaColegiado") != "PLEN":
+        return None
     try:
         return _inteiro(item.get("codigoSessao"))
     except ErroColeta:
@@ -85,6 +89,8 @@ def _video_encontro(http: ClienteHttp, codigo: int) -> tuple[Resposta, object]:
     if len(encontros) == 1:
         encontro = encontros[0]
         if _inteiro(encontro.get("codigo")) == codigo:
+            if encontro.get("siglaCasa") != "SF":
+                return resposta, URL_RECUSADA
             return resposta, encontro.get("linkVideo")
     raise ErroColeta("Detalhe da sessão inválido ou divergente.")
 
@@ -122,7 +128,7 @@ def _sessoes_historicas(
             except ErroColeta:
                 continue
             if externo in pendentes:
-                codigo = _codigo_sessao(item)
+                codigo = _codigo_sessao_plenaria(item)
                 if codigos.setdefault(externo, codigo) != codigo:
                     codigos[externo] = None
     sessoes: VotacoesPorSessao = defaultdict(list)
@@ -521,7 +527,7 @@ def coletar(
                             "Coleta interrompida após três votações consecutivas com falha."
                         ) from None
                 else:
-                    sessoes[_codigo_sessao(item)].append(votacao_id)
+                    sessoes[_codigo_sessao_plenaria(item)].append(votacao_id)
                     falhas_seguidas = 0
     except (ErroColeta, SQLAlchemyError) as erro:
         resumo.completa = False

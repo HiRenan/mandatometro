@@ -32,6 +32,7 @@ from mandatometro.coleta.persistencia import (
 )
 from mandatometro.coleta.tipos import DadosVoto, ResumoColeta
 from mandatometro.coleta.videos import (
+    URL_RECUSADA,
     VotacaoSemVideo,
     VotacoesPorSessao,
     coletar_videos,
@@ -48,6 +49,7 @@ from mandatometro.db.modelos import (
 
 BASE = "https://dadosabertos.camara.leg.br/api/v2"
 PUBLICA = "https://www.camara.leg.br"
+ID_PLENARIO = 180
 logger = logging.getLogger(__name__)
 FALHAS = (ErroColeta, ValueError, KeyError, TypeError, SQLAlchemyError)
 
@@ -94,7 +96,16 @@ def _video_evento(http: ClienteHttp, id_evento: int) -> tuple[Resposta, object]:
     try:
         dados = _objeto(_objeto(resposta.dados).get("dados"))
         if _inteiro(dados.get("id")) == id_evento:
-            return resposta, dados.get("urlRegistro")
+            orgaos = dados.get("orgaos")
+            if (
+                isinstance(orgaos, list)
+                and orgaos
+                and all(
+                    isinstance(orgao, dict) and orgao.get("id") == ID_PLENARIO for orgao in orgaos
+                )
+            ):
+                return resposta, dados.get("urlRegistro")
+            return resposta, URL_RECUSADA
     except ValueError:
         pass
     raise ErroColeta("Detalhe do evento inválido ou divergente.")
@@ -285,7 +296,7 @@ class _Coleta:
             limite = min(fim, fim_do_ano)
             limite_consulta = limite
             params = {
-                "idOrgao": 180,
+                "idOrgao": ID_PLENARIO,
                 "dataInicio": inicio.isoformat(),
                 "itens": 100,
                 "ordem": "ASC",
@@ -333,7 +344,7 @@ class _Coleta:
         data = date.fromisoformat(detalhe["data"])
         if (
             detalhe["id"] != identificador
-            or detalhe["idOrgao"] != 180
+            or detalhe["idOrgao"] != ID_PLENARIO
             or not self.resumo.inicio <= data <= self.resumo.fim
         ):
             raise ErroColeta("Detalhe da votação diverge da consulta.")

@@ -14,6 +14,9 @@ from mandatometro.coleta.persistencia import salvar_video_sessao
 from mandatometro.coleta.tipos import ResumoColeta
 from mandatometro.db.modelos import PADRAO_URL_VIDEO, Fonte, VideoSessao, Votacao
 
+# O detalhe pode responder com sucesso e declarar outra origem para a sessão.
+URL_RECUSADA = object()
+
 type VotacaoSemVideo = tuple[int, str, str | None]
 type VotacoesPorSessao = dict[int | None, list[int]]
 type ConsultarSessao = Callable[[ClienteHttp, int], tuple[Resposta, object]]
