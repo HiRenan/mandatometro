@@ -101,24 +101,28 @@ def test_coleta_tse_liga_apenas_pares_unicos_e_registra_origens(
         "sem_par": 2,
         "em_conflito": 3,
         "derrubados_pela_trava": 1,
+        "outro_cargo": 0,
     }
     assert resumo["anos"]["2022"]["senado"] == {
         "ligados": 1,
         "sem_par": 0,
         "em_conflito": 0,
         "derrubados_pela_trava": 1,
+        "outro_cargo": 0,
     }
     assert resumo["anos"]["2026"]["camara"] == {
         "ligados": 2,
-        "sem_par": 3,
-        "em_conflito": 2,
+        "sem_par": 2,
+        "em_conflito": 3,
         "derrubados_pela_trava": 0,
+        "outro_cargo": 0,
     }
     assert resumo["anos"]["2026"]["senado"] == {
         "ligados": 0,
         "sem_par": 2,
         "em_conflito": 0,
         "derrubados_pela_trava": 0,
+        "outro_cargo": 0,
     }
 
     candidaturas = sessao.scalars(
@@ -365,38 +369,55 @@ def test_candidatura_disputada_e_dois_pares_do_mesmo_parlamentar_ficam_em_confli
     )
     resumo = _carregar(arquivos, capsys)
     assert resumo["2022"]["camara"]["em_conflito"] == 3
-    assert resumo["2026"]["camara"]["ligados"] == 1
-    assert sessao.execute(select(Candidatura.parlamentar_id, Candidatura.id_externo)).all() == [
-        (dois, 4)
-    ]
+    assert resumo["2026"]["camara"]["em_conflito"] == 1
+    assert sessao.scalars(select(Candidatura.id)).all() == []
 
 
-@pytest.mark.parametrize("cargo_duplicado", [6, 5])
+@pytest.mark.parametrize(("ano_duplicado", "cargo_duplicado"), [(2022, 6), (2022, 5), (2026, 5)])
 def test_cpf_duplicado_em_qualquer_casa_do_recorte_invalida_os_dois_anos(
-    arquivos, sessao, cadastrar_parlamentar, capsys, cargo_duplicado
+    arquivos, sessao, cadastrar_parlamentar, capsys, ano_duplicado, cargo_duplicado
 ):
     cadastrar_parlamentar("camara", "Urna QA Com Par", "SP")
     cpf = "00000000901"
-    _gravar_fixture(
-        arquivos,
-        "consulta_cand",
-        2022,
-        [
-            _candidatura(2022, 1, "Urna QA Com Par", cpf=cpf),
-            _candidatura(2022, 2, "Urna QA Terceira Pessoa", cpf=cpf, cargo=cargo_duplicado),
-        ],
+    candidaturas = {
+        2022: [_candidatura(2022, 1, "Urna QA Com Par", cpf=cpf)],
+        2026: [_candidatura(2026, 3, "Urna QA Outro Estado", uf="MG", cpf=cpf)],
+    }
+    candidaturas[ano_duplicado].append(
+        _candidatura(ano_duplicado, 2, "Urna QA Terceira Pessoa", cpf=cpf, cargo=cargo_duplicado)
     )
-    _gravar_fixture(
-        arquivos,
-        "consulta_cand",
-        2026,
-        [
-            _candidatura(2026, 3, "Urna QA Outro Estado", uf="MG", cpf=cpf),
-        ],
-    )
+    for ano, linhas in candidaturas.items():
+        _gravar_fixture(arquivos, "consulta_cand", ano, linhas)
     resumo = _carregar(arquivos, capsys)
     assert [resumo[str(ano)]["camara"]["em_conflito"] for ano in (2022, 2026)] == [1, 1]
+    assert resumo["2026"]["camara"]["outro_cargo"] == 0
     assert sessao.scalars(select(Candidatura.id)).all() == []
+
+
+def test_outro_cargo_em_2026_preserva_o_vinculo_compativel_de_2022(
+    arquivos, sessao, cadastrar_parlamentar, capsys
+):
+    pessoa = cadastrar_parlamentar("camara", "Urna QA Com Par", "SP")
+    cpf = "00000000901"
+    _gravar_fixture(
+        arquivos, "consulta_cand", 2022, [_candidatura(2022, 1, "Urna QA Com Par", cpf=cpf)]
+    )
+    _gravar_fixture(
+        arquivos, "consulta_cand", 2026, [_candidatura(2026, 2, "Urna QA Senado", cargo=5, cpf=cpf)]
+    )
+
+    resumo = _carregar(arquivos, capsys)
+    assert resumo["2022"]["camara"]["ligados"] == 1
+    assert resumo["2022"]["camara"]["outro_cargo"] == 0
+    assert resumo["2026"]["camara"] == {
+        "ligados": 0,
+        "sem_par": 0,
+        "em_conflito": 0,
+        "derrubados_pela_trava": 0,
+        "outro_cargo": 1,
+    }
+    gravadas = select(Candidatura.ano, Candidatura.parlamentar_id, Candidatura.id_externo)
+    assert sessao.execute(gravadas).all() == [(2022, pessoa, 1)]
 
 
 def test_cpf_em_2026_sozinho_nao_busca_uma_candidatura_em_2022(
@@ -455,7 +476,7 @@ def test_cpf_que_contradiz_par_nominal_sem_documento_invalida_os_dois_anos(
     assert sessao.scalars(select(Candidatura.id)).all() == []
 
 
-def test_cpf_que_alcanca_candidatura_incompativel_invalida_a_pessoa_inteira(
+def test_cpf_que_alcanca_candidatura_incompativel_de_2022_invalida_a_pessoa_inteira(
     arquivos, sessao, cadastrar_parlamentar, capsys
 ):
     cadastrar_parlamentar("senado", "Urna QA Com Par", "SP", legislatura=56)
@@ -478,6 +499,7 @@ def test_cpf_que_alcanca_candidatura_incompativel_invalida_a_pessoa_inteira(
     )
     resumo = _carregar(arquivos, capsys)
     assert [resumo[str(ano)]["senado"]["em_conflito"] for ano in (2022, 2026)] == [1, 1]
+    assert resumo["2026"]["senado"]["outro_cargo"] == 0
     assert sessao.scalars(select(Candidatura.id)).all() == []
 
 
