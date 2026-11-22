@@ -31,6 +31,15 @@ export function formatarDia(data: string): string {
 }
 
 /**
+ * "2026-10" vira "outubro de 2026": o mês até onde a inflação corrige o
+ * patrimônio declarado. À mão, como o formatarData.
+ */
+export function formatarMes(mes: string): string {
+	const [ano, numero] = mes.split("-").map(Number);
+	return `${MESES[numero - 1]} de ${ano}`;
+}
+
+/**
  * O período de uma edição, do primeiro ao último dia: "9 a 15 de novembro de
  * 2026", "30 de novembro a 6 de dezembro de 2026" ou, na virada do ano, as duas
  * datas inteiras. Um dia só é a data. À mão, como o formatarData.

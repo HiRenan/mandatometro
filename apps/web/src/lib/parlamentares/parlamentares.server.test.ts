@@ -2,8 +2,11 @@ import { isNotFound } from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TEMPO_DE_ESPERA } from "@/lib/edicoes/edicoes.server";
 import {
+	correcaoDeExemplo,
 	detalheDeExemplo,
+	eleicaoDeExemplo,
 	listaDeExemplo,
+	patrimonioDeExemplo,
 	votacaoDeExemplo,
 	votosDeExemplo,
 } from "./exemplos-de-teste";
@@ -56,13 +59,23 @@ function json(status: number, corpo: unknown) {
 	});
 }
 
-/** A API de um parlamentar: o detalhe e a página de votos pedida, de `total` votos. */
-function apiDoParlamentar(total: number) {
+/**
+ * A API de um parlamentar: o detalhe, a página de votos pedida, de `total` votos,
+ * e o patrimônio declarado, que `patrimonio` pode trocar, como por uma falha.
+ */
+function apiDoParlamentar(
+	total: number,
+	patrimonio: (pedido: Request) => Response | Promise<Response> = () =>
+		json(200, patrimonioDeExemplo()),
+) {
 	return api((pedido) => {
 		const endereco = new URL(pedido.url);
 		if (endereco.pathname.endsWith("/votos")) {
 			const deslocamento = Number(endereco.searchParams.get("deslocamento"));
 			return json(200, votosDeExemplo(total, deslocamento));
+		}
+		if (endereco.pathname.endsWith("/patrimonio")) {
+			return patrimonio(pedido);
 		}
 		return json(200, detalheDeExemplo());
 	});
@@ -155,13 +168,14 @@ describe("a lista dos parlamentares", () => {
 });
 
 describe("a página do parlamentar", () => {
-	it("pede o parlamentar e a primeira página de votos ao mesmo tempo", async () => {
+	it("pede o parlamentar, a primeira página de votos e o patrimônio ao mesmo tempo", async () => {
 		const { pedidos } = apiDoParlamentar(25);
 
 		const pagina = await lerParlamentar("81-agata-cedrolume", 1);
 
 		expect(pedidos.map((pedido) => pedido.url).sort()).toEqual([
 			"https://api.exemplo.test/parlamentares/81",
+			"https://api.exemplo.test/parlamentares/81/patrimonio",
 			"https://api.exemplo.test/parlamentares/81/votos?limite=20&deslocamento=0",
 		]);
 		expect(pagina).toMatchObject({
@@ -172,6 +186,13 @@ describe("a página do parlamentar", () => {
 			paginas: 2,
 		});
 		expect(pagina.tipo === "parlamentar" && pagina.votos).toHaveLength(20);
+		const { eleicoes, correcao_ipca } = patrimonioDeExemplo();
+		expect(pagina.tipo === "parlamentar" && pagina.patrimonio).toEqual({
+			tipo: "patrimonio",
+			eleicoes,
+			correcao: correcao_ipca,
+		});
+		expect(erros).not.toHaveBeenCalled();
 	});
 
 	it("a segunda página pede os votos a partir do 21º", async () => {
@@ -223,6 +244,220 @@ describe("a página do parlamentar", () => {
 				String(status),
 			).toBe(true);
 		}
+	});
+});
+
+describe("o patrimônio declarado na página do parlamentar", () => {
+	it("sem a série do IPCA, a correção fica nula; sem eleição ligada à pessoa, a lista fica vazia", async () => {
+		apiDoParlamentar(3, () => json(200, { eleicoes: [], correcao_ipca: null }));
+
+		const pagina = await lerParlamentar("81", 1);
+
+		expect(pagina.tipo === "parlamentar" && pagina.patrimonio).toEqual({
+			tipo: "patrimonio",
+			eleicoes: [],
+			correcao: null,
+		});
+		expect(erros).not.toHaveBeenCalled();
+	});
+
+	const falhas = [
+		["o 500", () => json(500, { detalhe: MENSAGEM_DA_FALHA }), "http-500"],
+		["o 503", () => json(503, { detalhe: MENSAGEM_DA_FALHA }), "http-503"],
+		[
+			"o 404 com a pessoa na API",
+			() => json(404, { detail: MENSAGEM_DA_FALHA }),
+			"http-404",
+		],
+		[
+			"a conexão recusada",
+			() => {
+				throw new TypeError(MENSAGEM_DA_FALHA);
+			},
+			"sem-resposta",
+		],
+		[
+			"o corpo em outro formato",
+			() => json(200, { eleicoes: "SELECT", correcao_ipca: null }),
+			"resposta-invalida",
+		],
+		[
+			"um total negativo",
+			() =>
+				json(
+					200,
+					patrimonioDeExemplo({
+						eleicoes: [eleicaoDeExemplo({ total_centavos: -1 })],
+					}),
+				),
+			"resposta-invalida",
+		],
+		[
+			"um total com fração de centavo",
+			() =>
+				json(
+					200,
+					patrimonioDeExemplo({
+						eleicoes: [eleicaoDeExemplo({ total_corrigido_centavos: 10.5 })],
+					}),
+				),
+			"resposta-invalida",
+		],
+		[
+			"um estado que não existe",
+			() =>
+				json(200, {
+					...patrimonioDeExemplo(),
+					eleicoes: [{ ...eleicaoDeExemplo(), uf: "XX" }],
+				}),
+			"resposta-invalida",
+		],
+		[
+			"o cargo sem nome",
+			() =>
+				json(
+					200,
+					patrimonioDeExemplo({
+						eleicoes: [eleicaoDeExemplo({ cargo: { codigo: 6, nome: " " } })],
+					}),
+				),
+			"resposta-invalida",
+		],
+		[
+			"um mês fora do calendário",
+			() =>
+				json(
+					200,
+					patrimonioDeExemplo({
+						correcao_ipca: correcaoDeExemplo({ mes_fim: "2026-13" }),
+					}),
+				),
+			"resposta-invalida",
+		],
+		[
+			"uma coleta do TSE com texto em vez de data e hora",
+			() => {
+				const eleicao = eleicaoDeExemplo();
+				return json(
+					200,
+					patrimonioDeExemplo({
+						eleicoes: [
+							{
+								...eleicao,
+								fonte: { ...eleicao.fonte, coletado_em: "data inválida" },
+							},
+						],
+					}),
+				);
+			},
+			"resposta-invalida",
+		],
+		[
+			"uma coleta do IPCA num dia que não existe",
+			() => {
+				const correcao = correcaoDeExemplo();
+				return json(
+					200,
+					patrimonioDeExemplo({
+						correcao_ipca: {
+							...correcao,
+							fonte: {
+								...correcao.fonte,
+								coletado_em: "2026-02-30T01:30:00Z",
+							},
+						},
+					}),
+				);
+			},
+			"resposta-invalida",
+		],
+		[
+			"uma coleta do IPCA sem horário",
+			() => {
+				const correcao = correcaoDeExemplo();
+				return json(
+					200,
+					patrimonioDeExemplo({
+						correcao_ipca: {
+							...correcao,
+							fonte: { ...correcao.fonte, coletado_em: "2026-11-20" },
+						},
+					}),
+				);
+			},
+			"resposta-invalida",
+		],
+		[
+			"outro índice",
+			() =>
+				json(200, {
+					...patrimonioDeExemplo(),
+					correcao_ipca: { ...correcaoDeExemplo(), indice: "INPC" },
+				}),
+			"resposta-invalida",
+		],
+	] as const;
+
+	it.each(falhas)(
+		"só o patrimônio falha, com %s: a página abre, o bloco fica indisponível e o log tem só a linha fixa",
+		async (_, responder, motivo) => {
+			apiDoParlamentar(3, responder);
+
+			const pagina = await lerParlamentar("81", 1);
+
+			expect(pagina).toMatchObject({
+				tipo: "parlamentar",
+				total: 3,
+				patrimonio: { tipo: "indisponivel" },
+			});
+			expect(erros.mock.calls).toEqual([
+				[`[parlamentares] O patrimônio não carregou: ${motivo}.`],
+			]);
+			const registrado = JSON.stringify([erros.mock.calls, pagina]);
+			for (const segredo of SEGREDOS) {
+				expect(registrado, segredo).not.toContain(segredo);
+			}
+		},
+	);
+
+	it("o patrimônio que não chega no tempo fica indisponível, e a página abre", async () => {
+		vi.useFakeTimers();
+		apiDoParlamentar(
+			3,
+			(pedido) =>
+				new Promise((_, recusar) => {
+					pedido.signal.addEventListener("abort", () =>
+						recusar(new DOMException(MENSAGEM_DA_FALHA, "AbortError")),
+					);
+				}),
+		);
+
+		const leitura = lerParlamentar("81", 1);
+		await vi.advanceTimersByTimeAsync(TEMPO_DE_ESPERA);
+
+		expect(await leitura).toMatchObject({
+			tipo: "parlamentar",
+			patrimonio: { tipo: "indisponivel" },
+		});
+		expect(erros.mock.calls).toEqual([
+			["[parlamentares] O patrimônio não carregou: tempo-esgotado."],
+		]);
+	});
+
+	it("a pessoa que não existe dá a página não encontrada, sem uma linha do patrimônio no log", async () => {
+		api(() => json(404, { erro: "parlamentar_nao_encontrado" }));
+
+		expect(isNotFound(await erroDe(lerParlamentar("81", 1)))).toBe(true);
+		expect(erros).not.toHaveBeenCalled();
+	});
+
+	it("a página que falha inteira registra só a falha da página", async () => {
+		api(() => json(500, { detalhe: MENSAGEM_DA_FALHA }));
+
+		confereErroGenerico(await erroDe(lerParlamentar("81", 1)), "http-500");
+		expect(erros.mock.calls).toEqual([
+			["[parlamentares] A leitura na API falhou: http-500."],
+		]);
 	});
 });
 

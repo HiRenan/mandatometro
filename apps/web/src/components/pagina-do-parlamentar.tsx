@@ -28,21 +28,23 @@ import {
 import { Painel } from "./azulejo";
 import { FaixaDeInformacoes } from "./faixa-de-informacoes";
 import { ParlamentaresIndisponiveis } from "./pagina-dos-parlamentares";
+import { PatrimonioDeclarado } from "./parlamentares/patrimonio-declarado";
 import { ARTIGO_DA_VOTACAO } from "./parlamentares/quem-votou-como";
 
 /**
  * A página de um parlamentar, em /parlamentares/81-nome: o cartaz das páginas de
  * dentro, com o nome gigante, a Casa, o estado e o partido, e o painel de
- * enfeite, com a semente do id; embaixo, os mandatos, como a pessoa votou, com a
- * regra de cada voto e o artigo do regimento, e os votos, do mais novo para o
- * mais antigo, 20 por página. Sem voto registrado, a página explica por quê, com
- * a votação simbólica e o link da trilha.
+ * enfeite, com a semente do id; embaixo, os mandatos, o patrimônio declarado ao
+ * TSE em cada eleição, como a pessoa votou, com a regra de cada voto e o artigo
+ * do regimento, e os votos, do mais novo para o mais antigo, 20 por página. Sem
+ * voto registrado, a página explica por quê, com a votação simbólica e o link da
+ * trilha.
  */
 export function PaginaDoParlamentar({ pagina }: { pagina: Pagina }) {
 	if (pagina.tipo === "sem-api") {
 		return <ParlamentaresIndisponiveis />;
 	}
-	const { parlamentar, votos, total, paginas } = pagina;
+	const { parlamentar, votos, total, paginas, patrimonio } = pagina;
 	const estado = estadoDaSigla(parlamentar.uf);
 	return (
 		<>
@@ -119,6 +121,7 @@ export function PaginaDoParlamentar({ pagina }: { pagina: Pagina }) {
 						</ul>
 					</section>
 				)}
+				<PatrimonioDeclarado patrimonio={patrimonio} nome={parlamentar.nome} />
 				{total === 0 ? (
 					<SemVotos nome={parlamentar.nome} />
 				) : (
