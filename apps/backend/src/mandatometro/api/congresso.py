@@ -2,9 +2,10 @@
 
 import logging
 from collections.abc import Mapping
+from typing import Annotated
 from unicodedata import combining, normalize
 
-from fastapi import Request, Response
+from fastapi import Path, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
@@ -12,6 +13,11 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from mandatometro.api.esquemas import ContagemVotosParlamentar, ProposicaoAfetada
 from mandatometro.db.modelos import VALORES_DE_VOTO, Votacao
+
+IdCongresso = Annotated[
+    int,
+    Path(gt=0, le=2_147_483_647, description="Id interno, inteiro positivo de 32 bits com sinal."),
+]
 
 logger = logging.getLogger(__name__)
 

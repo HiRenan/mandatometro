@@ -1858,9 +1858,12 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "maximum": 2147483647,
               "exclusiveMinimum": 0,
+              "description": "Id interno, inteiro positivo de 32 bits com sinal.",
               "title": "Id"
-            }
+            },
+            "description": "Id interno, inteiro positivo de 32 bits com sinal."
           }
         ],
         "responses": {
@@ -1922,9 +1925,12 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "maximum": 2147483647,
               "exclusiveMinimum": 0,
+              "description": "Id interno, inteiro positivo de 32 bits com sinal.",
               "title": "Id"
-            }
+            },
+            "description": "Id interno, inteiro positivo de 32 bits com sinal."
           },
           {
             "name": "limite",
@@ -2099,9 +2105,12 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "maximum": 2147483647,
               "exclusiveMinimum": 0,
+              "description": "Id interno, inteiro positivo de 32 bits com sinal.",
               "title": "Id"
-            }
+            },
+            "description": "Id interno, inteiro positivo de 32 bits com sinal."
           }
         ],
         "responses": {

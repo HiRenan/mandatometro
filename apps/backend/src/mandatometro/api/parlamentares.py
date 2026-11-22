@@ -2,13 +2,14 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Path, Query
+from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.orm import contains_eager
 
 from mandatometro.api.congresso import (
+    IdCongresso,
     RotaCongresso,
     contagem_por_valor,
     dados_da_votacao,
@@ -96,7 +97,7 @@ def listar_parlamentares(
     response_model=DetalheParlamentar,
     responses={404: {"model": ErroParlamentar}},
 )
-def obter_parlamentar(id: Annotated[int, Path(gt=0)]):
+def obter_parlamentar(id: IdCongresso):
     with sessao_do_banco() as sessao:
         parlamentar = sessao.get(Parlamentar, id)
         if parlamentar is None:
@@ -147,7 +148,7 @@ def _voto_publico(voto: Voto) -> VotoParlamentar:
     responses={404: {"model": ErroParlamentar}},
 )
 def listar_votos_parlamentar(
-    id: Annotated[int, Path(gt=0)],
+    id: IdCongresso,
     limite: Annotated[int, Query(ge=1, le=100)] = 20,
     deslocamento: Annotated[int, Query(ge=0)] = 0,
 ):

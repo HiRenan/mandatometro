@@ -532,6 +532,19 @@ def test_entrada_invalida_tem_422_fixo(url):
 
 
 @pytest.mark.parametrize(
+    "rota", ["/parlamentares/{id}", "/parlamentares/{id}/votos", "/votacoes/{id}"]
+)
+def test_id_acima_do_limite_do_banco_tem_422_fixo(cliente, caplog, rota):
+    assert cliente.get(rota.format(id=2_147_483_647)).status_code == 404
+
+    resposta = cliente.get(rota.format(id=2_147_483_648))
+
+    assert resposta.status_code == 422
+    assert resposta.json() == {"erro": "dados_invalidos"}
+    assert "Banco indisponível" not in caplog.text
+
+
+@pytest.mark.parametrize(
     "url", ["/parlamentares", "/parlamentares/1", "/parlamentares/1/votos", "/votacoes/1"]
 )
 def test_falha_do_banco_tem_503_fixo(monkeypatch, caplog, url):

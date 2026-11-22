@@ -1927,6 +1927,8 @@ export type ObterParlamentarData = {
     path: {
         /**
          * Id
+         *
+         * Id interno, inteiro positivo de 32 bits com sinal.
          */
         id: number;
     };
@@ -1965,6 +1967,8 @@ export type ListarVotosParlamentarData = {
     path: {
         /**
          * Id
+         *
+         * Id interno, inteiro positivo de 32 bits com sinal.
          */
         id: number;
     };
@@ -2053,6 +2057,8 @@ export type ObterVotacaoData = {
     path: {
         /**
          * Id
+         *
+         * Id interno, inteiro positivo de 32 bits com sinal.
          */
         id: number;
     };
