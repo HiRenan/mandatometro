@@ -148,6 +148,7 @@ erDiagram
     fonte ||--o{ mandato : "comprova"
     fonte ||--o{ candidatura : "comprova"
     fonte ||--o{ candidatura_patrimonio : "comprova candidatura e bens"
+    fonte ||--o{ ipca_mensal : "comprova o índice"
     fonte ||--o{ proposicao : "comprova"
     fonte ||--o{ proposicao_tema : "classifica"
     fonte ||--o{ votacao : "comprova"
@@ -209,6 +210,11 @@ erDiagram
         int candidatura_id PK,FK
         int tipo PK "código do tipo de bem do TSE"
         bigint valor_centavos "nominal, agregado por tipo"
+    }
+    ipca_mensal {
+        date mes PK "primeiro dia do mês"
+        numeric variacao_percentual "variação mensal em %"
+        int fonte_id FK
     }
     proposicao {
         int id PK

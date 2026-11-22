@@ -17,6 +17,7 @@
 
 import logging
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
@@ -26,6 +27,7 @@ from sqlalchemy import (
     Column,
     ForeignKey,
     Index,
+    Numeric,
     SmallInteger,
     String,
     Table,
@@ -343,6 +345,25 @@ class BemDeclarado(Base):
     )
     tipo: Mapped[int] = mapped_column(primary_key=True)
     valor_centavos: Mapped[int] = mapped_column(BigInteger)
+
+
+class IpcaMensal(Base):
+    """Variação percentual mensal da série 433 do SGS."""
+
+    __tablename__ = "ipca_mensal"
+    __table_args__ = (
+        CheckConstraint("mes >= DATE '2006-01-01' AND EXTRACT(DAY FROM mes) = 1", name="mes"),
+        CheckConstraint(
+            "variacao_percentual > -100 AND variacao_percentual <= 99999.99",
+            name="variacao_percentual",
+        ),
+    )
+
+    mes: Mapped[date] = mapped_column(primary_key=True)
+    variacao_percentual: Mapped[Decimal] = mapped_column(Numeric(7, 2))
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
+    fonte: Mapped[Fonte] = relationship()
 
 
 class Proposicao(Base):
