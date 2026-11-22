@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { BOTAO_CONTINUAR } from "@/components/botao-continuar";
 import { useHidratado } from "@/components/quiz";
 import { classes } from "@/lib/classes";
@@ -26,6 +26,34 @@ import { FimDoJogo } from "./fim-do-jogo";
 import { PainelDeVotos } from "./painel-de-votos";
 import { RelogioDoPrazo } from "./relogio-do-prazo";
 
+function rolarParaOPasso(bloco: Element) {
+	const inicio = bloco.querySelector("[data-inicio-do-passo]") ?? bloco;
+	const topo = inicio.getBoundingClientRect().top;
+	const fim = bloco.getBoundingClientRect().bottom;
+	const janela = window.visualViewport;
+	const altura = janela?.height ?? window.innerHeight;
+	const alto = janela?.offsetTop ?? 0;
+	const baixo = alto + altura;
+	const sobra = altura - (fim - topo);
+	const respiro = 12;
+	const margem = Math.min(respiro, Math.max(0, sobra / 2));
+
+	let deslocamento = 0;
+	if (sobra < 0) {
+		deslocamento = topo - alto - respiro;
+	} else if (topo < alto) {
+		deslocamento = topo - alto - margem;
+	} else if (fim > baixo) {
+		deslocamento = fim - baixo + margem;
+	}
+	if (Math.abs(deslocamento) >= 1) {
+		window.scrollTo({
+			top: window.scrollY + deslocamento,
+			behavior: movimentoReduzido() ? "auto" : "smooth",
+		});
+	}
+}
+
 /**
  * O palco do jogo: o cenário, o retrato de quem fala e, na frente, o passo da
  * vez — a fala, a decisão, o painel, o prazo ou o carimbo. A partida fica na
@@ -45,38 +73,36 @@ export function Jogo({
 	comApi: boolean;
 }) {
 	const [partida, setPartida] = useState<Partida>(comecar);
-	const palco = useRef<HTMLDivElement>(null);
+	const frente = useRef<HTMLDivElement>(null);
 	const hidratado = useHidratado();
 
 	const cena = jogo.cenas[partida.cena];
 	const passo = passoAtual(jogo, partida);
 	const naCena = partida.fase === "cena";
-	const escolhidas = partida.escolhas.length;
+	const escolha =
+		passo?.tipo === "decisao" ? escolhaDa(partida, passo.id) : undefined;
+	const tipo = escolha ? "resposta" : (passo?.tipo ?? partida.fase);
+	const tipoAnterior = useRef(tipo);
 
-	// Depois de cada passo, o foco vai para o que apareceu — a fala, a pergunta,
-	// a resposta da decisão, a legenda ou o título do cartão —, e quem usa o
-	// teclado ou o leitor de tela continua dali, como no quiz. A abertura fica
-	// de fora: ali o foco já está no título da página.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: a cena, o passo e a escolha são o que faz o foco andar; o efeito não lê o valor deles, procura o alvo da vez no palco.
-	useEffect(() => {
-		if (partida.fase === "abertura") {
+	// O foco acompanha cada passo. A rolagem só enquadra o conteúdo quando
+	// muda o tipo do passo, inclusive da pergunta para a resposta. Na primeira
+	// abertura, o lugar da página é o da navegação do site.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: duas falas têm o mesmo tipo, mas cada uma precisa receber o foco quando a cena ou o passo muda.
+	useLayoutEffect(() => {
+		const mudouOTipo = tipoAnterior.current !== tipo;
+		tipoAnterior.current = tipo;
+		const bloco = frente.current?.firstElementChild;
+		if (!bloco || (tipo === "abertura" && !mudouOTipo)) {
 			return;
 		}
-		const alvo = palco.current?.querySelector<HTMLElement>("[data-foco]");
-		alvo?.focus({ preventScroll: true });
-	}, [partida.fase, partida.cena, partida.passo, escolhidas]);
 
-	// A revelação e o fim começam do alto, porque são mais altos que a tela.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: a cena troca a revelação, e cada uma começa do alto.
-	useEffect(() => {
-		if (partida.fase !== "revelacao" && partida.fase !== "fim") {
-			return;
+		bloco
+			.querySelector<HTMLElement>("[data-foco]")
+			?.focus({ preventScroll: true });
+		if (mudouOTipo) {
+			rolarParaOPasso(bloco);
 		}
-		window.scrollTo({
-			top: 0,
-			behavior: movimentoReduzido() ? "auto" : "smooth",
-		});
-	}, [partida.fase, partida.cena]);
+	}, [tipo, partida.cena, partida.passo]);
 
 	const cenario =
 		naCena || partida.fase === "revelacao" ? cena.cenario : jogo.cenario;
@@ -99,7 +125,6 @@ export function Jogo({
 			// A fala fica em cima da cena, como numa visual novel; a decisão, o
 			// painel e o cartão, que são altos, ficam embaixo dela.
 			data-sobre-a-cena={fala ? "true" : undefined}
-			ref={palco}
 		>
 			<div className="jogo-cena" aria-hidden="true">
 				<img
@@ -135,10 +160,12 @@ export function Jogo({
 				) : null}
 			</div>
 
-			<div className="jogo-frente">
+			<div className="jogo-frente" ref={frente}>
 				{partida.fase === "abertura" ? (
 					<div className="jogo-abertura">
-						<p className="jogo-resumo">{jogo.resumo}</p>
+						<p className="jogo-resumo" tabIndex={-1} data-foco="true">
+							{jogo.resumo}
+						</p>
 						<p className="jogo-aviso">{jogo.aviso}</p>
 						{hidratado ? (
 							<div className="jogo-acoes">
@@ -184,7 +211,7 @@ export function Jogo({
 					<Decisao
 						key={passo.id}
 						decisao={passo}
-						escolha={escolhaDa(partida, passo.id)}
+						escolha={escolha}
 						aoEscolher={escolherOpcao}
 						aoAvancar={seguir}
 					/>

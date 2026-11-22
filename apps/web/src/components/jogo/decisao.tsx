@@ -52,7 +52,15 @@ export function Decisao({
 				{decisao.pergunta}
 			</p>
 			<p className="jogo-natureza">{AVISO_DA_NATUREZA[decisao.natureza]}</p>
-			<ul role="list" className="jogo-opcoes">
+			<ul
+				role="list"
+				className="jogo-opcoes"
+				data-inicio-do-passo={
+					escolhida !== undefined && decisao.natureza === "regra"
+						? "true"
+						: undefined
+				}
+			>
 				{decisao.opcoes.map((opcao) => (
 					<li key={opcao.texto}>
 						<button
@@ -77,7 +85,14 @@ export function Decisao({
 				))}
 			</ul>
 			{escolhida !== undefined ? (
-				<div className="jogo-feedback" tabIndex={-1} data-foco="true">
+				<div
+					className="jogo-feedback"
+					tabIndex={-1}
+					data-foco="true"
+					data-inicio-do-passo={
+						decisao.natureza === "opiniao" ? "true" : undefined
+					}
+				>
 					{decisao.natureza === "opiniao" ? (
 						<>
 							<p className="jogo-eco">

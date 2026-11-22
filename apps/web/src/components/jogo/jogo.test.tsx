@@ -39,26 +39,31 @@ const jogo = lerOJogo();
 beforeEach(() => {
 	// O jsdom não rola a janela.
 	vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+	vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+	vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
 });
 
 afterEach(() => {
 	cleanup();
 	window.localStorage.clear();
 	vi.restoreAllMocks();
+	vi.unstubAllGlobals();
 });
 
-/**
- * Joga pela tela até a tela final, como quem clica: a cada passo, a primeira
- * opção da decisão ou o botão que avança. O primeiro clique numa fala revela o
- * texto inteiro, e o seguinte passa adiante.
- */
-async function jogarAteOFim() {
-	const comecar = await screen.findByRole("button", {
+async function iniciarPartida() {
+	return screen.findByRole("button", {
 		name: "Começar pela primeira cena",
 	});
-	fireEvent.click(comecar);
+}
+
+/**
+ * Joga pela tela: a cada passo, a primeira opção da decisão ou o botão que
+ * avança. O primeiro clique numa fala revela o texto inteiro, e o seguinte
+ * passa adiante.
+ */
+function jogarAte(seletor: string) {
 	for (let volta = 0; volta < 400; volta += 1) {
-		if (document.querySelector(".jogo-fim")) {
+		if (document.querySelector(seletor)) {
 			return;
 		}
 		const opcao = document.querySelector<HTMLButtonElement>(
@@ -72,7 +77,24 @@ async function jogarAteOFim() {
 		}
 		fireEvent.click(alvo);
 	}
-	await screen.findByText("O caminho que você fez");
+	expect(document.querySelector(seletor), seletor).toBeTruthy();
+}
+
+async function jogarAteOFim() {
+	fireEvent.click(await iniciarPartida());
+	jogarAte(".jogo-fim");
+}
+
+function medirCaixas(caixas: Record<string, [number, number]>) {
+	vi.stubGlobal("innerHeight", 600);
+	vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+		function (this: HTMLElement) {
+			const [topo, fim] = Object.entries(caixas).find(([classe]) =>
+				this.classList.contains(classe),
+			)?.[1] ?? [0, 0];
+			return new DOMRect(0, topo, 400, fim - topo);
+		},
+	);
 }
 
 /** O jogo num site de mentira, para os `Link` da tela final funcionarem. */
@@ -125,5 +147,98 @@ describe("a tela do jogo", () => {
 		expect(
 			screen.getByRole("link", { name: "Rever as lições da trilha" }),
 		).toBeTruthy();
+	});
+
+	it("enquadra a primeira fala e mantém a posição e a ordem do foco na seguinte", async () => {
+		medirCaixas({ "jogo-caixa": [450, 680] });
+		mostrar();
+		const comecar = await iniciarPartida();
+		// O router aplica a posição inicial da navegação.
+		expect(window.scrollTo).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({ top: 0, left: 0 }),
+		);
+		vi.mocked(window.scrollTo).mockClear();
+
+		fireEvent.click(comecar);
+		const primeiraFala = document.querySelector("[data-foco]");
+		expect(document.activeElement).toBe(primeiraFala);
+		expect(window.scrollTo).toHaveBeenCalledExactlyOnceWith({
+			top: 92,
+			behavior: "smooth",
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+		expect(document.activeElement).toBe(
+			document.querySelector(".jogo-caixa [data-foco]"),
+		);
+		expect(document.activeElement).not.toBe(primeiraFala);
+		expect(window.scrollTo).toHaveBeenCalledTimes(1);
+	});
+
+	it("começa pelo conteúdo novo quando as explicações da decisão são altas", async () => {
+		medirCaixas({
+			"jogo-decisao": [300, 990],
+			"jogo-opcoes": [420, 940],
+		});
+		mostrar();
+		fireEvent.click(await iniciarPartida());
+		jogarAte(".jogo-pergunta");
+		expect(window.scrollTo).toHaveBeenLastCalledWith({
+			top: 288,
+			behavior: "smooth",
+		});
+
+		vi.stubGlobal("scrollY", 288);
+		medirCaixas({
+			"jogo-decisao": [300, 1090],
+			"jogo-opcoes": [420, 1040],
+		});
+		fireEvent.click(
+			screen.getByRole("button", { name: "O autor pede o desarquivamento" }),
+		);
+		expect(document.activeElement).toBe(
+			document.querySelector(
+				".jogo-feedback [data-foco], .jogo-feedback[data-foco]",
+			),
+		);
+		// A pergunta já estava na tela, mas a resposta precisa do intervalo
+		// inteiro desde as explicações até o botão.
+		expect(window.scrollTo).toHaveBeenLastCalledWith({
+			top: 696,
+			behavior: "smooth",
+		});
+	});
+
+	it("encaixa a revelação, alinha o começo do fim e traz o foco de volta ao recomeçar", async () => {
+		vi.stubGlobal("matchMedia", () => ({ matches: true }));
+		medirCaixas({
+			"jogo-cartao": [680, 1060],
+			"jogo-fim": [680, 1480],
+			"jogo-abertura": [680, 910],
+		});
+		mostrar();
+		fireEvent.click(await iniciarPartida());
+		jogarAte(".jogo-cartao");
+		expect(window.scrollTo).toHaveBeenLastCalledWith({
+			top: 472,
+			behavior: "auto",
+		});
+		expect(document.activeElement?.textContent).toBe(
+			"O que aconteceu de verdade",
+		);
+
+		jogarAte(".jogo-fim");
+		expect(window.scrollTo).toHaveBeenLastCalledWith({
+			top: 668,
+			behavior: "auto",
+		});
+		expect(document.activeElement?.textContent).toBe("O caminho que você fez");
+
+		fireEvent.click(screen.getByRole("button", { name: "Jogar de novo" }));
+		expect(document.activeElement).toBe(document.querySelector(".jogo-resumo"));
+		expect(window.scrollTo).toHaveBeenLastCalledWith({
+			top: 322,
+			behavior: "auto",
+		});
 	});
 });
