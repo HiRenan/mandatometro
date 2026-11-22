@@ -8,6 +8,11 @@ O `DESIGN.md` e o `PRODUCT.md`, na raiz, seguem o formato do Impeccable.
 - `apps/web/imagens/`: o HTML do ícone da aba (`icone.html`) e da prévia do link (`previa.html`). O `pnpm --filter web imagens` grava o `favicon.ico`, o `apple-touch-icon.png` e o `previa.png` em `apps/web/public/`. O Edge ou o Chrome abre sem janela (`NAVEGADOR=<caminho>` escolhe outro navegador). Faça commit do HTML e das imagens. Para mudar uma imagem, mude o HTML e gere de novo, sem editar o PNG. O `mapa.mjs` desenha o mapa do fundo: o `pnpm --filter web mapa` grava o `apps/web/src/estilos/mapa.svg`, e vale a mesma regra, mude o roteiro e gere de novo.
 - O `DESIGN.md` descreve o que o código faz: mudou o visual, atualize esse arquivo e o `apps/web/.impeccable/design.json`, que mostra as mesmas peças no painel do Impeccable.
 
+## Jogo das Comissões
+
+- A rolagem interna mede o trecho novo da folha junto do botão, depois que o React atualiza o palco. O foco usa `preventScroll` para preservar esse enquadramento. Uma fala seguida de outra conserva a posição, com a altura reservada pelas duas versões do rótulo do botão e pelas falas do grupo.
+- No Edge, o `pointerdown` do toque chegou cedo demais para iniciar a trilha. O jogo começa a tocar no `click` nativo do palco, que também chega ao acionar um botão pelo teclado. Ao sair da rota, a desmontagem silencia o áudio local. O `pagehide` faz o mesmo quando o navegador guarda o documento para a volta pelo histórico.
+
 ## Regras do visual
 
 O desenho inteiro está no [DESIGN.md](../DESIGN.md). O que mais pega quem mexe numa tela:
