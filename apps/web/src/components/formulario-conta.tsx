@@ -8,6 +8,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { flushSync } from "react-dom";
 import {
 	type Cadastro,
 	cadastrarConta,
@@ -92,6 +93,8 @@ const MUITAS_TENTATIVAS = "Muitas tentativas. Aguarde um minuto.";
 const LOGIN_RECUSADO = "Confira o e-mail, a senha e a confirmação do cadastro.";
 const SENHA_RECUSADA = "Entre novamente e confira sua senha.";
 const LINK_VENCIDO = "O link expirou ou é inválido. Solicite outro abaixo.";
+const TEXTO_DO_ACEITE = "Tenho 12 anos ou mais e li e aceito";
+const TERMO_DO_ACEITE = "o termo de consentimento";
 const TERMO_MUDOU =
 	"O termo mudou. Recarregue a página para ler a versão atual.";
 const NAO_CONCLUIU =
@@ -192,17 +195,50 @@ function Campo({
 	);
 }
 
+function impedirAtivacao(evento: { preventDefault: () => void }) {
+	evento.preventDefault();
+}
+
 /** Uma lista do site, com o rótulo em Label em cima. */
 function Lista({
 	rotulo,
+	ocupada,
 	...props
-}: SelectHTMLAttributes<HTMLSelectElement> & { rotulo: string; name: string }) {
+}: SelectHTMLAttributes<HTMLSelectElement> & {
+	rotulo: string;
+	name: string;
+	ocupada: boolean;
+}) {
 	return (
 		<div className="campo-com-rotulo">
 			<label htmlFor={`campo-${props.name}`} className="rotulo">
 				{rotulo}
 			</label>
-			<select id={`campo-${props.name}`} className="campo" {...props} />
+			<select
+				id={`campo-${props.name}`}
+				className="campo"
+				{...props}
+				aria-disabled={ocupada || undefined}
+				onClick={ocupada ? impedirAtivacao : undefined}
+				onPointerDown={(evento) => {
+					if (!ocupada) return;
+					evento.preventDefault();
+					evento.currentTarget.focus();
+				}}
+				onKeyDown={(evento) => {
+					// A lista nativa não tem readOnly. Preserve Tab e os atalhos
+					// do navegador, mas impeça a seleção e a abertura da lista.
+					if (
+						ocupada &&
+						((evento.key.length === 1 && !evento.ctrlKey && !evento.metaKey) ||
+							/^(ArrowUp|ArrowDown|ArrowLeft|ArrowRight|Home|End|PageUp|PageDown|Enter|F4)$/.test(
+								evento.key,
+							))
+					) {
+						evento.preventDefault();
+					}
+				}}
+			/>
 		</div>
 	);
 }
@@ -363,13 +399,17 @@ export function FormularioConta({
 		const confirmar_senha = valor("confirmar_senha");
 		const pendentes = validar(form);
 		setTentouEnviar(true);
-		setErros(pendentes);
 		const primeiro = Object.keys(pendentes)[0];
 		if (primeiro) {
-			setMensagem("");
+			// A descrição precisa estar no DOM quando o navegador mudar o foco.
+			flushSync(() => {
+				setErros(pendentes);
+				setMensagem("");
+			});
 			(form.elements.namedItem(primeiro) as HTMLInputElement).focus();
 			return;
 		}
+		setErros(pendentes);
 		const token = window.location.hash.slice(1);
 		enviando.current = true;
 		setOcupado(true);
@@ -401,7 +441,7 @@ export function FormularioConta({
 								confirmar_senha,
 								aceite: true,
 								termo: termo.versao,
-								genero: (genero || null) as Cadastro["genero"],
+								genero: (valor("genero") || null) as Cadastro["genero"],
 								autodescricao: valor("autodescricao") || null,
 								estado: valor("estado") || null,
 								nascimento: valor("nascimento") || null,
@@ -521,7 +561,8 @@ export function FormularioConta({
 			inert={verificando}
 			onSubmit={enviar}
 			onChange={(e) => {
-				if (tentouEnviar) setErros(validar(e.currentTarget));
+				if (tentouEnviar && !enviando.current)
+					setErros(validar(e.currentTarget));
 			}}
 			className={classes(
 				"conta-formulario",
@@ -589,6 +630,7 @@ export function FormularioConta({
 						<Lista
 							rotulo="Gênero"
 							name="genero"
+							ocupada={ocupado}
 							value={genero}
 							onChange={(e) => setGenero(e.target.value)}
 						>
@@ -607,7 +649,11 @@ export function FormularioConta({
 								readOnly={ocupado}
 							/>
 						)}
-						<Lista rotulo="Estado de residência" name="estado">
+						<Lista
+							rotulo="Estado de residência"
+							name="estado"
+							ocupada={ocupado}
+						>
 							<option value="">Selecione, se quiser</option>
 							{estados.map((uf) => (
 								<option key={uf}>{uf}</option>
@@ -630,17 +676,20 @@ export function FormularioConta({
 								type="checkbox"
 								name="aceite"
 								required
+								aria-label={`${TEXTO_DO_ACEITE} ${TERMO_DO_ACEITE}.`}
+								aria-disabled={ocupado || undefined}
 								aria-invalid={erros.aceite ? true : undefined}
 								aria-describedby={erros.aceite ? "erro-aceite" : undefined}
+								onClick={ocupado ? impedirAtivacao : undefined}
 							/>
 							<span>
-								Tenho 12 anos ou mais e li e aceito{" "}
+								{TEXTO_DO_ACEITE}{" "}
 								{termo ? (
 									<a href={termo.url} target="_blank" rel="noreferrer">
-										o termo de consentimento
+										{TERMO_DO_ACEITE}
 									</a>
 								) : (
-									"o termo de consentimento"
+									TERMO_DO_ACEITE
 								)}
 								.
 							</span>
@@ -652,7 +701,12 @@ export function FormularioConta({
 						)}
 					</div>
 					<label className="marcar">
-						<input type="checkbox" name="newsletter" />
+						<input
+							type="checkbox"
+							name="newsletter"
+							aria-disabled={ocupado || undefined}
+							onClick={ocupado ? impedirAtivacao : undefined}
+						/>
 						<span>Quero receber a newsletter semanal.</span>
 					</label>
 				</>
@@ -742,10 +796,10 @@ export function FormularioConta({
 						/>
 					</>
 				)}
-				{/* A inscrição na newsletter pode completar a mensagem do cadastro. */}
+				{/* Só a conclusão pode esperar a inscrição na newsletter. */}
 				<p
 					role="status"
-					aria-busy={cadastro ? ocupado : undefined}
+					aria-busy={(cadastro && concluido && ocupado) || undefined}
 					className={classes(
 						"col-start-1 row-start-1",
 						concluido
