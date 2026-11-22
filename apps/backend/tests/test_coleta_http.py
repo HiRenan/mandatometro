@@ -6,7 +6,7 @@ from pathlib import Path
 import httpx2
 import pytest
 
-from mandatometro.coleta.http import ClienteHttp, ErroColeta
+from mandatometro.coleta.http import ClienteHttp, ErroColeta, PrazoConsultaEsgotado
 
 BASE = "https://dadosabertos.camara.leg.br/api/v2"
 
@@ -96,6 +96,32 @@ def test_504_e_timeout_recebem_backoff(monkeypatch):
     assert http.obter_json("/votos").dados == []
     assert pausas == [1, 2]
     assert (http.chamadas, http.tentativas_extras) == (4, 2)
+
+
+def test_prazo_opcional_limita_timeout_e_tentativas(monkeypatch):
+    agora = 0.0
+    timeouts = []
+
+    def esperar(segundos):
+        nonlocal agora
+        agora += segundos
+
+    monkeypatch.setattr("mandatometro.coleta.http.time.sleep", esperar)
+    monkeypatch.setattr("mandatometro.coleta.http.time.monotonic", lambda: agora)
+
+    def atender(req):
+        if req.url.path == "/robots.txt":
+            return httpx2.Response(404)
+        timeout = req.extensions["timeout"]["read"]
+        timeouts.append(timeout)
+        esperar(timeout)
+        raise httpx2.ReadTimeout("Tempo de teste esgotado.", request=req)
+
+    with cliente(atender) as http, pytest.raises(PrazoConsultaEsgotado):
+        http.obter_json("/temas", prazo=31.5)
+
+    assert timeouts == [30, 0.5]
+    assert agora == 31.5
 
 
 def test_robots_5xx_esgota_tentativas_sem_acessar_api(monkeypatch):
