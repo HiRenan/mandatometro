@@ -211,7 +211,7 @@ export const obterParlamentar = <ThrowOnError extends boolean = false>(options: 
 /**
  * Listar o patrimônio declarado ao TSE por eleição
  *
- * Eleições com vínculo confirmado, em ordem crescente de ano.
+ * Eleições com vínculo confirmado, em ordem crescente de ano, com os totais nominais e a correção pelo IPCA quando disponível.
  */
 export const obterPatrimonioParlamentar = <ThrowOnError extends boolean = false>(options: Options<ObterPatrimonioParlamentarData, ThrowOnError>): RequestResult<ObterPatrimonioParlamentarResponses, ObterPatrimonioParlamentarErrors, ThrowOnError> => (options.client ?? client).get<ObterPatrimonioParlamentarResponses, ObterPatrimonioParlamentarErrors, ThrowOnError>({ url: '/parlamentares/{id}/patrimonio', ...options });
 
