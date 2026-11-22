@@ -133,6 +133,7 @@ erDiagram
     parlamentar ||--o{ mandato : "tem"
     parlamentar ||--o{ voto : "dá"
     votacao ||--o{ voto : "recebe"
+    video_sessao |o--o{ votacao : "registra"
     votacao ||--o{ votacao_proposicao : "afeta"
     proposicao ||--o{ votacao_proposicao : "é afetada"
     proposicao ||--o{ proposicao_tema : "tem"
@@ -143,6 +144,7 @@ erDiagram
     fonte ||--o{ proposicao : "comprova"
     fonte ||--o{ proposicao_tema : "classifica"
     fonte ||--o{ votacao : "comprova"
+    fonte ||--o{ video_sessao : "comprova"
     fonte ||--o{ voto : "comprova"
     fonte ||--o{ ato : "comprova"
     fonte ||--o{ item_edicao : "comprova"
@@ -195,6 +197,14 @@ erDiagram
         string descricao
         string resultado "aprovada, rejeitada ou outro"
         string resultado_bruto "código publicado pela Casa"
+        int fonte_id FK
+        int video_sessao_id FK "anulável"
+    }
+    video_sessao {
+        int id PK
+        string casa UK
+        int id_externo UK "evento da Câmara ou encontro do Senado"
+        string url_video "endereço oficial no YouTube ou nulo"
         int fonte_id FK
     }
     votacao_proposicao {
@@ -351,7 +361,7 @@ Toda conta nasce com o papel `comum`. Quem opera o banco pode [conceder ou revog
 - `GET /parlamentares` lista todos os parlamentares em exercício por nome. Os filtros opcionais `uf` e `casa` aceitam a sigla da UF em maiúsculas e os valores `camara` ou `senado`, respectivamente.
 - `GET /parlamentares/{id}` usa o id interno e acrescenta os mandatos e a contagem de votos registrados por valor.
 - `GET /parlamentares/{id}/votos` devolve `votos`, `total`, `limite` e `deslocamento`, da votação mais recente para a mais antiga. O limite padrão é 20, com máximo de 100. Cada voto traz as proposições afetadas. O campo `url_oficial` usa o endereço público da fonte, com o endereço da coleta como reserva, e é nulo se a fonte estiver sem endereço.
-- `GET /votacoes/{id}` mostra os votos de uma votação por nome de parlamentar, com a sigla do partido e a UF no dia do voto. O placar geral e o de cada partido contam esses registros nas sete categorias. Use o `votacao_id` do histórico ou o `id` de cada votação nos fatos da edição publicada.
+- `GET /votacoes/{id}` mostra os votos de uma votação por nome de parlamentar, com a sigla do partido e a UF no dia do voto. O placar geral e o de cada partido contam esses registros nas sete categorias. `url_video` traz o endereço oficial da sessão inteira no YouTube ou nulo. Use o `votacao_id` do histórico ou o `id` de cada votação nos fatos da edição publicada.
 
 O partido no cadastro do parlamentar vem do voto mais recente pela data da votação e pode ser nulo. O histórico e a contagem consideram só os registros de voto da pessoa. Uma votação sem votos individuais gravados devolve as listas de votos e partidos vazias e as sete contagens zeradas. [OpenAPI](apps/backend/openapi.json)
 
@@ -392,6 +402,17 @@ uv run mandatometro coleta senado
 O comando coleta as votações publicadas de acordo com as [regras do endpoint do Senado](docs/dicionario-de-dados.md#votacao--a-votação-e-os-votos-numa-chamada).
 
 Se o histórico de um votante fora da lista atual falhar, seus votos ficam gravados, o mandato não é inventado e `falhas_parlamentares` conta o parlamentar uma vez. Processo indisponível entra no resumo pelo caminho com seu id (por exemplo, `/processo/9006525`), e a votação é pulada. A [saída das coletas](docs/dicionario-de-dados.md#pegadinhas-e-saída-da-coleta) descreve como consultar históricos indisponíveis.
+
+**Preenchimento de vídeos das sessões.** A coleta das duas Casas consulta uma vez por sessão das votações gravadas e registra o vídeo oficial disponível. Para preencher os vídeos de votações antigas, use os comandos abaixo com o período desejado. O modo atualiza o vínculo do vídeo e usa uma fonte própria, preservando os dados e as referências da revisão da edição.
+
+```bash
+uv run mandatometro coleta camara --somente-videos --inicio 2026-11-13 --fim 2026-11-20
+uv run mandatometro coleta senado --somente-videos --inicio 2026-11-13 --fim 2026-11-20
+```
+
+A coleta normal renova as fontes editoriais mesmo quando o único dado novo é o vídeo. Para um rascunho pronto para publicar, use `--somente-videos` para conservar a revisão.
+
+O resumo inclui as contagens em `videos`. Consulte [vídeos das sessões](docs/dicionario-de-dados.md#vídeos-das-sessões) e o [preenchimento em hospedagem](docs/hospedagem.md#preencher-vídeos-das-sessões).
 
 **Preencher temas de votações já gravadas.** Em `apps/backend`, com as migrations aplicadas e `DATABASE_URL` explícito, use a janela das votações que quer cobrir.
 

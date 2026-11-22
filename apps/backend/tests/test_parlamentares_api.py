@@ -440,6 +440,7 @@ def test_votacao_sem_registros_sem_endereco_e_sem_proposicao(cliente, sessao, ca
         "proposicoes": [],
         "temas": [],
         "url_oficial": None,
+        "url_video": None,
         "coletado_em": "2026-11-21T00:00:00Z",
         "placar": {
             "sim": 0,

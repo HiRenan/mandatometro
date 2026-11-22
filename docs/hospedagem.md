@@ -64,7 +64,7 @@ Comece depois de conferir a inscrição de teste no ambiente anterior. A publica
 | Tarefa | Quando | Código e banco |
 | --- | --- | --- |
 | Coleta diária | 03h17 de Brasília (`17 6 * * *` UTC), se `COLETAS_ATIVAS=true` | YAML da `develop`, checkout da `main`, banco `producao` |
-| Coleta manual | Botão Run workflow | `develop` → `desenvolvimento`; `main` → `producao` |
+| Coleta manual | Botão Run workflow, com datas e modo Somente vídeos opcionais | `develop` → `desenvolvimento`; `main` → `producao` |
 | Agenda de sábado | 04h47 de Brasília (`47 7 * * 6` UTC), se `AGENDA_SABADO_ATIVA=true` | YAML da `develop`, checkout da `main`, banco `producao` |
 | Preparo manual da edição | Botão Run workflow, com período opcional | Commit do disparo (`github.sha`). `develop` usa `desenvolvimento` e `main` usa `producao` |
 | Envio dominical | 10h37 de Brasília (`37 13 * * 0` UTC), se `ENVIOS_ATIVOS=true` | YAML da `develop`, checkout da `main`, banco `producao` |
@@ -78,9 +78,15 @@ As duas Casas rodam uma por vez, com até 30 minutos cada, e a segunda é tentad
 
 Para recuperar uma lacuna maior, preencha **inicio e fim juntos**, em `AAAA-MM-DD`, no disparo manual da coleta. Sem datas, valem os sete dias completos anteriores em Brasília. O deploy da Vercel não espera o Actions. Na hospedagem, siga as [convenções de migrations](../AGENTS.md#conventions). Não há migration na importação, no build ou na requisição da API.
 
-## Preencher temas de votações já coletadas
+### Preencher vídeos das sessões
 
-Depois de confirmar a migration 0014 no ambiente, abra **Actions → Coletar Congresso → Run workflow**. Para produção, escolha **main**, marque **somente_temas** e informe a janela das votações já gravadas. Divida um histórico maior em janelas. Em cada Casa, acompanhe `temas` no resumo. Se `falhas_consulta` ou `falhas_gravacao` forem maiores que zero, repita a janela para as proposições pendentes. As datas vazias usam os sete dias completos anteriores em Brasília.
+Depois de aplicar a migration `0012` e publicar a API, abra **Actions → Coletar Congresso → Run workflow**. Escolha **main** para produção ou **develop** para desenvolvimento. Informe `inicio` e `fim` do período que quer preencher e marque **Somente vídeos**, desmarcado por padrão. A agenda diária segue com a coleta completa.
+
+Confira os campos `videos` nos dois resumos e `url_video` na edição publicada e em uma votação com registro oficial. Se uma consulta falhar, repita com as mesmas datas. O modo volta às votações sem vídeo e usa a mesma fila e credenciais do banco da coleta.
+
+### Preencher temas de votações já coletadas
+
+Depois de confirmar a migration 0014 no ambiente, abra **Actions → Coletar Congresso → Run workflow**. Para produção, escolha **main**, marque apenas **somente_temas** e informe a janela das votações já gravadas. Divida um histórico maior em janelas. Em cada Casa, acompanhe `temas` no resumo. Se `falhas_consulta` ou `falhas_gravacao` forem maiores que zero, repita a janela para as proposições pendentes. As datas vazias usam os sete dias completos anteriores em Brasília.
 
 O modo usa as mesmas credenciais e a mesma fila da coleta e fica desmarcado por padrão. A agenda roda a coleta normal. O preenchimento grava temas e fontes temáticas à parte, o que preserva as revisões dos rascunhos. [Comando local](../README.md#como-rodar)
 

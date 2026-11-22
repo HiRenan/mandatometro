@@ -239,6 +239,12 @@ export type DetalheVotacao = {
      */
     casa: 'camara' | 'senado';
     /**
+     * Url Video
+     *
+     * Endereço HTTPS do vídeo oficial da sessão inteira, ou nulo quando indisponível.
+     */
+    url_video: string | null;
+    /**
      * Contagem dos votos individuais gravados.
      */
     placar: ContagemVotosParlamentar;
@@ -933,6 +939,12 @@ export type VotacaoPublica = {
      * Fontes
      */
     fontes: Array<FontePublica>;
+    /**
+     * Url Video
+     *
+     * Endereço HTTPS do vídeo oficial da sessão inteira, ou nulo quando indisponível.
+     */
+    url_video: string | null;
     /**
      * Temas
      */

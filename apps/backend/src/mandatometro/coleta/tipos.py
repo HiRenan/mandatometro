@@ -24,6 +24,17 @@ class ResumoTemas:
 
 
 @dataclass
+class ResumoVideos:
+    votacoes_sem_sessao: int = 0
+    sessoes_com_video: int = 0
+    sessoes_sem_video: int = 0
+    urls_recusadas: int = 0
+    falhas_sessoes: int = 0
+    falhas_gravacao: int = 0
+    votacoes_com_video: int = 0
+
+
+@dataclass
 class ResumoColeta:
     casa: str
     inicio: date
@@ -44,6 +55,7 @@ class ResumoColeta:
     sem_proposicao: int = 0
     codigos_desconhecidos: int = 0
     erro: str | None = None
+    videos: ResumoVideos = field(default_factory=ResumoVideos)
     temas: ResumoTemas = field(default_factory=ResumoTemas)
 
 

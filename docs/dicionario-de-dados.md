@@ -136,6 +136,7 @@ Três avisos sobre essas chaves:
 | `ultimaApresentacaoProposicao` | objeto | o parecer lido em plenário | não |
 | `descUltimaAberturaVotacao` | texto | ex.: "Votação em turno único" | sim |
 | `efeitosRegistrados` | lista | veio vazia no exemplo | não |
+| `idEvento` | inteiro ou nulo | identifica a sessão e liga ao detalhe de `/eventos/{id}` | chave |
 
 ```json
 {
@@ -324,7 +325,8 @@ Uma consulta só com `dataInicio` e `dataFim` aceita **no máximo um ano**, conf
 | `totalVotosSim` / `Nao` / `Abstencao` | inteiro | **vieram `null` nas quatro**, que eram abertas; na votação secreta, vêm preenchidos (ver abaixo) | não |
 | `votos[]` | lista | o estado de cada um dos 81 senadores | sim |
 | `codigoSessaoVotacao`, `sequencialVotacao` | inteiro | ids da votação, globais e únicos: nas 7 votações de 14/10 a 03/11/2026, em três sessões, foram `7106` a `7112` e `4420` a `4426`. O `codigoSessaoVotacao` sozinho basta como id | chave |
-| `codigoSessao`, `sequencialSessao` | inteiro | a sessão e a ordem da votação dentro dela (`1`, `2`, `3`...) | não |
+| `codigoSessao` | inteiro | código do encontro em `/plenario/encontro/{codigo}` | chave |
+| `sequencialSessao` | inteiro | ordem da votação dentro da sessão (`1`, `2`, `3`...) | não |
 | `informeLegislativo` | objeto | ata em texto livre; traz os totais em prosa | não |
 
 Cada item de `votos[]`:
@@ -504,6 +506,19 @@ Três pegadinhas, uma delas séria:
 
 O `apelido` (`"PEC da Segurança Pública"`) é o campo mais útil para a newsletter: diz em quatro palavras o que a ementa diz em seis linhas. Não é garantido para toda matéria — quando faltar, caia para `conteudo.ementa`.
 
+## Vídeos das sessões
+
+- **Câmara.** A coleta usa `idEvento` do detalhe da votação e consulta `/eventos/{id}`. O objeto `dados` traz `id`, `dataHoraInicio`, `dataHoraFim` e `urlRegistro`, com um endereço por evento. De 13 a 20/11/2026 foram gravadas 49 votações. As 36 com `idEvento` vieram de dois eventos, ambos com `urlRegistro` no formato `https://www.youtube.com/watch?v=<id>`. [Evento 83363](https://dadosabertos.camara.leg.br/api/v2/eventos/83363) · [Evento 83382](https://dadosabertos.camara.leg.br/api/v2/eventos/83382)
+- **Senado.** A coleta usa `codigoSessao` das votações com `casaSessao` igual a `SF` e consulta `/plenario/encontro/{codigo}`. O endereço fica em `ServicoPlenario.encontros.encontro[].linkVideo` no objeto com o código consultado. [Sessão 594169](https://legis.senado.leg.br/dadosabertos/plenario/encontro/594169) · [OpenAPI do Senado](https://legis.senado.leg.br/dadosabertos/v3/api-docs)
+
+Nos dois modos, o detalhe de evento da Câmara precisa indicar apenas o Plenário (id `180` em `orgaos`). No Senado, só ganha vídeo a votação com `informeLegislativo.siglaColegiado` igual a `PLEN` e cujo encontro declara `siglaCasa` igual a `SF`. O detalhe que não confirma o órgão da Câmara ou a Casa do encontro do Senado entra em `videos.urls_recusadas`.
+
+Só é aceito `https://www.youtube.com/watch?v=<id>`, com 11 caracteres ASCII entre letras, algarismos, `_` e `-`. A consulta lê o detalhe de cada sessão uma vez por rodada, com as mesmas regras de robots e tentativas das Casas. O vídeo corresponde à sessão inteira. `dataHoraRegistro` é a hora do registro da Câmara. Na amostra, dois registros são posteriores ao fim do evento, por isso a hora não dá o minuto da votação no vídeo.
+
+Cada par `(casa, id_externo)` de `video_sessao` tem uma fonte própria, com a URL da sessão consultada e a hora da coleta. As votações da sessão compartilham o registro. Falha na consulta mantém a votação e, se já houver, a observação anterior. Link ausente ou fora do formato fica nulo na coleta normal. O resumo `videos` conta votações sem sessão, sessões com vídeo, sessões sem endereço, URLs recusadas, falhas na consulta ou gravação e votações vinculadas com vídeo.
+
+O modo `--somente-videos` usa o período dos comandos de coleta e procura só votações sem vídeo. Na Câmara, extrai o id da página oficial gravada na fonte da votação. No Senado, consulta `/votacao` para cruzar `codigoSessaoVotacao` e `codigoSessao`. O preenchimento registra somente observações com link válido. Retorna código 1 em falha de consulta ou gravação, preservando os vínculos já confirmados para a próxima rodada.
+
 ## Da API para os nomes do domínio
 
 Este é o mapa que o modelo da #7 segue, em `apps/backend/src/mandatometro/db/modelos.py`, conferido com ele em 16/11/2026. A chave de parlamentar, proposição e votação é a `casa` (`camara` ou `senado`) com o `id_externo`, e cada registro aponta para uma `fonte`: a `url` que a coleta leu, a `url_publica` que o leitor abre, quando houver, e a data da coleta (`coletado_em`). [Convenções de nomes do domínio](../AGENTS.md#conventions).
@@ -527,6 +542,7 @@ Este é o mapa que o modelo da #7 segue, em `apps/backend/src/mandatometro/db/mo
 | `votacao.descricao` | `descricao` | `descricaoVotacao` |
 | `votacao.resultado` / `resultado_bruto` | `aprovacao` (`1`/`0`) | `resultadoVotacao` (letra) |
 | `votacao_proposicao` | `proposicoesAfetadas[]` do `/votacoes/{id}` — **nunca o prefixo do id da votação** | `idProcesso` |
+| `video_sessao.url_video` | `urlRegistro` de `/eventos/{id}` | `linkVideo` de `/plenario/encontro/{codigo}` |
 | `voto.parlamentar` | `votos[].deputado_.id` | `votos[].codigoParlamentar` |
 | `voto.valor` / `valor_bruto` | `tipoVoto` | `siglaVotoParlamentar` |
 | `voto.partido` | `votos[].deputado_.siglaPartido` | `votos[].siglaPartidoParlamentar` |

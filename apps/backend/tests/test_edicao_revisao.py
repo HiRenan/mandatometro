@@ -1,13 +1,20 @@
 from copy import deepcopy
 from datetime import UTC, datetime
 
+import httpx2
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from test_coleta_camara import ler
 from test_edicao_selecao import FIM, INICIO
 from test_edicao_selecao import dados as dados
 
-from mandatometro.db.modelos import Edicao, Fonte
+from mandatometro.api.app import app
+from mandatometro.cli import main
+from mandatometro.coleta import camara
+from mandatometro.coleta.http import ClienteHttp
+from mandatometro.db.modelos import Edicao, Fonte, VideoSessao
 from mandatometro.ia.servico import ErroEdicao, exportar, gerar, mostrar, publicar, revisar
 
 
@@ -97,6 +104,83 @@ def test_recoleta_invalida_fatos_sem_modificar_o_rascunho(abrir, dados, sessao):
     sessao.expire_all()
     assert sessao.get(Edicao, edicao_id).estado == "rascunho"
     assert gerar(abrir, INICIO, FIM, refazer=True)["situacao"] == "rascunho_refeito"
+
+
+@pytest.mark.parametrize("publicar_antes", [False, True])
+def test_preencher_video_preserva_a_revisao_e_enriquece_fotografia_v1(
+    abrir, dados, sessao, monkeypatch, publicar_antes
+):
+    votacao = dados(83057, valores=("sim",))
+    edicao_id = gerar(abrir, INICIO, FIM)["edicao_id"]
+    revisar(abrir, edicao_id, pronto(exportar(abrir, edicao_id)))
+    revisao = exportar(abrir, edicao_id)
+    edicao = sessao.get(Edicao, edicao_id)
+    fotografia = deepcopy(edicao.itens[0].fatos)
+    assert fotografia["versao"] == 1
+    fontes_editoriais = (
+        votacao.fonte_id,
+        votacao.proposicoes[0].fonte_id,
+        votacao.votos[0].fonte_id,
+    )
+    conexao = sessao.connection()
+    monkeypatch.setattr("mandatometro.db.engine", lambda: conexao)
+    cliente = TestClient(app)
+    rota = f"/edicoes/{edicao_id}"
+    if publicar_antes:
+        publicar(abrir, edicao_id)
+        antes = cliente.get(rota).json()
+        assert antes["itens"][0]["fatos"]["votacoes"][0]["url_video"] is None
+
+    chamadas = []
+    resumos = []
+
+    def atender(req):
+        chamadas.append(req.url.path)
+        if req.url.path == "/robots.txt":
+            return httpx2.Response(404)
+        assert req.url.path == "/api/v2/eventos/83057"
+        return httpx2.Response(200, json=ler("evento-83057"))
+
+    argumentos = [
+        "coleta",
+        "camara",
+        "--somente-videos",
+        "--inicio",
+        INICIO.isoformat(),
+        "--fim",
+        FIM.isoformat(),
+    ]
+    with httpx2.Client(transport=httpx2.MockTransport(atender)) as transporte:
+        monkeypatch.setattr(
+            camara, "ClienteHttp", lambda base: ClienteHttp(base, cliente=transporte, intervalo=0)
+        )
+        monkeypatch.setattr(camara, "sessao_do_banco", abrir)
+        monkeypatch.setattr(camara, "mostrar_resumo", resumos.append)
+        assert main(argumentos) == main(argumentos) == 0
+
+    assert chamadas == ["/robots.txt", "/api/v2/eventos/83057"]
+    assert [r.fontes for r in resumos] == [1, 0]
+    assert [r.videos.votacoes_com_video for r in resumos] == [1, 0]
+    sessao.expire_all()
+    assert len(sessao.scalars(select(VideoSessao)).all()) == 1
+    assert edicao.itens[0].fatos == fotografia
+    assert fontes_editoriais == (
+        votacao.fonte_id,
+        votacao.proposicoes[0].fonte_id,
+        votacao.votos[0].fonte_id,
+    )
+    if not publicar_antes:
+        assert exportar(abrir, edicao_id) == revisao
+        assert publicar(abrir, edicao_id)["situacao"] == "publicada"
+
+    url = votacao.video_sessao.url_video
+    assert url == "https://www.youtube.com/watch?v=Video_Teste"
+    assert cliente.get(f"/votacoes/{votacao.id}").json()["url_video"] == url
+    depois = cliente.get(rota).json()
+    assert depois["itens"][0]["fatos"]["votacoes"][0]["url_video"] == url
+    if publicar_antes:
+        antes["itens"][0]["fatos"]["votacoes"][0]["url_video"] = url
+        assert depois == antes
 
 
 def test_sem_votacoes_nao_cria_edicao(abrir, sessao):

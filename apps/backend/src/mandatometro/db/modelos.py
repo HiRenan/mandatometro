@@ -41,6 +41,7 @@ from mandatometro.temas import TemaId
 logger = logging.getLogger(__name__)
 
 CASAS = ("camara", "senado")
+PADRAO_URL_VIDEO = r"https://www[.]youtube[.]com/watch[?]v=[A-Za-z0-9_-]{11}"
 
 PapelConta = Literal["comum", "administradora"]
 PADRAO_ID_ARTIGO = r"^[a-z0-9-]+/[a-z0-9-]+$"
@@ -319,6 +320,26 @@ votacao_proposicao = Table(
 )
 
 
+class VideoSessao(Base):
+    """Registro oficial de vídeo de uma sessão, separado das fontes editoriais."""
+
+    __tablename__ = "video_sessao"
+    __table_args__ = (
+        UniqueConstraint("casa", "id_externo"),
+        CheckConstraint(_um_de("casa", CASAS), name="casa"),
+        CheckConstraint("id_externo > 0", name="id_externo"),
+        CheckConstraint(f"""url_video COLLATE "C" ~ '^{PADRAO_URL_VIDEO}$'""", name="url_video"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    casa: Mapped[str]
+    id_externo: Mapped[int]
+    url_video: Mapped[str | None]
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
+    fonte: Mapped[Fonte] = relationship()
+
+
 class Votacao(Base):
     """Uma votação do plenário.
 
@@ -349,8 +370,12 @@ class Votacao(Base):
     resultado: Mapped[str]
     resultado_bruto: Mapped[str | None]
     fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+    video_sessao_id: Mapped[int | None] = mapped_column(
+        ForeignKey("video_sessao.id", ondelete="SET NULL")
+    )
 
     fonte: Mapped[Fonte] = relationship()
+    video_sessao: Mapped[VideoSessao | None] = relationship()
     proposicoes: Mapped[list[Proposicao]] = relationship(secondary=votacao_proposicao)
     votos: Mapped[list["Voto"]] = relationship(
         back_populates="votacao", cascade="all, delete-orphan", passive_deletes=True

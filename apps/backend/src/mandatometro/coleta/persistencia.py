@@ -17,6 +17,7 @@ from mandatometro.db.modelos import (
     Parlamentar,
     Proposicao,
     ProposicaoTema,
+    VideoSessao,
     Votacao,
     Voto,
 )
@@ -224,6 +225,31 @@ def salvar_votacao(
     votacao.proposicoes = list({p.id: p for p in proposicoes}.values())
     sessao.flush()
     return votacao
+
+
+def salvar_video_sessao(
+    sessao: Session,
+    *,
+    casa: str,
+    id_externo: int,
+    url_video: str | None,
+    resposta: Resposta,
+) -> tuple[int, bool]:
+    anterior = sessao.scalar(
+        select(VideoSessao)
+        .where(VideoSessao.casa == casa, VideoSessao.id_externo == id_externo)
+        .with_for_update()
+    )
+    if anterior is not None and anterior.url_video == url_video:
+        return anterior.id, False
+    fonte = registrar_fonte(sessao, resposta)
+    video = _salvar(
+        sessao,
+        VideoSessao,
+        ["casa", "id_externo"],
+        {"casa": casa, "id_externo": id_externo, "url_video": url_video, "fonte_id": fonte.id},
+    )
+    return video.id, True
 
 
 def sincronizar_votos(sessao: Session, votacao: Votacao, votos: Sequence[DadosVoto]) -> int:

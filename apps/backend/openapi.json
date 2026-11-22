@@ -2594,6 +2594,18 @@
             ],
             "title": "Casa"
           },
+          "url_video": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url Video",
+            "description": "Endereço HTTPS do vídeo oficial da sessão inteira, ou nulo quando indisponível."
+          },
           "placar": {
             "$ref": "#/components/schemas/ContagemVotosParlamentar",
             "description": "Contagem dos votos individuais gravados."
@@ -2626,6 +2638,7 @@
           "coletado_em",
           "id",
           "casa",
+          "url_video",
           "placar",
           "placar_por_partido",
           "votos"
@@ -3726,6 +3739,18 @@
             "type": "array",
             "title": "Fontes"
           },
+          "url_video": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url Video",
+            "description": "Endereço HTTPS do vídeo oficial da sessão inteira, ou nulo quando indisponível."
+          },
           "temas": {
             "items": {
               "$ref": "#/components/schemas/TemaPublico"
@@ -3741,6 +3766,7 @@
           "resultado",
           "placar",
           "fontes",
+          "url_video",
           "temas"
         ],
         "title": "VotacaoPublica"

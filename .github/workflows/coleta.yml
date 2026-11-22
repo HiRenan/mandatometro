@@ -14,6 +14,10 @@ on:
         description: "Último dia, inclusive (AAAA-MM-DD)"
         required: false
         type: string
+      somente_videos:
+        description: "Somente vídeos"
+        type: boolean
+        default: false
       somente_temas:
         description: "Preenche somente os temas das proposições de votações já gravadas"
         required: false
@@ -51,7 +55,6 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       COLETA_INICIO: ${{ inputs.inicio }}
       COLETA_FIM: ${{ inputs.fim }}
-      COLETA_SOMENTE_TEMAS: ${{ github.event_name == 'workflow_dispatch' && inputs.somente_temas && 'true' || 'false' }}
       CASA: ${{ matrix.casa }}
       PYTHONUTF8: "1"
     steps:
@@ -69,4 +72,7 @@ jobs:
           cache-dependency-glob: apps/backend/uv.lock
       - run: uv sync --locked --no-dev
       - name: Coletar e mostrar o resumo sem dados pessoais
-        run: uv run --no-sync python scripts/tarefas.py coletar "$CASA"
+        run: >-
+          uv run --no-sync python scripts/tarefas.py coletar "$CASA"
+          ${{ github.event_name == 'workflow_dispatch' && inputs.somente_videos && '--somente-videos' || '' }}
+          ${{ github.event_name == 'workflow_dispatch' && inputs.somente_temas && '--somente-temas' || '' }}

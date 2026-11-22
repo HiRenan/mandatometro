@@ -38,6 +38,8 @@ def roteiro():
     for identificador in (2637478, 2236186):
         dados[f"/proposicoes/{identificador}"] = ler(f"proposicao-{identificador}")
         dados[f"/proposicoes/{identificador}/temas"] = {"dados": [], "links": []}
+    for evento in (83057, 83188):
+        dados[f"/eventos/{evento}"] = ler(f"evento-{evento}")
     dados["/votacoes"] = {
         "dados": [deepcopy(dados[f"/votacoes/{i}"]["dados"]) for i in ("2637478-26", "2236186-60")],
         "links": [],
@@ -45,7 +47,16 @@ def roteiro():
     return dados
 
 
-def executar(sessao, roteiro, *, inicio=INICIO, fim=FIM, interceptar=None, saida_esperada=None):
+def executar(
+    sessao,
+    roteiro,
+    *,
+    inicio=INICIO,
+    fim=FIM,
+    interceptar=None,
+    saida_esperada=None,
+    somente_videos=False,
+):
     caminhos = []
 
     def atender(req):
@@ -72,19 +83,26 @@ def executar(sessao, roteiro, *, inicio=INICIO, fim=FIM, interceptar=None, saida
         def criar_sessao():
             return Session(bind=conexao, join_transaction_mode="create_savepoint")
 
-        if saida_esperada is None:
+        if saida_esperada is None and not somente_videos:
             resumo = coletar(inicio, fim, http=http, criar_sessao=criar_sessao)
         else:
+            argumentos = [
+                "coleta",
+                "camara",
+                "--inicio",
+                inicio.isoformat(),
+                "--fim",
+                fim.isoformat(),
+            ]
+            if somente_videos:
+                argumentos.append("--somente-videos")
             resumos = []
             with pytest.MonkeyPatch.context() as patch:
                 patch.setattr(camara, "ClienteHttp", lambda _: nullcontext(http))
                 patch.setattr(camara, "sessao_do_banco", criar_sessao)
                 patch.setattr(camara, "mostrar_resumo", resumos.append)
-                codigo = main(
-                    ["coleta", "camara", "--inicio", inicio.isoformat(), "--fim", fim.isoformat()]
-                )
+                assert main(argumentos) == (saida_esperada or 0)
             resumo = resumos[0]
-            assert codigo == saida_esperada
     sessao.expire_all()
     return resumo, caminhos
 
@@ -97,6 +115,8 @@ def test_coleta_nominal_simbolica_e_repete_sem_duplicar(sessao, roteiro):
     primeiro, chamadas = executar(sessao, roteiro)
     assert primeiro.completa
     assert (primeiro.votacoes, primeiro.proposicoes, primeiro.votos) == (2, 2, 429)
+    assert primeiro.videos.sessoes_com_video == 1
+    assert primeiro.videos.sessoes_sem_video == 1
     assert all("/orientacoes" not in x for x in chamadas)
     assert [contar(sessao, m) for m in (Parlamentar, Mandato, Proposicao, Votacao, Voto)] == [
         429,
@@ -131,6 +151,92 @@ def test_coleta_nominal_simbolica_e_repete_sem_duplicar(sessao, roteiro):
     for proposicao in sessao.scalars(select(Proposicao)):
         assert f"idProposicao={proposicao.id_externo}" in proposicao.fonte.url_publica
         assert proposicao.fonte.trecho == proposicao.ementa
+
+
+def test_video_da_camara_e_consultado_uma_vez_por_evento(sessao, roteiro):
+    roteiro["/votacoes/2637478-26"]["dados"]["idEvento"] = 83057
+
+    resumo, chamadas = executar(sessao, roteiro)
+
+    assert resumo.videos.votacoes_com_video == 2
+    assert [url for url in chamadas if "/eventos/" in url] == [f"{BASE}/eventos/83057"]
+    votacoes = sessao.scalars(select(Votacao)).all()
+    assert len({v.video_sessao_id for v in votacoes}) == 1
+    video = votacoes[0].video_sessao
+    assert video.url_video == "https://www.youtube.com/watch?v=Video_Teste"
+    assert video.fonte.url == f"{BASE}/eventos/83057"
+    assert video.fonte.coletado_em is not None
+    assert all(v.fonte_id != video.fonte_id for v in votacoes)
+
+
+@pytest.mark.parametrize("status,recusadas,falhas", [(None, 1, 0), (404, 0, 1)])
+def test_video_da_camara_invalido_ou_indisponivel_preserva_votacao(
+    sessao, roteiro, status, recusadas, falhas
+):
+    roteiro["/eventos/83188"] = status or ler("evento-url-recusada")
+
+    resumo, _ = executar(sessao, roteiro)
+
+    assert resumo.completa and resumo.votacoes == 2
+    assert (resumo.videos.urls_recusadas, resumo.videos.falhas_sessoes) == (recusadas, falhas)
+    votacao = sessao.scalar(select(Votacao).where(Votacao.id_externo == "2637478-26"))
+    assert votacao.video_sessao is None or votacao.video_sessao.url_video is None
+
+
+@pytest.mark.parametrize("sufixo", ["&t=60", "\n"], ids=["tempo", "quebra-de-linha"])
+def test_video_recusa_url_com_sufixo_antes_da_gravacao(sessao, roteiro, sufixo):
+    url = roteiro["/eventos/83057"]["dados"]["urlRegistro"]
+    roteiro["/eventos/83188"]["dados"]["urlRegistro"] = url + sufixo
+
+    resumo, _ = executar(sessao, roteiro)
+
+    assert resumo.completa and resumo.votacoes == 2
+    assert resumo.videos.urls_recusadas == 1
+    assert resumo.videos.falhas_gravacao == 0
+    votacao = sessao.scalar(select(Votacao).where(Votacao.id_externo == "2637478-26"))
+    assert votacao.video_sessao.url_video is None
+
+
+@pytest.mark.parametrize("somente_videos", [False, True])
+@pytest.mark.parametrize(
+    "orgaos",
+    [None, [{"id": 999, "sigla": "CCJC"}], [{"id": 180, "sigla": "PLEN"}, {"id": 999}]],
+    ids=["ausente", "comissao", "misto"],
+)
+def test_video_da_camara_recusa_evento_fora_do_plenario(sessao, roteiro, somente_videos, orgaos):
+    rota = "/eventos/83057"
+    evento = roteiro[rota]
+    if somente_videos:
+        roteiro[rota] = 404
+        executar(sessao, roteiro)
+        roteiro[rota] = evento
+    if orgaos is None:
+        evento["dados"].pop("orgaos")
+    else:
+        evento["dados"]["orgaos"] = orgaos
+
+    resumo, chamadas = executar(sessao, roteiro, somente_videos=somente_videos)
+
+    assert resumo.completa
+    assert resumo.votacoes == (0 if somente_videos else 2)
+    assert [url for url in chamadas if url.endswith(rota)] == [f"{BASE}{rota}"]
+    assert resumo.videos.urls_recusadas == 1
+    assert resumo.videos.falhas_sessoes == 0
+    assert resumo.videos.votacoes_com_video == 0
+    assert all(
+        v.video_sessao is None or v.video_sessao.url_video is None
+        for v in sessao.scalars(select(Votacao))
+    )
+
+
+def test_votacao_sem_evento_e_contada(sessao, roteiro):
+    roteiro["/votacoes/2637478-26"]["dados"]["idEvento"] = None
+
+    resumo, chamadas = executar(sessao, roteiro)
+
+    assert resumo.completa and resumo.votacoes == 2
+    assert resumo.videos.votacoes_sem_sessao == 1
+    assert not any(url.endswith("/eventos/83188") for url in chamadas)
 
 
 def test_quem_votou_fora_da_lista_atual_tem_mandato_da_fonte_do_voto(sessao, roteiro):

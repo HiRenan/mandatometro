@@ -4,6 +4,7 @@ import argparse
 import logging
 import re
 import time
+from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -14,7 +15,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from mandatometro.coleta.cli import (
-    adicionar_argumento_temas,
+    adicionar_argumentos_de_preenchimento,
     adicionar_argumentos_periodo,
     mostrar_resumo,
     resolver_periodo,
@@ -31,6 +32,13 @@ from mandatometro.coleta.persistencia import (
 )
 from mandatometro.coleta.temas import coletar_temas, preencher_temas
 from mandatometro.coleta.tipos import DadosVoto, ResumoColeta
+from mandatometro.coleta.videos import (
+    URL_RECUSADA,
+    VotacaoSemVideo,
+    VotacoesPorSessao,
+    coletar_videos,
+    preencher_videos,
+)
 from mandatometro.db import sessao as sessao_do_banco
 from mandatometro.db.modelos import (
     Mandato,
@@ -42,6 +50,7 @@ from mandatometro.db.modelos import (
 
 BASE = "https://dadosabertos.camara.leg.br/api/v2"
 PUBLICA = "https://www.camara.leg.br"
+ID_PLENARIO = 180
 logger = logging.getLogger(__name__)
 FALHAS = (ErroColeta, ValueError, KeyError, TypeError, SQLAlchemyError)
 
@@ -81,6 +90,36 @@ def _opcional(valor) -> str | None:
     if valor is not None and not isinstance(valor, str):
         raise ValueError("Texto inválido na fonte.")
     return valor or None
+
+
+def _video_evento(http: ClienteHttp, id_evento: int) -> tuple[Resposta, object]:
+    resposta = http.obter_json(f"/eventos/{id_evento}")
+    try:
+        dados = _objeto(_objeto(resposta.dados).get("dados"))
+        if _inteiro(dados.get("id")) == id_evento:
+            orgaos = dados.get("orgaos")
+            if (
+                isinstance(orgaos, list)
+                and orgaos
+                and all(
+                    isinstance(orgao, dict) and orgao.get("id") == ID_PLENARIO for orgao in orgaos
+                )
+            ):
+                return resposta, dados.get("urlRegistro")
+            return resposta, URL_RECUSADA
+    except ValueError:
+        pass
+    raise ErroColeta("Detalhe do evento inválido ou divergente.")
+
+
+def _eventos_historicos(candidatas: list[VotacaoSemVideo]) -> VotacoesPorSessao:
+    eventos: VotacoesPorSessao = defaultdict(list)
+    for votacao_id, _, url_publica in candidatas:
+        evento = re.fullmatch(
+            rf"{re.escape(PUBLICA)}/evento-legislativo/([1-9][0-9]*)", url_publica or ""
+        )
+        eventos[int(evento[1]) if evento else None].append(votacao_id)
+    return eventos
 
 
 def _metadados(resposta: Resposta) -> Resposta:
@@ -258,7 +297,7 @@ class _Coleta:
             limite = min(fim, fim_do_ano)
             limite_consulta = limite
             params = {
-                "idOrgao": 180,
+                "idOrgao": ID_PLENARIO,
                 "dataInicio": inicio.isoformat(),
                 "itens": 100,
                 "ordem": "ASC",
@@ -306,7 +345,7 @@ class _Coleta:
         data = date.fromisoformat(detalhe["data"])
         if (
             detalhe["id"] != identificador
-            or detalhe["idOrgao"] != 180
+            or detalhe["idOrgao"] != ID_PLENARIO
             or not self.resumo.inicio <= data <= self.resumo.fim
         ):
             raise ErroColeta("Detalhe da votação diverge da consulta.")
@@ -314,7 +353,7 @@ class _Coleta:
         resultado, bruto = normalizar_resultado(detalhe["aprovacao"])
         afetadas = {_inteiro(_objeto(p)["id"]) for p in _lista(detalhe["proposicoesAfetadas"])}
         evento = detalhe.get("idEvento")
-        publica = f"{PUBLICA}/evento-legislativo/{_inteiro(evento)}" if evento else None
+        id_evento = _inteiro(evento) if evento else None
         try:
             paginas = _paginas(self.http, f"/votacoes/{identificador}/votos")
         except ErroColeta as erro:
@@ -355,12 +394,13 @@ class _Coleta:
                     "url_inteiro_teor": _opcional(item["urlInteiroTeor"]),
                 }
                 self.proposicoes[id_proposicao] = Resposta(prop.url, prop.coletado_em, dados)
-        return resposta, data, descricao, resultado, bruto, afetadas, publica, paginas, votos
+        return resposta, data, descricao, resultado, bruto, afetadas, id_evento, paginas, votos
 
-    def gravar_votacao(self, identificador) -> None:
-        resposta, data, descricao, resultado, bruto, afetadas, publica, paginas, votos = (
+    def gravar_votacao(self, identificador) -> tuple[int, int | None]:
+        resposta, data, descricao, resultado, bruto, afetadas, id_evento, paginas, votos = (
             self.ler_votacao(identificador)
         )
+        publica = f"{PUBLICA}/evento-legislativo/{id_evento}" if id_evento is not None else None
         fontes_criadas, pessoas_criadas, mandatos_criados = 0, 0, 0
         novas_proposicoes = afetadas - self.proposicoes_gravadas
         with self.criar_sessao() as sessao, sessao.begin():
@@ -465,6 +505,7 @@ class _Coleta:
                     )
                 )
             sincronizar_votos(sessao, votacao, dados_votos)
+            votacao_id = votacao.id
         # Só contam observações confirmadas; o cache de ids gravados também avança após o commit.
         self.proposicoes_gravadas.update(afetadas)
         self.resumo.proposicoes += len(novas_proposicoes)
@@ -482,6 +523,7 @@ class _Coleta:
             logger.warning("Votação %s sem proposição afetada na fonte.", identificador)
         if publica is None:
             logger.warning("Votação %s sem evento para a página pública.", identificador)
+        return votacao_id, id_evento
 
 
 def coletar(
@@ -497,13 +539,14 @@ def coletar(
     coleta = _Coleta(inicio, fim, http, criar_sessao)
     resumo = coleta.resumo
     comeco = time.monotonic()
+    sessoes: VotacoesPorSessao = defaultdict(list)
     try:
         coleta.deputados()
         ids = coleta.listar_votacoes()
         consecutivas = 0
         for identificador in ids:
             try:
-                coleta.gravar_votacao(identificador)
+                votacao_id, id_evento = coleta.gravar_votacao(identificador)
             except _VotacaoIndisponivel as erro:
                 resumo.indisponiveis_na_fonte.append(identificador)
                 logger.warning(
@@ -518,6 +561,7 @@ def coletar(
                 if consecutivas == 3:
                     raise ErroColeta("Três falhas consecutivas nas votações.") from None
             else:
+                sessoes[id_evento].append(votacao_id)
                 consecutivas = 0
     except FALHAS as erro:
         resumo.completa = False
@@ -527,6 +571,7 @@ def coletar(
             else "Falha na estrutura da fonte ou na gravação."
         )
         logger.error("Coleta interrompida: %s", resumo.erro)
+    coletar_videos(resumo, sessoes, http=http, abrir_sessao=criar_sessao, consultar=_video_evento)
     coletar_temas(resumo, sorted(coleta.proposicoes_gravadas), http=http, abrir_sessao=criar_sessao)
     resumo.chamadas = http.chamadas
     resumo.tentativas_extras = http.tentativas_extras
@@ -537,7 +582,7 @@ def coletar(
 def registrar_comando(casas) -> None:
     parser = casas.add_parser("camara", help="coleta plenário e deputados em exercício da Câmara")
     adicionar_argumentos_periodo(parser)
-    adicionar_argumento_temas(parser)
+    adicionar_argumentos_de_preenchimento(parser)
 
     def rodar(args: argparse.Namespace) -> int:
         try:
@@ -548,6 +593,16 @@ def registrar_comando(casas) -> None:
             if args.somente_temas:
                 resumo = preencher_temas(
                     inicio, fim, casa="camara", http=http, abrir_sessao=sessao_do_banco
+                )
+            elif args.somente_videos:
+                resumo = preencher_videos(
+                    inicio,
+                    fim,
+                    casa="camara",
+                    http=http,
+                    abrir_sessao=sessao_do_banco,
+                    localizar=_eventos_historicos,
+                    consultar=_video_evento,
                 )
             else:
                 resumo = coletar(inicio, fim, http=http, criar_sessao=sessao_do_banco)
