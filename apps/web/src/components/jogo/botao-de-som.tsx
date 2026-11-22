@@ -1,48 +1,77 @@
-import { useEffect, useRef } from "react";
+import { type RefObject, useEffect, useRef } from "react";
 import { semCliqueDuplo } from "@/lib/clique";
-import { ligarSom, MUSICA, useSom, VOLUME_DA_MUSICA } from "@/lib/jogo/som";
+import {
+	ligarSom,
+	MUSICA,
+	pararSons,
+	useSom,
+	VOLUME_DA_MUSICA,
+} from "@/lib/jogo/som";
 
 /**
  * Liga e desliga o som do jogo. Ele vem ligado, e quem não quiser desliga aqui
- * (docs/jogo-das-comissoes.md). O navegador só deixa tocar depois de um toque
- * ou de uma tecla: a trilha de fundo não começa ao abrir a página, e sim no
- * primeiro clique da pessoa, como o "Começar pela primeira cena". O que o som
- * marca também está em palavras na tela.
+ * (docs/jogo-das-comissoes.md). A trilha de fundo começa no primeiro
+ * acionamento dentro do palco, como o "Começar pela primeira cena". O que o
+ * som marca também está em palavras na tela.
  */
-export function BotaoDeSom() {
+export function BotaoDeSom({
+	palco,
+}: {
+	palco: RefObject<HTMLDivElement | null>;
+}) {
 	const ligado = useSom();
 	const musica = useRef<HTMLAudioElement>(null);
+	const interagiu = useRef(false);
 
 	useEffect(() => {
 		const toca = musica.current;
-		if (!toca) {
+		const areaDoJogo = palco.current;
+		if (!toca || !areaDoJogo) {
 			return;
 		}
 		toca.volume = VOLUME_DA_MUSICA;
-		if (!ligado) {
-			toca.pause?.();
-			return;
-		}
+
 		const tentar = () => {
-			void toca.play?.()?.catch(() => undefined);
+			if (ligado && toca.paused) {
+				void toca.play()?.catch(() => undefined);
+			}
 		};
-		tentar();
-		// A primeira tentativa, ao abrir a página, é recusada pelo navegador: a
-		// trilha entra no primeiro toque ou tecla, e a escuta sai depois dele.
-		document.addEventListener("pointerdown", tentar, { once: true });
-		document.addEventListener("keydown", tentar, { once: true });
+
+		const aoInteragir = () => {
+			interagiu.current = true;
+			tentar();
+		};
+
+		const silenciar = () => {
+			toca.pause();
+			pararSons();
+		};
+
+		const aoSairDoDocumento = () => {
+			interagiu.current = false;
+			silenciar();
+		};
+
+		// O clique nativo chega depois de o navegador aceitar o toque e é o
+		// mesmo evento que Enter e Espaço disparam ao acionar um botão.
+		areaDoJogo.addEventListener("click", aoInteragir, true);
+		window.addEventListener("pagehide", aoSairDoDocumento);
+		if (interagiu.current) {
+			tentar();
+		}
+
 		return () => {
-			document.removeEventListener("pointerdown", tentar);
-			document.removeEventListener("keydown", tentar);
+			areaDoJogo.removeEventListener("click", aoInteragir, true);
+			window.removeEventListener("pagehide", aoSairDoDocumento);
+			silenciar();
 		};
-	}, [ligado]);
+	}, [ligado, palco]);
 
 	return (
 		<div className="jogo-som">
 			<button
 				type="button"
 				className="acao-de-texto"
-				aria-pressed={ligado}
 				onClick={semCliqueDuplo(() => ligarSom(!ligado))}
 			>
 				{ligado ? "Desligar o som" : "Ligar o som"}

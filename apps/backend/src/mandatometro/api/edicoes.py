@@ -73,6 +73,7 @@ def _item(item: ItemEdicao, fontes: dict[int, Fonte]) -> ItemPublico:
         fatos_publicos = FatosPublicos(
             votacoes=[
                 VotacaoPublica(
+                    id=v.id,
                     data=v.data,
                     resultado=v.resultado,
                     placar=PlacarPublico(**v.placar.model_dump()) if v.placar else None,
