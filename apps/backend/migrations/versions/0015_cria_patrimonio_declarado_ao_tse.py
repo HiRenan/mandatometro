@@ -1,7 +1,7 @@
 """cria patrimonio declarado ao tse
 
 Revision ID: 0015
-Revises: 0013
+Revises: 0014
 """
 
 from collections.abc import Sequence

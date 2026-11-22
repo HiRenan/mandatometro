@@ -10,7 +10,7 @@ A API, o front, os logs e os fixtures de teste identificam pessoas pelo id inter
 
 O banco recebe candidaturas com par único entre os parlamentares em exercício, ligadas pelo id interno. A carga guarda o nome de urna para essas candidaturas. Nome civil, documentos, nascimento e demais dados de cadastro ficam fora da tabela de candidaturas. Os resumos e logs trazem contagens, e as fixtures do TSE usam dados inventados. Veja os [campos pessoais das fontes](dicionario-de-dados.md#campos-pessoais).
 
-A carga de bens usa somente o CPF para ligar as eleições e revalidar os vínculos já gravados. O CPF fica na memória da execução. O banco recebe a chave oficial da candidatura, o código de cargo, a UF, as fontes e o total nominal por código de bem. A carga descarta a descrição livre de cada bem e usa rótulos fixos no código. A API entrega o total por eleição com a fonte. Logs e resumos trazem apenas contagens e códigos de falha. [Bens declarados ao TSE](dicionario-de-dados.md#bens-declarados-ao-tse)
+A carga de bens refaz a ligação de 2022 e 2026 em memória, com nome de urna e nome civil, para confirmar as âncoras. Ela usa só o CPF para ligar as outras eleições e conferir a identidade do histórico gravado. O CPF e os nomes do CSV ficam na memória da execução. O banco recebe a chave oficial da candidatura, o código de cargo, a UF, as fontes e o total nominal por código de bem. A carga descarta a descrição livre de cada bem e usa rótulos fixos no código. A API entrega o total por eleição com a fonte. Logs e resumos trazem apenas contagens e códigos de falha. [Bens declarados ao TSE](dicionario-de-dados.md#bens-declarados-ao-tse)
 
 ## Ausências e afastamentos
 
