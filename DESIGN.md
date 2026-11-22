@@ -225,6 +225,10 @@ components:
     backgroundColor: "{colors.papel-2}"
     textColor: "{colors.tinta}"
     rounded: "{rounded.none}"
+  capa-do-video:
+    backgroundColor: "{colors.papel-2}"
+    textColor: "{colors.tinta}"
+    rounded: "{rounded.none}"
 ---
 
 # Design System: Mandatômetro
@@ -824,7 +828,7 @@ Tudo é reto: raio zero (`--radius: 0`).
 - **Tudo em tinta:** o Sim não é verde, e o Não não é vermelho. O placar é contado por votação, e a Presidência fica fora dele. Um resultado que não é aprovada nem rejeitada não vira aprovação.
 - **Sem placar,** como nas votações secretas do Senado: "O placar não está disponível nos dados usados.", sem zero e sem adivinhar a modalidade.
 - **Leitor de tela:** o nome vem antes do número no HTML, e o leitor de tela lê "Sim, 312"; a tela põe o número em cima (`column-reverse`).
-- **Ver quem votou:** na edição, cada quadro termina com a ação em texto "Ver quem votou", que leva à página da votação (`/votacoes/139`). O fim do nome, "na votação de 12 de novembro de 2026", fica só para o leitor de tela: a edição pode ter várias votações. O painel de revisão não passa o id da votação e fica sem o link. O Renan pediu o link em 21/11/2026, na #268, olhando o placar de uma edição.
+- **Ver quem votou:** na edição, cada quadro termina com a ação em texto "Ver quem votou", que leva à página da votação (`/votacoes/139`). O fim do nome, "na votação de 12 de novembro de 2026", fica só para o leitor de tela: a edição pode ter várias votações. O painel de revisão não passa o id da votação e fica sem o link. O Renan pediu o link em 21/11/2026, na #268, olhando o placar de uma edição. Quando a votação tem o vídeo da sessão, vem ao lado a ação em texto "Vídeo da sessão", que leva ao bloco dele na página da votação (`/votacoes/139#video-da-sessao`), com o mesmo fim só para o leitor de tela (veja "Vídeo da sessão"); sem vídeo, ou com um endereço fora do formato do contrato, ela não aparece.
 
 ### Fontes do item
 - **Forma:** o título "Fontes", em Label, e a lista numerada das "Fontes oficiais" do artigo, sem o fio de 6 px. As fontes vêm agrupadas pelo endereço, como no e-mail: o primeiro endereço se chama "Fonte oficial", e os outros, "Outra referência oficial". Embaixo do nome, o site, como nas fontes das trilhas, e "coletada em 13 de novembro de 2026", no dia de Brasília.
@@ -861,6 +865,14 @@ Tudo é reto: raio zero (`--radius: 0`).
 - **O filtro:** "Estado" e "Partido", só com o que aparece na votação, e o botão "Filtrar", num formulário GET para o mesmo endereço (`/votacoes/139?uf=SC&partido=PFT`), que funciona sem JavaScript. Embaixo vem "Mostrando 16 de 513 nomes", que o leitor de tela ouve quando muda, e, com filtro, a ação em texto "Limpar os filtros". Sem nome nenhum, aparece "Nenhum nome com esses filtros.". O filtro só muda o que a página mostra, e a votação não é pedida de novo. Um valor que não aparece na votação é ignorado, e um valor que não é estado nem partido sai do endereço. A página fica onde está, com a lista logo abaixo, e o foco fica no "Filtrar"; o "Limpar os filtros" some com o filtro e leva o foco ao "Filtrar", logo acima.
 - **Sem o voto de cada um,** como na votação simbólica e na secreta do Senado: o painel volta a ser de enfeite, o placar por partido e o filtro saem, e "Quem votou como" diz "Esta votação não tem o voto de cada parlamentar nos dados usados. Isso acontece quando o voto de cada um não é registrado, como na votação simbólica.", com o link "Entenda na trilha: O Plenário vota o projeto".
 - **Título da aba:** a proposição ("PL 812/2026 · Mandatômetro"). A descrição: "Câmara dos Deputados, 20 de novembro de 2026: aprovada. O placar, o placar por partido e quem votou como, com a página oficial da votação.".
+
+### Vídeo da sessão
+- **Onde:** na página da votação, depois do placar e antes do placar por partido, só quando a votação tem o vídeo da sessão (o `url_video` da API). Na edição, o quadro da votação leva a ele pelo "Vídeo da sessão" (veja "Quadro da votação"), sem player dentro da edição. A Atena escolheu, pelo Renan, em 22/11/2026, na #268: o pedido nasceu na edição, quando ele abriu o link oficial de uma votação e caiu no vídeo da sessão no site da Câmara.
+- **O endereço:** só o formato do contrato, `https://www.youtube.com/watch?v=` com o id de 11 caracteres, vira capa e player (`lib/parlamentares/video.ts`). Qualquer outro valor conta como sem vídeo, e o bloco não aparece.
+- **A capa:** "Vídeo da sessão", em subtítulo, e a caixa 16:9, guardada desde o servidor, com o fio de tinta de 2 px e o papel do painel. Dentro, o azulejo de tinta com o play em papel, desenhado em SVG no código, e, ao lado, "Assistir ao vídeo da sessão", em Archivo estreito em maiúsculas, e a linha "Sessão de 20 de novembro de 2026 · Câmara dos Deputados · YouTube", em Label. A capa inteira é um link para o vídeo no YouTube: sem o JavaScript, ela abre o vídeo lá; com ele, o toque põe no lugar o player do `youtube-nocookie.com`, que já começa a tocar, num `iframe` com o título "Vídeo da sessão de 20 de novembro de 2026, no YouTube", e o foco vai para o player. O Ctrl, o Shift e o botão do meio seguem o link. Nada do YouTube carrega antes do toque, nem a miniatura.
+- **A altura:** com a letra grande numa tela estreita, a caixa cresce para caber a capa. Depois do toque, a capa fica na caixa, escondida e fora do teclado (`inert`), e o player ocupa a caixa inteira: nada pula.
+- **A nota,** embaixo, em serifa pequena: "O vídeo é da sessão inteira do Plenário, publicado pela Câmara dos Deputados no YouTube, e não começa no momento desta votação. O player do YouTube, do Google, só carrega depois do toque." No Senado, "publicado pelo Senado Federal". A API não diz o minuto da votação, e a página não afirma.
+- **O termo** fica como está (a Atena, pelo Renan, em 22/11/2026): o vídeo não usa dado da conta, e a nota diz que o player é do Google.
 
 ### Página do termo
 - **Endereço.** O termo de consentimento da conta fica em `/termo`, com o título da aba "Termo de consentimento · Mandatômetro". A rota serve o texto sem loader nem pedido à API e abre sem conta e sem JavaScript. No navegador com API configurada e sessão anotada, a moldura consulta o progresso da conta, como nas outras páginas. O cadastro leva até o termo em outra aba, pelo endereço que a API devolve (`CONTA_TERMO_URL`), e o rodapé de todas as páginas, pelo link "O termo de consentimento da conta".
