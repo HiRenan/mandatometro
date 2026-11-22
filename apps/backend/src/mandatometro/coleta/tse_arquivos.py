@@ -10,14 +10,12 @@ from dataclasses import dataclass
 from io import BufferedReader, RawIOBase, TextIOWrapper
 from pathlib import Path
 from tempfile import TemporaryFile
-from urllib.parse import unquote_to_bytes, urlsplit, urlunsplit
 from zipfile import ZipExtFile, ZipFile
 
 import httpx2
 
 BASE = "https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand"
 CANDIDATURAS = "consulta_cand"
-REDES = "rede_social_candidato"
 LIMITE_DOWNLOAD = 50_000_000
 LIMITE_MEMBRO = 300_000_000
 CARGOS_POR_CASA = {"camara": (6,), "senado": (5, 9, 10)}
@@ -67,27 +65,13 @@ _CAMPOS_CANDIDATURAS = {
     "NR_CPF_CANDIDATO",
     "CD_SIT_TOT_TURNO",
 }
-_CAMPOS_REDES = {
-    "AA_ELEICAO",
-    "CD_ELEICAO",
-    "SQ_CANDIDATO",
-    "SG_UF",
-    "DS_URL",
-    "NR_ORDEM_REDE_SOCIAL",
-}
 _UTF8_MULTIBYTE = re.compile(r"[^\x00-\x7f\udc80-\udcff]")
-_ROTULO_HOST = re.compile(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?")
-_SERVICOS_DE_MENSAGENS = ("wa.me", "whatsapp.com")
 
 type ChaveTse = tuple[int, int]  # CD_ELEICAO e SQ_CANDIDATO, dentro do ano do arquivo.
 
 
 class ArquivoInvalido(ValueError):
     """O arquivo inteiro precisa ser descartado."""
-
-
-class UrlInvalida(ValueError):
-    """A mensagem é um código de descarte fixo, sem valor da fonte."""
 
 
 class _LeituraCSV(RawIOBase):
@@ -133,21 +117,19 @@ class CandidaturaTse:
     cpf: str | None
 
 
-def url_arquivo(tipo: str, ano: int) -> str:
-    return f"{BASE}/{tipo}_{ano}.zip"
+def url_arquivo(ano: int) -> str:
+    return f"{BASE}/{CANDIDATURAS}_{ano}.zip"
 
 
 @contextmanager
-def abrir_zip(
-    tipo: str, ano: int, diretorio: Path | None, cliente: httpx2.Client
-) -> Iterator[ZipFile]:
+def abrir_zip(ano: int, diretorio: Path | None, cliente: httpx2.Client) -> Iterator[ZipFile]:
     if diretorio is not None:
-        with ZipFile(diretorio / f"{tipo}_{ano}.zip") as arquivo:
+        with ZipFile(diretorio / f"{CANDIDATURAS}_{ano}.zip") as arquivo:
             yield arquivo
         return
     # O diretório central do ZIP fica no fim. O temporário permite a leitura com seek.
     with TemporaryFile() as temporario:
-        with cliente.stream("GET", url_arquivo(tipo, ano), follow_redirects=False) as resposta:
+        with cliente.stream("GET", url_arquivo(ano), follow_redirects=False) as resposta:
             resposta.raise_for_status()
             tamanho = 0
             for bloco in resposta.iter_bytes(chunk_size=128 * 1024):
@@ -270,91 +252,3 @@ def ler_candidaturas(
     if not candidaturas:
         raise ArquivoInvalido("O arquivo não traz candidaturas do recorte.")
     return list(candidaturas.values())
-
-
-def _conferir_caminho(caminho: str) -> None:
-    dados = unquote_to_bytes(caminho)
-    while (decodificado := unquote_to_bytes(dados)) != dados:
-        dados = decodificado
-    try:
-        decodificado = dados.decode("utf-8")
-    except UnicodeDecodeError:
-        decodificado = dados.decode("latin-1")
-    if "@" in decodificado:
-        raise UrlInvalida("caminho_arroba")
-    if any(ch.isspace() for ch in decodificado):
-        raise UrlInvalida("caminho_espaco")
-    if re.search(r"\d{8,}", decodificado):
-        raise UrlInvalida("caminho_digitos")
-
-
-def _url_declarada(valor: str) -> str:
-    valor = valor.strip()
-    if not valor or "\\" in valor or any(ord(ch) < 32 or ord(ch) == 127 for ch in valor):
-        raise UrlInvalida("formato_invalido")
-    explicita = valor.startswith("//") or re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", valor)
-    if valor.startswith("//"):
-        valor = "https:" + valor
-    elif not explicita:
-        if re.match(r"^[a-zA-Z][a-zA-Z0-9+-]*:", valor):
-            raise UrlInvalida("esquema_invalido")
-        valor = "https://" + valor
-
-    try:
-        url = urlsplit(valor)
-        host = (url.hostname or "").encode("idna").decode("ascii")
-        porta = url.port
-    except ValueError:
-        host = ""
-    if (
-        "." not in host
-        or len(host) > 253
-        or not all(_ROTULO_HOST.fullmatch(r) for r in host.split("."))
-    ):
-        raise UrlInvalida("host_invalido")
-    if url.scheme not in ("https", "http"):
-        raise UrlInvalida("esquema_invalido")
-    if not explicita and url.username is not None:
-        raise UrlInvalida("email_avulso")
-    if porta == 0:
-        raise UrlInvalida("formato_invalido")
-    if any(host == servico or host.endswith(f".{servico}") for servico in _SERVICOS_DE_MENSAGENS):
-        raise UrlInvalida("mensagens_por_telefone")
-    _conferir_caminho(url.path)
-    caminho = "/".join(parte.partition(";")[0] for parte in url.path.split("/"))
-    return urlunsplit((url.scheme, host, caminho, "", ""))
-
-
-def ler_links(
-    arquivo: ZipFile,
-    ano: int,
-    candidaturas: dict[ChaveTse, tuple[int, str]],
-    descartes: Counter[str],
-) -> list[tuple[int, int, str]]:
-    por_url: dict[tuple[int, str], int] = {}
-    por_ordem: dict[tuple[int, int], str] = {}
-    for linha in _linhas(arquivo, f"{REDES}_{ano}_BRASIL.csv", _CAMPOS_REDES, descartes):
-        try:
-            chave = _chave(linha)
-            if chave not in candidaturas:
-                continue
-            candidatura_id, uf = candidaturas[chave]
-            ordem = _numero(linha["NR_ORDEM_REDE_SOCIAL"], 1, 2**31 - 1)
-            if linha["AA_ELEICAO"] != str(ano) or linha["SG_UF"] != uf:
-                raise ValueError("A rede diverge da candidatura.")
-        except ValueError:
-            descartes["linha_invalida"] += 1
-            continue
-        try:
-            url = _url_declarada(linha["DS_URL"])
-        except UrlInvalida as erro:
-            descartes[f"url_{erro}"] += 1
-            continue
-        if por_ordem.setdefault((candidatura_id, ordem), url) != url:
-            raise ArquivoInvalido("Endereços divergentes para a mesma ordem.")
-        chave_url = candidatura_id, url
-        if chave_url in por_url:
-            descartes["url_repetida"] += 1
-            ordem = min(ordem, por_url[chave_url])
-        por_url[chave_url] = ordem
-    return [(candidatura_id, ordem, url) for (candidatura_id, url), ordem in por_url.items()]

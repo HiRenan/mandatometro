@@ -66,30 +66,8 @@ def upgrade() -> None:
     op.create_index(
         op.f("ix_candidatura_parlamentar_id"), "candidatura", ["parlamentar_id"], unique=False
     )
-    op.create_table(
-        "link_candidatura",
-        sa.Column("candidatura_id", sa.Integer(), nullable=False),
-        sa.Column("ordem", sa.Integer(), nullable=False),
-        sa.Column("url", sa.String(), nullable=False),
-        sa.Column("fonte_id", sa.Integer(), nullable=False),
-        sa.CheckConstraint("ordem > 0", name=op.f("ck_link_candidatura_ordem")),
-        sa.CheckConstraint(
-            "url like 'http://%' or url like 'https://%'", name=op.f("ck_link_candidatura_url")
-        ),
-        sa.ForeignKeyConstraint(
-            ["candidatura_id"],
-            ["candidatura.id"],
-            name=op.f("fk_link_candidatura_candidatura_id_candidatura"),
-            ondelete="CASCADE",
-        ),
-        sa.ForeignKeyConstraint(
-            ["fonte_id"], ["fonte.id"], name=op.f("fk_link_candidatura_fonte_id_fonte")
-        ),
-        sa.PrimaryKeyConstraint("candidatura_id", "ordem", name=op.f("pk_link_candidatura")),
-    )
 
 
 def downgrade() -> None:
-    op.drop_table("link_candidatura")
     op.drop_index(op.f("ix_candidatura_parlamentar_id"), table_name="candidatura")
     op.drop_table("candidatura")

@@ -89,11 +89,11 @@ Confira os campos `videos` nos dois resumos e `url_video` na edição publicada 
 
 1. Confirme que **Migrar banco** aplicou a revisão `0013` e que **Coletar Congresso** carregou os parlamentares em exercício na mesma branch.
 2. Em **Actions → Coletar TSE → Run workflow**, escolha `develop` para desenvolvimento ou `main` para produção. O job usa o segredo `DATABASE_URL` com pool do ambiente, aguarda a fila desse banco e tem até 10 minutos.
-3. Confira o commit executado e a linha JSON. `completa: true` confirma os quatro arquivos, e as contagens por Casa e ano indicam a cobertura da ligação. Em 2026, `outro_cargo` conta as candidaturas à outra Casa encontradas pelo CPF da âncora de 2022. Se um arquivo falhar, a execução tenta os demais e fica vermelha. Repita o disparo para recuperar a carga.
+3. Confira o commit executado e a linha JSON. `completa: true` confirma os dois arquivos, e as contagens por Casa e ano indicam a cobertura da ligação. Em 2026, `outro_cargo` conta as candidaturas à outra Casa encontradas pelo CPF da âncora de 2022 quando a ligação está livre de conflito. Se uma leitura falhar, a execução tenta a outra e fica vermelha. Repita o disparo para recuperar a carga.
 
-As duas leituras de candidaturas precisam concluir para a coleta gravar novos vínculos ou atualizar os registros de candidaturas confirmadas. Uma falha de leitura preserva as candidaturas gravadas. Se um ZIP de redes faltar, ficam pendentes os links daquele ano.
+As duas leituras de candidaturas precisam concluir para a coleta gravar novos vínculos, atualizar registros confirmados ou registrar fontes. A gravação dos dois anos ocorre na mesma transação.
 
-Os ZIPs são temporários no runner. O resumo contém apenas contagens e os registros confirmados ficam no banco com a URL oficial de cada arquivo. [Campos e ligação do TSE](dicionario-de-dados.md#candidaturas-e-redes-do-tse)
+Os ZIPs são temporários no runner. O resumo contém apenas contagens e os registros confirmados ficam no banco com a URL oficial de cada arquivo. [Campos e ligação do TSE](dicionario-de-dados.md#candidaturas-do-tse)
 
 ## Ativar e recuperar a agenda de sábado
 

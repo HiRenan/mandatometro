@@ -12,50 +12,6 @@ CAMPOS = {"ID", "NOME"}
 DADOS = '"ID";"NOME"\r\n"1";"Urna fictícia"\r\n'
 
 
-@pytest.mark.parametrize(
-    ("entrada", "esperada"),
-    [
-        ("perfil.example/campanha", "https://perfil.example/campanha"),
-        ("//perfil.example/campanha", "https://perfil.example/campanha"),
-        ("http://perfil.example/1234567", "http://perfil.example/1234567"),
-        (
-            "https://usuario:senha@PERFIL.EXAMPLE:8000/campanha;dado=teste?dado=teste#teste",
-            "https://perfil.example/campanha",
-        ),
-    ],
-)
-def test_url_conserva_apenas_esquema_host_e_caminho(entrada, esperada):
-    assert tse._url_declarada(entrada) == esperada
-
-
-@pytest.mark.parametrize(
-    ("entrada", "motivo"),
-    [
-        ("ftp://perfil.example/campanha", "esquema_invalido"),
-        ("contato@perfil.example", "email_avulso"),
-        ("mailto:contato@perfil.example", "esquema_invalido"),
-        ("https://perfil.example/contato@perfil.example", "caminho_arroba"),
-        ("https://perfil.example/contato%252540perfil.example", "caminho_arroba"),
-        ("https://perfil.example/Rua%2520Inventada", "caminho_espaco"),
-        ("https://perfil.example/Rua Inventada", "caminho_espaco"),
-        ("https://perfil.example/12345678", "caminho_digitos"),
-        ("https://perfil.example/%2531%2532%2533%2534%2535%2536%2537%2538", "caminho_digitos"),
-        ("https://./campanha", "host_invalido"),
-        ("https://perfil..example/campanha", "host_invalido"),
-        ("https://-perfil.example/campanha", "host_invalido"),
-        ("https://[perfil.example/campanha", "host_invalido"),
-        ("https://wa.me/campanha", "mensagens_por_telefone"),
-        ("https://conversa.wa.me/campanha", "mensagens_por_telefone"),
-        ("https://whatsapp.com/campanha", "mensagens_por_telefone"),
-        ("https://conversa.whatsapp.com/campanha", "mensagens_por_telefone"),
-    ],
-)
-def test_url_recusada_tem_motivo_fixo_sem_o_valor(entrada, motivo):
-    with pytest.raises(tse.UrlInvalida, match=f"^{motivo}$") as erro:
-        tse._url_declarada(entrada)
-    assert erro.value.__context__ is None
-
-
 def _zip_em_memoria(dados):
     temporario = BytesIO()
     with ZipFile(temporario, "w") as arquivo:
@@ -111,12 +67,12 @@ def test_limite_do_download_conta_os_bytes_da_resposta(monkeypatch):
     monkeypatch.setattr(tse, "LIMITE_DOWNLOAD", 6)
 
     def resposta(pedido):
-        assert str(pedido.url) == tse.url_arquivo(tse.CANDIDATURAS, 2022)
+        assert str(pedido.url) == tse.url_arquivo(2022)
         return httpx2.Response(200, headers={"content-length": "1"}, content=b"sete123")
 
     with (
         httpx2.Client(transport=httpx2.MockTransport(resposta)) as cliente,
         pytest.raises(tse.ArquivoInvalido, match="Download do ZIP acima do limite"),
-        tse.abrir_zip(tse.CANDIDATURAS, 2022, None, cliente),
+        tse.abrir_zip(2022, None, cliente),
     ):
         pytest.fail("O limite deveria ser aplicado antes de abrir o ZIP.")

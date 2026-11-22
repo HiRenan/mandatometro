@@ -81,7 +81,7 @@ O banco guarda os dados da Câmara, do Senado e do TSE, os atos do Diário Ofici
 
 - **Cada Casa tem os seus números:** parlamentar, proposição e votação se identificam pela Casa e pelo id que a Casa dá (`casa`, `id_externo`). Quando a mesma matéria aparece nas duas Casas, cada uma tem o seu registro. A numeração única de 2019 em diante permite relacioná-los por sigla, número e ano.
 - **Atos do Diário Oficial** se identificam por `origem` e `id_externo`. A seleção semanal usa a data de publicação.
-- **Candidaturas do TSE** se identificam por ano, código da eleição e `SQ_CANDIDATO`. A coleta grava os pares únicos ligados a parlamentares em exercício, com os endereços declarados.
+- **Candidaturas do TSE** se identificam por ano, código da eleição e `SQ_CANDIDATO`. A coleta grava os pares únicos ligados a parlamentares em exercício.
 - **Fonte em tudo:** cada dado coletado e cada item da edição aponta para uma `fonte`, com o endereço e a data da coleta. Sem fonte, o banco não grava.
 - **O partido fica no voto,** porque muda dentro do mandato. Os totais das nominais se contam pelos votos. Nas secretas do Senado, a coleta guarda matéria, votação e resultado, sem votos individuais; o banco não guarda os totais nem a modalidade. Ausência de votos no banco não significa zero votos na sessão nem identifica, sozinha, uma votação secreta.
 - **Ausência sem motivo:** toda ausência reconhecida do Senado (`AP`, `LS`, `MIS`, `NCom`, `LAP` e `LP`, em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, para a licença saúde ficar igual às outras. O voto só guarda os códigos de voto e de presença da lista `CODIGOS_GRAVADOS`, e o banco recusa os demais. Um código ainda não classificado, como `NA`, entra como `outro`, sem o código, e o log não leva o código nem a pessoa: a coleta registra só a votação e quantos códigos desconhecidos vieram nela.
@@ -133,7 +133,6 @@ erDiagram
     }
     parlamentar ||--o{ mandato : "tem"
     parlamentar ||--o{ candidatura : "disputou"
-    candidatura ||--o{ link_candidatura : "declara"
     parlamentar ||--o{ voto : "dá"
     votacao ||--o{ voto : "recebe"
     video_sessao |o--o{ votacao : "registra"
@@ -144,7 +143,6 @@ erDiagram
     fonte ||--o{ parlamentar : "comprova"
     fonte ||--o{ mandato : "comprova"
     fonte ||--o{ candidatura : "comprova"
-    fonte ||--o{ link_candidatura : "comprova"
     fonte ||--o{ proposicao : "comprova"
     fonte ||--o{ votacao : "comprova"
     fonte ||--o{ video_sessao : "comprova"
@@ -188,12 +186,6 @@ erDiagram
         string resultado
         smallint resultado_bruto
         int parlamentar_id FK
-        int fonte_id FK
-    }
-    link_candidatura {
-        int candidatura_id PK,FK
-        int ordem PK
-        string url
         int fonte_id FK
     }
     proposicao {
@@ -460,7 +452,7 @@ uv run mandatometro coleta tse
 uv run mandatometro coleta tse --diretorio-zips /caminho/dos/zips
 ```
 
-O primeiro comando baixa os quatro ZIPs oficiais de candidaturas e redes de 2022 e 2026. O segundo lê as cópias da pasta indicada. A carga repete as mesmas chaves e acrescenta uma observação de fonte por arquivo concluído. O resumo JSON mostra, por Casa e ano, os pares ligados, sem par, em conflito e descartados por incompatibilidade com o mandato. Em 2026, `outro_cargo` conta as candidaturas à outra Casa alcançadas pelo CPF da âncora de 2022. Se um arquivo falhar, a execução tenta os demais e retorna 1. A gravação de candidaturas depende da leitura completa dos dois arquivos de candidaturas. Cada arquivo de redes atualiza os links do próprio ano. Consulte os [campos do TSE](docs/dicionario-de-dados.md#candidaturas-e-redes-do-tse) e o [disparo manual na hospedagem](docs/hospedagem.md#coletar-o-tse).
+O primeiro comando baixa os dois ZIPs oficiais de candidaturas de 2022 e 2026. O segundo lê as cópias da pasta indicada. A carga repete as mesmas chaves e acrescenta uma observação de fonte por arquivo a cada execução completa. O resumo JSON mostra, por Casa e ano, os pares ligados, sem par, em conflito e descartados por incompatibilidade com o mandato. Em 2026, `outro_cargo` conta as candidaturas à outra Casa alcançadas pelo CPF da âncora de 2022 quando a ligação está livre de conflito. Se uma leitura falhar, a execução tenta a outra e retorna 1 sem gravar candidaturas ou fontes. Consulte os [campos do TSE](docs/dicionario-de-dados.md#candidaturas-do-tse) e o [disparo manual na hospedagem](docs/hospedagem.md#coletar-o-tse).
 
 ### Edição semanal
 

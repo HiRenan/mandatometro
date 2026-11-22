@@ -300,25 +300,6 @@ class Candidatura(Base):
     fonte: Mapped[Fonte] = relationship()
 
 
-class LinkCandidatura(Base):
-    """Endereço declarado ao TSE, na ordem do arquivo de redes da candidatura."""
-
-    __tablename__ = "link_candidatura"
-    __table_args__ = (
-        CheckConstraint("ordem > 0", name="ordem"),
-        CheckConstraint("url like 'http://%' or url like 'https://%'", name="url"),
-    )
-
-    candidatura_id: Mapped[int] = mapped_column(
-        ForeignKey("candidatura.id", ondelete="CASCADE"), primary_key=True
-    )
-    ordem: Mapped[int] = mapped_column(primary_key=True)
-    url: Mapped[str]
-    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
-
-    fonte: Mapped[Fonte] = relationship()
-
-
 class Proposicao(Base):
     """Um projeto numa Casa: PL, PEC, requerimento...
 

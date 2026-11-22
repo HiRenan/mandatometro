@@ -8,9 +8,7 @@ Desde a decisão de 21/11/2026, CPF, título de eleitor e data de nascimento de 
 
 A API, o front, os logs e os fixtures de teste identificam pessoas pelo id interno.
 
-O banco recebe candidaturas com par único entre os parlamentares em exercício, ligadas pelo id interno. A carga guarda o nome de urna e os endereços públicos declarados no TSE para essas candidaturas. Nome civil, documentos, nascimento e demais dados de cadastro ficam fora das tabelas do TSE. Os resumos e logs trazem contagens, e as fixtures do TSE usam dados inventados. Veja os [campos pessoais das fontes](dicionario-de-dados.md#campos-pessoais).
-
-Dos endereços declarados, ficam apenas o esquema, o host e o caminho que passam pelas [regras de validação do TSE](dicionario-de-dados.md#candidaturas-e-redes-do-tse). Falhas da gravação dos links saem no resumo como contagens por motivo.
+O banco recebe candidaturas com par único entre os parlamentares em exercício, ligadas pelo id interno. A carga guarda o nome de urna para essas candidaturas. Nome civil, documentos, nascimento e demais dados de cadastro ficam fora da tabela de candidaturas. Os resumos e logs trazem contagens, e as fixtures do TSE usam dados inventados. Veja os [campos pessoais das fontes](dicionario-de-dados.md#campos-pessoais).
 
 ## Ausências e afastamentos
 

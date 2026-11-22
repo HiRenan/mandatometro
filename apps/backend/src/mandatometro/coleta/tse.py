@@ -10,12 +10,12 @@ from collections import Counter, defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from itertools import batched
+from itertools import batched, chain
 from pathlib import Path
 from zipfile import BadZipFile, LargeZipFile
 
 import httpx2
-from sqlalchemy import delete, func, select, tuple_
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -26,27 +26,26 @@ from mandatometro.coleta.tse_arquivos import (
     CANDIDATURAS,
     CARGOS_POR_CASA,
     CASA_POR_CARGO,
-    REDES,
     ArquivoInvalido,
     CandidaturaTse,
     ChaveTse,
     abrir_zip,
     ler_candidaturas,
-    ler_links,
     url_arquivo,
 )
 from mandatometro.db import sessao
 from mandatometro.db.modelos import (
     RESULTADOS_TSE,
     Candidatura,
-    LinkCandidatura,
     Mandato,
     Parlamentar,
 )
 
 ANOS = (2022, 2026)
-CARGOS = tuple(CASA_POR_CARGO)
 _CHAVE_CANDIDATURA = ("ano", "codigo_eleicao", "id_externo")
+
+type ChaveCandidatura = tuple[int, ChaveTse]
+type ParesNominais = dict[int, dict[ChaveTse, CandidaturaTse]]
 
 
 @dataclass(frozen=True, repr=False)
@@ -152,9 +151,37 @@ def _ponte_por_cpf(
     return (alcancadas, outro_cargo) if ancora and ancora.cpf else ({}, False)
 
 
+def _conflitos_das_cadeias(
+    pares_nominais: dict[int, ParesNominais],
+    por_cpf: dict[tuple[int, str], list[CandidaturaTse]],
+    donos: dict[ChaveCandidatura, int],
+) -> set[int]:
+    por_candidatura: dict[ChaveCandidatura, set[int]] = defaultdict(set)
+    por_documento: dict[str, set[int]] = defaultdict(set)
+    conflitos = set()
+    for pessoa, pares in pares_nominais.items():
+        # Mesmo um par múltiplo ou incompatível é evidência de uma possível identidade.
+        cpfs = {c.cpf for cs in pares.values() for c in cs.values() if c.cpf}
+        chaves = {(ano, chave) for ano, cs in pares.items() for chave in cs}
+        for cpf in cpfs:
+            por_documento[cpf].add(pessoa)
+            for ano in ANOS:
+                chaves.update((ano, c.chave) for c in por_cpf.get((ano, cpf), ()))
+        for chave in chaves:
+            por_candidatura[chave].add(pessoa)
+        if any(donos.get(chave, pessoa) != pessoa for chave in chaves):
+            conflitos.add(pessoa)
+
+    for pessoas in chain(por_candidatura.values(), por_documento.values()):
+        if len(pessoas) > 1:
+            conflitos.update(pessoas)
+    return conflitos
+
+
 def _ligar(
     parlamentares: list[EmExercicio],
     arquivos: dict[int, list[CandidaturaTse]],
+    donos: dict[ChaveCandidatura, int],
     contagens: dict[int, dict[str, dict[str, int]]],
 ) -> dict[int, dict[ChaveTse, tuple[CandidaturaTse, int]]]:
     nominais = defaultdict(list)
@@ -170,21 +197,32 @@ def _ligar(
     por_parlamentar = defaultdict(list)
     for mandato in parlamentares:
         por_parlamentar[mandato.id].append(mandato)
-    propostas = defaultdict(list)
-    for mandatos in por_parlamentar.values():
+
+    pares_nominais = {}
+    for pessoa, mandatos in por_parlamentar.items():
         p = mandatos[0]
         nome = _nome(p.nome)
         ufs = {m.uf for m in mandatos}
-        pares = {
+        pares_nominais[pessoa] = {
             ano: {c.chave: c for uf in ufs for c in nominais.get((ano, p.casa, uf, nome), ())}
             for ano in ANOS
         }
+
+    conflitos = _conflitos_das_cadeias(pares_nominais, por_cpf, donos)
+    por_pessoa = defaultdict(set)
+    for (ano, chave), dono in donos.items():
+        por_pessoa[ano, dono].add(chave)
+
+    ligadas: dict[int, dict[ChaveTse, tuple[CandidaturaTse, int]]] = {ano: {} for ano in arquivos}
+    for pessoa, mandatos in por_parlamentar.items():
+        p = mandatos[0]
+        pares = pares_nominais[pessoa]
         unicos = {ano: next(iter(cs.values())) for ano, cs in pares.items() if len(cs) == 1}
         compativeis = {
             ano: c for ano, c in unicos.items() if _compativel_com_mandatos(mandatos, ano, c)
         }
         ponte = _ponte_por_cpf(mandatos, unicos, compativeis, por_cpf)
-        if ponte is None or any(len(cs) > 1 for cs in pares.values()):
+        if pessoa in conflitos or ponte is None or any(len(cs) > 1 for cs in pares.values()):
             for ano in ANOS:
                 contagens[ano][p.casa]["em_conflito"] += 1
             continue
@@ -197,152 +235,51 @@ def _ligar(
             elif ano in unicos and ano not in compativeis:
                 resumo["derrubados_pela_trava"] += 1
             elif c := compativeis.get(ano) or candidaturas_por_cpf.get(ano):
-                propostas[ano, c.chave].append((c, p))
+                if por_pessoa[ano, pessoa] - {c.chave}:
+                    resumo["em_conflito"] += 1
+                else:
+                    ligadas[ano][c.chave] = c, pessoa
             else:
                 resumo["sem_par"] += 1
-
-    ligadas: dict[int, dict[ChaveTse, tuple[CandidaturaTse, int]]] = {ano: {} for ano in arquivos}
-    for (ano, chave), pares in propostas.items():
-        if len(pares) == 1:
-            c, pessoa = pares[0]
-            ligadas[ano][chave] = c, pessoa.id
-        else:
-            for _, pessoa in pares:
-                contagens[ano][pessoa.casa]["em_conflito"] += 1
     return ligadas
 
 
-def _gravar_em_lotes(
-    s: Session, modelo, chave: tuple[str, ...], valores: list[dict], *, fixos: tuple[str, ...] = ()
-) -> None:
-    for lote in batched(valores, 500, strict=False):
-        comando = insert(modelo).values(lote)
-        s.execute(
-            comando.on_conflict_do_update(
-                index_elements=chave,
-                set_={
-                    campo: comando.excluded[campo]
-                    for campo in lote[0]
-                    if campo not in chave and campo not in fixos
-                },
-            )
-        )
-
-
-def _travar_ano(s: Session, ano: int) -> None:
-    # Serializa a conferência dos vínculos e a gravação de cada ano entre chamadas ao CLI.
-    s.execute(select(func.pg_advisory_xact_lock(func.hashtext("mandatometro.coleta.tse"), ano)))
-
-
 def _gravar_candidaturas(
-    criar_sessao: Callable[[], Session],
+    s: Session,
     ano: int,
     instante: datetime,
     pares: dict[ChaveTse, tuple[CandidaturaTse, int]],
-) -> tuple[list[CandidaturaTse], Counter[str]]:
-    with criar_sessao() as s, s.begin():
-        _travar_ano(s, ano)
-        donos = {}
-        por_pessoa = defaultdict(set)
-        for eleicao, externo, pessoa in s.execute(
-            select(
-                Candidatura.codigo_eleicao, Candidatura.id_externo, Candidatura.parlamentar_id
-            ).where(Candidatura.ano == ano)
-        ):
-            chave = (eleicao, externo)
-            donos[chave] = pessoa
-            por_pessoa[pessoa].add(chave)
-
-        aceitos = []
-        conflitos: Counter[str] = Counter()
-        for chave, (c, pessoa) in pares.items():
-            if donos.get(chave, pessoa) != pessoa or por_pessoa[pessoa] - {chave}:
-                conflitos[CASA_POR_CARGO[c.cargo]] += 1
-            else:
-                aceitos.append((c, pessoa))
-        fonte = registrar_fonte(s, Resposta(url_arquivo(CANDIDATURAS, ano), instante, None))
-        valores = [
-            {
-                "ano": ano,
-                "codigo_eleicao": c.chave[0],
-                "id_externo": c.chave[1],
-                "cargo": c.cargo,
-                "uf": c.uf,
-                "partido": c.partido,
-                "numero": c.numero,
-                "nome_urna": c.nome_urna,
-                "resultado": RESULTADOS_TSE.get(c.resultado_bruto, "outro"),
-                "resultado_bruto": c.resultado_bruto,
-                "parlamentar_id": parlamentar_id,
-                "fonte_id": fonte.id,
-            }
-            for c, parlamentar_id in aceitos
-        ]
-        _gravar_em_lotes(s, Candidatura, _CHAVE_CANDIDATURA, valores, fixos=("parlamentar_id",))
-    return [c for c, _ in aceitos], conflitos
-
-
-def _gravar_links(
-    criar_sessao: Callable[[], Session],
-    cliente: httpx2.Client,
-    diretorio: Path | None,
-    ano: int,
-    parlamentares: list[EmExercicio],
-    resumo: ResumoArquivo,
-) -> int:
-    with abrir_zip(REDES, ano, diretorio, cliente) as arq:
-        observacao = Resposta(url_arquivo(REDES, ano), datetime.now(UTC), None)
-        try:
-            with criar_sessao() as s, s.begin():
-                _travar_ano(s, ano)
-                linhas = s.execute(
-                    select(
-                        Candidatura.codigo_eleicao,
-                        Candidatura.id_externo,
-                        Candidatura.id,
-                        Candidatura.uf,
-                    ).where(
-                        Candidatura.ano == ano,
-                        Candidatura.cargo.in_(CARGOS),
-                        Candidatura.parlamentar_id.in_([p.id for p in parlamentares]),
-                    )
-                )
-                candidaturas = {(eleicao, sq): (id_, uf) for eleicao, sq, id_, uf in linhas}
-                links = ler_links(arq, ano, candidaturas, resumo.descartes)
-                fonte = registrar_fonte(s, observacao)
-                if resumo.descartes["linha_invalida"] == 0:
-                    s.execute(
-                        delete(LinkCandidatura).where(
-                            LinkCandidatura.candidatura_id.in_(
-                                [id_ for id_, _ in candidaturas.values()]
-                            )
-                        )
-                    )
-                else:
-                    # Mesmo num arquivo parcial, um URL observado pode ter mudado de ordem.
-                    for lote in batched(links, 500, strict=False):
-                        s.execute(
-                            delete(LinkCandidatura).where(
-                                tuple_(LinkCandidatura.candidatura_id, LinkCandidatura.url).in_(
-                                    [(id_, url) for id_, _, url in lote]
-                                )
-                            )
-                        )
-                _gravar_em_lotes(
-                    s,
-                    LinkCandidatura,
-                    ("candidatura_id", "ordem"),
-                    [
-                        {"candidatura_id": id_, "ordem": ordem, "url": url, "fonte_id": fonte.id}
-                        for id_, ordem, url in links
-                    ],
-                )
-        except SQLAlchemyError:
-            # O detalhe do PostgreSQL pode conter a linha que o banco recusou.
-            pass
-        else:
-            return len(links)
-        raise SQLAlchemyError("Falha ao gravar os links do TSE.")
+) -> None:
+    fonte = registrar_fonte(s, Resposta(url_arquivo(ano), instante, None))
+    valores = [
+        {
+            "ano": ano,
+            "codigo_eleicao": c.chave[0],
+            "id_externo": c.chave[1],
+            "cargo": c.cargo,
+            "uf": c.uf,
+            "partido": c.partido,
+            "numero": c.numero,
+            "nome_urna": c.nome_urna,
+            "resultado": RESULTADOS_TSE.get(c.resultado_bruto, "outro"),
+            "resultado_bruto": c.resultado_bruto,
+            "parlamentar_id": parlamentar_id,
+            "fonte_id": fonte.id,
+        }
+        for c, parlamentar_id in pares.values()
+    ]
+    for lote in batched(valores, 500, strict=False):
+        comando = insert(Candidatura).values(lote)
+        s.execute(
+            comando.on_conflict_do_update(
+                index_elements=_CHAVE_CANDIDATURA,
+                set_={
+                    campo: comando.excluded[campo]
+                    for campo in lote[0]
+                    if campo not in _CHAVE_CANDIDATURA and campo != "parlamentar_id"
+                },
+            )
+        )
 
 
 def _coletar(
@@ -350,7 +287,7 @@ def _coletar(
     cliente: httpx2.Client,
     criar_sessao: Callable[[], Session],
     contagens: dict[int, dict[str, dict[str, int]]],
-    resumos: dict[int, dict[str, ResumoArquivo]],
+    resumos: dict[int, ResumoArquivo],
 ) -> None:
     with criar_sessao() as s:
         em_exercicio = [
@@ -371,47 +308,52 @@ def _coletar(
         raise ArquivoInvalido("Cadastre os parlamentares em exercício antes da coleta.")
 
     candidaturas, instantes = {}, {}
-    for ano in ANOS:
-        resumo = resumos[ano][CANDIDATURAS]
+    for ano, resumo in resumos.items():
         try:
-            with abrir_zip(CANDIDATURAS, ano, diretorio, cliente) as arq:
+            with abrir_zip(ano, diretorio, cliente) as arq:
                 lidas = ler_candidaturas(arq, ano, resumo.descartes)
             candidaturas[ano] = lidas
             instantes[ano] = datetime.now(UTC)
         except Exception as erro:
             resumo.registrar_falha(erro)
 
-    ligadas = {}
-    if len(candidaturas) == len(ANOS):
-        ligadas = _ligar(em_exercicio, candidaturas, contagens)
-    else:
+    if len(candidaturas) != len(ANOS):
         for ano in candidaturas:
-            resumos[ano][CANDIDATURAS].falhas["candidaturas_incompletas"] = 1
-    for ano in ANOS:
-        if ano in ligadas:
-            resumo = resumos[ano][CANDIDATURAS]
-            try:
-                gravadas, conflitos = _gravar_candidaturas(
-                    criar_sessao, ano, instantes[ano], ligadas[ano]
-                )
-            except Exception as erro:
-                resumo.registrar_falha(erro)
-            else:
-                resumo.gravados, resumo.fontes = len(gravadas), 1
-                for casa, total in conflitos.items():
-                    contagens[ano][casa]["em_conflito"] += total
-                for c in gravadas:
-                    contagens[ano][CASA_POR_CARGO[c.cargo]]["ligados"] += 1
+            resumos[ano].falhas["candidaturas_incompletas"] = 1
+        return
 
-        resumo = resumos[ano][REDES]
-        try:
-            resumo.gravados = _gravar_links(
-                criar_sessao, cliente, diretorio, ano, em_exercicio, resumo
-            )
-        except Exception as erro:
+    try:
+        with criar_sessao() as s, s.begin():
+            # Confere os titulares e grava os dois anos sob as mesmas travas, sempre nesta ordem.
+            for ano in ANOS:
+                s.execute(
+                    select(
+                        func.pg_advisory_xact_lock(func.hashtext("mandatometro.coleta.tse"), ano)
+                    )
+                )
+            donos = {
+                (ano, (eleicao, externo)): pessoa
+                for ano, eleicao, externo, pessoa in s.execute(
+                    select(
+                        Candidatura.ano,
+                        Candidatura.codigo_eleicao,
+                        Candidatura.id_externo,
+                        Candidatura.parlamentar_id,
+                    ).where(Candidatura.ano.in_(ANOS))
+                )
+            }
+            ligadas = _ligar(em_exercicio, candidaturas, donos, contagens)
+            for ano, instante in instantes.items():
+                _gravar_candidaturas(s, ano, instante, ligadas[ano])
+    except SQLAlchemyError as erro:
+        for resumo in resumos.values():
             resumo.registrar_falha(erro)
-        else:
-            resumo.fontes = 1
+        return
+
+    for ano, pares in ligadas.items():
+        resumos[ano].gravados, resumos[ano].fontes = len(pares), 1
+        for c, _ in pares.values():
+            contagens[ano][CASA_POR_CARGO[c.cargo]]["ligados"] += 1
 
 
 def _executar(args: argparse.Namespace) -> int:
@@ -425,7 +367,7 @@ def _executar(args: argparse.Namespace) -> int:
         }
         for ano in ANOS
     }
-    resumos = {ano: {tipo: ResumoArquivo() for tipo in (CANDIDATURAS, REDES)} for ano in ANOS}
+    resumos = {ano: ResumoArquivo() for ano in ANOS}
     falhas_gerais = 0
     try:
         with httpx2.Client(timeout=30.0) as cliente:
@@ -433,9 +375,7 @@ def _executar(args: argparse.Namespace) -> int:
     except Exception:
         # Exceções do driver, do CSV ou da rede podem carregar valores da fonte.
         falhas_gerais = 1
-    completa = falhas_gerais == 0 and all(
-        not a.falhas for r in resumos.values() for a in r.values()
-    )
+    completa = falhas_gerais == 0 and all(not a.falhas for a in resumos.values())
     print(
         json.dumps(
             {
@@ -445,7 +385,7 @@ def _executar(args: argparse.Namespace) -> int:
                 "anos": {
                     ano: {
                         **contagens[ano],
-                        "arquivos": {tipo: vars(a) for tipo, a in resumos[ano].items()},
+                        "arquivos": {CANDIDATURAS: vars(resumos[ano])},
                     }
                     for ano in ANOS
                 },
@@ -457,10 +397,6 @@ def _executar(args: argparse.Namespace) -> int:
 
 
 def registrar(casas) -> None:
-    parser = casas.add_parser(
-        "tse", help="coleta candidaturas de 2022 e 2026 e seus links declarados"
-    )
-    parser.add_argument(
-        "--diretorio-zips", type=Path, help="lê os quatro ZIPs já baixados na pasta"
-    )
+    parser = casas.add_parser("tse", help="coleta candidaturas de 2022 e 2026")
+    parser.add_argument("--diretorio-zips", type=Path, help="lê os dois ZIPs já baixados na pasta")
     parser.set_defaults(rodar=_executar)

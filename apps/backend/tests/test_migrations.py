@@ -19,7 +19,6 @@ TABELAS_DO_MVP = {
     "parlamentar",
     "mandato",
     "candidatura",
-    "link_candidatura",
     "proposicao",
     "video_sessao",
     "votacao",
@@ -54,9 +53,9 @@ def test_as_migrations_sobem_do_zero_descem_e_batem_com_os_modelos(engine_de_tes
     alembic("upgrade", "0012")
     tabelas_0012 = _tabelas(engine_de_teste)
     assert "video_sessao" in tabelas_0012
-    assert {"candidatura", "link_candidatura"}.isdisjoint(tabelas_0012)
+    assert "candidatura" not in tabelas_0012
     alembic("upgrade", "0013")
-    assert {"video_sessao", "candidatura", "link_candidatura"} <= _tabelas(engine_de_teste)
+    assert _tabelas(engine_de_teste) == tabelas_0012 | {"candidatura"}
     alembic("upgrade", "head")
     assert _tabelas(engine_de_teste) == TABELAS_DO_MVP
     assert _tem_a_extensao_vector(engine_de_teste)
