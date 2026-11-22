@@ -43,7 +43,7 @@ export const Route = createFileRoute("/perfil")({
 	loader: () => buscarTrilhas(),
 	head: () => ({
 		meta: [
-			{ title: "Meu perfil | Mandatômetro" },
+			{ title: "Meu perfil · Mandatômetro" },
 			{ name: "robots", content: "noindex" },
 		],
 	}),

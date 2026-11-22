@@ -19,3 +19,18 @@ export function semCliqueDuplo(
 		}
 	};
 }
+
+/**
+ * O `onClick` de um link que nasce no lugar de um botão, como os da conclusão
+ * das telas da conta: o segundo clique de um clique duplo no botão, e o
+ * terceiro de um clique triplo, não seguem o link. Um clique novo, de
+ * propósito, segue.
+ */
+export function semSegundoClique(evento: {
+	detail: number;
+	preventDefault: () => void;
+}) {
+	if (evento.detail > 1) {
+		evento.preventDefault();
+	}
+}
