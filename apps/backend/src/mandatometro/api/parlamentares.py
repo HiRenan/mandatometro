@@ -1,12 +1,14 @@
 """Leitura pública de parlamentares, votos e patrimônio declarado."""
 
+from datetime import date, timedelta
+from decimal import ROUND_HALF_UP, Decimal, localcontext
 from typing import Annotated
 
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import distinct_on
-from sqlalchemy.orm import contains_eager
+from sqlalchemy.orm import Session, contains_eager
 
 from mandatometro.api.congresso import (
     IdCongresso,
@@ -21,6 +23,7 @@ from mandatometro.api.esquemas import (
     UF,
     CargoPatrimonio,
     Casa,
+    CorrecaoIpca,
     DetalheParlamentar,
     EleicaoPatrimonio,
     ErroParlamentar,
@@ -38,13 +41,14 @@ from mandatometro.db.modelos import (
     BemDeclarado,
     CandidaturaPatrimonio,
     Fonte,
+    IpcaMensal,
     Mandato,
     Parlamentar,
     Votacao,
     Voto,
 )
 from mandatometro.temas import TemaId
-from mandatometro.tse_catalogos import CARGOS_TSE
+from mandatometro.tse_catalogos import CARGOS_TSE, MAXIMO_CENTAVOS
 
 ORDEM_DOS_VOTOS = (Votacao.data.desc(), Votacao.id.desc())
 
@@ -149,10 +153,51 @@ def obter_parlamentar(id: IdCongresso):
         )
 
 
+def _correcao_ipca(sessao: Session) -> tuple[CorrecaoIpca | None, dict[date, Decimal]]:
+    registros = sessao.execute(
+        select(IpcaMensal.mes, IpcaMensal.variacao_percentual, Fonte.url, Fonte.coletado_em)
+        .join(IpcaMensal.fonte)
+        .order_by(IpcaMensal.mes.desc())
+    ).all()
+    if not registros:
+        return None, {}
+
+    mes_fim, _, url, coletado_em = registros[0]
+    fatores = {}
+    esperado = mes_fim
+    acumulado = Decimal(1)
+    with localcontext() as contexto:
+        # Uma taxa NUMERIC(7, 2) gera um fator com até 8 algarismos (1000.9999).
+        contexto.prec = 8 * len(registros)
+        for mes, variacao, _, _ in registros:
+            if mes != esperado:
+                break
+            acumulado *= 1 + variacao / 100
+            fatores[mes] = acumulado
+            esperado = (mes - timedelta(days=1)).replace(day=1)
+
+    correcao = CorrecaoIpca(
+        indice="IPCA",
+        mes_fim=mes_fim.strftime("%Y-%m"),
+        fonte=FontePatrimonio(url=url, coletado_em=coletado_em),
+    )
+    return correcao, fatores
+
+
+def _total_corrigido(total: int | None, fator: Decimal | None) -> int | None:
+    if total is None or fator is None:
+        return None
+    with localcontext() as contexto:
+        contexto.prec = len(str(total)) + len(fator.as_tuple().digits)
+        centavos = int((total * fator).to_integral_value(rounding=ROUND_HALF_UP))
+    return centavos if centavos <= MAXIMO_CENTAVOS else None
+
+
 @router.get(
     "/{id}/patrimonio",
     summary="Listar o patrimônio declarado ao TSE por eleição",
-    description="Eleições com vínculo confirmado, em ordem crescente de ano.",
+    description="Eleições com vínculo confirmado, em ordem crescente de ano, com os totais "
+    "nominais e a correção pelo IPCA quando disponível.",
     response_model=PatrimonioParlamentar,
     responses={404: {"model": ErroParlamentar}},
 )
@@ -176,21 +221,26 @@ def obter_patrimonio_parlamentar(id: IdCongresso):
             .where(eleicao.parlamentar_id == id)
             .group_by(eleicao.id, Fonte.id)
             .order_by(eleicao.ano)
-        )
-        return PatrimonioParlamentar(
-            eleicoes=[
+        ).all()
+        correcao, fatores = _correcao_ipca(sessao)
+        eleicoes = []
+        for ano, cargo, uf, total, url, coletado_em in registros:
+            inicio = date(ano, 10, 1)
+            nominal = int(total) if total is not None else None
+            eleicoes.append(
                 EleicaoPatrimonio(
                     ano=ano,
                     cargo=CargoPatrimonio(
                         codigo=cargo, nome=CARGOS_TSE.get(cargo, "Cargo desconhecido")
                     ),
                     uf=uf,
-                    total_centavos=int(total) if total is not None else None,
+                    total_centavos=nominal,
                     fonte=FontePatrimonio(url=url, coletado_em=coletado_em),
+                    mes_inicio=inicio.strftime("%Y-%m"),
+                    total_corrigido_centavos=_total_corrigido(nominal, fatores.get(inicio)),
                 )
-                for ano, cargo, uf, total, url, coletado_em in registros
-            ]
-        )
+            )
+        return PatrimonioParlamentar(eleicoes=eleicoes, correcao_ipca=correcao)
 
 
 def _voto_publico(voto: Voto, temas: list[TemaPublico]) -> VotoParlamentar:

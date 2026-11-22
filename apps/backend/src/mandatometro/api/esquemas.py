@@ -214,6 +214,15 @@ class FontePatrimonio(BaseModel):
     coletado_em: datetime
 
 
+MesIpca = Annotated[str, Field(pattern=r"^[0-9]{4}-(0[1-9]|1[0-2])$")]
+
+
+class CorrecaoIpca(BaseModel):
+    indice: Literal["IPCA"]
+    mes_fim: MesIpca = Field(description="Último mês do IPCA disponível, incluído na correção.")
+    fonte: FontePatrimonio = Field(description="Observação do IPCA do mês final no Banco Central.")
+
+
 class EleicaoPatrimonio(BaseModel):
     ano: int
     cargo: CargoPatrimonio
@@ -224,10 +233,18 @@ class EleicaoPatrimonio(BaseModel):
         description="Total nominal declarado ao TSE, em centavos de real. Nulo sem total.",
     )
     fonte: FontePatrimonio
+    mes_inicio: MesIpca = Field(description="Outubro do ano da eleição, incluído na correção.")
+    total_corrigido_centavos: int | None = Field(
+        ge=0,
+        le=MAXIMO_CENTAVOS,
+        description="Total em centavos corrigido pelo IPCA. Nulo sem total, sem cobertura "
+        "completa do período ou acima do limite de centavos da API.",
+    )
 
 
 class PatrimonioParlamentar(BaseModel):
     eleicoes: list[EleicaoPatrimonio]
+    correcao_ipca: CorrecaoIpca | None = Field(description="Nula sem a série do IPCA no banco.")
 
 
 class ProposicaoAfetada(BaseModel):
