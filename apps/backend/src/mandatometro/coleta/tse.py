@@ -119,17 +119,18 @@ def _ponte_por_cpf(
     unicos: dict[int, CandidaturaTse],
     compativeis: dict[int, CandidaturaTse],
     por_cpf: dict[tuple[int, str], list[CandidaturaTse]],
-) -> dict[int, CandidaturaTse] | None:
-    """Retorna os pares que o CPF permite acrescentar, ou sinaliza uma contradição."""
+) -> tuple[dict[int, CandidaturaTse], bool] | None:
+    """Retorna a ponte e indica outro cargo em 2026. None sinaliza contradição."""
     cpfs = {c.cpf for c in unicos.values() if c.cpf}
     if len(cpfs) > 1:
         return None
     if not cpfs:
-        return {}
+        return {}, False
 
     cpf = next(iter(cpfs))
     cpf_de_par_compativel = any(c.cpf for c in compativeis.values())
     alcancadas = {}
+    outro_cargo = False
     for ano in ANOS:
         pares = por_cpf.get((ano, cpf), [])
         if len(pares) > 1:
@@ -140,11 +141,15 @@ def _ponte_por_cpf(
         if ano in unicos and c.chave != unicos[ano].chave:
             return None
         if cpf_de_par_compativel and not _compativel_com_mandatos(mandatos, ano, c):
-            return None
+            if ano == 2022:
+                return None
+            # Em 2026, a candidatura a outra Casa preserva a âncora de 2022.
+            outro_cargo = True
+            continue
         alcancadas[ano] = c
 
     ancora = compativeis.get(2022)
-    return alcancadas if ancora and ancora.cpf else {}
+    return (alcancadas, outro_cargo) if ancora and ancora.cpf else ({}, False)
 
 
 def _ligar(
@@ -179,13 +184,19 @@ def _ligar(
             ano: c for ano, c in unicos.items() if _compativel_com_mandatos(mandatos, ano, c)
         }
         ponte = _ponte_por_cpf(mandatos, unicos, compativeis, por_cpf)
+        if ponte is None or any(len(cs) > 1 for cs in pares.values()):
+            for ano in ANOS:
+                contagens[ano][p.casa]["em_conflito"] += 1
+            continue
+
+        candidaturas_por_cpf, outro_cargo = ponte
         for ano in ANOS:
             resumo = contagens[ano][p.casa]
-            if ponte is None or len(pares[ano]) > 1:
-                resumo["em_conflito"] += 1
+            if ano == 2026 and outro_cargo:
+                resumo["outro_cargo"] += 1
             elif ano in unicos and ano not in compativeis:
                 resumo["derrubados_pela_trava"] += 1
-            elif c := compativeis.get(ano) or ponte.get(ano):
+            elif c := compativeis.get(ano) or candidaturas_por_cpf.get(ano):
                 propostas[ano, c.chave].append((c, p))
             else:
                 resumo["sem_par"] += 1
@@ -407,7 +418,9 @@ def _executar(args: argparse.Namespace) -> int:
     comeco = time.monotonic()
     contagens = {
         ano: {
-            casa: dict.fromkeys(("ligados", "sem_par", "em_conflito", "derrubados_pela_trava"), 0)
+            casa: dict.fromkeys(
+                ("ligados", "sem_par", "em_conflito", "derrubados_pela_trava", "outro_cargo"), 0
+            )
             for casa in CARGOS_POR_CASA
         }
         for ano in ANOS
