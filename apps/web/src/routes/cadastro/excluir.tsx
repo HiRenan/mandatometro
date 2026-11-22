@@ -4,7 +4,7 @@ import { FormularioConta, titulos } from "@/components/formulario-conta";
 export const Route = createFileRoute("/cadastro/excluir")({
 	head: () => ({
 		meta: [
-			{ title: `${titulos.excluir} | Mandatômetro` },
+			{ title: `${titulos.excluir} · Mandatômetro` },
 			{ name: "robots", content: "noindex" },
 			{ name: "referrer", content: "no-referrer" },
 		],

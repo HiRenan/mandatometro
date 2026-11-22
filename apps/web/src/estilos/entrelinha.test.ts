@@ -269,26 +269,48 @@ function cartazesDoTsx(arquivo: string) {
 	const nomes = new Map<string, string[]>([
 		["FRASE_DO_RECOMECO", [FRASE_DO_RECOMECO]],
 	]);
-	percorrer(fonte, (no) => {
-		if (
-			!(ts.isVariableDeclaration(no) || ts.isBindingElement(no)) ||
-			!no.initializer
-		)
-			return;
-		const valor = no.initializer;
-		if (ts.isStringLiteralLike(valor))
-			nomes.set(no.name.getText(), [valor.text]);
-		// Os títulos dos modos da conta vêm de um objeto de textos no próprio TSX.
-		if (ts.isObjectLiteralExpression(valor)) {
-			const opcoes = valor.properties.flatMap((p) =>
-				ts.isPropertyAssignment(p) && ts.isStringLiteralLike(p.initializer)
-					? [p.initializer.text]
-					: [],
-			);
-			if (opcoes.length === valor.properties.length)
-				nomes.set(no.name.getText(), opcoes);
-		}
-	});
+	// O cartaz da conta recebe o título por prop: os textos dele ficam nos
+	// objetos de textos do formulario-conta.tsx, que entra na leitura.
+	const daConta = arquivo === "components/cartaz-da-conta.tsx";
+	const fontes = daConta
+		? [
+				fonte,
+				ts.createSourceFile(
+					"components/formulario-conta.tsx",
+					ler("components/formulario-conta.tsx"),
+					ts.ScriptTarget.Latest,
+					true,
+					ts.ScriptKind.TSX,
+				),
+			]
+		: [fonte];
+	for (const lida of fontes)
+		percorrer(lida, (no) => {
+			if (
+				!(ts.isVariableDeclaration(no) || ts.isBindingElement(no)) ||
+				!no.initializer
+			)
+				return;
+			const valor = no.initializer;
+			if (ts.isStringLiteralLike(valor))
+				nomes.set(no.name.getText(), [valor.text]);
+			// Os títulos das telas da conta vêm de objetos de textos.
+			if (ts.isObjectLiteralExpression(valor)) {
+				const opcoes = valor.properties.flatMap((p) =>
+					ts.isPropertyAssignment(p) && ts.isStringLiteralLike(p.initializer)
+						? [p.initializer.text]
+						: [],
+				);
+				if (opcoes.length === valor.properties.length)
+					nomes.set(no.name.getText(), opcoes);
+			}
+		});
+	// O título do cartaz da conta é o de uma das sete telas ou o da conclusão.
+	if (daConta)
+		nomes.set("titulo", [
+			...(nomes.get("titulos") ?? []),
+			...(nomes.get("titulosDaConclusao") ?? []),
+		]);
 
 	function textos(no: ts.Node | undefined): string[] {
 		if (!no) return [""];

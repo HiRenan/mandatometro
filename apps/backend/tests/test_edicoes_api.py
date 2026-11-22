@@ -5,13 +5,13 @@ from os import environ
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import delete
+from sqlalchemy import delete, event
 from sqlalchemy.orm import Session
 
 from mandatometro.api.app import app
 from mandatometro.config import config
 from mandatometro.db import engine
-from mandatometro.db.modelos import Edicao, Fonte, ItemEdicao
+from mandatometro.db.modelos import Edicao, Fonte, ItemEdicao, VideoSessao, Votacao
 from mandatometro.ia.artigos import CATALOGO
 from mandatometro.ia.esquemas import Fatos, FatosAto, FatoVotacao, Placar
 
@@ -176,7 +176,8 @@ def test_detalhe_preserva_fotografia_fontes_artigo_e_legado(publicadas):
     assert primeiro["fontes"][0]["trecho"] == "Trecho fictício <b>sem HTML executável</b>."
     assert antigo["fatos"] is None and antigo["artigo"] is None
     assert set(primeiro) == {"ordem", "tipo", "titulo", "texto", "fatos", "fontes", "artigo"}
-    assert set(nominal) == {"id", "data", "resultado", "placar", "fontes"}
+    assert set(nominal) == {"id", "data", "resultado", "placar", "fontes", "url_video"}
+    assert nominal["url_video"] is None and sem_placar["url_video"] is None
     assert set(primeiro["fontes"][0]) == {"url", "coletado_em", "trecho"}
     for proibido in (
         '"pendencias":',
@@ -186,6 +187,85 @@ def test_detalhe_preserva_fotografia_fontes_artigo_e_legado(publicadas):
         '"versao":',
     ):
         assert proibido not in resposta.text
+
+
+@pytest.mark.parametrize("quantidade", [1, 13])
+def test_detalhe_busca_videos_em_lote(sessao, monkeypatch, quantidade):
+    dia = date(2026, 11, 12)
+    instante = datetime(2026, 11, 15, tzinfo=UTC)
+    fonte = Fonte(url="https://dadosabertos.camara.leg.br/api/v2/votacoes", coletado_em=instante)
+    url = "https://www.youtube.com/watch?v=Video_Teste"
+    video = VideoSessao(
+        casa="camara",
+        id_externo=83057,
+        url_video=url,
+        fonte=Fonte(url="https://dadosabertos.camara.leg.br/api/v2/eventos/83057"),
+    )
+    votacoes = [
+        Votacao(
+            casa="camara",
+            id_externo=f"90000-{indice}",
+            data=dia,
+            descricao="Votação fictícia.",
+            resultado="aprovada",
+            fonte=fonte,
+            video_sessao=video,
+        )
+        for indice in range(quantidade)
+    ]
+    sessao.add_all(votacoes)
+    sessao.flush()
+    fatos = Fatos(
+        proposicoes=[1],
+        votacoes=[
+            FatoVotacao(id=v.id, data=dia, resultado="aprovada", placar=None, fontes=[fonte.id])
+            for v in votacoes
+        ],
+        fontes=[fonte.id],
+        origem="revisao",
+        pendencias=[],
+    )
+    edicao = Edicao(
+        titulo="Edição fictícia",
+        inicio=date(2026, 11, 9),
+        fim=date(2026, 11, 15),
+        estado="publicada",
+        publicada_em=instante,
+        itens=[
+            ItemEdicao(
+                ordem=1,
+                titulo="Primeiro item",
+                texto="Texto fictício.",
+                fonte=fonte,
+                fatos=fatos.model_dump(mode="json"),
+            )
+        ],
+    )
+    sessao.add(edicao)
+    sessao.flush()
+
+    conexao = sessao.connection()
+    monkeypatch.setattr("mandatometro.db.engine", lambda: conexao)
+    selects = []
+
+    def contar_selects(_conexao, _cursor, comando, _parametros, _contexto, _varias):
+        if comando.lstrip().upper().startswith("SELECT"):
+            selects.append(comando)
+
+    with TestClient(app) as cliente:
+        event.listen(conexao, "before_cursor_execute", contar_selects)
+        try:
+            resposta = cliente.get(f"/edicoes/{edicao.id}")
+        finally:
+            event.remove(conexao, "before_cursor_execute", contar_selects)
+
+    assert resposta.status_code == 200
+    assert [v["url_video"] for v in resposta.json()["itens"][0]["fatos"]["votacoes"]] == [
+        url
+    ] * quantidade
+    # Edição, itens e fontes custam três SELECTs. Os vídeos custam um nos dois tamanhos.
+    assert len(selects) == 4
+    assert sum("video_sessao" in sql for sql in selects) == 1
 
 
 def test_rascunho_e_inexistente_tem_mesmo_404(publicadas):

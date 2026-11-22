@@ -21,6 +21,7 @@ from mandatometro.db.modelos import (
     Mandato,
     Parlamentar,
     Proposicao,
+    VideoSessao,
     Votacao,
     Voto,
     normalizar_resultado,
@@ -173,6 +174,23 @@ def test_o_resultado_fica_no_conjunto(sessao):
     votacao = _votacao()
     votacao.resultado = "empatada"
     _nao_grava(sessao, votacao, regra="ck_votacao_resultado")
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://www.youtube.com/watch?v=Video_Teste",
+        "https://www.youtube.com.example.com/watch?v=Video_Teste",
+        "https://youtu.be/Video_Teste",
+        "https://www.youtube.com/watch?v=Video_Teste&t=60",
+        "https://www.youtube.com/watch?v=Video_Teste\n",
+        "https://www.youtube.com/watch?v=Videó_Teste",
+    ],
+)
+def test_video_da_sessao_recusa_url_fora_do_formato(sessao, url):
+    fonte = Fonte(url="https://dadosabertos.camara.leg.br/api/v2/eventos/1")
+    video = VideoSessao(casa="camara", id_externo=1, url_video=url, fonte=fonte)
+    _nao_grava(sessao, video, regra="ck_video_sessao_url_video")
 
 
 # --- O voto: o valor no conjunto e, só dos códigos da lista, o código como a Casa publica ---

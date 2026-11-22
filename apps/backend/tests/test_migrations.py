@@ -19,6 +19,7 @@ TABELAS_DO_MVP = {
     "parlamentar",
     "mandato",
     "proposicao",
+    "video_sessao",
     "votacao",
     "votacao_proposicao",
     "voto",
