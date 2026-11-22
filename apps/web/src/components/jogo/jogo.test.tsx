@@ -195,7 +195,7 @@ describe("a tela do jogo", () => {
 		);
 		expect(
 			screen
-				.getByRole("button", { name: "Continuar", exact: true })
+				.getByRole("button", { name: "Continuar" })
 				.querySelector(".invisible")?.ariaHidden,
 		).toBe("true");
 
