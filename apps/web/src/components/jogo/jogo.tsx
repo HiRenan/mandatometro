@@ -3,7 +3,7 @@ import { BOTAO_CONTINUAR } from "@/components/botao-continuar";
 import { useHidratado } from "@/components/quiz";
 import { classes } from "@/lib/classes";
 import { semCliqueDuplo } from "@/lib/clique";
-import type { JogoNaPagina } from "@/lib/jogo";
+import type { JogoNaPagina, Passo } from "@/lib/jogo";
 import {
 	avancar,
 	caminho,
@@ -25,6 +25,22 @@ import { Decisao } from "./decisao";
 import { FimDoJogo } from "./fim-do-jogo";
 import { PainelDeVotos } from "./painel-de-votos";
 import { RelogioDoPrazo } from "./relogio-do-prazo";
+
+function falasSeguidas(passos: Passo[], indice: number): string[] {
+	let inicio = indice;
+	while (passos[inicio - 1]?.tipo === "fala") {
+		inicio -= 1;
+	}
+
+	const falas = new Set<string>();
+	for (const passo of passos.slice(inicio)) {
+		if (passo.tipo !== "fala") {
+			break;
+		}
+		falas.add(passo.texto);
+	}
+	return [...falas];
+}
 
 function rolarParaOPasso(bloco: Element) {
 	const inicio = bloco.querySelector("[data-inicio-do-passo]") ?? bloco;
@@ -203,6 +219,7 @@ export function Jogo({
 								: jogo.personagens[fala.quem].nome
 						}
 						texto={fala.texto}
+						falasSeguidas={falasSeguidas(cena.passos, partida.passo)}
 						aoAvancar={seguir}
 					/>
 				) : null}

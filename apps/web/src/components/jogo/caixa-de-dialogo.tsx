@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { BOTAO_CONTINUAR } from "@/components/botao-continuar";
+import { Reservas } from "@/components/reservas";
 import { classes } from "@/lib/classes";
 import { semCliqueDuplo } from "@/lib/clique";
 import { pararVoz, tocar, tocarVoz } from "@/lib/jogo/som";
@@ -17,11 +18,14 @@ import { movimentoReduzido } from "@/lib/painel-vivo";
  */
 const MS_POR_LETRA = 22;
 
+const MOSTRAR_FALA = "Mostrar a fala inteira";
+
 export function CaixaDeDialogo({
 	id,
 	nome,
 	quem,
 	texto,
+	falasSeguidas,
 	aoAvancar,
 	rotulo = "Continuar",
 }: {
@@ -32,6 +36,7 @@ export function CaixaDeDialogo({
 	/** Quem fala, para o estilo da caixa. */
 	quem: string;
 	texto: string;
+	falasSeguidas: readonly string[];
 	aoAvancar: () => void;
 	rotulo?: string;
 }) {
@@ -93,9 +98,14 @@ export function CaixaDeDialogo({
 				className="jogo-toque"
 				aria-hidden="true"
 				tabIndex={-1}
+				onMouseDown={(evento) => evento.preventDefault()}
 				onClick={semCliqueDuplo(agir)}
 			/>
-			<p className="jogo-placa" data-narracao={nome ? undefined : "true"}>
+			<p
+				className="jogo-placa"
+				data-narracao={nome ? undefined : "true"}
+				aria-hidden="true"
+			>
 				{nome ?? "Narração"}
 			</p>
 			{/*
@@ -103,20 +113,30 @@ export function CaixaDeDialogo({
 			 * escrever fica no pedaço que ele não lê: quem ouve não perde o fim da
 			 * frase, e quem vê acompanha a digitação.
 			 */}
-			<p className="jogo-fala" tabIndex={-1} data-foco="true">
-				<span aria-hidden="true">
-					{texto.slice(0, letras)}
-					{completa ? null : <span className="jogo-cursor" />}
-				</span>
-				<span className="sr-only">{texto}</span>
-			</p>
+			<div className="jogo-linhas-da-fala">
+				<Reservas frases={falasSeguidas} />
+				<p className="jogo-fala" tabIndex={-1} data-foco="true">
+					<span aria-hidden="true">
+						{texto.slice(0, letras)}
+						{completa ? null : <span className="jogo-cursor" />}
+					</span>
+					<span className="sr-only">
+						{nome ?? "Narração"}. {texto}
+					</span>
+				</p>
+			</div>
 			<div className="jogo-acoes">
 				<button
 					type="button"
 					className={classes(BOTAO_CONTINUAR, "jogo-botao")}
 					onClick={semCliqueDuplo(agir)}
 				>
-					{completa ? rotulo : "Mostrar a fala inteira"}
+					<span className="jogo-rotulo-do-botao">
+						<Reservas frases={[rotulo, MOSTRAR_FALA]} />
+						<span className="col-start-1 row-start-1">
+							{completa ? rotulo : MOSTRAR_FALA}
+						</span>
+					</span>
 				</button>
 			</div>
 		</div>

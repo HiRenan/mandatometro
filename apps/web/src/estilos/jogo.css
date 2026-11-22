@@ -29,12 +29,22 @@
 
 	/* O palco: o cenário atrás e o passo da vez na frente. */
 	.jogo-palco {
+		--largura-do-item: clamp(4.5rem, 13vw, 7.5rem);
+		--espaco-do-item: calc(var(--largura-do-item) + 2.5rem);
 		position: relative;
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: 1rem;
+		overflow-x: clip;
 		border: 2px solid var(--tinta);
 		background: var(--papel-2);
+	}
+
+	@media (width < 48rem) {
+		.jogo-palco {
+			/* A etiqueta do item pode ocupar duas linhas. */
+			--espaco-do-item: calc(var(--largura-do-item) + 3.5rem);
+		}
 	}
 
 	/*
@@ -82,7 +92,7 @@
 		position: absolute;
 		top: 0.75rem;
 		left: 0.75rem;
-		width: clamp(4.5rem, 13vw, 7.5rem);
+		width: var(--largura-do-item);
 	}
 
 	.jogo-item img {
@@ -161,28 +171,34 @@
 
 	.jogo-placa[data-narracao="true"] {
 		background: none;
-		border: 1px solid var(--tinta-suave);
+		outline: 1px solid var(--tinta-suave);
+		outline-offset: -1px;
 		color: var(--tinta-suave);
 	}
 
 	/*
-	 * A fala guarda a altura de três linhas: a caixa não muda de tamanho de uma
-	 * fala para a outra, e o botão fica no mesmo lugar (como as Reservas do
-	 * quiz).
+	 * O mínimo são três linhas. As falas consecutivas compartilham a altura da
+	 * mais alta, mesmo enquanto só parte do texto está escrita. O parágrafo
+	 * da vez fica em bloco dentro da grade, como nas Reservas do quiz.
 	 */
-	.jogo-fala {
+	.jogo-linhas-da-fala {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		min-height: 5.25em;
+		font-family: var(--font-serif);
 		font-size: 1.0625rem;
 		line-height: 1.65;
 	}
 
-	.jogo-fala:focus-visible {
-		outline: none;
+	.jogo-fala {
+		grid-area: 1 / 1;
+		text-wrap: wrap;
 	}
 
 	.jogo-cursor {
-		display: inline-block;
+		position: absolute;
 		width: 0.5em;
+		height: 1em;
 		border-bottom: 2px solid var(--tinta);
 		animation: pisca 900ms steps(1, end) infinite;
 	}
@@ -217,6 +233,11 @@
 
 	.jogo-acoes-do-fim {
 		gap: 0.75rem;
+	}
+
+	.jogo-rotulo-do-botao {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 	}
 
 	/* A decisão: a etiqueta da natureza, a pergunta e as opções. */
@@ -533,6 +554,7 @@
 		font-weight: 700;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
+		overflow-wrap: anywhere;
 	}
 
 	.jogo-caminho li[data-estado="adiante"] .jogo-casa {
@@ -548,6 +570,17 @@
 		font-weight: 800;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
+	}
+
+	@media (width < 22rem) {
+		.jogo-caminho li {
+			grid-template-columns: auto minmax(0, 1fr);
+		}
+
+		.jogo-aqui {
+			grid-column: 2;
+			justify-self: start;
+		}
 	}
 
 	@media (width >= 48rem) {
@@ -605,6 +638,7 @@
 	.jogo-palco[data-sobre-a-cena] > .jogo-frente {
 		align-self: end;
 		z-index: 1;
+		margin-block-start: var(--espaco-do-item);
 		padding-block: 0 clamp(0.75rem, 2vw, 1.25rem);
 	}
 
@@ -634,6 +668,13 @@
 	.jogo-cartao-trilha {
 		font-family: var(--font-sans);
 		font-size: 0.9375rem;
+	}
+
+	.jogo-cartao-trilha a,
+	.jogo .lista-de-fontes a {
+		display: inline-block;
+		min-height: 44px;
+		align-content: center;
 	}
 
 	.jogo-regras ol,

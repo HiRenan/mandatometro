@@ -175,6 +175,37 @@ describe("a tela do jogo", () => {
 		expect(window.scrollTo).toHaveBeenCalledTimes(1);
 	});
 
+	it("reserva a altura das falas seguidas e lê quem está falando junto do texto", async () => {
+		mostrar();
+		fireEvent.click(await iniciarPartida());
+
+		const falas = [
+			...document.querySelectorAll(".jogo-linhas-da-fala > .invisible"),
+		];
+		expect(falas.map((fala) => fala.textContent)).toEqual(
+			jogo.cenas[0].passos
+				.slice(0, 6)
+				.map((passo) => (passo.tipo === "fala" ? passo.texto : undefined)),
+		);
+		expect(falas.every((fala) => fala.ariaHidden === "true")).toBe(true);
+		expect(document.activeElement?.querySelector(".sr-only")?.textContent).toBe(
+			"Narração. Brasília. Primeira semana de mandato.",
+		);
+		expect(
+			screen
+				.getByRole("button", { name: "Continuar", exact: true })
+				.querySelector(".invisible")?.ariaHidden,
+		).toBe("true");
+
+		const caixa = document.querySelector(".jogo-toque");
+		expect(caixa).toBeTruthy();
+		expect(fireEvent.mouseDown(caixa as HTMLElement)).toBe(false);
+		fireEvent.click(caixa as HTMLElement);
+		expect(document.activeElement?.querySelector(".sr-only")?.textContent).toBe(
+			"Lia Moraes. Pronto, gabinete montado. Por onde a gente começa?",
+		);
+	});
+
 	it("começa pelo conteúdo novo quando as explicações da decisão são altas", async () => {
 		medirCaixas({
 			"jogo-decisao": [300, 990],
