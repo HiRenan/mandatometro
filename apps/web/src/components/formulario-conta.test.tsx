@@ -116,9 +116,11 @@ describe("o termo no cadastro", () => {
 		versaoNaApi("2026-01-01");
 		render(<FormularioConta modo="cadastro" />);
 
-		expect(
-			await screen.findByText("O cadastro está indisponível no momento."),
-		).toBeTruthy();
+		await waitFor(() =>
+			expect(screen.getByRole("status").textContent).toBe(
+				"O cadastro está indisponível no momento.",
+			),
+		);
 		expect(
 			screen.queryByRole("link", { name: "o termo de consentimento" }),
 		).toBeNull();
@@ -128,7 +130,11 @@ describe("o termo no cadastro", () => {
 	it("faz zero POSTs mesmo se o formulário com versão divergente for enviado", async () => {
 		versaoNaApi("2026-01-01");
 		render(<FormularioConta modo="cadastro" />);
-		await screen.findByText("O cadastro está indisponível no momento.");
+		await waitFor(() =>
+			expect(screen.getByRole("status").textContent).toBe(
+				"O cadastro está indisponível no momento.",
+			),
+		);
 
 		preencherCadastro();
 		await act(async () => {

@@ -16,24 +16,20 @@ export const Route = createFileRoute("/login")({
 	component: Login,
 });
 
+/**
+ * O login confere a sessão antes de mostrar o formulário. Quem já entrou vai
+ * para o /perfil (o usePerfil), e a tela fica na espera até lá.
+ */
 function Login() {
-	const sessao = usePerfil("login");
-	if (sessao.estado === "visitante") return <FormularioConta modo="login" />;
+	const { estado } = usePerfil("login");
 	return (
-		<section className="px-margem-celular text-tinta mx-auto grid max-w-xl gap-6 py-12">
-			<h1 className="titulo-condensado letra-com-teto [--palavra:6]">
-				Entrar na conta
-			</h1>
-			{sessao.estado === "indisponivel" ? (
-				<p role="alert">
-					Não foi possível consultar sua conta.{" "}
-					<a href="/login" className="underline">
-						Tentar novamente
-					</a>
-				</p>
-			) : (
-				<p role="status">Verificando sua sessão…</p>
-			)}
-		</section>
+		<FormularioConta
+			modo="login"
+			sessao={
+				estado === "visitante" || estado === "indisponivel"
+					? estado
+					: "verificando"
+			}
+		/>
 	);
 }

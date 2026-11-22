@@ -1,0 +1,203 @@
+/*
+ * As telas da conta (DESIGN.md, "Telas da conta"): o /login, o /cadastro e as
+ * telas da confirmação, do reenvio, da senha e da exclusão, no cartaz das
+ * páginas de dentro, como o perfil (components/cartaz-da-conta.tsx). No pé, o
+ * lado leva a frase da tela e, no cadastro, o que a conta guarda; a ação leva o
+ * formulário, a linha das mensagens e os links entre as telas. Os campos são os
+ * do site (o .campo, com o rótulo em Label em cima, e o .marcar), como no
+ * painel de revisão (estilos/painel.css). A tela fica em
+ * components/formulario-conta.tsx.
+ */
+@layer components {
+	/* ───── O lado ───── */
+
+	.conta-lado {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: clamp(1.5rem, 3vw, 2.25rem);
+		align-content: start;
+	}
+
+	/* O que a conta guarda, no cadastro: o rótulo, o texto e o termo. */
+	.conta-guarda {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.6rem;
+		max-width: 34rem;
+	}
+
+	.conta-guarda-texto {
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.5;
+		color: var(--tinta-suave);
+	}
+
+	/* A seta do link que abre em outra aba, desenhada, na altura da letra. */
+	.conta-outra-aba {
+		display: inline;
+		width: 1em;
+		height: 1em;
+		margin-left: 0.3em;
+		vertical-align: -0.15em;
+	}
+
+	/* ───── A ação ───── */
+
+	/*
+	 * O formulário, a linha das mensagens e os links, numa coluna, com o
+	 * formulário e a linha na mesma largura, até 32rem. O botão sem formulário,
+	 * o "Ver as trilhas" de quando a conta não funciona no endereço, tem a
+	 * largura do texto, como no perfil. As regras que mudam as do cartaz levam
+	 * as duas classes: o index.css vem depois deste arquivo e venceria uma
+	 * classe só.
+	 */
+	.cartaz-acao.conta-acao {
+		justify-items: stretch;
+	}
+
+	.conta-acao > .botao {
+		justify-self: start;
+	}
+
+	/*
+	 * A grade do formulário e a da linha das mensagens ficam aqui, e não numa
+	 * classe do Tailwind: a classe, na camada de cima, venceria o display: none
+	 * de quando o navegador está sem JavaScript, embaixo.
+	 */
+	.conta-formulario {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1.25rem;
+		max-width: 32rem;
+	}
+
+	/*
+	 * A lista do navegador é só de leitura para o :read-only, que o painel usa
+	 * para o campo que espera o envio: aqui, o texto dela fica na tinta, como o
+	 * dos outros campos.
+	 */
+	.conta-formulario select.campo {
+		color: var(--tinta);
+	}
+
+	/*
+	 * Os campos opcionais do cadastro, entre dois fios. A legenda com o float
+	 * deixa de ser desenhada em cima do fio e vira a primeira linha da grade.
+	 */
+	.conta-opcionais {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem;
+		min-width: 0;
+		margin: 0;
+		padding: 1.25rem 0;
+		border: 0;
+		border-block: 2px solid var(--tinta);
+	}
+
+	.conta-opcionais > legend {
+		float: left;
+		width: 100%;
+		padding: 0;
+	}
+
+	/*
+	 * No login, a espera da sessão e o formulário ficam na mesma célula: o
+	 * formulário vem invisível no HTML do servidor e aparece no lugar dele.
+	 */
+	.conta-sessao {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		max-width: 32rem;
+	}
+
+	.conta-verificando,
+	.conta-indisponivel {
+		align-self: start;
+	}
+
+	.conta-indisponivel {
+		display: grid;
+		justify-items: start;
+		gap: 0.5rem;
+	}
+
+	/*
+	 * A linha das mensagens, embaixo do botão: guarda a altura do "Aguarde…"
+	 * (as Reservas), que entra e sai sem mexer em nada, e, no computador, a dos
+	 * erros (embaixo). Na conclusão, leva a frase, na letra da abertura.
+	 */
+	.conta-mensagem {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		max-width: 32rem;
+	}
+
+	.conta-aguarde {
+		color: var(--tinta-suave);
+	}
+
+	/*
+	 * Os links entre as telas, um embaixo do outro. A área de toque de cada um
+	 * (15 px em cima e embaixo da letra) não encosta na do vizinho.
+	 */
+	.conta-links {
+		display: grid;
+		justify-items: start;
+		gap: 1.75rem;
+		margin-top: 0.5rem;
+	}
+
+	/*
+	 * O que fica guardado para o computador: os erros da linha das mensagens e,
+	 * no login, o link que o 401 traz. A partir de 62rem, o cartaz prende o
+	 * título embaixo (o margin-top: auto do h1, com a altura mínima), e numa
+	 * tela curta o que crescesse no pé subiria o título, o formulário e o botão,
+	 * que está embaixo do ponteiro. No celular, o cartaz não tem altura mínima e
+	 * nada fica guardado: o erro e o link empurram só o que vem embaixo deles.
+	 */
+	.conta-link-guardado {
+		visibility: hidden;
+	}
+
+	@media (width < 62rem) {
+		.conta-erro-guardado,
+		.conta-link-guardado {
+			display: none;
+		}
+	}
+
+	/*
+	 * Sem JavaScript, a conta não responde: o formulário, a espera da sessão e
+	 * a linha das mensagens saem, e o aviso do noscript fica no lugar. O
+	 * -caixa-da-pagina-ssr.test.tsx confere que os três não levam classe de
+	 * display do Tailwind.
+	 */
+	@media (scripting: none) {
+		.conta-formulario,
+		.conta-verificando,
+		.conta-mensagem {
+			display: none;
+		}
+	}
+
+	/*
+	 * A partir de 62rem, o lado fica à esquerda e a ação, a coluna mais larga, à
+	 * direita. Sem o lado, como na conclusão, a ação toma o pé inteiro.
+	 */
+	@media (width >= 62rem) {
+		.cartaz-pe.conta-pe {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+		}
+
+		.conta-pe > .conta-lado {
+			grid-row: 1;
+			grid-column: 1;
+		}
+
+		.conta-pe-so > .conta-acao {
+			grid-column: 1 / -1;
+		}
+	}
+}
