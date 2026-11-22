@@ -235,23 +235,36 @@ def test_declaracao_invalida_nova_fica_sem_total(arquivos, parlamentares, sessao
     )
 
 
-@pytest.mark.parametrize("falha", ["ausente", "bens_truncados", "candidaturas_truncadas"])
+@pytest.mark.parametrize(
+    ("tipo", "terminador"),
+    [
+        pytest.param(None, b"", id="arquivo-ausente"),
+        pytest.param("bem_candidato", b"", id="bens-truncados-no-fim"),
+        pytest.param("consulta_cand", b"", id="candidaturas-truncadas-no-fim"),
+        pytest.param("bem_candidato", b"\r\n", id="linha-curta-com-quebra"),
+    ],
+)
 def test_arquivo_incompleto_preserva_fontes_e_totais(
     arquivos,
     parlamentares,
     sessao,
     capsys,
-    falha,
+    tipo,
+    terminador,
 ):
     _carregar(arquivos, capsys)
     antes = _bens(sessao)
     fontes = sessao.scalar(select(func.count()).select_from(Fonte))
-    if falha == "ausente":
+    if tipo is None:
         (arquivos / "bem_candidato_2018.zip").unlink()
+        resumo = _carregar(arquivos, capsys, completa=False)
+        assert resumo["anos"]["2018"]["bens"]["falhas"] == {"ausente": 1}
     else:
-        nome = "bem_candidato_2018" if falha == "bens_truncados" else "consulta_cand_2018"
-        _alterar_zip(arquivos, nome, lambda b: b[:-2].rsplit(b";", 1)[0] + b"\r\n")
-    _carregar(arquivos, capsys, completa=False)
+        _alterar_zip(arquivos, f"{tipo}_2018", lambda b: b[:-2].rsplit(b";", 1)[0] + terminador)
+        resumo = _carregar(arquivos, capsys, completa=False)
+        arquivo = resumo["anos"]["2018"]["bens" if tipo == "bem_candidato" else "candidaturas"]
+        assert arquivo["falhas"] == {"invalido": 1}
+        assert arquivo.get("linha_invalida", 0) == int(bool(terminador))
     assert _bens(sessao) == antes
     assert sessao.scalar(select(func.count()).select_from(Fonte)) == fontes
 

@@ -169,10 +169,13 @@ def _linhas(
         ) as csv_,
     ):
         fim = False
+        linha_terminada = False
 
         def linhas_fisicas():
-            nonlocal fim
-            yield from csv_
+            nonlocal fim, linha_terminada
+            for linha in csv_:
+                linha_terminada = linha.endswith(("\r", "\n"))
+                yield linha
             fim = True
 
         leitor = csv.reader(linhas_fisicas(), delimiter=";", strict=True)
@@ -206,6 +209,8 @@ def _linhas(
                     ):
                         raise ArquivoInvalido("O CSV deve estar em latin-1.")
                 yield {campo: valores[i] for i, campo in indices}
+            elif len(valores) < len(colunas) and not linha_terminada:
+                raise ArquivoInvalido("Registro CSV truncado.")
             else:
                 descartes["linha_invalida"] += 1
 
