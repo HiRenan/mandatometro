@@ -5,6 +5,7 @@ import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query
 import { Carregando, TEMPOS_DO_CARREGANDO } from "./components/carregando";
 import { NaoEncontrado } from "./components/nao-encontrado";
 import { PaginaDeErro } from "./components/pagina-de-erro";
+import { buscaComPartido } from "./lib/parlamentares/busca";
 import {
 	molduraNaTela,
 	rolagemDasPaginas,
@@ -22,6 +23,7 @@ export const getRouter = () => {
 	const rolagem = rolagemDasPaginas();
 	const router = createTanStackRouter({
 		routeTree,
+		...buscaComPartido,
 		scrollRestoration: true,
 		defaultPreloadStaleTime: 0,
 		context: { queryClient },

@@ -86,7 +86,7 @@ export type Explicacao = { texto: string; artigos: Artigo[] };
  * no Regimento Interno de cada Casa, só lendo o texto oficial (a Atena, em
  * 22/11/2026: a regra que não estiver lá sai do texto). Na obstrução, o
  * "para atrasar ou impedir a decisão" saiu: nenhum dos dois regimentos diz o
- * motivo, só que a ausência foi decidida pela liderança. O "Não votou" e o
+ * motivo, só como a ausência é formalizada. O "Não votou" e o
  * "Outro registro" descrevem os dados, e não uma regra.
  */
 export const EXPLICACAO_DO_VOTO: Record<Valor, Explicacao> = {
@@ -113,7 +113,7 @@ export const EXPLICACAO_DO_VOTO: Record<Valor, Explicacao> = {
 	},
 	obstrucao: {
 		texto:
-			"Deixou de votar numa estratégia do partido, anunciada pela liderança.",
+			"Deixou de votar numa estratégia do partido ou do bloco, comunicada à Mesa na Câmara e declarada pela liderança no Senado.",
 		artigos: [
 			{ casa: "camara", artigo: "art.\u00a082, §\u00a06º" },
 			{ casa: "senado", artigo: "art.\u00a013, §\u00a02º" },
@@ -121,7 +121,7 @@ export const EXPLICACAO_DO_VOTO: Record<Valor, Explicacao> = {
 	},
 	presidente: {
 		texto:
-			"Presidia a sessão. Na votação aberta, quem preside só vota para desempatar, e o registro fica fora do placar.",
+			"Presidia a sessão. Na votação aberta, quem preside só vota para desempatar; por isso, este registro aparece à parte e não conta como Sim nem como Não.",
 		artigos: [
 			{ casa: "camara", artigo: "art.\u00a017, §\u00a01º" },
 			{ casa: "senado", artigo: "art.\u00a051" },
@@ -235,10 +235,10 @@ export function opcoesDoFiltro(votos: readonly VotoNominal[]): {
 		if (voto.uf) {
 			ufs.add(voto.uf);
 		}
-		if (voto.partido) {
-			partidos.add(voto.partido);
-		} else {
+		if (voto.partido === null) {
 			semPartido = true;
+		} else if (partidoDaBusca(voto.partido) !== undefined) {
+			partidos.add(voto.partido);
 		}
 	}
 	const emOrdem = (lista: Set<string>) =>
@@ -247,15 +247,14 @@ export function opcoesDoFiltro(votos: readonly VotoNominal[]): {
 }
 
 /**
- * O partido do endereço (?partido=PFT): uma sigla de letras, números, ponto,
- * hífen ou espaço, até 20 caracteres, ou o "sem-partido". A sigla fica como
- * veio, porque a fonte mistura maiúsculas e minúsculas em algumas. Outro valor
- * fica sem filtro, como no endereço sem ?partido.
+ * O partido do endereço (?partido=PFT): o texto original, até 40 caracteres,
+ * sem controles. O campo vazio equivale ao endereço sem ?partido.
  */
 export function partidoDaBusca(valor: unknown): string | undefined {
 	return typeof valor === "string" &&
-		(valor === SEM_PARTIDO ||
-			/^[\p{L}\p{N}][\p{L}\p{N} .-]{0,19}$/u.test(valor))
+		valor !== "" &&
+		[...valor].length <= 40 &&
+		!/\p{Cc}/u.test(valor)
 		? valor
 		: undefined;
 }

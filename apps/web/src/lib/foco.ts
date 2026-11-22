@@ -20,19 +20,33 @@ export function focarNoTitulo(trecho?: string) {
 	(alvo ?? conteudo)?.focus({ preventScroll: true });
 }
 
+/** O título que recebe o foco ao paginar os votos de um parlamentar. */
+export const TRECHO_DOS_VOTOS = "votos";
+
 /** O que a regra abaixo lê de cada endereço (o `ParsedLocation` do router). */
-type Endereco = { pathname: string; search: { uf?: unknown } };
+type Endereco = {
+	pathname: string;
+	search: { uf?: unknown; pagina?: unknown };
+	hash?: string;
+};
 
 /**
  * Se a navegação abriu outra página: outro caminho ou, na lista dos
  * parlamentares, outro estado (?uf), que traz outro título e outros nomes no
- * mesmo caminho. O filtro da votação (?uf e ?partido em /votacoes/139) só troca
+ * mesmo caminho. No perfil, a paginação dos votos muda a lista e leva o foco
+ * ao título dela (#votos). O filtro da votação (?uf e ?partido) só troca
  * a lista da mesma página, e o foco fica no botão do filtro. Sem a página de
  * antes, conta como outra, como o `pathChanged` do router.
  */
 export function outraPagina(de: Endereco | undefined, para: Endereco) {
 	if (!de || de.pathname !== para.pathname) {
 		return true;
+	}
+	if (
+		para.pathname.startsWith("/parlamentares/") &&
+		para.hash === TRECHO_DOS_VOTOS
+	) {
+		return de.search.pagina !== para.search.pagina;
 	}
 	return para.pathname === "/parlamentares" && de.search.uf !== para.search.uf;
 }

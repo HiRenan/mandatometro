@@ -30,8 +30,8 @@ const DESENHO: Record<Valor, (x: number, y: number) => string> = {
  * celular. Cada voto vira um pedaço do caminho do seu valor, e o desenho tem só
  * um caminho por valor, mesmo com os 513 votos da Câmara.
  *
- * É desenho: o placar logo abaixo diz o mesmo em texto, e o painel inteiro fica
- * fora do leitor de tela, com a legenda visível embaixo.
+ * O painel é decorativo, com legenda visível, e fica fora do leitor de tela.
+ * Os placares e os grupos trazem as contagens em texto.
  */
 export function Plenario({ votos }: { votos: VotoNominal[] }) {
 	const emOrdem = VALORES.flatMap((valor) =>

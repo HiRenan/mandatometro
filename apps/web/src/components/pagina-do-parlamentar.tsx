@@ -8,6 +8,7 @@ import type {
 import { sementeDe } from "@/lib/azulejos";
 import { estiloDoTeto } from "@/lib/conteudo/regua";
 import { enderecoSeguro } from "@/lib/edicoes/conteudo-da-edicao";
+import { TRECHO_DOS_VOTOS } from "@/lib/foco";
 import { dataEmBrasilia, formatarData, plural } from "@/lib/formatar";
 import {
 	enderecoDoParlamentar,
@@ -124,11 +125,12 @@ export function PaginaDoParlamentar({ pagina }: { pagina: Pagina }) {
 					<>
 						<ComoVotou parlamentar={parlamentar} />
 						<section
-							aria-labelledby="votos"
+							aria-labelledby={TRECHO_DOS_VOTOS}
 							className="secao-dos-parlamentares"
 						>
 							<h2
-								id="votos"
+								id={TRECHO_DOS_VOTOS}
+								tabIndex={-1}
 								className="subtitulo-condensado letra-com-teto [--palavra:2.77]"
 							>
 								Votos
@@ -285,9 +287,9 @@ function SemVotos({ nome }: { nome: string }) {
 			</h2>
 			<p>
 				Os dados usados ainda não têm votos de {nome}. O voto de cada
-				parlamentar só fica registrado na votação nominal, pelo painel
-				eletrônico. Na votação simbólica, a mais comum na Câmara, o resultado
-				sai sem a lista de nomes.
+				parlamentar só fica registrado na votação nominal, feita em geral pelo
+				painel eletrônico. Na votação simbólica, a mais comum na Câmara, o
+				resultado sai sem a lista de nomes.
 			</p>
 			<p>
 				<Link
@@ -304,8 +306,8 @@ function SemVotos({ nome }: { nome: string }) {
 
 /**
  * Os links para as páginas vizinhas dos votos, como os das edições (o mesmo
- * desenho, no edicoes.css), que funcionam sem o JavaScript. A primeira página
- * fica sem o ?pagina.
+ * desenho, no edicoes.css). O trecho leva ao título dos votos com e sem o
+ * JavaScript. A primeira página fica sem o ?pagina.
  */
 function PaginasDosVotos({
 	endereco,
@@ -327,6 +329,7 @@ function PaginasDosVotos({
 					to="/parlamentares/$id"
 					params={{ id: endereco }}
 					search={anterior > 1 ? { pagina: anterior } : {}}
+					hash={TRECHO_DOS_VOTOS}
 					className="mais-novas acao-de-texto"
 				>
 					<span>Votos mais novos</span>
@@ -337,6 +340,7 @@ function PaginasDosVotos({
 					to="/parlamentares/$id"
 					params={{ id: endereco }}
 					search={{ pagina: pagina + 1 }}
+					hash={TRECHO_DOS_VOTOS}
 					className="mais-antigas acao-de-texto"
 				>
 					<span>Votos mais antigos</span>
