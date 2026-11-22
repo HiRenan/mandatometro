@@ -221,6 +221,8 @@ O [guia de hospedagem](hospedagem.md#ativar-e-recuperar-o-envio-de-domingo) desc
 
 Nos fatos públicos, cada votação traz seu id interno (`id`), data, resultado, placar ou nulo e suas fontes. O id vem da fotografia gravada no item e permite consultar a lista nominal em `GET /votacoes/{id}`. Se a votação sair do banco, essa consulta responde 404 e a edição continua abrindo com o id e o placar publicados. Os ids de item, proposição e fonte ficam fora dessa resposta pública.
 
+Cada votação da edição também traz `url_video`, com o link oficial da sessão inteira ou nulo. A API busca os vídeos pelos ids internos em uma consulta ao banco. Isso vale para fotografias v1 já publicadas. A fonte do vídeo é da coleta da sessão e fica fora da fotografia usada pela revisão e pelo envio.
+
 Cada fonte traz `url`, `coletado_em` e `trecho` ou nulo; o artigo traz `titulo` e `caminho` do catálogo ou é nulo. Placar nulo significa indisponível, não zero nem modalidade; presidência fica separada. O legado continua com fatos/artigo nulos. Rascunho e inexistente respondem o mesmo 404; dados inválidos, 422; banco ou fotografia inválida, 503, sem conteúdo parcial. A API não devolve a origem do texto, pendências de revisão, versão interna nem estado de envio, e não recalcula a edição com dados novos. O id da edição serve à navegação. Carregue também as fontes de `fatos.fontes`.
 
 Os fatos públicos de um ato trazem `data_publicacao` e `votacoes: []`. A primeira fonte é a página oficial registrada em `fonte.url_publica`. O trecho vem nulo para atos na API e fica fora da prévia e do e-mail. O motivo da seleção e a origem da ordem ficam na revisão.
