@@ -403,6 +403,8 @@ uv run mandatometro coleta camara --somente-videos --inicio 2026-11-13 --fim 202
 uv run mandatometro coleta senado --somente-videos --inicio 2026-11-13 --fim 2026-11-20
 ```
 
+A coleta normal renova as fontes editoriais mesmo quando o único dado novo é o vídeo. Para um rascunho pronto para publicar, use `--somente-videos` para conservar a revisão.
+
 O resumo inclui as contagens em `videos`. Consulte [vídeos das sessões](docs/dicionario-de-dados.md#vídeos-das-sessões) e o [preenchimento em hospedagem](docs/hospedagem.md#preencher-vídeos-das-sessões).
 
 **Coleta de atos da legislação federal.** Em `apps/backend`, aplique as migrations e passe `DATABASE_URL` com o banco de destino.
