@@ -119,6 +119,80 @@ export type Codigo = {
 };
 
 /**
+ * ContagemVotosParlamentar
+ */
+export type ContagemVotosParlamentar = {
+    /**
+     * Sim
+     */
+    sim: number;
+    /**
+     * Nao
+     */
+    nao: number;
+    /**
+     * Abstencao
+     */
+    abstencao: number;
+    /**
+     * Obstrucao
+     */
+    obstrucao: number;
+    /**
+     * Presidente
+     */
+    presidente: number;
+    /**
+     * Nao Votou
+     */
+    nao_votou: number;
+    /**
+     * Outro
+     */
+    outro: number;
+};
+
+/**
+ * DetalheParlamentar
+ */
+export type DetalheParlamentar = {
+    /**
+     * Id
+     *
+     * Id interno do parlamentar.
+     */
+    id: number;
+    /**
+     * Nome
+     */
+    nome: string;
+    /**
+     * Casa
+     */
+    casa: 'camara' | 'senado';
+    /**
+     * Uf
+     *
+     * UF do mandato em exercício de maior legislatura. No detalhe, usa o mandato de maior legislatura se nenhum estiver em exercício. Nula sem mandato.
+     */
+    uf: string | null;
+    /**
+     * Partido
+     *
+     * Sigla registrada no voto mais recente pela data da votação, com desempate pelo maior id interno da votação. Nula se o voto não informa partido ou se não há voto.
+     */
+    partido: string | null;
+    /**
+     * Mandatos
+     */
+    mandatos: Array<MandatoPublico>;
+    /**
+     * Contagem dos registros de voto deste parlamentar, por valor normalizado. Uma votação sem registro da pessoa fica fora da contagem.
+     */
+    contagem_votos: ContagemVotosParlamentar;
+};
+
+/**
  * EdicaoPublica
  */
 export type EdicaoPublica = {
@@ -196,6 +270,16 @@ export type ErroPainel = {
      * Detail
      */
     detail: string;
+};
+
+/**
+ * ErroParlamentar
+ */
+export type ErroParlamentar = {
+    /**
+     * Erro
+     */
+    erro: 'dados_invalidos' | 'parlamentar_nao_encontrado' | 'servico_indisponivel';
 };
 
 /**
@@ -374,6 +458,38 @@ export type ListaEdicoes = {
 };
 
 /**
+ * ListaParlamentares
+ */
+export type ListaParlamentares = {
+    /**
+     * Parlamentares
+     */
+    parlamentares: Array<ParlamentarPublico>;
+};
+
+/**
+ * ListaVotosParlamentar
+ */
+export type ListaVotosParlamentar = {
+    /**
+     * Votos
+     */
+    votos: Array<VotoParlamentar>;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Limite
+     */
+    limite: number;
+    /**
+     * Deslocamento
+     */
+    deslocamento: number;
+};
+
+/**
  * Login
  */
 export type Login = {
@@ -385,6 +501,60 @@ export type Login = {
      * Email
      */
     email: string;
+};
+
+/**
+ * MandatoPublico
+ */
+export type MandatoPublico = {
+    /**
+     * Legislatura
+     */
+    legislatura: number;
+    /**
+     * Uf
+     */
+    uf: string;
+    /**
+     * Condicao
+     */
+    condicao: string | null;
+    /**
+     * Em Exercicio
+     */
+    em_exercicio: boolean;
+};
+
+/**
+ * ParlamentarPublico
+ */
+export type ParlamentarPublico = {
+    /**
+     * Id
+     *
+     * Id interno do parlamentar.
+     */
+    id: number;
+    /**
+     * Nome
+     */
+    nome: string;
+    /**
+     * Casa
+     */
+    casa: 'camara' | 'senado';
+    /**
+     * Uf
+     *
+     * UF do mandato em exercício de maior legislatura. No detalhe, usa o mandato de maior legislatura se nenhum estiver em exercício. Nula sem mandato.
+     */
+    uf: string | null;
+    /**
+     * Partido
+     *
+     * Sigla registrada no voto mais recente pela data da votação, com desempate pelo maior id interno da votação. Nula se o voto não informa partido ou se não há voto.
+     */
+    partido: string | null;
 };
 
 /**
@@ -485,6 +655,28 @@ export type ProgressoConta = {
      * Lidos
      */
     lidos: Array<string>;
+};
+
+/**
+ * ProposicaoAfetada
+ */
+export type ProposicaoAfetada = {
+    /**
+     * Sigla
+     */
+    sigla: string;
+    /**
+     * Numero
+     */
+    numero: number;
+    /**
+     * Ano
+     */
+    ano: number;
+    /**
+     * Ementa
+     */
+    ementa: string | null;
 };
 
 /**
@@ -632,6 +824,50 @@ export type VotacaoPublica = {
      * Fontes
      */
     fontes: Array<FontePublica>;
+};
+
+/**
+ * VotoParlamentar
+ */
+export type VotoParlamentar = {
+    /**
+     * Votacao Id
+     *
+     * Id interno da votação.
+     */
+    votacao_id: number;
+    /**
+     * Data
+     */
+    data: string;
+    /**
+     * Descricao
+     */
+    descricao: string;
+    /**
+     * Resultado
+     */
+    resultado: 'aprovada' | 'rejeitada' | 'outro';
+    /**
+     * Proposicoes
+     */
+    proposicoes: Array<ProposicaoAfetada>;
+    /**
+     * Valor
+     */
+    valor: 'sim' | 'nao' | 'abstencao' | 'obstrucao' | 'presidente' | 'nao_votou' | 'outro';
+    /**
+     * Url Oficial
+     *
+     * Página oficial da votação, com o endereço da coleta como reserva. Nula se a fonte estiver sem endereço.
+     */
+    url_oficial: string | null;
+    /**
+     * Coletado Em
+     *
+     * Data e hora de coleta da fonte da votação.
+     */
+    coletado_em: string;
 };
 
 export type InscreverNewsletterData = {
@@ -1524,6 +1760,131 @@ export type PublicarEdicaoResponses = {
 };
 
 export type PublicarEdicaoResponse = PublicarEdicaoResponses[keyof PublicarEdicaoResponses];
+
+export type ListarParlamentaresData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Uf
+         *
+         * Sigla da UF do mandato em exercício.
+         */
+        uf?: 'AC' | 'AL' | 'AM' | 'AP' | 'BA' | 'CE' | 'DF' | 'ES' | 'GO' | 'MA' | 'MG' | 'MS' | 'MT' | 'PA' | 'PB' | 'PE' | 'PI' | 'PR' | 'RJ' | 'RN' | 'RO' | 'RR' | 'RS' | 'SC' | 'SE' | 'SP' | 'TO' | null;
+        /**
+         * Casa
+         */
+        casa?: 'camara' | 'senado' | null;
+    };
+    url: '/parlamentares';
+};
+
+export type ListarParlamentaresErrors = {
+    /**
+     * Dados inválidos.
+     */
+    422: ErroParlamentar;
+    /**
+     * Banco indisponível.
+     */
+    503: ErroParlamentar;
+};
+
+export type ListarParlamentaresError = ListarParlamentaresErrors[keyof ListarParlamentaresErrors];
+
+export type ListarParlamentaresResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListaParlamentares;
+};
+
+export type ListarParlamentaresResponse = ListarParlamentaresResponses[keyof ListarParlamentaresResponses];
+
+export type ObterParlamentarData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: number;
+    };
+    query?: never;
+    url: '/parlamentares/{id}';
+};
+
+export type ObterParlamentarErrors = {
+    /**
+     * Not Found
+     */
+    404: ErroParlamentar;
+    /**
+     * Dados inválidos.
+     */
+    422: ErroParlamentar;
+    /**
+     * Banco indisponível.
+     */
+    503: ErroParlamentar;
+};
+
+export type ObterParlamentarError = ObterParlamentarErrors[keyof ObterParlamentarErrors];
+
+export type ObterParlamentarResponses = {
+    /**
+     * Successful Response
+     */
+    200: DetalheParlamentar;
+};
+
+export type ObterParlamentarResponse = ObterParlamentarResponses[keyof ObterParlamentarResponses];
+
+export type ListarVotosParlamentarData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: number;
+    };
+    query?: {
+        /**
+         * Limite
+         */
+        limite?: number;
+        /**
+         * Deslocamento
+         */
+        deslocamento?: number;
+    };
+    url: '/parlamentares/{id}/votos';
+};
+
+export type ListarVotosParlamentarErrors = {
+    /**
+     * Not Found
+     */
+    404: ErroParlamentar;
+    /**
+     * Dados inválidos.
+     */
+    422: ErroParlamentar;
+    /**
+     * Banco indisponível.
+     */
+    503: ErroParlamentar;
+};
+
+export type ListarVotosParlamentarError = ListarVotosParlamentarErrors[keyof ListarVotosParlamentarErrors];
+
+export type ListarVotosParlamentarResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListaVotosParlamentar;
+};
+
+export type ListarVotosParlamentarResponse = ListarVotosParlamentarResponses[keyof ListarVotosParlamentarResponses];
 
 export type RegistrarTentativaPilotoData = {
     body: PedidoTentativaPiloto;

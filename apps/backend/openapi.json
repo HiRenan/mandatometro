@@ -1733,6 +1733,267 @@
         }
       }
     },
+    "/parlamentares": {
+      "get": {
+        "tags": [
+          "parlamentares"
+        ],
+        "summary": "Listar os parlamentares em exercício",
+        "description": "Lista completa em ordem alfabética, com filtros opcionais por UF e Casa.",
+        "operationId": "listar_parlamentares",
+        "parameters": [
+          {
+            "name": "uf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "AC",
+                    "AL",
+                    "AM",
+                    "AP",
+                    "BA",
+                    "CE",
+                    "DF",
+                    "ES",
+                    "GO",
+                    "MA",
+                    "MG",
+                    "MS",
+                    "MT",
+                    "PA",
+                    "PB",
+                    "PE",
+                    "PI",
+                    "PR",
+                    "RJ",
+                    "RN",
+                    "RO",
+                    "RR",
+                    "RS",
+                    "SC",
+                    "SE",
+                    "SP",
+                    "TO"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Sigla da UF do mandato em exercício.",
+              "title": "Uf"
+            },
+            "description": "Sigla da UF do mandato em exercício."
+          },
+          {
+            "name": "casa",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "camara",
+                    "senado"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Casa"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaParlamentares"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Banco indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/parlamentares/{id}": {
+      "get": {
+        "tags": [
+          "parlamentares"
+        ],
+        "summary": "Ler um parlamentar, seus mandatos e a contagem de votos gravados",
+        "operationId": "obter_parlamentar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetalheParlamentar"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Banco indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/parlamentares/{id}/votos": {
+      "get": {
+        "tags": [
+          "parlamentares"
+        ],
+        "summary": "Listar os votos gravados do parlamentar da votação mais recente para a mais antiga",
+        "description": "Paginação por deslocamento, com desempate por id interno decrescente da votação.",
+        "operationId": "listar_votos_parlamentar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Id"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limite"
+            }
+          },
+          {
+            "name": "deslocamento",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Deslocamento"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaVotosParlamentar"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Banco indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/piloto/tentativas": {
       "post": {
         "tags": [
@@ -2042,6 +2303,116 @@
         ],
         "title": "Codigo"
       },
+      "ContagemVotosParlamentar": {
+        "properties": {
+          "sim": {
+            "type": "integer",
+            "title": "Sim"
+          },
+          "nao": {
+            "type": "integer",
+            "title": "Nao"
+          },
+          "abstencao": {
+            "type": "integer",
+            "title": "Abstencao"
+          },
+          "obstrucao": {
+            "type": "integer",
+            "title": "Obstrucao"
+          },
+          "presidente": {
+            "type": "integer",
+            "title": "Presidente"
+          },
+          "nao_votou": {
+            "type": "integer",
+            "title": "Nao Votou"
+          },
+          "outro": {
+            "type": "integer",
+            "title": "Outro"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sim",
+          "nao",
+          "abstencao",
+          "obstrucao",
+          "presidente",
+          "nao_votou",
+          "outro"
+        ],
+        "title": "ContagemVotosParlamentar"
+      },
+      "DetalheParlamentar": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "Id interno do parlamentar."
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "casa": {
+            "type": "string",
+            "enum": [
+              "camara",
+              "senado"
+            ],
+            "title": "Casa"
+          },
+          "uf": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uf",
+            "description": "UF do mandato em exercício de maior legislatura. No detalhe, usa o mandato de maior legislatura se nenhum estiver em exercício. Nula sem mandato."
+          },
+          "partido": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partido",
+            "description": "Sigla registrada no voto mais recente pela data da votação, com desempate pelo maior id interno da votação. Nula se o voto não informa partido ou se não há voto."
+          },
+          "mandatos": {
+            "items": {
+              "$ref": "#/components/schemas/MandatoPublico"
+            },
+            "type": "array",
+            "title": "Mandatos"
+          },
+          "contagem_votos": {
+            "$ref": "#/components/schemas/ContagemVotosParlamentar",
+            "description": "Contagem dos registros de voto deste parlamentar, por valor normalizado. Uma votação sem registro da pessoa fica fora da contagem."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "casa",
+          "uf",
+          "partido",
+          "mandatos",
+          "contagem_votos"
+        ],
+        "title": "DetalheParlamentar"
+      },
       "EdicaoPublica": {
         "properties": {
           "id": {
@@ -2161,6 +2532,24 @@
           "detail"
         ],
         "title": "ErroPainel"
+      },
+      "ErroParlamentar": {
+        "properties": {
+          "erro": {
+            "type": "string",
+            "enum": [
+              "dados_invalidos",
+              "parlamentar_nao_encontrado",
+              "servico_indisponivel"
+            ],
+            "title": "Erro"
+          }
+        },
+        "type": "object",
+        "required": [
+          "erro"
+        ],
+        "title": "ErroParlamentar"
       },
       "ErroPiloto": {
         "properties": {
@@ -2455,6 +2844,53 @@
         ],
         "title": "ListaEdicoes"
       },
+      "ListaParlamentares": {
+        "properties": {
+          "parlamentares": {
+            "items": {
+              "$ref": "#/components/schemas/ParlamentarPublico"
+            },
+            "type": "array",
+            "title": "Parlamentares"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parlamentares"
+        ],
+        "title": "ListaParlamentares"
+      },
+      "ListaVotosParlamentar": {
+        "properties": {
+          "votos": {
+            "items": {
+              "$ref": "#/components/schemas/VotoParlamentar"
+            },
+            "type": "array",
+            "title": "Votos"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limite": {
+            "type": "integer",
+            "title": "Limite"
+          },
+          "deslocamento": {
+            "type": "integer",
+            "title": "Deslocamento"
+          }
+        },
+        "type": "object",
+        "required": [
+          "votos",
+          "total",
+          "limite",
+          "deslocamento"
+        ],
+        "title": "ListaVotosParlamentar"
+      },
       "Login": {
         "properties": {
           "senha": {
@@ -2475,6 +2911,95 @@
           "email"
         ],
         "title": "Login"
+      },
+      "MandatoPublico": {
+        "properties": {
+          "legislatura": {
+            "type": "integer",
+            "title": "Legislatura"
+          },
+          "uf": {
+            "type": "string",
+            "title": "Uf"
+          },
+          "condicao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condicao"
+          },
+          "em_exercicio": {
+            "type": "boolean",
+            "title": "Em Exercicio"
+          }
+        },
+        "type": "object",
+        "required": [
+          "legislatura",
+          "uf",
+          "condicao",
+          "em_exercicio"
+        ],
+        "title": "MandatoPublico"
+      },
+      "ParlamentarPublico": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "Id interno do parlamentar."
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "casa": {
+            "type": "string",
+            "enum": [
+              "camara",
+              "senado"
+            ],
+            "title": "Casa"
+          },
+          "uf": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uf",
+            "description": "UF do mandato em exercício de maior legislatura. No detalhe, usa o mandato de maior legislatura se nenhum estiver em exercício. Nula sem mandato."
+          },
+          "partido": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partido",
+            "description": "Sigla registrada no voto mais recente pela data da votação, com desempate pelo maior id interno da votação. Nula se o voto não informa partido ou se não há voto."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "casa",
+          "uf",
+          "partido"
+        ],
+        "title": "ParlamentarPublico"
       },
       "PedidoInscricao": {
         "properties": {
@@ -2630,6 +3155,41 @@
           "lidos"
         ],
         "title": "ProgressoConta"
+      },
+      "ProposicaoAfetada": {
+        "properties": {
+          "sigla": {
+            "type": "string",
+            "title": "Sigla"
+          },
+          "numero": {
+            "type": "integer",
+            "title": "Numero"
+          },
+          "ano": {
+            "type": "integer",
+            "title": "Ano"
+          },
+          "ementa": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ementa"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sigla",
+          "numero",
+          "ano",
+          "ementa"
+        ],
+        "title": "ProposicaoAfetada"
       },
       "Redefinicao": {
         "properties": {
@@ -2867,6 +3427,83 @@
           "fontes"
         ],
         "title": "VotacaoPublica"
+      },
+      "VotoParlamentar": {
+        "properties": {
+          "votacao_id": {
+            "type": "integer",
+            "title": "Votacao Id",
+            "description": "Id interno da votação."
+          },
+          "data": {
+            "type": "string",
+            "format": "date",
+            "title": "Data"
+          },
+          "descricao": {
+            "type": "string",
+            "title": "Descricao"
+          },
+          "resultado": {
+            "type": "string",
+            "enum": [
+              "aprovada",
+              "rejeitada",
+              "outro"
+            ],
+            "title": "Resultado"
+          },
+          "proposicoes": {
+            "items": {
+              "$ref": "#/components/schemas/ProposicaoAfetada"
+            },
+            "type": "array",
+            "title": "Proposicoes"
+          },
+          "valor": {
+            "type": "string",
+            "enum": [
+              "sim",
+              "nao",
+              "abstencao",
+              "obstrucao",
+              "presidente",
+              "nao_votou",
+              "outro"
+            ],
+            "title": "Valor"
+          },
+          "url_oficial": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url Oficial",
+            "description": "Página oficial da votação, com o endereço da coleta como reserva. Nula se a fonte estiver sem endereço."
+          },
+          "coletado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Coletado Em",
+            "description": "Data e hora de coleta da fonte da votação."
+          }
+        },
+        "type": "object",
+        "required": [
+          "votacao_id",
+          "data",
+          "descricao",
+          "resultado",
+          "proposicoes",
+          "valor",
+          "url_oficial",
+          "coletado_em"
+        ],
+        "title": "VotoParlamentar"
       }
     }
   }

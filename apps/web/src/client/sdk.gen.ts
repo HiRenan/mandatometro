@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AbrirSaidaData, AbrirSaidaErrors, AlterarProgressoContaData, AlterarProgressoContaErrors, AlterarProgressoContaResponses, CadastrarContaData, CadastrarContaErrors, CadastrarContaResponses, ConfirmarContaData, ConfirmarContaErrors, ConfirmarContaResponses, ConsultarPerfilData, ConsultarPerfilErrors, ConsultarPerfilResponses, ConsultarProgressoContaData, ConsultarProgressoContaErrors, ConsultarProgressoContaResponses, EntrarContaData, EntrarContaErrors, EntrarContaResponses, ExcluirContaData, ExcluirContaErrors, ExcluirContaResponses, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, LerRascunhoData, LerRascunhoErrors, LerRascunhoResponses, ListarEdicoesData, ListarEdicoesErrors, ListarEdicoesResponses, ObterEdicaoData, ObterEdicaoErrors, ObterEdicaoResponses, PublicarEdicaoData, PublicarEdicaoErrors, PublicarEdicaoResponses, RecuperarContaData, RecuperarContaErrors, RecuperarContaResponses, RedefinirSenhaData, RedefinirSenhaErrors, RedefinirSenhaResponses, ReenviarConfirmacaoData, ReenviarConfirmacaoErrors, ReenviarConfirmacaoResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, SairContaData, SairContaErrors, SairContaResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses, SalvarRevisaoData, SalvarRevisaoErrors, SalvarRevisaoResponses, TermoContaData, TermoContaErrors, TermoContaResponses } from './types.gen';
+import type { AbrirSaidaData, AbrirSaidaErrors, AlterarProgressoContaData, AlterarProgressoContaErrors, AlterarProgressoContaResponses, CadastrarContaData, CadastrarContaErrors, CadastrarContaResponses, ConfirmarContaData, ConfirmarContaErrors, ConfirmarContaResponses, ConsultarPerfilData, ConsultarPerfilErrors, ConsultarPerfilResponses, ConsultarProgressoContaData, ConsultarProgressoContaErrors, ConsultarProgressoContaResponses, EntrarContaData, EntrarContaErrors, EntrarContaResponses, ExcluirContaData, ExcluirContaErrors, ExcluirContaResponses, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, LerRascunhoData, LerRascunhoErrors, LerRascunhoResponses, ListarEdicoesData, ListarEdicoesErrors, ListarEdicoesResponses, ListarParlamentaresData, ListarParlamentaresErrors, ListarParlamentaresResponses, ListarVotosParlamentarData, ListarVotosParlamentarErrors, ListarVotosParlamentarResponses, ObterEdicaoData, ObterEdicaoErrors, ObterEdicaoResponses, ObterParlamentarData, ObterParlamentarErrors, ObterParlamentarResponses, PublicarEdicaoData, PublicarEdicaoErrors, PublicarEdicaoResponses, RecuperarContaData, RecuperarContaErrors, RecuperarContaResponses, RedefinirSenhaData, RedefinirSenhaErrors, RedefinirSenhaResponses, ReenviarConfirmacaoData, ReenviarConfirmacaoErrors, ReenviarConfirmacaoResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, SairContaData, SairContaErrors, SairContaResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses, SalvarRevisaoData, SalvarRevisaoErrors, SalvarRevisaoResponses, TermoContaData, TermoContaErrors, TermoContaResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -195,6 +195,25 @@ export const salvarRevisao = <ThrowOnError extends boolean = false>(options: Opt
  * Publica a edição sem disparar o envio da newsletter.
  */
 export const publicarEdicao = <ThrowOnError extends boolean = false>(options: Options<PublicarEdicaoData, ThrowOnError>): RequestResult<PublicarEdicaoResponses, PublicarEdicaoErrors, ThrowOnError> => (options.client ?? client).post<PublicarEdicaoResponses, PublicarEdicaoErrors, ThrowOnError>({ url: '/painel/edicoes/{id}/publicar', ...options });
+
+/**
+ * Listar os parlamentares em exercício
+ *
+ * Lista completa em ordem alfabética, com filtros opcionais por UF e Casa.
+ */
+export const listarParlamentares = <ThrowOnError extends boolean = false>(options?: Options<ListarParlamentaresData, ThrowOnError>): RequestResult<ListarParlamentaresResponses, ListarParlamentaresErrors, ThrowOnError> => (options?.client ?? client).get<ListarParlamentaresResponses, ListarParlamentaresErrors, ThrowOnError>({ url: '/parlamentares', ...options });
+
+/**
+ * Ler um parlamentar, seus mandatos e a contagem de votos gravados
+ */
+export const obterParlamentar = <ThrowOnError extends boolean = false>(options: Options<ObterParlamentarData, ThrowOnError>): RequestResult<ObterParlamentarResponses, ObterParlamentarErrors, ThrowOnError> => (options.client ?? client).get<ObterParlamentarResponses, ObterParlamentarErrors, ThrowOnError>({ url: '/parlamentares/{id}', ...options });
+
+/**
+ * Listar os votos gravados do parlamentar da votação mais recente para a mais antiga
+ *
+ * Paginação por deslocamento, com desempate por id interno decrescente da votação.
+ */
+export const listarVotosParlamentar = <ThrowOnError extends boolean = false>(options: Options<ListarVotosParlamentarData, ThrowOnError>): RequestResult<ListarVotosParlamentarResponses, ListarVotosParlamentarErrors, ThrowOnError> => (options.client ?? client).get<ListarVotosParlamentarResponses, ListarVotosParlamentarErrors, ThrowOnError>({ url: '/parlamentares/{id}/votos', ...options });
 
 /**
  * Receber a primeira conclusão de uma etapa do piloto
