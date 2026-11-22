@@ -116,3 +116,93 @@ describe("os pontos de quebra", () => {
 		}
 	});
 });
+
+describe("o patrimônio declarado", () => {
+	/** Só a seção do patrimônio, para os pontos de quebra dela. */
+	const inicio = css.indexOf(
+		"/* ───── A página do parlamentar: o patrimônio declarado",
+	);
+	const patrimonio = css.slice(
+		inicio,
+		css.indexOf("/* ───── A página da votação", inicio),
+	);
+
+	it("cada eleição fica em colunas de minmax(0, 1fr): com a letra grande, o texto quebra dentro da coluna e não alarga a página", () => {
+		expect(inicio).toBeGreaterThan(0);
+		expect(regra(patrimonio, ".eleicao-do-patrimonio")).toContain(
+			"grid-template-columns: 4.25rem minmax(0, 1fr);",
+		);
+		expect(
+			regra(
+				bloco(patrimonio, "@media (width >= 40rem)"),
+				".eleicao-do-patrimonio",
+			),
+		).toContain("grid-template-columns: 5.5rem minmax(0, 1fr);");
+		const largo = regra(
+			bloco(patrimonio, "@media (width >= 48rem)"),
+			".eleicao-do-patrimonio",
+		);
+		expect(largo).toContain(
+			"grid-template-columns: 5.5rem minmax(0, 1fr) minmax(0, 1fr);",
+		);
+		expect(largo).toContain(
+			'grid-template-areas: "ano cargo valor" "ano detalhes valor";',
+		);
+		expect(
+			regra(
+				bloco(patrimonio, "@media (width < 22rem)"),
+				".eleicao-do-patrimonio",
+			),
+		).toContain("grid-template-columns: minmax(0, 1fr);");
+	});
+
+	it("a barra é de tinta, com 4 px no mínimo, e continua à vista nas cores forçadas", () => {
+		const barra = regra(patrimonio, ".barra-do-patrimonio");
+		expect(barra).toContain("width: max(4px, calc(var(--parte) * 100%));");
+		expect(barra).toContain("background: var(--tinta);");
+		const forcadas = regra(
+			bloco(patrimonio, "@media (forced-colors: active)"),
+			".barra-do-patrimonio",
+		);
+		expect(forcadas).toContain("forced-color-adjust: none;");
+		expect(forcadas).toContain("background: CanvasText;");
+	});
+
+	it("o aviso leva o fio de tinta do desvio, sem cor", () => {
+		expect(regra(patrimonio, ".aviso-do-patrimonio")).toContain(
+			"border-left: 5px solid var(--tinta);",
+		);
+	});
+
+	it("numa coluna estreita, o cargo e o estado ficam um embaixo do outro, sem o quadradinho: ele não fica sozinho no fim da linha", () => {
+		expect(regra(patrimonio, ".cargo-da-eleicao")).toContain(
+			"container: cargo-da-eleicao / inline-size;",
+		);
+		const estreita = bloco(
+			patrimonio,
+			"@container cargo-da-eleicao (width < 23.5rem)",
+		);
+		expect(regra(estreita, ".cargo-da-eleicao .faixa")).toContain(
+			"flex-direction: column;",
+		);
+		// Mais específica que a regra do quadradinho no index.css, que vem depois.
+		expect(
+			regra(
+				estreita,
+				".cargo-da-eleicao .faixa > span:not(:last-child)::after",
+			),
+		).toContain("display: none;");
+	});
+
+	it("o arquivo sem link ocupa a altura do link: a linha da eleição não encolhe nem cola o arquivo na data da coleta", () => {
+		const indice = readFileSync(
+			new URL("../index.css", import.meta.url),
+			"utf8",
+		);
+		const link = regra(indice, "a.acao-de-texto").match(
+			/padding-block: [^;]+;/,
+		);
+		expect(link).not.toBeNull();
+		expect(regra(patrimonio, ".arquivo-sem-link")).toContain(link?.[0]);
+	});
+});

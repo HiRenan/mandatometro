@@ -1,18 +1,23 @@
 import type {
 	ContagemVotosParlamentar,
+	CorrecaoIpca,
 	DetalheParlamentar,
 	DetalheVotacao,
+	EleicaoPatrimonio,
 	ListaParlamentares,
 	ListaVotosParlamentar,
 	ParlamentarPublico,
+	PatrimonioParlamentar,
 	VotoNominal,
 	VotoParlamentar,
 } from "@/client";
 
 // Parlamentares e votações de mentira para os testes, no formato da API
-// (GET /parlamentares, /parlamentares/{id}, /parlamentares/{id}/votos e
-// /votacoes/{id}). Os nomes, os partidos, os projetos e os endereços são
-// inventados: nenhum é de pessoa ou de partido de verdade.
+// (GET /parlamentares, /parlamentares/{id}, /parlamentares/{id}/votos,
+// /parlamentares/{id}/patrimonio e /votacoes/{id}). Os nomes, os partidos, os
+// projetos, os valores declarados e os endereços das votações são inventados:
+// nenhum é de pessoa ou de partido de verdade. Os endereços do patrimônio seguem
+// o formato público dos arquivos do TSE e da série do Banco Central.
 
 export const CONTAGEM_ZERADA: ContagemVotosParlamentar = {
 	sim: 0,
@@ -247,4 +252,76 @@ export function votacaoSemVotosDeExemplo(): DetalheVotacao {
 		placar_por_partido: [],
 		votos: [],
 	});
+}
+
+/**
+ * Uma eleição do patrimônio declarado (GET /parlamentares/{id}/patrimonio): em
+ * 2018, para deputado federal por Santa Catarina, R$ 812.400,00 declarados e R$
+ * 1.100.000,00 em reais de hoje. Os valores são inventados.
+ */
+export function eleicaoDeExemplo(
+	mudancas: Partial<EleicaoPatrimonio> = {},
+): EleicaoPatrimonio {
+	const ano = mudancas.ano ?? 2018;
+	return {
+		ano,
+		cargo: { codigo: 6, nome: "Deputado federal" },
+		uf: "SC",
+		total_centavos: 81_240_000,
+		fonte: {
+			url: `https://cdn.tse.jus.br/estatistica/sead/odsele/bem_candidato/bem_candidato_${ano}.zip`,
+			coletado_em: "2026-11-20T15:00:00+00:00",
+		},
+		mes_inicio: `${ano}-10`,
+		total_corrigido_centavos: 110_000_000,
+		...mudancas,
+	};
+}
+
+/** A correção pelo IPCA até outubro de 2026, com a série 433 do Banco Central. */
+export function correcaoDeExemplo(
+	mudancas: Partial<CorrecaoIpca> = {},
+): CorrecaoIpca {
+	return {
+		indice: "IPCA",
+		mes_fim: "2026-10",
+		fonte: {
+			url: "https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados?formato=json",
+			coletado_em: "2026-11-22T13:00:00+00:00",
+		},
+		...mudancas,
+	};
+}
+
+/**
+ * O patrimônio de Ágata Cedrolume: quatro eleições, de 2014 a 2026, uma delas
+ * (2022) sem total nos dados do TSE.
+ */
+export function patrimonioDeExemplo(
+	mudancas: Partial<PatrimonioParlamentar> = {},
+): PatrimonioParlamentar {
+	return {
+		eleicoes: [
+			eleicaoDeExemplo({
+				ano: 2014,
+				cargo: { codigo: 7, nome: "Deputado estadual" },
+				total_centavos: 19_830_000,
+				total_corrigido_centavos: 35_212_300,
+			}),
+			eleicaoDeExemplo({ ano: 2018 }),
+			eleicaoDeExemplo({
+				ano: 2022,
+				total_centavos: null,
+				total_corrigido_centavos: null,
+			}),
+			eleicaoDeExemplo({
+				ano: 2026,
+				cargo: { codigo: 5, nome: "Senador" },
+				total_centavos: 241_000_000,
+				total_corrigido_centavos: 241_337_400,
+			}),
+		],
+		correcao_ipca: correcaoDeExemplo(),
+		...mudancas,
+	};
 }

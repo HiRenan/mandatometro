@@ -162,6 +162,7 @@ const SEM_SEGUNDA_LINHA = [
 	".quiz-letra",
 	".votacao .contagem dd",
 	".numero-do-tipo",
+	".ano-da-eleicao",
 	".rodape .nome-do-site",
 ];
 
