@@ -3,13 +3,15 @@
 import argparse
 import logging
 import time
-from collections.abc import Callable
+from collections import defaultdict
+from collections.abc import Callable, Iterator
 from datetime import date, timedelta
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from mandatometro.coleta.cli import (
+    adicionar_argumento_videos,
     adicionar_argumentos_periodo,
     mostrar_resumo,
     resolver_periodo,
@@ -25,6 +27,13 @@ from mandatometro.coleta.persistencia import (
     sincronizar_votos,
 )
 from mandatometro.coleta.tipos import DadosVoto, ResumoColeta
+from mandatometro.coleta.videos import (
+    URL_RECUSADA,
+    VotacaoSemVideo,
+    VotacoesPorSessao,
+    coletar_videos,
+    preencher_videos,
+)
 from mandatometro.db import sessao
 from mandatometro.db.modelos import Fonte, normalizar_resultado, normalizar_voto
 
@@ -61,6 +70,71 @@ def _inteiro(dado: object) -> int:
     if numero <= 0:
         raise ErroColeta("Identificador ou número inválido na fonte.")
     return numero
+
+
+def _codigo_sessao_plenaria(item: dict) -> int | None:
+    informe = item.get("informeLegislativo")
+    if not isinstance(informe, dict) or informe.get("siglaColegiado") != "PLEN":
+        return None
+    try:
+        return _inteiro(item.get("codigoSessao"))
+    except ErroColeta:
+        return None
+
+
+def _video_encontro(http: ClienteHttp, codigo: int) -> tuple[Resposta, object]:
+    resposta = http.obter_json(f"/plenario/encontro/{codigo}")
+    plenario = _objeto(_objeto(resposta.dados).get("ServicoPlenario"))
+    encontros = _lista(_objeto(plenario.get("encontros")).get("encontro"), objeto_unico=True)
+    if len(encontros) == 1:
+        encontro = encontros[0]
+        if _inteiro(encontro.get("codigo")) == codigo:
+            if encontro.get("siglaCasa") != "SF":
+                return resposta, URL_RECUSADA
+            return resposta, encontro.get("linkVideo")
+    raise ErroColeta("Detalhe da sessão inválido ou divergente.")
+
+
+def _votacoes_por_periodo(
+    http: ClienteHttp, inicio: date, fim: date
+) -> Iterator[tuple[date, date, Resposta]]:
+    primeiro = inicio
+    while primeiro <= fim:
+        ultimo = primeiro + timedelta(days=min(364, (fim - primeiro).days))
+        yield (
+            primeiro,
+            ultimo,
+            http.obter_json(
+                "/votacao",
+                params={"dataInicio": primeiro.isoformat(), "dataFim": ultimo.isoformat()},
+            ),
+        )
+        if ultimo == fim:
+            break
+        primeiro = ultimo + timedelta(days=1)
+
+
+def _sessoes_historicas(
+    candidatas: list[VotacaoSemVideo], http: ClienteHttp, inicio: date, fim: date
+) -> VotacoesPorSessao:
+    pendentes = {externo: interno for interno, externo, _ in candidatas}
+    codigos: dict[str, int | None] = {}
+    for _, _, resposta in _votacoes_por_periodo(http, inicio, fim):
+        for item in _lista(resposta.dados):
+            if item.get("casaSessao") != "SF":
+                continue
+            try:
+                externo = str(_inteiro(item.get("codigoSessaoVotacao")))
+            except ErroColeta:
+                continue
+            if externo in pendentes:
+                codigo = _codigo_sessao_plenaria(item)
+                if codigos.setdefault(externo, codigo) != codigo:
+                    codigos[externo] = None
+    sessoes: VotacoesPorSessao = defaultdict(list)
+    for externo, interno in pendentes.items():
+        sessoes[codigos.get(externo)].append(interno)
+    return sessoes
 
 
 def _texto(dado: object, *, opcional: bool = False) -> str | None:
@@ -290,7 +364,9 @@ class _Coleta:
                 mandatos[codigo] = None
         return mandatos
 
-    def gravar(self, id_votacao: str, item: dict, resposta: Resposta, inicio: date, fim: date):
+    def gravar(
+        self, id_votacao: str, item: dict, resposta: Resposta, inicio: date, fim: date
+    ) -> int:
         dados = _votacao(item, inicio, fim)
         processo = dados["id_processo"]
         if processo not in self.processos:
@@ -379,6 +455,7 @@ class _Coleta:
                     )
                 )
             sincronizar_votos(s, votacao, votos)
+            votacao_id = votacao.id
         # Só expõe ids internos confirmados, nunca os de uma transação desfeita.
         for recurso in indisponiveis:
             if recurso not in self.resumo.indisponiveis_na_fonte:
@@ -396,6 +473,7 @@ class _Coleta:
             logger.warning(
                 "%s código(s) desconhecido(s) na votação %s.", dados["desconhecidos"], id_votacao
             )
+        return votacao_id
 
 
 def coletar(
@@ -409,16 +487,11 @@ def coletar(
     comeco = time.monotonic()
     coleta = _Coleta(resumo, http, abrir_sessao)
     vistas: dict[str, dict] = {}
+    sessoes: VotacoesPorSessao = defaultdict(list)
     falhas_seguidas = 0
     try:
         coleta.cadastrar_atuais()
-        primeiro = inicio
-        while primeiro <= fim:
-            ultimo = primeiro + timedelta(days=min(364, (fim - primeiro).days))
-            resposta = http.obter_json(
-                "/votacao",
-                params={"dataInicio": primeiro.isoformat(), "dataFim": ultimo.isoformat()},
-            )
+        for primeiro, ultimo, resposta in _votacoes_por_periodo(http, inicio, fim):
             itens = _lista(resposta.dados)
             por_id = {}
             contraditorias = set()
@@ -440,7 +513,7 @@ def coletar(
                             raise ErroColeta("Votação repetida com dados contraditórios.")
                         continue
                     vistas[id_votacao] = item
-                    coleta.gravar(id_votacao, item, resposta, primeiro, ultimo)
+                    votacao_id = coleta.gravar(id_votacao, item, resposta, primeiro, ultimo)
                 except _RecursoIndisponivel:
                     # Não incrementa falhas nem desfaz o cadastro; não há votação parcial.
                     continue
@@ -450,22 +523,19 @@ def coletar(
                     falhas_seguidas += 1
                     logger.warning("Votação %s: %s", id_votacao, _erro_seguro(erro))
                     if falhas_seguidas >= 3:
-                        resumo.erro = (
+                        raise ErroColeta(
                             "Coleta interrompida após três votações consecutivas com falha."
-                        )
-                        return resumo
+                        ) from None
                 else:
+                    sessoes[_codigo_sessao_plenaria(item)].append(votacao_id)
                     falhas_seguidas = 0
-            if ultimo == fim:
-                break
-            primeiro = ultimo + timedelta(days=1)
     except (ErroColeta, SQLAlchemyError) as erro:
         resumo.completa = False
         resumo.erro = _erro_seguro(erro)
-    finally:
-        resumo.chamadas = http.chamadas
-        resumo.tentativas_extras = http.tentativas_extras
-        resumo.duracao_s = round(time.monotonic() - comeco, 3)
+    coletar_videos(resumo, sessoes, http=http, abrir_sessao=abrir_sessao, consultar=_video_encontro)
+    resumo.chamadas = http.chamadas
+    resumo.tentativas_extras = http.tentativas_extras
+    resumo.duracao_s = round(time.monotonic() - comeco, 3)
     return resumo
 
 
@@ -476,7 +546,18 @@ def _executar(args: argparse.Namespace) -> int:
         print(str(erro))
         return 2
     with ClienteHttp(BASE) as http:
-        resumo = coletar(inicio, fim, http=http)
+        if args.somente_videos:
+            resumo = preencher_videos(
+                inicio,
+                fim,
+                casa="senado",
+                http=http,
+                abrir_sessao=sessao,
+                localizar=lambda candidatas: _sessoes_historicas(candidatas, http, inicio, fim),
+                consultar=_video_encontro,
+            )
+        else:
+            resumo = coletar(inicio, fim, http=http)
     mostrar_resumo(resumo)
     return 0 if resumo.completa else 1
 
@@ -484,4 +565,5 @@ def _executar(args: argparse.Namespace) -> int:
 def registrar(casas: argparse._SubParsersAction) -> None:
     parser = casas.add_parser("senado", help="coleta votações e senadores em exercício")
     adicionar_argumentos_periodo(parser)
+    adicionar_argumento_videos(parser)
     parser.set_defaults(rodar=_executar)

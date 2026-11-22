@@ -40,7 +40,13 @@ router = APIRouter(
 def obter_votacao(id: IdCongresso):
     with sessao_do_banco() as sessao:
         votacao = sessao.get(
-            Votacao, id, options=(joinedload(Votacao.fonte), selectinload(Votacao.proposicoes))
+            Votacao,
+            id,
+            options=(
+                joinedload(Votacao.fonte),
+                joinedload(Votacao.video_sessao),
+                selectinload(Votacao.proposicoes),
+            ),
         )
         if votacao is None:
             return JSONResponse({"erro": "votacao_nao_encontrada"}, status_code=404)
@@ -69,6 +75,7 @@ def obter_votacao(id: IdCongresso):
         return DetalheVotacao(
             id=votacao.id,
             casa=votacao.casa,
+            url_video=votacao.video_sessao.url_video if votacao.video_sessao else None,
             **dados_da_votacao(votacao),
             placar=contagem_por_valor(total),
             placar_por_partido=[

@@ -31,7 +31,7 @@ def preparar_migration() -> int:
     return 0
 
 
-def coletar(casa: str) -> int:
+def coletar(casa: str, *, somente_videos: bool = False) -> int:
     from mandatometro.cli import main as cli
     from mandatometro.coleta.cli import resolver_periodo
 
@@ -43,6 +43,8 @@ def coletar(casa: str) -> int:
         print("::error::Informe início e fim juntos, em AAAA-MM-DD, na ordem cronológica.")
         return 2
     argumentos = ["coleta", casa]
+    if somente_videos:
+        argumentos.append("--somente-videos")
     if inicio is not None and fim is not None:
         argumentos += ["--inicio", inicio, "--fim", fim]
     # O Actions publica só o resumo; bibliotecas também podem registrar URLs de pessoas.
@@ -174,13 +176,18 @@ def main(argv: list[str] | None = None) -> int:
             return enviar()
         if argumentos == ["preparar-migration"]:
             return preparar_migration()
-        if argumentos not in (["migrar"], ["coletar", "camara"], ["coletar", "senado"]):
+        coleta = argumentos[:2] in (["coletar", "camara"], ["coletar", "senado"]) and argumentos[
+            2:
+        ] in ([], ["--somente-videos"])
+        if argumentos != ["migrar"] and not coleta:
             print("::error::Tarefa inválida. Use agenda, migrar, enviar ou coletar camara/senado.")
             return 2
         if not os.environ.get("DATABASE_URL", "").strip():
             print("::error::Defina DATABASE_URL; a tarefa não usa o banco local por padrão.")
             return 2
-        return migrar() if argumentos == ["migrar"] else coletar(argumentos[1])
+        if coleta:
+            return coletar(argumentos[1], somente_videos=len(argumentos) == 3)
+        return migrar()
     except Exception:
         if argumentos in (["agenda"], ["enviar"]):
             print(json.dumps({"falhas_gerais": 1}))
