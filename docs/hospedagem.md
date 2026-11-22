@@ -66,6 +66,7 @@ Comece depois de conferir a inscrição de teste no ambiente anterior. A publica
 | Coleta diária | 03h17 de Brasília (`17 6 * * *` UTC), se `COLETAS_ATIVAS=true` | YAML da `develop`, checkout da `main`, banco `producao` |
 | Coleta manual | Botão Run workflow, com datas e modo Somente vídeos opcionais | `develop` → `desenvolvimento`; `main` → `producao` |
 | Coletar TSE | Somente Run workflow | Commit do disparo. `develop` usa `desenvolvimento` e `main` usa `producao` |
+| Coletar IPCA | Somente Run workflow | Commit do disparo. `develop` usa `desenvolvimento` e `main` usa `producao` |
 | Agenda de sábado | 04h47 de Brasília (`47 7 * * 6` UTC), se `AGENDA_SABADO_ATIVA=true` | YAML da `develop`, checkout da `main`, banco `producao` |
 | Preparo manual da edição | Botão Run workflow, com período opcional | Commit do disparo (`github.sha`). `develop` usa `desenvolvimento` e `main` usa `producao` |
 | Envio dominical | 10h37 de Brasília (`37 13 * * 0` UTC), se `ENVIOS_ATIVOS=true` | YAML da `develop`, checkout da `main`, banco `producao` |
@@ -104,6 +105,14 @@ As duas leituras de candidaturas precisam concluir para a coleta gravar novos v�
 O passo **Coletar bens declarados e mostrar as contagens** roda depois das candidaturas, no mesmo job. O `completa: true` do segundo resumo confirma que os 12 arquivos das seis eleições gerais foram lidos e a gravação terminou. Se um arquivo de bens ou de candidaturas faltar ou estiver incompleto nesse passo, a série publicada é preservada. Repita o workflow depois de corrigir a falha.
 
 Os ZIPs são temporários no runner. O resumo contém apenas contagens e os registros confirmados ficam no banco com a URL oficial de cada arquivo. [Campos e ligação do TSE](dicionario-de-dados.md#candidaturas-do-tse)
+
+## Coletar o IPCA
+
+1. Confirme que **Migrar banco** aplicou a revisão `0016`, que cria `ipca_mensal`, no ambiente de destino.
+2. Em **Actions → Coletar IPCA → Run workflow**, escolha `main` para produção ou `develop` para desenvolvimento. O job usa o segredo `DATABASE_URL` com pool e a fila do banco dessa branch.
+3. Confira o commit executado e a linha JSON. `completa: true` confirma que todos os `meses` da carga foram gravados até `mes_fim`. Em caso de falha, a API continua lendo a série gravada. Repita o workflow depois de resolver a falha.
+
+A carga roda por disparo manual e pode ser repetida quando o Banco Central publicar um mês novo ou revisar uma taxa. [Fonte e cálculo](dicionario-de-dados.md#ipca-mensal)
 
 ## Ativar e recuperar a agenda de sábado
 

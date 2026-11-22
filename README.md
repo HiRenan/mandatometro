@@ -505,6 +505,14 @@ uv run mandatometro coleta bens-tse --diretorio-zips /caminho/dos/zips
 
 A carga de bens usa os ZIPs `consulta_cand` e `bem_candidato` das seis eleições gerais de 2006 a 2026. O resumo JSON mostra as contagens por ano e a saída 1 indica falha na carga. A API entrega o patrimônio nominal de cada eleição em `GET /parlamentares/{id}/patrimonio`. A série usa `null` quando o total está indisponível. [Campos e regras dos bens](docs/dicionario-de-dados.md#bens-declarados-ao-tse)
 
+**Coleta do IPCA.** Em `apps/backend`, aplique as migrations e passe `DATABASE_URL` para o banco de destino.
+
+```bash
+uv run mandatometro coleta ipca
+```
+
+O comando atualiza a série mensal do Banco Central desde janeiro de 2006. O resumo JSON mostra quantos meses foram gravados e até que mês. Saída 1 indica falha e preserva a carga anterior. A rota de patrimônio usa a série gravada para acrescentar o total corrigido de cada eleição. [Fonte e cálculo](docs/dicionario-de-dados.md#ipca-mensal) · [Disparo na hospedagem](docs/hospedagem.md#coletar-o-ipca)
+
 ### Edição semanal
 
 A agenda de sábado coleta a legislação e os destaques do Diário Oficial e prepara o rascunho às 04h47 de Brasília quando `AGENDA_SABADO_ATIVA` vale `true`. [Ativação e recuperação](docs/hospedagem.md#ativar-e-recuperar-a-agenda-de-sábado).

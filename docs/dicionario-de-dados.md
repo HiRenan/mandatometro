@@ -730,7 +730,25 @@ Um valor vazio, negativo, malformado ou acima do limite impede a soma da declara
 
 O comando `coleta bens-tse` só grava depois de ler os 12 arquivos completos, incluindo o último registro de cada CSV. A gravação usa a mesma trava da carga de candidaturas e ocorre numa única transação. O resumo mostra candidaturas, totais por tipo processados e contagens de descartes. Uma falha de arquivo retorna 1 e preserva todas as gravações anteriores.
 
-`GET /parlamentares/{id}/patrimonio` devolve `eleicoes` em ordem de ano, com `ano`, `cargo` (código e nome), `uf`, `total_centavos` e `fonte` (URL do ZIP de bens e hora da coleta). Os rótulos vêm da lista fixa do TSE no código. A correção pelo IPCA fica com a apresentação da série.
+`GET /parlamentares/{id}/patrimonio` devolve `eleicoes` em ordem de ano, com `ano`, `cargo` (código e nome), `uf`, `total_centavos` e `fonte` (URL do ZIP de bens e hora da coleta). Os rótulos vêm da lista fixa do TSE no código. A API acrescenta a [correção pelo IPCA](#ipca-mensal) a partir da série gravada.
+
+## IPCA mensal
+
+O SGS do Banco Central publica a variação percentual mensal do IPCA na série 433. A API é pública e dispensa chave. O JSON traz `data` em `DD/MM/AAAA`, sempre com dia `01`, e `valor` como texto com ponto decimal e duas casas. A consulta de 22/11/2026 cobriu janeiro de 2006 a outubro de 2026, com 250 meses consecutivos em um pedido. O `robots.txt` devolveu HTTP 404 nessa data. [Série 433 do SGS](https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados?formato=json&dataInicial=01/01/2006&dataFinal=22/11/2026) · [Robots do host](https://api.bcb.gov.br/robots.txt)
+
+O catálogo do Banco Central descreve seus dados como públicos e divulgados sob licença aberta. As séries relacionadas de IPCA no catálogo usam a Licença Aberta para Bases de Dados (ODbL) do Open Data Commons. A busca no catálogo não localizou a ficha da série 433. [Perguntas frequentes do catálogo](https://dadosabertos.bcb.gov.br/pages/perguntas-frequentes) · [Licença de uma série relacionada](https://dadosabertos.bcb.gov.br/dataset/11428-indice-nacional-de-precos-ao-consumidor---amplo-ipca---itens-livres)
+
+| Registro | Campo | Procedência |
+| --- | --- | --- |
+| `ipca_mensal` | `mes` | Primeiro dia do mês de referência, chave da linha. |
+| | `variacao_percentual` | `valor` da série 433, guardado como `NUMERIC(7,2)`. Aceita deflação enquanto o fator mensal for positivo. |
+| | `fonte_id` | Uma observação por carga válida, com URL consultada e hora UTC da coleta. |
+
+`coleta ipca` consulta de 01/01/2006 até a data da execução em Brasília. A série precisa começar em janeiro de 2006, seguir sem duplicatas ou lacunas e alcançar pelo menos o segundo mês anterior ao mês corrente. A carga de novembro, por exemplo, precisa chegar a setembro ou depois. A resposta precisa chegar também ao último mês já gravado, se houver. A API do Banco Central devolve apenas os meses publicados na consulta. Uma série recusada ou falha de gravação retorna 1 e preserva a carga anterior. Em uma transação só, a coleta atualiza as taxas e a fonte observada de cada mês, inclusive quando há revisão de um valor.
+
+O total corrigido é o total nominal em centavos multiplicado pelo produto dos fatores `1 + variação_percentual / 100` de outubro do ano eleitoral ao último mês gravado, incluindo os dois meses, em decimal exato, com um único arredondamento ao centavo mais próximo e empate para cima (`ROUND_HALF_UP`). Por exemplo, outubro com 10% e novembro com −5% levam R$ 1,00 a 104,5 centavos, que arredondam para R$ 1,05.
+
+Cada eleição traz `mes_inicio` em `AAAA-MM` e `total_corrigido_centavos`. O corrigido vem nulo se faltar o total ou algum mês do intervalo, se a série acabar antes de outubro daquela eleição ou se o resultado superar o maior inteiro exato do JavaScript. A resposta traz `correcao_ipca` com `indice` igual a `IPCA`, `mes_fim` em `AAAA-MM` e `fonte` com a URL e a hora da coleta do mês final. Com o banco sem a série, `correcao_ipca` é nulo.
 
 ## Campos pessoais
 
