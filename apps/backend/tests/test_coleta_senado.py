@@ -3,6 +3,7 @@
 import copy
 import json
 from collections import Counter
+from contextlib import nullcontext
 from datetime import date
 from pathlib import Path
 
@@ -11,6 +12,8 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from mandatometro.cli import main
+from mandatometro.coleta import senado
 from mandatometro.coleta.cli import mostrar_resumo
 from mandatometro.coleta.http import ClienteHttp
 from mandatometro.coleta.senado import coletar
@@ -30,6 +33,7 @@ def respostas():
     return {
         "/senador/lista/atual.json": ler("senador-lista-atual.json"),
         "/votacao": ler("votacao-2026-11-03_2026-11-07.json"),
+        "/plenario/encontro/594169": ler("encontro-594169.json"),
         "/processo/9006525": ler("processo-9006525.json"),
         "/senador/5672/mandatos.json": ler("senador-5672-mandatos.json"),
         "/senador/4525/mandatos.json": ler("senador-4525-mandatos.json"),
@@ -38,7 +42,7 @@ def respostas():
 
 @pytest.fixture
 def executar(sessao, respostas):
-    def rodar(inicio=INICIO, fim=FIM):
+    def rodar(inicio=INICIO, fim=FIM, *, somente_videos=False):
         requisicoes = []
 
         def atender(req):
@@ -60,14 +64,33 @@ def executar(sessao, respostas):
             httpx2.Client(transport=httpx2.MockTransport(atender)) as transporte,
             ClienteHttp(BASE, cliente=transporte, intervalo=0, tentativas=1) as http,
         ):
-            resumo = coletar(
-                inicio,
-                fim,
-                http=http,
-                abrir_sessao=lambda: Session(
-                    bind=conexao, join_transaction_mode="create_savepoint"
-                ),
-            )
+
+            def abrir():
+                return Session(bind=conexao, join_transaction_mode="create_savepoint")
+
+            if somente_videos:
+                resumos = []
+                with pytest.MonkeyPatch.context() as patch:
+                    patch.setattr(senado, "ClienteHttp", lambda _: nullcontext(http))
+                    patch.setattr(senado, "sessao", abrir)
+                    patch.setattr(senado, "mostrar_resumo", resumos.append)
+                    assert (
+                        main(
+                            [
+                                "coleta",
+                                "senado",
+                                "--somente-videos",
+                                "--inicio",
+                                inicio.isoformat(),
+                                "--fim",
+                                fim.isoformat(),
+                            ]
+                        )
+                        == 0
+                    )
+                resumo = resumos[0]
+            else:
+                resumo = coletar(inicio, fim, http=http, abrir_sessao=abrir)
         sessao.expire_all()
         return resumo, requisicoes
 
@@ -87,12 +110,14 @@ def test_semana_real_usa_um_processo_sem_detalhes_dos_81_senadores(sessao, execu
     resumo, requisicoes = executar()
     assert resumo.completa
     assert (resumo.parlamentares, resumo.mandatos, resumo.proposicoes) == (81, 81, 1)
-    assert (resumo.votacoes, resumo.votos, resumo.fontes, resumo.chamadas) == (4, 324, 10, 4)
+    assert (resumo.votacoes, resumo.votos, resumo.fontes, resumo.chamadas) == (4, 324, 11, 5)
+    assert resumo.videos.votacoes_com_video == 4
     assert [r.url.path for r in requisicoes] == [
         "/robots.txt",
         "/dadosabertos/senador/lista/atual.json",
         "/dadosabertos/votacao",
         "/dadosabertos/processo/9006525",
+        "/dadosabertos/plenario/encontro/594169",
     ]
     assert dict(requisicoes[2].url.params) == {"dataInicio": "2026-11-03", "dataFim": "2026-11-07"}
     assert Counter(sessao.scalars(select(Mandato.legislatura))) == {56: 54, 57: 27}
@@ -110,6 +135,8 @@ def test_semana_real_usa_um_processo_sem_detalhes_dos_81_senadores(sessao, execu
     assert materia.fonte.trecho == materia.ementa
     assert materia.fonte.url_publica.endswith("/materia/172997")
     for votacao in sessao.scalars(select(Votacao)):
+        assert votacao.video_sessao.url_video == "https://www.youtube.com/watch?v=SenaDo_0001"
+        assert votacao.video_sessao.fonte.url == f"{BASE}/plenario/encontro/594169"
         assert votacao.fonte.trecho == votacao.descricao
         assert votacao.fonte.url_publica.endswith(
             f"/materia/172997/votacoes#votacao_{votacao.id_externo}"
@@ -132,7 +159,7 @@ def test_repetir_preserva_ids_fontes_e_corrige_remove_votos(sessao, executar, re
         81,
         1,
     )
-    assert (total(sessao, Votacao), total(sessao, Voto), total(sessao, Fonte)) == (4, 323, 20)
+    assert (total(sessao, Votacao), total(sessao, Voto), total(sessao, Fonte)) == (4, 323, 21)
     assert set(sessao.execute(select(Votacao.id, Votacao.id_externo))) == ids
     fontes_depois = fontes_por_id(sessao)
     fontes_divergentes = [
@@ -151,6 +178,53 @@ def lista(respostas):
     return respostas["/senador/lista/atual.json"]["ListaParlamentarEmExercicio"]["Parlamentares"][
         "Parlamentar"
     ]
+
+
+def test_votacoes_do_senado_sem_link_ficam_sem_video(sessao, executar, respostas):
+    encontro = respostas["/plenario/encontro/594169"]["ServicoPlenario"]["encontros"]["encontro"][0]
+    encontro.pop("linkVideo")
+
+    resumo, _ = executar()
+
+    assert resumo.completa and resumo.votacoes == 4
+    assert resumo.videos.sessoes_sem_video == 1
+    assert resumo.videos.votacoes_com_video == 0
+    assert all(v.video_sessao.url_video is None for v in sessao.scalars(select(Votacao)))
+
+
+def test_preencher_videos_do_senado_cruza_o_id_da_votacao(sessao, executar, respostas):
+    fonte = Fonte(
+        url=f"{BASE}/votacao", url_publica="https://www25.senado.leg.br/votacoes-ficticias"
+    )
+    votacoes = [
+        Votacao(
+            casa="senado",
+            id_externo=str(item["codigoSessaoVotacao"]),
+            data=date.fromisoformat(item["dataSessao"]),
+            descricao="Votação fictícia.",
+            resultado="aprovada",
+            fonte=fonte,
+        )
+        for item in respostas["/votacao"][:2]
+    ]
+    sessao.add_all(votacoes)
+    sessao.flush()
+
+    resumo, requisicoes = executar(somente_videos=True)
+    repetida, novas_requisicoes = executar(somente_videos=True)
+
+    assert [r.url.path for r in requisicoes] == [
+        "/robots.txt",
+        "/dadosabertos/votacao",
+        "/dadosabertos/plenario/encontro/594169",
+    ]
+    assert (resumo.votacoes, resumo.votos, resumo.proposicoes, resumo.fontes) == (0, 0, 0, 1)
+    assert resumo.videos.votacoes_com_video == 2
+    assert repetida.fontes == 0 and not novas_requisicoes
+    assert total(sessao, Fonte) == 2
+    assert {v.fonte_id for v in votacoes} == {fonte.id}
+    assert len({v.video_sessao_id for v in votacoes}) == 1
+    assert votacoes[0].video_sessao.url_video == "https://www.youtube.com/watch?v=SenaDo_0001"
 
 
 def test_sai_da_lista_desativa_senado_mas_preserva_camara(sessao, executar, respostas):
@@ -430,7 +504,7 @@ def test_lista_atual_com_id_duplicado_preserva_exercicio(sessao, executar, respo
     lista(respostas).append(copy.deepcopy(lista(respostas)[0]))
     resumo, _ = executar()
     assert not resumo.completa
-    assert total(sessao, Fonte) == 10
+    assert total(sessao, Fonte) == 11
     assert set(sessao.scalars(select(Mandato.em_exercicio))) == {True}
 
 
@@ -524,6 +598,7 @@ def test_secreta_real_com_votou_e_ausencias_nao_gera_votos_nem_desconhecidos(
 ):
     respostas["/votacao"] = ler("votacao-secreta-7081.json")
     respostas["/processo/9026396"] = ler("processo-9026396.json")
+    respostas["/plenario/encontro/550751"] = 404
     original = respostas["/votacao"][0]
     assert len(original["votos"]) == 81
     assert sum(v["siglaVotoParlamentar"] == "Votou" for v in original["votos"]) == 77
@@ -539,5 +614,6 @@ def test_secreta_real_com_votou_e_ausencias_nao_gera_votos_nem_desconhecidos(
         "R",
     )
     assert gravada.descricao == original["descricaoVotacao"]
-    assert len(requisicoes) == 4
+    assert len(requisicoes) == 5
+    assert resumo.videos.falhas_sessoes == 1
     assert "desconhecido" not in caplog.text

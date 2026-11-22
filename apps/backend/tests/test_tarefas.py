@@ -86,6 +86,27 @@ def test_coleta_sem_datas_usa_a_janela_existente(tarefa, monkeypatch):
 
 
 @pytest.mark.parametrize("casa", ["camara", "senado"])
+def test_coleta_manual_somente_videos_chama_o_cli_com_as_datas(tarefa, monkeypatch, casa):
+    monkeypatch.setenv("DATABASE_URL", "banco-ficticio")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
+    monkeypatch.setenv("COLETA_INICIO", "2026-11-09")
+    monkeypatch.setenv("COLETA_FIM", "2026-11-15")
+    recebidos = []
+    monkeypatch.setattr("mandatometro.cli.main", lambda args: recebidos.extend(args))
+
+    assert tarefa(["coletar", casa, "--somente-videos"]) == 0
+    assert recebidos == [
+        "coleta",
+        casa,
+        "--somente-videos",
+        "--inicio",
+        "2026-11-09",
+        "--fim",
+        "2026-11-15",
+    ]
+
+
+@pytest.mark.parametrize("casa", ["camara", "senado"])
 @pytest.mark.parametrize("completa", [True, False])
 def test_coleta_no_actions_mostra_so_o_resumo(tarefa, monkeypatch, capsys, caplog, casa, completa):
     monkeypatch.setenv("DATABASE_URL", "banco-ficticio")
