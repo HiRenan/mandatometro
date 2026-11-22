@@ -38,6 +38,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from mandatometro.db import Base
 from mandatometro.temas import TemaId
+from mandatometro.tse_catalogos import MAXIMO_CENTAVOS
 
 logger = logging.getLogger(__name__)
 
@@ -299,6 +300,49 @@ class Candidatura(Base):
     fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
 
     fonte: Mapped[Fonte] = relationship()
+
+
+class CandidaturaPatrimonio(Base):
+    """Eleição ligada pelo CPF de uma âncora, com fontes para os dois arquivos do TSE."""
+
+    __tablename__ = "candidatura_patrimonio"
+    __table_args__ = (
+        UniqueConstraint("ano", "codigo_eleicao", "uf", "id_externo"),
+        UniqueConstraint("parlamentar_id", "ano"),
+        CheckConstraint("ano >= 2006", name="ano"),
+        CheckConstraint("codigo_eleicao > 0", name="codigo_eleicao"),
+        CheckConstraint("id_externo > 0", name="id_externo"),
+        CheckConstraint("cargo > 0", name="cargo"),
+        CheckConstraint("""uf COLLATE "C" ~ '^[A-Z]{2}$'""", name="uf"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ano: Mapped[int] = mapped_column(SmallInteger)
+    codigo_eleicao: Mapped[int]
+    uf: Mapped[str] = mapped_column(String(2))
+    id_externo: Mapped[int] = mapped_column(BigInteger)
+    cargo: Mapped[int] = mapped_column(SmallInteger)
+    parlamentar_id: Mapped[int] = mapped_column(ForeignKey("parlamentar.id", ondelete="CASCADE"))
+    fonte_candidatura_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+    fonte_bens_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
+    fonte_candidatura: Mapped[Fonte] = relationship(foreign_keys=[fonte_candidatura_id])
+    fonte_bens: Mapped[Fonte] = relationship(foreign_keys=[fonte_bens_id])
+
+
+class BemDeclarado(Base):
+    """Total nominal por tipo de bem. A fonte é o ZIP de bens da candidatura."""
+
+    __tablename__ = "bem_declarado"
+    __table_args__ = (
+        CheckConstraint(f"valor_centavos BETWEEN 0 AND {MAXIMO_CENTAVOS}", name="valor_centavos"),
+    )
+
+    candidatura_id: Mapped[int] = mapped_column(
+        ForeignKey("candidatura_patrimonio.id", ondelete="CASCADE"), primary_key=True
+    )
+    tipo: Mapped[int] = mapped_column(primary_key=True)
+    valor_centavos: Mapped[int] = mapped_column(BigInteger)
 
 
 class Proposicao(Base):

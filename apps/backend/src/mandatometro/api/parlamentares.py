@@ -1,4 +1,4 @@
-"""Leitura pública dos parlamentares e dos votos gravados pela coleta."""
+"""Leitura pública de parlamentares, votos e patrimônio declarado."""
 
 from typing import Annotated
 
@@ -19,19 +19,32 @@ from mandatometro.api.congresso import (
 )
 from mandatometro.api.esquemas import (
     UF,
+    CargoPatrimonio,
     Casa,
     DetalheParlamentar,
+    EleicaoPatrimonio,
     ErroParlamentar,
+    FontePatrimonio,
     ListaParlamentares,
     ListaVotosParlamentar,
     MandatoPublico,
     ParlamentarPublico,
+    PatrimonioParlamentar,
     TemaPublico,
     VotoParlamentar,
 )
 from mandatometro.db import sessao as sessao_do_banco
-from mandatometro.db.modelos import Mandato, Parlamentar, Votacao, Voto
+from mandatometro.db.modelos import (
+    BemDeclarado,
+    CandidaturaPatrimonio,
+    Fonte,
+    Mandato,
+    Parlamentar,
+    Votacao,
+    Voto,
+)
 from mandatometro.temas import TemaId
+from mandatometro.tse_catalogos import CARGOS_TSE
 
 ORDEM_DOS_VOTOS = (Votacao.data.desc(), Votacao.id.desc())
 
@@ -133,6 +146,50 @@ def obter_parlamentar(id: IdCongresso):
             partido=recente.partido if recente else None,
             mandatos=mandatos,
             contagem_votos=contagem_por_valor(contagem),
+        )
+
+
+@router.get(
+    "/{id}/patrimonio",
+    summary="Listar o patrimônio declarado ao TSE por eleição",
+    description="Eleições com vínculo confirmado, em ordem crescente de ano.",
+    response_model=PatrimonioParlamentar,
+    responses={404: {"model": ErroParlamentar}},
+)
+def obter_patrimonio_parlamentar(id: IdCongresso):
+    eleicao = CandidaturaPatrimonio
+    with sessao_do_banco() as sessao:
+        if sessao.get(Parlamentar, id) is None:
+            return JSONResponse({"erro": "parlamentar_nao_encontrado"}, status_code=404)
+        registros = sessao.execute(
+            select(
+                eleicao.ano,
+                eleicao.cargo,
+                eleicao.uf,
+                func.sum(BemDeclarado.valor_centavos),
+                Fonte.url,
+                Fonte.coletado_em,
+            )
+            .select_from(eleicao)
+            .join(Fonte, Fonte.id == eleicao.fonte_bens_id)
+            .outerjoin(BemDeclarado, BemDeclarado.candidatura_id == eleicao.id)
+            .where(eleicao.parlamentar_id == id)
+            .group_by(eleicao.id, Fonte.id)
+            .order_by(eleicao.ano)
+        )
+        return PatrimonioParlamentar(
+            eleicoes=[
+                EleicaoPatrimonio(
+                    ano=ano,
+                    cargo=CargoPatrimonio(
+                        codigo=cargo, nome=CARGOS_TSE.get(cargo, "Cargo desconhecido")
+                    ),
+                    uf=uf,
+                    total_centavos=int(total) if total is not None else None,
+                    fonte=FontePatrimonio(url=url, coletado_em=coletado_em),
+                )
+                for ano, cargo, uf, total, url, coletado_em in registros
+            ]
         )
 
 

@@ -39,10 +39,12 @@ jobs:
           enable-cache: true
           cache-dependency-glob: apps/backend/uv.lock
       - run: uv sync --locked --no-dev
-      - name: Coletar e mostrar as contagens
+      - name: Coletar candidaturas e mostrar as contagens
         run: |
           if [[ -z "$DATABASE_URL" ]]; then
             echo "::error::Defina DATABASE_URL no ambiente selecionado."
             exit 2
           fi
           uv run --no-sync mandatometro coleta tse
+      - name: Coletar bens declarados e mostrar as contagens
+        run: uv run --no-sync mandatometro coleta bens-tse

@@ -8,6 +8,7 @@ from mandatometro.avisos.inscricao import SituacaoInscricao
 from mandatometro.ia.esquemas import Pendencia
 from mandatometro.piloto import TOTAL_PERGUNTAS, Etapa, VersaoQuiz
 from mandatometro.temas import TemaId
+from mandatometro.tse_catalogos import MAXIMO_CENTAVOS
 
 
 class PedidoInscricao(BaseModel):
@@ -201,6 +202,32 @@ class DetalheParlamentar(ParlamentarPublico):
         description="Contagem dos registros de voto deste parlamentar, por valor normalizado. "
         "Uma votação sem registro da pessoa fica fora da contagem."
     )
+
+
+class CargoPatrimonio(BaseModel):
+    codigo: int
+    nome: str
+
+
+class FontePatrimonio(BaseModel):
+    url: str
+    coletado_em: datetime
+
+
+class EleicaoPatrimonio(BaseModel):
+    ano: int
+    cargo: CargoPatrimonio
+    uf: UF | Literal["BR"] = Field(description="UF da eleição ou BR para eleição nacional.")
+    total_centavos: int | None = Field(
+        ge=0,
+        le=MAXIMO_CENTAVOS,
+        description="Total nominal declarado ao TSE, em centavos de real. Nulo sem total.",
+    )
+    fonte: FontePatrimonio
+
+
+class PatrimonioParlamentar(BaseModel):
+    eleicoes: list[EleicaoPatrimonio]
 
 
 class ProposicaoAfetada(BaseModel):

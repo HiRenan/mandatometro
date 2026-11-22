@@ -76,3 +76,18 @@ def test_limite_do_download_conta_os_bytes_da_resposta(monkeypatch):
         tse.abrir_zip(2022, None, cliente),
     ):
         pytest.fail("O limite deveria ser aplicado antes de abrir o ZIP.")
+
+
+def test_descricao_livre_e_descartada_antes_de_conferir_codificacao():
+    cabecalho = b'"ID";"NOME";"DS_BEM_CANDIDATO"\r\n'
+    descricao = b'"1";"Urna de teste";"\xc3\xa1"\r\n'
+    opcoes = {"ignorar_coluna": "DS_BEM_CANDIDATO"}
+    with _zip_em_memoria(cabecalho + descricao) as arquivo:
+        assert list(tse._linhas(arquivo, MEMBRO, CAMPOS, Counter(), **opcoes)) == [
+            {"ID": "1", "NOME": "Urna de teste"}
+        ]
+    with (
+        _zip_em_memoria(cabecalho + b'"1";"\xc3\xa1";""\r\n') as arquivo,
+        pytest.raises(tse.ArquivoInvalido, match="latin-1"),
+    ):
+        list(tse._linhas(arquivo, MEMBRO, CAMPOS, Counter(), **opcoes))
