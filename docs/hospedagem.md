@@ -78,6 +78,12 @@ As duas Casas rodam uma por vez, com até 30 minutos cada, e a segunda é tentad
 
 Para recuperar uma lacuna maior, preencha **inicio e fim juntos**, em `AAAA-MM-DD`, no disparo manual da coleta. Sem datas, valem os sete dias completos anteriores em Brasília. O deploy da Vercel não espera o Actions. Na hospedagem, siga as [convenções de migrations](../AGENTS.md#conventions). Não há migration na importação, no build ou na requisição da API.
 
+## Preencher temas de votações já coletadas
+
+Depois de confirmar a migration 0014 no ambiente, abra **Actions → Coletar Congresso → Run workflow**. Para produção, escolha **main**, marque **somente_temas** e informe a janela das votações já gravadas. Divida um histórico maior em janelas. Em cada Casa, acompanhe `temas` no resumo. Se `falhas_consulta` ou `falhas_gravacao` forem maiores que zero, repita a janela para as proposições pendentes. As datas vazias usam os sete dias completos anteriores em Brasília.
+
+O modo usa as mesmas credenciais e a mesma fila da coleta e fica desmarcado por padrão. A agenda roda a coleta normal. O preenchimento grava temas e fontes temáticas à parte, o que preserva as revisões dos rascunhos. [Comando local](../README.md#como-rodar)
+
 ## Ativar e recuperar a agenda de sábado
 
 **Preparar edição de sábado** coleta a legislação federal pelo Senado, coleta os destaques do Diário Oficial pelo Firecrawl e prepara o rascunho, nessa ordem e no mesmo banco. A rodada tem até 60 minutos. O horário de **04h47 de Brasília** reserva uma hora para a coleta das duas Casas, que começa às 03h17, mais 30 minutos de folga. Se a coleta diária ainda ocupar a fila, a agenda espera a sua vez.
