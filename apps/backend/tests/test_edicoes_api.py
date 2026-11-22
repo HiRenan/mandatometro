@@ -11,7 +11,15 @@ from sqlalchemy.orm import Session
 from mandatometro.api.app import app
 from mandatometro.config import config
 from mandatometro.db import engine
-from mandatometro.db.modelos import Edicao, Fonte, ItemEdicao, VideoSessao, Votacao
+from mandatometro.db.modelos import (
+    Edicao,
+    Fonte,
+    ItemEdicao,
+    Proposicao,
+    ProposicaoTema,
+    VideoSessao,
+    Votacao,
+)
 from mandatometro.ia.artigos import CATALOGO
 from mandatometro.ia.esquemas import Fatos, FatosAto, FatoVotacao, Placar
 
@@ -176,7 +184,8 @@ def test_detalhe_preserva_fotografia_fontes_artigo_e_legado(publicadas):
     assert primeiro["fontes"][0]["trecho"] == "Trecho fictício <b>sem HTML executável</b>."
     assert antigo["fatos"] is None and antigo["artigo"] is None
     assert set(primeiro) == {"ordem", "tipo", "titulo", "texto", "fatos", "fontes", "artigo"}
-    assert set(nominal) == {"id", "data", "resultado", "placar", "fontes", "url_video"}
+    assert set(nominal) == {"id", "data", "resultado", "placar", "fontes", "url_video", "temas"}
+    assert nominal["temas"] == sem_placar["temas"] == []
     assert nominal["url_video"] is None and sem_placar["url_video"] is None
     assert set(primeiro["fontes"][0]) == {"url", "coletado_em", "trecho"}
     for proibido in (
@@ -190,7 +199,7 @@ def test_detalhe_preserva_fotografia_fontes_artigo_e_legado(publicadas):
 
 
 @pytest.mark.parametrize("quantidade", [1, 13])
-def test_detalhe_busca_videos_em_lote(sessao, monkeypatch, quantidade):
+def test_detalhe_busca_videos_e_temas_em_lote(sessao, monkeypatch, quantidade):
     dia = date(2026, 11, 12)
     instante = datetime(2026, 11, 15, tzinfo=UTC)
     fonte = Fonte(url="https://dadosabertos.camara.leg.br/api/v2/votacoes", coletado_em=instante)
@@ -201,6 +210,9 @@ def test_detalhe_busca_videos_em_lote(sessao, monkeypatch, quantidade):
         url_video=url,
         fonte=Fonte(url="https://dadosabertos.camara.leg.br/api/v2/eventos/83057"),
     )
+    proposicao = Proposicao(
+        casa="camara", id_externo=90000, sigla="PL", numero=1, ano=2026, fonte=fonte
+    )
     votacoes = [
         Votacao(
             casa="camara",
@@ -210,13 +222,15 @@ def test_detalhe_busca_videos_em_lote(sessao, monkeypatch, quantidade):
             resultado="aprovada",
             fonte=fonte,
             video_sessao=video,
+            proposicoes=[proposicao],
         )
         for indice in range(quantidade)
     ]
     sessao.add_all(votacoes)
     sessao.flush()
+    sessao.add(ProposicaoTema(proposicao_id=proposicao.id, tema="saude", fonte_id=fonte.id))
     fatos = Fatos(
-        proposicoes=[1],
+        proposicoes=[proposicao.id],
         votacoes=[
             FatoVotacao(id=v.id, data=dia, resultado="aprovada", placar=None, fontes=[fonte.id])
             for v in votacoes
@@ -260,12 +274,14 @@ def test_detalhe_busca_videos_em_lote(sessao, monkeypatch, quantidade):
             event.remove(conexao, "before_cursor_execute", contar_selects)
 
     assert resposta.status_code == 200
-    assert [v["url_video"] for v in resposta.json()["itens"][0]["fatos"]["votacoes"]] == [
-        url
-    ] * quantidade
-    # Edição, itens e fontes custam três SELECTs. Os vídeos custam um nos dois tamanhos.
-    assert len(selects) == 4
+    votacoes_publicadas = resposta.json()["itens"][0]["fatos"]["votacoes"]
+    assert len(votacoes_publicadas) == quantidade
+    assert all(v["url_video"] == url for v in votacoes_publicadas)
+    assert all(v["temas"] == [{"id": "saude", "nome": "Saúde"}] for v in votacoes_publicadas)
+    # Edição, itens e fontes custam três SELECTs. Os vídeos e os temas custam um cada.
+    assert len(selects) == 5
     assert sum("video_sessao" in sql for sql in selects) == 1
+    assert sum("proposicao_tema" in sql for sql in selects) == 1
 
 
 def test_rascunho_e_inexistente_tem_mesmo_404(publicadas):

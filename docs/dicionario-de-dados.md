@@ -9,7 +9,7 @@ Bases, as duas sem chave de acesso:
 - **Câmara:** `https://dadosabertos.camara.leg.br/api/v2`
 - **Senado:** `https://legis.senado.leg.br/dadosabertos`
 
-Os endpoints de depois do MVP seguem nas notas da #10 e da #11. O TSE entra depois do MVP, nas issues #12 e #13.
+Os endpoints de depois do MVP seguem nas notas da #10 e da #11. A #12 cobre as candidaturas do TSE, e a #13 trata dos bens declarados.
 
 ## Como ler este documento
 
@@ -243,6 +243,10 @@ As orientações ficaram para depois do MVP (decisão do Renan na #7, em 12/11/2
 }
 ```
 
+### `/proposicoes/{id}/temas` — a classificação temática
+
+`dados[]` pode vir vazio. Cada entrada traz `codTema` (inteiro) e `tema` (nome da classificação). A referência `/referencias/proposicoes/codTema` traz os mesmos códigos em `dados[].cod` como texto e os nomes em `dados[].nome`. A coleta consulta uma vez por proposição confirmada e converte pelo código. [Referência oficial da Câmara](https://dadosabertos.camara.leg.br/api/v2/referencias/proposicoes/codTema)
+
 ### `/deputados` e `/deputados/{id}` — quem são os deputados
 
 ```text
@@ -472,7 +476,8 @@ A lista atual basta para cadastrar quem está em exercício: a coleta usa a prim
 | `siglaCasaIniciadora` | texto | `CD` ou `SF` — **onde a matéria começou** | sim |
 | `identificacaoProcessoInicial` | texto | a identificação na Casa de origem | sim |
 | `outrosNumeros[]` | lista | a mesma matéria na outra Casa (ver abaixo) | chave |
-| `despachos`, `autuacoes`, `ordensDoDia`, `classificacoes` | lista | tramitação detalhada | não |
+| `despachos`, `autuacoes`, `ordensDoDia` | lista | tramitação detalhada | não |
+| `classificacoes[]` | lista | cada entrada traz `codigo`, `descricao` e `descricaoHierarquia` | temas |
 
 ```json
 {
@@ -550,6 +555,43 @@ O `resultado` e o `voto.valor` têm domínios diferentes nas duas Casas, e o mod
 - **`votacao.resultado`:** `aprovada`, `rejeitada` ou `outro`. O `1` e o `"A"` viram `aprovada`, o `0` e o `"R"` viram `rejeitada`, e um código ainda não classificado vira `outro`. O `resultado_bruto` guarda o código como a Casa publicou.
 - **`voto.valor`:** `sim`, `nao`, `abstencao`, `obstrucao`, `presidente`, `nao_votou` ou `outro`. O `Artigo 17` e o `Presidente (art. 51 RISF)` viram `presidente`, e o `P-NRV` vira `nao_votou`. O armazenamento do `valor_bruto` segue as regras de [ausências e afastamentos](dados-pessoais.md#ausências-e-afastamentos).
 
+## Temas das proposições e das votações
+
+No Senado, `descricaoHierarquia` usa ` / ` entre os níveis. A coleta normal reaproveita o processo lido para gravar a proposição. O modo `--somente-temas` busca o processo pelo `idProcesso` e confere o id da resposta. Lista ausente, nula ou vazia significa falta de classificação. Os 179 nós de `/processo/classes` e os 32 códigos de referência da Câmara formam as fixtures de conversão. [Hierarquia oficial do Senado](https://legis.senado.leg.br/dadosabertos/processo/classes)
+
+O catálogo tem identificadores estáveis e nomes para a tela. Na Câmara, vale a linha do código. No Senado, vale o caminho mais específico que conste na tabela, por segmentos inteiros. Ele também cobre seus descendentes até uma regra mais específica. Entradas sem regra ficam sem tema. A tabela deixa de fora raízes amplas como **Política Social** e **Organização do Estado**. Uma matéria classificada em **Política Social / Previdência Social** recebe o tema correspondente. As palavras-chave de `keywords` e `documento.indexacao`, a ementa e o título ficam fora da conversão.
+
+| ID | Nome | Códigos e temas da Câmara | Caminhos do Senado |
+| --- | --- | --- | --- |
+| `saude` | Saúde | `56` Saúde | Política Social / Saúde |
+| `educacao` | Educação | `46` Educação | Política Social / Educação |
+| `economia` | Economia e impostos | `40` Economia · `60` Turismo · `66` Indústria, Comércio e Serviços | Economia e Desenvolvimento / Fiscalização e Controle da Atividade Econômica · Economia e Desenvolvimento / Indústria, Comércio e Serviços · Economia e Desenvolvimento / Linha de Crédito · Economia e Desenvolvimento / Sistema Financeiro Nacional · Economia e Desenvolvimento / Tributos |
+| `trabalho` | Trabalho e emprego | `58` Trabalho e Emprego | Jurídico / Processo / Processo do Trabalho · Política Social / Trabalho e Emprego |
+| `previdencia_assistencia` | Previdência e assistência social | `52` Previdência e Assistência Social | Política Social / Previdência Social · Política Social / Proteção Social / Assistência Social · Política Social / Proteção Social / Desenvolvimento Social e Combate à Fome |
+| `direitos_cidadania` | Direitos e cidadania | `44` Direitos Humanos e Minorias · `67` Direito e Defesa do Consumidor | Jurídico / Direito do Consumidor · Jurídico / Direitos e Garantias · Política Social / Proteção Social / Crianças e Adolescentes · Política Social / Proteção Social / Direitos Humanos e Minorias · Política Social / Proteção Social / Idosos · Política Social / Proteção Social / Mulheres · Política Social / Proteção Social / Pessoas com Deficiência · Política Social / Proteção Social / População Indígena · Soberania, Defesa Nacional e Ordem Pública / Direito dos Estrangeiros |
+| `seguranca_defesa` | Segurança e defesa | `57` Defesa e Segurança | Soberania, Defesa Nacional e Ordem Pública / Defesa do Estado e das Instituições Democráticas |
+| `justica` | Justiça | `42` Direito Civil e Processual Civil · `43` Direito Penal e Processual Penal · `68` Direito Constitucional · `76` Direito e Justiça | Organização do Estado / Funções Essenciais à Justiça · Organização do Estado / Poder Judiciário · Jurídico / Direito Civil · Jurídico / Direito Empresarial e Econômico · Jurídico / Direito Notarial e Registral · Jurídico / Direito Penal e Penitenciário · Jurídico / Processo / Processo Civil · Jurídico / Processo / Processo Penal |
+| `meio_ambiente` | Meio ambiente | `48` Meio Ambiente e Desenvolvimento Sustentável | Meio Ambiente |
+| `agropecuaria` | Agricultura e pecuária | `51` Estrutura Fundiária · `64` Agricultura, Pecuária, Pesca e Extrativismo | Economia e Desenvolvimento / Agropecuária e Abastecimento · Economia e Desenvolvimento / Política Fundiária e Reforma Agrária |
+| `infraestrutura` | Infraestrutura e transporte | `54` Energia, Recursos Hídricos e Minerais · `61` Viação, Transporte e Mobilidade | Infraestrutura · Jurídico / Direito de Trânsito · Política Social / Desenvolvimento Urbano / Mobilidade Urbana |
+| `cidades_moradia` | Cidades e moradia | `41` Cidades e Desenvolvimento Urbano | Política Social / Desenvolvimento Urbano · Política Social / Habitação |
+| `ciencia_tecnologia` | Ciência, tecnologia e comunicação | `37` Comunicações · `62` Ciência, Tecnologia e Inovação · `85` Ciências Exatas e da Terra · `86` Ciências Sociais e Humanas | Economia e Desenvolvimento / Ciência, Tecnologia e Informática · Infraestrutura / Comunicações |
+| `cultura_esporte` | Cultura, esporte e lazer | `35` Arte, Cultura e Religião · `39` Esporte e Lazer | Política Social / Cultura · Política Social / Desporto e Lazer |
+| `politica_governo` | Política e governo | `34` Administração Pública · `53` Processo Legislativo e Atuação Parlamentar · `74` Política, Partidos e Eleições | Administração Pública · Jurídico / Direito Eleitoral · Jurídico / Processo / Processo Legislativo · Jurídico / Processo / Processo Administrativo · Organização do Estado / Fiscalização e Controle · Organização do Estado / Organização Federativa · Organização do Estado / Poder Legislativo |
+| `orcamento_publico` | Orçamento público | `70` Finanças Públicas e Orçamento | Economia e Desenvolvimento / Finanças Públicas · Orçamento Público |
+| `relacoes_internacionais` | Relações internacionais | `55` Relações Internacionais e Comércio Exterior | Soberania, Defesa Nacional e Ordem Pública / Relações Internacionais |
+| `homenagens` | Homenagens e datas comemorativas | `72` Homenagens e Datas Comemorativas | Honorífico |
+
+`proposicao_tema` guarda uma linha por par de proposição e tema convertido, mesmo se mais de uma classificação oficial chegar ao mesmo tema. Sua fonte tem a URL e a data da consulta temática da Câmara ou do processo do Senado. A gravação é separada dos fatos da proposição e da votação. Quando o conjunto se repete, a fonte é reaproveitada. Na coleta normal, uma resposta válida substitui o conjunto da proposição e uma falha preserva o conjunto anterior.
+
+O resumo `temas` distingue proposições com tema, proposições sem classificação, classificações sem conversão e falhas de consulta ou gravação. Uma proposição pode ter um tema reconhecido e outra classificação sem conversão. O modo `--somente-temas` consulta só proposições sem tema ligadas a votações gravadas no período.
+
+Os códigos temáticos são aceitos como inteiros positivos ou texto com os dígitos de 0 a 9. Código malformado conta como falha da consulta e preserva os temas anteriores. No Senado, o código é validado e o caminho decide o tema.
+
+Na coleta normal da Câmara, a etapa dos temas para após duas falhas temporárias seguidas ou ao esgotar o prazo das consultas. As consultas de tema têm até quatro minutos, dentro dos primeiros 25 minutos da coleta. O resumo conta as proposições restantes em `proposicoes_nao_consultadas`. Uma nova coleta pode consultar essas proposições. O modo `--somente-temas` também pode consultar as que ainda estão sem tema.
+
+Uma votação expõe a união dos temas de suas proposições afetadas, na ordem do catálogo, em `temas: [{id, nome}]`. A lista vem vazia quando não há tema. O campo aparece em `GET /votacoes/{id}`, nos votos de `GET /parlamentares/{id}/votos` e nos fatos públicos das votações em `GET /edicoes/{id}`. Nos votos do parlamentar, `?tema=saude` filtra os registros antes da contagem e da paginação. Id de tema inválido responde 422 com `dados_invalidos`. `GET /temas` lista o catálogo.
+
 ## Atos do Diário Oficial
 
 A tabela `ato` guarda os atos publicados para a seleção semanal da newsletter. Os dados abertos do Senado fornecem decretos, leis e medidas provisórias. A página de destaques complementa a cobertura com portarias e outros atos de ministérios. [ADR 0005](adr/0005-legislacao-federal-na-newsletter.md) · [ADR 0006](adr/0006-destaques-do-dou.md).
@@ -624,12 +666,55 @@ Atos de pessoal da seção 2 e contratos e editais da seção 3 ficam fora do re
 
 Sem `FIRECRAWL_API_KEY`, o comando sai com código 2. A coleta confirma a conexão com o banco antes do primeiro pedido. Se o banco não responder, a saída é 1 e o resumo registra zero chamadas. Falha do provedor ou de gravação também sai com código 1 e mantém os atos já confirmados. Respostas HTTP 429 e 5xx permitem até três pedidos da mesma página. O cliente respeita o `Retry-After` e encerra a coleta se a espera solicitada exceder 60 segundos.
 
+## Candidaturas do TSE
+
+O CDN do TSE publica `consulta_cand_AAAA.zip` na pasta `consulta_cand`. Em 2022 e 2026, cada ZIP contém 27 CSVs de UF, o CSV `BR`, o consolidado `BRASIL` e `leiame.pdf`. O consolidado repete exatamente as linhas das partes. A coleta lê só `*_BRASIL.csv` em fluxo. Os CSVs dos dois anos usam latin-1, ponto e vírgula, aspas duplas e CRLF, com 51 colunas de candidaturas. [Candidaturas de 2022](https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand/consulta_cand_2022.zip) · [Candidaturas de 2026](https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand/consulta_cand_2026.zip)
+
+O download tem limite de 50 MB por arquivo, e o CSV aberto tem limite de 300 MB. A coleta conta os bytes durante a leitura. BOM, bytes nulos e sequências de UTF-8 multibyte invalidam o arquivo.
+
+A migration `0013` cria `candidatura` após a revisão `0012`, que guarda os vídeos das sessões.
+
+| Registro | Campo | Procedência |
+| --- | --- | --- |
+| `candidatura` | `id` | Identificador interno gerado pelo banco. |
+| | `ano`, `codigo_eleicao` e `id_externo` | Chave única com `ANO_ELEICAO`, `CD_ELEICAO` e `SQ_CANDIDATO`. O último pode ter 12 dígitos. |
+| | `cargo` | `CD_CARGO` vale 6 para deputado federal, 5 para senador, 9 para primeiro suplente e 10 para segundo suplente. |
+| | `uf`, `partido`, `numero` e `nome_urna` | `SG_UF`, `SG_PARTIDO`, `NR_CANDIDATO` como texto e `NM_URNA_CANDIDATO`. |
+| | `resultado` e `resultado_bruto` | `CD_SIT_TOT_TURNO`. Os códigos 1, 2, 3, 4 e 5 viram `eleito`, `eleito_por_qp`, `eleito_por_media`, `nao_eleito` e `suplente`. O código -1 (`#NULO`) vira `sem_resultado`. Um código novo entra como `outro` e é conservado em `resultado_bruto`. |
+| | `parlamentar_id` | FK para o parlamentar identificado no cadastro do Congresso. |
+| | `fonte_id` | FK da observação do ZIP de candidaturas. |
+
+Em 2026, `CD_SITUACAO_CANDIDATURA` veio todo como `-3` (`#NE`) no recorte. O resultado eleitoral é `CD_SIT_TOT_TURNO`. A fonte guarda a URL oficial do ZIP e a hora da coleta.
+
+Os links declarados ficaram de fora desta entrega porque podem conter dados pessoais no endereço. A coleta dos links será tratada em uma issue própria, com uma lista fechada de redes.
+
+### Ligação com os parlamentares
+
+A coleta começa pelo nome parlamentar, comparado aos nomes de urna e civil com caixa, acentos, pontuação e espaços normalizados. A UF do mandato e o grupo de cargos da Casa limitam essa busca. A apuração reúne todos os mandatos em exercício do parlamentar. O vínculo final precisa ser único tanto para o parlamentar naquele ano quanto para a candidatura.
+
+A candidatura de 2022 precisa ser compatível com o mandato. Para mandato iniciado em 2023, o resultado precisa ser de eleito ou suplente. O mandato de senador iniciado em 2019 fica fora dessa ligação de 2022. A candidatura de 2026 pode ter qualquer resultado, pois a eleição é posterior ao início dos mandatos do recorte.
+
+Um par nominal único e compatível de 2022 pode fornecer o CPF para reconhecer a mesma pessoa em 2026, inclusive após troca de UF. O CPF serve apenas durante a execução. Um par nominal isolado de 2026 pode valer por si e seu CPF pode revelar conflitos. A expansão entre anos depende da âncora de 2022. Mais de um par nominal, CPF repetido no recorte de um ano, CPFs nominais divergentes, CPF que aponta para uma candidatura diferente do par nominal ou candidatura de 2022 incompatível alcançada por CPF invalidam a ligação da pessoa nos dois anos. Quando a busca pelo CPF da âncora encontra em 2026 uma candidatura à outra Casa, só o vínculo de 2022 é gravado, desde que a candidatura e o CPF estejam livres de conflito.
+
+Antes de decidir os vínculos, a coleta compara todos os pares nominais e todas as candidaturas alcançadas pelo CPF, inclusive candidaturas incompatíveis com o mandato ou à outra Casa. Se dois parlamentares reivindicarem a mesma candidatura ou CPF, ambos ficam em conflito nos dois anos, mesmo quando são de Casas diferentes.
+
+O JSON conta `ligados`, `sem_par`, `em_conflito`, `derrubados_pela_trava` e `outro_cargo` por Casa e ano, além das gravações, fontes, descartes e falhas por arquivo. `outro_cargo` conta em 2026 a candidatura à outra Casa encontrada pelo CPF da âncora de 2022 quando a ligação está livre de conflito. Uma linha com quantidade errada de campos, valor inválido ou erro de aspas recuperável entra nos descartes e as demais seguem. Uma aspa de abertura sem fechamento pode consumir a linha seguinte, e as duas contam como um descarte. Um ZIP ausente, membro ou cabeçalho inválido ou CSV ilegível deixa a outra leitura seguir, retorna código 1 e zera as contagens de ligação. As candidaturas e fontes só são gravadas após a leitura completa dos dois arquivos e numa única transação.
+
+Um último registro com menos campos que o cabeçalho e sem quebra de linha invalida o arquivo, e a carga retorna 1 sem gravar candidaturas ou fontes.
+
+Uma candidatura já ligada conserva o parlamentar gravado, inclusive quando ele sai do exercício. Se algum par nominal ou alcançado pelo CPF já tiver outro titular, a pessoa fica em conflito nos dois anos e conserva os vínculos anteriores. Tentar gravar para a mesma pessoa uma candidatura diferente no mesmo ano conta como conflito naquele ano e preserva o vínculo anterior.
+
+Para quem já tem candidaturas gravadas, a coleta as relê pela chave e usa seus CPFs em memória para detectar disputas entre parlamentares e vetar vínculos novos nos dois anos quando faltar uma ficha ou um CPF, ou quando os CPFs divergirem.
+
+Para ligar as eleições históricas na #13, as chaves das candidaturas ligadas permitem reler `consulta_cand` e recuperar os identificadores em memória. A busca percorre todas as UFs. Em 2024 o CPF vem vazio e em 2012 falta em parte das linhas, segundo as notas da #13. Nesses casos, a ligação usa título de eleitor com data de nascimento. [Issue da série de bens](https://github.com/HiRenan/mandatometro/issues/13)
+
 ## Campos pessoais
 
 As regras de uso, exposição e descarte estão em [dados pessoais](dados-pessoais.md).
 
 - **Câmara:** `/deputados/{id}` devolve `cpf` e `dataNascimento`. A [fixture da Câmara](../apps/backend/tests/fixtures/README.md#dados-pessoais) tem valores fictícios.
 - O Senado **não** devolve CPF nos endpoints que usamos. O `/senador/{cod}`, que não usamos, traz `DadosBasicosParlamentar.DataNascimento`, `Naturalidade`, `UfNaturalidade` e `EnderecoParlamentar`: quem gravar essa resposta troca a data de nascimento, como no `/deputados/{id}`.
+- **TSE.** `NR_CPF_CANDIDATO`, `NR_TITULO_ELEITORAL_CANDIDATO` e `DT_NASCIMENTO` servem exclusivamente para ligação em memória. Os arquivos de teste da #12 usam valores inventados.
 
 Nome, partido, UF e voto de parlamentar **não** são dados pessoais protegidos neste sentido: são atos públicos de agente público, e é justamente o que a newsletter mostra.
 
@@ -637,6 +722,4 @@ Nome, partido, UF e voto de parlamentar **não** são dados pessoais protegidos 
 
 - **Separar a votação de mérito das de rito.** Das 27 votações do plenário da Câmara na semana do exemplo, a maioria é procedimental ("Aprovada a Emenda de Redação", "Aprovada a Redação Final"), e as 4 do Senado eram todas da mesma PEC. A newsletter precisa de um critério para escolher o que contar. Fica para a #22, que monta a edição.
 - **As orientações de bancada,** depois do MVP (decisão do Renan na #7): o banco do MVP não tem tabela para elas.
-- **O TSE,** depois do MVP (#12 e #13). `SQ_CANDIDATO` liga os arquivos dentro de uma eleição.
-- Os CSVs do TSE vêm em latin-1, separados por `;`, um por UF dentro de cada ZIP.
-- A mesma pessoa se liga entre eleições do TSE pelo CPF. Em 2024 o CPF vem vazio e em 2012 falta em parte das linhas: nesses anos, use o título de eleitor e confira a data de nascimento.
+- **A série de bens do TSE** de 2006 a 2026 fica na #13 e usa os vínculos da #12 como ponto de partida.

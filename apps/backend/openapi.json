@@ -1916,7 +1916,7 @@
           "parlamentares"
         ],
         "summary": "Listar os votos gravados do parlamentar da votação mais recente para a mais antiga",
-        "description": "Paginação por deslocamento, com desempate por id interno decrescente da votação.",
+        "description": "O filtro por tema é aplicado antes da paginação por deslocamento. O desempate usa o id interno decrescente da votação.",
         "operationId": "listar_votos_parlamentar",
         "parameters": [
           {
@@ -1954,6 +1954,24 @@
               "default": 0,
               "title": "Deslocamento"
             }
+          },
+          {
+            "name": "tema",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/TemaId"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Tema das proposições afetadas.",
+              "title": "Tema"
+            },
+            "description": "Tema das proposições afetadas."
           }
         ],
         "responses": {
@@ -2171,6 +2189,31 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Saude"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/temas": {
+      "get": {
+        "tags": [
+          "temas"
+        ],
+        "summary": "Listar os temas do Mandatômetro",
+        "operationId": "listar_temas",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TemaPublico"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Temas"
                 }
               }
             }
@@ -2513,6 +2556,13 @@
             "type": "array",
             "title": "Proposicoes"
           },
+          "temas": {
+            "items": {
+              "$ref": "#/components/schemas/TemaPublico"
+            },
+            "type": "array",
+            "title": "Temas"
+          },
           "url_oficial": {
             "anyOf": [
               {
@@ -2583,6 +2633,7 @@
           "descricao",
           "resultado",
           "proposicoes",
+          "temas",
           "url_oficial",
           "coletado_em",
           "id",
@@ -3591,6 +3642,47 @@
         ],
         "title": "Saude"
       },
+      "TemaId": {
+        "type": "string",
+        "enum": [
+          "saude",
+          "educacao",
+          "economia",
+          "trabalho",
+          "previdencia_assistencia",
+          "direitos_cidadania",
+          "seguranca_defesa",
+          "justica",
+          "meio_ambiente",
+          "agropecuaria",
+          "infraestrutura",
+          "cidades_moradia",
+          "ciencia_tecnologia",
+          "cultura_esporte",
+          "politica_governo",
+          "orcamento_publico",
+          "relacoes_internacionais",
+          "homenagens"
+        ],
+        "title": "TemaId"
+      },
+      "TemaPublico": {
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/TemaId"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome"
+        ],
+        "title": "TemaPublico"
+      },
       "Termo": {
         "properties": {
           "versao": {
@@ -3658,6 +3750,13 @@
             ],
             "title": "Url Video",
             "description": "Endereço HTTPS do vídeo oficial da sessão inteira, ou nulo quando indisponível."
+          },
+          "temas": {
+            "items": {
+              "$ref": "#/components/schemas/TemaPublico"
+            },
+            "type": "array",
+            "title": "Temas"
           }
         },
         "type": "object",
@@ -3667,7 +3766,8 @@
           "resultado",
           "placar",
           "fontes",
-          "url_video"
+          "url_video",
+          "temas"
         ],
         "title": "VotacaoPublica"
       },
@@ -3757,6 +3857,13 @@
             "type": "array",
             "title": "Proposicoes"
           },
+          "temas": {
+            "items": {
+              "$ref": "#/components/schemas/TemaPublico"
+            },
+            "type": "array",
+            "title": "Temas"
+          },
           "url_oficial": {
             "anyOf": [
               {
@@ -3800,6 +3907,7 @@
           "descricao",
           "resultado",
           "proposicoes",
+          "temas",
           "url_oficial",
           "coletado_em",
           "votacao_id",

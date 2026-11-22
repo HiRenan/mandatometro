@@ -285,6 +285,7 @@ def test_votos_paginados_por_data_e_id_com_proposicoes_e_fontes(cliente, parlame
             },
         ],
         "url_oficial": presidencia.fonte.url_publica,
+        "temas": [],
         "coletado_em": "2026-11-21T00:00:00Z",
     }
     assert "valor_bruto" not in recente
@@ -437,6 +438,7 @@ def test_votacao_sem_registros_sem_endereco_e_sem_proposicao(cliente, sessao, ca
         "descricao": votacao.descricao,
         "resultado": "outro",
         "proposicoes": [],
+        "temas": [],
         "url_oficial": None,
         "url_video": None,
         "coletado_em": "2026-11-21T00:00:00Z",

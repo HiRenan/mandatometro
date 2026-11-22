@@ -31,7 +31,7 @@ def preparar_migration() -> int:
     return 0
 
 
-def coletar(casa: str, *, somente_videos: bool = False) -> int:
+def coletar(casa: str, *, modo: str | None = None) -> int:
     from mandatometro.cli import main as cli
     from mandatometro.coleta.cli import resolver_periodo
 
@@ -43,8 +43,8 @@ def coletar(casa: str, *, somente_videos: bool = False) -> int:
         print("::error::Informe início e fim juntos, em AAAA-MM-DD, na ordem cronológica.")
         return 2
     argumentos = ["coleta", casa]
-    if somente_videos:
-        argumentos.append("--somente-videos")
+    if modo:
+        argumentos.append(modo)
     if inicio is not None and fim is not None:
         argumentos += ["--inicio", inicio, "--fim", fim]
     # O Actions publica só o resumo; bibliotecas também podem registrar URLs de pessoas.
@@ -176,9 +176,12 @@ def main(argv: list[str] | None = None) -> int:
             return enviar()
         if argumentos == ["preparar-migration"]:
             return preparar_migration()
-        coleta = argumentos[:2] in (["coletar", "camara"], ["coletar", "senado"]) and argumentos[
-            2:
-        ] in ([], ["--somente-videos"])
+        opcoes = argumentos[2:]
+        coleta = argumentos[:2] in (["coletar", "camara"], ["coletar", "senado"]) and opcoes in (
+            [],
+            ["--somente-videos"],
+            ["--somente-temas"],
+        )
         if argumentos != ["migrar"] and not coleta:
             print("::error::Tarefa inválida. Use agenda, migrar, enviar ou coletar camara/senado.")
             return 2
@@ -186,7 +189,7 @@ def main(argv: list[str] | None = None) -> int:
             print("::error::Defina DATABASE_URL; a tarefa não usa o banco local por padrão.")
             return 2
         if coleta:
-            return coletar(argumentos[1], somente_videos=len(argumentos) == 3)
+            return coletar(argumentos[1], modo=opcoes[0] if opcoes else None)
         return migrar()
     except Exception:
         if argumentos in (["agenda"], ["enviar"]):

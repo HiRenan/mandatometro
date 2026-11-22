@@ -3,8 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from pydantic import BaseModel
 
+from mandatometro.api.congresso import temas_publicos
 from mandatometro.api.contas import router as contas
 from mandatometro.api.edicoes import router as edicoes
+from mandatometro.api.esquemas import TemaPublico
 from mandatometro.api.newsletter import router as newsletter
 from mandatometro.api.painel import AcessoPainel
 from mandatometro.api.painel import router as painel
@@ -12,6 +14,7 @@ from mandatometro.api.parlamentares import router as parlamentares
 from mandatometro.api.piloto import router as piloto
 from mandatometro.api.votacoes import router as votacoes
 from mandatometro.config import config
+from mandatometro.temas import TEMAS
 
 
 def _id_da_operacao(rota: APIRoute) -> str:
@@ -46,3 +49,8 @@ class Saude(BaseModel):
 @app.get("/health", tags=["saude"])
 def health() -> Saude:
     return Saude(status="ok")
+
+
+@app.get("/temas", tags=["temas"], summary="Listar os temas do Mandatômetro")
+def listar_temas() -> list[TemaPublico]:
+    return temas_publicos(TEMAS)

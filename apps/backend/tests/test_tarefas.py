@@ -86,7 +86,10 @@ def test_coleta_sem_datas_usa_a_janela_existente(tarefa, monkeypatch):
 
 
 @pytest.mark.parametrize("casa", ["camara", "senado"])
-def test_coleta_manual_somente_videos_chama_o_cli_com_as_datas(tarefa, monkeypatch, casa):
+@pytest.mark.parametrize("modo", ["--somente-videos", "--somente-temas"])
+def test_coleta_manual_chama_o_cli_com_o_modo_de_preenchimento_e_as_datas(
+    tarefa, monkeypatch, casa, modo
+):
     monkeypatch.setenv("DATABASE_URL", "banco-ficticio")
     monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
     monkeypatch.setenv("COLETA_INICIO", "2026-11-09")
@@ -94,16 +97,21 @@ def test_coleta_manual_somente_videos_chama_o_cli_com_as_datas(tarefa, monkeypat
     recebidos = []
     monkeypatch.setattr("mandatometro.cli.main", lambda args: recebidos.extend(args))
 
-    assert tarefa(["coletar", casa, "--somente-videos"]) == 0
+    assert tarefa(["coletar", casa, modo]) == 0
     assert recebidos == [
         "coleta",
         casa,
-        "--somente-videos",
+        modo,
         "--inicio",
         "2026-11-09",
         "--fim",
         "2026-11-15",
     ]
+
+
+def test_coleta_manual_recusa_os_dois_modos_de_preenchimento(tarefa, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "banco-ficticio")
+    assert tarefa(["coletar", "camara", "--somente-videos", "--somente-temas"]) == 2
 
 
 @pytest.mark.parametrize("casa", ["camara", "senado"])

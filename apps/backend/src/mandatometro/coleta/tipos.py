@@ -15,6 +15,16 @@ class DadosVoto:
 
 
 @dataclass
+class ResumoTemas:
+    proposicoes_com_tema: int = 0
+    proposicoes_sem_classificacao: int = 0
+    classificacoes_sem_tema: int = 0
+    falhas_consulta: int = 0
+    falhas_gravacao: int = 0
+    proposicoes_nao_consultadas: int = 0
+
+
+@dataclass
 class ResumoVideos:
     votacoes_sem_sessao: int = 0
     sessoes_com_video: int = 0
@@ -47,6 +57,7 @@ class ResumoColeta:
     codigos_desconhecidos: int = 0
     erro: str | None = None
     videos: ResumoVideos = field(default_factory=ResumoVideos)
+    temas: ResumoTemas = field(default_factory=ResumoTemas)
 
 
 @dataclass

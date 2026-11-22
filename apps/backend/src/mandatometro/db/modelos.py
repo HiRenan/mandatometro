@@ -21,6 +21,7 @@ from typing import Literal
 from uuid import UUID
 
 from sqlalchemy import (
+    BigInteger,
     CheckConstraint,
     Column,
     ForeignKey,
@@ -36,6 +37,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from mandatometro.db import Base
+from mandatometro.temas import TemaId
 
 logger = logging.getLogger(__name__)
 
@@ -254,6 +256,51 @@ class Mandato(Base):
     fonte: Mapped[Fonte] = relationship()
 
 
+RESULTADOS_TSE = {
+    -1: "sem_resultado",
+    1: "eleito",
+    2: "eleito_por_qp",
+    3: "eleito_por_media",
+    4: "nao_eleito",
+    5: "suplente",
+}
+
+
+class Candidatura(Base):
+    """Candidatura do TSE ligada a um parlamentar pela coleta, sem documentos pessoais."""
+
+    __tablename__ = "candidatura"
+    __table_args__ = (
+        UniqueConstraint("ano", "codigo_eleicao", "id_externo"),
+        CheckConstraint("ano >= 2006", name="ano"),
+        CheckConstraint("codigo_eleicao > 0", name="codigo_eleicao"),
+        CheckConstraint("id_externo > 0", name="id_externo"),
+        CheckConstraint("cargo > 0", name="cargo"),
+        CheckConstraint("""uf COLLATE "C" ~ '^[A-Z]{2}$'""", name="uf"),
+        CheckConstraint("""numero COLLATE "C" ~ '^[0-9]+$'""", name="numero"),
+        CheckConstraint("btrim(nome_urna) <> ''", name="nome_urna"),
+        CheckConstraint(_um_de("resultado", (*RESULTADOS_TSE.values(), "outro")), name="resultado"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ano: Mapped[int] = mapped_column(SmallInteger)
+    codigo_eleicao: Mapped[int]
+    id_externo: Mapped[int] = mapped_column(BigInteger)
+    cargo: Mapped[int] = mapped_column(SmallInteger)
+    uf: Mapped[str] = mapped_column(String(2))
+    partido: Mapped[str]
+    numero: Mapped[str]
+    nome_urna: Mapped[str]
+    resultado: Mapped[str]
+    resultado_bruto: Mapped[int] = mapped_column(SmallInteger)
+    parlamentar_id: Mapped[int] = mapped_column(
+        ForeignKey("parlamentar.id", ondelete="CASCADE"), index=True
+    )
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
+    fonte: Mapped[Fonte] = relationship()
+
+
 class Proposicao(Base):
     """Um projeto numa Casa: PL, PEC, requerimento...
 
@@ -286,6 +333,21 @@ class Proposicao(Base):
     fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
 
     fonte: Mapped[Fonte] = relationship()
+
+
+class ProposicaoTema(Base):
+    """Tema convertido da classificação oficial, com uma observação própria da fonte."""
+
+    __tablename__ = "proposicao_tema"
+    __table_args__ = (
+        CheckConstraint(_um_de("tema", tuple(tema.value for tema in TemaId)), name="tema"),
+    )
+
+    proposicao_id: Mapped[int] = mapped_column(
+        ForeignKey("proposicao.id", ondelete="CASCADE"), primary_key=True
+    )
+    tema: Mapped[str] = mapped_column(primary_key=True)
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
 
 
 # Quais proposições cada votação afetou. Na Câmara, a lista proposicoesAfetadas do
