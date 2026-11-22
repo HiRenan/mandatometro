@@ -77,10 +77,11 @@ Quando a agenda de domingo está ativa, `edicao enviar` usa o Resend para mandar
 
 ## Modelo de dados
 
-O banco guarda os dados da Câmara e do Senado, os atos do Diário Oficial, as edições da newsletter, a medição do piloto e as contas com o progresso das trilhas. Os modelos ficam em `apps/backend/src/mandatometro/db/modelos.py`, e cada mudança vira uma migration do Alembic.
+O banco guarda os dados da Câmara, do Senado e do TSE, os atos do Diário Oficial, as edições da newsletter, a medição do piloto e as contas com o progresso das trilhas. Os modelos ficam em `apps/backend/src/mandatometro/db/modelos.py`, e cada mudança vira uma migration do Alembic.
 
 - **Cada Casa tem os seus números:** parlamentar, proposição e votação se identificam pela Casa e pelo id que a Casa dá (`casa`, `id_externo`). Quando a mesma matéria aparece nas duas Casas, cada uma tem o seu registro. A numeração única de 2019 em diante permite relacioná-los por sigla, número e ano.
 - **Atos do Diário Oficial** se identificam por `origem` e `id_externo`. A seleção semanal usa a data de publicação.
+- **Candidaturas do TSE** se identificam por ano, código da eleição e `SQ_CANDIDATO`. A coleta grava os pares únicos ligados a parlamentares em exercício.
 - **Fonte em tudo:** cada dado coletado e cada item da edição aponta para uma `fonte`, com o endereço e a data da coleta. Sem fonte, o banco não grava.
 - **O partido fica no voto,** porque muda dentro do mandato. Os totais das nominais se contam pelos votos. Nas secretas do Senado, a coleta guarda matéria, votação e resultado, sem votos individuais; o banco não guarda os totais nem a modalidade. Ausência de votos no banco não significa zero votos na sessão nem identifica, sozinha, uma votação secreta.
 - **Ausência sem motivo:** toda ausência reconhecida do Senado (`AP`, `LS`, `MIS`, `NCom`, `LAP` e `LP`, em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, para a licença saúde ficar igual às outras. O voto só guarda os códigos de voto e de presença da lista `CODIGOS_GRAVADOS`, e o banco recusa os demais. Um código ainda não classificado, como `NA`, entra como `outro`, sem o código, e o log não leva o código nem a pessoa: a coleta registra só a votação e quantos códigos desconhecidos vieram nela.
@@ -131,6 +132,7 @@ erDiagram
         int tentativas
     }
     parlamentar ||--o{ mandato : "tem"
+    parlamentar ||--o{ candidatura : "disputou"
     parlamentar ||--o{ voto : "dá"
     votacao ||--o{ voto : "recebe"
     video_sessao |o--o{ votacao : "registra"
@@ -140,6 +142,7 @@ erDiagram
     edicao |o--o{ inscrito : "última aceita"
     fonte ||--o{ parlamentar : "comprova"
     fonte ||--o{ mandato : "comprova"
+    fonte ||--o{ candidatura : "comprova"
     fonte ||--o{ proposicao : "comprova"
     fonte ||--o{ votacao : "comprova"
     fonte ||--o{ video_sessao : "comprova"
@@ -168,6 +171,21 @@ erDiagram
         string uf
         string condicao "Titular, Suplente..."
         bool em_exercicio "na última coleta"
+        int fonte_id FK
+    }
+    candidatura {
+        int id PK
+        smallint ano UK
+        int codigo_eleicao UK
+        bigint id_externo UK "SQ_CANDIDATO"
+        smallint cargo "código do TSE"
+        string uf
+        string partido
+        string numero
+        string nome_urna
+        string resultado
+        smallint resultado_bruto
+        int parlamentar_id FK
         int fonte_id FK
     }
     proposicao {
@@ -301,7 +319,7 @@ pnpm dev                        # site na porta 3001 e API na 8000
 
 **Cliente da API.** `pnpm generate:client`. Veja o [contrato da API](AGENTS.md#conventions).
 
-**Migration nova.** Em `apps/backend`, use o próximo número de revisão. Um exemplo depois da `0011` é `uv run alembic revision --autogenerate --rev-id 0012 -m "cria a tabela orientacao"`. `uv run alembic check` diz se algum modelo mudou sem migration. Veja as [convenções de migrations](AGENTS.md#conventions).
+**Migration nova.** Em `apps/backend`, use o próximo número de revisão. Um exemplo depois da `0013` é `uv run alembic revision --autogenerate --rev-id 0014 -m "cria a tabela orientacao"`. `uv run alembic check` diz se algum modelo mudou sem migration. Veja as [convenções de migrations](AGENTS.md#conventions).
 
 ### Checagens
 
@@ -426,6 +444,15 @@ uv run mandatometro coleta destaques
 ```
 
 O comando grava os destaques da seção 1 pela data de publicação, incluindo portarias. Passe as duas datas ou use os sete dias completos anteriores no fuso de Brasília. Quando a coleta roda, o resumo é uma linha JSON com gravações, descartes e falhas. Saída 1 sinaliza falha ou coleta incompleta. O comando confere a conexão com o banco antes de pedir a primeira página. Se o banco não responder, o resumo traz o erro e zero chamadas. Sem a chave ou com datas inválidas, o comando imprime uma linha de texto fixo e sai com código 2. [Campos e paginação](docs/dicionario-de-dados.md#destaques-da-imprensa-nacional).
+
+**Coleta do TSE.** Em `apps/backend`, use `DATABASE_URL` para o banco de destino com a migration `0013` aplicada e os mandatos em exercício carregados.
+
+```bash
+uv run mandatometro coleta tse
+uv run mandatometro coleta tse --diretorio-zips /caminho/dos/zips
+```
+
+O primeiro comando baixa os dois ZIPs oficiais de candidaturas de 2022 e 2026. O segundo lê as cópias da pasta indicada. A carga repete as mesmas chaves e acrescenta uma observação de fonte por arquivo a cada execução completa. O resumo JSON mostra, por Casa e ano, os pares ligados, sem par, em conflito e descartados por incompatibilidade com o mandato. Em 2026, `outro_cargo` conta as candidaturas à outra Casa alcançadas pelo CPF da âncora de 2022 quando a ligação está livre de conflito. Se uma leitura falhar, a execução tenta a outra e retorna 1 sem gravar candidaturas ou fontes. Consulte os [campos do TSE](docs/dicionario-de-dados.md#candidaturas-do-tse) e o [disparo manual na hospedagem](docs/hospedagem.md#coletar-o-tse).
 
 ### Edição semanal
 

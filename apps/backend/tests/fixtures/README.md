@@ -73,4 +73,6 @@ Cada arquivo cobre um comportamento que o conector precisa tratar:
 
 ## Como atualizar
 
+Os CSVs de `tse/` foram escritos com dados inventados e os mesmos cabeçalhos dos arquivos oficiais de 2022 e 2026. Mantenha latin-1, aspas duplas, ponto e vírgula e CRLF. Os testes montam ZIPs temporários com esses CSVs e usam transporte local para verificar o download.
+
 Se a estrutura de uma API mudar, grave de novo o arquivo com a resposta íntegra (JSON indentado com 2 espaços, UTF-8, fim de linha LF), refaça a troca dos campos pessoais e atualize a data de coleta no topo deste arquivo e no dicionário.

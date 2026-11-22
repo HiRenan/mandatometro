@@ -4,9 +4,11 @@ O regulamento do hackathon (item 6.9) proíbe a demo de expor dados pessoais rea
 
 ## Parlamentares e candidatos
 
-CPF, título de eleitor e data de nascimento de parlamentares e candidatos servem só para ligar registros entre bases e ficam no banco. A API, o front, os logs e os fixtures de teste identificam pessoas pelo id interno.
+Desde a decisão de 21/11/2026, CPF, título de eleitor e data de nascimento de parlamentares e candidatos servem só para ligar registros entre bases e ficam apenas na memória durante a carga, quando necessários. O conector do TSE usa o CPF para confirmar a ligação entre eleições. A coleta da Câmara descarta `cpf` e `dataNascimento` de `/deputados/{id}`.
 
-No MVP, a coleta descarta `cpf` e `dataNascimento` de `/deputados/{id}`. O banco ainda não tem colunas para eles. A ligação por CPF só entra com o TSE, depois do MVP (#12 e #13). Veja os [campos pessoais das fontes](dicionario-de-dados.md#campos-pessoais).
+A API, o front, os logs e os fixtures de teste identificam pessoas pelo id interno.
+
+O banco recebe candidaturas com par único entre os parlamentares em exercício, ligadas pelo id interno. A carga guarda o nome de urna para essas candidaturas. Nome civil, documentos, nascimento e demais dados de cadastro ficam fora da tabela de candidaturas. Os resumos e logs trazem contagens, e as fixtures do TSE usam dados inventados. Veja os [campos pessoais das fontes](dicionario-de-dados.md#campos-pessoais).
 
 ## Ausências e afastamentos
 
