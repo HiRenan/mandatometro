@@ -21,6 +21,7 @@ from typing import Literal
 from uuid import UUID
 
 from sqlalchemy import (
+    BigInteger,
     CheckConstraint,
     Column,
     ForeignKey,
@@ -250,6 +251,70 @@ class Mandato(Base):
     fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
 
     parlamentar: Mapped[Parlamentar] = relationship()
+    fonte: Mapped[Fonte] = relationship()
+
+
+RESULTADOS_TSE = {
+    -1: "sem_resultado",
+    1: "eleito",
+    2: "eleito_por_qp",
+    3: "eleito_por_media",
+    4: "nao_eleito",
+    5: "suplente",
+}
+
+
+class Candidatura(Base):
+    """Candidatura do TSE ligada a um parlamentar pela coleta, sem documentos pessoais."""
+
+    __tablename__ = "candidatura"
+    __table_args__ = (
+        UniqueConstraint("ano", "codigo_eleicao", "id_externo"),
+        CheckConstraint("ano >= 2006", name="ano"),
+        CheckConstraint("codigo_eleicao > 0", name="codigo_eleicao"),
+        CheckConstraint("id_externo > 0", name="id_externo"),
+        CheckConstraint("cargo > 0", name="cargo"),
+        CheckConstraint("""uf COLLATE "C" ~ '^[A-Z]{2}$'""", name="uf"),
+        CheckConstraint("""numero COLLATE "C" ~ '^[0-9]+$'""", name="numero"),
+        CheckConstraint("btrim(nome_urna) <> ''", name="nome_urna"),
+        CheckConstraint(_um_de("resultado", (*RESULTADOS_TSE.values(), "outro")), name="resultado"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ano: Mapped[int] = mapped_column(SmallInteger)
+    codigo_eleicao: Mapped[int]
+    id_externo: Mapped[int] = mapped_column(BigInteger)
+    cargo: Mapped[int] = mapped_column(SmallInteger)
+    uf: Mapped[str] = mapped_column(String(2))
+    partido: Mapped[str]
+    numero: Mapped[str]
+    nome_urna: Mapped[str]
+    resultado: Mapped[str]
+    resultado_bruto: Mapped[int] = mapped_column(SmallInteger)
+    parlamentar_id: Mapped[int] = mapped_column(
+        ForeignKey("parlamentar.id", ondelete="CASCADE"), index=True
+    )
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
+    fonte: Mapped[Fonte] = relationship()
+
+
+class LinkCandidatura(Base):
+    """Endereço declarado ao TSE, na ordem do arquivo de redes da candidatura."""
+
+    __tablename__ = "link_candidatura"
+    __table_args__ = (
+        CheckConstraint("ordem > 0", name="ordem"),
+        CheckConstraint("url like 'http://%' or url like 'https://%'", name="url"),
+    )
+
+    candidatura_id: Mapped[int] = mapped_column(
+        ForeignKey("candidatura.id", ondelete="CASCADE"), primary_key=True
+    )
+    ordem: Mapped[int] = mapped_column(primary_key=True)
+    url: Mapped[str]
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
     fonte: Mapped[Fonte] = relationship()
 
 

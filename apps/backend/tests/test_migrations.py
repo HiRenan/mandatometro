@@ -18,6 +18,8 @@ TABELAS_DO_MVP = {
     "fonte",
     "parlamentar",
     "mandato",
+    "candidatura",
+    "link_candidatura",
     "proposicao",
     "votacao",
     "votacao_proposicao",
