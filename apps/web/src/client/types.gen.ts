@@ -213,6 +213,10 @@ export type DetalheVotacao = {
      */
     proposicoes: Array<ProposicaoAfetada>;
     /**
+     * Temas
+     */
+    temas: Array<TemaPublico>;
+    /**
      * Url Oficial
      *
      * Página oficial da votação, com o endereço da coleta como reserva. Nula se a fonte estiver sem endereço.
@@ -877,6 +881,22 @@ export type Saude = {
 };
 
 /**
+ * TemaId
+ */
+export type TemaId = 'saude' | 'educacao' | 'economia' | 'trabalho' | 'previdencia_assistencia' | 'direitos_cidadania' | 'seguranca_defesa' | 'justica' | 'meio_ambiente' | 'agropecuaria' | 'infraestrutura' | 'cidades_moradia' | 'ciencia_tecnologia' | 'cultura_esporte' | 'politica_governo' | 'orcamento_publico' | 'relacoes_internacionais' | 'homenagens';
+
+/**
+ * TemaPublico
+ */
+export type TemaPublico = {
+    id: TemaId;
+    /**
+     * Nome
+     */
+    nome: string;
+};
+
+/**
  * Termo
  */
 export type Termo = {
@@ -913,6 +933,10 @@ export type VotacaoPublica = {
      * Fontes
      */
     fontes: Array<FontePublica>;
+    /**
+     * Temas
+     */
+    temas: Array<TemaPublico>;
 };
 
 /**
@@ -967,6 +991,10 @@ export type VotoParlamentar = {
      * Proposicoes
      */
     proposicoes: Array<ProposicaoAfetada>;
+    /**
+     * Temas
+     */
+    temas: Array<TemaPublico>;
     /**
      * Url Oficial
      *
@@ -1981,6 +2009,12 @@ export type ListarVotosParlamentarData = {
          * Deslocamento
          */
         deslocamento?: number;
+        /**
+         * Tema
+         *
+         * Tema das proposições afetadas.
+         */
+        tema?: TemaId | null;
     };
     url: '/parlamentares/{id}/votos';
 };
@@ -2107,3 +2141,21 @@ export type HealthResponses = {
 };
 
 export type HealthResponse = HealthResponses[keyof HealthResponses];
+
+export type ListarTemasData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/temas';
+};
+
+export type ListarTemasResponses = {
+    /**
+     * Response Listar Temas
+     *
+     * Successful Response
+     */
+    200: Array<TemaPublico>;
+};
+
+export type ListarTemasResponse = ListarTemasResponses[keyof ListarTemasResponses];
