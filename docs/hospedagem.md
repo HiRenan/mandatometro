@@ -83,7 +83,7 @@ Para recuperar uma lacuna maior, preencha **inicio e fim juntos**, em `AAAA-MM-D
 
 1. Confirme que **Migrar banco** aplicou a revisão `0013` e que **Coletar Congresso** carregou os parlamentares em exercício na mesma branch.
 2. Em **Actions → Coletar TSE → Run workflow**, escolha `develop` para desenvolvimento ou `main` para produção. O job usa o segredo `DATABASE_URL` com pool do ambiente, aguarda a fila desse banco e tem até 10 minutos.
-3. Confira o commit executado e a linha JSON. `completa: true` confirma os quatro arquivos, e as contagens por Casa e ano indicam a cobertura da ligação. Se um arquivo falhar, a execução tenta os demais e fica vermelha. Repita o disparo para recuperar a carga.
+3. Confira o commit executado e a linha JSON. `completa: true` confirma os quatro arquivos, e as contagens por Casa e ano indicam a cobertura da ligação. Em 2026, `outro_cargo` conta as candidaturas à outra Casa encontradas pelo CPF da âncora de 2022. Se um arquivo falhar, a execução tenta os demais e fica vermelha. Repita o disparo para recuperar a carga.
 
 As duas leituras de candidaturas precisam concluir para a coleta gravar novos vínculos ou atualizar os registros de candidaturas confirmadas. Uma falha de leitura preserva as candidaturas gravadas. Se um ZIP de redes faltar, ficam pendentes os links daquele ano.
 
