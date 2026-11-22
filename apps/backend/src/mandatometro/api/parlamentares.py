@@ -14,6 +14,8 @@ from mandatometro.api.congresso import (
     contagem_por_valor,
     dados_da_votacao,
     ordem_alfabetica,
+    temas_das_votacoes,
+    voto_tem_tema,
 )
 from mandatometro.api.esquemas import (
     UF,
@@ -24,10 +26,12 @@ from mandatometro.api.esquemas import (
     ListaVotosParlamentar,
     MandatoPublico,
     ParlamentarPublico,
+    TemaPublico,
     VotoParlamentar,
 )
 from mandatometro.db import sessao as sessao_do_banco
 from mandatometro.db.modelos import Mandato, Parlamentar, Votacao, Voto
+from mandatometro.temas import TemaId
 
 ORDEM_DOS_VOTOS = (Votacao.data.desc(), Votacao.id.desc())
 
@@ -132,18 +136,19 @@ def obter_parlamentar(id: IdCongresso):
         )
 
 
-def _voto_publico(voto: Voto) -> VotoParlamentar:
+def _voto_publico(voto: Voto, temas: list[TemaPublico]) -> VotoParlamentar:
     return VotoParlamentar(
         votacao_id=voto.votacao_id,
         valor=voto.valor,
-        **dados_da_votacao(voto.votacao),
+        **dados_da_votacao(voto.votacao, temas),
     )
 
 
 @router.get(
     "/{id}/votos",
     summary="Listar os votos gravados do parlamentar da votação mais recente para a mais antiga",
-    description="Paginação por deslocamento, com desempate por id interno decrescente da votação.",
+    description="O filtro por tema é aplicado antes da paginação por deslocamento. "
+    "O desempate usa o id interno decrescente da votação.",
     response_model=ListaVotosParlamentar,
     responses={404: {"model": ErroParlamentar}},
 )
@@ -151,19 +156,22 @@ def listar_votos_parlamentar(
     id: IdCongresso,
     limite: Annotated[int, Query(ge=1, le=100)] = 20,
     deslocamento: Annotated[int, Query(ge=0)] = 0,
+    tema: Annotated[TemaId | None, Query(description="Tema das proposições afetadas.")] = None,
 ):
     with sessao_do_banco() as sessao:
         if sessao.get(Parlamentar, id) is None:
             return JSONResponse({"erro": "parlamentar_nao_encontrado"}, status_code=404)
 
-        por_parlamentar = Voto.parlamentar_id == id
-        total = sessao.scalar(select(func.count()).select_from(Voto).where(por_parlamentar))
+        filtros = [Voto.parlamentar_id == id]
+        if tema is not None:
+            filtros.append(voto_tem_tema(tema))
+        total = sessao.scalar(select(func.count()).select_from(Voto).where(*filtros))
         votos = []
         if deslocamento < total:
             registros = sessao.scalars(
                 select(Voto)
                 .join(Voto.votacao)
-                .where(por_parlamentar)
+                .where(*filtros)
                 .options(
                     contains_eager(Voto.votacao).joinedload(Votacao.fonte),
                     contains_eager(Voto.votacao).selectinload(Votacao.proposicoes),
@@ -171,8 +179,9 @@ def listar_votos_parlamentar(
                 .order_by(*ORDEM_DOS_VOTOS)
                 .limit(limite)
                 .offset(deslocamento)
-            )
-            votos = [_voto_publico(voto) for voto in registros]
+            ).all()
+            temas = temas_das_votacoes(sessao, [voto.votacao_id for voto in registros])
+            votos = [_voto_publico(voto, temas.get(voto.votacao_id, [])) for voto in registros]
         return ListaVotosParlamentar(
             votos=votos,
             total=total,

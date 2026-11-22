@@ -13,6 +13,7 @@ from mandatometro.api.congresso import (
     contagem_por_valor,
     dados_da_votacao,
     ordem_alfabetica,
+    temas_das_votacoes,
 )
 from mandatometro.api.esquemas import DetalheVotacao, ErroVotacao, PlacarPorPartido, VotoNominal
 from mandatometro.db import sessao as sessao_do_banco
@@ -66,10 +67,11 @@ def obter_votacao(id: IdCongresso):
             por_partido[voto.partido][voto.valor] += 1
 
         votos.sort(key=lambda v: ordem_alfabetica(v.nome, v.parlamentar_id))
+        temas = temas_das_votacoes(sessao, [id])
         return DetalheVotacao(
             id=votacao.id,
             casa=votacao.casa,
-            **dados_da_votacao(votacao),
+            **dados_da_votacao(votacao, temas.get(id, [])),
             placar=contagem_por_valor(total),
             placar_por_partido=[
                 PlacarPorPartido(partido=sigla, placar=contagem_por_valor(por_partido[sigla]))

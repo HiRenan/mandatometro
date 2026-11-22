@@ -1,7 +1,8 @@
 """Campos e regras de leitura compartilhados entre parlamentares e votações."""
 
 import logging
-from collections.abc import Mapping
+from collections import defaultdict
+from collections.abc import Collection, Mapping
 from typing import Annotated
 from unicodedata import combining, normalize
 
@@ -9,10 +10,19 @@ from fastapi import Path, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
-from mandatometro.api.esquemas import ContagemVotosParlamentar, ProposicaoAfetada
-from mandatometro.db.modelos import VALORES_DE_VOTO, Votacao
+from mandatometro.api.esquemas import ContagemVotosParlamentar, ProposicaoAfetada, TemaPublico
+from mandatometro.db.modelos import (
+    VALORES_DE_VOTO,
+    ProposicaoTema,
+    Votacao,
+    Voto,
+    votacao_proposicao,
+)
+from mandatometro.temas import TEMAS, TemaId
 
 IdCongresso = Annotated[
     int,
@@ -52,7 +62,35 @@ def contagem_por_valor(totais: Mapping[str, int]) -> ContagemVotosParlamentar:
     )
 
 
-def dados_da_votacao(votacao: Votacao) -> dict[str, object]:
+def temas_publicos(ids: Collection[str]) -> list[TemaPublico]:
+    return [TemaPublico(id=id_, nome=nome) for id_, nome in TEMAS.items() if id_ in ids]
+
+
+def _consulta_temas():
+    return select(votacao_proposicao.c.votacao_id, ProposicaoTema.tema).join(
+        ProposicaoTema, ProposicaoTema.proposicao_id == votacao_proposicao.c.proposicao_id
+    )
+
+
+def voto_tem_tema(tema: TemaId):
+    return (
+        _consulta_temas()
+        .where(votacao_proposicao.c.votacao_id == Voto.votacao_id, ProposicaoTema.tema == tema)
+        .exists()
+    )
+
+
+def temas_das_votacoes(sessao: Session, ids: Collection[int]) -> dict[int, list[TemaPublico]]:
+    if not ids:
+        return {}
+    consulta = _consulta_temas().where(votacao_proposicao.c.votacao_id.in_(ids)).distinct()
+    por_votacao: defaultdict[int, set[str]] = defaultdict(set)
+    for votacao_id, tema in sessao.execute(consulta):
+        por_votacao[votacao_id].add(tema)
+    return {id_: temas_publicos(temas) for id_, temas in por_votacao.items()}
+
+
+def dados_da_votacao(votacao: Votacao, temas: list[TemaPublico]) -> dict[str, object]:
     return {
         "data": votacao.data,
         "descricao": votacao.descricao,
@@ -61,6 +99,7 @@ def dados_da_votacao(votacao: Votacao) -> dict[str, object]:
             ProposicaoAfetada.model_validate(proposicao, from_attributes=True)
             for proposicao in sorted(votacao.proposicoes, key=lambda proposicao: proposicao.id)
         ],
+        "temas": temas,
         "url_oficial": votacao.fonte.url_publica or votacao.fonte.url or None,
         "coletado_em": votacao.fonte.coletado_em,
     }

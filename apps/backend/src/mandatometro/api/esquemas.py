@@ -7,6 +7,7 @@ from pydantic import UUID4, BaseModel, ConfigDict, EmailStr, Field, field_valida
 from mandatometro.avisos.inscricao import SituacaoInscricao
 from mandatometro.ia.esquemas import Pendencia
 from mandatometro.piloto import TOTAL_PERGUNTAS, Etapa, VersaoQuiz
+from mandatometro.temas import TemaId
 
 
 class PedidoInscricao(BaseModel):
@@ -70,12 +71,18 @@ class PlacarPublico(BaseModel):
     presidente: int
 
 
+class TemaPublico(BaseModel):
+    id: TemaId
+    nome: str
+
+
 class VotacaoPublica(BaseModel):
     id: int = Field(description="Id interno da votação gravado nos fatos da edição.")
     data: date
     resultado: Literal["aprovada", "rejeitada", "outro"]
     placar: PlacarPublico | None
     fontes: list[FontePublica]
+    temas: list[TemaPublico]
 
 
 class FatosPublicos(BaseModel):
@@ -201,6 +208,7 @@ class DadosVotacao(BaseModel):
     descricao: str
     resultado: Literal["aprovada", "rejeitada", "outro"]
     proposicoes: list[ProposicaoAfetada]
+    temas: list[TemaPublico]
     url_oficial: str | None = Field(
         description="Página oficial da votação, com o endereço da coleta como reserva. "
         "Nula se a fonte estiver sem endereço."
