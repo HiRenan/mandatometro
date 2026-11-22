@@ -2,6 +2,7 @@ import { globSync, readFileSync } from "node:fs";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { trilhas } from "../lib/conteudo/paginas.server";
+import { ESTADOS } from "../lib/parlamentares/estados";
 import { FRASE_DO_RECOMECO, frasesDoAndamento } from "../lib/quiz";
 
 // A altura de linha dos títulos na letra do cartaz (a Archivo 900 condensada, em
@@ -160,6 +161,7 @@ const SEM_SEGUNDA_LINHA = [
 	".aba-n",
 	".quiz-letra",
 	".votacao .contagem dd",
+	".numero-do-tipo",
 	".rodape .nome-do-site",
 ];
 
@@ -305,6 +307,12 @@ function cartazesDoTsx(arquivo: string) {
 					nomes.set(no.name.getText(), opcoes);
 			}
 		});
+	// O título da lista dos parlamentares é o da página ou o nome de um estado.
+	if (arquivo === "components/pagina-dos-parlamentares.tsx")
+		nomes.set("titulo", [
+			"Parlamentares",
+			...ESTADOS.map((estado) => estado.nome),
+		]);
 	// O título do cartaz da conta é o de uma das sete telas ou o da conclusão.
 	if (daConta)
 		nomes.set("titulo", [

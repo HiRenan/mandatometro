@@ -8,6 +8,7 @@ import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "./botao-continuar";
 import { InfograficoEmLinha } from "./infografico-em-linha";
 import { InscricaoNaNewsletter } from "./inscricao-na-newsletter";
 import { Palavras } from "./palavras";
+import { QuemRepresenta } from "./parlamentares/quem-representa";
 
 // O título em duas linhas: a de cima, na letra do cartaz; a de baixo, em letra de
 // máquina, com a tira das cinco fitas riscada embaixo.
@@ -17,14 +18,15 @@ const FRASE = "um passo de cada vez.";
 /**
  * A página inicial: o cartaz, com o título gigante, o painel de azulejos, o que
  * é o Mandatômetro e para quem ele é, e o botão que começa ou continua a trilha;
- * depois, o caminho de um projeto de lei, passo a passo, e a folha da inscrição
- * na newsletter, com o link das edições. A partir do lg, o painel fica à
+ * depois, o caminho de um projeto de lei, passo a passo, o bloco "Quem representa
+ * o seu estado" e a folha da inscrição na newsletter, com o link das edições. A partir do lg, o painel fica à
  * direita, de cima a baixo; antes disso, é uma faixa de duas fileiras no alto.
  * Abaixo do md, o "para quem" vem depois do botão (`ParaQuem`).
  */
 export function PaginaInicial({
 	pagina,
 	newsletter = false,
+	parlamentares = false,
 }: {
 	pagina: Dados;
 	/**
@@ -32,6 +34,8 @@ export function PaginaInicial({
 	 * API_URL do build). Na Vercel, ele fica vazio até a API ter casa (#23).
 	 */
 	newsletter?: boolean;
+	/** Se o bloco dos parlamentares aparece: também só onde o site tem a API. */
+	parlamentares?: boolean;
 }) {
 	const { trilha, caminho } = pagina;
 	const lidos = useArtigosLidos();
@@ -119,6 +123,7 @@ export function PaginaInicial({
 				</div>
 			</section>
 			{caminho && <InfograficoEmLinha caminho={caminho} trilha={trilha} />}
+			{parlamentares && <QuemRepresenta className="revelar" />}
 			{newsletter && (
 				<InscricaoNaNewsletter className="revelar">
 					{/* As edições aparecem onde a folha aparece: onde o site tem a API. */}
