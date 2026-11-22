@@ -165,8 +165,8 @@
 		font-family: var(--font-sans);
 		font-size: 0.75rem;
 		font-weight: 800;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
+		letter-spacing: calc(0.08em * var(--espacado));
+		text-transform: var(--caixa-alta);
 	}
 
 	.jogo-placa[data-narracao="true"] {
@@ -670,7 +670,9 @@
 	.jogo .lista-de-fontes a {
 		display: inline-block;
 		min-height: 44px;
+		max-width: 100%;
 		align-content: center;
+		overflow-wrap: anywhere;
 	}
 
 	.jogo-regras ol,

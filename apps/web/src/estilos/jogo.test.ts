@@ -18,6 +18,7 @@ it("mantém a fala em Literata sobre uma grade com espaço para o item da cena",
 	expect(regra('.jogo-placa[data-narracao="true"]')).not.toMatch(
 		/(?<!-)\bborder:/,
 	);
+	expect(regra(".jogo-placa")).toContain("text-transform: var(--caixa-alta);");
 	expect(css).toMatch(
 		/\.jogo-palco\[data-sobre-a-cena\] > \.jogo-frente \{[^}]*margin-block-start: var\(--espaco-do-item\);/,
 	);
@@ -32,7 +33,10 @@ it("contém o carimbo durante a batida e dá espaço para a casa atual na tela e
 });
 
 it("dá 44 px de altura aos links de referência do jogo", () => {
-	expect(regra(".jogo .lista-de-fontes a")).toContain("min-height: 44px;");
+	const links = regra(".jogo .lista-de-fontes a");
+	expect(links).toContain("min-height: 44px;");
+	expect(links).toContain("max-width: 100%;");
+	expect(links).toContain("overflow-wrap: anywhere;");
 	expect(css).toMatch(
 		/\.jogo-cartao-trilha a,\s*\.jogo \.lista-de-fontes a \{/,
 	);
