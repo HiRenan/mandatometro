@@ -660,7 +660,29 @@ O JSON conta `ligados`, `sem_par`, `em_conflito`, `derrubados_pela_trava` e `out
 
 Uma candidatura já ligada conserva o parlamentar gravado, inclusive quando ele sai do exercício. Se algum par nominal ou alcançado pelo CPF já tiver outro titular, a pessoa fica em conflito nos dois anos e conserva os vínculos anteriores. Tentar gravar para a mesma pessoa uma candidatura diferente no mesmo ano conta como conflito naquele ano e preserva o vínculo anterior.
 
-Para ligar as eleições históricas na #13, as chaves das candidaturas ligadas permitem reler `consulta_cand` e recuperar os identificadores em memória. A busca percorre todas as UFs. Em 2024 o CPF vem vazio e em 2012 falta em parte das linhas, segundo as notas da #13. Nesses casos, a ligação usa título de eleitor com data de nascimento. [Issue da série de bens](https://github.com/HiRenan/mandatometro/issues/13)
+Para ligar as eleições históricas na #13, as chaves das candidaturas ligadas permitem reler `consulta_cand` e recuperar os CPFs em memória. A busca percorre todas as UFs. A carga cobre as eleições gerais. A cobertura do CPF nas municipais de 2012 e 2024 e a proposta de usar título de eleitor com data de nascimento nesses casos ficam para uma segunda etapa. [Issue da série de bens](https://github.com/HiRenan/mandatometro/issues/13)
+
+## Bens declarados ao TSE
+
+O CDN publica `bem_candidato_AAAA.zip` na pasta `bem_candidato`. Os arquivos das seis eleições gerais de 2006 a 2026 trazem o consolidado `BRASIL`, 27 UFs e `BR`. Em cada ZIP, a carga lê só o CSV consolidado em fluxo, com os mesmos limites de 50 MB para o ZIP e 300 MB para o membro aberto. Os CSVs usam Latin-1, ponto e vírgula, aspas duplas e CRLF. A descrição livre `DS_BEM_CANDIDATO` tem uma sequência compatível com UTF-8 no arquivo de 2022. O leitor descarta a descrição assim que o CSV separa os campos e continua a recusar BOM, bytes nulos e sequências UTF-8 nos demais dados. [Arquivo de bens de 2022](https://cdn.tse.jus.br/estatistica/sead/odsele/bem_candidato/bem_candidato_2022.zip)
+
+| Registro | Campo | Procedência |
+| --- | --- | --- |
+| `candidatura_patrimonio` | `ano`, `codigo_eleicao`, `uf`, `id_externo` | Chave com `ANO_ELEICAO`, `CD_ELEICAO`, `SG_UF` e `SQ_CANDIDATO` nos dois CSVs. Em 2006, o número da candidatura se repete entre UFs. `BR` identifica uma candidatura nacional. |
+| | `cargo`, `parlamentar_id` | Código `CD_CARGO` e id interno do parlamentar confirmado. |
+| | `fonte_candidatura_id`, `fonte_bens_id` | Uma observação por ZIP usado na gravação, com a URL oficial e a hora da coleta. |
+| `bem_declarado` | `candidatura_id`, `tipo` | Chave da agregação por candidatura e `CD_TIPO_BEM_CANDIDATO`. O código desconhecido entra na soma e no resumo. |
+| | `valor_centavos` | Soma de `VR_BEM_CANDIDATO` por tipo, no valor nominal em centavos inteiros. |
+
+Os CSVs de bens têm 19 colunas. Em 2006 e 2010, a ordem do bem vem em `NR_ORDEM_CANDIDATO` e as colunas de atualização são `DT_ULTIMA_ATUALIZACAO` e `HH_ULTIMA_ATUALIZACAO`. Desde 2014, são `NR_ORDEM_BEM_CANDIDATO`, `DT_ULT_ATUAL_BEM_CANDIDATO` e `HH_ULT_ATUAL_BEM_CANDIDATO`. A ordem distingue os bens da mesma candidatura. O `consulta_cand` tem 63 colunas em 2006 e 2010, 50 em 2014 e 2018 e 51 nos dois anos recentes. A carga lê os campos de ligação pelo cabeçalho.
+
+O CPF de uma âncora de 2022 ou 2026 precisa apontar para uma única candidatura naquele ano. CPFs compartilhados entre parlamentares ou âncoras da mesma pessoa com CPFs diferentes bloqueiam a ligação. Se o CPF aponta para mais de uma candidatura no ano, aquele ano fica em conflito. O resumo conta as linhas com CPF indisponível. A carga relê as chaves de todo o histórico já gravado para conferir o CPF antes de aceitar novas eleições. A mesma chave conserva o dono e cada parlamentar tem até uma eleição por ano.
+
+Um valor vazio, negativo, malformado ou acima do limite impede a soma da declaração. O leitor também invalida uma declaração quando a ordem do mesmo bem traz dois valores ou tipos diferentes. Nesses casos, uma declaração completa de uma carga anterior é preservada. Zero declarado é registrado como zero. Quando o arquivo de bens não traz linhas da eleição confirmada, ou a primeira leitura não obtém um total válido, a API devolve `total_centavos: null`. Os centavos são limitados ao maior inteiro exato no JavaScript, inclusive na soma por eleição.
+
+O comando `coleta bens-tse` só grava depois de ler os 12 arquivos completos, incluindo o último registro de cada CSV. A gravação usa a mesma trava da carga de candidaturas e ocorre numa única transação. O resumo mostra candidaturas, totais por tipo processados e contagens de descartes. Uma falha de arquivo retorna 1 e preserva todas as gravações anteriores.
+
+`GET /parlamentares/{id}/patrimonio` devolve `eleicoes` em ordem de ano, com `ano`, `cargo` (código e nome), `uf`, `total_centavos` e `fonte` (URL do ZIP de bens e hora da coleta). Os rótulos vêm da lista fixa do TSE no código. A correção pelo IPCA fica com a apresentação da série.
 
 ## Campos pessoais
 
@@ -676,4 +698,4 @@ Nome, partido, UF e voto de parlamentar **não** são dados pessoais protegidos 
 
 - **Separar a votação de mérito das de rito.** Das 27 votações do plenário da Câmara na semana do exemplo, a maioria é procedimental ("Aprovada a Emenda de Redação", "Aprovada a Redação Final"), e as 4 do Senado eram todas da mesma PEC. A newsletter precisa de um critério para escolher o que contar. Fica para a #22, que monta a edição.
 - **As orientações de bancada,** depois do MVP (decisão do Renan na #7): o banco do MVP não tem tabela para elas.
-- **A série de bens do TSE** de 2006 a 2026 fica na #13 e usa os vínculos da #12 como ponto de partida.
+- **A série de bens das eleições municipais** fica para uma segunda etapa.

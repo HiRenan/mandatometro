@@ -19,6 +19,8 @@ TABELAS_DO_MVP = {
     "parlamentar",
     "mandato",
     "candidatura",
+    "candidatura_patrimonio",
+    "bem_declarado",
     "proposicao",
     "video_sessao",
     "votacao",
