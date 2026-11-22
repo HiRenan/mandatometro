@@ -12,6 +12,8 @@ No MVP, a coleta descarta `cpf` e `dataNascimento` de `/deputados/{id}`. O banco
 
 Motivo de ausência fica fora do banco, para a licença saúde não ser deduzida: toda ausência do Senado (AP, LS, MIS, NCom, LAP, LP e as que entrarem em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, igual às outras, e o motivo de afastamento do senador não é gravado. O voto só guarda os códigos de voto e de presença de `CODIGOS_GRAVADOS` em `valor_bruto`, o que o CHECK do banco garante, e um código novo entra como `outro`, sem o código. O banco guarda `P-NRV`, de quem estava presente. O log também não leva o código nem a pessoa, porque o log junto com o banco apontaria quem recebeu um código que pode ser de saúde: a coleta (#10 e #11) registra a votação e quantos códigos desconhecidos vieram nela, e quem for classificar o código o lê na fonte pública.
 
+A API dos parlamentares usa o valor normalizado (`voto.valor`) no histórico e na contagem de votos.
+
 ## Atos do Diário Oficial
 
 Antes do modelo, o filtro retém atos da seção 2 e atos com rótulo de pessoal ou padrões de documento, como CPF e matrícula. No título e na ementa, procura palavras do vocabulário de atos de pessoal e sinais como duas ou mais palavras com inicial maiúscula compatíveis com um nome ou indicação de lista nominal. Um título ou uma ementa em caixa alta com termo do vocabulário também retém o ato. Só os atos elegíveis seguem para a seleção pelo modelo. O resumo do rascunho informa o id interno e o código de cada ato retido. Para um item que já está na edição, a revisão usa o número do item e o código. Testes e fixtures usam atos e dados pessoais inteiramente inventados.
