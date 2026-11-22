@@ -106,6 +106,113 @@ class EdicaoPublica(ResumoEdicao):
     itens: list[ItemPublico]
 
 
+Casa = Literal["camara", "senado"]
+UF = Literal[
+    "AC",
+    "AL",
+    "AM",
+    "AP",
+    "BA",
+    "CE",
+    "DF",
+    "ES",
+    "GO",
+    "MA",
+    "MG",
+    "MS",
+    "MT",
+    "PA",
+    "PB",
+    "PE",
+    "PI",
+    "PR",
+    "RJ",
+    "RN",
+    "RO",
+    "RR",
+    "RS",
+    "SC",
+    "SE",
+    "SP",
+    "TO",
+]
+
+
+class ErroParlamentar(BaseModel):
+    erro: Literal["dados_invalidos", "parlamentar_nao_encontrado", "servico_indisponivel"]
+
+
+class ParlamentarPublico(BaseModel):
+    id: int = Field(description="Id interno do parlamentar.")
+    nome: str
+    casa: Casa
+    uf: str | None = Field(
+        description="UF do mandato em exercício de maior legislatura. No detalhe, usa o "
+        "mandato de maior legislatura se nenhum estiver em exercício. Nula sem mandato."
+    )
+    partido: str | None = Field(
+        description="Sigla registrada no voto mais recente pela data da votação, com desempate "
+        "pelo maior id interno da votação. Nula se o voto não informa partido ou se não há voto."
+    )
+
+
+class ListaParlamentares(BaseModel):
+    parlamentares: list[ParlamentarPublico]
+
+
+class MandatoPublico(BaseModel):
+    legislatura: int
+    uf: str
+    condicao: str | None
+    em_exercicio: bool
+
+
+class ContagemVotosParlamentar(BaseModel):
+    sim: int
+    nao: int
+    abstencao: int
+    obstrucao: int
+    presidente: int
+    nao_votou: int
+    outro: int
+
+
+class DetalheParlamentar(ParlamentarPublico):
+    mandatos: list[MandatoPublico]
+    contagem_votos: ContagemVotosParlamentar = Field(
+        description="Contagem dos registros de voto deste parlamentar, por valor normalizado. "
+        "Uma votação sem registro da pessoa fica fora da contagem."
+    )
+
+
+class ProposicaoAfetada(BaseModel):
+    sigla: str
+    numero: int
+    ano: int
+    ementa: str | None
+
+
+class VotoParlamentar(BaseModel):
+    votacao_id: int = Field(description="Id interno da votação.")
+    data: date
+    descricao: str
+    resultado: Literal["aprovada", "rejeitada", "outro"]
+    proposicoes: list[ProposicaoAfetada]
+    valor: Literal["sim", "nao", "abstencao", "obstrucao", "presidente", "nao_votou", "outro"]
+    url_oficial: str | None = Field(
+        description="Página oficial da votação, com o endereço da coleta como reserva. "
+        "Nula se a fonte estiver sem endereço."
+    )
+    coletado_em: datetime = Field(description="Data e hora de coleta da fonte da votação.")
+
+
+class ListaVotosParlamentar(BaseModel):
+    votos: list[VotoParlamentar]
+    total: int
+    limite: int
+    deslocamento: int
+
+
 class ErroPainel(BaseModel):
     detail: str
 

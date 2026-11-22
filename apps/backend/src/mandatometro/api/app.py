@@ -8,6 +8,7 @@ from mandatometro.api.edicoes import router as edicoes
 from mandatometro.api.newsletter import router as newsletter
 from mandatometro.api.painel import AcessoPainel
 from mandatometro.api.painel import router as painel
+from mandatometro.api.parlamentares import router as parlamentares
 from mandatometro.api.piloto import router as piloto
 from mandatometro.config import config
 
@@ -32,6 +33,7 @@ app.include_router(newsletter)
 app.include_router(contas)
 app.include_router(edicoes)
 app.include_router(painel)
+app.include_router(parlamentares)
 app.include_router(piloto)
 
 
