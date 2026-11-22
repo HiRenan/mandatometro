@@ -46,6 +46,7 @@ _CHAVE_CANDIDATURA = ("ano", "codigo_eleicao", "id_externo")
 
 type ChaveCandidatura = tuple[int, ChaveTse]
 type ParesNominais = dict[int, dict[ChaveTse, CandidaturaTse]]
+type CandidaturasGravadas = dict[ChaveCandidatura, CandidaturaTse | None]
 
 
 @dataclass(frozen=True, repr=False)
@@ -155,14 +156,18 @@ def _conflitos_das_cadeias(
     pares_nominais: dict[int, ParesNominais],
     por_cpf: dict[tuple[int, str], list[CandidaturaTse]],
     donos: dict[ChaveCandidatura, int],
+    gravadas: dict[int, CandidaturasGravadas],
 ) -> set[int]:
     por_candidatura: dict[ChaveCandidatura, set[int]] = defaultdict(set)
     por_documento: dict[str, set[int]] = defaultdict(set)
     conflitos = set()
-    for pessoa, pares in pares_nominais.items():
+    for pessoa in pares_nominais.keys() | gravadas.keys():
+        pares = pares_nominais.get(pessoa, {})
+        historico = gravadas.get(pessoa, {})
         # Mesmo um par múltiplo ou incompatível é evidência de uma possível identidade.
         cpfs = {c.cpf for cs in pares.values() for c in cs.values() if c.cpf}
-        chaves = {(ano, chave) for ano, cs in pares.items() for chave in cs}
+        cpfs.update(c.cpf for c in historico.values() if c and c.cpf)
+        chaves = {(ano, chave) for ano, cs in pares.items() for chave in cs} | historico.keys()
         for cpf in cpfs:
             por_documento[cpf].add(pessoa)
             for ano in ANOS:
@@ -186,8 +191,10 @@ def _ligar(
 ) -> dict[int, dict[ChaveTse, tuple[CandidaturaTse, int]]]:
     nominais = defaultdict(list)
     por_cpf = defaultdict(list)
+    por_chave = {}
     for ano, candidaturas in arquivos.items():
         for c in candidaturas:
+            por_chave[ano, c.chave] = c
             casa = CASA_POR_CARGO[c.cargo]
             for nome in {_nome(c.nome_urna), _nome(c.nome_civil)} - {""}:
                 nominais[ano, casa, c.uf, nome].append(c)
@@ -208,10 +215,10 @@ def _ligar(
             for ano in ANOS
         }
 
-    conflitos = _conflitos_das_cadeias(pares_nominais, por_cpf, donos)
-    por_pessoa = defaultdict(set)
-    for (ano, chave), dono in donos.items():
-        por_pessoa[ano, dono].add(chave)
+    gravadas: dict[int, CandidaturasGravadas] = defaultdict(dict)
+    for chave, dono in donos.items():
+        gravadas[dono][chave] = por_chave.get(chave)
+    conflitos = _conflitos_das_cadeias(pares_nominais, por_cpf, donos, gravadas)
 
     ligadas: dict[int, dict[ChaveTse, tuple[CandidaturaTse, int]]] = {ano: {} for ano in arquivos}
     for pessoa, mandatos in por_parlamentar.items():
@@ -228,17 +235,28 @@ def _ligar(
             continue
 
         candidaturas_por_cpf, outro_cargo = ponte
+        propostas = candidaturas_por_cpf | compativeis
+        historico = gravadas.get(pessoa, {})
+        novos_cpfs = {c.cpf for ano, c in propostas.items() if (ano, c.chave) not in historico}
+        cpfs = novos_cpfs | {c.cpf if c else None for c in historico.values()}
+        conflito_historico = bool(historico and novos_cpfs) and (len(cpfs) != 1 or None in cpfs)
         for ano in ANOS:
             resumo = contagens[ano][p.casa]
-            if ano == 2026 and outro_cargo:
+            c = propostas.get(ano)
+            outra_ficha_no_ano = c is not None and any(
+                ano_gravado == ano and chave != c.chave for ano_gravado, chave in historico
+            )
+            if conflito_historico or outra_ficha_no_ano:
+                resumo["em_conflito"] += 1
+                # O veto a vínculos novos permite atualizar uma ficha já ligada ao titular.
+                if c and not outra_ficha_no_ano and (ano, c.chave) in historico:
+                    ligadas[ano][c.chave] = c, pessoa
+            elif ano == 2026 and outro_cargo:
                 resumo["outro_cargo"] += 1
             elif ano in unicos and ano not in compativeis:
                 resumo["derrubados_pela_trava"] += 1
-            elif c := compativeis.get(ano) or candidaturas_por_cpf.get(ano):
-                if por_pessoa[ano, pessoa] - {c.chave}:
-                    resumo["em_conflito"] += 1
-                else:
-                    ligadas[ano][c.chave] = c, pessoa
+            elif c:
+                ligadas[ano][c.chave] = c, pessoa
             else:
                 resumo["sem_par"] += 1
     return ligadas
@@ -339,7 +357,7 @@ def _coletar(
                         Candidatura.codigo_eleicao,
                         Candidatura.id_externo,
                         Candidatura.parlamentar_id,
-                    ).where(Candidatura.ano.in_(ANOS))
+                    )
                 )
             }
             ligadas = _ligar(em_exercicio, candidaturas, donos, contagens)

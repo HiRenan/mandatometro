@@ -157,10 +157,13 @@ def _linhas(
         TextIOWrapper(BufferedReader(_LeituraCSV(bruto)), encoding="latin-1", newline="") as csv_,
     ):
         fim = False
+        linha_terminada = False
 
         def linhas_fisicas():
-            nonlocal fim
-            yield from csv_
+            nonlocal fim, linha_terminada
+            for linha in csv_:
+                linha_terminada = linha.endswith(("\r", "\n"))
+                yield linha
             fim = True
 
         leitor = csv.reader(linhas_fisicas(), delimiter=";", strict=True)
@@ -179,6 +182,8 @@ def _linhas(
                 continue
             if len(valores) == len(colunas):
                 yield dict(zip(colunas, valores, strict=True))
+            elif len(valores) < len(colunas) and not linha_terminada:
+                raise ArquivoInvalido("Registro CSV truncado.")
             else:
                 descartes["linha_invalida"] += 1
 

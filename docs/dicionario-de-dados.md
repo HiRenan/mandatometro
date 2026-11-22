@@ -658,7 +658,11 @@ Antes de decidir os vínculos, a coleta compara todos os pares nominais e todas 
 
 O JSON conta `ligados`, `sem_par`, `em_conflito`, `derrubados_pela_trava` e `outro_cargo` por Casa e ano, além das gravações, fontes, descartes e falhas por arquivo. `outro_cargo` conta em 2026 a candidatura à outra Casa encontrada pelo CPF da âncora de 2022 quando a ligação está livre de conflito. Uma linha com quantidade errada de campos, valor inválido ou erro de aspas recuperável entra nos descartes e as demais seguem. Uma aspa de abertura sem fechamento pode consumir a linha seguinte, e as duas contam como um descarte. Um ZIP ausente, membro ou cabeçalho inválido ou CSV ilegível deixa a outra leitura seguir, retorna código 1 e zera as contagens de ligação. As candidaturas e fontes só são gravadas após a leitura completa dos dois arquivos e numa única transação.
 
+Um último registro com menos campos que o cabeçalho e sem quebra de linha invalida o arquivo, e a carga retorna 1 sem gravar candidaturas ou fontes.
+
 Uma candidatura já ligada conserva o parlamentar gravado, inclusive quando ele sai do exercício. Se algum par nominal ou alcançado pelo CPF já tiver outro titular, a pessoa fica em conflito nos dois anos e conserva os vínculos anteriores. Tentar gravar para a mesma pessoa uma candidatura diferente no mesmo ano conta como conflito naquele ano e preserva o vínculo anterior.
+
+Para quem já tem candidaturas gravadas, a coleta as relê pela chave e usa seus CPFs em memória para detectar disputas entre parlamentares e vetar vínculos novos nos dois anos quando faltar uma ficha ou um CPF, ou quando os CPFs divergirem.
 
 Para ligar as eleições históricas na #13, as chaves das candidaturas ligadas permitem reler `consulta_cand` e recuperar os identificadores em memória. A busca percorre todas as UFs. Em 2024 o CPF vem vazio e em 2012 falta em parte das linhas, segundo as notas da #13. Nesses casos, a ligação usa título de eleitor com data de nascimento. [Issue da série de bens](https://github.com/HiRenan/mandatometro/issues/13)
 

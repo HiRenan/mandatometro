@@ -514,6 +514,123 @@ def test_titular_divergente_da_ancora_bloqueia_nova_candidatura_alcancada_em_202
     assert sessao.execute(campos).one() == vinculo
 
 
+def test_nome_parlamentar_novo_nao_troca_o_cpf_do_titular(
+    arquivos, sessao, cadastrar_parlamentar, capsys
+):
+    antigo, novo = "Urna QA Nome Anterior", "Urna QA Nome de Homônimo"
+    titular = cadastrar_parlamentar("camara", antigo, "SP")
+    cadastrar_parlamentar("camara", novo, "SP", ativo=False)
+    cpf = "00000000901"
+    _gravar_fixture(arquivos, 2022, [_candidatura(2022, 1, antigo, cpf=cpf)])
+    _gravar_fixture(arquivos, 2026, [_candidatura(2026, 4, "Urna QA Sem Par", uf="AM")])
+    fichas = select(Candidatura.id_externo, Candidatura.parlamentar_id).order_by(Candidatura.ano)
+    _carregar(arquivos, capsys)
+    assert sessao.execute(fichas).all() == [(1, titular)]
+
+    pessoa = sessao.get(Parlamentar, titular)
+    pessoa.nome = novo
+    sessao.flush()
+    _gravar_fixture(
+        arquivos,
+        2026,
+        [
+            _candidatura(2026, 2, novo, cpf="00000000902"),
+            _candidatura(2026, 3, "Urna QA em Outra UF", uf="MG", cpf=cpf),
+        ],
+    )
+    resumo = _carregar(arquivos, capsys)
+    assert [resumo[str(ano)]["camara"]["em_conflito"] for ano in (2022, 2026)] == [1, 1]
+    assert sessao.execute(fichas).all() == [(1, titular)]
+
+    pessoa.nome = antigo
+    sessao.flush()
+    resumo = _carregar(arquivos, capsys)
+    assert resumo["2026"]["camara"]["ligados"] == 1
+    assert sessao.execute(fichas).all() == [(1, titular), (3, titular)]
+
+
+@pytest.mark.parametrize("ficha_anterior", ["ausente", "sem_cpf"])
+def test_ficha_gravada_sem_cpf_disponivel_veta_novo_vinculo(
+    arquivos, sessao, cadastrar_parlamentar, capsys, ficha_anterior
+):
+    nome = "Urna QA Titular com Histórico"
+    titular = cadastrar_parlamentar("camara", nome, "SP")
+    cpf = "00000000901"
+    _gravar_fixture(arquivos, 2022, [_candidatura(2022, 1, nome, cpf=cpf)])
+    _gravar_fixture(arquivos, 2026, [_candidatura(2026, 3, "Urna QA Sem Par", uf="AM")])
+    _carregar(arquivos, capsys)
+
+    anterior = (
+        _candidatura(2022, 3, "Urna QA Sem Par", uf="AM")
+        if ficha_anterior == "ausente"
+        else _candidatura(2022, 1, nome)
+    )
+    _gravar_fixture(arquivos, 2022, [anterior])
+    _gravar_fixture(arquivos, 2026, [_candidatura(2026, 2, nome, cpf=cpf)])
+    resumo = _carregar(arquivos, capsys)
+    assert [resumo[str(ano)]["camara"]["em_conflito"] for ano in (2022, 2026)] == [1, 1]
+    assert sessao.execute(select(Candidatura.id_externo, Candidatura.parlamentar_id)).all() == [
+        (1, titular)
+    ]
+
+
+def test_ficha_nova_sem_cpf_nao_impede_atualizar_a_ficha_do_titular(
+    arquivos, sessao, cadastrar_parlamentar, capsys
+):
+    nome = "Urna QA Sem Documento na Ficha Nova"
+    titular = cadastrar_parlamentar("camara", nome, "SP")
+    anterior = _candidatura(2022, 1, nome, cpf="00000000901")
+    _gravar_fixture(arquivos, 2022, [anterior])
+    _gravar_fixture(arquivos, 2026, [_candidatura(2026, 3, "Urna QA Sem Par", uf="AM")])
+    _carregar(arquivos, capsys)
+    campos = select(Candidatura.id, Candidatura.parlamentar_id, Candidatura.partido)
+    ficha = sessao.execute(campos).one()
+
+    _gravar_fixture(arquivos, 2022, [{**anterior, "SG_PARTIDO": "QAF"}])
+    _gravar_fixture(arquivos, 2026, [_candidatura(2026, 2, nome)])
+    resumo = _carregar(arquivos, capsys)
+    assert [resumo[str(ano)]["camara"]["em_conflito"] for ano in (2022, 2026)] == [1, 1]
+    assert sessao.execute(campos).all() == [(ficha.id, titular, "QAF")]
+
+
+def test_recoleta_identica_das_duas_fichas_sem_cpf_nao_cria_conflito(
+    arquivos, sessao, cadastrar_parlamentar, capsys
+):
+    nome = "Urna QA Histórico sem Documento"
+    titular = cadastrar_parlamentar("camara", nome, "SP")
+    for ano in (2022, 2026):
+        _gravar_fixture(arquivos, ano, [_candidatura(ano, ano + 1, nome)])
+    campos = select(Candidatura.ano, Candidatura.id, Candidatura.parlamentar_id).order_by(
+        Candidatura.ano
+    )
+    primeira = _carregar(arquivos, capsys)
+    fichas = sessao.execute(campos).all()
+    assert [(a, p) for a, _, p in fichas] == [(2022, titular), (2026, titular)]
+    assert _carregar(arquivos, capsys) == primeira
+    assert sessao.execute(campos).all() == fichas
+
+
+def test_ficha_gravada_fora_da_busca_nominal_ainda_disputa_cpf(
+    arquivos, sessao, cadastrar_parlamentar, capsys
+):
+    antigo, outro = "Urna QA Nome Histórico", "Urna QA Outro Titular"
+    titular = cadastrar_parlamentar("camara", antigo, "SP")
+    cadastrar_parlamentar("camara", outro, "MG")
+    cpf = "00000000901"
+    _gravar_fixture(arquivos, 2022, [_candidatura(2022, 1, antigo, cpf=cpf)])
+    _gravar_fixture(arquivos, 2026, [_candidatura(2026, 3, "Urna QA Sem Par", uf="AM")])
+    _carregar(arquivos, capsys)
+
+    sessao.get(Parlamentar, titular).nome = "Urna QA Nome Atualizado"
+    sessao.flush()
+    _gravar_fixture(arquivos, 2026, [_candidatura(2026, 2, outro, uf="MG", cpf=cpf)])
+    resumo = _carregar(arquivos, capsys)
+    assert [resumo[str(ano)]["camara"]["em_conflito"] for ano in (2022, 2026)] == [2, 2]
+    assert sessao.execute(select(Candidatura.id_externo, Candidatura.parlamentar_id)).all() == [
+        (1, titular)
+    ]
+
+
 @pytest.mark.parametrize(("presente", "faltante"), [(2022, 2026), (2026, 2022)])
 def test_sem_os_dois_arquivos_de_candidaturas_nao_grava_em_banco_sem_vinculos(
     arquivos, sessao, cadastrar_parlamentar, capsys, presente, faltante
@@ -547,6 +664,42 @@ def test_carga_parcial_preserva_candidaturas_e_fontes_existentes(
     assert resumo["2026"]["arquivos"]["consulta_cand"]["falhas"] == {"invalido": 1}
     assert resumo["2022"]["arquivos"]["consulta_cand"]["falhas"] == {"candidaturas_incompletas": 1}
     assert resumo["2022"]["camara"]["ligados"] == resumo["2026"]["camara"]["ligados"] == 0
+    assert sessao.execute(fichas).all() == candidaturas
+    assert sessao.execute(origens).all() == fontes
+
+
+@pytest.mark.parametrize("aspa_aberta", [False, True], ids=["campo-completo", "aspa-aberta"])
+def test_csv_truncado_no_ultimo_registro_reverte_toda_a_carga(
+    arquivos, sessao, cadastrar_parlamentar, capsys, aspa_aberta
+):
+    nome = "Urna QA CSV Truncado"
+    cadastrar_parlamentar("camara", nome, "SP")
+    cpf = "00000000901"
+    anterior = _candidatura(2022, 1, nome, cpf=cpf)
+    _gravar_fixture(arquivos, 2022, [anterior])
+    _gravar_fixture(arquivos, 2026, [_candidatura(2026, 3, "Urna QA Sem Par", uf="AM")])
+    _carregar(arquivos, capsys)
+    fichas = select(*Candidatura.__table__.columns).order_by(Candidatura.id)
+    origens = select(*Fonte.__table__.columns).order_by(Fonte.id)
+    candidaturas, fontes = sessao.execute(fichas).all(), sessao.execute(origens).all()
+
+    _gravar_fixture(arquivos, 2022, [{**anterior, "SG_PARTIDO": "QAF"}])
+    _gravar_fixture(
+        arquivos,
+        2026,
+        [_candidatura(2026, 2, nome, cpf=cpf), _candidatura(2026, 3, "Urna QA Ficha Cortada")],
+    )
+    caminho = arquivos / "consulta_cand_2026.zip"
+    membro = "consulta_cand_2026_BRASIL.csv"
+    with ZipFile(caminho) as arquivo:
+        prefixo, ultimo, _ = arquivo.read(membro).rsplit(b"\r\n", 2)
+    corte = b";".join(ultimo.split(b";", 7)[:7])
+    with ZipFile(caminho, "w") as arquivo:
+        arquivo.writestr(membro, prefixo + b"\r\n" + (corte[:-1] if aspa_aberta else corte))
+
+    resumo = _carregar(arquivos, capsys, completa=False)
+    assert resumo["2026"]["arquivos"]["consulta_cand"]["falhas"] == {"invalido": 1}
+    assert resumo["2022"]["arquivos"]["consulta_cand"]["falhas"] == {"candidaturas_incompletas": 1}
     assert sessao.execute(fichas).all() == candidaturas
     assert sessao.execute(origens).all() == fontes
 
