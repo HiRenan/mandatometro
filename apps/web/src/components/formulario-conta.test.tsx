@@ -173,14 +173,16 @@ describe("o termo no cadastro", () => {
 
 describe("o aviso de e-mail na conclusão", () => {
 	it("marca o status como ocupado até concluir o pedido da newsletter", async () => {
+		let responderCadastro!: (resposta: Response) => void;
+		const cadastro = new Promise<Response>((resolver) => {
+			responderCadastro = resolver;
+		});
 		let responderInscricao!: (resposta: Response) => void;
 		const inscricao = new Promise<Response>((resolver) => {
 			responderInscricao = resolver;
 		});
 		versaoNaApi(VERSAO_DO_TERMO);
-		pedidosAApi
-			.mockResolvedValueOnce(new Response(null, { status: 204 }))
-			.mockReturnValueOnce(inscricao);
+		pedidosAApi.mockReturnValueOnce(cadastro).mockReturnValueOnce(inscricao);
 		render(<FormularioConta modo="cadastro" />);
 		await screen.findByRole("link", { name: "o termo de consentimento" });
 
@@ -191,6 +193,12 @@ describe("o aviso de e-mail na conclusão", () => {
 		fireEvent.click(botao());
 
 		const status = screen.getByRole("status");
+		expect(status.textContent).toBe("Aguarde…");
+		expect(status.hasAttribute("aria-busy")).toBe(false);
+
+		await act(async () =>
+			responderCadastro(new Response(null, { status: 204 })),
+		);
 		await waitFor(() => expect(status.textContent).toBe(conclusaoDoCadastro));
 		expect(screen.getByRole("status", { busy: true })).toBe(status);
 
@@ -249,6 +257,74 @@ describe("o aviso de e-mail na conclusão", () => {
 
 // As telas da conta no cartaz (DESIGN.md, "Telas da conta").
 describe("as telas da conta", () => {
+	it.each([false, true])(
+		"no cadastro, conserva a escolha da newsletter (%s) e trava os campos durante o envio",
+		async (optouPelaNewsletter) => {
+			let responder!: (resposta: Response) => void;
+			versaoNaApi(VERSAO_DO_TERMO);
+			pedidosAApi.mockReturnValueOnce(
+				new Promise<Response>((resolver) => {
+					responder = resolver;
+				}),
+			);
+			pedidosAApi.mockResolvedValueOnce(Response.json({}));
+			render(<FormularioConta modo="cadastro" />);
+			await screen.findByRole("link", { name: "o termo de consentimento" });
+
+			preencherCadastro();
+			escrever("Gênero", "autodescricao");
+			escrever("Como você se identifica?", "Pessoa fictícia");
+			escrever("Estado de residência", "SP");
+			escrever("Data de nascimento", "2000-01-01");
+			const aceite = screen.getByRole("checkbox", {
+				name: /li e aceito/,
+			}) as HTMLInputElement;
+			const newsletter = screen.getByRole("checkbox", {
+				name: /receber a newsletter/,
+			}) as HTMLInputElement;
+			if (optouPelaNewsletter) fireEvent.click(newsletter);
+			const { form } = botao();
+			fireEvent.click(botao());
+
+			for (const campo of form?.querySelectorAll<HTMLInputElement>(
+				"input:not([type=checkbox])",
+			) ?? []) {
+				expect(campo.readOnly, campo.name).toBe(true);
+			}
+			for (const caixa of [aceite, newsletter]) {
+				expect(caixa.getAttribute("aria-disabled")).toBe("true");
+				expect(caixa.disabled).toBe(false);
+				fireEvent.click(caixa);
+			}
+			expect(aceite.checked).toBe(true);
+			expect(newsletter.checked).toBe(optouPelaNewsletter);
+			for (const lista of screen.getAllByRole<HTMLSelectElement>("combobox")) {
+				expect(lista.getAttribute("aria-disabled")).toBe("true");
+				expect(lista.disabled).toBe(false);
+				expect(fireEvent.pointerDown(lista)).toBe(false);
+				expect(fireEvent.keyDown(lista, { key: "ArrowDown" })).toBe(false);
+				expect(fireEvent.keyDown(lista, { key: "Tab" })).toBe(true);
+			}
+
+			await act(async () => responder(new Response(null, { status: 204 })));
+			expect(
+				pedidosAApi.mock.calls.map(([pedido]) => new URL(pedido.url).pathname),
+			).toEqual([
+				"/contas/termo",
+				"/contas",
+				...(optouPelaNewsletter ? ["/newsletter/inscricoes"] : []),
+			]);
+			const post = pedidosAApi.mock.calls[1][0];
+			expect(await post.json()).toMatchObject({
+				aceite: true,
+				genero: "autodescricao",
+				autodescricao: "Pessoa fictícia",
+				estado: "SP",
+				nascimento: "2000-01-01",
+			});
+		},
+	);
+
 	it.each(MODOS)(
 		"%s, sem a API, não pede nada e diz que a conta não funciona ali",
 		async (modo) => {
@@ -390,12 +466,20 @@ describe("as telas da conta", () => {
 
 	it("leva o foco ao primeiro campo com erro, ligado à mensagem pelo aria-describedby", () => {
 		render(<FormularioConta modo="login" />);
+		const email = screen.getByRole("textbox", { name: "E-mail" });
+		const aoFocar = vi.fn(() => ({
+			invalido: email.getAttribute("aria-invalid"),
+			erro: document.getElementById(
+				email.getAttribute("aria-describedby") ?? "",
+			)?.textContent,
+		}));
+		email.addEventListener("focus", aoFocar);
 
 		fireEvent.click(screen.getByRole("button", { name: "Entrar" }));
 
-		const email = screen.getByRole("textbox", {
-			name: "E-mail",
-			description: "Preencha este campo.",
+		expect(aoFocar).toHaveReturnedWith({
+			invalido: "true",
+			erro: "Preencha este campo.",
 		});
 		expect(document.activeElement).toBe(email);
 		expect(email.getAttribute("aria-invalid")).toBe("true");
