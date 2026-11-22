@@ -55,6 +55,7 @@ UFS = frozenset(
 
 _CAMPOS_CANDIDATURAS = {
     "ANO_ELEICAO",
+    "CD_TIPO_ELEICAO",
     "CD_ELEICAO",
     "CD_CARGO",
     "SG_UF",
@@ -236,6 +237,11 @@ def cpf_ou_nulo(valor: str) -> str | None:
     return cpf if re.fullmatch(r"[0-9]{11}", cpf) and len(set(cpf)) > 1 else None
 
 
+def eleicao_ordinaria(linha: dict[str, str], ano: int) -> bool:
+    # O leiaute de 2006 usa 0 para a eleição ordinária. Os demais usam 2.
+    return linha["CD_TIPO_ELEICAO"] == ("0" if ano == 2006 else "2")
+
+
 def _candidatura(linha: dict[str, str], ano: int, cargo: int) -> CandidaturaTse:
     uf = linha["SG_UF"]
     partido, nome = linha["SG_PARTIDO"].strip(), linha["NM_URNA_CANDIDATO"].strip()
@@ -266,11 +272,16 @@ def ler_candidaturas(
     arquivo: ZipFile,
     ano: int,
     descartes: Counter[str],
+    *,
+    exigir_recorte: bool = True,
 ) -> list[CandidaturaTse]:
     candidaturas: dict[ChaveTse, CandidaturaTse] = {}
     for linha in _linhas(
         arquivo, f"{CANDIDATURAS}_{ano}_BRASIL.csv", _CAMPOS_CANDIDATURAS, descartes
     ):
+        if not eleicao_ordinaria(linha, ano):
+            descartes["fora_das_gerais"] += 1
+            continue
         try:
             cargo = _numero(linha["CD_CARGO"], 1, 2**15 - 1)
             if cargo not in CASA_POR_CARGO:
@@ -285,6 +296,6 @@ def ler_candidaturas(
             descartes["candidatura_repetida"] += 1
         else:
             candidaturas[c.chave] = c
-    if not candidaturas:
+    if exigir_recorte and not candidaturas:
         raise ArquivoInvalido("O arquivo não traz candidaturas do recorte.")
     return list(candidaturas.values())

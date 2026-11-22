@@ -10,15 +10,18 @@ from mandatometro.coleta.tse_arquivos import (
     CANDIDATURAS,
     UFS,
     ArquivoInvalido,
+    CandidaturaTse,
     _chave,
     _linhas,
     _numero,
     cpf_ou_nulo,
+    eleicao_ordinaria,
+    ler_candidaturas,
 )
 from mandatometro.tse_catalogos import MAXIMO_CENTAVOS, TIPOS_DE_BEM_TSE
 
 _CAMPOS_CHAVE = {"ANO_ELEICAO", "CD_ELEICAO", "SG_UF", "SQ_CANDIDATO"}
-_CAMPOS_CANDIDATURAS = {*_CAMPOS_CHAVE, "CD_CARGO", "NR_CPF_CANDIDATO"}
+_CAMPOS_CANDIDATURAS = {*_CAMPOS_CHAVE, "CD_TIPO_ELEICAO", "CD_CARGO", "NR_CPF_CANDIDATO"}
 _CAMPOS_BENS = {*_CAMPOS_CHAVE, "CD_TIPO_BEM_CANDIDATO", "VR_BEM_CANDIDATO"}
 _DECIMAL = re.compile(r"-?[0-9]+,[0-9]{2}")
 
@@ -50,6 +53,9 @@ def ler_candidaturas_patrimonio(
     for linha in _linhas(
         arquivo, f"{CANDIDATURAS}_{ano}_BRASIL.csv", _CAMPOS_CANDIDATURAS, contagens
     ):
+        if not eleicao_ordinaria(linha, ano):
+            contagens["fora_das_gerais"] += 1
+            continue
         chave = _chave_patrimonio(linha, ano)
         try:
             cargo = _numero(linha["CD_CARGO"], 1, 2**15 - 1)
@@ -65,6 +71,15 @@ def ler_candidaturas_patrimonio(
     if contagens["linha_invalida"] or not candidaturas:
         raise ArquivoInvalido("CSV de candidaturas incompleto.")
     return candidaturas
+
+
+def ler_candidaturas_recentes(
+    arquivo: ZipFile, ano: int, contagens: Counter[str]
+) -> tuple[dict[ChavePatrimonio, CandidaturaLida], list[CandidaturaTse]]:
+    patrimonio = ler_candidaturas_patrimonio(arquivo, ano, contagens)
+    # A primeira leitura já validou o arquivo de todos os cargos e contou os descartes.
+    candidaturas = ler_candidaturas(arquivo, ano, Counter(), exigir_recorte=False)
+    return patrimonio, candidaturas
 
 
 def _centavos(texto: str, contagens: Counter[str]) -> int | None:
