@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it } from "vitest";
-import { focarNoTitulo } from "./foco";
+import { focarNoTitulo, outraPagina } from "./foco";
 
 afterEach(() => {
 	document.body.innerHTML = "";
@@ -47,5 +47,50 @@ describe("focarNoTitulo", () => {
 		expect(document.activeElement?.tagName).toBe("H1");
 		focarNoTitulo("rodape");
 		expect(document.activeElement?.tagName).toBe("H1");
+	});
+});
+
+describe("outraPagina", () => {
+	const em = (
+		pathname: string,
+		search: { uf?: string; partido?: string } = {},
+	) => ({
+		pathname,
+		search,
+	});
+
+	it("outro caminho é outra página, e a primeira também", () => {
+		expect(outraPagina(em("/edicoes"), em("/votacoes/139"))).toBe(true);
+		expect(outraPagina(undefined, em("/parlamentares"))).toBe(true);
+	});
+
+	it("outro estado na lista dos parlamentares é outra página", () => {
+		expect(
+			outraPagina(em("/parlamentares"), em("/parlamentares", { uf: "SC" })),
+		).toBe(true);
+		expect(
+			outraPagina(
+				em("/parlamentares", { uf: "SC" }),
+				em("/parlamentares", { uf: "BA" }),
+			),
+		).toBe(true);
+		expect(
+			outraPagina(
+				em("/parlamentares", { uf: "SC" }),
+				em("/parlamentares", { uf: "SC" }),
+			),
+		).toBe(false);
+	});
+
+	it("o filtro da votação fica na mesma página", () => {
+		expect(
+			outraPagina(em("/votacoes/139"), em("/votacoes/139", { uf: "SC" })),
+		).toBe(false);
+		expect(
+			outraPagina(
+				em("/votacoes/139", { uf: "SC" }),
+				em("/votacoes/139", { uf: "SC", partido: "PFT" }),
+			),
+		).toBe(false);
 	});
 });

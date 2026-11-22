@@ -35,6 +35,18 @@ import {
 	JOGO_DAS_COMISSOES,
 	jogos,
 } from "@/lib/jogo/paginas.server";
+import {
+	detalheDeExemplo,
+	listaDeExemplo as listaDosParlamentares,
+	votacaoDeExemplo,
+	votacaoSemVotosDeExemplo,
+	votosDeExemplo,
+} from "@/lib/parlamentares/exemplos-de-teste";
+import {
+	lerParlamentar,
+	lerParlamentares,
+	lerVotacao,
+} from "@/lib/parlamentares/parlamentares.server";
 import { TRILHA_DO_PILOTO } from "@/lib/piloto";
 import { Route as RotaRaiz } from "@/routes/__root";
 import { Route as RotaAutenticada } from "@/routes/_autenticado";
@@ -51,6 +63,8 @@ import { Route as RotaInicial } from "@/routes/index";
 import { Route as RotaDoJogo } from "@/routes/jogos";
 import { Route as Login } from "@/routes/login";
 import { Route as RotaDeSair } from "@/routes/newsletter/sair";
+import { Route as RotaDoParlamentar } from "@/routes/parlamentares/$id";
+import { Route as RotaDosParlamentares } from "@/routes/parlamentares/index";
 import { Route as Perfil } from "@/routes/perfil";
 import { Route as RotaDoPiloto } from "@/routes/piloto";
 import { Route as RotaDoTermo } from "@/routes/termo";
@@ -59,6 +73,7 @@ import { Route as RotaDaTrilha } from "@/routes/trilhas/$trilha/index";
 import { Route as RotaDoQuiz } from "@/routes/trilhas/$trilha/quiz";
 import { Route as RotaDoQuizFinal } from "@/routes/trilhas/$trilha/quiz-final";
 import { Route as RotaDasTrilhas } from "@/routes/trilhas/index";
+import { Route as RotaDaVotacao } from "@/routes/votacoes/$id";
 
 // O teto da letra grande mede a caixa do teto mais perto do título (o
 // letra-com-teto e o caixa-do-teto, no index.css), e não a tela: o 100vw conta
@@ -212,13 +227,27 @@ const json = (status: number, corpo: unknown) =>
 	});
 
 /**
- * A API das edições: a lista com três edições e, no lugar de cada uma, a edição
- * de exemplo.
+ * A API de exemplo: a lista com três edições e, no lugar de cada uma, a edição
+ * de exemplo; a lista dos parlamentares, a pessoa com 25 votos e a votação.
  */
-function apiDasEdicoes(pedido: Request) {
-	return new URL(pedido.url).pathname === "/edicoes"
-		? json(200, listaDeExemplo(3))
-		: json(200, edicaoDeExemplo());
+function apiDeExemplo(pedido: Request) {
+	const { pathname } = new URL(pedido.url);
+	if (pathname === "/edicoes") {
+		return json(200, listaDeExemplo(3));
+	}
+	if (pathname === "/parlamentares") {
+		return json(200, listaDosParlamentares());
+	}
+	if (pathname.endsWith("/votos")) {
+		return json(200, votosDeExemplo(25));
+	}
+	if (pathname.startsWith("/parlamentares/")) {
+		return json(200, detalheDeExemplo());
+	}
+	if (pathname.startsWith("/votacoes/")) {
+		return json(200, votacaoDeExemplo());
+	}
+	return json(200, edicaoDeExemplo());
 }
 
 /**
@@ -352,6 +381,28 @@ function criarRouter() {
 					lerEdicao(params.id),
 				),
 			),
+			RotaDosParlamentares.update(
+				naRaiz("/parlamentares/", ({ deps }: { deps: { uf?: string } }) =>
+					lerParlamentares(deps.uf),
+				),
+			),
+			RotaDoParlamentar.update(
+				naRaiz(
+					"/parlamentares/$id",
+					({
+						params,
+						deps,
+					}: {
+						params: { id: string };
+						deps: { pagina: number };
+					}) => lerParlamentar(params.id, deps.pagina),
+				),
+			),
+			RotaDaVotacao.update(
+				naRaiz("/votacoes/$id", ({ params }: { params: { id: string } }) =>
+					lerVotacao(params.id),
+				),
+			),
 		]),
 		defaultNotFoundComponent: NaoEncontrado,
 		defaultErrorComponent: PaginaDeErro,
@@ -364,7 +415,7 @@ function criarRouter() {
 /** Pede uma página ao servidor do roteador: o HTTP e o HTML lido. */
 async function pedir(
 	caminho: string,
-	{ api = apiDasEdicoes, semApi = false }: Pick<Pagina, "api" | "semApi"> = {},
+	{ api = apiDeExemplo, semApi = false }: Pick<Pagina, "api" | "semApi"> = {},
 ) {
 	ambiente.API_URL = semApi ? "" : COM_API;
 	vi.stubGlobal(
@@ -387,7 +438,7 @@ type Pagina = {
 	nome: string;
 	caminho: string;
 	status: number;
-	/** A API das edições, se não for a de exemplo. */
+	/** A API, se não for a de exemplo. */
 	api?: (pedido: Request) => Response;
 	/** O site sem o API_URL. */
 	semApi?: boolean;
@@ -395,7 +446,8 @@ type Pagina = {
 
 /**
  * As páginas que abrem: a inicial, cada trilha com os artigos e os quizzes, o
- * piloto, a saída da newsletter, a lista das edições e uma edição.
+ * piloto, a saída da newsletter, a lista das edições e uma edição, a lista dos
+ * parlamentares, um parlamentar e uma votação.
  */
 const QUE_ABREM = [
 	"/login",
@@ -421,12 +473,16 @@ const QUE_ABREM = [
 	"/edicoes",
 	"/edicoes/7",
 	"/painel",
+	"/parlamentares",
+	"/parlamentares/81-agata-cedrolume",
+	"/votacoes/139",
 ];
 
 /**
  * Cada página do site, com o HTTP dela: as que abrem, com a API e sem ela, a
- * lista sem edição, a página não encontrada (o endereço e a edição que não
- * existem) e a página de erro (a API fora do ar).
+ * lista sem edição, os parlamentares de um estado, a pessoa sem voto e a
+ * votação sem o voto de cada um, a página não encontrada (o endereço e a edição
+ * que não existem) e a página de erro (a API fora do ar).
  */
 const PAGINAS: Pagina[] = [
 	...QUE_ABREM.map((caminho) => ({ nome: caminho, caminho, status: 200 })),
@@ -441,6 +497,26 @@ const PAGINAS: Pagina[] = [
 		caminho: "/edicoes",
 		status: 200,
 		api: () => json(200, listaDeExemplo(0)),
+	},
+	{
+		nome: "/parlamentares?uf=SC, com os nomes do estado",
+		caminho: "/parlamentares?uf=SC",
+		status: 200,
+	},
+	{
+		nome: "/parlamentares/81-agata-cedrolume, sem voto registrado",
+		caminho: "/parlamentares/81-agata-cedrolume",
+		status: 200,
+		api: (pedido) =>
+			pedido.url.includes("/votos")
+				? json(200, votosDeExemplo(0))
+				: json(200, detalheDeExemplo()),
+	},
+	{
+		nome: "/votacoes/140, sem o voto de cada um",
+		caminho: "/votacoes/140",
+		status: 200,
+		api: () => json(200, votacaoSemVotosDeExemplo()),
 	},
 	{
 		nome: "/pagina-que-nao-existe",
