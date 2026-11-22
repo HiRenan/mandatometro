@@ -4,7 +4,7 @@ import { FormularioConta, titulos } from "@/components/formulario-conta";
 export const Route = createFileRoute("/cadastro/redefinir")({
 	head: () => ({
 		meta: [
-			{ title: `${titulos.redefinir} | Mandatômetro` },
+			{ title: `${titulos.redefinir} · Mandatômetro` },
 			{ name: "robots", content: "noindex" },
 			{ name: "referrer", content: "no-referrer" },
 		],

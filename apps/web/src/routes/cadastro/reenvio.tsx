@@ -4,7 +4,7 @@ import { FormularioConta, titulos } from "@/components/formulario-conta";
 export const Route = createFileRoute("/cadastro/reenvio")({
 	head: () => ({
 		meta: [
-			{ title: `${titulos.reenvio} | Mandatômetro` },
+			{ title: `${titulos.reenvio} · Mandatômetro` },
 			{ name: "robots", content: "noindex" },
 			{ name: "referrer", content: "no-referrer" },
 		],
