@@ -287,6 +287,17 @@
 		}
 
 		/*
+		 * A barra do patrimônio declarado se risca a partir da esquerda quando entra
+		 * na tela, como a tira do cartaz, no trecho das seções: fica inteira quando
+		 * o alto dela sobe 7rem. Sem a animação de rolagem, ela já está inteira.
+		 */
+		.barra-do-patrimonio {
+			animation: risca linear both;
+			animation-timeline: view();
+			animation-range: entry 0 entry 7rem;
+		}
+
+		/*
 		 * A barra da leitura acompanha o texto do artigo, numa janela que vai da
 		 * linha a 60% da altura da tela à linha a 90%, a do visto (o rootMargin de
 		 * −10%, em routes/trilhas/$trilha/$artigo.tsx). O texto é mais alto que a
