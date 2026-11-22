@@ -63,6 +63,7 @@ export function edicaoDeExemplo(): EdicaoPublica {
 				fatos: {
 					votacoes: [
 						{
+							id: 701,
 							data: "2026-11-11",
 							resultado: "aprovada",
 							placar: {
@@ -95,6 +96,7 @@ export function edicaoDeExemplo(): EdicaoPublica {
 				fatos: {
 					votacoes: [
 						{
+							id: 702,
 							data: "2026-11-12",
 							resultado: "outro",
 							placar: null,

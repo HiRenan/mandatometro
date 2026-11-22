@@ -69,7 +69,7 @@ O GitHub Actions roda as coletas e o rascunho fora dos pedidos ao site. A coleta
 
 O comando de rascunho lê os dados já gravados e salva a edição no banco. Quando configurado, o modelo de linguagem sugere a ordem dos atos do Diário Oficial e escreve o texto das votações elegíveis. Em `/painel`, uma administradora confere os itens e as fontes, completa os textos pendentes e publica pela API.
 
-A API entrega ao site as edições publicadas e registra inscrições, contas, progresso das trilhas e tentativas do piloto. As trilhas vêm de arquivos do site. Na hospedagem, o site e a API ficam na Vercel e o PostgreSQL fica no Neon.
+A API entrega ao site as edições publicadas, os parlamentares e os votos gravados pela coleta. Também registra inscrições, contas, progresso das trilhas e tentativas do piloto. As trilhas vêm de arquivos do site. Na hospedagem, o site e a API ficam na Vercel e o PostgreSQL fica no Neon.
 
 Quando a agenda de domingo está ativa, `edicao enviar` usa o Resend para mandar a edição publicada naquela semana. O Resend também envia a edição mais recente na inscrição, quando disponível, e os avisos de conta. O workflow de avisos retoma pendências com `python -m mandatometro.contas`. O de migrations atualiza o banco com `alembic upgrade head`.
 
@@ -338,6 +338,15 @@ Marcar, desmarcar, recomeçar e desfazer atualizam a tela na hora e gravam na co
 `GET /contas/progresso` devolve `{"lidos": [...]}` da sessão atual. `POST /contas/progresso` aceita as listas opcionais `marcar` e `desmarcar` e devolve os ids após a alteração. Cada id segue o formato `trilha/slug` e tem até 128 caracteres. O servidor aceita até 256 ids somados por pedido e até 256 marcas por conta. O POST aceita até 64 KiB de corpo em JSON UTF-8 e responde `413` acima desse tamanho. Nas duas rotas de progresso, cada espera pela trava da conta tem prazo de 3 segundos. Quando vence, a API devolve `503` com `Retry-After: 3`.
 
 Toda conta nasce com o papel `comum`. Quem opera o banco pode [conceder ou revogar o papel de administradora](docs/hospedagem.md#conceder-e-revogar-o-papel-de-administradora) pelo CLI depois da confirmação do e-mail. Com o papel, o `/perfil` mostra o link "Revisar a edição da semana", que leva à revisão em `/painel`. [Revisão pelo painel](docs/newsletter.md#revisão-pelo-painel)
+
+### Consulta de parlamentares
+
+- `GET /parlamentares` lista todos os parlamentares em exercício por nome. Os filtros opcionais `uf` e `casa` aceitam a sigla da UF em maiúsculas e os valores `camara` ou `senado`, respectivamente.
+- `GET /parlamentares/{id}` usa o id interno e acrescenta os mandatos e a contagem de votos registrados por valor.
+- `GET /parlamentares/{id}/votos` devolve `votos`, `total`, `limite` e `deslocamento`, da votação mais recente para a mais antiga. O limite padrão é 20, com máximo de 100. Cada voto traz as proposições afetadas. O campo `url_oficial` usa o endereço público da fonte, com o endereço da coleta como reserva, e é nulo se a fonte estiver sem endereço.
+- `GET /votacoes/{id}` mostra os votos de uma votação por nome de parlamentar, com a sigla do partido e a UF no dia do voto. O placar geral e o de cada partido contam esses registros nas sete categorias. Use o `votacao_id` do histórico ou o `id` de cada votação nos fatos da edição publicada.
+
+O partido no cadastro do parlamentar vem do voto mais recente pela data da votação e pode ser nulo. O histórico e a contagem consideram só os registros de voto da pessoa. Uma votação sem votos individuais gravados devolve as listas de votos e partidos vazias e as sete contagens zeradas. [OpenAPI](apps/backend/openapi.json)
 
 ### Coletas
 
