@@ -21,6 +21,7 @@ class ResumoTemas:
     classificacoes_sem_tema: int = 0
     falhas_consulta: int = 0
     falhas_gravacao: int = 0
+    proposicoes_nao_consultadas: int = 0
 
 
 @dataclass

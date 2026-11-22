@@ -51,6 +51,9 @@ from mandatometro.db.modelos import (
 BASE = "https://dadosabertos.camara.leg.br/api/v2"
 PUBLICA = "https://www.camara.leg.br"
 ID_PLENARIO = 180
+LIMITE_TEMAS_S = 4 * 60
+# O job tem teto de 30 min, incluindo o preparo do ambiente e a saída do CLI.
+LIMITE_COLETA_COM_TEMAS_S = 25 * 60
 logger = logging.getLogger(__name__)
 FALHAS = (ErroColeta, ValueError, KeyError, TypeError, SQLAlchemyError)
 
@@ -572,7 +575,13 @@ def coletar(
         )
         logger.error("Coleta interrompida: %s", resumo.erro)
     coletar_videos(resumo, sessoes, http=http, abrir_sessao=criar_sessao, consultar=_video_evento)
-    coletar_temas(resumo, sorted(coleta.proposicoes_gravadas), http=http, abrir_sessao=criar_sessao)
+    coletar_temas(
+        resumo,
+        sorted(coleta.proposicoes_gravadas),
+        http=http,
+        abrir_sessao=criar_sessao,
+        prazo=min(time.monotonic() + LIMITE_TEMAS_S, comeco + LIMITE_COLETA_COM_TEMAS_S),
+    )
     resumo.chamadas = http.chamadas
     resumo.tentativas_extras = http.tentativas_extras
     resumo.duracao_s = round(time.monotonic() - comeco, 2)

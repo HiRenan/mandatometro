@@ -1,14 +1,20 @@
 """Lê as classificações oficiais e grava os temas sem regravar os fatos coletados."""
 
 import time
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Collection, Mapping
 from datetime import date
 
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from mandatometro.coleta.http import ClienteHttp, ErroColeta, Resposta
+from mandatometro.coleta.http import (
+    ClienteHttp,
+    ErroColeta,
+    ErroColetaTemporario,
+    PrazoConsultaEsgotado,
+    Resposta,
+)
 from mandatometro.coleta.persistencia import salvar_temas_da_proposicao
 from mandatometro.coleta.tipos import ResumoColeta
 from mandatometro.db.modelos import Proposicao, ProposicaoTema, Votacao, votacao_proposicao
@@ -16,12 +22,11 @@ from mandatometro.temas import TemaId, tema_da_camara, tema_do_senado
 
 
 def _codigo(valor: object) -> int:
-    if isinstance(valor, bool) or not isinstance(valor, (int, str)):
+    if isinstance(valor, str) and valor.isascii() and valor.isdecimal():
+        valor = int(valor)
+    if type(valor) is not int or valor <= 0:
         raise ValueError("Código de classificação inválido.")
-    numero = int(valor)
-    if numero <= 0:
-        raise ValueError("Código de classificação inválido.")
-    return numero
+    return valor
 
 
 def _classificacoes(casa: str, id_externo: int, resposta: Resposta) -> list[TemaId | None]:
@@ -43,43 +48,55 @@ def _classificacoes(casa: str, id_externo: int, resposta: Resposta) -> list[Tema
         por_codigo = {_codigo(item.get("codTema")) for item in itens}
         return [tema_da_camara(codigo) for codigo in por_codigo]
 
-    por_codigo = {}
+    caminhos = set()
     for item in itens:
-        codigo = _codigo(item.get("codigo"))
+        _codigo(item.get("codigo"))
         caminho = item.get("descricaoHierarquia")
         if not isinstance(caminho, str) or not caminho.strip():
             raise ValueError("Caminho da classificação inválido.")
-        if codigo in por_codigo and por_codigo[codigo] != caminho:
-            raise ValueError("Classificação repetida com caminhos diferentes.")
-        por_codigo[codigo] = caminho
-    return [tema_do_senado(caminho) for caminho in por_codigo.values()]
+        caminhos.add(caminho)
+    return [tema_do_senado(caminho) for caminho in caminhos]
 
 
 def coletar_temas(
     resumo: ResumoColeta,
-    ids_externos: Iterable[int],
+    ids_externos: Collection[int],
     *,
     http: ClienteHttp,
     abrir_sessao: Callable[[], Session],
     processos: Mapping[int, Resposta] | None = None,
     somente_preencher: bool = False,
+    prazo: float | None = None,
 ) -> None:
-    for id_externo in ids_externos:
+    contagens = resumo.temas
+    falhas_seguidas = 0
+    for indice, id_externo in enumerate(ids_externos):
+        if prazo is not None and (falhas_seguidas >= 2 or time.monotonic() >= prazo):
+            contagens.proposicoes_nao_consultadas += len(ids_externos) - indice
+            break
+        chamadas = http.chamadas
         try:
             if resumo.casa == "camara":
-                resposta = http.obter_json(f"/proposicoes/{id_externo}/temas")
+                resposta = http.obter_json(f"/proposicoes/{id_externo}/temas", prazo=prazo)
             elif processos is None:
                 resposta = http.obter_json(f"/processo/{id_externo}")
             else:
                 resposta = processos[id_externo]
             classificacoes = _classificacoes(resumo.casa, id_externo, resposta)
-        except (ErroColeta, ValueError):
-            resumo.temas.falhas_consulta += 1
+        except PrazoConsultaEsgotado:
+            consultada = http.chamadas > chamadas
+            contagens.falhas_consulta += consultada
+            contagens.proposicoes_nao_consultadas += len(ids_externos) - indice - consultada
+            break
+        except (ErroColeta, ValueError) as erro:
+            contagens.falhas_consulta += 1
+            falhas_seguidas = falhas_seguidas + 1 if isinstance(erro, ErroColetaTemporario) else 0
             continue
 
+        falhas_seguidas = 0
         temas = {tema for tema in classificacoes if tema is not None}
-        resumo.temas.proposicoes_sem_classificacao += not classificacoes
-        resumo.temas.classificacoes_sem_tema += classificacoes.count(None)
+        contagens.proposicoes_sem_classificacao += not classificacoes
+        contagens.classificacoes_sem_tema += classificacoes.count(None)
         try:
             with abrir_sessao() as sessao, sessao.begin():
                 fontes = salvar_temas_da_proposicao(
@@ -91,10 +108,10 @@ def coletar_temas(
                     somente_preencher=somente_preencher,
                 )
         except SQLAlchemyError:
-            resumo.temas.falhas_gravacao += 1
+            contagens.falhas_gravacao += 1
         else:
             resumo.fontes += fontes
-            resumo.temas.proposicoes_com_tema += bool(temas)
+            contagens.proposicoes_com_tema += bool(temas)
 
 
 def preencher_temas(
