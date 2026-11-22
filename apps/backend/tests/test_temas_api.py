@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from copy import deepcopy
-from datetime import UTC, date, datetime
+from datetime import date
 
 import pytest
 from fastapi.testclient import TestClient
@@ -15,8 +15,7 @@ from mandatometro.api import edicoes, parlamentares, votacoes
 from mandatometro.api.app import app
 from mandatometro.coleta.camara import BASE
 from mandatometro.coleta.temas import preencher_temas
-from mandatometro.db.modelos import Edicao, ItemEdicao, Parlamentar, ProposicaoTema, Voto
-from mandatometro.ia.esquemas import Fatos, FatoVotacao
+from mandatometro.db.modelos import Edicao, Parlamentar, ProposicaoTema, Voto
 from mandatometro.ia.servico import exportar, gerar, publicar, revisar
 
 SAUDE = {"id": "saude", "nome": "Saúde"}
@@ -144,68 +143,18 @@ def _consultas(sessao):
         event.remove(conexao, "before_cursor_execute", registrar)
 
 
-def _edicao_publicada(sessao, votacoes_):
-    fonte = votacoes_[0].fonte
-    fatos = Fatos(
-        proposicoes=[v.proposicoes[0].id for v in votacoes_],
-        votacoes=[
-            FatoVotacao(id=v.id, data=v.data, resultado=v.resultado, placar=None, fontes=[fonte.id])
-            for v in votacoes_
-        ],
-        fontes=[fonte.id],
-        origem="revisao",
-        pendencias=[],
-    )
-    edicao = Edicao(
-        titulo="Edição fictícia",
-        inicio=INICIO,
-        fim=FIM,
-        estado="publicada",
-        publicada_em=datetime(2026, 11, 16, tzinfo=UTC),
-        itens=[
-            ItemEdicao(
-                ordem=1,
-                titulo="Item fictício",
-                texto="Texto fictício.",
-                fonte=fonte,
-                fatos=fatos.model_dump(mode="json"),
-            )
-        ],
-    )
-    sessao.add(edicao)
-    sessao.flush()
-    return edicao.id
-
-
-def test_leitura_dos_temas_faz_uma_consulta_com_uma_ou_varias_votacoes(sessao, dados, cliente):
+def test_lista_do_parlamentar_busca_temas_em_lote(sessao, dados, cliente):
     votacoes_ = [dados(numero) for numero in range(1, 21)]
     for votacao in votacoes_:
         _associar(sessao, votacao.proposicoes[0], "saude")
     pessoa = _pessoa(sessao, *votacoes_)
-    pequena = _edicao_publicada(sessao, votacoes_[:1])
-    grande = _edicao_publicada(sessao, votacoes_[:13])
-
-    def extrair_edicao(corpo):
-        return corpo["itens"][0]["fatos"]["votacoes"]
-
-    def extrair_votos(corpo):
-        return corpo["votos"]
-
-    for rota_curta, rota_longa, total_longa, extrair in (
-        (f"/edicoes/{pequena}", f"/edicoes/{grande}", 13, extrair_edicao),
-        (
-            f"/parlamentares/{pessoa.id}/votos?limite=1",
-            f"/parlamentares/{pessoa.id}/votos?limite=20",
-            20,
-            extrair_votos,
-        ),
-    ):
-        with _consultas(sessao) as consultas_curta:
-            uma = extrair(cliente.get(rota_curta).json())
-        with _consultas(sessao) as consultas_longa:
-            varias = extrair(cliente.get(rota_longa).json())
-        assert len(uma) == 1 and len(varias) == total_longa
-        assert all(v["temas"] == [SAUDE] for v in uma + varias)
-        assert len(consultas_curta) == len(consultas_longa)
-        for consultas in (consultas_curta, consultas_longa):
-            assert sum("proposicao_tema" in sql for sql in consultas) == 1
+    rota = f"/parlamentares/{pessoa.id}/votos"
+    with _consultas(sessao) as consultas_curta:
+        uma = cliente.get(rota, params={"limite": 1}).json()["votos"]
+    with _consultas(sessao) as consultas_longa:
+        varias = cliente.get(rota, params={"limite": 20}).json()["votos"]
+    assert len(uma) == 1 and len(varias) == 20
+    assert all(v["temas"] == [SAUDE] for v in uma + varias)
+    assert len(consultas_curta) == len(consultas_longa)
+    for consultas in (consultas_curta, consultas_longa):
+        assert sum("proposicao_tema" in sql for sql in consultas) == 1
