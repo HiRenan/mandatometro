@@ -192,7 +192,7 @@ def test_votacoes_do_senado_sem_link_ficam_sem_video(sessao, executar, respostas
     assert all(v.video_sessao.url_video is None for v in sessao.scalars(select(Votacao)))
 
 
-def test_preencher_videos_do_senado_cruza_o_id_da_votacao(sessao, executar, respostas):
+def gravar_votacoes_anteriores(sessao, itens):
     fonte = Fonte(
         url=f"{BASE}/votacao", url_publica="https://www25.senado.leg.br/votacoes-ficticias"
     )
@@ -205,10 +205,16 @@ def test_preencher_videos_do_senado_cruza_o_id_da_votacao(sessao, executar, resp
             resultado="aprovada",
             fonte=fonte,
         )
-        for item in respostas["/votacao"][:2]
+        for item in itens
     ]
     sessao.add_all(votacoes)
     sessao.flush()
+    return votacoes
+
+
+def test_preencher_videos_do_senado_cruza_o_id_da_votacao(sessao, executar, respostas):
+    votacoes = gravar_votacoes_anteriores(sessao, respostas["/votacao"][:2])
+    fonte_id = votacoes[0].fonte_id
 
     resumo, requisicoes = executar(somente_videos=True)
     repetida, novas_requisicoes = executar(somente_videos=True)
@@ -222,9 +228,95 @@ def test_preencher_videos_do_senado_cruza_o_id_da_votacao(sessao, executar, resp
     assert resumo.videos.votacoes_com_video == 2
     assert repetida.fontes == 0 and not novas_requisicoes
     assert total(sessao, Fonte) == 2
-    assert {v.fonte_id for v in votacoes} == {fonte.id}
+    assert {v.fonte_id for v in votacoes} == {fonte_id}
     assert len({v.video_sessao_id for v in votacoes}) == 1
     assert votacoes[0].video_sessao.url_video == "https://www.youtube.com/watch?v=SenaDo_0001"
+
+
+@pytest.mark.parametrize("somente_videos", [False, True])
+def test_so_plenario_do_senado_recebe_video_no_lote_misto(
+    sessao, executar, respostas, somente_videos
+):
+    itens = respostas["/votacao"]
+    plenario, comissao, sem_colegiado, desconhecido = itens
+    comissao["informeLegislativo"]["siglaColegiado"] = "CCJ"
+    sem_colegiado.pop("informeLegislativo")
+    desconhecido["informeLegislativo"]["siglaColegiado"] = "XXX"
+    conjunta = copy.deepcopy(plenario)
+    conjunta["codigoSessaoVotacao"] = 999999
+    conjunta["casaSessao"] = "CN"
+    itens.append(conjunta)
+    if somente_videos:
+        gravar_votacoes_anteriores(sessao, itens)
+
+    resumo, requisicoes = executar(somente_videos=somente_videos)
+
+    assert resumo.completa
+    assert (resumo.votacoes, resumo.votos) == ((0, 0) if somente_videos else (4, 324))
+    assert resumo.videos.votacoes_com_video == 1
+    assert resumo.videos.votacoes_sem_sessao == (4 if somente_videos else 3)
+    assert [r.url.path for r in requisicoes if "/encontro/" in r.url.path] == [
+        "/dadosabertos/plenario/encontro/594169"
+    ]
+    por_externo = {v.id_externo: v.video_sessao for v in sessao.scalars(select(Votacao))}
+    esperadas = itens if somente_videos else itens[:-1]
+    assert set(por_externo) == {str(item["codigoSessaoVotacao"]) for item in esperadas}
+    sessao_plenaria = por_externo.pop(str(plenario["codigoSessaoVotacao"]))
+    assert sessao_plenaria.url_video == "https://www.youtube.com/watch?v=SenaDo_0001"
+    assert all(video is None for video in por_externo.values())
+
+
+@pytest.mark.parametrize("somente_videos", [False, True])
+@pytest.mark.parametrize("sigla_casa", ["CN", None], ids=["outra-casa", "sem-casa"])
+def test_video_do_senado_recusa_encontro_sem_casa_sf(
+    sessao, executar, respostas, somente_videos, sigla_casa
+):
+    encontro = respostas["/plenario/encontro/594169"]["ServicoPlenario"]["encontros"]["encontro"][0]
+    if sigla_casa is None:
+        encontro.pop("siglaCasa")
+    else:
+        encontro["siglaCasa"] = sigla_casa
+    if somente_videos:
+        gravar_votacoes_anteriores(sessao, respostas["/votacao"])
+
+    resumo, _ = executar(somente_videos=somente_videos)
+
+    assert resumo.completa
+    assert resumo.videos.urls_recusadas == 1
+    assert resumo.videos.falhas_sessoes == 0
+    assert resumo.videos.votacoes_com_video == 0
+    assert all(
+        v.video_sessao is None or v.video_sessao.url_video is None
+        for v in sessao.scalars(select(Votacao))
+    )
+
+
+def test_video_do_senado_recusa_encontro_com_codigo_divergente(executar, respostas):
+    encontro = respostas["/plenario/encontro/594169"]["ServicoPlenario"]["encontros"]["encontro"][0]
+    encontro["codigo"] = 999999
+
+    resumo, _ = executar()
+
+    assert resumo.completa and resumo.votacoes == 4
+    assert resumo.videos.falhas_sessoes == 1
+    assert resumo.videos.urls_recusadas == 0
+    assert resumo.videos.votacoes_com_video == 0
+
+
+def test_recoleta_do_senado_desvincula_video_de_votacao_que_deixou_de_ser_plenaria(
+    sessao, executar, respostas
+):
+    executar()
+    votacao = respostas["/votacao"][0]
+    consultar = select(Votacao).where(Votacao.id_externo == str(votacao["codigoSessaoVotacao"]))
+    assert sessao.scalar(consultar).video_sessao_id is not None
+    votacao["informeLegislativo"]["siglaColegiado"] = "CCJ"
+
+    resumo, _ = executar()
+
+    assert resumo.completa and resumo.votacoes == 4
+    assert resumo.videos.votacoes_com_video == 3
+    assert sessao.scalar(consultar).video_sessao_id is None
 
 
 def test_sai_da_lista_desativa_senado_mas_preserva_camara(sessao, executar, respostas):
