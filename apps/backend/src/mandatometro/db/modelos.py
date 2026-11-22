@@ -37,6 +37,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from mandatometro.db import Base
+from mandatometro.temas import TemaId
 
 logger = logging.getLogger(__name__)
 
@@ -332,6 +333,21 @@ class Proposicao(Base):
     fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
 
     fonte: Mapped[Fonte] = relationship()
+
+
+class ProposicaoTema(Base):
+    """Tema convertido da classificação oficial, com uma observação própria da fonte."""
+
+    __tablename__ = "proposicao_tema"
+    __table_args__ = (
+        CheckConstraint(_um_de("tema", tuple(tema.value for tema in TemaId)), name="tema"),
+    )
+
+    proposicao_id: Mapped[int] = mapped_column(
+        ForeignKey("proposicao.id", ondelete="CASCADE"), primary_key=True
+    )
+    tema: Mapped[str] = mapped_column(primary_key=True)
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
 
 
 # Quais proposições cada votação afetou. Na Câmara, a lista proposicoesAfetadas do

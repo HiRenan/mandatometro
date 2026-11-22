@@ -1,4 +1,4 @@
-"""Leitura da fotografia publicada e do vídeo oficial das sessões no banco."""
+"""Leitura da fotografia publicada, dos vídeos das sessões e dos temas das votações."""
 
 from typing import Annotated
 
@@ -6,6 +6,7 @@ from fastapi import APIRouter, Path, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy import func, select
 
+from mandatometro.api.congresso import temas_das_votacoes
 from mandatometro.api.esquemas import (
     ArtigoDaEdicao,
     EdicaoPublica,
@@ -17,6 +18,7 @@ from mandatometro.api.esquemas import (
     ListaEdicoes,
     PlacarPublico,
     ResumoEdicao,
+    TemaPublico,
     VotacaoPublica,
 )
 from mandatometro.api.newsletter import RotaNewsletter
@@ -65,6 +67,7 @@ def _item(
     fatos: FatosItem | None,
     fontes: dict[int, Fonte],
     urls_video: dict[int, str | None],
+    temas: dict[int, list[TemaPublico]],
 ) -> ItemPublico:
     fatos_publicos: FatosPublicos | FatosAtoPublicos | None
     de_ato = isinstance(fatos, FatosAto)
@@ -83,6 +86,7 @@ def _item(
                     placar=PlacarPublico(**v.placar.model_dump()) if v.placar else None,
                     fontes=[_fonte(fontes[i]) for i in dict.fromkeys(v.fontes)],
                     url_video=urls_video.get(v.id),
+                    temas=temas.get(v.id, []),
                 )
                 for v in fatos.votacoes
             ]
@@ -152,9 +156,10 @@ def obter_edicao(id: Annotated[int, Path(gt=0)]):
                         .where(Votacao.id.in_(ids))
                     )
                 }
+            temas = temas_das_votacoes(sessao, ids)
             return EdicaoPublica(
                 **_resumo(edicao).model_dump(),
-                itens=[_item(i, fatos, fontes, urls_video) for i, fatos in itens],
+                itens=[_item(i, fatos, fontes, urls_video, temas) for i, fatos in itens],
             )
         except (MensagemInvalida, KeyError):
             return JSONResponse({"erro": "servico_indisponivel"}, status_code=503)

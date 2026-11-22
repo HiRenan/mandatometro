@@ -243,6 +243,10 @@ As orientações ficaram para depois do MVP (decisão do Renan na #7, em 12/11/2
 }
 ```
 
+### `/proposicoes/{id}/temas` — a classificação temática
+
+`dados[]` pode vir vazio. Cada entrada traz `codTema` (inteiro) e `tema` (nome da classificação). A referência `/referencias/proposicoes/codTema` traz os mesmos códigos em `dados[].cod` como texto e os nomes em `dados[].nome`. A coleta consulta uma vez por proposição confirmada e converte pelo código. [Referência oficial da Câmara](https://dadosabertos.camara.leg.br/api/v2/referencias/proposicoes/codTema)
+
 ### `/deputados` e `/deputados/{id}` — quem são os deputados
 
 ```text
@@ -472,7 +476,8 @@ A lista atual basta para cadastrar quem está em exercício: a coleta usa a prim
 | `siglaCasaIniciadora` | texto | `CD` ou `SF` — **onde a matéria começou** | sim |
 | `identificacaoProcessoInicial` | texto | a identificação na Casa de origem | sim |
 | `outrosNumeros[]` | lista | a mesma matéria na outra Casa (ver abaixo) | chave |
-| `despachos`, `autuacoes`, `ordensDoDia`, `classificacoes` | lista | tramitação detalhada | não |
+| `despachos`, `autuacoes`, `ordensDoDia` | lista | tramitação detalhada | não |
+| `classificacoes[]` | lista | cada entrada traz `codigo`, `descricao` e `descricaoHierarquia` | temas |
 
 ```json
 {
@@ -549,6 +554,43 @@ O `resultado` e o `voto.valor` têm domínios diferentes nas duas Casas, e o mod
 
 - **`votacao.resultado`:** `aprovada`, `rejeitada` ou `outro`. O `1` e o `"A"` viram `aprovada`, o `0` e o `"R"` viram `rejeitada`, e um código ainda não classificado vira `outro`. O `resultado_bruto` guarda o código como a Casa publicou.
 - **`voto.valor`:** `sim`, `nao`, `abstencao`, `obstrucao`, `presidente`, `nao_votou` ou `outro`. O `Artigo 17` e o `Presidente (art. 51 RISF)` viram `presidente`, e o `P-NRV` vira `nao_votou`. O armazenamento do `valor_bruto` segue as regras de [ausências e afastamentos](dados-pessoais.md#ausências-e-afastamentos).
+
+## Temas das proposições e das votações
+
+No Senado, `descricaoHierarquia` usa ` / ` entre os níveis. A coleta normal reaproveita o processo lido para gravar a proposição. O modo `--somente-temas` busca o processo pelo `idProcesso` e confere o id da resposta. Lista ausente, nula ou vazia significa falta de classificação. Os 179 nós de `/processo/classes` e os 32 códigos de referência da Câmara formam as fixtures de conversão. [Hierarquia oficial do Senado](https://legis.senado.leg.br/dadosabertos/processo/classes)
+
+O catálogo tem identificadores estáveis e nomes para a tela. Na Câmara, vale a linha do código. No Senado, vale o caminho mais específico que conste na tabela, por segmentos inteiros. Ele também cobre seus descendentes até uma regra mais específica. Entradas sem regra ficam sem tema. A tabela deixa de fora raízes amplas como **Política Social** e **Organização do Estado**. Uma matéria classificada em **Política Social / Previdência Social** recebe o tema correspondente. As palavras-chave de `keywords` e `documento.indexacao`, a ementa e o título ficam fora da conversão.
+
+| ID | Nome | Códigos e temas da Câmara | Caminhos do Senado |
+| --- | --- | --- | --- |
+| `saude` | Saúde | `56` Saúde | Política Social / Saúde |
+| `educacao` | Educação | `46` Educação | Política Social / Educação |
+| `economia` | Economia e impostos | `40` Economia · `60` Turismo · `66` Indústria, Comércio e Serviços | Economia e Desenvolvimento / Fiscalização e Controle da Atividade Econômica · Economia e Desenvolvimento / Indústria, Comércio e Serviços · Economia e Desenvolvimento / Linha de Crédito · Economia e Desenvolvimento / Sistema Financeiro Nacional · Economia e Desenvolvimento / Tributos |
+| `trabalho` | Trabalho e emprego | `58` Trabalho e Emprego | Jurídico / Processo / Processo do Trabalho · Política Social / Trabalho e Emprego |
+| `previdencia_assistencia` | Previdência e assistência social | `52` Previdência e Assistência Social | Política Social / Previdência Social · Política Social / Proteção Social / Assistência Social · Política Social / Proteção Social / Desenvolvimento Social e Combate à Fome |
+| `direitos_cidadania` | Direitos e cidadania | `44` Direitos Humanos e Minorias · `67` Direito e Defesa do Consumidor | Jurídico / Direito do Consumidor · Jurídico / Direitos e Garantias · Política Social / Proteção Social / Crianças e Adolescentes · Política Social / Proteção Social / Direitos Humanos e Minorias · Política Social / Proteção Social / Idosos · Política Social / Proteção Social / Mulheres · Política Social / Proteção Social / Pessoas com Deficiência · Política Social / Proteção Social / População Indígena · Soberania, Defesa Nacional e Ordem Pública / Direito dos Estrangeiros |
+| `seguranca_defesa` | Segurança e defesa | `57` Defesa e Segurança | Soberania, Defesa Nacional e Ordem Pública / Defesa do Estado e das Instituições Democráticas |
+| `justica` | Justiça | `42` Direito Civil e Processual Civil · `43` Direito Penal e Processual Penal · `68` Direito Constitucional · `76` Direito e Justiça | Organização do Estado / Funções Essenciais à Justiça · Organização do Estado / Poder Judiciário · Jurídico / Direito Civil · Jurídico / Direito Empresarial e Econômico · Jurídico / Direito Notarial e Registral · Jurídico / Direito Penal e Penitenciário · Jurídico / Processo / Processo Civil · Jurídico / Processo / Processo Penal |
+| `meio_ambiente` | Meio ambiente | `48` Meio Ambiente e Desenvolvimento Sustentável | Meio Ambiente |
+| `agropecuaria` | Agricultura e pecuária | `51` Estrutura Fundiária · `64` Agricultura, Pecuária, Pesca e Extrativismo | Economia e Desenvolvimento / Agropecuária e Abastecimento · Economia e Desenvolvimento / Política Fundiária e Reforma Agrária |
+| `infraestrutura` | Infraestrutura e transporte | `54` Energia, Recursos Hídricos e Minerais · `61` Viação, Transporte e Mobilidade | Infraestrutura · Jurídico / Direito de Trânsito · Política Social / Desenvolvimento Urbano / Mobilidade Urbana |
+| `cidades_moradia` | Cidades e moradia | `41` Cidades e Desenvolvimento Urbano | Política Social / Desenvolvimento Urbano · Política Social / Habitação |
+| `ciencia_tecnologia` | Ciência, tecnologia e comunicação | `37` Comunicações · `62` Ciência, Tecnologia e Inovação · `85` Ciências Exatas e da Terra · `86` Ciências Sociais e Humanas | Economia e Desenvolvimento / Ciência, Tecnologia e Informática · Infraestrutura / Comunicações |
+| `cultura_esporte` | Cultura, esporte e lazer | `35` Arte, Cultura e Religião · `39` Esporte e Lazer | Política Social / Cultura · Política Social / Desporto e Lazer |
+| `politica_governo` | Política e governo | `34` Administração Pública · `53` Processo Legislativo e Atuação Parlamentar · `74` Política, Partidos e Eleições | Administração Pública · Jurídico / Direito Eleitoral · Jurídico / Processo / Processo Legislativo · Jurídico / Processo / Processo Administrativo · Organização do Estado / Fiscalização e Controle · Organização do Estado / Organização Federativa · Organização do Estado / Poder Legislativo |
+| `orcamento_publico` | Orçamento público | `70` Finanças Públicas e Orçamento | Economia e Desenvolvimento / Finanças Públicas · Orçamento Público |
+| `relacoes_internacionais` | Relações internacionais | `55` Relações Internacionais e Comércio Exterior | Soberania, Defesa Nacional e Ordem Pública / Relações Internacionais |
+| `homenagens` | Homenagens e datas comemorativas | `72` Homenagens e Datas Comemorativas | Honorífico |
+
+`proposicao_tema` guarda uma linha por par de proposição e tema convertido, mesmo se mais de uma classificação oficial chegar ao mesmo tema. Sua fonte tem a URL e a data da consulta temática da Câmara ou do processo do Senado. A gravação é separada dos fatos da proposição e da votação. Quando o conjunto se repete, a fonte é reaproveitada. Na coleta normal, uma resposta válida substitui o conjunto da proposição e uma falha preserva o conjunto anterior.
+
+O resumo `temas` distingue proposições com tema, proposições sem classificação, classificações sem conversão e falhas de consulta ou gravação. Uma proposição pode ter um tema reconhecido e outra classificação sem conversão. O modo `--somente-temas` consulta só proposições sem tema ligadas a votações gravadas no período.
+
+Os códigos temáticos são aceitos como inteiros positivos ou texto com os dígitos de 0 a 9. Código malformado conta como falha da consulta e preserva os temas anteriores. No Senado, o código é validado e o caminho decide o tema.
+
+Na coleta normal da Câmara, a etapa dos temas para após duas falhas temporárias seguidas ou ao esgotar o prazo das consultas. As consultas de tema têm até quatro minutos, dentro dos primeiros 25 minutos da coleta. O resumo conta as proposições restantes em `proposicoes_nao_consultadas`. Uma nova coleta pode consultar essas proposições. O modo `--somente-temas` também pode consultar as que ainda estão sem tema.
+
+Uma votação expõe a união dos temas de suas proposições afetadas, na ordem do catálogo, em `temas: [{id, nome}]`. A lista vem vazia quando não há tema. O campo aparece em `GET /votacoes/{id}`, nos votos de `GET /parlamentares/{id}/votos` e nos fatos públicos das votações em `GET /edicoes/{id}`. Nos votos do parlamentar, `?tema=saude` filtra os registros antes da contagem e da paginação. Id de tema inválido responde 422 com `dados_invalidos`. `GET /temas` lista o catálogo.
 
 ## Atos do Diário Oficial
 

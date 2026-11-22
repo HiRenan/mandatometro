@@ -1,0 +1,12 @@
+{
+  "multiplos": {
+    "dados": [
+      {"codTema": 56, "tema": "Saúde"},
+      {"codTema": 62, "tema": "Ciência, Tecnologia e Inovação"},
+      {"codTema": 85, "tema": "Ciências Exatas e da Terra"}
+    ],
+    "links": []
+  },
+  "vazia": {"dados": [], "links": []},
+  "desconhecida": {"dados": [{"codTema": 999999, "tema": "Tema fictício"}], "links": []}
+}

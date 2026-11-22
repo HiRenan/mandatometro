@@ -85,6 +85,14 @@ Depois de aplicar a migration `0012` e publicar a API, abra **Actions → Coleta
 
 Confira os campos `videos` nos dois resumos e `url_video` na edição publicada e em uma votação com registro oficial. Se uma consulta falhar, repita com as mesmas datas. O modo volta às votações sem vídeo e usa a mesma fila e credenciais do banco da coleta.
 
+### Preencher temas de votações já coletadas
+
+Depois de confirmar a migration 0014 no ambiente, abra **Actions → Coletar Congresso → Run workflow**. Para produção, escolha **main**, marque apenas **somente_temas** e informe a janela das votações já gravadas. Divida um histórico maior em janelas. Em cada Casa, acompanhe `temas` no resumo. Se `falhas_consulta` ou `falhas_gravacao` forem maiores que zero, repita a janela para as proposições pendentes. As datas vazias usam os sete dias completos anteriores em Brasília.
+
+O modo usa as mesmas credenciais e a mesma fila da coleta e fica desmarcado por padrão. A agenda roda a coleta normal. O preenchimento grava temas e fontes temáticas à parte, o que preserva as revisões dos rascunhos. [Comando local](../README.md#como-rodar)
+
+Marcar **somente_videos** e **somente_temas** juntos faz a tarefa parar com erro antes de coletar. Rode um modo por vez.
+
 ## Coletar o TSE
 
 1. Confirme que **Migrar banco** aplicou a revisão `0013` e que **Coletar Congresso** carregou os parlamentares em exercício na mesma branch.

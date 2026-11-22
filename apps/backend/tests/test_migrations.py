@@ -20,6 +20,7 @@ TABELAS_DO_MVP = {
     "mandato",
     "candidatura",
     "proposicao",
+    "proposicao_tema",
     "video_sessao",
     "votacao",
     "votacao_proposicao",
@@ -277,3 +278,65 @@ def test_papel_preserva_conta_e_insert_da_versao_anterior(engine_de_teste, alemb
                 text("delete from conta where id in (:antiga, :nova)"),
                 {"antiga": antiga, "nova": nova},
             )
+
+
+def test_migration_dos_temas_preserva_votacao_e_proposicao_antigas(engine_de_teste, alembic):
+    url_fonte = "https://dadosabertos.camara.leg.br/exemplo-migration-0014"
+    inserir_tema = text(
+        "insert into proposicao_tema (proposicao_id, tema, fonte_id) values (:prop, :tema, :fonte)"
+    )
+    ler_vinculo = text(
+        "select pv.proposicao_id, pv.votacao_id, p.fonte_id, v.fonte_id"
+        " from votacao_proposicao pv"
+        " join proposicao p on p.id = pv.proposicao_id"
+        " join votacao v on v.id = pv.votacao_id where pv.votacao_id = :voto"
+    )
+
+    alembic("downgrade", "0014-1")
+    try:
+        with engine_de_teste.begin() as c:
+            fonte = c.execute(
+                text("insert into fonte (url) values (:url) returning id"), {"url": url_fonte}
+            ).scalar_one()
+            prop = c.execute(
+                text(
+                    "insert into proposicao (casa, id_externo, sigla, numero, ano, fonte_id)"
+                    " values ('camara', 611014, 'PL', 1, 2026, :fonte) returning id"
+                ),
+                {"fonte": fonte},
+            ).scalar_one()
+            voto = c.execute(
+                text(
+                    "insert into votacao (casa, id_externo, data, descricao, resultado, fonte_id)"
+                    " values ('camara', '611014-1', '2026-11-14', 'Votação fictícia.',"
+                    " 'aprovada', :fonte) returning id"
+                ),
+                {"fonte": fonte},
+            ).scalar_one()
+            c.execute(
+                text(
+                    "insert into votacao_proposicao (proposicao_id, votacao_id)"
+                    " values (:prop, :voto)"
+                ),
+                {"prop": prop, "voto": voto},
+            )
+
+        alembic("upgrade", "0014")
+        with engine_de_teste.begin() as c:
+            assert c.execute(ler_vinculo, {"voto": voto}).one() == (prop, voto, fonte, fonte)
+            assert c.execute(text("select count(*) from proposicao_tema")).scalar_one() == 0
+            c.execute(inserir_tema, {"prop": prop, "tema": "saude", "fonte": fonte})
+            with pytest.raises(IntegrityError) as erro, c.begin_nested():
+                c.execute(inserir_tema, {"prop": prop, "tema": "desconhecido", "fonte": fonte})
+            assert erro.value.orig.diag.constraint_name == "ck_proposicao_tema_tema"
+
+        alembic("downgrade", "0014-1")
+        assert "proposicao_tema" not in _tabelas(engine_de_teste)
+        with engine_de_teste.connect() as c:
+            assert c.execute(ler_vinculo, {"voto": voto}).one() == (prop, voto, fonte, fonte)
+    finally:
+        alembic("upgrade", "head")
+        with engine_de_teste.begin() as c:
+            c.execute(text("delete from votacao where casa = 'camara' and id_externo = '611014-1'"))
+            c.execute(text("delete from proposicao where casa = 'camara' and id_externo = 611014"))
+            c.execute(text("delete from fonte where url = :url"), {"url": url_fonte})

@@ -1,0 +1,20 @@
+{
+  "id": 101,
+  "classificacoes": [
+    {
+      "codigo": 33809168,
+      "descricao": "Saúde Pública",
+      "descricaoHierarquia": "Política Social / Saúde / Saúde Pública"
+    },
+    {
+      "codigo": 33809348,
+      "descricao": "Desenvolvimento Social e Combate à Fome",
+      "descricaoHierarquia": "Política Social / Proteção Social / Desenvolvimento Social e Combate à Fome"
+    },
+    {
+      "codigo": 33808912,
+      "descricao": "Política Social",
+      "descricaoHierarquia": "Política Social"
+    }
+  ]
+}
