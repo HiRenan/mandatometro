@@ -8,23 +8,32 @@
  */
 @layer components {
 	/*
-	 * A entrada da busca no cabeçalho, entre o nome e os links: a barra com a
-	 * lupa, "Buscar no site" e a tecla do atalho, com o fio de 2 px em papel 3
-	 * sobre a tinta. Com o ponteiro, o fio e a letra vão para o papel, e o foco é
-	 * o amarelo do cabeçalho (o .moldura). Ela cresce até 20rem no espaço entre
-	 * o nome e os links e fica no meio dele. A base é de 14rem, o que a lupa, o
-	 * "Buscar no site" e a tecla pedem: a linha do cabeçalho quebra pela base, e,
-	 * com a base de 20rem, os links desciam para a linha de baixo.
+	 * O lugar da entrada no cabeçalho, ao lado da conta: ele cresce até 20rem no
+	 * espaço que sobra e encolhe até o quadrado da lupa (o Renan, na #261). É um
+	 * contêiner, e a entrada mostra o que cabe nele. A largura dele vem do pai,
+	 * pelo flex: o contêiner não mede o que tem dentro.
+	 */
+	.lugar-da-busca {
+		container: lugar-da-busca / inline-size;
+		display: flex;
+		flex: 0 1 20rem;
+		justify-content: flex-end;
+		min-width: 2.75rem;
+	}
+
+	/*
+	 * A entrada da busca: a barra com a lupa, "Buscar no site" e a tecla do
+	 * atalho, com o fio de 2 px em papel 3 sobre a tinta. Com o ponteiro, o fio e
+	 * a letra vão para o papel, e o foco é o amarelo do cabeçalho (o .moldura).
 	 */
 	.entrada-da-busca {
+		position: relative;
 		display: flex;
-		flex: 1 1 14rem;
+		flex: 1 1 auto;
 		align-items: center;
 		gap: 0.6rem;
 		min-width: 0;
-		max-width: 20rem;
 		min-height: 2.75rem;
-		margin-inline: auto;
 		padding: 0 0.5rem 0 0.75rem;
 		border: 2px solid var(--papel-3);
 		color: var(--papel-3);
@@ -50,8 +59,14 @@
 		height: 1.125rem;
 	}
 
-	/* A tecla do atalho, à direita; a largura guarda o lugar do "⌘ K" do Mac. */
+	/*
+	 * A tecla do atalho, à direita; a largura guarda o lugar do "⌘ K" do Mac.
+	 * Ela só aparece no computador, com mouse ou trackpad, e onde a barra inteira
+	 * cabe (o Renan, na #261: "Ctrl K no computador"): no celular, ninguém aperta
+	 * Ctrl K.
+	 */
 	.entrada-da-busca kbd {
+		display: none;
 		min-width: 3.5rem;
 		margin-left: auto;
 		padding: 0.3rem 0.4rem;
@@ -64,31 +79,56 @@
 		text-transform: uppercase;
 	}
 
-	/* Abaixo de 960 px, a barra encolhe para a lupa e o "Buscar". */
-	@media (width < 60rem) {
-		.entrada-da-busca {
-			flex: none;
-		}
-
-		.entrada-da-busca-resto,
-		.entrada-da-busca kbd {
-			display: none;
+	@media (hover: hover) and (pointer: fine) {
+		@container lugar-da-busca (width >= 14.25rem) {
+			.entrada-da-busca kbd {
+				display: block;
+			}
 		}
 	}
 
 	/*
-	 * No celular, quando os links descem para a linha de baixo, a entrada fica na
-	 * ponta direita da linha do nome.
+	 * Onde "Buscar no site" não cabe, fica "Buscar", e, onde nem ele cabe, só a
+	 * lupa, num quadrado de 44 px. O que sai da tela continua no botão para o
+	 * leitor de tela, e o nome dele é sempre "Buscar no site". Os limites têm
+	 * folga sobre o que cada forma pede: "Buscar", 6,25rem; "Buscar no site",
+	 * 9,22rem; e a barra com a tecla, 13,84rem (medido no Edge, com a letra a
+	 * 100%; a 200%, um pouco menos, porque o fio fica em px).
 	 */
-	@media (width < 48rem) {
+	@container lugar-da-busca (width < 9.5rem) {
+		.entrada-da-busca-resto {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			margin: -1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+			white-space: nowrap;
+		}
+	}
+
+	@container lugar-da-busca (width < 6.5rem) {
 		.entrada-da-busca {
-			margin-right: 0;
+			flex: none;
+			justify-content: center;
+			width: 2.75rem;
+			padding: 0;
+		}
+
+		.entrada-da-busca-texto {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			margin: -1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+			white-space: nowrap;
 		}
 	}
 
 	/* Sem JavaScript, a entrada não abriria nada: ela sai do cabeçalho. */
 	@media (scripting: none) {
-		.entrada-da-busca {
+		.lugar-da-busca {
 			display: none;
 		}
 	}

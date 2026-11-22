@@ -6,8 +6,12 @@
 @import "./estilos/newsletter.css";
 @import "./estilos/edicoes.css";
 @import "./estilos/termo.css";
+@import "./estilos/perfil.css";
+@import "./estilos/conta.css";
 @import "./estilos/busca.css";
+@import "./estilos/jogo.css";
 @import "./estilos/painel.css";
+@import "./estilos/parlamentares.css";
 
 @theme {
 	/*
@@ -560,6 +564,16 @@
 		outline: none;
 	}
 
+	/*
+	 * O Renan reorganizou o cabeçalho na #261, em 20/11/2026 ("as opções para o
+	 * centro"). No computador, uma linha em três colunas: o nome à esquerda, os
+	 * links no meio e a busca e a conta à direita. As colunas dos lados têm a
+	 * mesma largura, e por isso os links ficam no meio exato da tela.
+	 *
+	 * Abaixo de 62rem, duas linhas: o nome, a busca e a conta em cima, e os links
+	 * embaixo, no meio. Os links estão duas vezes no HTML (header.tsx), e cada
+	 * largura mostra a sua lista: assim, o Tab segue a ordem da tela nas duas.
+	 */
 	.topo-dentro {
 		display: flex;
 		flex-wrap: wrap;
@@ -569,11 +583,40 @@
 		min-height: calc(var(--topo) - 6px);
 	}
 
+	.topo-nav-meio {
+		display: none;
+	}
+
+	/*
+	 * A lista de baixo toma a linha inteira e é um contêiner: a coluna da letra
+	 * grande depende da largura dela, e não da tela.
+	 */
+	.topo-nav-baixo {
+		flex: 1 1 100%;
+		container: links-de-baixo / inline-size;
+	}
+
+	@media (width >= 62rem) {
+		.topo-dentro {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+		}
+
+		.topo-nav-meio {
+			display: block;
+		}
+
+		.topo-nav-baixo {
+			display: none;
+		}
+	}
+
+	/* O nome e, a partir de 82rem, o lema embaixo dele. */
 	.marca {
 		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		column-gap: 0.9rem;
+		flex-direction: column;
+		align-items: flex-start;
+		row-gap: 2px;
 	}
 
 	.marca a {
@@ -606,13 +649,70 @@
 		color: var(--papel-3);
 	}
 
-	.topo-links {
+	/*
+	 * O lema fica embaixo do nome a partir de 82rem (o Renan, na #261: "Embaixo
+	 * do nome"). Ao lado dele, com os links no meio, só caberia a partir de uns
+	 * 1710 px. Abaixo de 82rem, ele sai do cabeçalho (está no rodapé). Com o
+	 * lema, o link do nome fica com a altura da letra, e os dois cabem juntos nos
+	 * 72 px do cabeçalho.
+	 */
+	@media (width < 82rem) {
+		.moldura .marca-lema {
+			display: none;
+		}
+	}
+
+	@media (width >= 82rem) {
+		.moldura .marca a {
+			min-height: 0;
+		}
+	}
+
+	/* A busca e a conta, juntas à direita. */
+	.topo-ferramentas {
 		display: flex;
-		gap: 0.25rem;
+		flex: 1 1 0;
+		align-items: center;
+		justify-content: flex-end;
+		column-gap: 0.5rem;
+	}
+
+	/*
+	 * A entrada da conta: "Entrar" para quem não entrou e "Conta" para quem
+	 * entrou (o Renan, na #261). Os dois links ficam na mesma célula, e a marca
+	 * data-conta-aberta do <html> (header.tsx) esconde um deles: a célula tem a
+	 * largura do maior, e nada pula quando a marca chega. O visibility: hidden
+	 * tira o escondido do Tab e do leitor de tela. A margem negativa põe a
+	 * palavra na margem da página, como o nome do outro lado.
+	 */
+	.entrada-da-conta {
+		display: grid;
+		flex: none;
 		margin-right: -0.9rem;
 	}
 
-	.topo-links a {
+	.entrada-da-conta > a {
+		grid-area: 1 / 1;
+		justify-self: end;
+	}
+
+	html:not([data-conta-aberta]) .entrada-da-conta > [data-para="quem-entrou"],
+	html[data-conta-aberta] .entrada-da-conta > [data-para="quem-nao-entrou"] {
+		visibility: hidden;
+	}
+
+	.topo-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem;
+	}
+
+	.topo-nav-baixo .topo-links {
+		justify-content: center;
+	}
+
+	.topo-links a,
+	.entrada-da-conta a {
 		position: relative;
 		display: inline-flex;
 		align-items: center;
@@ -628,7 +728,8 @@
 	}
 
 	/* O traço da seção: ele se risca quando o ponteiro passa e fica na seção aberta. */
-	.topo-links a::after {
+	.topo-links a::after,
+	.entrada-da-conta a::after {
 		content: "";
 		position: absolute;
 		right: 0.9rem;
@@ -642,36 +743,36 @@
 	}
 
 	.topo-links a:hover::after,
-	.topo-links a[data-na-secao]::after {
+	.topo-links a[data-na-secao]::after,
+	.entrada-da-conta a:hover::after,
+	.entrada-da-conta a[data-na-secao]::after {
 		transform: scaleX(1);
 	}
 
-	/*
-	 * O lema, em letra de máquina, é largo: abaixo de 1344 px ele não cabe na
-	 * linha do nome, da barra da busca e dos links, e sai do cabeçalho (ele está
-	 * no rodapé). A barra fica com o espaço dele (o Renan, na #233).
-	 */
-	@media (width < 84rem) {
-		.moldura .marca-lema {
-			display: none;
+	/* Nas cores forçadas, o navegador apaga os fundos: o traço fica na cor do texto. */
+	@media (forced-colors: active) {
+		.topo-links a::after,
+		.entrada-da-conta a::after {
+			background: CanvasText;
 		}
 	}
 
 	/*
-	 * No celular, os links se apertam. O respiro dos links fica em px, como as
-	 * margens: com a letra grande, ele não cresce, e o nome e os links ganham o
-	 * espaço.
+	 * No celular, os links e a conta se apertam. O respiro fica em px, como as
+	 * margens: com a letra grande, ele não cresce, e as palavras ganham o espaço.
 	 */
 	@media (width < 48rem) {
-		.topo-links {
+		.entrada-da-conta {
 			margin-right: -10px;
 		}
 
-		.topo-links a {
+		.topo-links a,
+		.entrada-da-conta a {
 			padding: 0 10px;
 		}
 
-		.topo-links a::after {
+		.topo-links a::after,
+		.entrada-da-conta a::after {
 			right: 10px;
 			left: 10px;
 		}
@@ -682,60 +783,94 @@
 			--letra: 1.3125rem;
 		}
 
-		.topo-links a {
+		.topo-links a,
+		.entrada-da-conta a {
 			letter-spacing: 0.05em;
 		}
 	}
 
 	/*
-	 * Com as edições, são três links (o data-com-edicoes, onde o site tem a API).
-	 * Abaixo de 32rem, eles não cabem na linha do nome, e o Início sai: o nome
-	 * leva ao início (o Renan, na #39). Com a letra grande, a linha ainda pode
-	 * quebrar, e os links descem, como antes.
+	 * A 320 px, o nome, a lupa e o "Entrar" cabem na linha de cima com o nome um
+	 * pouco menor (19 px): com 21 px, sobravam 2 px.
+	 */
+	@media (width < 22.5rem) {
+		.moldura .nome-do-site {
+			--letra: 1.1875rem;
+		}
+	}
+
+	/*
+	 * São quatro links — Início, Trilhas, Jogos e, com a API, Edições. Abaixo de
+	 * 32rem, eles não cabem numa linha com folga, e o Início sai: o nome leva ao
+	 * início (o Renan, na #39).
 	 */
 	@media (width < 32rem) {
-		.topo-links[data-com-edicoes] > li:first-child {
+		.topo-links > li:first-child {
 			display: none;
 		}
 	}
 
 	/*
-	 * Mesmo sem o Início, Trilhas e Edições só cabiam na linha do nome a partir de
-	 * 375 px, com 1 px de folga. Abaixo de 26rem, com as edições, os dois links se
-	 * apertam: o respiro de cada um cai para 6 px, sem o vão entre eles, e o vão
-	 * mínimo entre o nome e os links fica em 12 px. Assim, a linha cabe a partir
-	 * de 355 px. O cabeçalho sem a API não muda.
+	 * No celular estreito, o respiro de cada link e o da conta caem para 6 px,
+	 * sem o vão entre os links, e o vão mínimo entre o nome e a busca fica em
+	 * 12 px.
 	 */
 	@media (width < 26rem) {
-		.topo-dentro:has(.topo-links[data-com-edicoes]) {
+		.topo-dentro {
 			column-gap: 12px;
 		}
 
-		.topo-links[data-com-edicoes] {
-			gap: 0;
+		.entrada-da-conta {
 			margin-right: -6px;
 		}
 
-		.topo-links[data-com-edicoes] a {
+		.topo-links {
+			gap: 0;
+		}
+
+		.topo-links a,
+		.entrada-da-conta a {
 			padding: 0 6px;
 		}
 
-		.topo-links[data-com-edicoes] a::after {
+		.topo-links a::after,
+		.entrada-da-conta a::after {
 			right: 6px;
 			left: 6px;
 		}
 	}
 
 	/*
-	 * Com a letra grande numa tela estreita, Trilhas e Edições podem não caber
-	 * juntos nem na linha de baixo: a 320 px, com a letra a 200%, eles pedem uns
-	 * 296 px. A lista quebra, e Edições desce para baixo de Trilhas, em vez de
-	 * passar da página (no computador, a barra de rolagem toma 15 px, e a página
-	 * rolava de lado) ou de entrar na margem (no celular). Onde os dois cabem,
-	 * nada muda.
+	 * Com a letra grande no celular, os links não cabem numa linha: eles ficam um
+	 * embaixo do outro, no meio (o Renan, na #261: "Um embaixo do outro"), cada um
+	 * com 44 px de altura, em px, para o cabeçalho não crescer com a letra. A
+	 * medida é a largura da lista. Trilhas, Jogos e Edições pedem 11,95rem de
+	 * letra e 36 px de respiro: 13,75rem com a letra a 125%, 13,45rem a 150% e
+	 * 13,07rem a 200% (medido no Edge). Abaixo de 13,75rem, a coluna; a 100%, a
+	 * lista do celular tem pelo menos 17,5rem. Sem as edições, Trilhas e Jogos
+	 * pedem 7,6rem e 24 px (8,35rem a 200%) e cabem lado a lado até a 320 px.
+	 * Onde eles cabem, a lista fica numa linha, e nenhum link fica sozinho.
 	 */
-	.topo-links[data-com-edicoes] {
-		flex-wrap: wrap;
+	@container links-de-baixo (width < 13.75rem) {
+		.topo-links[data-com-edicoes] {
+			flex-direction: column;
+			align-items: center;
+		}
+
+		.topo-links[data-com-edicoes] a {
+			min-height: 44px;
+		}
+	}
+
+	@container links-de-baixo (width < 8.5rem) {
+		.topo-links:not([data-com-edicoes]) {
+			flex-direction: column;
+			align-items: center;
+		}
+
+		.topo-links:not([data-com-edicoes]) a {
+			min-height: 44px;
+		}
 	}
 
 	/* ───── O cartaz ───── */

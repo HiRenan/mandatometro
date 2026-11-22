@@ -116,13 +116,38 @@ def test_push_de_migration_e_manual_usam_mesmo_banco_e_fila(branch, ambiente):
 
 
 @pytest.mark.parametrize(
-    "nome", ["coleta.yml", "migrar.yml", "enviar-edicao.yml", "agenda-sabado.yml"]
+    "nome",
+    [
+        "coleta.yml",
+        "coleta-tse.yml",
+        "coleta-ipca.yml",
+        "migrar.yml",
+        "enviar-edicao.yml",
+        "agenda-sabado.yml",
+    ],
 )
 def test_fila_nao_cancela_migration_pendente_ao_chegar_coleta(nome):
     workflow = ler(nome)
     assert workflow["permissions"] == {"contents": "read"}
     assert workflow["concurrency"]["cancel-in-progress"] == "false"
     assert workflow["concurrency"]["queue"] == "max"
+
+
+@pytest.mark.parametrize("nome", ["coleta-tse.yml", "coleta-ipca.yml"])
+def test_coleta_so_dispara_manualmente_no_banco_da_branch(nome):
+    workflow = ler(nome)
+    job = workflow["jobs"]["coletar"]
+    assert set(workflow["on"]) == {"workflow_dispatch"}
+    for branch, ambiente in (("main", "producao"), ("develop", "desenvolvimento")):
+        assert avaliar(job["if"], "workflow_dispatch", branch)
+        assert avaliar(job["environment"], "workflow_dispatch", branch) == ambiente
+        assert (
+            avaliar(workflow["concurrency"]["group"], "workflow_dispatch", branch)
+            == f"banco-{ambiente}"
+        )
+    assert not avaliar(job["if"], "workflow_dispatch", "feat/teste")
+    assert not avaliar(job["if"], "schedule", "develop")
+    assert job["env"]["DATABASE_URL"] == "${{ secrets.DATABASE_URL }}"
 
 
 @pytest.mark.parametrize(

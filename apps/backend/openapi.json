@@ -1733,6 +1733,358 @@
         }
       }
     },
+    "/parlamentares": {
+      "get": {
+        "tags": [
+          "parlamentares"
+        ],
+        "summary": "Listar os parlamentares em exercício",
+        "description": "Lista completa em ordem alfabética, com filtros opcionais por UF e Casa.",
+        "operationId": "listar_parlamentares",
+        "parameters": [
+          {
+            "name": "uf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "AC",
+                    "AL",
+                    "AM",
+                    "AP",
+                    "BA",
+                    "CE",
+                    "DF",
+                    "ES",
+                    "GO",
+                    "MA",
+                    "MG",
+                    "MS",
+                    "MT",
+                    "PA",
+                    "PB",
+                    "PE",
+                    "PI",
+                    "PR",
+                    "RJ",
+                    "RN",
+                    "RO",
+                    "RR",
+                    "RS",
+                    "SC",
+                    "SE",
+                    "SP",
+                    "TO"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Sigla da UF do mandato em exercício.",
+              "title": "Uf"
+            },
+            "description": "Sigla da UF do mandato em exercício."
+          },
+          {
+            "name": "casa",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "camara",
+                    "senado"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Casa"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaParlamentares"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Banco indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/parlamentares/{id}": {
+      "get": {
+        "tags": [
+          "parlamentares"
+        ],
+        "summary": "Ler um parlamentar, seus mandatos e a contagem de votos gravados",
+        "operationId": "obter_parlamentar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2147483647,
+              "exclusiveMinimum": 0,
+              "description": "Id interno, inteiro positivo de 32 bits com sinal.",
+              "title": "Id"
+            },
+            "description": "Id interno, inteiro positivo de 32 bits com sinal."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetalheParlamentar"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Banco indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/parlamentares/{id}/patrimonio": {
+      "get": {
+        "tags": [
+          "parlamentares"
+        ],
+        "summary": "Listar o patrimônio declarado ao TSE por eleição",
+        "description": "Eleições com vínculo confirmado, em ordem crescente de ano, com os totais nominais e a correção pelo IPCA quando disponível.",
+        "operationId": "obter_patrimonio_parlamentar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2147483647,
+              "exclusiveMinimum": 0,
+              "description": "Id interno, inteiro positivo de 32 bits com sinal.",
+              "title": "Id"
+            },
+            "description": "Id interno, inteiro positivo de 32 bits com sinal."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatrimonioParlamentar"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Banco indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/parlamentares/{id}/votos": {
+      "get": {
+        "tags": [
+          "parlamentares"
+        ],
+        "summary": "Listar os votos gravados do parlamentar da votação mais recente para a mais antiga",
+        "description": "O filtro por tema é aplicado antes da paginação por deslocamento. O desempate usa o id interno decrescente da votação.",
+        "operationId": "listar_votos_parlamentar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2147483647,
+              "exclusiveMinimum": 0,
+              "description": "Id interno, inteiro positivo de 32 bits com sinal.",
+              "title": "Id"
+            },
+            "description": "Id interno, inteiro positivo de 32 bits com sinal."
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limite"
+            }
+          },
+          {
+            "name": "deslocamento",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Deslocamento"
+            }
+          },
+          {
+            "name": "tema",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/TemaId"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Tema das proposições afetadas.",
+              "title": "Tema"
+            },
+            "description": "Tema das proposições afetadas."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaVotosParlamentar"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Banco indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/piloto/tentativas": {
       "post": {
         "tags": [
@@ -1823,6 +2175,73 @@
         }
       }
     },
+    "/votacoes/{id}": {
+      "get": {
+        "tags": [
+          "votacoes"
+        ],
+        "summary": "Ler uma votação, seus votos por nome e os placares geral e por partido",
+        "description": "A lista contém todos os votos individuais gravados. Quando a votação não tem registros individuais, a lista de votos e a de partidos vêm vazias e o placar vem zerado.",
+        "operationId": "obter_votacao",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2147483647,
+              "exclusiveMinimum": 0,
+              "description": "Id interno, inteiro positivo de 32 bits com sinal.",
+              "title": "Id"
+            },
+            "description": "Id interno, inteiro positivo de 32 bits com sinal."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetalheVotacao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroVotacao"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Banco indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroVotacao"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroVotacao"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -1837,6 +2256,31 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Saude"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/temas": {
+      "get": {
+        "tags": [
+          "temas"
+        ],
+        "summary": "Listar os temas do Mandatômetro",
+        "operationId": "listar_temas",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TemaPublico"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Temas"
                 }
               }
             }
@@ -2028,6 +2472,24 @@
         ],
         "title": "Cadastro"
       },
+      "CargoPatrimonio": {
+        "properties": {
+          "codigo": {
+            "type": "integer",
+            "title": "Codigo"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          }
+        },
+        "type": "object",
+        "required": [
+          "codigo",
+          "nome"
+        ],
+        "title": "CargoPatrimonio"
+      },
       "Codigo": {
         "properties": {
           "token": {
@@ -2041,6 +2503,258 @@
           "token"
         ],
         "title": "Codigo"
+      },
+      "ContagemVotosParlamentar": {
+        "properties": {
+          "sim": {
+            "type": "integer",
+            "title": "Sim"
+          },
+          "nao": {
+            "type": "integer",
+            "title": "Nao"
+          },
+          "abstencao": {
+            "type": "integer",
+            "title": "Abstencao"
+          },
+          "obstrucao": {
+            "type": "integer",
+            "title": "Obstrucao"
+          },
+          "presidente": {
+            "type": "integer",
+            "title": "Presidente"
+          },
+          "nao_votou": {
+            "type": "integer",
+            "title": "Nao Votou"
+          },
+          "outro": {
+            "type": "integer",
+            "title": "Outro"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sim",
+          "nao",
+          "abstencao",
+          "obstrucao",
+          "presidente",
+          "nao_votou",
+          "outro"
+        ],
+        "title": "ContagemVotosParlamentar"
+      },
+      "CorrecaoIpca": {
+        "properties": {
+          "indice": {
+            "type": "string",
+            "const": "IPCA",
+            "title": "Indice"
+          },
+          "mes_fim": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+            "title": "Mes Fim",
+            "description": "Último mês do IPCA disponível, incluído na correção."
+          },
+          "fonte": {
+            "$ref": "#/components/schemas/FontePatrimonio",
+            "description": "Observação do IPCA do mês final no Banco Central."
+          }
+        },
+        "type": "object",
+        "required": [
+          "indice",
+          "mes_fim",
+          "fonte"
+        ],
+        "title": "CorrecaoIpca"
+      },
+      "DetalheParlamentar": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "Id interno do parlamentar."
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "casa": {
+            "type": "string",
+            "enum": [
+              "camara",
+              "senado"
+            ],
+            "title": "Casa"
+          },
+          "uf": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uf",
+            "description": "UF do mandato em exercício de maior legislatura. No detalhe, usa o mandato de maior legislatura se nenhum estiver em exercício. Nula sem mandato."
+          },
+          "partido": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partido",
+            "description": "Sigla registrada no voto mais recente pela data da votação, com desempate pelo maior id interno da votação. Nula se o voto não informa partido ou se não há voto."
+          },
+          "mandatos": {
+            "items": {
+              "$ref": "#/components/schemas/MandatoPublico"
+            },
+            "type": "array",
+            "title": "Mandatos"
+          },
+          "contagem_votos": {
+            "$ref": "#/components/schemas/ContagemVotosParlamentar",
+            "description": "Contagem dos registros de voto deste parlamentar, por valor normalizado. Uma votação sem registro da pessoa fica fora da contagem."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "casa",
+          "uf",
+          "partido",
+          "mandatos",
+          "contagem_votos"
+        ],
+        "title": "DetalheParlamentar"
+      },
+      "DetalheVotacao": {
+        "properties": {
+          "data": {
+            "type": "string",
+            "format": "date",
+            "title": "Data"
+          },
+          "descricao": {
+            "type": "string",
+            "title": "Descricao"
+          },
+          "resultado": {
+            "type": "string",
+            "enum": [
+              "aprovada",
+              "rejeitada",
+              "outro"
+            ],
+            "title": "Resultado"
+          },
+          "proposicoes": {
+            "items": {
+              "$ref": "#/components/schemas/ProposicaoAfetada"
+            },
+            "type": "array",
+            "title": "Proposicoes"
+          },
+          "temas": {
+            "items": {
+              "$ref": "#/components/schemas/TemaPublico"
+            },
+            "type": "array",
+            "title": "Temas"
+          },
+          "url_oficial": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url Oficial",
+            "description": "Página oficial da votação, com o endereço da coleta como reserva. Nula se a fonte estiver sem endereço."
+          },
+          "coletado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Coletado Em",
+            "description": "Data e hora de coleta da fonte da votação."
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "Id interno da votação."
+          },
+          "casa": {
+            "type": "string",
+            "enum": [
+              "camara",
+              "senado"
+            ],
+            "title": "Casa"
+          },
+          "url_video": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url Video",
+            "description": "Endereço HTTPS do vídeo oficial da sessão inteira, ou nulo quando indisponível."
+          },
+          "placar": {
+            "$ref": "#/components/schemas/ContagemVotosParlamentar",
+            "description": "Contagem dos votos individuais gravados."
+          },
+          "placar_por_partido": {
+            "items": {
+              "$ref": "#/components/schemas/PlacarPorPartido"
+            },
+            "type": "array",
+            "title": "Placar Por Partido",
+            "description": "Um placar por sigla presente nos votos. O grupo sem partido vem por último."
+          },
+          "votos": {
+            "items": {
+              "$ref": "#/components/schemas/VotoNominal"
+            },
+            "type": "array",
+            "title": "Votos",
+            "description": "Lista completa em ordem de nome, com desempate pelo id interno do parlamentar."
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "descricao",
+          "resultado",
+          "proposicoes",
+          "temas",
+          "url_oficial",
+          "coletado_em",
+          "id",
+          "casa",
+          "url_video",
+          "placar",
+          "placar_por_partido",
+          "votos"
+        ],
+        "title": "DetalheVotacao"
       },
       "EdicaoPublica": {
         "properties": {
@@ -2085,6 +2799,107 @@
           "itens"
         ],
         "title": "EdicaoPublica"
+      },
+      "EleicaoPatrimonio": {
+        "properties": {
+          "ano": {
+            "type": "integer",
+            "title": "Ano"
+          },
+          "cargo": {
+            "$ref": "#/components/schemas/CargoPatrimonio"
+          },
+          "uf": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "AC",
+                  "AL",
+                  "AM",
+                  "AP",
+                  "BA",
+                  "CE",
+                  "DF",
+                  "ES",
+                  "GO",
+                  "MA",
+                  "MG",
+                  "MS",
+                  "MT",
+                  "PA",
+                  "PB",
+                  "PE",
+                  "PI",
+                  "PR",
+                  "RJ",
+                  "RN",
+                  "RO",
+                  "RR",
+                  "RS",
+                  "SC",
+                  "SE",
+                  "SP",
+                  "TO"
+                ]
+              },
+              {
+                "type": "string",
+                "const": "BR"
+              }
+            ],
+            "title": "Uf",
+            "description": "UF da eleição ou BR para eleição nacional."
+          },
+          "total_centavos": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 9007199254740991.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Centavos",
+            "description": "Total nominal declarado ao TSE, em centavos de real. Nulo sem total."
+          },
+          "fonte": {
+            "$ref": "#/components/schemas/FontePatrimonio"
+          },
+          "mes_inicio": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+            "title": "Mes Inicio",
+            "description": "Outubro do ano da eleição, incluído na correção."
+          },
+          "total_corrigido_centavos": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 9007199254740991.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Corrigido Centavos",
+            "description": "Total em centavos corrigido pelo IPCA. Nulo sem total, sem cobertura completa do período ou acima do limite de centavos da API."
+          }
+        },
+        "type": "object",
+        "required": [
+          "ano",
+          "cargo",
+          "uf",
+          "total_centavos",
+          "fonte",
+          "mes_inicio",
+          "total_corrigido_centavos"
+        ],
+        "title": "EleicaoPatrimonio"
       },
       "Endereco": {
         "properties": {
@@ -2162,6 +2977,24 @@
         ],
         "title": "ErroPainel"
       },
+      "ErroParlamentar": {
+        "properties": {
+          "erro": {
+            "type": "string",
+            "enum": [
+              "dados_invalidos",
+              "parlamentar_nao_encontrado",
+              "servico_indisponivel"
+            ],
+            "title": "Erro"
+          }
+        },
+        "type": "object",
+        "required": [
+          "erro"
+        ],
+        "title": "ErroParlamentar"
+      },
       "ErroPiloto": {
         "properties": {
           "erro": {
@@ -2181,6 +3014,24 @@
           "erro"
         ],
         "title": "ErroPiloto"
+      },
+      "ErroVotacao": {
+        "properties": {
+          "erro": {
+            "type": "string",
+            "enum": [
+              "dados_invalidos",
+              "votacao_nao_encontrada",
+              "servico_indisponivel"
+            ],
+            "title": "Erro"
+          }
+        },
+        "type": "object",
+        "required": [
+          "erro"
+        ],
+        "title": "ErroVotacao"
       },
       "Exclusao": {
         "properties": {
@@ -2235,6 +3086,25 @@
           "votacoes"
         ],
         "title": "FatosPublicos"
+      },
+      "FontePatrimonio": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "coletado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Coletado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "coletado_em"
+        ],
+        "title": "FontePatrimonio"
       },
       "FontePublica": {
         "properties": {
@@ -2455,6 +3325,53 @@
         ],
         "title": "ListaEdicoes"
       },
+      "ListaParlamentares": {
+        "properties": {
+          "parlamentares": {
+            "items": {
+              "$ref": "#/components/schemas/ParlamentarPublico"
+            },
+            "type": "array",
+            "title": "Parlamentares"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parlamentares"
+        ],
+        "title": "ListaParlamentares"
+      },
+      "ListaVotosParlamentar": {
+        "properties": {
+          "votos": {
+            "items": {
+              "$ref": "#/components/schemas/VotoParlamentar"
+            },
+            "type": "array",
+            "title": "Votos"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limite": {
+            "type": "integer",
+            "title": "Limite"
+          },
+          "deslocamento": {
+            "type": "integer",
+            "title": "Deslocamento"
+          }
+        },
+        "type": "object",
+        "required": [
+          "votos",
+          "total",
+          "limite",
+          "deslocamento"
+        ],
+        "title": "ListaVotosParlamentar"
+      },
       "Login": {
         "properties": {
           "senha": {
@@ -2475,6 +3392,123 @@
           "email"
         ],
         "title": "Login"
+      },
+      "MandatoPublico": {
+        "properties": {
+          "legislatura": {
+            "type": "integer",
+            "title": "Legislatura"
+          },
+          "uf": {
+            "type": "string",
+            "title": "Uf"
+          },
+          "condicao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condicao"
+          },
+          "em_exercicio": {
+            "type": "boolean",
+            "title": "Em Exercicio"
+          }
+        },
+        "type": "object",
+        "required": [
+          "legislatura",
+          "uf",
+          "condicao",
+          "em_exercicio"
+        ],
+        "title": "MandatoPublico"
+      },
+      "ParlamentarPublico": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "Id interno do parlamentar."
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "casa": {
+            "type": "string",
+            "enum": [
+              "camara",
+              "senado"
+            ],
+            "title": "Casa"
+          },
+          "uf": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uf",
+            "description": "UF do mandato em exercício de maior legislatura. No detalhe, usa o mandato de maior legislatura se nenhum estiver em exercício. Nula sem mandato."
+          },
+          "partido": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partido",
+            "description": "Sigla registrada no voto mais recente pela data da votação, com desempate pelo maior id interno da votação. Nula se o voto não informa partido ou se não há voto."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "casa",
+          "uf",
+          "partido"
+        ],
+        "title": "ParlamentarPublico"
+      },
+      "PatrimonioParlamentar": {
+        "properties": {
+          "eleicoes": {
+            "items": {
+              "$ref": "#/components/schemas/EleicaoPatrimonio"
+            },
+            "type": "array",
+            "title": "Eleicoes"
+          },
+          "correcao_ipca": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CorrecaoIpca"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nula sem a série do IPCA no banco."
+          }
+        },
+        "type": "object",
+        "required": [
+          "eleicoes",
+          "correcao_ipca"
+        ],
+        "title": "PatrimonioParlamentar"
       },
       "PedidoInscricao": {
         "properties": {
@@ -2580,6 +3614,31 @@
         ],
         "title": "PerfilConta"
       },
+      "PlacarPorPartido": {
+        "properties": {
+          "partido": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partido",
+            "description": "Sigla do dia do voto, nula no grupo sem partido."
+          },
+          "placar": {
+            "$ref": "#/components/schemas/ContagemVotosParlamentar"
+          }
+        },
+        "type": "object",
+        "required": [
+          "partido",
+          "placar"
+        ],
+        "title": "PlacarPorPartido"
+      },
       "PlacarPublico": {
         "properties": {
           "sim": {
@@ -2630,6 +3689,41 @@
           "lidos"
         ],
         "title": "ProgressoConta"
+      },
+      "ProposicaoAfetada": {
+        "properties": {
+          "sigla": {
+            "type": "string",
+            "title": "Sigla"
+          },
+          "numero": {
+            "type": "integer",
+            "title": "Numero"
+          },
+          "ano": {
+            "type": "integer",
+            "title": "Ano"
+          },
+          "ementa": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ementa"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sigla",
+          "numero",
+          "ano",
+          "ementa"
+        ],
+        "title": "ProposicaoAfetada"
       },
       "Redefinicao": {
         "properties": {
@@ -2807,6 +3901,47 @@
         ],
         "title": "Saude"
       },
+      "TemaId": {
+        "type": "string",
+        "enum": [
+          "saude",
+          "educacao",
+          "economia",
+          "trabalho",
+          "previdencia_assistencia",
+          "direitos_cidadania",
+          "seguranca_defesa",
+          "justica",
+          "meio_ambiente",
+          "agropecuaria",
+          "infraestrutura",
+          "cidades_moradia",
+          "ciencia_tecnologia",
+          "cultura_esporte",
+          "politica_governo",
+          "orcamento_publico",
+          "relacoes_internacionais",
+          "homenagens"
+        ],
+        "title": "TemaId"
+      },
+      "TemaPublico": {
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/TemaId"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nome"
+        ],
+        "title": "TemaPublico"
+      },
       "Termo": {
         "properties": {
           "versao": {
@@ -2827,6 +3962,11 @@
       },
       "VotacaoPublica": {
         "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "Id interno da votação gravado nos fatos da edição."
+          },
           "data": {
             "type": "string",
             "format": "date",
@@ -2857,16 +3997,182 @@
             },
             "type": "array",
             "title": "Fontes"
+          },
+          "url_video": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url Video",
+            "description": "Endereço HTTPS do vídeo oficial da sessão inteira, ou nulo quando indisponível."
+          },
+          "temas": {
+            "items": {
+              "$ref": "#/components/schemas/TemaPublico"
+            },
+            "type": "array",
+            "title": "Temas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "data",
+          "resultado",
+          "placar",
+          "fontes",
+          "url_video",
+          "temas"
+        ],
+        "title": "VotacaoPublica"
+      },
+      "VotoNominal": {
+        "properties": {
+          "parlamentar_id": {
+            "type": "integer",
+            "title": "Parlamentar Id",
+            "description": "Id interno do parlamentar."
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "partido": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partido",
+            "description": "Sigla do partido no dia do voto."
+          },
+          "uf": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uf",
+            "description": "UF registrada no dia do voto."
+          },
+          "valor": {
+            "type": "string",
+            "enum": [
+              "sim",
+              "nao",
+              "abstencao",
+              "obstrucao",
+              "presidente",
+              "nao_votou",
+              "outro"
+            ],
+            "title": "Valor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parlamentar_id",
+          "nome",
+          "partido",
+          "uf",
+          "valor"
+        ],
+        "title": "VotoNominal"
+      },
+      "VotoParlamentar": {
+        "properties": {
+          "data": {
+            "type": "string",
+            "format": "date",
+            "title": "Data"
+          },
+          "descricao": {
+            "type": "string",
+            "title": "Descricao"
+          },
+          "resultado": {
+            "type": "string",
+            "enum": [
+              "aprovada",
+              "rejeitada",
+              "outro"
+            ],
+            "title": "Resultado"
+          },
+          "proposicoes": {
+            "items": {
+              "$ref": "#/components/schemas/ProposicaoAfetada"
+            },
+            "type": "array",
+            "title": "Proposicoes"
+          },
+          "temas": {
+            "items": {
+              "$ref": "#/components/schemas/TemaPublico"
+            },
+            "type": "array",
+            "title": "Temas"
+          },
+          "url_oficial": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url Oficial",
+            "description": "Página oficial da votação, com o endereço da coleta como reserva. Nula se a fonte estiver sem endereço."
+          },
+          "coletado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Coletado Em",
+            "description": "Data e hora de coleta da fonte da votação."
+          },
+          "votacao_id": {
+            "type": "integer",
+            "title": "Votacao Id",
+            "description": "Id interno da votação."
+          },
+          "valor": {
+            "type": "string",
+            "enum": [
+              "sim",
+              "nao",
+              "abstencao",
+              "obstrucao",
+              "presidente",
+              "nao_votou",
+              "outro"
+            ],
+            "title": "Valor"
           }
         },
         "type": "object",
         "required": [
           "data",
+          "descricao",
           "resultado",
-          "placar",
-          "fontes"
+          "proposicoes",
+          "temas",
+          "url_oficial",
+          "coletado_em",
+          "votacao_id",
+          "valor"
         ],
-        "title": "VotacaoPublica"
+        "title": "VotoParlamentar"
       }
     }
   }

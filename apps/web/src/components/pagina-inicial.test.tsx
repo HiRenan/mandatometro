@@ -118,14 +118,24 @@ const pagina: Dados = {
 
 /**
  * Mostra a página num site de mentira, com as rotas da trilha e dos artigos para
- * os links. A folha da newsletter só aparece com a API (o `newsletter`).
+ * os links. A folha da newsletter e o bloco dos parlamentares só aparecem com a
+ * API (o `newsletter` e o `parlamentares`).
  */
-async function mostrar(dados: Dados = pagina, { newsletter = false } = {}) {
+async function mostrar(
+	dados: Dados = pagina,
+	{ newsletter = false, parlamentares = false } = {},
+) {
 	const raiz = createRootRoute({ component: () => <Outlet /> });
 	const inicio = createRoute({
 		getParentRoute: () => raiz,
 		path: "/",
-		component: () => <PaginaInicial pagina={dados} newsletter={newsletter} />,
+		component: () => (
+			<PaginaInicial
+				pagina={dados}
+				newsletter={newsletter}
+				parlamentares={parlamentares}
+			/>
+		),
 	});
 	const trilha = createRoute({
 		getParentRoute: () => raiz,
@@ -525,6 +535,38 @@ describe("página inicial", () => {
 		expect(tela.textContent).not.toMatch(
 			/status da api|quiz|em breve|em construção/i,
 		);
+	});
+
+	it("com a API, o bloco dos parlamentares vem depois do caminho, com o campo Estado, que pede a lista sem JavaScript", async () => {
+		await mostrar(pagina, { parlamentares: true });
+		const bloco = screen.getByRole("region", {
+			name: "Quem representa o seu estado",
+		});
+		const formulario = bloco.querySelector("form");
+
+		expect(
+			vemDepois(
+				screen.getByRole("region", { name: pagina.caminho?.titulo }),
+				bloco,
+			),
+		).toBe(true);
+		expect(bloco.classList.contains("revelar")).toBe(true);
+		expect(
+			within(bloco).getByRole("combobox", { name: "Estado" }),
+		).toBeTruthy();
+		expect(formulario?.getAttribute("action")).toBe("/parlamentares");
+		expect(formulario?.getAttribute("method")).toBe("get");
+		expect(
+			bloco.querySelector(".mapa-de-enfeite")?.getAttribute("aria-hidden"),
+		).toBe("true");
+	});
+
+	it("sem a API, o bloco dos parlamentares não aparece", async () => {
+		await mostrar();
+
+		expect(
+			screen.queryByRole("region", { name: "Quem representa o seu estado" }),
+		).toBeNull();
 	});
 
 	it("na folha da newsletter, depois da nota, o link leva às edições", async () => {

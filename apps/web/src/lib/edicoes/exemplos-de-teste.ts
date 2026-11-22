@@ -63,6 +63,7 @@ export function edicaoDeExemplo(): EdicaoPublica {
 				fatos: {
 					votacoes: [
 						{
+							id: 701,
 							data: "2026-11-11",
 							resultado: "aprovada",
 							placar: {
@@ -73,6 +74,8 @@ export function edicaoDeExemplo(): EdicaoPublica {
 								presidente: 1,
 							},
 							fontes: [FONTE_DA_VOTACAO],
+							url_video: null,
+							temas: [],
 						},
 					],
 				},
@@ -95,10 +98,13 @@ export function edicaoDeExemplo(): EdicaoPublica {
 				fatos: {
 					votacoes: [
 						{
+							id: 702,
 							data: "2026-11-12",
 							resultado: "outro",
 							placar: null,
 							fontes: [FONTE_DO_SENADO],
+							url_video: null,
+							temas: [],
 						},
 					],
 				},

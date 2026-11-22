@@ -1,3 +1,6 @@
 # Fim de linha LF em todos os arquivos de texto, inclusive no Windows:
 # scripts com CRLF quebram dentro dos containers Linux do Docker.
 * text=auto eol=lf
+# As amostras do TSE mantêm os bytes do CSV em latin-1 com CRLF.
+apps/backend/tests/fixtures/tse/*.csv -text !eol whitespace=cr-at-eol
+apps/backend/tests/fixtures/tse_bens/*.csv -text !eol whitespace=cr-at-eol

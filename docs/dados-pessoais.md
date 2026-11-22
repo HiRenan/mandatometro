@@ -4,13 +4,19 @@ O regulamento do hackathon (item 6.9) proíbe a demo de expor dados pessoais rea
 
 ## Parlamentares e candidatos
 
-CPF, título de eleitor e data de nascimento de parlamentares e candidatos servem só para ligar registros entre bases e ficam no banco. A API, o front, os logs e os fixtures de teste identificam pessoas pelo id interno.
+Desde a decisão de 21/11/2026, CPF, título de eleitor e data de nascimento de parlamentares e candidatos servem só para ligar registros entre bases e ficam apenas na memória durante a carga, quando necessários. O conector do TSE usa o CPF para confirmar a ligação entre eleições. A coleta da Câmara descarta `cpf` e `dataNascimento` de `/deputados/{id}`.
 
-No MVP, a coleta descarta `cpf` e `dataNascimento` de `/deputados/{id}`. O banco ainda não tem colunas para eles. A ligação por CPF só entra com o TSE, depois do MVP (#12 e #13). Veja os [campos pessoais das fontes](dicionario-de-dados.md#campos-pessoais).
+A API, o front, os logs e os fixtures de teste identificam pessoas pelo id interno.
+
+O banco recebe candidaturas com par único entre os parlamentares em exercício, ligadas pelo id interno. A carga guarda o nome de urna para essas candidaturas. Nome civil, documentos, nascimento e demais dados de cadastro ficam fora da tabela de candidaturas. Os resumos e logs trazem contagens, e as fixtures do TSE usam dados inventados. Veja os [campos pessoais das fontes](dicionario-de-dados.md#campos-pessoais).
+
+A carga de bens refaz a ligação de 2022 e 2026 em memória, com nome de urna e nome civil, para confirmar as âncoras. Ela usa só o CPF para ligar as outras eleições e conferir a identidade do histórico gravado. O CPF e os nomes do CSV ficam na memória da execução. O banco recebe a chave oficial da candidatura, o código de cargo, a UF, as fontes e o total nominal por código de bem. A carga descarta a descrição livre de cada bem e usa rótulos fixos no código. A API entrega o total por eleição com a fonte. Logs e resumos trazem apenas contagens e códigos de falha. [Bens declarados ao TSE](dicionario-de-dados.md#bens-declarados-ao-tse)
 
 ## Ausências e afastamentos
 
 Motivo de ausência fica fora do banco, para a licença saúde não ser deduzida: toda ausência do Senado (AP, LS, MIS, NCom, LAP, LP e as que entrarem em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, igual às outras, e o motivo de afastamento do senador não é gravado. O voto só guarda os códigos de voto e de presença de `CODIGOS_GRAVADOS` em `valor_bruto`, o que o CHECK do banco garante, e um código novo entra como `outro`, sem o código. O banco guarda `P-NRV`, de quem estava presente. O log também não leva o código nem a pessoa, porque o log junto com o banco apontaria quem recebeu um código que pode ser de saúde: a coleta (#10 e #11) registra a votação e quantos códigos desconhecidos vieram nela, e quem for classificar o código o lê na fonte pública.
+
+A API usa o valor normalizado (`voto.valor`) no histórico e na contagem de votos do parlamentar, na lista nominal da votação e nos placares. Na lista nominal, cada voto traz o id interno e o nome do parlamentar, com o partido e a UF registrados no dia do voto.
 
 ## Atos do Diário Oficial
 

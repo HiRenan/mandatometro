@@ -1,0 +1,345 @@
+/*
+ * O perfil da conta, em /perfil (DESIGN.md, "Perfil da conta"): o cartaz das
+ * páginas de dentro, com o nome da página no alto e a saudação no lugar do
+ * título; o quadro da leitura, uma folha com uma trilha por linha e um azulejo
+ * por artigo; e a conta. A tela fica em routes/perfil.tsx.
+ */
+@layer components {
+	/* ───── O cartaz ───── */
+
+	/*
+	 * O nome da página, em Label, no alto do cartaz, onde as outras páginas põem
+	 * a migalha, e com a altura dela. A margem de cima que empurra o título do
+	 * cartaz para o pé (a do .cartaz h1) fica com a saudação.
+	 */
+	.perfil-cartaz > .perfil-nome {
+		display: flex;
+		align-items: center;
+		min-height: 2.75rem;
+		margin-top: 0;
+	}
+
+	/*
+	 * A saudação, na letra gigante do cartaz: "Olá!" no HTML do servidor e, com a
+	 * conta, "Olá," e o primeiro nome, cada um numa linha, que não quebra. A
+	 * caixa guarda as duas linhas na letra maior que a saudação pode ter: a do
+	 * "Olá" sozinho na linha (o --palavra-da-caixa, do TETO_DA_CAIXA de
+	 * lib/perfil.ts), com a entrelinha de 1,15 do titulo-de-folha. A saudação
+	 * fica no alto da caixa: quando o nome chega, o "Olá" não sai do lugar, o nome
+	 * entra na linha de baixo, e o fio do pé fica onde estava. Um nome comprido só
+	 * diminui a letra, pelo --palavra da saudação, que mede a linha inteira.
+	 */
+	.saudacao {
+		--letra: clamp(3.5rem, 1.2rem + 8vw, 11rem);
+		min-height: calc(
+			2 *
+			1.15 *
+			min(
+				var(--letra),
+				calc(
+					(100cqi - 2 * var(--margem) - var(--recuo, 0px)) /
+					var(--palavra-da-caixa)
+				)
+			)
+		);
+		margin-top: auto;
+	}
+
+	.saudacao .caixa {
+		display: block;
+	}
+
+	/* Cada linha tomba no lugar, como as palavras do título do cartaz. */
+	.saudacao .palavra {
+		display: block;
+		width: fit-content;
+		white-space: nowrap;
+		transform-origin: 50% 100%;
+		animation: palavra-tomba 0.7s var(--ease-mola) both;
+		animation-delay: calc(0.08s + var(--i, 0) * 70ms);
+	}
+
+	/*
+	 * A linha da leitura guarda a altura da frase mais comprida (as Reservas). Na
+	 * coluna do botão, ela tem a largura da coluna, e as frases guardadas quebram
+	 * as linhas como a da vez. A grade fica aqui, e não numa classe do Tailwind:
+	 * a classe, na camada de cima, venceria o display: none de baixo.
+	 */
+	.perfil-progresso {
+		display: grid;
+		justify-self: stretch;
+	}
+
+	/*
+	 * Sem JavaScript, a conta não responde: a espera e o "Sair" saem, e o aviso do
+	 * noscript fica no lugar do botão. O -caixa-da-pagina-ssr.test.tsx confere que
+	 * os dois não levam classe de display do Tailwind.
+	 */
+	@media (scripting: none) {
+		.perfil-progresso,
+		.perfil-sair {
+			display: none;
+		}
+	}
+
+	@media (width >= 62rem) {
+		/* O painel ocupa os 30% da direita, e a saudação para antes dele. */
+		.saudacao {
+			--recuo: 30cqi;
+		}
+	}
+
+	/* ───── Sua leitura e sua conta ───── */
+
+	.perfil-corpo {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: clamp(3rem, 7vw, 5rem);
+		padding: clamp(1.5rem, 4vw, 3rem) var(--margem) clamp(2.5rem, 6vw, 4.5rem);
+	}
+
+	/* Os títulos das duas partes, do tamanho dos da página do termo. */
+	.perfil-titulo {
+		--letra: clamp(1.875rem, 1.4rem + 2vw, 3rem);
+	}
+
+	.perfil-legenda {
+		max-width: 39rem;
+		margin-top: 0.75rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.5;
+		color: var(--tinta-suave);
+	}
+
+	/*
+	 * O quadro da leitura: uma folha com fio de tinta, como a chamada do quiz,
+	 * com uma trilha por linha, entre fios. No papel claro da folha, o azulejo
+	 * cru, papel sobre papel, ainda se vê.
+	 */
+	.perfil-trilhas {
+		margin-top: clamp(1.25rem, 3vw, 2rem);
+		border: 2px solid var(--tinta);
+		background: var(--folha);
+	}
+
+	/*
+	 * Cada trilha: o azulejo dela ao lado do título e da frase e, embaixo, a
+	 * fileira dos artigos, na largura toda. A partir de 40rem, a fileira fica
+	 * embaixo do texto; a partir de 62rem, numa terceira coluna.
+	 */
+	.perfil-trilha {
+		display: grid;
+		grid-template-columns: 3.5rem minmax(0, 1fr);
+		gap: 1rem var(--respiro);
+		align-items: start;
+		padding: clamp(1.25rem, 3vw, 1.75rem) var(--respiro);
+	}
+
+	.perfil-trilha + .perfil-trilha {
+		border-top: 2px solid var(--tinta);
+	}
+
+	.perfil-trilha-azulejo {
+		width: 3.5rem;
+	}
+
+	/* O azulejo do símbolo vira em onda quando o ponteiro passa, como em Trilhas. */
+	.perfil-trilha:hover .com-simbolo .az {
+		rotate: y 360deg;
+	}
+
+	.perfil-trilha-texto > h3 {
+		--letra: clamp(1.5rem, 1.1rem + 1.6vw, 2.25rem);
+	}
+
+	/*
+	 * O título leva à trilha, com a área de toque do título da lista das
+	 * trilhas: pelo menos 44 px de altura, o que falta por igual em cima e
+	 * embaixo, sem mexer no desenho.
+	 */
+	.perfil-trilha-texto a {
+		position: relative;
+		display: block;
+		width: fit-content;
+		text-decoration: none;
+	}
+
+	.perfil-trilha-texto a::before {
+		content: "";
+		position: absolute;
+		inset: 50% 0 auto;
+		height: max(100%, 2.75rem);
+		translate: 0 -50%;
+	}
+
+	.perfil-trilha-texto a:hover {
+		text-decoration: underline;
+		text-decoration-thickness: 0.06em;
+	}
+
+	.perfil-trilha-progresso {
+		margin-top: 0.5rem;
+	}
+
+	/*
+	 * A fileira dos artigos, numa linha só: cada azulejo tem até 44 px e, numa
+	 * tela estreita, diminui até caber a fileira da trilha mais comprida (o
+	 * --mais, do TSX). Todas as fileiras têm o azulejo do mesmo tamanho, e as
+	 * colunas do quadro se alinham de uma trilha para a outra. São desenho: o
+	 * estado está na frase da trilha.
+	 */
+	.perfil-azulejos {
+		display: grid;
+		grid-column: 1 / -1;
+		grid-auto-columns: min(
+			2.75rem,
+			(100% - (var(--mais, 8) - 1) * 0.375rem) /
+			var(--mais, 8)
+		);
+		grid-auto-flow: column;
+		justify-content: start;
+		gap: 0.375rem;
+	}
+
+	.perfil-azulejos li {
+		position: relative;
+	}
+
+	/*
+	 * O visto no canto do azulejo lido, como na miniatura: passa da borda, mas
+	 * não chega ao vizinho. É desenhado quando o azulejo termina de virar (o
+	 * --atraso de cada um, mais a volta das peças).
+	 */
+	.visto-do-perfil {
+		position: absolute;
+		top: -27%;
+		right: -14%;
+		width: 60%;
+		height: 60%;
+	}
+
+	.visto-do-perfil path {
+		animation: tracar 400ms var(--ease-golpe) both;
+		animation-delay: calc(var(--atraso, 0ms) + 0.35s);
+	}
+
+	/*
+	 * Nas cores forçadas do Windows, os azulejos somem: cada artigo fica com um
+	 * contorno na cor do texto, e o lido, com o visto.
+	 */
+	@media (forced-colors: active) {
+		.perfil-azulejos li {
+			outline: 1px solid CanvasText;
+		}
+	}
+
+	/*
+	 * Com a letra grande, o azulejo da trilha passa para cima do texto, como na
+	 * lista das trilhas: ao lado, a coluna do texto ficava estreita demais.
+	 */
+	@media (width < 22rem) {
+		.perfil-trilha {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+
+	@media (width >= 40rem) {
+		.perfil-azulejos {
+			grid-column: 2;
+		}
+	}
+
+	/*
+	 * A partir de 62rem, o quadro vira uma tabela: o azulejo da trilha, o texto e
+	 * a fileira, que tem a largura da trilha mais comprida (o --mais, do TSX).
+	 * Os azulejos de todas as trilhas começam na mesma linha vertical.
+	 */
+	@media (width >= 62rem) {
+		.perfil-trilha {
+			grid-template-columns:
+				4.5rem minmax(0, 1fr)
+				calc(var(--mais, 8) * 2.75rem + (var(--mais, 8) - 1) * 0.375rem);
+			align-items: center;
+		}
+
+		.perfil-trilha-azulejo {
+			width: 4.5rem;
+		}
+
+		.perfil-azulejos {
+			grid-row: 1;
+			grid-column: 3;
+		}
+	}
+
+	/*
+	 * Sua conta: depois de um fio de tinta, o que a conta guarda à esquerda e as
+	 * ações à direita, a partir de 62rem; embaixo, numa coluna só.
+	 */
+	.perfil-conta {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1.5rem 3rem;
+		padding-top: clamp(1.5rem, 3vw, 2.25rem);
+		border-top: 2px solid var(--tinta);
+	}
+
+	/*
+	 * Cada parágrafo tem a largura da coluna, e os links ficam no tamanho do
+	 * texto deles. Com o justify-items: start, o parágrafo não ficava mais
+	 * estreito que a palavra mais comprida: com a letra a 200%, num celular, o
+	 * endereço do e-mail passava da tela, e a página rolava de lado.
+	 */
+	.perfil-conta-dados,
+	.perfil-conta-acoes {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem;
+		align-content: start;
+	}
+
+	/*
+	 * A linha do nome guarda a altura de uma linha e, abaixo de 40rem, de duas:
+	 * numa coluna estreita, "Você entrou como" e um nome completo quebram, e o
+	 * texto de baixo descia uma linha quando a conta respondia.
+	 */
+	.perfil-quem {
+		min-height: 1.4em;
+		font-family: var(--font-sans);
+		font-size: 1.125rem;
+		font-weight: 700;
+		line-height: 1.4;
+	}
+
+	@media (width < 40rem) {
+		.perfil-quem {
+			min-height: 2.8em;
+		}
+	}
+
+	.perfil-texto {
+		max-width: 39rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.5;
+	}
+
+	.perfil-nota {
+		max-width: 30rem;
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.5;
+		color: var(--tinta-suave);
+	}
+
+	@media (width >= 62rem) {
+		.perfil-conta {
+			grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+		}
+
+		.perfil-conta > h2 {
+			grid-column: 1 / -1;
+		}
+	}
+}

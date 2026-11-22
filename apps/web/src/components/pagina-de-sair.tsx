@@ -29,8 +29,10 @@ const SAIR = "Sair da newsletter";
 const SAIU = "Você saiu da newsletter.";
 const EXPLICA =
 	"Com o botão, o seu e-mail sai da lista e as edições de domingo param de chegar. Antes dele, nada muda.";
-const FORA_DA_LISTA =
-	"O seu e-mail não está mais na lista, e as próximas edições não vão chegar.";
+const ANTES_DE_EDICOES =
+	"O seu e-mail não está mais na lista, e as próximas edições não vão chegar. Elas continuam no site, em ";
+const EDICOES = "Edições";
+const DEPOIS_DE_EDICOES = ", para ler quando quiser.";
 const FORA_DO_AR =
 	"Não conseguimos confirmar a saída agora. Espere alguns minutos e tente de novo.";
 const SEM_CONEXAO =
@@ -179,7 +181,7 @@ export function PaginaDeSair({
 		setEstado(resultado.tipo);
 		avisar(
 			resultado.tipo === "saiu"
-				? `${SAIU} ${FORA_DA_LISTA}`
+				? `${SAIU} ${ANTES_DE_EDICOES}${EDICOES}${DEPOIS_DE_EDICOES}`
 				: resultado.tipo === "link-invalido"
 					? INCOMPLETO
 					: (ERROS[resultado.tipo] ?? ""),
@@ -188,11 +190,9 @@ export function PaginaDeSair({
 
 	const abertura = !comApi
 		? "A newsletter ainda não funciona neste endereço do site."
-		: saiu
-			? FORA_DA_LISTA
-			: incompleto
-				? INCOMPLETO
-				: EXPLICA;
+		: incompleto
+			? INCOMPLETO
+			: EXPLICA;
 	const erro = ERROS[estado];
 	const irParaOInicio = (
 		<Link
@@ -228,15 +228,11 @@ export function PaginaDeSair({
 					{saiu ? SAIU : SAIR}
 				</span>
 			</h1>
-			{/* O pé também guarda a altura de antes da saída. Depois dela, a frase
-			    é mais curta, e os dois links cabem numa linha, onde o botão e o
-			    "Ir para o início" pediam duas: com a letra grande, numa tela
-			    estreita, o pé encolhia, e o "Inscrever-se de novo" nascia até 135
-			    px acima do botão. A abertura guarda as duas frases, invisíveis, e
-			    a da vez fica no alto, junto do fio; o lugar do botão guarda uma
-			    cópia dele. Depois da saída, sobra um vão embaixo da frase, e nada
-			    sai do lugar. Com o código recusado, o "Ir para o início" sobe
-			    para o lugar do botão, e o vão fica no fim do pé, no item dele.
+			{/* O pé guarda a altura de antes da saída. A abertura reserva o lugar
+			    da frase mais alta, e a da vez fica no alto, junto do fio. O lugar
+			    do botão guarda uma cópia dele, para o "Inscrever-se de novo"
+			    nascer no meio dele. Com o código recusado, o "Ir para o início"
+			    sobe para o lugar do botão, e o vão fica no fim do pé, no item dele.
 			    A grade da abertura fica num div em volta do parágrafo: o Chromium
 			    tira da árvore de acessibilidade um <p> em grade, e quem anda pelos
 			    parágrafos pulava a frase. As guardadas quebram as linhas como ela,
@@ -244,21 +240,42 @@ export function PaginaDeSair({
 			    O erro fica no lugar da frase, em negrito, e a abertura guarda os
 			    dois, com o desenho deles: embaixo das ações, com duas colunas, ele
 			    empurrava o botão até 65 px para cima, e o "Ir para o início" ficava
-			    embaixo do ponteiro. A explicação é sempre a mais alta das frases, e
-			    o erro entra sem mexer em nada. */}
+			    embaixo do ponteiro. Com as frases na mesma célula, o erro entra
+			    sem mexer em nada. */}
 			<div className="cartaz-pe">
 				<div className="abertura grid text-pretty">
-					{telaPodeMudar && <Reservas frases={[EXPLICA, FORA_DA_LISTA]} />}
 					{telaPodeMudar && (
-						<Reservas
-							frases={[FORA_DO_AR, SEM_CONEXAO]}
-							className="ainda-nao"
-						/>
+						<>
+							<Reservas frases={[EXPLICA]} />
+							<span
+								aria-hidden="true"
+								className="invisible col-start-1 row-start-1"
+							>
+								{ANTES_DE_EDICOES}
+								{/* biome-ignore lint/a11y/useValidAnchor: a cópia invisível do link só guarda a altura da frase. */}
+								<a>{EDICOES}</a>
+								{DEPOIS_DE_EDICOES}
+							</span>
+							<Reservas
+								frases={[FORA_DO_AR, SEM_CONEXAO]}
+								className="ainda-nao"
+							/>
+						</>
 					)}
 					<p
 						className={classes("col-start-1 row-start-1", erro && "ainda-nao")}
 					>
-						{erro ?? abertura}
+						{saiu ? (
+							<>
+								{ANTES_DE_EDICOES}
+								<Link to="/edicoes" onClick={semSegundoClique}>
+									{EDICOES}
+								</Link>
+								{DEPOIS_DE_EDICOES}
+							</>
+						) : (
+							(erro ?? abertura)
+						)}
 					</p>
 				</div>
 				<div className="cartaz-acao">

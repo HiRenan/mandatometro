@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AbrirSaidaData, AbrirSaidaErrors, AlterarProgressoContaData, AlterarProgressoContaErrors, AlterarProgressoContaResponses, CadastrarContaData, CadastrarContaErrors, CadastrarContaResponses, ConfirmarContaData, ConfirmarContaErrors, ConfirmarContaResponses, ConsultarPerfilData, ConsultarPerfilErrors, ConsultarPerfilResponses, ConsultarProgressoContaData, ConsultarProgressoContaErrors, ConsultarProgressoContaResponses, EntrarContaData, EntrarContaErrors, EntrarContaResponses, ExcluirContaData, ExcluirContaErrors, ExcluirContaResponses, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, LerRascunhoData, LerRascunhoErrors, LerRascunhoResponses, ListarEdicoesData, ListarEdicoesErrors, ListarEdicoesResponses, ObterEdicaoData, ObterEdicaoErrors, ObterEdicaoResponses, PublicarEdicaoData, PublicarEdicaoErrors, PublicarEdicaoResponses, RecuperarContaData, RecuperarContaErrors, RecuperarContaResponses, RedefinirSenhaData, RedefinirSenhaErrors, RedefinirSenhaResponses, ReenviarConfirmacaoData, ReenviarConfirmacaoErrors, ReenviarConfirmacaoResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, SairContaData, SairContaErrors, SairContaResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses, SalvarRevisaoData, SalvarRevisaoErrors, SalvarRevisaoResponses, TermoContaData, TermoContaErrors, TermoContaResponses } from './types.gen';
+import type { AbrirSaidaData, AbrirSaidaErrors, AlterarProgressoContaData, AlterarProgressoContaErrors, AlterarProgressoContaResponses, CadastrarContaData, CadastrarContaErrors, CadastrarContaResponses, ConfirmarContaData, ConfirmarContaErrors, ConfirmarContaResponses, ConsultarPerfilData, ConsultarPerfilErrors, ConsultarPerfilResponses, ConsultarProgressoContaData, ConsultarProgressoContaErrors, ConsultarProgressoContaResponses, EntrarContaData, EntrarContaErrors, EntrarContaResponses, ExcluirContaData, ExcluirContaErrors, ExcluirContaResponses, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, LerRascunhoData, LerRascunhoErrors, LerRascunhoResponses, ListarEdicoesData, ListarEdicoesErrors, ListarEdicoesResponses, ListarParlamentaresData, ListarParlamentaresErrors, ListarParlamentaresResponses, ListarTemasData, ListarTemasResponses, ListarVotosParlamentarData, ListarVotosParlamentarErrors, ListarVotosParlamentarResponses, ObterEdicaoData, ObterEdicaoErrors, ObterEdicaoResponses, ObterParlamentarData, ObterParlamentarErrors, ObterParlamentarResponses, ObterPatrimonioParlamentarData, ObterPatrimonioParlamentarErrors, ObterPatrimonioParlamentarResponses, ObterVotacaoData, ObterVotacaoErrors, ObterVotacaoResponses, PublicarEdicaoData, PublicarEdicaoErrors, PublicarEdicaoResponses, RecuperarContaData, RecuperarContaErrors, RecuperarContaResponses, RedefinirSenhaData, RedefinirSenhaErrors, RedefinirSenhaResponses, ReenviarConfirmacaoData, ReenviarConfirmacaoErrors, ReenviarConfirmacaoResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, SairContaData, SairContaErrors, SairContaResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses, SalvarRevisaoData, SalvarRevisaoErrors, SalvarRevisaoResponses, TermoContaData, TermoContaErrors, TermoContaResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -197,6 +197,32 @@ export const salvarRevisao = <ThrowOnError extends boolean = false>(options: Opt
 export const publicarEdicao = <ThrowOnError extends boolean = false>(options: Options<PublicarEdicaoData, ThrowOnError>): RequestResult<PublicarEdicaoResponses, PublicarEdicaoErrors, ThrowOnError> => (options.client ?? client).post<PublicarEdicaoResponses, PublicarEdicaoErrors, ThrowOnError>({ url: '/painel/edicoes/{id}/publicar', ...options });
 
 /**
+ * Listar os parlamentares em exercício
+ *
+ * Lista completa em ordem alfabética, com filtros opcionais por UF e Casa.
+ */
+export const listarParlamentares = <ThrowOnError extends boolean = false>(options?: Options<ListarParlamentaresData, ThrowOnError>): RequestResult<ListarParlamentaresResponses, ListarParlamentaresErrors, ThrowOnError> => (options?.client ?? client).get<ListarParlamentaresResponses, ListarParlamentaresErrors, ThrowOnError>({ url: '/parlamentares', ...options });
+
+/**
+ * Ler um parlamentar, seus mandatos e a contagem de votos gravados
+ */
+export const obterParlamentar = <ThrowOnError extends boolean = false>(options: Options<ObterParlamentarData, ThrowOnError>): RequestResult<ObterParlamentarResponses, ObterParlamentarErrors, ThrowOnError> => (options.client ?? client).get<ObterParlamentarResponses, ObterParlamentarErrors, ThrowOnError>({ url: '/parlamentares/{id}', ...options });
+
+/**
+ * Listar o patrimônio declarado ao TSE por eleição
+ *
+ * Eleições com vínculo confirmado, em ordem crescente de ano, com os totais nominais e a correção pelo IPCA quando disponível.
+ */
+export const obterPatrimonioParlamentar = <ThrowOnError extends boolean = false>(options: Options<ObterPatrimonioParlamentarData, ThrowOnError>): RequestResult<ObterPatrimonioParlamentarResponses, ObterPatrimonioParlamentarErrors, ThrowOnError> => (options.client ?? client).get<ObterPatrimonioParlamentarResponses, ObterPatrimonioParlamentarErrors, ThrowOnError>({ url: '/parlamentares/{id}/patrimonio', ...options });
+
+/**
+ * Listar os votos gravados do parlamentar da votação mais recente para a mais antiga
+ *
+ * O filtro por tema é aplicado antes da paginação por deslocamento. O desempate usa o id interno decrescente da votação.
+ */
+export const listarVotosParlamentar = <ThrowOnError extends boolean = false>(options: Options<ListarVotosParlamentarData, ThrowOnError>): RequestResult<ListarVotosParlamentarResponses, ListarVotosParlamentarErrors, ThrowOnError> => (options.client ?? client).get<ListarVotosParlamentarResponses, ListarVotosParlamentarErrors, ThrowOnError>({ url: '/parlamentares/{id}/votos', ...options });
+
+/**
  * Receber a primeira conclusão de uma etapa do piloto
  *
  * O mesmo código nas duas etapas permite parear resultados; códigos diferentes permitem apenas médias independentes. Reenvios não alteram a primeira conclusão. Novo e repetido recebem a mesma resposta, sem revelar acertos ou existência anterior.
@@ -211,6 +237,18 @@ export const registrarTentativaPiloto = <ThrowOnError extends boolean = false>(o
 });
 
 /**
+ * Ler uma votação, seus votos por nome e os placares geral e por partido
+ *
+ * A lista contém todos os votos individuais gravados. Quando a votação não tem registros individuais, a lista de votos e a de partidos vêm vazias e o placar vem zerado.
+ */
+export const obterVotacao = <ThrowOnError extends boolean = false>(options: Options<ObterVotacaoData, ThrowOnError>): RequestResult<ObterVotacaoResponses, ObterVotacaoErrors, ThrowOnError> => (options.client ?? client).get<ObterVotacaoResponses, ObterVotacaoErrors, ThrowOnError>({ url: '/votacoes/{id}', ...options });
+
+/**
  * Health
  */
 export const health = <ThrowOnError extends boolean = false>(options?: Options<HealthData, ThrowOnError>): RequestResult<HealthResponses, unknown, ThrowOnError> => (options?.client ?? client).get<HealthResponses, unknown, ThrowOnError>({ url: '/health', ...options });
+
+/**
+ * Listar os temas do Mandatômetro
+ */
+export const listarTemas = <ThrowOnError extends boolean = false>(options?: Options<ListarTemasData, ThrowOnError>): RequestResult<ListarTemasResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListarTemasResponses, unknown, ThrowOnError>({ url: '/temas', ...options });

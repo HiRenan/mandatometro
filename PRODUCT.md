@@ -40,9 +40,9 @@ A política explicada em linguagem simples e de forma interativa, a partir de ca
 
 ## Capabilities and Constraints
 
-- **MVP:** as trilhas (artigos, infográfico e quiz), a newsletter semanal com as edições no site e a conta opcional.
+- **MVP:** as trilhas (artigos, infográfico e quiz), a newsletter semanal com as edições no site, a conta opcional e as páginas dos parlamentares e das votações: os deputados e os senadores de cada estado, como cada um votou e quem votou como em cada votação (Renan, 21/11/2026).
 - **Depois do MVP:**
-  - as páginas de cada parlamentar, com as promessas, os atos e o patrimônio declarado ao TSE;
+  - nas páginas de cada parlamentar, as promessas, os atos e o patrimônio declarado ao TSE;
   - o "fake ou fato";
   - o jogo das comissões.
 - **Sem pontos, ranking nem certificado.** O quiz mostra a resposta certa e a fonte, sem nota.

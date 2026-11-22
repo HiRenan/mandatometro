@@ -30,6 +30,23 @@ import {
 	edicaoDeExemplo,
 	listaDeExemplo,
 } from "@/lib/edicoes/exemplos-de-teste";
+import {
+	acharJogo,
+	JOGO_DAS_COMISSOES,
+	jogos,
+} from "@/lib/jogo/paginas.server";
+import {
+	detalheDeExemplo,
+	listaDeExemplo as listaDosParlamentares,
+	votacaoDeExemplo,
+	votacaoSemVotosDeExemplo,
+	votosDeExemplo,
+} from "@/lib/parlamentares/exemplos-de-teste";
+import {
+	lerParlamentar,
+	lerParlamentares,
+	lerVotacao,
+} from "@/lib/parlamentares/parlamentares.server";
 import { TRILHA_DO_PILOTO } from "@/lib/piloto";
 import { Route as RotaRaiz } from "@/routes/__root";
 import { Route as RotaAutenticada } from "@/routes/_autenticado";
@@ -43,8 +60,11 @@ import { Route as ContaReenvio } from "@/routes/cadastro/reenvio";
 import { Route as RotaDaEdicao } from "@/routes/edicoes/$id";
 import { Route as RotaDasEdicoes } from "@/routes/edicoes/index";
 import { Route as RotaInicial } from "@/routes/index";
+import { Route as RotaDoJogo } from "@/routes/jogos";
 import { Route as Login } from "@/routes/login";
 import { Route as RotaDeSair } from "@/routes/newsletter/sair";
+import { Route as RotaDoParlamentar } from "@/routes/parlamentares/$id";
+import { Route as RotaDosParlamentares } from "@/routes/parlamentares/index";
 import { Route as Perfil } from "@/routes/perfil";
 import { Route as RotaDoPiloto } from "@/routes/piloto";
 import { Route as RotaDoTermo } from "@/routes/termo";
@@ -53,6 +73,7 @@ import { Route as RotaDaTrilha } from "@/routes/trilhas/$trilha/index";
 import { Route as RotaDoQuiz } from "@/routes/trilhas/$trilha/quiz";
 import { Route as RotaDoQuizFinal } from "@/routes/trilhas/$trilha/quiz-final";
 import { Route as RotaDasTrilhas } from "@/routes/trilhas/index";
+import { Route as RotaDaVotacao } from "@/routes/votacoes/$id";
 
 // O teto da letra grande mede a caixa do teto mais perto do título (o
 // letra-com-teto e o caixa-do-teto, no index.css), e não a tela: o 100vw conta
@@ -206,13 +227,27 @@ const json = (status: number, corpo: unknown) =>
 	});
 
 /**
- * A API das edições: a lista com três edições e, no lugar de cada uma, a edição
- * de exemplo.
+ * A API de exemplo: a lista com três edições e, no lugar de cada uma, a edição
+ * de exemplo; a lista dos parlamentares, a pessoa com 25 votos e a votação.
  */
-function apiDasEdicoes(pedido: Request) {
-	return new URL(pedido.url).pathname === "/edicoes"
-		? json(200, listaDeExemplo(3))
-		: json(200, edicaoDeExemplo());
+function apiDeExemplo(pedido: Request) {
+	const { pathname } = new URL(pedido.url);
+	if (pathname === "/edicoes") {
+		return json(200, listaDeExemplo(3));
+	}
+	if (pathname === "/parlamentares") {
+		return json(200, listaDosParlamentares());
+	}
+	if (pathname.endsWith("/votos")) {
+		return json(200, votosDeExemplo(25));
+	}
+	if (pathname.startsWith("/parlamentares/")) {
+		return json(200, detalheDeExemplo());
+	}
+	if (pathname.startsWith("/votacoes/")) {
+		return json(200, votacaoDeExemplo());
+	}
+	return json(200, edicaoDeExemplo());
 }
 
 /**
@@ -313,8 +348,11 @@ function criarRouter() {
 			RotaDoPiloto.update(
 				naRaiz("/piloto", () => acharQuizFinal(trilhas, TRILHA_DO_PILOTO)),
 			),
+			RotaDoJogo.update(
+				naRaiz("/jogos", () => acharJogo(jogos, JOGO_DAS_COMISSOES)),
+			),
 			ContaIndex.update(naRaiz("/cadastro/")),
-			Perfil.update(naRaiz("/perfil")),
+			Perfil.update(naRaiz("/perfil", () => listarTrilhas(trilhas))),
 			Login.update(naRaiz("/login")),
 			ContaConfirmar.update(naRaiz("/cadastro/confirmar")),
 			ContaReenvio.update(naRaiz("/cadastro/reenvio")),
@@ -343,6 +381,28 @@ function criarRouter() {
 					lerEdicao(params.id),
 				),
 			),
+			RotaDosParlamentares.update(
+				naRaiz("/parlamentares/", ({ deps }: { deps: { uf?: string } }) =>
+					lerParlamentares(deps.uf),
+				),
+			),
+			RotaDoParlamentar.update(
+				naRaiz(
+					"/parlamentares/$id",
+					({
+						params,
+						deps,
+					}: {
+						params: { id: string };
+						deps: { pagina: number };
+					}) => lerParlamentar(params.id, deps.pagina),
+				),
+			),
+			RotaDaVotacao.update(
+				naRaiz("/votacoes/$id", ({ params }: { params: { id: string } }) =>
+					lerVotacao(params.id),
+				),
+			),
 		]),
 		defaultNotFoundComponent: NaoEncontrado,
 		defaultErrorComponent: PaginaDeErro,
@@ -355,7 +415,7 @@ function criarRouter() {
 /** Pede uma página ao servidor do roteador: o HTTP e o HTML lido. */
 async function pedir(
 	caminho: string,
-	{ api = apiDasEdicoes, semApi = false }: Pick<Pagina, "api" | "semApi"> = {},
+	{ api = apiDeExemplo, semApi = false }: Pick<Pagina, "api" | "semApi"> = {},
 ) {
 	ambiente.API_URL = semApi ? "" : COM_API;
 	vi.stubGlobal(
@@ -378,7 +438,7 @@ type Pagina = {
 	nome: string;
 	caminho: string;
 	status: number;
-	/** A API das edições, se não for a de exemplo. */
+	/** A API, se não for a de exemplo. */
 	api?: (pedido: Request) => Response;
 	/** O site sem o API_URL. */
 	semApi?: boolean;
@@ -386,7 +446,8 @@ type Pagina = {
 
 /**
  * As páginas que abrem: a inicial, cada trilha com os artigos e os quizzes, o
- * piloto, a saída da newsletter, a lista das edições e uma edição.
+ * piloto, a saída da newsletter, a lista das edições e uma edição, a lista dos
+ * parlamentares, um parlamentar e uma votação.
  */
 const QUE_ABREM = [
 	"/login",
@@ -406,17 +467,22 @@ const QUE_ABREM = [
 		...(acharQuizFinal(trilhas, slug) ? [`/trilhas/${slug}/quiz-final`] : []),
 	]),
 	"/piloto",
+	"/jogos",
 	"/newsletter/sair",
 	"/termo",
 	"/edicoes",
 	"/edicoes/7",
 	"/painel",
+	"/parlamentares",
+	"/parlamentares/81-agata-cedrolume",
+	"/votacoes/139",
 ];
 
 /**
  * Cada página do site, com o HTTP dela: as que abrem, com a API e sem ela, a
- * lista sem edição, a página não encontrada (o endereço e a edição que não
- * existem) e a página de erro (a API fora do ar).
+ * lista sem edição, os parlamentares de um estado, a pessoa sem voto e a
+ * votação sem o voto de cada um, a página não encontrada (o endereço e a edição
+ * que não existem) e a página de erro (a API fora do ar).
  */
 const PAGINAS: Pagina[] = [
 	...QUE_ABREM.map((caminho) => ({ nome: caminho, caminho, status: 200 })),
@@ -431,6 +497,26 @@ const PAGINAS: Pagina[] = [
 		caminho: "/edicoes",
 		status: 200,
 		api: () => json(200, listaDeExemplo(0)),
+	},
+	{
+		nome: "/parlamentares?uf=SC, com os nomes do estado",
+		caminho: "/parlamentares?uf=SC",
+		status: 200,
+	},
+	{
+		nome: "/parlamentares/81-agata-cedrolume, sem voto registrado",
+		caminho: "/parlamentares/81-agata-cedrolume",
+		status: 200,
+		api: (pedido) =>
+			pedido.url.includes("/votos")
+				? json(200, votosDeExemplo(0))
+				: json(200, detalheDeExemplo()),
+	},
+	{
+		nome: "/votacoes/140, sem o voto de cada um",
+		caminho: "/votacoes/140",
+		status: 200,
+		api: () => json(200, votacaoSemVotosDeExemplo()),
 	},
 	{
 		nome: "/pagina-que-nao-existe",
@@ -938,5 +1024,139 @@ describe("a caixa da página", () => {
 			paginasSemEndereco(declaradas, abertas),
 			"Cada rota com página abre por um endereço do QUE_ABREM deste teste: ponha nele um da rota que falta",
 		).toEqual([]);
+	});
+});
+
+// O HTML do perfil, antes de a conta responder: a página não sabe quem entrou
+// nem o que a pessoa leu, e mostra a espera com os lugares guardados
+// (DESIGN.md, "Perfil da conta").
+describe("o HTML do servidor do perfil", () => {
+	it("mostra a espera, o olá sem nome e todos os azulejos crus", async () => {
+		const { status, pagina } = await pedir("/perfil");
+		const artigos = trilhas.flatMap((trilha) => trilha.artigos);
+
+		expect(status).toBe(200);
+		expect(pagina.querySelector('[role="status"]')?.textContent).toBe(
+			"Verificando sua sessão…",
+		);
+		expect(pagina.querySelector(".saudacao .sr-only")?.textContent).toBe(
+			"Olá!",
+		);
+		expect(pagina.querySelectorAll(".perfil-azulejos > li")).toHaveLength(
+			artigos.length,
+		);
+		expect(
+			pagina.querySelectorAll(".perfil-azulejos .az:not(.cru)"),
+		).toHaveLength(0);
+		expect(pagina.querySelector(".perfil-azulejos .marca-de-lido")).toBeNull();
+		expect(pagina.querySelector(".perfil-quem")?.textContent).toBe("");
+		expect(pagina.body.textContent).not.toContain("Você entrou como");
+	});
+
+	it("sem a API, nasce sem a espera e com a frase de que a conta não funciona ali", async () => {
+		const { pagina } = await pedir("/perfil", { semApi: true });
+
+		expect(pagina.querySelector('[role="status"]')?.textContent).toBe("");
+		expect(pagina.querySelector(".cartaz-pe .abertura > p")?.textContent).toBe(
+			"A conta ainda não funciona neste endereço do site.",
+		);
+	});
+
+	it("sem JavaScript, a espera e o Sair saem pelo perfil.css, sem classe de display do Tailwind", async () => {
+		// As classes do Tailwind ficam na camada utilities, acima da components do
+		// perfil.css: um "grid" no elemento venceria o display: none, e a página
+		// sem JavaScript ficava em "Verificando sua sessão…" para sempre.
+		const css = readFileSync(join(src, "estilos", "perfil.css"), "utf8");
+		const regra = css.match(
+			/@media \(scripting: none\) \{\s*([^{]+)\{\s*display: none;\s*\}\s*\}/,
+		);
+		const seletores = regra?.[1].split(",").map((seletor) => seletor.trim());
+		expect(seletores).toEqual([".perfil-progresso", ".perfil-sair"]);
+
+		const { pagina } = await pedir("/perfil");
+		const DISPLAY =
+			/^(block|inline|inline-block|flex|inline-flex|grid|inline-grid|contents|flow-root|table|hidden)$/;
+		for (const seletor of seletores ?? []) {
+			const elemento = pagina.querySelector(seletor);
+			expect(elemento, seletor).not.toBeNull();
+			expect(
+				[...(elemento?.classList ?? [])].filter((classe) =>
+					DISPLAY.test(classe),
+				),
+				seletor,
+			).toEqual([]);
+		}
+	});
+});
+
+// As telas da conta no cartaz (DESIGN.md, "Telas da conta"): a aba, o site sem
+// a API, como nas prévias dos PRs, e o site sem JavaScript.
+describe("o HTML do servidor das telas da conta", () => {
+	const TELAS = [
+		["/login", "Entrar"],
+		["/cadastro", "Criar conta"],
+		["/cadastro/confirmar", "Confirmar e-mail"],
+		["/cadastro/reenvio", "Reenviar confirmação"],
+		["/cadastro/recuperar", "Recuperar senha"],
+		["/cadastro/redefinir", "Definir nova senha"],
+		["/cadastro/excluir", "Excluir conta"],
+	] as const;
+
+	it.each([...TELAS, ["/perfil", "Meu perfil"] as const])(
+		"%s tem a aba com o título e o ponto: %s · Mandatômetro",
+		async (caminho, titulo) => {
+			const { pagina } = await pedir(caminho);
+
+			expect(pagina.title).toBe(`${titulo} · Mandatômetro`);
+		},
+	);
+
+	it.each(TELAS)(
+		"%s, sem a API, nasce sem formulário e com a frase de que a conta não funciona ali",
+		async (caminho, titulo) => {
+			const { pagina } = await pedir(caminho, { semApi: true });
+			const cartaz = pagina.querySelector(".cartaz");
+
+			expect(cartaz?.querySelector("h1")?.textContent).toBe(titulo);
+			expect(cartaz?.querySelector("form")).toBeNull();
+			expect(cartaz?.querySelector(".cartaz-pe .abertura")?.textContent).toBe(
+				"A conta ainda não funciona neste endereço do site.",
+			);
+			expect(
+				cartaz?.querySelector('a[href="/trilhas"]')?.textContent?.trim(),
+			).toBe("Ver as trilhas");
+		},
+	);
+
+	it("sem JavaScript, o formulário, a espera e a linha das mensagens saem pelo conta.css, sem classe de display do Tailwind", async () => {
+		// Como no perfil: um "grid" do Tailwind no elemento venceria o display:
+		// none, e o /login sem JavaScript mostraria um formulário que não envia.
+		const css = readFileSync(join(src, "estilos", "conta.css"), "utf8");
+		const regra = css.match(
+			/@media \(scripting: none\) \{\s*([^{]+)\{\s*display: none;\s*\}\s*\}/,
+		);
+		const seletores = regra?.[1].split(",").map((seletor) => seletor.trim());
+		expect(seletores).toEqual([
+			".conta-formulario",
+			".conta-verificando",
+			".conta-mensagem",
+		]);
+
+		const { pagina } = await pedir("/login");
+		const DISPLAY =
+			/^(block|inline|inline-block|flex|inline-flex|grid|inline-grid|contents|flow-root|table|hidden)$/;
+		for (const seletor of seletores ?? []) {
+			const elemento = pagina.querySelector(seletor);
+			expect(elemento, seletor).not.toBeNull();
+			expect(
+				[...(elemento?.classList ?? [])].filter((classe) =>
+					DISPLAY.test(classe),
+				),
+				seletor,
+			).toEqual([]);
+		}
+		expect(pagina.querySelector(".cartaz noscript")?.textContent).toBe(
+			"A conta precisa do JavaScript do navegador ligado.",
+		);
 	});
 });

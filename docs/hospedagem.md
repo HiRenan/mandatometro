@@ -51,7 +51,7 @@ Comece depois de conferir a inscrição de teste no ambiente anterior. A publica
 
    `PILOTO_ATIVO` fica desligado por padrão; o Renan define `true` como **Config** nas variáveis da **API** e faz nova publicação quando aprovar as decisões da [medição do piloto](medicao-do-piloto.md), com a migration aplicada e a tela integrada.
 
-4. **GitHub → PR da develop para main:** Renan e Atena publicam a versão aprovada. **Não pule este passo:** em 16/11/2026, a `main` em `2b1bcea` ainda não tinha os conectores. A mudança de migrations no push aciona **Migrar banco** para produção. Se não houve mudança nesses arquivos, ou se a execução anterior pulou por falta do segredo, use **Actions → Migrar banco → Run workflow → main** uma vez. **Confira:** migration aplicada e publicação da API pronta. Mantenha a folha de produção oculta até concluir; publicação e migration são processos separados.
+4. **GitHub → PR da develop para main:** Renan e Atena publicam a versão aprovada. **Não pule este passo:** em 16/11/2026, a `main` em `2b1bcea` ainda não tinha os conectores. A mudança de migrations no push aciona **Migrar banco** para produção. Se não houve mudança nesses arquivos, ou se a execução anterior pulou por falta do segredo, use **Actions → Migrar banco → Run workflow → main** uma vez. **Confira:** **Migrar banco** aplicou até a revisão `0013` e a publicação da API está pronta. Mantenha a folha de produção oculta até concluir; publicação e migration são processos separados.
 
 5. **GitHub → Actions → Coletar Congresso → Run workflow → main:** deixe as datas vazias para carregar os sete dias completos anteriores. **Confira:** resumo das duas Casas, commit publicado na `main` e ausência de falhas. Não copie a edição de prova do banco local. A edição real precisa do preparo e da revisão da #22; só a coleta não a publica.
 
@@ -64,7 +64,9 @@ Comece depois de conferir a inscrição de teste no ambiente anterior. A publica
 | Tarefa | Quando | Código e banco |
 | --- | --- | --- |
 | Coleta diária | 03h17 de Brasília (`17 6 * * *` UTC), se `COLETAS_ATIVAS=true` | YAML da `develop`, checkout da `main`, banco `producao` |
-| Coleta manual | Botão Run workflow | `develop` → `desenvolvimento`; `main` → `producao` |
+| Coleta manual | Botão Run workflow, com datas e modo Somente vídeos opcionais | `develop` → `desenvolvimento`; `main` → `producao` |
+| Coletar TSE | Somente Run workflow | Commit do disparo. `develop` usa `desenvolvimento` e `main` usa `producao` |
+| Coletar IPCA | Somente Run workflow | Commit do disparo. `develop` usa `desenvolvimento` e `main` usa `producao` |
 | Agenda de sábado | 04h47 de Brasília (`47 7 * * 6` UTC), se `AGENDA_SABADO_ATIVA=true` | YAML da `develop`, checkout da `main`, banco `producao` |
 | Preparo manual da edição | Botão Run workflow, com período opcional | Commit do disparo (`github.sha`). `develop` usa `desenvolvimento` e `main` usa `producao` |
 | Envio dominical | 10h37 de Brasília (`37 13 * * 0` UTC), se `ENVIOS_ATIVOS=true` | YAML da `develop`, checkout da `main`, banco `producao` |
@@ -77,6 +79,40 @@ Sem o secret da URL direta, a migration no push mostra um aviso e pula antes de 
 As duas Casas rodam uma por vez, com até 30 minutos cada, e a segunda é tentada mesmo se a primeira falhar. Coleta, agenda de sábado, migration e envio compartilham a fila `banco-producao` ou `banco-desenvolvimento`. `cancel-in-progress: false` deixa terminar quem já começou, e `queue: max` preserva até 100 execuções pendentes. A ordem pelo horário do push pode variar. Falha ou cancelamento pede conferir o último sucesso e, se necessário, disparar a migration de reserva. O cron pode atrasar ou ser descartado. Em repositório público, fica inativo após 60 dias sem atividade. [Concorrência](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency), [agendamento](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
 
 Para recuperar uma lacuna maior, preencha **inicio e fim juntos**, em `AAAA-MM-DD`, no disparo manual da coleta. Sem datas, valem os sete dias completos anteriores em Brasília. O deploy da Vercel não espera o Actions. Na hospedagem, siga as [convenções de migrations](../AGENTS.md#conventions). Não há migration na importação, no build ou na requisição da API.
+
+### Preencher vídeos das sessões
+
+Depois de aplicar a migration `0012` e publicar a API, abra **Actions → Coletar Congresso → Run workflow**. Escolha **main** para produção ou **develop** para desenvolvimento. Informe `inicio` e `fim` do período que quer preencher e marque **Somente vídeos**, desmarcado por padrão. A agenda diária segue com a coleta completa.
+
+Confira os campos `videos` nos dois resumos e `url_video` na edição publicada e em uma votação com registro oficial. Se uma consulta falhar, repita com as mesmas datas. O modo volta às votações sem vídeo e usa a mesma fila e credenciais do banco da coleta.
+
+### Preencher temas de votações já coletadas
+
+Depois de confirmar a migration 0014 no ambiente, abra **Actions → Coletar Congresso → Run workflow**. Para produção, escolha **main**, marque apenas **somente_temas** e informe a janela das votações já gravadas. Divida um histórico maior em janelas. Em cada Casa, acompanhe `temas` no resumo. Se `falhas_consulta` ou `falhas_gravacao` forem maiores que zero, repita a janela para as proposições pendentes. As datas vazias usam os sete dias completos anteriores em Brasília.
+
+O modo usa as mesmas credenciais e a mesma fila da coleta e fica desmarcado por padrão. A agenda roda a coleta normal. O preenchimento grava temas e fontes temáticas à parte, o que preserva as revisões dos rascunhos. [Comando local](../README.md#como-rodar)
+
+Marcar **somente_videos** e **somente_temas** juntos faz a tarefa parar com erro antes de coletar. Rode um modo por vez.
+
+## Coletar o TSE
+
+1. Confirme que **Migrar banco** aplicou as revisões de candidaturas e de patrimônio, até a `0015`, e que **Coletar Congresso** carregou os parlamentares em exercício na mesma branch.
+2. Em **Actions → Coletar TSE → Run workflow**, escolha `develop` para desenvolvimento ou `main` para produção. O job usa o segredo `DATABASE_URL` com pool do ambiente, aguarda a fila desse banco e tem até 10 minutos.
+3. Confira o commit executado e a linha JSON. `completa: true` confirma os dois arquivos, e as contagens por Casa e ano indicam a cobertura da ligação. Em 2026, `outro_cargo` conta as candidaturas à outra Casa encontradas pelo CPF da âncora de 2022 quando a ligação está livre de conflito. Se uma leitura falhar, a execução tenta a outra e fica vermelha. Repita o disparo para recuperar a carga.
+
+As duas leituras de candidaturas precisam concluir para a coleta gravar novos vínculos, atualizar registros confirmados ou registrar fontes. A gravação dos dois anos ocorre na mesma transação.
+
+O passo **Coletar bens declarados e mostrar as contagens** roda depois das candidaturas, no mesmo job. O `completa: true` do segundo resumo confirma que os 12 arquivos das seis eleições gerais foram lidos e a gravação terminou. Se um arquivo de bens ou de candidaturas faltar ou estiver incompleto nesse passo, a série publicada é preservada. Repita o workflow depois de corrigir a falha.
+
+Os ZIPs são temporários no runner. O resumo contém apenas contagens e os registros confirmados ficam no banco com a URL oficial de cada arquivo. [Campos e ligação do TSE](dicionario-de-dados.md#candidaturas-do-tse)
+
+## Coletar o IPCA
+
+1. Confirme que **Migrar banco** aplicou a revisão `0016`, que cria `ipca_mensal`, no ambiente de destino.
+2. Em **Actions → Coletar IPCA → Run workflow**, escolha `main` para produção ou `develop` para desenvolvimento. O job usa o segredo `DATABASE_URL` com pool e a fila do banco dessa branch.
+3. Confira o commit executado e a linha JSON. `completa: true` confirma que todos os `meses` da carga foram gravados até `mes_fim`. Em caso de falha, a API continua lendo a série gravada. Repita o workflow depois de resolver a falha.
+
+A carga roda por disparo manual e pode ser repetida quando o Banco Central publicar um mês novo ou revisar uma taxa. [Fonte e cálculo](dicionario-de-dados.md#ipca-mensal)
 
 ## Ativar e recuperar a agenda de sábado
 
@@ -125,7 +161,7 @@ O cadastro fica fechado enquanto a API não tem `CONTA_CHAVE`, `CONTA_TERMO_VERS
 | `CONTA_CHAVE` | uma chave só deste ambiente | outra chave, só da produção |
 
 1. **O contato do termo.** Mande um e-mail de teste para `contato@mandatometro.com.br` e confira se ele chega. O termo dá esse endereço a quem quer ver, corrigir ou apagar os próprios dados: abra o cadastro só com ele recebendo.
-2. **As migrations.** Em **GitHub → Actions → Migrar banco**, confira que a última execução na branch do ambiente aplicou até a `0011`. As contas vêm da `0008`, o papel, da `0010`, e o progresso, da `0011`. **Confira:** o passo **Aplicar as migrations** terminou com "Migration concluída até head".
+2. **As migrations.** Em **GitHub → Actions → Migrar banco**, confira que a última execução na branch do ambiente aplicou pelo menos até a `0011`. As contas vêm da `0008`, o papel, da `0010`, e o progresso, da `0011`. **Confira:** o passo **Aplicar as migrations** terminou com "Migration concluída até head".
 3. **A chave.** Num terminal local, em `apps/backend`, gere a chave com `uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`. Em **API → Settings → Environment Variables → Add**, cadastre-a como segredo, com o nome `CONTA_CHAVE`, no ambiente da tabela. Na produção, cadastre a mesma chave também em **GitHub → Settings → Environments → producao → Environment secrets**, para o workflow **Retomar avisos de conta**: com outra chave, ele não abre os avisos que a API deixou na fila. **Confira:** a chave não está no projeto do site, em conversas, issues ou PRs.
 4. **O termo.** No mesmo lugar, cadastre `CONTA_TERMO_URL` e `CONTA_TERMO_VERSAO` como **Config**, com os valores da tabela. Copie a versão do `apps/web/src/lib/termo.ts` da branch publicada no ambiente. **Confira:** o `APP_BASE_URL` da API é o endereço do site do ambiente, sem barra no fim. A API monta os links dos e-mails com ele, e entrar, sair e excluir a conta só funcionam a partir desse endereço.
 5. **Os e-mails.** A API manda pelo Resend o link que confirma o cadastro, o de troca de senha e o comprovante da exclusão. Na produção, `RESEND_API_KEY` (segredo) e `RESEND_FROM` (**Config**) já entram na API no passo 3 da produção e no GitHub no envio de domingo: confira se estão nos dois. No desenvolvimento, o passo 5 deixa a API sem a chave do Resend. Assim, o cadastro abre, mas o e-mail de confirmação não sai, e a conta nova não chega a entrar. Sem uma conta confirmada, esse ambiente também fica sem administradora para o painel. Pôr a chave do Resend na API do desenvolvimento liga também o e-mail de inscrição da newsletter dele: a decisão é do Renan.

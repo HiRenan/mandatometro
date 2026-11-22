@@ -17,14 +17,17 @@
 
 import logging
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
 from sqlalchemy import (
+    BigInteger,
     CheckConstraint,
     Column,
     ForeignKey,
     Index,
+    Numeric,
     SmallInteger,
     String,
     Table,
@@ -36,10 +39,13 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from mandatometro.db import Base
+from mandatometro.temas import TemaId
+from mandatometro.tse_catalogos import MAXIMO_CENTAVOS
 
 logger = logging.getLogger(__name__)
 
 CASAS = ("camara", "senado")
+PADRAO_URL_VIDEO = r"https://www[.]youtube[.]com/watch[?]v=[A-Za-z0-9_-]{11}"
 
 PapelConta = Literal["comum", "administradora"]
 PADRAO_ID_ARTIGO = r"^[a-z0-9-]+/[a-z0-9-]+$"
@@ -253,6 +259,113 @@ class Mandato(Base):
     fonte: Mapped[Fonte] = relationship()
 
 
+RESULTADOS_TSE = {
+    -1: "sem_resultado",
+    1: "eleito",
+    2: "eleito_por_qp",
+    3: "eleito_por_media",
+    4: "nao_eleito",
+    5: "suplente",
+}
+
+
+class Candidatura(Base):
+    """Candidatura do TSE ligada a um parlamentar pela coleta, sem documentos pessoais."""
+
+    __tablename__ = "candidatura"
+    __table_args__ = (
+        UniqueConstraint("ano", "codigo_eleicao", "id_externo"),
+        CheckConstraint("ano >= 2006", name="ano"),
+        CheckConstraint("codigo_eleicao > 0", name="codigo_eleicao"),
+        CheckConstraint("id_externo > 0", name="id_externo"),
+        CheckConstraint("cargo > 0", name="cargo"),
+        CheckConstraint("""uf COLLATE "C" ~ '^[A-Z]{2}$'""", name="uf"),
+        CheckConstraint("""numero COLLATE "C" ~ '^[0-9]+$'""", name="numero"),
+        CheckConstraint("btrim(nome_urna) <> ''", name="nome_urna"),
+        CheckConstraint(_um_de("resultado", (*RESULTADOS_TSE.values(), "outro")), name="resultado"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ano: Mapped[int] = mapped_column(SmallInteger)
+    codigo_eleicao: Mapped[int]
+    id_externo: Mapped[int] = mapped_column(BigInteger)
+    cargo: Mapped[int] = mapped_column(SmallInteger)
+    uf: Mapped[str] = mapped_column(String(2))
+    partido: Mapped[str]
+    numero: Mapped[str]
+    nome_urna: Mapped[str]
+    resultado: Mapped[str]
+    resultado_bruto: Mapped[int] = mapped_column(SmallInteger)
+    parlamentar_id: Mapped[int] = mapped_column(
+        ForeignKey("parlamentar.id", ondelete="CASCADE"), index=True
+    )
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
+    fonte: Mapped[Fonte] = relationship()
+
+
+class CandidaturaPatrimonio(Base):
+    """Eleição ligada pelo CPF de uma âncora, com fontes para os dois arquivos do TSE."""
+
+    __tablename__ = "candidatura_patrimonio"
+    __table_args__ = (
+        UniqueConstraint("ano", "codigo_eleicao", "uf", "id_externo"),
+        UniqueConstraint("parlamentar_id", "ano"),
+        CheckConstraint("ano >= 2006", name="ano"),
+        CheckConstraint("codigo_eleicao > 0", name="codigo_eleicao"),
+        CheckConstraint("id_externo > 0", name="id_externo"),
+        CheckConstraint("cargo > 0", name="cargo"),
+        CheckConstraint("""uf COLLATE "C" ~ '^[A-Z]{2}$'""", name="uf"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ano: Mapped[int] = mapped_column(SmallInteger)
+    codigo_eleicao: Mapped[int]
+    uf: Mapped[str] = mapped_column(String(2))
+    id_externo: Mapped[int] = mapped_column(BigInteger)
+    cargo: Mapped[int] = mapped_column(SmallInteger)
+    parlamentar_id: Mapped[int] = mapped_column(ForeignKey("parlamentar.id", ondelete="CASCADE"))
+    fonte_candidatura_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+    fonte_bens_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
+    fonte_candidatura: Mapped[Fonte] = relationship(foreign_keys=[fonte_candidatura_id])
+    fonte_bens: Mapped[Fonte] = relationship(foreign_keys=[fonte_bens_id])
+
+
+class BemDeclarado(Base):
+    """Total nominal por tipo de bem. A fonte é o ZIP de bens da candidatura."""
+
+    __tablename__ = "bem_declarado"
+    __table_args__ = (
+        CheckConstraint(f"valor_centavos BETWEEN 0 AND {MAXIMO_CENTAVOS}", name="valor_centavos"),
+    )
+
+    candidatura_id: Mapped[int] = mapped_column(
+        ForeignKey("candidatura_patrimonio.id", ondelete="CASCADE"), primary_key=True
+    )
+    tipo: Mapped[int] = mapped_column(primary_key=True)
+    valor_centavos: Mapped[int] = mapped_column(BigInteger)
+
+
+class IpcaMensal(Base):
+    """Variação percentual mensal da série 433 do SGS."""
+
+    __tablename__ = "ipca_mensal"
+    __table_args__ = (
+        CheckConstraint("mes >= DATE '2006-01-01' AND EXTRACT(DAY FROM mes) = 1", name="mes"),
+        CheckConstraint(
+            "variacao_percentual > -100 AND variacao_percentual <= 99999.99",
+            name="variacao_percentual",
+        ),
+    )
+
+    mes: Mapped[date] = mapped_column(primary_key=True)
+    variacao_percentual: Mapped[Decimal] = mapped_column(Numeric(7, 2))
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
+    fonte: Mapped[Fonte] = relationship()
+
+
 class Proposicao(Base):
     """Um projeto numa Casa: PL, PEC, requerimento...
 
@@ -287,6 +400,21 @@ class Proposicao(Base):
     fonte: Mapped[Fonte] = relationship()
 
 
+class ProposicaoTema(Base):
+    """Tema convertido da classificação oficial, com uma observação própria da fonte."""
+
+    __tablename__ = "proposicao_tema"
+    __table_args__ = (
+        CheckConstraint(_um_de("tema", tuple(tema.value for tema in TemaId)), name="tema"),
+    )
+
+    proposicao_id: Mapped[int] = mapped_column(
+        ForeignKey("proposicao.id", ondelete="CASCADE"), primary_key=True
+    )
+    tema: Mapped[str] = mapped_column(primary_key=True)
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
+
 # Quais proposições cada votação afetou. Na Câmara, a lista proposicoesAfetadas do
 # /votacoes/{id}; no Senado, o idProcesso. Nunca o prefixo do id da votação da Câmara: nas
 # urgências e nos recursos, ele é o do requerimento, e não o da matéria.
@@ -301,6 +429,26 @@ votacao_proposicao = Table(
         index=True,
     ),
 )
+
+
+class VideoSessao(Base):
+    """Registro oficial de vídeo de uma sessão, separado das fontes editoriais."""
+
+    __tablename__ = "video_sessao"
+    __table_args__ = (
+        UniqueConstraint("casa", "id_externo"),
+        CheckConstraint(_um_de("casa", CASAS), name="casa"),
+        CheckConstraint("id_externo > 0", name="id_externo"),
+        CheckConstraint(f"""url_video COLLATE "C" ~ '^{PADRAO_URL_VIDEO}$'""", name="url_video"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    casa: Mapped[str]
+    id_externo: Mapped[int]
+    url_video: Mapped[str | None]
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+
+    fonte: Mapped[Fonte] = relationship()
 
 
 class Votacao(Base):
@@ -333,8 +481,12 @@ class Votacao(Base):
     resultado: Mapped[str]
     resultado_bruto: Mapped[str | None]
     fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
+    video_sessao_id: Mapped[int | None] = mapped_column(
+        ForeignKey("video_sessao.id", ondelete="SET NULL")
+    )
 
     fonte: Mapped[Fonte] = relationship()
+    video_sessao: Mapped[VideoSessao | None] = relationship()
     proposicoes: Mapped[list[Proposicao]] = relationship(secondary=votacao_proposicao)
     votos: Mapped[list["Voto"]] = relationship(
         back_populates="votacao", cascade="all, delete-orphan", passive_deletes=True

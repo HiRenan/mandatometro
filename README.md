@@ -20,11 +20,12 @@ O DataSenado encontrou mais apoio à democracia entre pessoas com mais escolarid
 
 - **Trilhas.** Artigos curtos explicam como a política funciona com exemplos reais. Na trilha do processo legislativo, um infográfico mostra como uma ideia vira lei. Há um quiz no meio e outro no fim.
 - **Newsletter semanal.** O jornal legislativo pode reunir o que o Congresso votou na semana e os destaques do Diário Oficial da União. Cada item traz uma explicação simples e a fonte oficial. As edições publicadas ficam no site e o envio semanal é programado para domingo. Se já houver uma edição publicada, o sistema tenta enviá-la logo depois da inscrição. [Diário Oficial na newsletter](docs/adr/0004-newsletter-do-dou.md)
+- **Jogo das Comissões.** Em `/jogos`, cinco cenas contam a tramitação real do projeto que virou a Lei 15.100/2025, a do celular na escola. Em cada cena você decide o próximo passo e depois vê o que aconteceu de verdade, com o link da fonte oficial. O jogo fica fora da trilha, e o fim do quiz final leva até ele. [Roteiro e regras](docs/jogo-das-comissoes.md)
 - **Busca.** Use Ctrl+K ou a busca no alto da página para procurar nas trilhas, nos artigos e nas edições publicadas mais recentes. Você pode digitar só o começo da palavra, com ou sem acento. A busca ignora maiúsculas, funciona sem IA e mantém no navegador o que você digita.
 
 As trilhas são abertas e a newsletter pede só o e-mail. O navegador guarda os artigos lidos. Se você criar uma conta, o progresso também fica no perfil para continuar em outro aparelho.
 
-**Depois do MVP:** a página de cada deputado federal e senador, com o que prometeu na campanha, o que fez no mandato e o patrimônio que declarou ao TSE. Também ficam para depois o "fake ou fato" e o jogo das comissões, em que a pessoa acompanha um projeto real e decide como se fosse parlamentar.
+**Depois do MVP:** a página de cada deputado federal e senador, com o que prometeu na campanha, o que fez no mandato e o patrimônio que declarou ao TSE. O "fake ou fato" também fica para depois.
 
 O porquê dessas escolhas está no [ADR 0002](docs/adr/0002-mvp.md) e no [ADR 0003](docs/adr/0003-login-opcional.md).
 
@@ -68,7 +69,7 @@ O GitHub Actions roda as coletas e o rascunho fora dos pedidos ao site. A coleta
 
 O comando de rascunho lê os dados já gravados e salva a edição no banco. Quando configurado, o modelo de linguagem sugere a ordem dos atos do Diário Oficial e escreve o texto das votações elegíveis. Em `/painel`, uma administradora confere os itens e as fontes, completa os textos pendentes e publica pela API.
 
-A API entrega ao site as edições publicadas e registra inscrições, contas, progresso das trilhas e tentativas do piloto. As trilhas vêm de arquivos do site. Na hospedagem, o site e a API ficam na Vercel e o PostgreSQL fica no Neon.
+A API entrega ao site as edições publicadas, os parlamentares e os votos gravados pela coleta. Também registra inscrições, contas, progresso das trilhas e tentativas do piloto. As trilhas vêm de arquivos do site. Na hospedagem, o site e a API ficam na Vercel e o PostgreSQL fica no Neon.
 
 Quando a agenda de domingo está ativa, `edicao enviar` usa o Resend para mandar a edição publicada naquela semana. O Resend também envia a edição mais recente na inscrição, quando disponível, e os avisos de conta. O workflow de avisos retoma pendências com `python -m mandatometro.contas`. O de migrations atualiza o banco com `alembic upgrade head`.
 
@@ -76,10 +77,12 @@ Quando a agenda de domingo está ativa, `edicao enviar` usa o Resend para mandar
 
 ## Modelo de dados
 
-O banco guarda os dados da Câmara e do Senado, os atos do Diário Oficial, as edições da newsletter, a medição do piloto e as contas com o progresso das trilhas. Os modelos ficam em `apps/backend/src/mandatometro/db/modelos.py`, e cada mudança vira uma migration do Alembic.
+O banco guarda os dados da Câmara, do Senado e do TSE, os atos do Diário Oficial, as edições da newsletter, a medição do piloto e as contas com o progresso das trilhas. Os modelos ficam em `apps/backend/src/mandatometro/db/modelos.py`, e cada mudança vira uma migration do Alembic.
 
 - **Cada Casa tem os seus números:** parlamentar, proposição e votação se identificam pela Casa e pelo id que a Casa dá (`casa`, `id_externo`). Quando a mesma matéria aparece nas duas Casas, cada uma tem o seu registro. A numeração única de 2019 em diante permite relacioná-los por sigla, número e ano.
 - **Atos do Diário Oficial** se identificam por `origem` e `id_externo`. A seleção semanal usa a data de publicação.
+- **Candidaturas do TSE** se identificam por ano, código da eleição e `SQ_CANDIDATO`. A coleta grava os pares únicos ligados a parlamentares em exercício.
+- **Patrimônio declarado ao TSE** liga as eleições gerais ao parlamentar pela candidatura já confirmada. No histórico, a chave inclui a UF da eleição. Os bens ficam em centavos nominais, somados por candidatura e tipo.
 - **Fonte em tudo:** cada dado coletado e cada item da edição aponta para uma `fonte`, com o endereço e a data da coleta. Sem fonte, o banco não grava.
 - **O partido fica no voto,** porque muda dentro do mandato. Os totais das nominais se contam pelos votos. Nas secretas do Senado, a coleta guarda matéria, votação e resultado, sem votos individuais; o banco não guarda os totais nem a modalidade. Ausência de votos no banco não significa zero votos na sessão nem identifica, sozinha, uma votação secreta.
 - **Ausência sem motivo:** toda ausência reconhecida do Senado (`AP`, `LS`, `MIS`, `NCom`, `LAP` e `LP`, em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, para a licença saúde ficar igual às outras. O voto só guarda os códigos de voto e de presença da lista `CODIGOS_GRAVADOS`, e o banco recusa os demais. Um código ainda não classificado, como `NA`, entra como `outro`, sem o código, e o log não leva o código nem a pessoa: a coleta registra só a votação e quantos códigos desconhecidos vieram nela.
@@ -130,16 +133,26 @@ erDiagram
         int tentativas
     }
     parlamentar ||--o{ mandato : "tem"
+    parlamentar ||--o{ candidatura : "disputou"
+    parlamentar ||--o{ candidatura_patrimonio : "disputou"
+    candidatura_patrimonio ||--o{ bem_declarado : "soma por tipo"
     parlamentar ||--o{ voto : "dá"
     votacao ||--o{ voto : "recebe"
+    video_sessao |o--o{ votacao : "registra"
     votacao ||--o{ votacao_proposicao : "afeta"
     proposicao ||--o{ votacao_proposicao : "é afetada"
+    proposicao ||--o{ proposicao_tema : "tem"
     edicao ||--o{ item_edicao : "tem"
     edicao |o--o{ inscrito : "última aceita"
     fonte ||--o{ parlamentar : "comprova"
     fonte ||--o{ mandato : "comprova"
+    fonte ||--o{ candidatura : "comprova"
+    fonte ||--o{ candidatura_patrimonio : "comprova candidatura e bens"
+    fonte ||--o{ ipca_mensal : "comprova o índice"
     fonte ||--o{ proposicao : "comprova"
+    fonte ||--o{ proposicao_tema : "classifica"
     fonte ||--o{ votacao : "comprova"
+    fonte ||--o{ video_sessao : "comprova"
     fonte ||--o{ voto : "comprova"
     fonte ||--o{ ato : "comprova"
     fonte ||--o{ item_edicao : "comprova"
@@ -167,6 +180,42 @@ erDiagram
         bool em_exercicio "na última coleta"
         int fonte_id FK
     }
+    candidatura {
+        int id PK
+        smallint ano UK
+        int codigo_eleicao UK
+        bigint id_externo UK "SQ_CANDIDATO"
+        smallint cargo "código do TSE"
+        string uf
+        string partido
+        string numero
+        string nome_urna
+        string resultado
+        smallint resultado_bruto
+        int parlamentar_id FK
+        int fonte_id FK
+    }
+    candidatura_patrimonio {
+        int id PK
+        smallint ano UK
+        int codigo_eleicao UK
+        string uf UK
+        bigint id_externo UK "SQ_CANDIDATO"
+        smallint cargo "código do TSE"
+        int parlamentar_id FK,UK
+        int fonte_candidatura_id FK
+        int fonte_bens_id FK
+    }
+    bem_declarado {
+        int candidatura_id PK,FK
+        int tipo PK "código do tipo de bem do TSE"
+        bigint valor_centavos "nominal, agregado por tipo"
+    }
+    ipca_mensal {
+        date mes PK "primeiro dia do mês"
+        numeric variacao_percentual "variação mensal em %"
+        int fonte_id FK
+    }
     proposicao {
         int id PK
         string casa UK
@@ -179,6 +228,11 @@ erDiagram
         string url_inteiro_teor
         int fonte_id FK
     }
+    proposicao_tema {
+        int proposicao_id PK, FK
+        string tema PK
+        int fonte_id FK
+    }
     votacao {
         int id PK
         string casa UK
@@ -187,6 +241,14 @@ erDiagram
         string descricao
         string resultado "aprovada, rejeitada ou outro"
         string resultado_bruto "código publicado pela Casa"
+        int fonte_id FK
+        int video_sessao_id FK "anulável"
+    }
+    video_sessao {
+        int id PK
+        string casa UK
+        int id_externo UK "evento da Câmara ou encontro do Senado"
+        string url_video "endereço oficial no YouTube ou nulo"
         int fonte_id FK
     }
     votacao_proposicao {
@@ -290,7 +352,7 @@ pnpm dev                        # site na porta 3001 e API na 8000
 
 **Cliente da API.** `pnpm generate:client`. Veja o [contrato da API](AGENTS.md#conventions).
 
-**Migration nova.** Em `apps/backend`, use o próximo número de revisão. Um exemplo depois da `0011` é `uv run alembic revision --autogenerate --rev-id 0012 -m "cria a tabela orientacao"`. `uv run alembic check` diz se algum modelo mudou sem migration. Veja as [convenções de migrations](AGENTS.md#conventions).
+**Migration nova.** Em `apps/backend`, use o próximo número de revisão. Um exemplo depois da `0013` é `uv run alembic revision --autogenerate --rev-id 0014 -m "cria a tabela orientacao"`. `uv run alembic check` diz se algum modelo mudou sem migration. Veja as [convenções de migrations](AGENTS.md#conventions).
 
 ### Checagens
 
@@ -338,6 +400,15 @@ Marcar, desmarcar, recomeçar e desfazer atualizam a tela na hora e gravam na co
 
 Toda conta nasce com o papel `comum`. Quem opera o banco pode [conceder ou revogar o papel de administradora](docs/hospedagem.md#conceder-e-revogar-o-papel-de-administradora) pelo CLI depois da confirmação do e-mail. Com o papel, o `/perfil` mostra o link "Revisar a edição da semana", que leva à revisão em `/painel`. [Revisão pelo painel](docs/newsletter.md#revisão-pelo-painel)
 
+### Consulta de parlamentares
+
+- `GET /parlamentares` lista todos os parlamentares em exercício por nome. Os filtros opcionais `uf` e `casa` aceitam a sigla da UF em maiúsculas e os valores `camara` ou `senado`, respectivamente.
+- `GET /parlamentares/{id}` usa o id interno e acrescenta os mandatos e a contagem de votos registrados por valor.
+- `GET /parlamentares/{id}/votos` devolve `votos`, `total`, `limite` e `deslocamento`, da votação mais recente para a mais antiga. O limite padrão é 20, com máximo de 100. Cada voto traz as proposições afetadas. O campo `url_oficial` usa o endereço público da fonte, com o endereço da coleta como reserva, e é nulo se a fonte estiver sem endereço.
+- `GET /votacoes/{id}` mostra os votos de uma votação por nome de parlamentar, com a sigla do partido e a UF no dia do voto. O placar geral e o de cada partido contam esses registros nas sete categorias. `url_video` traz o endereço oficial da sessão inteira no YouTube ou nulo. Use o `votacao_id` do histórico ou o `id` de cada votação nos fatos da edição publicada.
+
+O partido no cadastro do parlamentar vem do voto mais recente pela data da votação e pode ser nulo. O histórico e a contagem consideram só os registros de voto da pessoa. Uma votação sem votos individuais gravados devolve as listas de votos e partidos vazias e as sete contagens zeradas. [OpenAPI](apps/backend/openapi.json)
+
 ### Coletas
 
 **Coleta das duas Casas.** Com as migrations aplicadas e `DATABASE_URL` apontando explicitamente para o banco que deve receber os dados, rode os comandos abaixo em `apps/backend`. As datas incluem o primeiro e o último dia: informe `--inicio` e `--fim` juntos, no formato `AAAA-MM-DD`, ou nenhum dos dois. Sem datas, valem os sete dias completos anteriores, no fuso de Brasília.
@@ -376,6 +447,26 @@ O comando coleta as votações publicadas de acordo com as [regras do endpoint d
 
 Se o histórico de um votante fora da lista atual falhar, seus votos ficam gravados, o mandato não é inventado e `falhas_parlamentares` conta o parlamentar uma vez. Processo indisponível entra no resumo pelo caminho com seu id (por exemplo, `/processo/9006525`), e a votação é pulada. A [saída das coletas](docs/dicionario-de-dados.md#pegadinhas-e-saída-da-coleta) descreve como consultar históricos indisponíveis.
 
+**Preenchimento de vídeos das sessões.** A coleta das duas Casas consulta uma vez por sessão das votações gravadas e registra o vídeo oficial disponível. Para preencher os vídeos de votações antigas, use os comandos abaixo com o período desejado. O modo atualiza o vínculo do vídeo e usa uma fonte própria, preservando os dados e as referências da revisão da edição.
+
+```bash
+uv run mandatometro coleta camara --somente-videos --inicio 2026-11-13 --fim 2026-11-20
+uv run mandatometro coleta senado --somente-videos --inicio 2026-11-13 --fim 2026-11-20
+```
+
+A coleta normal renova as fontes editoriais mesmo quando o único dado novo é o vídeo. Para um rascunho pronto para publicar, use `--somente-videos` para conservar a revisão.
+
+O resumo inclui as contagens em `videos`. Consulte [vídeos das sessões](docs/dicionario-de-dados.md#vídeos-das-sessões) e o [preenchimento em hospedagem](docs/hospedagem.md#preencher-vídeos-das-sessões).
+
+**Preencher temas de votações já gravadas.** Em `apps/backend`, com as migrations aplicadas e `DATABASE_URL` explícito, use a janela das votações que quer cobrir.
+
+```bash
+uv run mandatometro coleta camara --somente-temas --inicio 2026-11-13 --fim 2026-11-20
+uv run mandatometro coleta senado --somente-temas --inicio 2026-11-13 --fim 2026-11-20
+```
+
+Os comandos consultam as proposições ainda sem tema que estão ligadas a votações salvas no período e gravam só os temas oficiais convertidos e suas fontes. A coleta normal também preenche temas. Confira `temas` no resumo de cada Casa. Falha de consulta ou gravação temática dá saída 1 no modo `--somente-temas` e fica no resumo da coleta normal, preservando a votação e os temas já gravados. [Regras de conversão](docs/dicionario-de-dados.md#temas-das-proposições-e-das-votações) · [Preenchimento na hospedagem](docs/hospedagem.md#preencher-temas-de-votações-já-coletadas)
+
 **Coleta de atos da legislação federal.** Em `apps/backend`, aplique as migrations e passe `DATABASE_URL` com o banco de destino.
 
 ```bash
@@ -395,6 +486,32 @@ uv run mandatometro coleta destaques
 ```
 
 O comando grava os destaques da seção 1 pela data de publicação, incluindo portarias. Passe as duas datas ou use os sete dias completos anteriores no fuso de Brasília. Quando a coleta roda, o resumo é uma linha JSON com gravações, descartes e falhas. Saída 1 sinaliza falha ou coleta incompleta. O comando confere a conexão com o banco antes de pedir a primeira página. Se o banco não responder, o resumo traz o erro e zero chamadas. Sem a chave ou com datas inválidas, o comando imprime uma linha de texto fixo e sai com código 2. [Campos e paginação](docs/dicionario-de-dados.md#destaques-da-imprensa-nacional).
+
+**Coleta do TSE.** Em `apps/backend`, use `DATABASE_URL` para o banco de destino com a migration `0013` aplicada e os mandatos em exercício carregados.
+
+```bash
+uv run mandatometro coleta tse
+uv run mandatometro coleta tse --diretorio-zips /caminho/dos/zips
+```
+
+O primeiro comando baixa os dois ZIPs oficiais de candidaturas de 2022 e 2026. O segundo lê as cópias da pasta indicada. A carga repete as mesmas chaves e acrescenta uma observação de fonte por arquivo a cada execução completa. O resumo JSON mostra, por Casa e ano, os pares ligados, sem par, em conflito e descartados por incompatibilidade com o mandato. Em 2026, `outro_cargo` conta as candidaturas à outra Casa alcançadas pelo CPF da âncora de 2022 quando a ligação está livre de conflito. Se uma leitura falhar, a execução tenta a outra e retorna 1 sem gravar candidaturas ou fontes. Consulte os [campos do TSE](docs/dicionario-de-dados.md#candidaturas-do-tse) e o [disparo manual na hospedagem](docs/hospedagem.md#coletar-o-tse).
+
+**Bens declarados ao TSE.** Aplique a migration `0015` e rode após a carga de candidaturas, usando `DATABASE_URL` para o mesmo banco.
+
+```bash
+uv run mandatometro coleta bens-tse
+uv run mandatometro coleta bens-tse --diretorio-zips /caminho/dos/zips
+```
+
+A carga de bens usa os ZIPs `consulta_cand` e `bem_candidato` das seis eleições gerais de 2006 a 2026. O resumo JSON mostra as contagens por ano e a saída 1 indica falha na carga. A API entrega o patrimônio nominal de cada eleição em `GET /parlamentares/{id}/patrimonio`. A série usa `null` quando o total está indisponível. [Campos e regras dos bens](docs/dicionario-de-dados.md#bens-declarados-ao-tse)
+
+**Coleta do IPCA.** Em `apps/backend`, aplique as migrations e passe `DATABASE_URL` para o banco de destino.
+
+```bash
+uv run mandatometro coleta ipca
+```
+
+O comando atualiza a série mensal do Banco Central desde janeiro de 2006. O resumo JSON mostra quantos meses foram gravados e até que mês. Saída 1 indica falha e preserva a carga anterior. A rota de patrimônio usa a série gravada para acrescentar o total corrigido de cada eleição. [Fonte e cálculo](docs/dicionario-de-dados.md#ipca-mensal) · [Disparo na hospedagem](docs/hospedagem.md#coletar-o-ipca)
 
 ### Edição semanal
 
