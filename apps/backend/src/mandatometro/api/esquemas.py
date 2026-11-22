@@ -70,12 +70,22 @@ class PlacarPublico(BaseModel):
     presidente: int
 
 
+UrlVideoSessao = Annotated[
+    str | None,
+    Field(
+        description="Endereço HTTPS do vídeo oficial da sessão inteira, "
+        "ou nulo quando indisponível."
+    ),
+]
+
+
 class VotacaoPublica(BaseModel):
     id: int = Field(description="Id interno da votação gravado nos fatos da edição.")
     data: date
     resultado: Literal["aprovada", "rejeitada", "outro"]
     placar: PlacarPublico | None
     fontes: list[FontePublica]
+    url_video: UrlVideoSessao
 
 
 class FatosPublicos(BaseModel):
@@ -240,6 +250,7 @@ class PlacarPorPartido(BaseModel):
 class DetalheVotacao(DadosVotacao):
     id: int = Field(description="Id interno da votação.")
     casa: Casa
+    url_video: UrlVideoSessao
     placar: ContagemVotosParlamentar = Field(description="Contagem dos votos individuais gravados.")
     placar_por_partido: list[PlacarPorPartido] = Field(
         description="Um placar por sigla presente nos votos. O grupo sem partido vem por último."

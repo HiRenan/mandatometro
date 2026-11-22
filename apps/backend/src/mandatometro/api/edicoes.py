@@ -1,4 +1,4 @@
-"""Contrato de leitura: só a fotografia publicada, sem metadados da revisão ou do envio."""
+"""Leitura da fotografia publicada e do vídeo oficial das sessões no banco."""
 
 from typing import Annotated
 
@@ -24,9 +24,9 @@ from mandatometro.avisos.consulta import carregar_edicao, publicadas
 from mandatometro.avisos.email import MensagemInvalida, formatar_edicao
 from mandatometro.config import config
 from mandatometro.db import sessao as sessao_do_banco
-from mandatometro.db.modelos import Edicao, Fonte, ItemEdicao
+from mandatometro.db.modelos import Edicao, Fonte, ItemEdicao, VideoSessao, Votacao
 from mandatometro.ia.artigos import CATALOGO
-from mandatometro.ia.esquemas import Fatos, FatosAto
+from mandatometro.ia.esquemas import Fatos, FatosAto, FatosItem
 
 router = APIRouter(
     prefix="/edicoes",
@@ -60,8 +60,12 @@ def _fonte(fonte: Fonte, *, de_ato: bool = False) -> FontePublica:
     )
 
 
-def _item(item: ItemEdicao, fontes: dict[int, Fonte]) -> ItemPublico:
-    fatos = Fatos.ler(item.fatos) if item.fatos is not None else None
+def _item(
+    item: ItemEdicao,
+    fatos: FatosItem | None,
+    fontes: dict[int, Fonte],
+    urls_video: dict[int, str | None],
+) -> ItemPublico:
     fatos_publicos: FatosPublicos | FatosAtoPublicos | None
     de_ato = isinstance(fatos, FatosAto)
     if de_ato:
@@ -78,6 +82,7 @@ def _item(item: ItemEdicao, fontes: dict[int, Fonte]) -> ItemPublico:
                     resultado=v.resultado,
                     placar=PlacarPublico(**v.placar.model_dump()) if v.placar else None,
                     fontes=[_fonte(fontes[i]) for i in dict.fromkeys(v.fontes)],
+                    url_video=urls_video.get(v.id),
                 )
                 for v in fatos.votacoes
             ]
@@ -135,9 +140,21 @@ def obter_edicao(id: Annotated[int, Path(gt=0)]):
         try:
             # Compartilha a validação de fontes/fatos com a prévia e o e-mail; não interpreta HTML.
             formatar_edicao(edicao, fontes=fontes, app_base_url=config().app_base_url, previa=True)
+            itens = [(i, Fatos.ler(i.fatos) if i.fatos is not None else None) for i in edicao.itens]
+            ids = {v.id for _, fatos in itens if isinstance(fatos, Fatos) for v in fatos.votacoes}
+            urls_video = {}
+            if ids:
+                urls_video = {
+                    votacao_id: url
+                    for votacao_id, url in sessao.execute(
+                        select(Votacao.id, VideoSessao.url_video)
+                        .join(Votacao.video_sessao)
+                        .where(Votacao.id.in_(ids))
+                    )
+                }
             return EdicaoPublica(
                 **_resumo(edicao).model_dump(),
-                itens=[_item(i, fontes) for i in edicao.itens],
+                itens=[_item(i, fatos, fontes, urls_video) for i, fatos in itens],
             )
         except (MensagemInvalida, KeyError):
             return JSONResponse({"erro": "servico_indisponivel"}, status_code=503)

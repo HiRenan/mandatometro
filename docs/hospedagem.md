@@ -64,7 +64,7 @@ Comece depois de conferir a inscrição de teste no ambiente anterior. A publica
 | Tarefa | Quando | Código e banco |
 | --- | --- | --- |
 | Coleta diária | 03h17 de Brasília (`17 6 * * *` UTC), se `COLETAS_ATIVAS=true` | YAML da `develop`, checkout da `main`, banco `producao` |
-| Coleta manual | Botão Run workflow | `develop` → `desenvolvimento`; `main` → `producao` |
+| Coleta manual | Botão Run workflow, com datas e modo Somente vídeos opcionais | `develop` → `desenvolvimento`; `main` → `producao` |
 | Agenda de sábado | 04h47 de Brasília (`47 7 * * 6` UTC), se `AGENDA_SABADO_ATIVA=true` | YAML da `develop`, checkout da `main`, banco `producao` |
 | Preparo manual da edição | Botão Run workflow, com período opcional | Commit do disparo (`github.sha`). `develop` usa `desenvolvimento` e `main` usa `producao` |
 | Envio dominical | 10h37 de Brasília (`37 13 * * 0` UTC), se `ENVIOS_ATIVOS=true` | YAML da `develop`, checkout da `main`, banco `producao` |
@@ -77,6 +77,12 @@ Sem o secret da URL direta, a migration no push mostra um aviso e pula antes de 
 As duas Casas rodam uma por vez, com até 30 minutos cada, e a segunda é tentada mesmo se a primeira falhar. Coleta, agenda de sábado, migration e envio compartilham a fila `banco-producao` ou `banco-desenvolvimento`. `cancel-in-progress: false` deixa terminar quem já começou, e `queue: max` preserva até 100 execuções pendentes. A ordem pelo horário do push pode variar. Falha ou cancelamento pede conferir o último sucesso e, se necessário, disparar a migration de reserva. O cron pode atrasar ou ser descartado. Em repositório público, fica inativo após 60 dias sem atividade. [Concorrência](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency), [agendamento](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
 
 Para recuperar uma lacuna maior, preencha **inicio e fim juntos**, em `AAAA-MM-DD`, no disparo manual da coleta. Sem datas, valem os sete dias completos anteriores em Brasília. O deploy da Vercel não espera o Actions. Na hospedagem, siga as [convenções de migrations](../AGENTS.md#conventions). Não há migration na importação, no build ou na requisição da API.
+
+### Preencher vídeos das sessões
+
+Depois de aplicar a migration `0012` e publicar a API, abra **Actions → Coletar Congresso → Run workflow**. Escolha **main** para produção ou **develop** para desenvolvimento. Informe `inicio` e `fim` do período que quer preencher e marque **Somente vídeos**, desmarcado por padrão. A agenda diária segue com a coleta completa.
+
+Confira os campos `videos` nos dois resumos e `url_video` na edição publicada e em uma votação com registro oficial. Se uma consulta falhar, repita com as mesmas datas. O modo volta às votações sem vídeo e usa a mesma fila e credenciais do banco da coleta.
 
 ## Ativar e recuperar a agenda de sábado
 

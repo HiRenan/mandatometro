@@ -14,6 +14,12 @@ def adicionar_argumentos_periodo(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--fim", metavar="AAAA-MM-DD", help="último dia, inclusive")
 
 
+def adicionar_argumento_videos(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--somente-videos", action="store_true", help="preenche apenas vídeos de votações gravadas"
+    )
+
+
 def resolver_periodo(
     inicio: str | None,
     fim: str | None,
