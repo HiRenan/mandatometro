@@ -15,7 +15,7 @@ from pathlib import Path
 from zipfile import BadZipFile, LargeZipFile
 
 import httpx2
-from sqlalchemy import and_, delete, func, or_, select, tuple_
+from sqlalchemy import delete, func, select, tuple_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -97,12 +97,54 @@ def _nome(valor: str) -> str:
 
 
 def _compativel(pessoa: EmExercicio, ano: int, candidatura: CandidaturaTse) -> bool:
+    if CASA_POR_CARGO[candidatura.cargo] != pessoa.casa:
+        return False
     # A eleição de 2026 é posterior ao início dos mandatos deste recorte.
     if ano != 2022:
         return True
     if pessoa.casa == "senado" and pessoa.legislatura == 56:
         return False
     return pessoa.legislatura != 57 or candidatura.resultado_bruto in (1, 2, 3, 5)
+
+
+def _compativel_com_mandatos(
+    mandatos: list[EmExercicio], ano: int, candidatura: CandidaturaTse
+) -> bool:
+    mesma_uf = [m for m in mandatos if m.uf == candidatura.uf]
+    return any(_compativel(m, ano, candidatura) for m in mesma_uf or mandatos)
+
+
+def _ponte_por_cpf(
+    mandatos: list[EmExercicio],
+    unicos: dict[int, CandidaturaTse],
+    compativeis: dict[int, CandidaturaTse],
+    por_cpf: dict[tuple[int, str], list[CandidaturaTse]],
+) -> dict[int, CandidaturaTse] | None:
+    """Retorna os pares que o CPF permite acrescentar, ou sinaliza uma contradição."""
+    cpfs = {c.cpf for c in unicos.values() if c.cpf}
+    if len(cpfs) > 1:
+        return None
+    if not cpfs:
+        return {}
+
+    cpf = next(iter(cpfs))
+    cpf_de_par_compativel = any(c.cpf for c in compativeis.values())
+    alcancadas = {}
+    for ano in ANOS:
+        pares = por_cpf.get((ano, cpf), [])
+        if len(pares) > 1:
+            return None
+        if not pares:
+            continue
+        c = pares[0]
+        if ano in unicos and c.chave != unicos[ano].chave:
+            return None
+        if cpf_de_par_compativel and not _compativel_com_mandatos(mandatos, ano, c):
+            return None
+        alcancadas[ano] = c
+
+    ancora = compativeis.get(2022)
+    return alcancadas if ancora and ancora.cpf else {}
 
 
 def _ligar(
@@ -118,31 +160,35 @@ def _ligar(
             for nome in {_nome(c.nome_urna), _nome(c.nome_civil)} - {""}:
                 nominais[ano, casa, c.uf, nome].append(c)
             if c.cpf:
-                por_cpf[ano, casa, c.cpf].append(c)
+                por_cpf[ano, c.cpf].append(c)
 
+    por_parlamentar = defaultdict(list)
+    for mandato in parlamentares:
+        por_parlamentar[mandato.id].append(mandato)
     propostas = defaultdict(list)
-    for p in parlamentares:
+    for mandatos in por_parlamentar.values():
+        p = mandatos[0]
         nome = _nome(p.nome)
-        pares = {ano: nominais.get((ano, p.casa, p.uf, nome), []) for ano in arquivos}
-        cpfs = {cs[0].cpf for cs in pares.values() if len(cs) == 1 and cs[0].cpf}
-        if len(cpfs) > 1:
-            for ano in pares:
-                contagens[ano][p.casa]["em_conflito"] += 1
-            continue
-        if cpfs:
-            cpf = next(iter(cpfs))
-            pares = {ano: por_cpf.get((ano, p.casa, cpf), []) for ano in arquivos}
-        confirmado = bool(cpfs) and all(len(pares.get(ano, [])) == 1 for ano in ANOS)
-        for ano, cs in pares.items():
+        ufs = {m.uf for m in mandatos}
+        pares = {
+            ano: {c.chave: c for uf in ufs for c in nominais.get((ano, p.casa, uf, nome), ())}
+            for ano in ANOS
+        }
+        unicos = {ano: next(iter(cs.values())) for ano, cs in pares.items() if len(cs) == 1}
+        compativeis = {
+            ano: c for ano, c in unicos.items() if _compativel_com_mandatos(mandatos, ano, c)
+        }
+        ponte = _ponte_por_cpf(mandatos, unicos, compativeis, por_cpf)
+        for ano in ANOS:
             resumo = contagens[ano][p.casa]
-            if not cs:
-                resumo["sem_par"] += 1
-            elif len(cs) > 1:
+            if ponte is None or len(pares[ano]) > 1:
                 resumo["em_conflito"] += 1
-            elif not confirmado and not _compativel(p, ano, cs[0]):
+            elif ano in unicos and ano not in compativeis:
                 resumo["derrubados_pela_trava"] += 1
+            elif c := compativeis.get(ano) or ponte.get(ano):
+                propostas[ano, c.chave].append((c, p))
             else:
-                propostas[ano, cs[0].chave].append((cs[0], p))
+                resumo["sem_par"] += 1
 
     ligadas: dict[int, dict[ChaveTse, tuple[CandidaturaTse, int]]] = {ano: {} for ano in arquivos}
     for (ano, chave), pares in propostas.items():
@@ -155,19 +201,25 @@ def _ligar(
     return ligadas
 
 
-def _gravar_em_lotes(s: Session, modelo, chave: tuple[str, ...], valores: list[dict]) -> None:
+def _gravar_em_lotes(
+    s: Session, modelo, chave: tuple[str, ...], valores: list[dict], *, fixos: tuple[str, ...] = ()
+) -> None:
     for lote in batched(valores, 500, strict=False):
         comando = insert(modelo).values(lote)
         s.execute(
             comando.on_conflict_do_update(
                 index_elements=chave,
-                set_={campo: comando.excluded[campo] for campo in lote[0] if campo not in chave},
+                set_={
+                    campo: comando.excluded[campo]
+                    for campo in lote[0]
+                    if campo not in chave and campo not in fixos
+                },
             )
         )
 
 
 def _travar_ano(s: Session, ano: int) -> None:
-    # Serializa as substituições do mesmo ano, inclusive em duas chamadas locais ao CLI.
+    # Serializa a conferência dos vínculos e a gravação de cada ano entre chamadas ao CLI.
     s.execute(select(func.pg_advisory_xact_lock(func.hashtext("mandatometro.coleta.tse"), ano)))
 
 
@@ -176,12 +228,27 @@ def _gravar_candidaturas(
     ano: int,
     instante: datetime,
     pares: dict[ChaveTse, tuple[CandidaturaTse, int]],
-    parlamentares: list[EmExercicio],
-    *,
-    reconciliar: bool,
-) -> None:
+) -> tuple[list[CandidaturaTse], Counter[str]]:
     with criar_sessao() as s, s.begin():
         _travar_ano(s, ano)
+        donos = {}
+        por_pessoa = defaultdict(set)
+        for eleicao, externo, pessoa in s.execute(
+            select(
+                Candidatura.codigo_eleicao, Candidatura.id_externo, Candidatura.parlamentar_id
+            ).where(Candidatura.ano == ano)
+        ):
+            chave = (eleicao, externo)
+            donos[chave] = pessoa
+            por_pessoa[pessoa].add(chave)
+
+        aceitos = []
+        conflitos: Counter[str] = Counter()
+        for chave, (c, pessoa) in pares.items():
+            if donos.get(chave, pessoa) != pessoa or por_pessoa[pessoa] - {chave}:
+                conflitos[CASA_POR_CARGO[c.cargo]] += 1
+            else:
+                aceitos.append((c, pessoa))
         fonte = registrar_fonte(s, Resposta(url_arquivo(CANDIDATURAS, ano), instante, None))
         valores = [
             {
@@ -198,26 +265,10 @@ def _gravar_candidaturas(
                 "parlamentar_id": parlamentar_id,
                 "fonte_id": fonte.id,
             }
-            for c, parlamentar_id in pares.values()
+            for c, parlamentar_id in aceitos
         ]
-        _gravar_em_lotes(s, Candidatura, _CHAVE_CANDIDATURA, valores)
-        if reconciliar:
-            # Retira vínculos revistos com os dois arquivos íntegros. Preserva o histórico de
-            # quem já deixou o exercício e as chaves e IDs dos pares que se confirmaram.
-            recorte = [
-                and_(
-                    Candidatura.cargo.in_(cargos),
-                    Candidatura.parlamentar_id.in_([p.id for p in parlamentares if p.casa == casa]),
-                )
-                for casa, cargos in CARGOS_POR_CASA.items()
-            ]
-            s.execute(
-                delete(Candidatura).where(
-                    Candidatura.ano == ano,
-                    or_(*recorte),
-                    tuple_(Candidatura.codigo_eleicao, Candidatura.id_externo).not_in(list(pares)),
-                )
-            )
+        _gravar_em_lotes(s, Candidatura, _CHAVE_CANDIDATURA, valores, fixos=("parlamentar_id",))
+    return [c for c, _ in aceitos], conflitos
 
 
 def _gravar_links(
@@ -230,51 +281,57 @@ def _gravar_links(
 ) -> int:
     with abrir_zip(REDES, ano, diretorio, cliente) as arq:
         observacao = Resposta(url_arquivo(REDES, ano), datetime.now(UTC), None)
-        with criar_sessao() as s, s.begin():
-            _travar_ano(s, ano)
-            linhas = s.execute(
-                select(
-                    Candidatura.codigo_eleicao,
-                    Candidatura.id_externo,
-                    Candidatura.id,
-                    Candidatura.uf,
-                ).where(
-                    Candidatura.ano == ano,
-                    Candidatura.cargo.in_(CARGOS),
-                    Candidatura.parlamentar_id.in_([p.id for p in parlamentares]),
-                )
-            )
-            candidaturas = {(eleicao, sq): (id_, uf) for eleicao, sq, id_, uf in linhas}
-            links = ler_links(arq, ano, candidaturas, resumo.descartes)
-            fonte = registrar_fonte(s, observacao)
-            if resumo.descartes["linha_invalida"] == 0:
-                s.execute(
-                    delete(LinkCandidatura).where(
-                        LinkCandidatura.candidatura_id.in_(
-                            [id_ for id_, _ in candidaturas.values()]
-                        )
+        try:
+            with criar_sessao() as s, s.begin():
+                _travar_ano(s, ano)
+                linhas = s.execute(
+                    select(
+                        Candidatura.codigo_eleicao,
+                        Candidatura.id_externo,
+                        Candidatura.id,
+                        Candidatura.uf,
+                    ).where(
+                        Candidatura.ano == ano,
+                        Candidatura.cargo.in_(CARGOS),
+                        Candidatura.parlamentar_id.in_([p.id for p in parlamentares]),
                     )
                 )
-            else:
-                # Mesmo num arquivo parcial, um URL observado pode ter mudado de ordem.
-                for lote in batched(links, 500, strict=False):
+                candidaturas = {(eleicao, sq): (id_, uf) for eleicao, sq, id_, uf in linhas}
+                links = ler_links(arq, ano, candidaturas, resumo.descartes)
+                fonte = registrar_fonte(s, observacao)
+                if resumo.descartes["linha_invalida"] == 0:
                     s.execute(
                         delete(LinkCandidatura).where(
-                            tuple_(LinkCandidatura.candidatura_id, LinkCandidatura.url).in_(
-                                [(id_, url) for id_, _, url in lote]
+                            LinkCandidatura.candidatura_id.in_(
+                                [id_ for id_, _ in candidaturas.values()]
                             )
                         )
                     )
-            _gravar_em_lotes(
-                s,
-                LinkCandidatura,
-                ("candidatura_id", "ordem"),
-                [
-                    {"candidatura_id": id_, "ordem": ordem, "url": url, "fonte_id": fonte.id}
-                    for id_, ordem, url in links
-                ],
-            )
-    return len(links)
+                else:
+                    # Mesmo num arquivo parcial, um URL observado pode ter mudado de ordem.
+                    for lote in batched(links, 500, strict=False):
+                        s.execute(
+                            delete(LinkCandidatura).where(
+                                tuple_(LinkCandidatura.candidatura_id, LinkCandidatura.url).in_(
+                                    [(id_, url) for id_, _, url in lote]
+                                )
+                            )
+                        )
+                _gravar_em_lotes(
+                    s,
+                    LinkCandidatura,
+                    ("candidatura_id", "ordem"),
+                    [
+                        {"candidatura_id": id_, "ordem": ordem, "url": url, "fonte_id": fonte.id}
+                        for id_, ordem, url in links
+                    ],
+                )
+        except SQLAlchemyError:
+            # O detalhe do PostgreSQL pode conter a linha que o banco recusou.
+            pass
+        else:
+            return len(links)
+        raise SQLAlchemyError("Falha ao gravar os links do TSE.")
 
 
 def _coletar(
@@ -313,27 +370,26 @@ def _coletar(
         except Exception as erro:
             resumo.registrar_falha(erro)
 
-    ligadas = _ligar(em_exercicio, candidaturas, contagens)
-    reconciliar = len(candidaturas) == len(ANOS) and all(
-        resumos[ano][CANDIDATURAS].descartes["linha_invalida"] == 0 for ano in ANOS
-    )
+    ligadas = {}
+    if len(candidaturas) == len(ANOS):
+        ligadas = _ligar(em_exercicio, candidaturas, contagens)
+    else:
+        for ano in candidaturas:
+            resumos[ano][CANDIDATURAS].falhas["candidaturas_incompletas"] = 1
     for ano in ANOS:
         if ano in ligadas:
             resumo = resumos[ano][CANDIDATURAS]
             try:
-                _gravar_candidaturas(
-                    criar_sessao,
-                    ano,
-                    instantes[ano],
-                    ligadas[ano],
-                    em_exercicio,
-                    reconciliar=reconciliar,
+                gravadas, conflitos = _gravar_candidaturas(
+                    criar_sessao, ano, instantes[ano], ligadas[ano]
                 )
             except Exception as erro:
                 resumo.registrar_falha(erro)
             else:
-                resumo.gravados, resumo.fontes = len(ligadas[ano]), 1
-                for c, _ in ligadas[ano].values():
+                resumo.gravados, resumo.fontes = len(gravadas), 1
+                for casa, total in conflitos.items():
+                    contagens[ano][casa]["em_conflito"] += total
+                for c in gravadas:
                     contagens[ano][CASA_POR_CARGO[c.cargo]]["ligados"] += 1
 
         resumo = resumos[ano][REDES]

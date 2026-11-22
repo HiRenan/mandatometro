@@ -2,21 +2,24 @@
 
 import csv
 import re
+from codecs import getincrementaldecoder
 from collections import Counter
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from io import TextIOWrapper
+from io import BufferedReader, RawIOBase, TextIOWrapper
 from pathlib import Path
 from tempfile import TemporaryFile
-from urllib.parse import urlsplit
-from zipfile import ZipFile
+from urllib.parse import unquote_to_bytes, urlsplit, urlunsplit
+from zipfile import ZipExtFile, ZipFile
 
 import httpx2
 
 BASE = "https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand"
 CANDIDATURAS = "consulta_cand"
 REDES = "rede_social_candidato"
+LIMITE_DOWNLOAD = 50_000_000
+LIMITE_MEMBRO = 300_000_000
 CARGOS_POR_CASA = {"camara": (6,), "senado": (5, 9, 10)}
 CASA_POR_CARGO = {cargo: casa for casa, cargos in CARGOS_POR_CASA.items() for cargo in cargos}
 UFS = frozenset(
@@ -72,12 +75,49 @@ _CAMPOS_REDES = {
     "DS_URL",
     "NR_ORDEM_REDE_SOCIAL",
 }
+_UTF8_MULTIBYTE = re.compile(r"[^\x00-\x7f\udc80-\udcff]")
+_ROTULO_HOST = re.compile(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?")
+_SERVICOS_DE_MENSAGENS = ("wa.me", "whatsapp.com")
 
 type ChaveTse = tuple[int, int]  # CD_ELEICAO e SQ_CANDIDATO, dentro do ano do arquivo.
 
 
 class ArquivoInvalido(ValueError):
     """O arquivo inteiro precisa ser descartado."""
+
+
+class UrlInvalida(ValueError):
+    """A mensagem é um código de descarte fixo, sem valor da fonte."""
+
+
+class _LeituraCSV(RawIOBase):
+    def __init__(self, membro: ZipExtFile):
+        super().__init__()
+        self._membro = membro
+        self._lidos = 0
+        self._prefixo = b""
+        self._utf8 = getincrementaldecoder("utf-8")("surrogateescape")
+
+    def readable(self) -> bool:
+        return True
+
+    def readinto(self, destino) -> int:
+        bloco = self._membro.read(min(len(destino), LIMITE_MEMBRO + 1 - self._lidos))
+        self._lidos += len(bloco)
+        if self._lidos > LIMITE_MEMBRO:
+            raise ArquivoInvalido("Membro do ZIP acima do limite.")
+        if len(self._prefixo) < 2:
+            self._prefixo = (self._prefixo + bloco[:2])[:2]
+        # surrogateescape preserva octetos soltos de latin-1. Um caractere acima de
+        # ASCII que não veio desse escape representa uma sequência UTF-8 completa.
+        if (
+            self._prefixo in (b"\xff\xfe", b"\xfe\xff")
+            or b"\0" in bloco
+            or _UTF8_MULTIBYTE.search(self._utf8.decode(bloco, final=not bloco))
+        ):
+            raise ArquivoInvalido("O CSV deve estar em latin-1.")
+        destino[: len(bloco)] = bloco
+        return len(bloco)
 
 
 @dataclass(frozen=True, repr=False)
@@ -109,7 +149,11 @@ def abrir_zip(
     with TemporaryFile() as temporario:
         with cliente.stream("GET", url_arquivo(tipo, ano), follow_redirects=False) as resposta:
             resposta.raise_for_status()
+            tamanho = 0
             for bloco in resposta.iter_bytes(chunk_size=128 * 1024):
+                tamanho += len(bloco)
+                if tamanho > LIMITE_DOWNLOAD:
+                    raise ArquivoInvalido("Download do ZIP acima do limite.")
                 temporario.write(bloco)
         temporario.seek(0)
         with ZipFile(temporario) as arquivo:
@@ -123,15 +167,34 @@ def _linhas(
     descartes: Counter[str],
 ) -> Iterator[dict[str, str]]:
     # BRASIL já contém os registros de BR e de todas as UFs.
+    info = arquivo.getinfo(membro)
+    if info.file_size > LIMITE_MEMBRO:
+        raise ArquivoInvalido("Membro do ZIP acima do limite.")
     with (
-        arquivo.open(membro) as bruto,
-        TextIOWrapper(bruto, encoding="latin-1", newline="") as csv_,
+        arquivo.open(info) as bruto,
+        TextIOWrapper(BufferedReader(_LeituraCSV(bruto)), encoding="latin-1", newline="") as csv_,
     ):
-        leitor = csv.reader(csv_, delimiter=";", strict=True)
+        fim = False
+
+        def linhas_fisicas():
+            nonlocal fim
+            yield from csv_
+            fim = True
+
+        leitor = csv.reader(linhas_fisicas(), delimiter=";", strict=True)
         colunas = next(leitor, [])
         if not campos.issubset(colunas) or len(colunas) != len(set(colunas)):
             raise ArquivoInvalido("Cabeçalho inválido.")
-        for valores in leitor:
+        while True:
+            try:
+                valores = next(leitor)
+            except StopIteration:
+                break
+            except csv.Error:
+                if fim:
+                    raise ArquivoInvalido("Registro CSV truncado.") from None
+                descartes["linha_invalida"] += 1
+                continue
             if len(valores) == len(colunas):
                 yield dict(zip(colunas, valores, strict=True))
             else:
@@ -209,24 +272,57 @@ def ler_candidaturas(
     return list(candidaturas.values())
 
 
+def _conferir_caminho(caminho: str) -> None:
+    dados = unquote_to_bytes(caminho)
+    while (decodificado := unquote_to_bytes(dados)) != dados:
+        dados = decodificado
+    try:
+        decodificado = dados.decode("utf-8")
+    except UnicodeDecodeError:
+        decodificado = dados.decode("latin-1")
+    if "@" in decodificado:
+        raise UrlInvalida("caminho_arroba")
+    if any(ch.isspace() for ch in decodificado):
+        raise UrlInvalida("caminho_espaco")
+    if re.search(r"\d{8,}", decodificado):
+        raise UrlInvalida("caminho_digitos")
+
+
 def _url_declarada(valor: str) -> str:
     valor = valor.strip()
-    if not valor or "\\" in valor or any(ch.isspace() or ord(ch) < 32 for ch in valor):
-        raise ValueError("Endereço inválido.")
+    if not valor or "\\" in valor or any(ord(ch) < 32 or ord(ch) == 127 for ch in valor):
+        raise UrlInvalida("formato_invalido")
+    explicita = valor.startswith("//") or re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", valor)
     if valor.startswith("//"):
         valor = "https:" + valor
-    elif "://" not in valor:
+    elif not explicita:
+        if re.match(r"^[a-zA-Z][a-zA-Z0-9+-]*:", valor):
+            raise UrlInvalida("esquema_invalido")
         valor = "https://" + valor
-    url = urlsplit(valor)
+
+    try:
+        url = urlsplit(valor)
+        host = (url.hostname or "").encode("idna").decode("ascii")
+        porta = url.port
+    except ValueError:
+        host = ""
     if (
-        url.scheme not in ("https", "http")
-        or not url.hostname
-        or "." not in url.hostname
-        or url.username is not None
-        or url.port == 0
+        "." not in host
+        or len(host) > 253
+        or not all(_ROTULO_HOST.fullmatch(r) for r in host.split("."))
     ):
-        raise ValueError("Endereço inválido.")
-    return url.geturl()
+        raise UrlInvalida("host_invalido")
+    if url.scheme not in ("https", "http"):
+        raise UrlInvalida("esquema_invalido")
+    if not explicita and url.username is not None:
+        raise UrlInvalida("email_avulso")
+    if porta == 0:
+        raise UrlInvalida("formato_invalido")
+    if any(host == servico or host.endswith(f".{servico}") for servico in _SERVICOS_DE_MENSAGENS):
+        raise UrlInvalida("mensagens_por_telefone")
+    _conferir_caminho(url.path)
+    caminho = "/".join(parte.partition(";")[0] for parte in url.path.split("/"))
+    return urlunsplit((url.scheme, host, caminho, "", ""))
 
 
 def ler_links(
@@ -251,8 +347,8 @@ def ler_links(
             continue
         try:
             url = _url_declarada(linha["DS_URL"])
-        except ValueError:
-            descartes["url_invalida"] += 1
+        except UrlInvalida as erro:
+            descartes[f"url_{erro}"] += 1
             continue
         if por_ordem.setdefault((candidatura_id, ordem), url) != url:
             raise ArquivoInvalido("Endereços divergentes para a mesma ordem.")
