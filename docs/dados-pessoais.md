@@ -12,7 +12,7 @@ No MVP, a coleta descarta `cpf` e `dataNascimento` de `/deputados/{id}`. O banco
 
 Motivo de ausência fica fora do banco, para a licença saúde não ser deduzida: toda ausência do Senado (AP, LS, MIS, NCom, LAP, LP e as que entrarem em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, igual às outras, e o motivo de afastamento do senador não é gravado. O voto só guarda os códigos de voto e de presença de `CODIGOS_GRAVADOS` em `valor_bruto`, o que o CHECK do banco garante, e um código novo entra como `outro`, sem o código. O banco guarda `P-NRV`, de quem estava presente. O log também não leva o código nem a pessoa, porque o log junto com o banco apontaria quem recebeu um código que pode ser de saúde: a coleta (#10 e #11) registra a votação e quantos códigos desconhecidos vieram nela, e quem for classificar o código o lê na fonte pública.
 
-A API dos parlamentares usa o valor normalizado (`voto.valor`) no histórico e na contagem de votos.
+A API usa o valor normalizado (`voto.valor`) no histórico e na contagem de votos do parlamentar, na lista nominal da votação e nos placares. Na lista nominal, cada voto traz o id interno e o nome do parlamentar, com o partido e a UF registrados no dia do voto.
 
 ## Atos do Diário Oficial
 
