@@ -725,14 +725,21 @@
 		font-weight: 800;
 	}
 
+	/*
+	 * O parágrafo fica em bloco, sem flex (a #152): cada voto fica inteiro numa
+	 * linha, e a margem no fim dele faz o espaço até o próximo.
+	 */
 	.votos-do-partido {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.2rem 1rem;
 		margin-top: 0.2rem;
 		font-family: var(--font-sans);
 		font-size: 0.9375rem;
+		line-height: 1.7;
 		color: var(--tinta-suave);
+	}
+
+	.votos-do-partido > span {
+		margin-inline-end: 0.75rem;
+		white-space: nowrap;
 	}
 
 	.votos-do-partido strong {

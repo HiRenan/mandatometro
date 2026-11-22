@@ -1,4 +1,5 @@
 // biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
+import { Fragment } from "react";
 import type { PlacarPorPartido as Grupo } from "@/client";
 import { NOME_DO_VOTO, VALORES, type Valor } from "@/lib/parlamentares/votos";
 
@@ -59,9 +60,11 @@ export function PlacarPorPartido({ grupos }: { grupos: Grupo[] }) {
 						<p className="partido-da-lista">{grupo.partido ?? SEM_PARTIDO}</p>
 						<p className="votos-do-partido">
 							{votosDoGrupo(grupo, valores).map(([valor, quantos]) => (
-								<span key={valor}>
-									{NOME_DO_VOTO[valor]} <strong>{quantos}</strong>
-								</span>
+								<Fragment key={valor}>
+									<span>
+										{NOME_DO_VOTO[valor]} <strong>{quantos}</strong>
+									</span>{" "}
+								</Fragment>
 							))}
 						</p>
 					</li>

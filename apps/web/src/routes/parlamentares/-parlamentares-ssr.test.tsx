@@ -192,7 +192,7 @@ describe("o HTML das páginas dos parlamentares", () => {
 			"Câmara dos Deputados, Santa Catarina, PFT. Os mandatos, como votou e cada voto registrado, com a página oficial de cada votação.",
 		);
 		expect(html).toMatch(
-			/<h1 class="titulo-condensado letra-com-teto"[^>]*>Ágata Cedrolume<\/h1>/,
+			/<h1 class="titulo-de-folha letra-com-teto"[^>]*>Ágata Cedrolume<\/h1>/,
 		);
 		expect(html).toContain("57ª legislatura");
 		// A regra de cada voto, com o artigo do regimento da Câmara, sem quebra

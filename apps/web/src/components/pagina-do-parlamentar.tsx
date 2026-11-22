@@ -74,9 +74,11 @@ export function PaginaDoParlamentar({ pagina }: { pagina: Pagina }) {
 					</ol>
 				</nav>
 				{/* O nome vem da API: o teto da letra grande sai da régua, com a palavra
-				    mais larga dele (lib/conteudo/regua.ts). */}
+				    mais larga dele (lib/conteudo/regua.ts). A entrelinha é a da
+				    leitura (o titulo-de-folha): com a do cartaz, a cedilha de um nome
+				    encostaria no acento da linha de baixo (a #158). */}
 				<h1
-					className="titulo-condensado letra-com-teto"
+					className="titulo-de-folha letra-com-teto"
 					style={estiloDoTeto(parlamentar.nome, "titulo-condensado")}
 				>
 					{parlamentar.nome}

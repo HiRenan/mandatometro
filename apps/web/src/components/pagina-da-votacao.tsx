@@ -67,9 +67,10 @@ export function PaginaDaVotacao({
 					/>
 				)}
 				{/* O título sai dos dados: o teto da letra grande vem da régua, com a
-				    palavra mais larga dele (lib/conteudo/regua.ts). */}
+				    palavra mais larga dele (lib/conteudo/regua.ts). A entrelinha é a
+				    da leitura (o titulo-de-folha), que aceita qualquer texto. */}
 				<h1
-					className="titulo-condensado letra-com-teto"
+					className="titulo-de-folha letra-com-teto"
 					style={estiloDoTeto(titulo, "titulo-condensado")}
 				>
 					{titulo}

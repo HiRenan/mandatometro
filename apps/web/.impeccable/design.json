@@ -196,7 +196,7 @@
       },
       "title": {
         "displayName": "Título de folha",
-        "purpose": "O título de cada folha de uma lista (titulo-de-folha), em maiúsculas: o do artigo na trilha, de 1.875rem a 3.5rem; o da trilha em Trilhas, de 2.25rem a 4.5rem; o do anterior e do próximo, de 1.5rem a 2.5rem. Tem o teto do título de cartaz, com o recuo da folha."
+        "purpose": "O título de cada folha de uma lista (titulo-de-folha), em maiúsculas: o do artigo na trilha, de 1.875rem a 3.5rem; o da trilha em Trilhas, de 2.25rem a 4.5rem; o do anterior e do próximo, de 1.5rem a 2.5rem. Tem o teto do título de cartaz, com o recuo da folha. Também o nome na página do parlamentar e o título da página da votação, que vêm da API, no tamanho do título da página: a altura 1.15 da leitura aceita qualquer texto."
       },
       "subtitle": {
         "displayName": "Subtítulo",
