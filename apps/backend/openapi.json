@@ -1910,6 +1910,73 @@
         }
       }
     },
+    "/parlamentares/{id}/patrimonio": {
+      "get": {
+        "tags": [
+          "parlamentares"
+        ],
+        "summary": "Listar o patrimônio declarado ao TSE por eleição",
+        "description": "Eleições com vínculo confirmado, em ordem crescente de ano.",
+        "operationId": "obter_patrimonio_parlamentar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2147483647,
+              "exclusiveMinimum": 0,
+              "description": "Id interno, inteiro positivo de 32 bits com sinal.",
+              "title": "Id"
+            },
+            "description": "Id interno, inteiro positivo de 32 bits com sinal."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatrimonioParlamentar"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Banco indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroParlamentar"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/parlamentares/{id}/votos": {
       "get": {
         "tags": [
@@ -2362,6 +2429,24 @@
         ],
         "title": "Cadastro"
       },
+      "CargoPatrimonio": {
+        "properties": {
+          "codigo": {
+            "type": "integer",
+            "title": "Codigo"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          }
+        },
+        "type": "object",
+        "required": [
+          "codigo",
+          "nome"
+        ],
+        "title": "CargoPatrimonio"
+      },
       "Codigo": {
         "properties": {
           "token": {
@@ -2638,6 +2723,85 @@
         ],
         "title": "EdicaoPublica"
       },
+      "EleicaoPatrimonio": {
+        "properties": {
+          "ano": {
+            "type": "integer",
+            "title": "Ano"
+          },
+          "cargo": {
+            "$ref": "#/components/schemas/CargoPatrimonio"
+          },
+          "uf": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "AC",
+                  "AL",
+                  "AM",
+                  "AP",
+                  "BA",
+                  "CE",
+                  "DF",
+                  "ES",
+                  "GO",
+                  "MA",
+                  "MG",
+                  "MS",
+                  "MT",
+                  "PA",
+                  "PB",
+                  "PE",
+                  "PI",
+                  "PR",
+                  "RJ",
+                  "RN",
+                  "RO",
+                  "RR",
+                  "RS",
+                  "SC",
+                  "SE",
+                  "SP",
+                  "TO"
+                ]
+              },
+              {
+                "type": "string",
+                "const": "BR"
+              }
+            ],
+            "title": "Uf",
+            "description": "UF da eleição ou BR para eleição nacional."
+          },
+          "total_centavos": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 9007199254740991.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Centavos",
+            "description": "Total nominal declarado ao TSE, em centavos de real. Nulo sem total."
+          },
+          "fonte": {
+            "$ref": "#/components/schemas/FontePatrimonio"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ano",
+          "cargo",
+          "uf",
+          "total_centavos",
+          "fonte"
+        ],
+        "title": "EleicaoPatrimonio"
+      },
       "Endereco": {
         "properties": {
           "email": {
@@ -2823,6 +2987,25 @@
           "votacoes"
         ],
         "title": "FatosPublicos"
+      },
+      "FontePatrimonio": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "coletado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Coletado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "coletado_em"
+        ],
+        "title": "FontePatrimonio"
       },
       "FontePublica": {
         "properties": {
@@ -3199,6 +3382,22 @@
           "partido"
         ],
         "title": "ParlamentarPublico"
+      },
+      "PatrimonioParlamentar": {
+        "properties": {
+          "eleicoes": {
+            "items": {
+              "$ref": "#/components/schemas/EleicaoPatrimonio"
+            },
+            "type": "array",
+            "title": "Eleicoes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "eleicoes"
+        ],
+        "title": "PatrimonioParlamentar"
       },
       "PedidoInscricao": {
         "properties": {

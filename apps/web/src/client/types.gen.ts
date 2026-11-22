@@ -109,6 +109,20 @@ export type Cadastro = {
 };
 
 /**
+ * CargoPatrimonio
+ */
+export type CargoPatrimonio = {
+    /**
+     * Codigo
+     */
+    codigo: number;
+    /**
+     * Nome
+     */
+    nome: string;
+};
+
+/**
  * Codigo
  */
 export type Codigo = {
@@ -289,6 +303,30 @@ export type EdicaoPublica = {
 };
 
 /**
+ * EleicaoPatrimonio
+ */
+export type EleicaoPatrimonio = {
+    /**
+     * Ano
+     */
+    ano: number;
+    cargo: CargoPatrimonio;
+    /**
+     * Uf
+     *
+     * UF da eleição ou BR para eleição nacional.
+     */
+    uf: 'AC' | 'AL' | 'AM' | 'AP' | 'BA' | 'CE' | 'DF' | 'ES' | 'GO' | 'MA' | 'MG' | 'MS' | 'MT' | 'PA' | 'PB' | 'PE' | 'PI' | 'PR' | 'RJ' | 'RN' | 'RO' | 'RR' | 'RS' | 'SC' | 'SE' | 'SP' | 'TO' | 'BR';
+    /**
+     * Total Centavos
+     *
+     * Total nominal declarado ao TSE, em centavos de real. Nulo sem total.
+     */
+    total_centavos: number | null;
+    fonte: FontePatrimonio;
+};
+
+/**
  * Endereco
  */
 export type Endereco = {
@@ -400,6 +438,20 @@ export type FatosPublicos = {
      * Votacoes
      */
     votacoes: Array<VotacaoPublica>;
+};
+
+/**
+ * FontePatrimonio
+ */
+export type FontePatrimonio = {
+    /**
+     * Url
+     */
+    url: string;
+    /**
+     * Coletado Em
+     */
+    coletado_em: string;
 };
 
 /**
@@ -631,6 +683,16 @@ export type ParlamentarPublico = {
      * Sigla registrada no voto mais recente pela data da votação, com desempate pelo maior id interno da votação. Nula se o voto não informa partido ou se não há voto.
      */
     partido: string | null;
+};
+
+/**
+ * PatrimonioParlamentar
+ */
+export type PatrimonioParlamentar = {
+    /**
+     * Eleicoes
+     */
+    eleicoes: Array<EleicaoPatrimonio>;
 };
 
 /**
@@ -1973,6 +2035,46 @@ export type ObterParlamentarResponses = {
 };
 
 export type ObterParlamentarResponse = ObterParlamentarResponses[keyof ObterParlamentarResponses];
+
+export type ObterPatrimonioParlamentarData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         *
+         * Id interno, inteiro positivo de 32 bits com sinal.
+         */
+        id: number;
+    };
+    query?: never;
+    url: '/parlamentares/{id}/patrimonio';
+};
+
+export type ObterPatrimonioParlamentarErrors = {
+    /**
+     * Not Found
+     */
+    404: ErroParlamentar;
+    /**
+     * Dados inválidos.
+     */
+    422: ErroParlamentar;
+    /**
+     * Banco indisponível.
+     */
+    503: ErroParlamentar;
+};
+
+export type ObterPatrimonioParlamentarError = ObterPatrimonioParlamentarErrors[keyof ObterPatrimonioParlamentarErrors];
+
+export type ObterPatrimonioParlamentarResponses = {
+    /**
+     * Successful Response
+     */
+    200: PatrimonioParlamentar;
+};
+
+export type ObterPatrimonioParlamentarResponse = ObterPatrimonioParlamentarResponses[keyof ObterPatrimonioParlamentarResponses];
 
 export type ListarVotosParlamentarData = {
     body?: never;
