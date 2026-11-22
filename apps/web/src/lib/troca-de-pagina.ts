@@ -32,6 +32,12 @@ const PILOTO = "piloto";
 /** O começo do endereço das edições da newsletter: /edicoes e /edicoes/{id}. */
 const EDICOES = "edicoes";
 
+/** A lista dos parlamentares (/parlamentares) e a página de cada um. */
+const PARLAMENTARES = "parlamentares";
+
+/** A página de uma votação (/votacoes/{id}), que vem de uma edição ou de um parlamentar. */
+const VOTACOES = "votacoes";
+
 /** O que o router diz de cada troca (o `locationChangeInfo` do TanStack Router). */
 export type Troca = {
 	fromLocation?: { pathname: string };
@@ -59,6 +65,15 @@ function lugarNoBloco(caminho: string): Lugar {
 	// avançar, como entre duas trilhas.
 	if (partes[0] === EDICOES && partes.length <= 2) {
 		return { fundura: partes.length };
+	}
+	// A lista dos parlamentares fica ao lado da das edições, e cada parlamentar,
+	// ao lado de cada edição. A votação vem depois dos dois: da edição ou da
+	// pessoa para a votação é avançar, e da votação para a pessoa é voltar.
+	if (partes[0] === PARLAMENTARES && partes.length <= 2) {
+		return { fundura: partes.length };
+	}
+	if (partes[0] === VOTACOES && partes.length === 2) {
+		return { fundura: 3 };
 	}
 	if (partes[0] !== "trilhas" || partes.length > 3) {
 		return { fundura: 4 };
