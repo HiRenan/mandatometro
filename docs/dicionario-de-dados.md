@@ -586,6 +586,10 @@ O catálogo tem identificadores estáveis e nomes para a tela. Na Câmara, vale 
 
 O resumo `temas` distingue proposições com tema, proposições sem classificação, classificações sem conversão e falhas de consulta ou gravação. Uma proposição pode ter um tema reconhecido e outra classificação sem conversão. O modo `--somente-temas` consulta só proposições sem tema ligadas a votações gravadas no período.
 
+Os códigos temáticos são aceitos como inteiros positivos ou texto com os dígitos de 0 a 9. Código malformado conta como falha da consulta e preserva os temas anteriores. No Senado, o código é validado e o caminho decide o tema.
+
+Na coleta normal da Câmara, a etapa dos temas para após duas falhas temporárias seguidas ou ao esgotar o prazo das consultas. As consultas de tema têm até quatro minutos, dentro dos primeiros 25 minutos da coleta. O resumo conta as proposições restantes em `proposicoes_nao_consultadas`. Uma nova coleta pode consultar essas proposições. O modo `--somente-temas` também pode consultar as que ainda estão sem tema.
+
 Uma votação expõe a união dos temas de suas proposições afetadas, na ordem do catálogo, em `temas: [{id, nome}]`. A lista vem vazia quando não há tema. O campo aparece em `GET /votacoes/{id}`, nos votos de `GET /parlamentares/{id}/votos` e nos fatos públicos das votações em `GET /edicoes/{id}`. Nos votos do parlamentar, `?tema=saude` filtra os registros antes da contagem e da paginação. Id de tema inválido responde 422 com `dados_invalidos`. `GET /temas` lista o catálogo.
 
 ## Atos do Diário Oficial

@@ -90,6 +90,8 @@ Depois de confirmar a migration 0014 no ambiente, abra **Actions → Coletar Con
 
 O modo usa as mesmas credenciais e a mesma fila da coleta e fica desmarcado por padrão. A agenda roda a coleta normal. O preenchimento grava temas e fontes temáticas à parte, o que preserva as revisões dos rascunhos. [Comando local](../README.md#como-rodar)
 
+Marcar **somente_videos** e **somente_temas** juntos faz a tarefa parar com erro antes de coletar. Rode um modo por vez.
+
 ## Ativar e recuperar a agenda de sábado
 
 **Preparar edição de sábado** coleta a legislação federal pelo Senado, coleta os destaques do Diário Oficial pelo Firecrawl e prepara o rascunho, nessa ordem e no mesmo banco. A rodada tem até 60 minutos. O horário de **04h47 de Brasília** reserva uma hora para a coleta das duas Casas, que começa às 03h17, mais 30 minutos de folga. Se a coleta diária ainda ocupar a fila, a agenda espera a sua vez.
