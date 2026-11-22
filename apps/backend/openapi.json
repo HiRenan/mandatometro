@@ -2084,6 +2084,70 @@
         }
       }
     },
+    "/votacoes/{id}": {
+      "get": {
+        "tags": [
+          "votacoes"
+        ],
+        "summary": "Ler uma votação, seus votos por nome e os placares geral e por partido",
+        "description": "A lista contém todos os votos individuais gravados. Quando a votação não tem registros individuais, a lista de votos e a de partidos vêm vazias e o placar vem zerado.",
+        "operationId": "obter_votacao",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetalheVotacao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroVotacao"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Banco indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroVotacao"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroVotacao"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -2413,6 +2477,101 @@
         ],
         "title": "DetalheParlamentar"
       },
+      "DetalheVotacao": {
+        "properties": {
+          "data": {
+            "type": "string",
+            "format": "date",
+            "title": "Data"
+          },
+          "descricao": {
+            "type": "string",
+            "title": "Descricao"
+          },
+          "resultado": {
+            "type": "string",
+            "enum": [
+              "aprovada",
+              "rejeitada",
+              "outro"
+            ],
+            "title": "Resultado"
+          },
+          "proposicoes": {
+            "items": {
+              "$ref": "#/components/schemas/ProposicaoAfetada"
+            },
+            "type": "array",
+            "title": "Proposicoes"
+          },
+          "url_oficial": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url Oficial",
+            "description": "Página oficial da votação, com o endereço da coleta como reserva. Nula se a fonte estiver sem endereço."
+          },
+          "coletado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Coletado Em",
+            "description": "Data e hora de coleta da fonte da votação."
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "Id interno da votação."
+          },
+          "casa": {
+            "type": "string",
+            "enum": [
+              "camara",
+              "senado"
+            ],
+            "title": "Casa"
+          },
+          "placar": {
+            "$ref": "#/components/schemas/ContagemVotosParlamentar",
+            "description": "Contagem dos votos individuais gravados."
+          },
+          "placar_por_partido": {
+            "items": {
+              "$ref": "#/components/schemas/PlacarPorPartido"
+            },
+            "type": "array",
+            "title": "Placar Por Partido",
+            "description": "Um placar por sigla presente nos votos. O grupo sem partido vem por último."
+          },
+          "votos": {
+            "items": {
+              "$ref": "#/components/schemas/VotoNominal"
+            },
+            "type": "array",
+            "title": "Votos",
+            "description": "Lista completa em ordem de nome, com desempate pelo id interno do parlamentar."
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "descricao",
+          "resultado",
+          "proposicoes",
+          "url_oficial",
+          "coletado_em",
+          "id",
+          "casa",
+          "placar",
+          "placar_por_partido",
+          "votos"
+        ],
+        "title": "DetalheVotacao"
+      },
       "EdicaoPublica": {
         "properties": {
           "id": {
@@ -2570,6 +2729,24 @@
           "erro"
         ],
         "title": "ErroPiloto"
+      },
+      "ErroVotacao": {
+        "properties": {
+          "erro": {
+            "type": "string",
+            "enum": [
+              "dados_invalidos",
+              "votacao_nao_encontrada",
+              "servico_indisponivel"
+            ],
+            "title": "Erro"
+          }
+        },
+        "type": "object",
+        "required": [
+          "erro"
+        ],
+        "title": "ErroVotacao"
       },
       "Exclusao": {
         "properties": {
@@ -3105,6 +3282,31 @@
         ],
         "title": "PerfilConta"
       },
+      "PlacarPorPartido": {
+        "properties": {
+          "partido": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partido",
+            "description": "Sigla do dia do voto, nula no grupo sem partido."
+          },
+          "placar": {
+            "$ref": "#/components/schemas/ContagemVotosParlamentar"
+          }
+        },
+        "type": "object",
+        "required": [
+          "partido",
+          "placar"
+        ],
+        "title": "PlacarPorPartido"
+      },
       "PlacarPublico": {
         "properties": {
           "sim": {
@@ -3387,6 +3589,11 @@
       },
       "VotacaoPublica": {
         "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "Id interno da votação gravado nos fatos da edição."
+          },
           "data": {
             "type": "string",
             "format": "date",
@@ -3421,6 +3628,7 @@
         },
         "type": "object",
         "required": [
+          "id",
           "data",
           "resultado",
           "placar",
@@ -3428,13 +3636,67 @@
         ],
         "title": "VotacaoPublica"
       },
+      "VotoNominal": {
+        "properties": {
+          "parlamentar_id": {
+            "type": "integer",
+            "title": "Parlamentar Id",
+            "description": "Id interno do parlamentar."
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "partido": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partido",
+            "description": "Sigla do partido no dia do voto."
+          },
+          "uf": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uf",
+            "description": "UF registrada no dia do voto."
+          },
+          "valor": {
+            "type": "string",
+            "enum": [
+              "sim",
+              "nao",
+              "abstencao",
+              "obstrucao",
+              "presidente",
+              "nao_votou",
+              "outro"
+            ],
+            "title": "Valor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parlamentar_id",
+          "nome",
+          "partido",
+          "uf",
+          "valor"
+        ],
+        "title": "VotoNominal"
+      },
       "VotoParlamentar": {
         "properties": {
-          "votacao_id": {
-            "type": "integer",
-            "title": "Votacao Id",
-            "description": "Id interno da votação."
-          },
           "data": {
             "type": "string",
             "format": "date",
@@ -3460,19 +3722,6 @@
             "type": "array",
             "title": "Proposicoes"
           },
-          "valor": {
-            "type": "string",
-            "enum": [
-              "sim",
-              "nao",
-              "abstencao",
-              "obstrucao",
-              "presidente",
-              "nao_votou",
-              "outro"
-            ],
-            "title": "Valor"
-          },
           "url_oficial": {
             "anyOf": [
               {
@@ -3490,18 +3739,36 @@
             "format": "date-time",
             "title": "Coletado Em",
             "description": "Data e hora de coleta da fonte da votação."
+          },
+          "votacao_id": {
+            "type": "integer",
+            "title": "Votacao Id",
+            "description": "Id interno da votação."
+          },
+          "valor": {
+            "type": "string",
+            "enum": [
+              "sim",
+              "nao",
+              "abstencao",
+              "obstrucao",
+              "presidente",
+              "nao_votou",
+              "outro"
+            ],
+            "title": "Valor"
           }
         },
         "type": "object",
         "required": [
-          "votacao_id",
           "data",
           "descricao",
           "resultado",
           "proposicoes",
-          "valor",
           "url_oficial",
-          "coletado_em"
+          "coletado_em",
+          "votacao_id",
+          "valor"
         ],
         "title": "VotoParlamentar"
       }

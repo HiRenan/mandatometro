@@ -193,6 +193,66 @@ export type DetalheParlamentar = {
 };
 
 /**
+ * DetalheVotacao
+ */
+export type DetalheVotacao = {
+    /**
+     * Data
+     */
+    data: string;
+    /**
+     * Descricao
+     */
+    descricao: string;
+    /**
+     * Resultado
+     */
+    resultado: 'aprovada' | 'rejeitada' | 'outro';
+    /**
+     * Proposicoes
+     */
+    proposicoes: Array<ProposicaoAfetada>;
+    /**
+     * Url Oficial
+     *
+     * Página oficial da votação, com o endereço da coleta como reserva. Nula se a fonte estiver sem endereço.
+     */
+    url_oficial: string | null;
+    /**
+     * Coletado Em
+     *
+     * Data e hora de coleta da fonte da votação.
+     */
+    coletado_em: string;
+    /**
+     * Id
+     *
+     * Id interno da votação.
+     */
+    id: number;
+    /**
+     * Casa
+     */
+    casa: 'camara' | 'senado';
+    /**
+     * Contagem dos votos individuais gravados.
+     */
+    placar: ContagemVotosParlamentar;
+    /**
+     * Placar Por Partido
+     *
+     * Um placar por sigla presente nos votos. O grupo sem partido vem por último.
+     */
+    placar_por_partido: Array<PlacarPorPartido>;
+    /**
+     * Votos
+     *
+     * Lista completa em ordem de nome, com desempate pelo id interno do parlamentar.
+     */
+    votos: Array<VotoNominal>;
+};
+
+/**
  * EdicaoPublica
  */
 export type EdicaoPublica = {
@@ -290,6 +350,16 @@ export type ErroPiloto = {
      * Erro
      */
     erro: 'dados_invalidos' | 'corpo_muito_grande' | 'limite_de_tentativas' | 'servico_indisponivel' | 'piloto_encerrado';
+};
+
+/**
+ * ErroVotacao
+ */
+export type ErroVotacao = {
+    /**
+     * Erro
+     */
+    erro: 'dados_invalidos' | 'votacao_nao_encontrada' | 'servico_indisponivel';
 };
 
 /**
@@ -622,6 +692,19 @@ export type PerfilConta = {
 };
 
 /**
+ * PlacarPorPartido
+ */
+export type PlacarPorPartido = {
+    /**
+     * Partido
+     *
+     * Sigla do dia do voto, nula no grupo sem partido.
+     */
+    partido: string | null;
+    placar: ContagemVotosParlamentar;
+};
+
+/**
  * PlacarPublico
  */
 export type PlacarPublico = {
@@ -812,6 +895,12 @@ export type Termo = {
  */
 export type VotacaoPublica = {
     /**
+     * Id
+     *
+     * Id interno da votação gravado nos fatos da edição.
+     */
+    id: number;
+    /**
      * Data
      */
     data: string;
@@ -827,15 +916,41 @@ export type VotacaoPublica = {
 };
 
 /**
+ * VotoNominal
+ */
+export type VotoNominal = {
+    /**
+     * Parlamentar Id
+     *
+     * Id interno do parlamentar.
+     */
+    parlamentar_id: number;
+    /**
+     * Nome
+     */
+    nome: string;
+    /**
+     * Partido
+     *
+     * Sigla do partido no dia do voto.
+     */
+    partido: string | null;
+    /**
+     * Uf
+     *
+     * UF registrada no dia do voto.
+     */
+    uf: string | null;
+    /**
+     * Valor
+     */
+    valor: 'sim' | 'nao' | 'abstencao' | 'obstrucao' | 'presidente' | 'nao_votou' | 'outro';
+};
+
+/**
  * VotoParlamentar
  */
 export type VotoParlamentar = {
-    /**
-     * Votacao Id
-     *
-     * Id interno da votação.
-     */
-    votacao_id: number;
     /**
      * Data
      */
@@ -853,10 +968,6 @@ export type VotoParlamentar = {
      */
     proposicoes: Array<ProposicaoAfetada>;
     /**
-     * Valor
-     */
-    valor: 'sim' | 'nao' | 'abstencao' | 'obstrucao' | 'presidente' | 'nao_votou' | 'outro';
-    /**
      * Url Oficial
      *
      * Página oficial da votação, com o endereço da coleta como reserva. Nula se a fonte estiver sem endereço.
@@ -868,6 +979,16 @@ export type VotoParlamentar = {
      * Data e hora de coleta da fonte da votação.
      */
     coletado_em: string;
+    /**
+     * Votacao Id
+     *
+     * Id interno da votação.
+     */
+    votacao_id: number;
+    /**
+     * Valor
+     */
+    valor: 'sim' | 'nao' | 'abstencao' | 'obstrucao' | 'presidente' | 'nao_votou' | 'outro';
 };
 
 export type InscreverNewsletterData = {
@@ -1926,6 +2047,44 @@ export type RegistrarTentativaPilotoResponses = {
 };
 
 export type RegistrarTentativaPilotoResponse = RegistrarTentativaPilotoResponses[keyof RegistrarTentativaPilotoResponses];
+
+export type ObterVotacaoData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: number;
+    };
+    query?: never;
+    url: '/votacoes/{id}';
+};
+
+export type ObterVotacaoErrors = {
+    /**
+     * Not Found
+     */
+    404: ErroVotacao;
+    /**
+     * Dados inválidos.
+     */
+    422: ErroVotacao;
+    /**
+     * Banco indisponível.
+     */
+    503: ErroVotacao;
+};
+
+export type ObterVotacaoError = ObterVotacaoErrors[keyof ObterVotacaoErrors];
+
+export type ObterVotacaoResponses = {
+    /**
+     * Successful Response
+     */
+    200: DetalheVotacao;
+};
+
+export type ObterVotacaoResponse = ObterVotacaoResponses[keyof ObterVotacaoResponses];
 
 export type HealthData = {
     body?: never;
