@@ -10,6 +10,7 @@ import {
 	paragrafos,
 } from "@/lib/edicoes/conteudo-da-edicao";
 import { classeDaFita, dataEmBrasilia, formatarData } from "@/lib/formatar";
+import { idDaVotacao } from "@/lib/parlamentares/endereco";
 import { SiteDaFonte } from "./fontes";
 
 /** O resultado de cada votação, em palavras: o `outro` não vira aprovação. */
@@ -64,9 +65,13 @@ export function ItemDaEdicao({
 					<p key={posicao}>{paragrafo}</p>
 				))}
 			</div>
-			{item.fatos?.votacoes.map((votacao, posicao) => (
-				// biome-ignore lint/suspicious/noArrayIndexKey: as votações ficam fixas, na ordem da edição publicada.
-				<QuadroDaVotacao key={posicao} votacao={votacao} Titulo={Subtitulo} />
+			{item.fatos?.votacoes.map((votacao) => (
+				<QuadroDaVotacao
+					key={votacao.id}
+					votacao={votacao}
+					Titulo={Subtitulo}
+					id={votacao.id}
+				/>
 			))}
 			<FontesDoItem posicao={posicao} fontes={item.fontes} Titulo={Subtitulo} />
 			{artigo && item.artigo && (
@@ -92,22 +97,28 @@ export function ItemDaEdicao({
  * lista de termos só: o leitor de tela lê "Sim, 312", e a tela põe o número em
  * cima do nome. O painel de revisão (components/painel/) põe embaixo da data a
  * casa e a descrição oficial da votação, que a edição publicada não mostra.
+ *
+ * Com o `id`, que a edição passa, o quadro termina no "Ver quem votou", que leva
+ * à página da votação (/votacoes/139), com o dia no nome do link para o leitor
+ * de tela. A página da votação usa o mesmo quadro, com o título no h2.
  */
 export function QuadroDaVotacao({
 	votacao,
 	Titulo,
 	descricao,
+	id,
 }: {
 	votacao: Pick<VotacaoPublica, "data" | "resultado" | "placar">;
-	Titulo: "h3" | "h4";
+	Titulo: "h2" | "h3" | "h4";
 	descricao?: string;
+	id?: number;
 }) {
 	const { placar } = votacao;
+	const dia = formatarData(votacao.data.slice(0, 10));
+	const daVotacao = idDaVotacao(id);
 	return (
 		<div className="votacao">
-			<Titulo className="rotulo">
-				Votação de {formatarData(votacao.data.slice(0, 10))}
-			</Titulo>
+			<Titulo className="rotulo">Votação de {dia}</Titulo>
 			{descricao && <p className="descricao-da-votacao">{descricao}</p>}
 			<dl>
 				<div className="resultado">
@@ -142,6 +153,18 @@ export function QuadroDaVotacao({
 			{!placar && (
 				<p className="sem-placar">
 					O placar não está disponível nos dados usados.
+				</p>
+			)}
+			{daVotacao !== null && (
+				<p className="ver-quem-votou">
+					<Link
+						to="/votacoes/$id"
+						params={{ id: String(daVotacao) }}
+						className="acao-de-texto"
+					>
+						<span>Ver quem votou</span>{" "}
+						<span className="sr-only">na votação de {dia}</span>
+					</Link>
 				</p>
 			)}
 		</div>

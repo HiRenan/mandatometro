@@ -19,3 +19,20 @@ export function focarNoTitulo(trecho?: string) {
 	}
 	(alvo ?? conteudo)?.focus({ preventScroll: true });
 }
+
+/** O que a regra abaixo lê de cada endereço (o `ParsedLocation` do router). */
+type Endereco = { pathname: string; search: { uf?: unknown } };
+
+/**
+ * Se a navegação abriu outra página: outro caminho ou, na lista dos
+ * parlamentares, outro estado (?uf), que traz outro título e outros nomes no
+ * mesmo caminho. O filtro da votação (?uf e ?partido em /votacoes/139) só troca
+ * a lista da mesma página, e o foco fica no botão do filtro. Sem a página de
+ * antes, conta como outra, como o `pathChanged` do router.
+ */
+export function outraPagina(de: Endereco | undefined, para: Endereco) {
+	if (!de || de.pathname !== para.pathname) {
+		return true;
+	}
+	return para.pathname === "/parlamentares" && de.search.uf !== para.search.uf;
+}

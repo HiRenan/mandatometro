@@ -16,7 +16,7 @@ import Header, { MarcaDaConta } from "../components/header";
 import { Rodape } from "../components/rodape";
 import { ENV } from "../env";
 import appCss from "../index.css?url";
-import { focarNoTitulo } from "../lib/foco";
+import { focarNoTitulo, outraPagina } from "../lib/foco";
 import {
 	cabecalhosDaPagina,
 	metaDaImagem,
@@ -154,15 +154,16 @@ function Documento({ children }: { children: ReactNode }) {
 /**
  * Depois de cada navegação dentro do site, o foco vai para o título da página
  * nova, inclusive a de erro, ou para o trecho do endereço (#caminho). A primeira
- * carga não mexe no foco.
+ * carga não mexe no foco. Outro estado na lista dos parlamentares também é
+ * página nova (o outraPagina, em lib/foco.ts).
  */
 function FocoNaPaginaNova() {
 	const router = useRouter();
 
 	useEffect(
 		() =>
-			router.subscribe("onRendered", ({ pathChanged, toLocation }) => {
-				if (pathChanged) {
+			router.subscribe("onRendered", ({ fromLocation, toLocation }) => {
+				if (outraPagina(fromLocation, toLocation)) {
 					focarNoTitulo(toLocation.hash);
 				}
 			}),

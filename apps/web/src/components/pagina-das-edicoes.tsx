@@ -93,6 +93,19 @@ export function EdicoesIndisponiveis() {
 			<p className="abertura">
 				As edições ainda não aparecem neste endereço do site.
 			</p>
+			<EnquantoIsso />
+		</CartazDasEdicoes>
+	);
+}
+
+/**
+ * O pé do cartaz das páginas que dependem da API, quando o site está sem ela:
+ * as trilhas, enquanto isso, e o início. As edições e os parlamentares usam o
+ * mesmo, depois da frase de cada um.
+ */
+export function EnquantoIsso() {
+	return (
+		<>
 			<p className="para-quem">
 				Enquanto isso, as trilhas explicam passo a passo como o Congresso
 				funciona.
@@ -111,7 +124,7 @@ export function EdicoesIndisponiveis() {
 					</li>
 				</ul>
 			</div>
-		</CartazDasEdicoes>
+		</>
 	);
 }
 

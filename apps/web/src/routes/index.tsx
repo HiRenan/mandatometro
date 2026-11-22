@@ -22,6 +22,7 @@ function Inicio() {
 		<PaginaInicial
 			pagina={Route.useLoaderData()}
 			newsletter={Boolean(ENV.API_URL)}
+			parlamentares={Boolean(ENV.API_URL)}
 		/>
 	);
 }
