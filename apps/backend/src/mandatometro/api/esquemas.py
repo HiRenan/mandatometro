@@ -71,6 +71,7 @@ class PlacarPublico(BaseModel):
 
 
 class VotacaoPublica(BaseModel):
+    id: int = Field(description="Id interno da votação gravado nos fatos da edição.")
     data: date
     resultado: Literal["aprovada", "rejeitada", "outro"]
     placar: PlacarPublico | None
@@ -192,13 +193,14 @@ class ProposicaoAfetada(BaseModel):
     ementa: str | None
 
 
-class VotoParlamentar(BaseModel):
-    votacao_id: int = Field(description="Id interno da votação.")
+ValorVoto = Literal["sim", "nao", "abstencao", "obstrucao", "presidente", "nao_votou", "outro"]
+
+
+class DadosVotacao(BaseModel):
     data: date
     descricao: str
     resultado: Literal["aprovada", "rejeitada", "outro"]
     proposicoes: list[ProposicaoAfetada]
-    valor: Literal["sim", "nao", "abstencao", "obstrucao", "presidente", "nao_votou", "outro"]
     url_oficial: str | None = Field(
         description="Página oficial da votação, com o endereço da coleta como reserva. "
         "Nula se a fonte estiver sem endereço."
@@ -206,11 +208,45 @@ class VotoParlamentar(BaseModel):
     coletado_em: datetime = Field(description="Data e hora de coleta da fonte da votação.")
 
 
+class VotoParlamentar(DadosVotacao):
+    votacao_id: int = Field(description="Id interno da votação.")
+    valor: ValorVoto
+
+
 class ListaVotosParlamentar(BaseModel):
     votos: list[VotoParlamentar]
     total: int
     limite: int
     deslocamento: int
+
+
+class ErroVotacao(BaseModel):
+    erro: Literal["dados_invalidos", "votacao_nao_encontrada", "servico_indisponivel"]
+
+
+class VotoNominal(BaseModel):
+    parlamentar_id: int = Field(description="Id interno do parlamentar.")
+    nome: str
+    partido: str | None = Field(description="Sigla do partido no dia do voto.")
+    uf: str | None = Field(description="UF registrada no dia do voto.")
+    valor: ValorVoto
+
+
+class PlacarPorPartido(BaseModel):
+    partido: str | None = Field(description="Sigla do dia do voto, nula no grupo sem partido.")
+    placar: ContagemVotosParlamentar
+
+
+class DetalheVotacao(DadosVotacao):
+    id: int = Field(description="Id interno da votação.")
+    casa: Casa
+    placar: ContagemVotosParlamentar = Field(description="Contagem dos votos individuais gravados.")
+    placar_por_partido: list[PlacarPorPartido] = Field(
+        description="Um placar por sigla presente nos votos. O grupo sem partido vem por último."
+    )
+    votos: list[VotoNominal] = Field(
+        description="Lista completa em ordem de nome, com desempate pelo id interno do parlamentar."
+    )
 
 
 class ErroPainel(BaseModel):

@@ -160,6 +160,7 @@ def test_detalhe_preserva_fotografia_fontes_artigo_e_legado(publicadas):
         "titulo": next(iter(CATALOGO.values())),
     }
     nominal, sem_placar = primeiro["fatos"]["votacoes"]
+    assert [nominal["id"], sem_placar["id"]] == [888888, 777777]
     assert nominal["placar"] == {
         "sim": 20,
         "nao": 10,
@@ -175,13 +176,12 @@ def test_detalhe_preserva_fotografia_fontes_artigo_e_legado(publicadas):
     assert primeiro["fontes"][0]["trecho"] == "Trecho fictício <b>sem HTML executável</b>."
     assert antigo["fatos"] is None and antigo["artigo"] is None
     assert set(primeiro) == {"ordem", "tipo", "titulo", "texto", "fatos", "fontes", "artigo"}
-    assert set(nominal) == {"data", "resultado", "placar", "fontes"}
+    assert set(nominal) == {"id", "data", "resultado", "placar", "fontes"}
     assert set(primeiro["fontes"][0]) == {"url", "coletado_em", "trecho"}
     for proibido in (
         '"pendencias":',
         '"origem":',
         '"proposicoes":',
-        "888888",
         "999999",
         '"versao":',
     ):

@@ -1,61 +1,40 @@
 """Leitura pública dos parlamentares e dos votos gravados pela coleta."""
 
-import logging
 from typing import Annotated
-from unicodedata import combining, normalize
 
-from fastapi import APIRouter, Path, Query, Request, Response
-from fastapi.exceptions import RequestValidationError
+from fastapi import APIRouter, Path, Query
 from fastapi.responses import JSONResponse
-from fastapi.routing import APIRoute
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import distinct_on
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import contains_eager
 
+from mandatometro.api.congresso import (
+    RotaCongresso,
+    contagem_por_valor,
+    dados_da_votacao,
+    ordem_alfabetica,
+)
 from mandatometro.api.esquemas import (
     UF,
     Casa,
-    ContagemVotosParlamentar,
     DetalheParlamentar,
     ErroParlamentar,
     ListaParlamentares,
     ListaVotosParlamentar,
     MandatoPublico,
     ParlamentarPublico,
-    ProposicaoAfetada,
     VotoParlamentar,
 )
 from mandatometro.db import sessao as sessao_do_banco
-from mandatometro.db.modelos import VALORES_DE_VOTO, Mandato, Parlamentar, Votacao, Voto
+from mandatometro.db.modelos import Mandato, Parlamentar, Votacao, Voto
 
-logger = logging.getLogger(__name__)
 ORDEM_DOS_VOTOS = (Votacao.data.desc(), Votacao.id.desc())
-
-
-class RotaParlamentares(APIRoute):
-    def get_route_handler(self):
-        tratar = super().get_route_handler()
-
-        async def sem_dados_no_erro(request: Request) -> Response:
-            try:
-                resposta = await tratar(request)
-            except RequestValidationError:
-                resposta = JSONResponse({"erro": "dados_invalidos"}, status_code=422)
-            except SQLAlchemyError:
-                logger.warning("Banco indisponível na leitura de parlamentares.")
-                resposta = JSONResponse({"erro": "servico_indisponivel"}, status_code=503)
-            resposta.headers["Cache-Control"] = "no-store"
-            resposta.headers["Referrer-Policy"] = "no-referrer"
-            return resposta
-
-        return sem_dados_no_erro
 
 
 router = APIRouter(
     prefix="/parlamentares",
     tags=["parlamentares"],
-    route_class=RotaParlamentares,
+    route_class=RotaCongresso,
     responses={
         422: {"model": ErroParlamentar, "description": "Dados inválidos."},
         503: {"model": ErroParlamentar, "description": "Banco indisponível."},
@@ -70,11 +49,6 @@ def _partidos_recentes():
         .ext(distinct_on(Voto.parlamentar_id))
         .order_by(Voto.parlamentar_id, *ORDEM_DOS_VOTOS)
     )
-
-
-def _ordem_alfabetica(parlamentar: ParlamentarPublico) -> tuple[str, int]:
-    nome = normalize("NFD", parlamentar.nome.casefold())
-    return "".join(letra for letra in nome if not combining(letra)), parlamentar.id
 
 
 @router.get(
@@ -111,7 +85,7 @@ def listar_parlamentares(
         return ListaParlamentares(
             parlamentares=sorted(
                 (ParlamentarPublico.model_validate(linha) for linha in linhas),
-                key=_ordem_alfabetica,
+                key=lambda p: ordem_alfabetica(p.nome, p.id),
             )
         )
 
@@ -139,8 +113,7 @@ def obter_parlamentar(id: Annotated[int, Path(gt=0)]):
         recente = sessao.execute(
             _partidos_recentes().where(Voto.parlamentar_id == id)
         ).one_or_none()
-        contagem = dict.fromkeys(VALORES_DE_VOTO, 0)
-        contagem.update(
+        contagem = dict(
             sessao.execute(
                 select(Voto.valor, func.count())
                 .where(Voto.parlamentar_id == id)
@@ -154,24 +127,15 @@ def obter_parlamentar(id: Annotated[int, Path(gt=0)]):
             uf=mandatos[0].uf if mandatos else None,
             partido=recente.partido if recente else None,
             mandatos=mandatos,
-            contagem_votos=ContagemVotosParlamentar.model_validate(contagem),
+            contagem_votos=contagem_por_valor(contagem),
         )
 
 
 def _voto_publico(voto: Voto) -> VotoParlamentar:
-    votacao = voto.votacao
     return VotoParlamentar(
-        votacao_id=votacao.id,
-        data=votacao.data,
-        descricao=votacao.descricao,
-        resultado=votacao.resultado,
-        proposicoes=[
-            ProposicaoAfetada.model_validate(proposicao, from_attributes=True)
-            for proposicao in sorted(votacao.proposicoes, key=lambda proposicao: proposicao.id)
-        ],
+        votacao_id=voto.votacao_id,
         valor=voto.valor,
-        url_oficial=votacao.fonte.url_publica or votacao.fonte.url or None,
-        coletado_em=votacao.fonte.coletado_em,
+        **dados_da_votacao(voto.votacao),
     )
 
 
