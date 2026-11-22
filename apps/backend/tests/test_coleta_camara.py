@@ -37,6 +37,7 @@ def roteiro():
         dados[f"/votacoes/{identificador}/votos"] = ler(f"votacao-{identificador}-votos")
     for identificador in (2637478, 2236186):
         dados[f"/proposicoes/{identificador}"] = ler(f"proposicao-{identificador}")
+        dados[f"/proposicoes/{identificador}/temas"] = {"dados": [], "links": []}
     dados["/votacoes"] = {
         "dados": [deepcopy(dados[f"/votacoes/{i}"]["dados"]) for i in ("2637478-26", "2236186-60")],
         "links": [],

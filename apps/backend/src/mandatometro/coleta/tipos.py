@@ -15,6 +15,15 @@ class DadosVoto:
 
 
 @dataclass
+class ResumoTemas:
+    proposicoes_com_tema: int = 0
+    proposicoes_sem_classificacao: int = 0
+    classificacoes_sem_tema: int = 0
+    falhas_consulta: int = 0
+    falhas_gravacao: int = 0
+
+
+@dataclass
 class ResumoColeta:
     casa: str
     inicio: date
@@ -35,6 +44,7 @@ class ResumoColeta:
     sem_proposicao: int = 0
     codigos_desconhecidos: int = 0
     erro: str | None = None
+    temas: ResumoTemas = field(default_factory=ResumoTemas)
 
 
 @dataclass

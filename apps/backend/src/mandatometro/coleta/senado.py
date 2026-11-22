@@ -10,6 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from mandatometro.coleta.cli import (
+    adicionar_argumento_temas,
     adicionar_argumentos_periodo,
     mostrar_resumo,
     resolver_periodo,
@@ -24,6 +25,7 @@ from mandatometro.coleta.persistencia import (
     salvar_votacao,
     sincronizar_votos,
 )
+from mandatometro.coleta.temas import coletar_temas, preencher_temas
 from mandatometro.coleta.tipos import DadosVoto, ResumoColeta
 from mandatometro.db import sessao
 from mandatometro.db.modelos import Fonte, normalizar_resultado, normalizar_voto
@@ -450,10 +452,9 @@ def coletar(
                     falhas_seguidas += 1
                     logger.warning("Votação %s: %s", id_votacao, _erro_seguro(erro))
                     if falhas_seguidas >= 3:
-                        resumo.erro = (
+                        raise ErroColeta(
                             "Coleta interrompida após três votações consecutivas com falha."
-                        )
-                        return resumo
+                        ) from None
                 else:
                     falhas_seguidas = 0
             if ultimo == fim:
@@ -462,10 +463,16 @@ def coletar(
     except (ErroColeta, SQLAlchemyError) as erro:
         resumo.completa = False
         resumo.erro = _erro_seguro(erro)
-    finally:
-        resumo.chamadas = http.chamadas
-        resumo.tentativas_extras = http.tentativas_extras
-        resumo.duracao_s = round(time.monotonic() - comeco, 3)
+    coletar_temas(
+        resumo,
+        sorted(coleta.proposicoes),
+        http=http,
+        abrir_sessao=abrir_sessao,
+        processos=coleta.processos,
+    )
+    resumo.chamadas = http.chamadas
+    resumo.tentativas_extras = http.tentativas_extras
+    resumo.duracao_s = round(time.monotonic() - comeco, 3)
     return resumo
 
 
@@ -476,7 +483,10 @@ def _executar(args: argparse.Namespace) -> int:
         print(str(erro))
         return 2
     with ClienteHttp(BASE) as http:
-        resumo = coletar(inicio, fim, http=http)
+        if args.somente_temas:
+            resumo = preencher_temas(inicio, fim, casa="senado", http=http, abrir_sessao=sessao)
+        else:
+            resumo = coletar(inicio, fim, http=http)
     mostrar_resumo(resumo)
     return 0 if resumo.completa else 1
 
@@ -484,4 +494,5 @@ def _executar(args: argparse.Namespace) -> int:
 def registrar(casas: argparse._SubParsersAction) -> None:
     parser = casas.add_parser("senado", help="coleta votações e senadores em exercício")
     adicionar_argumentos_periodo(parser)
+    adicionar_argumento_temas(parser)
     parser.set_defaults(rodar=_executar)

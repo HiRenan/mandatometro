@@ -14,6 +14,14 @@ def adicionar_argumentos_periodo(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--fim", metavar="AAAA-MM-DD", help="último dia, inclusive")
 
 
+def adicionar_argumento_temas(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--somente-temas",
+        action="store_true",
+        help="preenche temas pelas proposições das votações já gravadas",
+    )
+
+
 def resolver_periodo(
     inicio: str | None,
     fim: str | None,

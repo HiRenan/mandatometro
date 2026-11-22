@@ -14,6 +14,11 @@ on:
         description: "Último dia, inclusive (AAAA-MM-DD)"
         required: false
         type: string
+      somente_temas:
+        description: "Preenche somente os temas das proposições de votações já gravadas"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -46,6 +51,7 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       COLETA_INICIO: ${{ inputs.inicio }}
       COLETA_FIM: ${{ inputs.fim }}
+      COLETA_SOMENTE_TEMAS: ${{ github.event_name == 'workflow_dispatch' && inputs.somente_temas && 'true' || 'false' }}
       CASA: ${{ matrix.casa }}
       PYTHONUTF8: "1"
     steps:

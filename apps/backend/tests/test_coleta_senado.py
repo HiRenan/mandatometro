@@ -87,7 +87,8 @@ def test_semana_real_usa_um_processo_sem_detalhes_dos_81_senadores(sessao, execu
     resumo, requisicoes = executar()
     assert resumo.completa
     assert (resumo.parlamentares, resumo.mandatos, resumo.proposicoes) == (81, 81, 1)
-    assert (resumo.votacoes, resumo.votos, resumo.fontes, resumo.chamadas) == (4, 324, 10, 4)
+    assert (resumo.votacoes, resumo.votos, resumo.fontes, resumo.chamadas) == (4, 324, 11, 4)
+    assert resumo.temas.proposicoes_com_tema == 1
     assert [r.url.path for r in requisicoes] == [
         "/robots.txt",
         "/dadosabertos/senador/lista/atual.json",
@@ -132,7 +133,7 @@ def test_repetir_preserva_ids_fontes_e_corrige_remove_votos(sessao, executar, re
         81,
         1,
     )
-    assert (total(sessao, Votacao), total(sessao, Voto), total(sessao, Fonte)) == (4, 323, 20)
+    assert (total(sessao, Votacao), total(sessao, Voto), total(sessao, Fonte)) == (4, 323, 21)
     assert set(sessao.execute(select(Votacao.id, Votacao.id_externo))) == ids
     fontes_depois = fontes_por_id(sessao)
     fontes_divergentes = [

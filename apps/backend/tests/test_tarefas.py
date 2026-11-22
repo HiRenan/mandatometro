@@ -85,6 +85,24 @@ def test_coleta_sem_datas_usa_a_janela_existente(tarefa, monkeypatch):
     assert recebidos == ["coleta", "senado"]
 
 
+@pytest.mark.parametrize(
+    "evento, selecao, espera",
+    [
+        ("workflow_dispatch", "true", ["--somente-temas"]),
+        ("workflow_dispatch", "false", []),
+        ("schedule", "true", []),
+    ],
+)
+def test_coleta_aceita_somente_temas_so_no_manual(tarefa, monkeypatch, evento, selecao, espera):
+    monkeypatch.setenv("DATABASE_URL", "banco-ficticio")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", evento)
+    monkeypatch.setenv("COLETA_SOMENTE_TEMAS", selecao)
+    recebidos = []
+    monkeypatch.setattr("mandatometro.cli.main", lambda args: recebidos.extend(args))
+    assert tarefa(["coletar", "camara"]) == 0
+    assert recebidos == ["coleta", "camara", *espera]
+
+
 @pytest.mark.parametrize("casa", ["camara", "senado"])
 @pytest.mark.parametrize("completa", [True, False])
 def test_coleta_no_actions_mostra_so_o_resumo(tarefa, monkeypatch, capsys, caplog, casa, completa):

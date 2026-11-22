@@ -13,7 +13,12 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from mandatometro.coleta.cli import adicionar_argumentos_periodo, mostrar_resumo, resolver_periodo
+from mandatometro.coleta.cli import (
+    adicionar_argumento_temas,
+    adicionar_argumentos_periodo,
+    mostrar_resumo,
+    resolver_periodo,
+)
 from mandatometro.coleta.http import ClienteHttp, ErroColeta, Resposta
 from mandatometro.coleta.persistencia import (
     reconciliar_exercicio,
@@ -24,6 +29,7 @@ from mandatometro.coleta.persistencia import (
     salvar_votacao,
     sincronizar_votos,
 )
+from mandatometro.coleta.temas import coletar_temas, preencher_temas
 from mandatometro.coleta.tipos import DadosVoto, ResumoColeta
 from mandatometro.db import sessao as sessao_do_banco
 from mandatometro.db.modelos import (
@@ -521,16 +527,17 @@ def coletar(
             else "Falha na estrutura da fonte ou na gravação."
         )
         logger.error("Coleta interrompida: %s", resumo.erro)
-    finally:
-        resumo.chamadas = http.chamadas
-        resumo.tentativas_extras = http.tentativas_extras
-        resumo.duracao_s = round(time.monotonic() - comeco, 2)
+    coletar_temas(resumo, sorted(coleta.proposicoes_gravadas), http=http, abrir_sessao=criar_sessao)
+    resumo.chamadas = http.chamadas
+    resumo.tentativas_extras = http.tentativas_extras
+    resumo.duracao_s = round(time.monotonic() - comeco, 2)
     return resumo
 
 
 def registrar_comando(casas) -> None:
     parser = casas.add_parser("camara", help="coleta plenário e deputados em exercício da Câmara")
     adicionar_argumentos_periodo(parser)
+    adicionar_argumento_temas(parser)
 
     def rodar(args: argparse.Namespace) -> int:
         try:
@@ -538,7 +545,12 @@ def registrar_comando(casas) -> None:
         except ValueError as erro:
             parser.error(str(erro))
         with ClienteHttp(BASE) as http:
-            resumo = coletar(inicio, fim, http=http, criar_sessao=sessao_do_banco)
+            if args.somente_temas:
+                resumo = preencher_temas(
+                    inicio, fim, casa="camara", http=http, abrir_sessao=sessao_do_banco
+                )
+            else:
+                resumo = coletar(inicio, fim, http=http, criar_sessao=sessao_do_banco)
         mostrar_resumo(resumo)
         return 0 if resumo.completa else 1
 

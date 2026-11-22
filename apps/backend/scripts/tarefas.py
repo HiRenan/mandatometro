@@ -45,6 +45,11 @@ def coletar(casa: str) -> int:
     argumentos = ["coleta", casa]
     if inicio is not None and fim is not None:
         argumentos += ["--inicio", inicio, "--fim", fim]
+    if (
+        os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch"
+        and os.environ.get("COLETA_SOMENTE_TEMAS") == "true"
+    ):
+        argumentos.append("--somente-temas")
     # O Actions publica só o resumo; bibliotecas também podem registrar URLs de pessoas.
     anterior = logging.root.manager.disable
     logging.disable(logging.CRITICAL)

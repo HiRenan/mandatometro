@@ -10,7 +10,17 @@ from sqlalchemy.orm import Session
 
 from mandatometro.coleta.http import Resposta
 from mandatometro.coleta.tipos import DadosVoto
-from mandatometro.db.modelos import Ato, Fonte, Mandato, Parlamentar, Proposicao, Votacao, Voto
+from mandatometro.db.modelos import (
+    Ato,
+    Fonte,
+    Mandato,
+    Parlamentar,
+    Proposicao,
+    ProposicaoTema,
+    Votacao,
+    Voto,
+)
+from mandatometro.temas import TemaId
 
 
 def registrar_fonte(
@@ -151,6 +161,38 @@ def salvar_proposicao(
             "fonte_id": fonte.id,
         },
     )
+
+
+def salvar_temas_da_proposicao(
+    sessao: Session,
+    *,
+    casa: str,
+    id_externo: int,
+    temas: set[TemaId],
+    resposta: Resposta,
+    somente_preencher: bool,
+) -> int:
+    """Serializa a troca do conjunto e retorna quantas fontes foram criadas."""
+    proposicao_id = sessao.scalar(
+        select(Proposicao.id)
+        .where(Proposicao.casa == casa, Proposicao.id_externo == id_externo)
+        .with_for_update()
+    )
+    if proposicao_id is None:
+        return 0
+    desta_proposicao = ProposicaoTema.proposicao_id == proposicao_id
+    anteriores = set(sessao.scalars(select(ProposicaoTema.tema).where(desta_proposicao)))
+    if (somente_preencher and anteriores) or anteriores == temas:
+        return 0
+    sessao.execute(delete(ProposicaoTema).where(desta_proposicao))
+    if not temas:
+        return 0
+    fonte = registrar_fonte(sessao, resposta)
+    sessao.add_all(
+        ProposicaoTema(proposicao_id=proposicao_id, tema=tema.value, fonte_id=fonte.id)
+        for tema in sorted(temas)
+    )
+    return 1
 
 
 def salvar_votacao(
