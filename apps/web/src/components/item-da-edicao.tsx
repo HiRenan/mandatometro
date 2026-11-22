@@ -11,6 +11,7 @@ import {
 } from "@/lib/edicoes/conteudo-da-edicao";
 import { classeDaFita, dataEmBrasilia, formatarData } from "@/lib/formatar";
 import { idDaVotacao } from "@/lib/parlamentares/endereco";
+import { BLOCO_DO_VIDEO, idDoVideo } from "@/lib/parlamentares/video";
 import { SiteDaFonte } from "./fontes";
 
 /** O resultado de cada votação, em palavras: o `outro` não vira aprovação. */
@@ -71,6 +72,7 @@ export function ItemDaEdicao({
 					votacao={votacao}
 					Titulo={Subtitulo}
 					id={votacao.id}
+					video={votacao.url_video}
 				/>
 			))}
 			<FontesDoItem posicao={posicao} fontes={item.fontes} Titulo={Subtitulo} />
@@ -100,22 +102,27 @@ export function ItemDaEdicao({
  *
  * Com o `id`, que a edição passa, o quadro termina no "Ver quem votou", que leva
  * à página da votação (/votacoes/139), com o dia no nome do link para o leitor
- * de tela. A página da votação usa o mesmo quadro, com o título no h2.
+ * de tela. A página da votação usa o mesmo quadro, com o título no h2. Quando a
+ * votação tem o vídeo da sessão (o `video`, no formato do contrato), vem ao lado
+ * o "Vídeo da sessão", que leva ao bloco dele na página da votação.
  */
 export function QuadroDaVotacao({
 	votacao,
 	Titulo,
 	descricao,
 	id,
+	video,
 }: {
 	votacao: Pick<VotacaoPublica, "data" | "resultado" | "placar">;
 	Titulo: "h2" | "h3" | "h4";
 	descricao?: string;
 	id?: number;
+	video?: string | null;
 }) {
 	const { placar } = votacao;
 	const dia = formatarData(votacao.data.slice(0, 10));
 	const daVotacao = idDaVotacao(id);
+	const comVideo = idDoVideo(video) !== null;
 	return (
 		<div className="votacao">
 			<Titulo className="rotulo">Votação de {dia}</Titulo>
@@ -156,16 +163,31 @@ export function QuadroDaVotacao({
 				</p>
 			)}
 			{daVotacao !== null && (
-				<p className="ver-quem-votou">
-					<Link
-						to="/votacoes/$id"
-						params={{ id: String(daVotacao) }}
-						className="acao-de-texto"
-					>
-						<span>Ver quem votou</span>{" "}
-						<span className="sr-only">na votação de {dia}</span>
-					</Link>
-				</p>
+				<ul role="list" className="ver-quem-votou">
+					<li>
+						<Link
+							to="/votacoes/$id"
+							params={{ id: String(daVotacao) }}
+							className="acao-de-texto"
+						>
+							<span>Ver quem votou</span>{" "}
+							<span className="sr-only">na votação de {dia}</span>
+						</Link>
+					</li>
+					{comVideo && (
+						<li>
+							<Link
+								to="/votacoes/$id"
+								params={{ id: String(daVotacao) }}
+								hash={BLOCO_DO_VIDEO}
+								className="acao-de-texto"
+							>
+								<span>Vídeo da sessão</span>{" "}
+								<span className="sr-only">da votação de {dia}</span>
+							</Link>
+						</li>
+					)}
+				</ul>
 			)}
 		</div>
 	);

@@ -18,14 +18,15 @@ import { ParlamentaresIndisponiveis } from "./pagina-dos-parlamentares";
 import { PlacarPorPartido } from "./parlamentares/placar-por-partido";
 import { Plenario } from "./parlamentares/plenario";
 import { QuemVotouComo } from "./parlamentares/quem-votou-como";
+import { VideoDaSessao } from "./parlamentares/video-da-sessao";
 
 /**
  * A página de uma votação, em /votacoes/139 (o Renan, em 21/11/2026: quem votou
  * como). O cartaz das páginas de dentro traz a proposição votada; no pé, a Casa,
  * o dia e o resultado, como a faixa da edição, a ementa, a descrição oficial e a
  * página oficial; no painel, o plenário, com um azulejo por voto (o Plenario).
- * Embaixo, o placar, no mesmo quadro da edição, o placar por partido e quem
- * votou como, cada um com o seu título.
+ * Embaixo, o placar, no mesmo quadro da edição, o vídeo da sessão, quando há,
+ * o placar por partido e quem votou como, cada um com o seu título.
  *
  * Sem o voto de cada um, como na votação simbólica, o painel volta a ser de
  * enfeite, o quadro diz que o placar não está disponível, e quem votou como
@@ -132,6 +133,7 @@ export function PaginaDaVotacao({
 						Titulo="h3"
 					/>
 				</section>
+				<VideoDaSessao votacao={votacao} />
 				{comVotos && <PlacarPorPartido grupos={votacao.placar_por_partido} />}
 				<QuemVotouComo votacao={votacao} filtro={filtro} />
 			</div>
