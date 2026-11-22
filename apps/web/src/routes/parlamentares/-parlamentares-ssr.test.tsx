@@ -12,7 +12,9 @@ import { NaoEncontrado } from "@/components/nao-encontrado";
 import { PaginaDeErro } from "@/components/pagina-de-erro";
 import {
 	detalheDeExemplo,
+	eleicaoDeExemplo,
 	listaDeExemplo,
+	patrimonioDeExemplo,
 	votosDeExemplo,
 } from "@/lib/parlamentares/exemplos-de-teste";
 import { Route as RotaRaiz } from "@/routes/__root";
@@ -68,8 +70,14 @@ function api(responder: (pedido: Request) => Response) {
 	return fetch;
 }
 
-/** A API de exemplo: a lista, a pessoa e a página de votos pedida, de `votos` votos. */
-function apiDeExemplo(votos = 25) {
+/**
+ * A API de exemplo: a lista, a pessoa, a página de votos pedida, de `votos`
+ * votos, e o patrimônio declarado, que `patrimonio` pode trocar por uma falha.
+ */
+function apiDeExemplo(
+	votos = 25,
+	patrimonio: () => Response = () => json(200, patrimonioDeExemplo()),
+) {
 	return api((pedido) => {
 		const endereco = new URL(pedido.url);
 		if (endereco.pathname === "/parlamentares") {
@@ -78,6 +86,9 @@ function apiDeExemplo(votos = 25) {
 		if (endereco.pathname.endsWith("/votos")) {
 			const deslocamento = Number(endereco.searchParams.get("deslocamento"));
 			return json(200, votosDeExemplo(votos, deslocamento));
+		}
+		if (endereco.pathname.endsWith("/patrimonio")) {
+			return patrimonio();
 		}
 		return json(200, detalheDeExemplo());
 	});
@@ -209,6 +220,71 @@ describe("o HTML das páginas dos parlamentares", () => {
 		expect(html).toContain(`href="${CANONICO}?pagina=2#votos"`);
 		expect(html).toMatch(/<h2 id="votos" tabindex="-1"[^>]*>Votos<\/h2>/);
 		expect(html).toContain('href="/votacoes/139"');
+	});
+
+	it("o patrimônio declarado vem no HTML, entre os mandatos e como votou, com cada eleição e o arquivo do TSE", async () => {
+		apiDeExemplo();
+
+		const { status, html } = await pedir(CANONICO);
+
+		expect(status).toBe(200);
+		expect(html).toMatch(
+			/<h2 id="patrimonio" class="subtitulo-condensado letra-com-teto \[--palavra:5\.26\]"[^>]*>Patrimônio declarado ao TSE<\/h2>/,
+		);
+		const mandatos = html.indexOf(">Mandatos</h2>");
+		const patrimonio = html.indexOf(">Patrimônio declarado ao TSE</h2>");
+		const comoVotou = html.indexOf(">Como votou</h2>");
+		expect(mandatos).toBeGreaterThan(0);
+		expect(patrimonio).toBeGreaterThan(mandatos);
+		expect(comoVotou).toBeGreaterThan(patrimonio);
+		expect(html.match(/<li class="eleicao-do-patrimonio">/g)).toHaveLength(4);
+		expect(html).toContain("corrigido pela inflação até outubro de 2026.");
+		expect(html).toContain('style="--parte:0.4558"');
+		expect(html).toContain(
+			'href="https://cdn.tse.jus.br/estatistica/sead/odsele/bem_candidato/bem_candidato_2018.zip"',
+		);
+	});
+
+	it("só o patrimônio falha: a página abre com 200, o bloco diz que não carregou, e nada da falha chega ao HTML", async () => {
+		apiDeExemplo(25, () => json(500, { detalhe: MENSAGEM_DA_FALHA }));
+
+		const { status, html } = await pedir(CANONICO);
+
+		expect(status).toBe(200);
+		expect(html).toContain(
+			"O patrimônio declarado não carregou agora. Recarregue a página para tentar de novo.",
+		);
+		expect(html).toContain(">Como votou</h2>");
+		expect(html.match(/<li class="voto-da-pessoa">/g)).toHaveLength(20);
+		for (const segredo of SEGREDOS) {
+			expect(html, segredo).not.toContain(segredo);
+		}
+	});
+
+	it("uma data de coleta inválida fica fora do HTML e o restante da página abre", async () => {
+		const eleicao = eleicaoDeExemplo();
+		apiDeExemplo(25, () =>
+			json(
+				200,
+				patrimonioDeExemplo({
+					eleicoes: [
+						{
+							...eleicao,
+							fonte: { ...eleicao.fonte, coletado_em: "data inválida" },
+						},
+					],
+				}),
+			),
+		);
+
+		const { status, html } = await pedir(CANONICO);
+		expect(status).toBe(200);
+		expect(html).toContain("O patrimônio declarado não carregou agora.");
+		expect(html).toContain(">Como votou</h2>");
+		expect(html.match(/<li class="voto-da-pessoa">/g)).toHaveLength(20);
+		expect(html).not.toMatch(
+			/data inválida|Coletado em undefined|eleicao-do-patrimonio/,
+		);
 	});
 
 	it("a segunda página de votos leva o número no título e volta à primeira sem o ?pagina", async () => {

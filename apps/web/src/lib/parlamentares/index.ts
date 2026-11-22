@@ -19,4 +19,5 @@ export type {
 	ListaDosParlamentares,
 	PaginaDaVotacao,
 	PaginaDoParlamentar,
+	Patrimonio,
 } from "./parlamentares.server";

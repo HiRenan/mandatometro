@@ -9,11 +9,18 @@ import {
 } from "@tanstack/react-router";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { DetalheParlamentar, VotoParlamentar } from "@/client";
-import type { PaginaDoParlamentar } from "@/lib/parlamentares";
+import type {
+	DetalheParlamentar,
+	PatrimonioParlamentar,
+	VotoParlamentar,
+} from "@/client";
+import type { PaginaDoParlamentar, Patrimonio } from "@/lib/parlamentares";
 import {
 	CONTAGEM_ZERADA,
+	correcaoDeExemplo,
 	detalheDeExemplo,
+	eleicaoDeExemplo,
+	patrimonioDeExemplo,
 	votoDoParlamentarDeExemplo,
 	votosDeExemplo,
 } from "@/lib/parlamentares/exemplos-de-teste";
@@ -43,6 +50,7 @@ async function abrir(
 	votos: VotoParlamentar[] = [votoDoParlamentarDeExemplo(139)],
 	paginaAtual = 1,
 	total = votos.length,
+	patrimonio: Patrimonio = patrimonioNaPagina(),
 ) {
 	const raiz = createRootRoute({ component: () => <Outlet /> });
 	const pagina = Route.update({
@@ -56,6 +64,7 @@ async function abrir(
 			total,
 			pagina: paginaAtual,
 			paginas: Math.max(1, Math.ceil(total / 20)),
+			patrimonio,
 		}),
 	} as never);
 	const router = createRouter({
@@ -66,6 +75,64 @@ async function abrir(
 	});
 	render(<RouterProvider router={router} />);
 	await screen.findByRole("heading", { level: 1, name: parlamentar.nome });
+}
+
+/** O patrimônio como a página recebe do servidor, com as quatro eleições de exemplo. */
+function patrimonioNaPagina(
+	mudancas: Partial<PatrimonioParlamentar> = {},
+): Patrimonio {
+	const { eleicoes, correcao_ipca } = patrimonioDeExemplo(mudancas);
+	return { tipo: "patrimonio", eleicoes, correcao: correcao_ipca };
+}
+
+/** A página de Ágata Cedrolume, com um voto, e o patrimônio dado. */
+function abrirComPatrimonio(patrimonio: Patrimonio) {
+	return abrir(detalheDeExemplo(), undefined, 1, undefined, patrimonio);
+}
+
+/** O espaço que não quebra entre o "R$" e o número. */
+const SEM_QUEBRA = "\u00a0";
+const reais = (numero: string) => `R$${SEM_QUEBRA}${numero}`;
+
+/**
+ * Cada eleição do patrimônio, parte por parte: o ano, o cargo e o lugar, o valor
+ * em destaque, a fração da barra (ou nada) e os detalhes, com o arquivo do TSE.
+ */
+function eleicoes() {
+	return Array.from(
+		document.querySelectorAll(".eleicao-do-patrimonio"),
+		(linha) => ({
+			ano: linha.querySelector("h3")?.textContent,
+			cargo: textos(linha, ".faixa > span"),
+			valor: textos(linha, ".valor-da-eleicao > p"),
+			barra:
+				linha
+					.querySelector<HTMLElement>(".barra-do-patrimonio")
+					?.style.getPropertyValue("--parte") ?? null,
+			detalhes: textos(
+				linha,
+				".declarado-na-eleicao > .sr-only, .detalhes-da-eleicao > :not(.declarado-na-eleicao)",
+			),
+		}),
+	);
+}
+
+function textos(dentro: Element, seletor: string) {
+	return Array.from(
+		dentro.querySelectorAll(seletor),
+		(parte) => parte.textContent,
+	);
+}
+
+/** O bloco do patrimônio, pelo título. */
+function blocoDoPatrimonio() {
+	const titulo = screen.getByRole("heading", {
+		level: 2,
+		name: "Patrimônio declarado ao TSE",
+	});
+	const bloco = titulo.closest("section");
+	if (!bloco) throw new Error("o título do patrimônio está fora de uma seção");
+	return bloco;
 }
 
 /** Cada voto de "Como votou": o nome, o número e a regra, como o leitor de tela lê. */
@@ -216,4 +283,379 @@ describe("a página do parlamentar", () => {
 			).toBe(`/parlamentares/81-agata-cedrolume${fim}`);
 		},
 	);
+});
+
+describe("o patrimônio declarado ao TSE", () => {
+	it("vem depois dos mandatos e antes de como votou; sem voto, antes da folha dos votos", async () => {
+		const titulos = () =>
+			screen
+				.getAllByRole("heading", { level: 2 })
+				.map((titulo) => titulo.textContent);
+
+		await abrir(detalheDeExemplo());
+		expect(titulos()).toEqual([
+			"Mandatos",
+			"Patrimônio declarado ao TSE",
+			"Como votou",
+			"Votos",
+		]);
+
+		cleanup();
+		await abrir(detalheDeExemplo(), []);
+		expect(titulos()).toEqual([
+			"Mandatos",
+			"Patrimônio declarado ao TSE",
+			"Nenhum voto registrado ainda",
+		]);
+	});
+
+	it("cada eleição, da mais antiga para a mais nova: o ano, o cargo e o estado, o valor de hoje com a barra, o declarado e o arquivo do TSE", async () => {
+		await abrir(detalheDeExemplo());
+
+		const arquivo = (ano: number) => [
+			`Arquivo do TSE (ZIP) com os bens declarados em ${ano}`,
+			"Coletado em 20 de novembro de 2026",
+		];
+		expect(eleicoes()).toEqual([
+			{
+				ano: "2014",
+				cargo: ["Deputado estadual", "Santa Catarina"],
+				valor: [reais("352 mil"), "em reais de hoje"],
+				barra: "0.1459",
+				detalhes: [
+					`Declarado em${SEM_QUEBRA}2014: ${reais("198.300,00")}`,
+					...arquivo(2014),
+				],
+			},
+			{
+				ano: "2018",
+				cargo: ["Deputado federal", "Santa Catarina"],
+				valor: [reais("1,1 milhão"), "em reais de hoje"],
+				barra: "0.4558",
+				detalhes: [
+					`Declarado em${SEM_QUEBRA}2018: ${reais("812.400,00")}`,
+					...arquivo(2018),
+				],
+			},
+			{
+				ano: "2022",
+				cargo: ["Deputado federal", "Santa Catarina"],
+				valor: ["Os dados do TSE desta eleição não trazem um total de bens."],
+				barra: null,
+				detalhes: arquivo(2022),
+			},
+			{
+				ano: "2026",
+				cargo: ["Senador", "Santa Catarina"],
+				valor: [reais("2,4 milhões"), "em reais de hoje"],
+				barra: "1",
+				detalhes: [
+					`Declarado em${SEM_QUEBRA}2026: ${reais("2.410.000,00")}`,
+					...arquivo(2026),
+				],
+			},
+		]);
+		expect(
+			screen
+				.getByRole("link", {
+					name: "Arquivo do TSE (ZIP) com os bens declarados em 2018",
+				})
+				.getAttribute("href"),
+		).toBe(
+			"https://cdn.tse.jus.br/estatistica/sead/odsele/bem_candidato/bem_candidato_2018.zip",
+		);
+		// O ano é o título de cada eleição, para quem anda pelos títulos.
+		expect(
+			within(blocoDoPatrimonio())
+				.getAllByRole("heading", { level: 3 })
+				.map((titulo) => titulo.textContent),
+		).toEqual(["2014", "2018", "2022", "2026"]);
+		// A barra é enfeite para o leitor de tela: o número já está escrito.
+		for (const barra of document.querySelectorAll(".barra-do-patrimonio")) {
+			expect(barra.getAttribute("aria-hidden")).toBe("true");
+		}
+	});
+
+	it("com todos os totais corrigidos, a abertura diz até que mês vai a correção e o aviso e as fontes explicam os dados", async () => {
+		await abrir(detalheDeExemplo());
+		const bloco = blocoDoPatrimonio();
+
+		expect(
+			within(bloco).getByText(
+				"Quem se candidata entrega à Justiça Eleitoral uma lista dos próprios bens, como casas, carros e dinheiro no banco. Aqui está o total que Ágata Cedrolume declarou nas eleições gerais em que concorreu. Para comparar anos diferentes, cada total aparece também em reais de hoje, corrigido pela inflação até outubro de 2026.",
+			),
+		).toBeTruthy();
+		const aviso = within(bloco).getByText(
+			"É o valor que a própria pessoa declarou ao registrar a candidatura, e não o patrimônio de hoje. A Justiça Eleitoral dá acesso à declaração como ela foi entregue, e cada bem costuma entrar pelo preço de compra, como na declaração do Imposto de Renda: uma casa comprada há 20 anos pode aparecer pelo valor daquela época.",
+		);
+		const lista = within(bloco).getByRole("list");
+		expect(aviso.nextElementSibling).toBe(lista);
+		expect(within(lista).getAllByRole("listitem")).toHaveLength(4);
+		expect(
+			within(bloco).getByText(
+				"Só aparecem as eleições em que deu para ligar, com segurança, a candidatura no TSE a Ágata Cedrolume. O arquivo de cada ano é o do TSE com os bens declarados naquela eleição, e não só os desta pessoa.",
+			),
+		).toBeTruthy();
+		expect(
+			within(bloco).getByText(
+				"A correção usa o IPCA, a inflação oficial medida pelo IBGE, de outubro do ano de cada eleição até outubro de 2026.",
+			),
+		).toBeTruthy();
+		expect(
+			within(bloco)
+				.getByRole("link", { name: "Série do IPCA no Banco Central" })
+				.getAttribute("href"),
+		).toBe(
+			"https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados?formato=json",
+		);
+		expect(
+			within(bloco).getByText("Coletada em 22 de novembro de 2026"),
+		).toBeTruthy();
+		expect(
+			within(bloco)
+				.getByRole("link", {
+					name: (nome) => nome.startsWith("Lei 9.504/1997, art."),
+				})
+				.getAttribute("href"),
+		).toBe("https://www.planalto.gov.br/ccivil_03/leis/l9504.htm#art11");
+		expect(
+			within(bloco)
+				.getByRole("link", { name: /^Lei 9\.250\/1995, art\.\s+25$/ })
+				.getAttribute("href"),
+		).toBe("https://www.planalto.gov.br/ccivil_03/leis/l9250.htm#art25");
+		expect(bloco.querySelector(".fonte-das-regras")?.textContent).toMatch(
+			/^Fontes das regras:/,
+		);
+	});
+
+	it("as duas fontes mostram o dia em Brasília quando a coleta ocorre perto da meia-noite UTC", async () => {
+		const eleicao = eleicaoDeExemplo();
+		const correcao = correcaoDeExemplo();
+		const coletado_em = "2026-11-21T01:30:00Z";
+		await abrirComPatrimonio(
+			patrimonioNaPagina({
+				eleicoes: [{ ...eleicao, fonte: { ...eleicao.fonte, coletado_em } }],
+				correcao_ipca: {
+					...correcao,
+					fonte: { ...correcao.fonte, coletado_em },
+				},
+			}),
+		);
+
+		const bloco = within(blocoDoPatrimonio());
+		expect(bloco.getByText("Coletado em 20 de novembro de 2026")).toBeTruthy();
+		expect(bloco.getByText("Coletada em 20 de novembro de 2026")).toBeTruthy();
+	});
+
+	it("o declarado conserva o valor exato e só oferece quebras entre os grupos de milhar", async () => {
+		await abrirComPatrimonio(
+			patrimonioNaPagina({
+				eleicoes: [
+					eleicaoDeExemplo({
+						total_centavos: Number.MAX_SAFE_INTEGER,
+						total_corrigido_centavos: null,
+					}),
+				],
+			}),
+		);
+
+		const declarado = blocoDoPatrimonio().querySelector(
+			".declarado-na-eleicao",
+		);
+		const texto = "Declarado em\u00a02018: R$\u00a090.071.992.547.409,91";
+		expect(declarado?.querySelector(".sr-only")?.textContent).toBe(texto);
+		const visual = declarado?.querySelector('[aria-hidden="true"]');
+		expect(visual?.textContent).toBe(texto);
+		const valor = visual?.querySelector(".valor-exato-da-eleicao");
+		expect(
+			Array.from(valor?.childNodes ?? [], (parte) =>
+				parte.nodeName === "WBR" ? "quebra" : parte.textContent,
+			),
+		).toEqual([
+			"R$\u00a090.",
+			"quebra",
+			"071.",
+			"quebra",
+			"992.",
+			"quebra",
+			"547.",
+			"quebra",
+			"409,91",
+		]);
+	});
+
+	it("com uma eleição só, não há barra: não há com o que comparar", async () => {
+		await abrirComPatrimonio(
+			patrimonioNaPagina({ eleicoes: [eleicaoDeExemplo()] }),
+		);
+
+		expect(eleicoes()).toMatchObject([
+			{ valor: [reais("1,1 milhão"), "em reais de hoje"], barra: null },
+		]);
+		expect(document.querySelector(".barra-do-patrimonio")).toBeNull();
+	});
+
+	it("o zero declarado aparece como R$ 0, sem barra, e o valor muito menor que o maior fica com o traço mínimo", async () => {
+		await abrirComPatrimonio(
+			patrimonioNaPagina({
+				eleicoes: [
+					eleicaoDeExemplo({
+						ano: 2006,
+						total_centavos: 0,
+						total_corrigido_centavos: 0,
+					}),
+					eleicaoDeExemplo({
+						ano: 2010,
+						total_centavos: 600_000,
+						total_corrigido_centavos: 1_200_000,
+					}),
+					eleicaoDeExemplo({
+						ano: 2022,
+						total_centavos: 30_000_000_000,
+						total_corrigido_centavos: 38_000_000_000,
+					}),
+				],
+			}),
+		);
+
+		expect(eleicoes()).toMatchObject([
+			{
+				valor: [reais("0"), "em reais de hoje"],
+				barra: null,
+				detalhes: [
+					`Declarado em${SEM_QUEBRA}2006: ${reais("0,00")}`,
+					expect.any(String),
+					expect.any(String),
+				],
+			},
+			{ valor: [reais("12 mil"), "em reais de hoje"], barra: "0.0001" },
+			{ valor: [reais("380 milhões"), "em reais de hoje"], barra: "1" },
+		]);
+	});
+
+	it("sem a série do IPCA: o valor declarado, sem barras, e a abertura diz por quê", async () => {
+		await abrirComPatrimonio(patrimonioNaPagina({ correcao_ipca: null }));
+		const bloco = blocoDoPatrimonio();
+
+		expect(eleicoes().map(({ valor, barra }) => [valor, barra])).toEqual([
+			[[reais("198 mil"), "sem a correção pela inflação"], null],
+			[[reais("812 mil"), "sem a correção pela inflação"], null],
+			[["Os dados do TSE desta eleição não trazem um total de bens."], null],
+			[[reais("2,4 milhões"), "sem a correção pela inflação"], null],
+		]);
+		expect(bloco.textContent).toContain(
+			"declarou nas eleições gerais em que concorreu. Os valores aparecem como foram declarados, sem a correção pela inflação: a série do IPCA não está nos dados usados agora.",
+		);
+		expect(bloco.textContent).not.toContain("reais de hoje");
+		expect(bloco.textContent).not.toContain("A correção usa o IPCA");
+		expect(
+			within(bloco).queryByRole("link", { name: /Banco Central/ }),
+		).toBeNull();
+	});
+
+	it("a eleição sem a correção mostra o declarado no destaque, e as outras continuam com a barra", async () => {
+		await abrirComPatrimonio(
+			patrimonioNaPagina({
+				eleicoes: [
+					eleicaoDeExemplo({ ano: 2018 }),
+					eleicaoDeExemplo({ ano: 2022, total_corrigido_centavos: 55_000_000 }),
+					eleicaoDeExemplo({
+						ano: 2026,
+						total_centavos: 241_000_000,
+						total_corrigido_centavos: null,
+					}),
+				],
+				correcao_ipca: correcaoDeExemplo({ mes_fim: "2026-09" }),
+			}),
+		);
+		const bloco = blocoDoPatrimonio();
+
+		expect(eleicoes().map(({ valor, barra }) => [valor, barra])).toEqual([
+			[[reais("1,1 milhão"), "em reais de hoje"], "1"],
+			[[reais("550 mil"), "em reais de hoje"], "0.5"],
+			[[reais("2,4 milhões"), "sem a correção pela inflação"], null],
+		]);
+		expect(bloco.textContent).toContain(
+			"Para comparar anos diferentes, os totais aparecem também em reais de hoje, corrigidos pela inflação até setembro de 2026, quando a série do IPCA cobre a eleição.",
+		);
+		expect(bloco.textContent).toContain(
+			"A correção usa o IPCA, a inflação oficial medida pelo IBGE, de outubro do ano da eleição até setembro de 2026.",
+		);
+	});
+
+	it("com a série e nenhuma eleição corrigida, a linha mostra o declarado e a nota do IPCA não aparece", async () => {
+		await abrirComPatrimonio(
+			patrimonioNaPagina({
+				eleicoes: [
+					eleicaoDeExemplo({ ano: 2026, total_corrigido_centavos: null }),
+				],
+				correcao_ipca: correcaoDeExemplo({ mes_fim: "2026-09" }),
+			}),
+		);
+		const bloco = blocoDoPatrimonio();
+		const texto = bloco.textContent;
+
+		expect(texto).toContain(
+			"declarou nas eleições gerais em que concorreu.É o valor",
+		);
+		expect(texto).not.toContain("reais de hoje");
+		expect(texto).not.toContain("a série do IPCA não está");
+		expect(texto).toContain("sem a correção pela inflação");
+		expect(bloco.querySelector(".correcao-do-patrimonio")).toBeNull();
+	});
+
+	it("sem eleição ligada à pessoa, a explicação curta, com o nome dela", async () => {
+		await abrirComPatrimonio(patrimonioNaPagina({ eleicoes: [] }));
+		const bloco = blocoDoPatrimonio();
+
+		expect(
+			within(bloco).getByText(
+				"Os dados usados ainda não têm a declaração de bens de Ágata Cedrolume. Uma eleição só aparece aqui quando dá para ligar, com segurança, a candidatura no TSE a esta pessoa.",
+			),
+		).toBeTruthy();
+		expect(within(bloco).queryByRole("list")).toBeNull();
+		expect(bloco.textContent).not.toContain("É o valor que a própria pessoa");
+	});
+
+	it("o patrimônio que não carregou: o bloco diz em palavras, e o resto da página continua", async () => {
+		await abrirComPatrimonio({ tipo: "indisponivel" });
+		const bloco = blocoDoPatrimonio();
+
+		expect(bloco.textContent).toBe(
+			"Patrimônio declarado ao TSEO patrimônio declarado não carregou agora. Recarregue a página para tentar de novo.",
+		);
+		expect(
+			screen.getByRole("heading", { level: 2, name: "Como votou" }),
+		).toBeTruthy();
+	});
+
+	it("o arquivo fora dos sites oficiais fica escrito, sem link e sem o ZIP", async () => {
+		await abrirComPatrimonio(
+			patrimonioNaPagina({
+				eleicoes: [
+					eleicaoDeExemplo({
+						fonte: {
+							url: "https://outro.example.com/bens.zip",
+							coletado_em: "2026-11-20T15:00:00+00:00",
+						},
+					}),
+				],
+			}),
+		);
+
+		expect(eleicoes()[0].detalhes).toEqual([
+			`Declarado em${SEM_QUEBRA}2018: ${reais("812.400,00")}`,
+			"Arquivo do TSE",
+			"Coletado em 20 de novembro de 2026",
+		]);
+		expect(screen.queryByRole("link", { name: /Arquivo do TSE/ })).toBeNull();
+	});
+
+	it("nenhuma palavra julga o número: sem subida, queda nem percentual", async () => {
+		await abrir(detalheDeExemplo());
+
+		expect(blocoDoPatrimonio().textContent).not.toMatch(
+			/aument|diminu|cresc|caiu|dobr|enriquec|ganh|perd|suspeit|evolu|varia|%/i,
+		);
+	});
 });

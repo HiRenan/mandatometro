@@ -7,6 +7,7 @@ import {
 	fitaDaPosicao,
 	formatarData,
 	formatarDia,
+	formatarMes,
 	formatarPeriodo,
 	fraseDoProgresso,
 	idDoPasso,
@@ -20,6 +21,14 @@ describe("formatarData", () => {
 	it("escreve a data por extenso, sem depender do fuso", () => {
 		expect(formatarData("2026-11-09")).toBe("9 de novembro de 2026");
 		expect(formatarData("2026-03-01")).toBe("1º de março de 2026");
+	});
+});
+
+describe("formatarMes", () => {
+	it("escreve o mês e o ano por extenso", () => {
+		expect(formatarMes("2026-10")).toBe("outubro de 2026");
+		expect(formatarMes("2014-01")).toBe("janeiro de 2014");
+		expect(formatarMes("2025-12")).toBe("dezembro de 2025");
 	});
 });
 

@@ -383,6 +383,9 @@
 	}
 
 	.fonte-das-regras a {
+		display: inline-grid;
+		align-items: center;
+		min-height: 2.75rem;
 		color: var(--tinta);
 	}
 
@@ -521,6 +524,203 @@
 		font-family: var(--font-serif);
 		font-size: 1.0625rem;
 		line-height: 1.5;
+	}
+
+	/* ───── A página do parlamentar: o patrimônio declarado ───── */
+
+	/*
+	 * O patrimônio declarado ao TSE: o texto, o aviso com o fio de tinta do desvio
+	 * e uma linha por eleição entre fios, como os votos. O ano fica em número
+	 * grande à esquerda, como em "Como votou"; a partir de 48rem, o valor em
+	 * destaque e a barra vão para uma terceira coluna, à direita. As grades ficam
+	 * em volta dos parágrafos, e não neles (a #152).
+	 */
+	.texto-do-patrimonio {
+		max-width: 39rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.5;
+	}
+
+	.aviso-do-patrimonio {
+		margin-top: 1rem;
+		padding-left: 1rem;
+		border-left: 5px solid var(--tinta);
+	}
+
+	.eleicoes-do-patrimonio {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		margin-top: 1.5rem;
+		border-top: 2px solid var(--tinta);
+	}
+
+	.eleicao-do-patrimonio {
+		display: grid;
+		grid-template-columns: 4.25rem minmax(0, 1fr);
+		grid-template-areas:
+			"ano cargo"
+			"ano valor"
+			"ano detalhes";
+		column-gap: var(--respiro);
+		row-gap: 0.6rem;
+		padding: 1.25rem 0;
+		border-bottom: 1px solid var(--tinta);
+	}
+
+	.ano-da-eleicao {
+		grid-area: ano;
+		font-family: var(--font-sans);
+		font-size: clamp(2rem, 1.7rem + 1.2vw, 2.75rem);
+		font-stretch: 62%;
+		font-weight: 900;
+		line-height: 0.9;
+		font-variant-numeric: lining-nums tabular-nums;
+	}
+
+	.cargo-da-eleicao {
+		grid-area: cargo;
+		container: cargo-da-eleicao / inline-size;
+	}
+
+	.cargo-da-eleicao .faixa {
+		color: var(--tinta);
+	}
+
+	/*
+	 * O cargo e o estado mais longos ("Deputado estadual" e "Rio Grande do Norte")
+	 * pedem cerca de 22.6rem numa linha. Numa coluna mais estreita, a faixa quebraria
+	 * com o quadradinho sozinho no fim da primeira linha: as duas partes ficam uma
+	 * embaixo da outra, sem ele. A regra do quadradinho, no index.css, vem depois
+	 * desta: a daqui precisa ser mais específica.
+	 */
+	@container cargo-da-eleicao (width < 23.5rem) {
+		.cargo-da-eleicao .faixa {
+			flex-direction: column;
+		}
+
+		.cargo-da-eleicao .faixa > span:not(:last-child)::after {
+			display: none;
+		}
+	}
+
+	.valor-da-eleicao {
+		grid-area: valor;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		align-content: start;
+		row-gap: 0.3rem;
+	}
+
+	.destaque-do-valor {
+		font-family: var(--font-sans);
+		font-size: clamp(2rem, 1.6rem + 1.8vw, 3rem);
+		font-stretch: 62%;
+		font-weight: 900;
+		line-height: 1;
+		font-variant-numeric: lining-nums tabular-nums;
+	}
+
+	.legenda-do-valor,
+	.arquivo-sem-link,
+	.detalhes-da-eleicao > .coletado-em,
+	.correcao-do-patrimonio > .coletado-em {
+		color: var(--tinta-suave);
+	}
+
+	.sem-total-da-eleicao {
+		max-width: 30rem;
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.5;
+	}
+
+	/*
+	 * A barra: a parte do maior valor de hoje da pessoa (o --parte, que vem do
+	 * servidor), em tinta, sem cor de ganho nem de perda. Com 4 px no mínimo, um
+	 * valor acima de zero não some. Ela se risca a partir da esquerda quando entra
+	 * na tela (estilos/movimento.css).
+	 */
+	.barra-do-patrimonio {
+		display: block;
+		width: max(4px, calc(var(--parte) * 100%));
+		height: 0.75rem;
+		margin-top: 0.4rem;
+		background: var(--tinta);
+		transform-origin: 0 50%;
+	}
+
+	@media (forced-colors: active) {
+		.barra-do-patrimonio {
+			forced-color-adjust: none;
+			background: CanvasText;
+		}
+	}
+
+	.detalhes-da-eleicao {
+		grid-area: detalhes;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		justify-items: start;
+		row-gap: 0.1rem;
+	}
+
+	/* Sem o link, o arquivo fica com a altura do link (a.acao-de-texto): a linha não
+	 * encolhe nem cola o arquivo na data da coleta. */
+	.arquivo-sem-link {
+		padding-block: 0.9375rem;
+	}
+
+	.declarado-na-eleicao {
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 600;
+		line-height: 1.4;
+		font-variant-numeric: lining-nums tabular-nums;
+		max-inline-size: 100%;
+	}
+
+	.valor-exato-da-eleicao {
+		display: inline-block;
+		max-inline-size: 100%;
+	}
+
+	.nota-do-patrimonio {
+		margin-top: 1rem;
+	}
+
+	.correcao-do-patrimonio {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		justify-items: start;
+		margin-top: 1rem;
+	}
+
+	@media (width >= 40rem) {
+		.eleicao-do-patrimonio {
+			grid-template-columns: 5.5rem minmax(0, 1fr);
+		}
+	}
+
+	@media (width >= 48rem) {
+		.eleicao-do-patrimonio {
+			grid-template-columns: 5.5rem minmax(0, 1fr) minmax(0, 1fr);
+			grid-template-areas:
+				"ano cargo valor"
+				"ano detalhes valor";
+			grid-template-rows: auto 1fr;
+		}
+	}
+
+	@media (width < 22rem) {
+		.eleicao-do-patrimonio {
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-areas:
+				"ano"
+				"cargo"
+				"valor"
+				"detalhes";
+		}
 	}
 
 	/* ───── A página da votação: o plenário ───── */
