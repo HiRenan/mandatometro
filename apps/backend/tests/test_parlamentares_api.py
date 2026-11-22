@@ -164,6 +164,28 @@ def test_lista_os_parlamentares_em_exercicio_por_nome(cliente, parlamentares, fi
     ]
 
 
+def test_lista_usa_a_uf_do_mandato_em_exercicio_de_maior_legislatura(
+    cliente, sessao, parlamentares
+):
+    agata, bentina, _, _ = parlamentares
+    sessao.add(
+        Mandato(parlamentar=agata, legislatura=55, uf="PR", em_exercicio=True, fonte=agata.fonte)
+    )
+    sessao.flush()
+
+    nacional = cliente.get("/parlamentares")
+    assert nacional.status_code == 200
+    assert [p["uf"] for p in nacional.json()["parlamentares"] if p["id"] == agata.id] == ["SC"]
+
+    por_sc = cliente.get("/parlamentares", params={"uf": "SC"})
+    assert por_sc.status_code == 200
+    assert [p["id"] for p in por_sc.json()["parlamentares"]] == [agata.id, bentina.id]
+
+    por_pr = cliente.get("/parlamentares", params={"uf": "PR"})
+    assert por_pr.status_code == 200
+    assert por_pr.json() == {"parlamentares": []}
+
+
 def test_partido_e_o_do_ultimo_voto_e_a_uf_e_a_do_mandato(cliente, parlamentares, votacoes):
     resposta = cliente.get("/parlamentares")
 
@@ -294,6 +316,7 @@ def test_votacao_lista_votos_por_nome_e_conta_cada_valor_e_partido(
             ("Dália Cedrágua", None, "RJ", "nao_votou"),
             ("Mira Sombravila", "", "CE", "outro"),
             ("bela Lumivento", "PFN", "TO", "sim"),
+            ("Nélvi Ventoluz", "   ", "RN", "obstrucao"),
         ]
     ):
         pessoa = Parlamentar(casa="camara", id_externo=901010 + i, nome=nome, fonte=votacao.fonte)
@@ -336,6 +359,7 @@ def test_votacao_lista_votos_por_nome_e_conta_cada_valor_e_partido(
         pessoas[1].id,
         pessoas[0].id,
         pessoas[4].id,
+        pessoas[6].id,
         zafira.id,
     ]
     assert votos[0] == {
@@ -349,13 +373,14 @@ def test_votacao_lista_votos_por_nome_e_conta_cada_valor_e_partido(
     assert [v["valor"] for v in votos if v["partido"] is None] == [
         "nao_votou",
         "outro",
+        "obstrucao",
         "abstencao",
     ]
     assert dados["placar"] == {
         "sim": 2,
         "nao": 1,
         "abstencao": 1,
-        "obstrucao": 1,
+        "obstrucao": 2,
         "presidente": 1,
         "nao_votou": 1,
         "outro": 1,
