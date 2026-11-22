@@ -18,6 +18,7 @@ TABELAS_DO_MVP = {
     "fonte",
     "parlamentar",
     "mandato",
+    "candidatura",
     "proposicao",
     "proposicao_tema",
     "video_sessao",
@@ -50,6 +51,12 @@ def test_as_migrations_sobem_do_zero_descem_e_batem_com_os_modelos(engine_de_tes
     assert _tabelas(engine_de_teste) == set()
     assert not _tem_a_extensao_vector(engine_de_teste)
 
+    alembic("upgrade", "0012")
+    tabelas_0012 = _tabelas(engine_de_teste)
+    assert "video_sessao" in tabelas_0012
+    assert "candidatura" not in tabelas_0012
+    alembic("upgrade", "0013")
+    assert _tabelas(engine_de_teste) == tabelas_0012 | {"candidatura"}
     alembic("upgrade", "head")
     assert _tabelas(engine_de_teste) == TABELAS_DO_MVP
     assert _tem_a_extensao_vector(engine_de_teste)
