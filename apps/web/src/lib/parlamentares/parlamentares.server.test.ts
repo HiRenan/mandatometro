@@ -259,13 +259,12 @@ describe("quando a API falha", () => {
 	] as const;
 
 	it.each(leituras)(
-		"%s: o 503 vira o erro genérico, sem nada da falha",
+		"%s: o 500 e o 503 viram o erro genérico, sem nada do corpo da API",
 		async (_, ler) => {
-			api(() =>
-				json(503, { erro: "servico_indisponivel", detalhe: MENSAGEM_DA_FALHA }),
-			);
-
-			confereErroGenerico(await erroDe(ler()), "http-503");
+			for (const status of [500, 503]) {
+				api(() => json(status, { detalhe: MENSAGEM_DA_FALHA }));
+				confereErroGenerico(await erroDe(ler()), `http-${status}`);
+			}
 		},
 	);
 

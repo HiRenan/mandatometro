@@ -71,6 +71,21 @@ describe("os nomes longos", () => {
 			);
 		}
 	});
+
+	it("o número do grupo pode descer quando o nome ocupa a linha", () => {
+		expect(regra(css, ".grupo-de-voto > summary")).toContain(
+			"flex-wrap: wrap;",
+		);
+	});
+});
+
+it("a caixa do vídeo mostra o anel enquanto o player tem foco", () => {
+	const anel = regra(
+		css,
+		".caixa-do-video:has(> .player-do-video):focus-within",
+	);
+	expect(anel).toContain("outline: 3px solid var(--ring);");
+	expect(anel).toContain("outline-offset: 3px;");
 });
 
 describe("o mapa dos estados", () => {

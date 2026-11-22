@@ -15,6 +15,7 @@ import {
 	CONTAGEM_ZERADA,
 	detalheDeExemplo,
 	votoDoParlamentarDeExemplo,
+	votosDeExemplo,
 } from "@/lib/parlamentares/exemplos-de-teste";
 import { Route } from "@/routes/parlamentares/$id";
 
@@ -40,6 +41,8 @@ afterEach(() => {
 async function abrir(
 	parlamentar: DetalheParlamentar,
 	votos: VotoParlamentar[] = [votoDoParlamentarDeExemplo(139)],
+	paginaAtual = 1,
+	total = votos.length,
 ) {
 	const raiz = createRootRoute({ component: () => <Outlet /> });
 	const pagina = Route.update({
@@ -50,9 +53,9 @@ async function abrir(
 			tipo: "parlamentar",
 			parlamentar,
 			votos,
-			total: votos.length,
-			pagina: 1,
-			paginas: 1,
+			total,
+			pagina: paginaAtual,
+			paginas: Math.max(1, Math.ceil(total / 20)),
 		}),
 	} as never);
 	const router = createRouter({
@@ -95,12 +98,12 @@ describe("a página do parlamentar", () => {
 			[
 				"Obstrução",
 				"0",
-				"Deixou de votar numa estratégia do partido, anunciada pela liderança. (Regimento Interno da Câmara, art. 82, § 6º)",
+				"Deixou de votar numa estratégia do partido ou do bloco, comunicada à Mesa na Câmara e declarada pela liderança no Senado. (Regimento Interno da Câmara, art. 82, § 6º)",
 			],
 			[
 				"Presidência",
 				"0",
-				"Presidia a sessão. Na votação aberta, quem preside só vota para desempatar, e o registro fica fora do placar. (Regimento Interno da Câmara, art. 17, § 1º)",
+				"Presidia a sessão. Na votação aberta, quem preside só vota para desempatar; por isso, este registro aparece à parte e não conta como Sim nem como Não. (Regimento Interno da Câmara, art. 17, § 1º)",
 			],
 			[
 				"Não votou",
@@ -191,4 +194,26 @@ describe("a página do parlamentar", () => {
 			within(segundo).queryByRole("link", { name: /Página oficial/ }),
 		).toBeNull();
 	});
+
+	it.each([
+		[1, "Votos mais antigos", "?pagina=2#votos"],
+		[2, "Votos mais novos", "#votos"],
+	])(
+		"da página %i, o link leva ao título dos votos",
+		async (pagina, nome, fim) => {
+			await abrir(
+				detalheDeExemplo(),
+				votosDeExemplo(25, (pagina - 1) * 20).votos,
+				pagina,
+				25,
+			);
+
+			const titulo = screen.getByRole("heading", { level: 2, name: "Votos" });
+			expect(titulo.id).toBe("votos");
+			expect(titulo.getAttribute("tabindex")).toBe("-1");
+			expect(
+				screen.getByRole("link", { name: nome }).getAttribute("href"),
+			).toBe(`/parlamentares/81-agata-cedrolume${fim}`);
+		},
+	);
 });

@@ -18,6 +18,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DetalheVotacao, PlacarPorPartido } from "@/client";
 import type { PaginaDaVotacao } from "@/lib/parlamentares";
+import { buscaComPartido } from "@/lib/parlamentares/busca";
 import {
 	CONTAGEM_ZERADA,
 	votacaoDeExemplo,
@@ -55,6 +56,7 @@ async function abrir(votacao: DetalheVotacao = votacaoDeExemplo()) {
 	} as never);
 	const router = createRouter({
 		routeTree: raiz.addChildren([pagina]),
+		...buscaComPartido,
 		history: createMemoryHistory({ initialEntries: ["/votacoes/139"] }),
 	});
 	render(<RouterProvider router={router} />);
@@ -138,6 +140,86 @@ describe("a página da votação", () => {
 		).toEqual(["PFT", "PNX", "PRV", "Sem partido registrado"]);
 	});
 
+	it.each(["S/TESTE", "PT.Z", "PÁ R", "P'T", "1.0"])(
+		"o partido %s continua selecionado e filtra pelo texto exato depois do envio",
+		async (partido) => {
+			const votacao = votacaoDeExemplo();
+			votacao.votos[0] = { ...votacao.votos[0], partido };
+			const { router, carregar } = await abrir(votacao);
+			const campo = () => screen.getByRole("combobox", { name: "Partido" });
+
+			fireEvent.change(campo(), { target: { value: partido } });
+			fireEvent.click(screen.getByRole("button", { name: "Filtrar" }));
+
+			await screen.findByText("Mostrando 1 de 5 nomes");
+			expect(campo()).toHaveProperty("value", partido);
+			expect(router.state.location.search).toEqual({ partido });
+			expect(nomes()).toEqual(["Ágata Cedrolume"]);
+			expect(carregar).toHaveBeenCalledTimes(1);
+		},
+	);
+
+	it("o estado vazio junta a frase e a contagem na região que o leitor ouve inteira", async () => {
+		await abrir();
+		fireEvent.change(screen.getByRole("combobox", { name: "Estado" }), {
+			target: { value: "BA" },
+		});
+		fireEvent.change(screen.getByRole("combobox", { name: "Partido" }), {
+			target: { value: "PNX" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Filtrar" }));
+
+		const contador = await screen.findByText("Mostrando 0 de 5 nomes");
+		expect(contador.getAttribute("aria-live")).toBe("polite");
+		expect(contador.getAttribute("aria-atomic")).toBe("true");
+		expect(contador.textContent).toBe(
+			"Mostrando 0 de 5 nomes. Nenhum nome com esses filtros.",
+		);
+		expect(
+			document.querySelector(".texto-sem-votos")?.getAttribute("aria-hidden"),
+		).toBe("true");
+		expect(
+			screen.getByRole("link", { name: "Limpar os filtros" }),
+		).toBeTruthy();
+	});
+
+	it("o quadro mostra cada número do placar geral vindo da API", async () => {
+		const votacao = votacaoDeExemplo();
+		votacao.placar = { ...votacao.placar, abstencao: 3, obstrucao: 4 };
+		await abrir(votacao);
+
+		const placar = screen.getByRole("region", { name: "Placar" });
+		expect(
+			Array.from(
+				placar.querySelectorAll(".contagem, .presidencia"),
+				(linha) => [
+					linha.querySelector("dt")?.textContent,
+					linha.querySelector("dd")?.textContent,
+				],
+			),
+		).toEqual([
+			["Sim", "2"],
+			["Não", "1"],
+			["Abstenções", "3"],
+			["Obstruções", "4"],
+			["Presidência", "1, contada à parte"],
+		]);
+	});
+
+	it("o nome no grupo leva o partido e a UF do próprio registro de voto", async () => {
+		await abrir();
+		for (const [nome, partidoEUf] of [
+			["Ágata Cedrolume", "PFT · SC"],
+			["Íris Dell'Ombre", "PNX · SC"],
+			["Rui Tavaquil", "PRV · BA"],
+		]) {
+			const link = screen.getByRole("link", { name: nome });
+			expect(
+				link.closest("li")?.querySelector(".partido-e-uf")?.textContent,
+			).toBe(partidoEUf);
+		}
+	});
+
 	it("a coluna do Outro registro só aparece quando algum partido tem um", async () => {
 		const grupos: PlacarPorPartido[] = [
 			{ partido: "PFT", placar: { ...CONTAGEM_ZERADA, sim: 1, outro: 1 } },
@@ -161,6 +243,26 @@ describe("a página da votação", () => {
 			),
 		).toEqual(["Sim", "Não", "Presidência", "Não votou"]);
 	});
+
+	it("cada desenho do plenário tem um azulejo por voto da API", async () => {
+		const votacao = votacaoDeExemplo();
+		await abrir(votacao);
+		const desenhos = document.querySelectorAll(
+			".painel-da-votacao svg.plenario",
+		);
+		expect(desenhos).toHaveLength(2);
+		for (const desenho of desenhos) {
+			// O anel usa dois subcaminhos por azulejo e a obstrução usa três.
+			const azulejos = Array.from(desenho.querySelectorAll("path"), (forma) => {
+				const subcaminhos =
+					(forma.getAttribute("d") ?? "").split("M").length - 1;
+				if (forma.classList.contains("voto-nao")) return subcaminhos / 2;
+				if (forma.classList.contains("voto-obstrucao")) return subcaminhos / 3;
+				return subcaminhos;
+			}).reduce((total, quantidade) => total + quantidade, 0);
+			expect(azulejos).toBe(votacao.votos.length);
+		}
+	});
 });
 
 describe("o vídeo da sessão, na página da votação", () => {
@@ -174,6 +276,7 @@ describe("o vídeo da sessão, na página da votação", () => {
 		});
 
 		expect(capa.getAttribute("href")).toBe(VIDEO);
+		expect(capa.querySelector("img, picture, svg image")).toBeNull();
 		expect(document.querySelector("iframe")).toBeNull();
 		expect(bloco.textContent).toContain(
 			"O vídeo é da sessão inteira do Plenário, publicado pela Câmara dos Deputados no YouTube, e não começa no momento desta votação. O player do YouTube, do Google, só carrega depois do toque.",

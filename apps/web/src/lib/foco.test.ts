@@ -53,10 +53,25 @@ describe("focarNoTitulo", () => {
 describe("outraPagina", () => {
 	const em = (
 		pathname: string,
-		search: { uf?: string; partido?: string } = {},
+		search: { uf?: string; partido?: string; pagina?: number } = {},
+		hash?: string,
 	) => ({
 		pathname,
 		search,
+		hash,
+	});
+
+	it("a paginação dos votos muda de página e aponta para o título da lista", () => {
+		const caminho = "/parlamentares/81-agata-cedrolume";
+		const inicio = em(caminho);
+		const primeira = em(caminho, {}, "votos");
+		const segunda = em(caminho, { pagina: 2 }, "votos");
+		expect(outraPagina(inicio, segunda)).toBe(true);
+		expect(outraPagina(segunda, primeira)).toBe(true);
+		expect(outraPagina(segunda, segunda)).toBe(false);
+		expect(outraPagina(em("/edicoes"), em("/edicoes", { pagina: 2 }))).toBe(
+			false,
+		);
 	});
 
 	it("outro caminho é outra página, e a primeira também", () => {

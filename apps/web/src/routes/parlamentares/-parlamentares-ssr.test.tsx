@@ -125,26 +125,30 @@ function meta(html: string, nome: string) {
 }
 
 describe("o HTML das páginas dos parlamentares", () => {
-	it("com a API fora do ar, a página de erro, com 500 e sem nada da falha", async () => {
-		api(() => {
-			throw new TypeError(MENSAGEM_DA_FALHA);
-		});
+	it.each(["fora do ar", "respondendo 500"])(
+		"com a API %s, HTML de erro sem o detalhe interno",
+		async (falha) => {
+			api(() => {
+				if (falha === "fora do ar") throw new TypeError(MENSAGEM_DA_FALHA);
+				return json(500, { detalhe: MENSAGEM_DA_FALHA });
+			});
 
-		for (const caminho of [
-			"/parlamentares",
-			"/parlamentares?uf=SC",
-			CANONICO,
-		]) {
-			const { status, html } = await pedir(caminho);
+			for (const caminho of [
+				"/parlamentares",
+				"/parlamentares?uf=SC",
+				CANONICO,
+			]) {
+				const { status, html } = await pedir(caminho);
 
-			expect(status, caminho).toBe(500);
-			expect(html, caminho).toContain("A página não carregou");
-			expect(html, caminho).toContain("Os parlamentares não carregaram.");
-			for (const segredo of SEGREDOS) {
-				expect(html, `${caminho}: ${segredo}`).not.toContain(segredo);
+				expect(status, caminho).toBe(500);
+				expect(html, caminho).toContain("A página não carregou");
+				expect(html, caminho).toContain("Os parlamentares não carregaram.");
+				for (const segredo of SEGREDOS) {
+					expect(html, `${caminho}: ${segredo}`).not.toContain(segredo);
+				}
 			}
-		}
-	});
+		},
+	);
 
 	it("o parlamentar que não existe dá 404, com a página que leva aos parlamentares", async () => {
 		api(() => json(404, { erro: "parlamentar_nao_encontrado" }));
@@ -202,14 +206,15 @@ describe("o HTML das páginas dos parlamentares", () => {
 		);
 		expect(html.match(/<li class="voto-da-pessoa">/g)).toHaveLength(20);
 		expect(html).toContain("Página 1 de 2");
-		expect(html).toContain(`href="${CANONICO}?pagina=2"`);
+		expect(html).toContain(`href="${CANONICO}?pagina=2#votos"`);
+		expect(html).toMatch(/<h2 id="votos" tabindex="-1"[^>]*>Votos<\/h2>/);
 		expect(html).toContain('href="/votacoes/139"');
 	});
 
 	it("a segunda página de votos leva o número no título e volta à primeira sem o ?pagina", async () => {
 		apiDeExemplo();
 
-		const { status, html } = await pedir(`${CANONICO}?pagina=2`);
+		const { status, html } = await pedir(`${CANONICO}?pagina=2#votos`);
 
 		expect(status).toBe(200);
 		expect(html).toContain(
@@ -217,7 +222,7 @@ describe("o HTML das páginas dos parlamentares", () => {
 		);
 		expect(html.match(/<li class="voto-da-pessoa">/g)).toHaveLength(5);
 		expect(html).toMatch(
-			new RegExp(`href="${CANONICO}"[^>]*><span>Votos mais novos`),
+			new RegExp(`href="${CANONICO}#votos"[^>]*><span>Votos mais novos`),
 		);
 	});
 
@@ -234,6 +239,9 @@ describe("o HTML das páginas dos parlamentares", () => {
 
 		expect(status).toBe(200);
 		expect(html).toContain("Nenhum voto registrado ainda");
+		expect(html).toContain(
+			"O voto de cada parlamentar só fica registrado na votação nominal, feita em geral pelo painel eletrônico.",
+		);
 		expect(html).toContain(
 			"Os dados usados ainda não têm votos de Ágata Cedrolume.",
 		);

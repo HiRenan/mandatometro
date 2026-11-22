@@ -65,11 +65,24 @@ describe("os filtros", () => {
 		expect(opcoesDoFiltro([votoNominalDeExemplo()]).semPartido).toBe(false);
 	});
 
-	it("o partido do endereço fica como veio, e o valor estranho é ignorado", () => {
-		expect(partidoDaBusca("PFT")).toBe("PFT");
-		expect(partidoDaBusca("PCdoX")).toBe("PCdoX");
-		expect(partidoDaBusca(SEM_PARTIDO)).toBe(SEM_PARTIDO);
-		for (const valor of ["", " PFT", "<b>", "P".repeat(21), 7, undefined]) {
+	it("o partido do endereço conserva o texto, até 40 caracteres e sem controles", () => {
+		for (const valor of [
+			"PCdoX",
+			"P/Á D.'X",
+			"<b>",
+			"P".repeat(40),
+			SEM_PARTIDO,
+		]) {
+			expect(partidoDaBusca(valor)).toBe(valor);
+		}
+		for (const valor of [
+			"",
+			"P".repeat(41),
+			"P\nFT",
+			"P\u0085FT",
+			7,
+			undefined,
+		]) {
 			expect(partidoDaBusca(valor), String(valor)).toBeUndefined();
 		}
 	});

@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DetalheVotacao } from "@/client";
 import { NaoEncontrado } from "@/components/nao-encontrado";
 import { PaginaDeErro } from "@/components/pagina-de-erro";
+import { buscaComPartido } from "@/lib/parlamentares/busca";
 import {
 	votacaoDeExemplo,
 	votacaoSemVotosDeExemplo,
@@ -80,6 +81,7 @@ function criarRouter() {
 	} as never);
 	return createRouter({
 		routeTree: raiz.addChildren([votacao]),
+		...buscaComPartido,
 		defaultNotFoundComponent: NaoEncontrado,
 		defaultErrorComponent: PaginaDeErro,
 	});
@@ -134,20 +136,24 @@ function votacaoGrande(quantos: number): DetalheVotacao {
 }
 
 describe("o HTML da página da votação", () => {
-	it("com a API fora do ar, a página de erro, com 500 e sem nada da falha", async () => {
-		api(() => {
-			throw new TypeError(MENSAGEM_DA_FALHA);
-		});
+	it.each(["fora do ar", "respondendo 500"])(
+		"com a API %s, HTML de erro sem o detalhe interno",
+		async (falha) => {
+			api(() => {
+				if (falha === "fora do ar") throw new TypeError(MENSAGEM_DA_FALHA);
+				return json(500, { detalhe: MENSAGEM_DA_FALHA });
+			});
 
-		const { status, html } = await pedir("/votacoes/139");
+			const { status, html } = await pedir("/votacoes/139");
 
-		expect(status).toBe(500);
-		expect(html).toContain("A página não carregou");
-		expect(html).toContain("Os parlamentares não carregaram.");
-		for (const segredo of SEGREDOS) {
-			expect(html, segredo).not.toContain(segredo);
-		}
-	});
+			expect(status).toBe(500);
+			expect(html).toContain("A página não carregou");
+			expect(html).toContain("Os parlamentares não carregaram.");
+			for (const segredo of SEGREDOS) {
+				expect(html, segredo).not.toContain(segredo);
+			}
+		},
+	);
 
 	it("a votação que não existe dá 404, e o id com nome nem chega à API", async () => {
 		for (const status of [404, 422]) {
@@ -175,7 +181,7 @@ describe("o HTML da página da votação", () => {
 		);
 		expect(html).toContain("Cria a Semana das Bibliotecas Comunitárias.");
 		expect(html).toContain('href="https://www.exemplo.leg.br/votacao/139"');
-		// O plenário é desenho: o placar, logo abaixo, diz o mesmo em texto.
+		// O plenário é desenho. Os placares e os grupos trazem os números em texto.
 		expect(html).toMatch(/<div aria-hidden="true" class="painel-da-votacao">/);
 		expect(html).toMatch(/<h2 id="placar"[^>]*>Placar<\/h2>/);
 		expect(html).toContain(
@@ -218,6 +224,7 @@ describe("o HTML da página da votação", () => {
 		);
 		expect(html).not.toContain("<iframe");
 		expect(html).not.toContain("youtube-nocookie");
+		expect(html).not.toContain("ytimg.com");
 	});
 
 	it("sem o vídeo, ou com um endereço fora do contrato, o bloco não aparece", async () => {
@@ -260,22 +267,42 @@ describe("o HTML da página da votação", () => {
 		expect(nenhum.html).toContain("Nenhum nome com esses filtros.");
 	});
 
-	it("um filtro que não aparece na votação fica de fora, como sem filtro", async () => {
+	it("um partido que não aparece na votação mantém a lista vazia e pode ser limpo", async () => {
 		api(() => json(200, votacaoDeExemplo()));
 
-		const { status, html } = await pedir("/votacoes/139?uf=RR&partido=PZZ");
+		const { status, html } = await pedir("/votacoes/139?partido=PZZ");
 
 		expect(status).toBe(200);
-		expect(html).toContain("Mostrando 5 de 5 nomes");
-		expect(html).not.toContain("Limpar os filtros");
+		expect(html).toContain("Mostrando 0 de 5 nomes");
+		expect(html).toContain("Nenhum nome com esses filtros.");
+		expect(html).toContain("Limpar os filtros");
+		expect(nomes(html)).toEqual([]);
 	});
 
+	it.each(["P/Á D.'X", "1.0"])(
+		"o formulário GET conserva o partido %s e o valor selecionado",
+		async (partido) => {
+			const votacao = votacaoDeExemplo();
+			votacao.votos[0] = { ...votacao.votos[0], partido };
+			api(() => json(200, votacao));
+
+			const busca = new URLSearchParams({ uf: "SC", partido });
+			const { status, html } = await pedir(`/votacoes/139?${busca}`);
+			expect(status).toBe(200);
+			expect(nomes(html)).toEqual(["Ágata Cedrolume"]);
+			expect(html).toContain("Mostrando 1 de 5 nomes");
+			const texto = partido.replaceAll("'", "&#x27;");
+			expect(html).toContain(
+				`<option value="${texto}" selected="">${texto}</option>`,
+			);
+		},
+	);
+
 	it("um valor que não é estado nem partido sai do endereço, pelo redirecionamento do roteador", async () => {
-		// O validateSearch da rota deixa de fora o valor estranho, e o roteador
-		// refaz o endereço sem ele: o <b> nem chega à página.
+		// O validateSearch deixa de fora a sigla com caractere de controle.
 		api(() => json(200, votacaoDeExemplo()));
 
-		expect(await pedir("/votacoes/139?partido=%3Cb%3E&uf=ba")).toMatchObject({
+		expect(await pedir("/votacoes/139?partido=P%00ZZ&uf=ba")).toMatchObject({
 			status: 307,
 			location: "/votacoes/139?uf=BA",
 		});

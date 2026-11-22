@@ -23,6 +23,8 @@ describe("idDoVideo", () => {
 			"https://www.youtube.com/watch?v=Mnd268Cam0",
 			"https://www.youtube.com/watch?v=Mnd268Cam012",
 			"https://www.youtube.com/watch?v=Mnd268Cam01&t=90",
+			" https://www.youtube.com/watch?v=Mnd268Cam01",
+			"https://www.youtube.com/watch?v=Mnd268Cam01 ",
 			"https://www.youtube.com/watch?v=Mnd268Cam0!",
 			"https://exemplo.test/?https://www.youtube.com/watch?v=Mnd268Cam01",
 			"javascript:alert(1)//https://www.youtube.com/watch?v=Mnd268Cam01",
