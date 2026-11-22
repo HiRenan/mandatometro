@@ -1012,3 +1012,66 @@ describe("o HTML do servidor do perfil", () => {
 		}
 	});
 });
+
+// As telas da conta no cartaz (DESIGN.md, "Telas da conta"): o site sem a API,
+// como nas prévias dos PRs, e o site sem JavaScript.
+describe("o HTML do servidor das telas da conta", () => {
+	const TELAS = [
+		["/login", "Entrar"],
+		["/cadastro", "Criar conta"],
+		["/cadastro/confirmar", "Confirmar e-mail"],
+		["/cadastro/reenvio", "Reenviar confirmação"],
+		["/cadastro/recuperar", "Recuperar senha"],
+		["/cadastro/redefinir", "Definir nova senha"],
+		["/cadastro/excluir", "Excluir conta"],
+	] as const;
+
+	it.each(TELAS)(
+		"%s, sem a API, nasce sem formulário e com a frase de que a conta não funciona ali",
+		async (caminho, titulo) => {
+			const { pagina } = await pedir(caminho, { semApi: true });
+			const cartaz = pagina.querySelector(".cartaz");
+
+			expect(cartaz?.querySelector("h1")?.textContent).toBe(titulo);
+			expect(cartaz?.querySelector("form")).toBeNull();
+			expect(cartaz?.querySelector(".cartaz-pe .abertura")?.textContent).toBe(
+				"A conta ainda não funciona neste endereço do site.",
+			);
+			expect(
+				cartaz?.querySelector('a[href="/trilhas"]')?.textContent?.trim(),
+			).toBe("Ver as trilhas");
+		},
+	);
+
+	it("sem JavaScript, o formulário, a espera e a linha das mensagens saem pelo conta.css, sem classe de display do Tailwind", async () => {
+		// Como no perfil: um "grid" do Tailwind no elemento venceria o display:
+		// none, e o /login sem JavaScript mostraria um formulário que não envia.
+		const css = readFileSync(join(src, "estilos", "conta.css"), "utf8");
+		const regra = css.match(
+			/@media \(scripting: none\) \{\s*([^{]+)\{\s*display: none;\s*\}\s*\}/,
+		);
+		const seletores = regra?.[1].split(",").map((seletor) => seletor.trim());
+		expect(seletores).toEqual([
+			".conta-formulario",
+			".conta-verificando",
+			".conta-mensagem",
+		]);
+
+		const { pagina } = await pedir("/login");
+		const DISPLAY =
+			/^(block|inline|inline-block|flex|inline-flex|grid|inline-grid|contents|flow-root|table|hidden)$/;
+		for (const seletor of seletores ?? []) {
+			const elemento = pagina.querySelector(seletor);
+			expect(elemento, seletor).not.toBeNull();
+			expect(
+				[...(elemento?.classList ?? [])].filter((classe) =>
+					DISPLAY.test(classe),
+				),
+				seletor,
+			).toEqual([]);
+		}
+		expect(pagina.querySelector(".cartaz noscript")?.textContent).toBe(
+			"A conta precisa do JavaScript do navegador ligado.",
+		);
+	});
+});
