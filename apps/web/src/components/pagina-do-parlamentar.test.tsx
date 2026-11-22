@@ -109,7 +109,10 @@ function eleicoes() {
 				linha
 					.querySelector<HTMLElement>(".barra-do-patrimonio")
 					?.style.getPropertyValue("--parte") ?? null,
-			detalhes: textos(linha, ".detalhes-da-eleicao > *"),
+			detalhes: textos(
+				linha,
+				".declarado-na-eleicao > .sr-only, .detalhes-da-eleicao > :not(.declarado-na-eleicao)",
+			),
 		}),
 	);
 }
@@ -373,7 +376,7 @@ describe("o patrimônio declarado ao TSE", () => {
 		}
 	});
 
-	it("a abertura diz até que mês vai a correção, o aviso vem logo antes da lista, e as fontes levam à série do Banco Central e à lei", async () => {
+	it("com todos os totais corrigidos, a abertura diz até que mês vai a correção e o aviso e as fontes explicam os dados", async () => {
 		await abrir(detalheDeExemplo());
 		const bloco = blocoDoPatrimonio();
 
@@ -383,14 +386,14 @@ describe("o patrimônio declarado ao TSE", () => {
 			),
 		).toBeTruthy();
 		const aviso = within(bloco).getByText(
-			"É o valor que a própria pessoa declarou ao registrar a candidatura, e não o patrimônio de hoje. A Justiça Eleitoral publica a declaração como recebeu, sem avaliar os bens, e cada bem costuma entrar pelo preço de compra: uma casa comprada há 20 anos pode aparecer pelo valor daquela época.",
+			"É o valor que a própria pessoa declarou ao registrar a candidatura, e não o patrimônio de hoje. A Justiça Eleitoral dá acesso à declaração como ela foi entregue, e cada bem costuma entrar pelo preço de compra, como na declaração do Imposto de Renda: uma casa comprada há 20 anos pode aparecer pelo valor daquela época.",
 		);
 		const lista = within(bloco).getByRole("list");
 		expect(aviso.nextElementSibling).toBe(lista);
 		expect(within(lista).getAllByRole("listitem")).toHaveLength(4);
 		expect(
 			within(bloco).getByText(
-				"Só aparecem as eleições em que deu para ligar, com segurança, a candidatura no TSE a Ágata Cedrolume. O arquivo de cada ano traz as declarações de todas as candidaturas daquela eleição.",
+				"Só aparecem as eleições em que deu para ligar, com segurança, a candidatura no TSE a Ágata Cedrolume. O arquivo de cada ano é o do TSE com os bens declarados naquela eleição, e não só os desta pessoa.",
 			),
 		).toBeTruthy();
 		expect(
@@ -415,6 +418,70 @@ describe("o patrimônio declarado ao TSE", () => {
 				})
 				.getAttribute("href"),
 		).toBe("https://www.planalto.gov.br/ccivil_03/leis/l9504.htm#art11");
+		expect(
+			within(bloco)
+				.getByRole("link", { name: /^Lei 9\.250\/1995, art\.\s+25$/ })
+				.getAttribute("href"),
+		).toBe("https://www.planalto.gov.br/ccivil_03/leis/l9250.htm#art25");
+		expect(bloco.querySelector(".fonte-das-regras")?.textContent).toMatch(
+			/^Fontes das regras:/,
+		);
+	});
+
+	it("as duas fontes mostram o dia em Brasília quando a coleta ocorre perto da meia-noite UTC", async () => {
+		const eleicao = eleicaoDeExemplo();
+		const correcao = correcaoDeExemplo();
+		const coletado_em = "2026-11-21T01:30:00Z";
+		await abrirComPatrimonio(
+			patrimonioNaPagina({
+				eleicoes: [{ ...eleicao, fonte: { ...eleicao.fonte, coletado_em } }],
+				correcao_ipca: {
+					...correcao,
+					fonte: { ...correcao.fonte, coletado_em },
+				},
+			}),
+		);
+
+		const bloco = within(blocoDoPatrimonio());
+		expect(bloco.getByText("Coletado em 20 de novembro de 2026")).toBeTruthy();
+		expect(bloco.getByText("Coletada em 20 de novembro de 2026")).toBeTruthy();
+	});
+
+	it("o declarado conserva o valor exato e só oferece quebras entre os grupos de milhar", async () => {
+		await abrirComPatrimonio(
+			patrimonioNaPagina({
+				eleicoes: [
+					eleicaoDeExemplo({
+						total_centavos: Number.MAX_SAFE_INTEGER,
+						total_corrigido_centavos: null,
+					}),
+				],
+			}),
+		);
+
+		const declarado = blocoDoPatrimonio().querySelector(
+			".declarado-na-eleicao",
+		);
+		const texto = "Declarado em\u00a02018: R$\u00a090.071.992.547.409,91";
+		expect(declarado?.querySelector(".sr-only")?.textContent).toBe(texto);
+		const visual = declarado?.querySelector('[aria-hidden="true"]');
+		expect(visual?.textContent).toBe(texto);
+		const valor = visual?.querySelector(".valor-exato-da-eleicao");
+		expect(
+			Array.from(valor?.childNodes ?? [], (parte) =>
+				parte.nodeName === "WBR" ? "quebra" : parte.textContent,
+			),
+		).toEqual([
+			"R$\u00a090.",
+			"quebra",
+			"071.",
+			"quebra",
+			"992.",
+			"quebra",
+			"547.",
+			"quebra",
+			"409,91",
+		]);
 	});
 
 	it("com uma eleição só, não há barra: não há com o que comparar", async () => {
@@ -509,14 +576,14 @@ describe("o patrimônio declarado ao TSE", () => {
 			[[reais("2,4 milhões"), "sem a correção pela inflação"], null],
 		]);
 		expect(bloco.textContent).toContain(
-			"corrigido pela inflação até setembro de 2026.",
+			"Para comparar anos diferentes, os totais aparecem também em reais de hoje, corrigidos pela inflação até setembro de 2026, quando a série do IPCA cobre a eleição.",
 		);
 		expect(bloco.textContent).toContain(
-			"de outubro do ano de cada eleição até setembro de 2026.",
+			"A correção usa o IPCA, a inflação oficial medida pelo IBGE, de outubro do ano da eleição até setembro de 2026.",
 		);
 	});
 
-	it("com a série e nenhuma eleição corrigida, a abertura não promete os reais de hoje", async () => {
+	it("com a série e nenhuma eleição corrigida, a linha mostra o declarado e a nota do IPCA não aparece", async () => {
 		await abrirComPatrimonio(
 			patrimonioNaPagina({
 				eleicoes: [
@@ -525,16 +592,16 @@ describe("o patrimônio declarado ao TSE", () => {
 				correcao_ipca: correcaoDeExemplo({ mes_fim: "2026-09" }),
 			}),
 		);
-		const texto = blocoDoPatrimonio().textContent;
+		const bloco = blocoDoPatrimonio();
+		const texto = bloco.textContent;
 
 		expect(texto).toContain(
 			"declarou nas eleições gerais em que concorreu.É o valor",
 		);
 		expect(texto).not.toContain("reais de hoje");
 		expect(texto).not.toContain("a série do IPCA não está");
-		expect(texto).toContain(
-			"de outubro do ano de cada eleição até setembro de 2026.",
-		);
+		expect(texto).toContain("sem a correção pela inflação");
+		expect(bloco.querySelector(".correcao-do-patrimonio")).toBeNull();
 	});
 
 	it("sem eleição ligada à pessoa, a explicação curta, com o nome dela", async () => {
@@ -588,7 +655,7 @@ describe("o patrimônio declarado ao TSE", () => {
 		await abrir(detalheDeExemplo());
 
 		expect(blocoDoPatrimonio().textContent).not.toMatch(
-			/aument|diminu|cresc|caiu|enriquec|ganh|perd|suspeit|evolu|varia|%/i,
+			/aument|diminu|cresc|caiu|dobr|enriquec|ganh|perd|suspeit|evolu|varia|%/i,
 		);
 	});
 });

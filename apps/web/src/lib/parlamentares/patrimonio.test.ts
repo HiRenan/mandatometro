@@ -42,6 +42,8 @@ describe("os reais arredondados", () => {
 		expect(reaisArredondados(450_000)).toBe(reais("4,5 mil"));
 		expect(reaisArredondados(4_500_000)).toBe(reais("45 mil"));
 		expect(reaisArredondados(4_530_000)).toBe(reais("45,3 mil"));
+		expect(reaisArredondados(9_994_900)).toBe(reais("99,9 mil"));
+		expect(reaisArredondados(9_995_000)).toBe(reais("100 mil"));
 		expect(reaisArredondados(9_999_500)).toBe(reais("100 mil"));
 		expect(reaisArredondados(35_212_300)).toBe(reais("352 mil"));
 		expect(reaisArredondados(99_949_999)).toBe(reais("999 mil"));

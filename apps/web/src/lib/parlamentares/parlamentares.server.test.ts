@@ -335,6 +335,59 @@ describe("o patrimônio declarado na página do parlamentar", () => {
 			"resposta-invalida",
 		],
 		[
+			"uma coleta do TSE com texto em vez de data e hora",
+			() => {
+				const eleicao = eleicaoDeExemplo();
+				return json(
+					200,
+					patrimonioDeExemplo({
+						eleicoes: [
+							{
+								...eleicao,
+								fonte: { ...eleicao.fonte, coletado_em: "data inválida" },
+							},
+						],
+					}),
+				);
+			},
+			"resposta-invalida",
+		],
+		[
+			"uma coleta do IPCA num dia que não existe",
+			() => {
+				const correcao = correcaoDeExemplo();
+				return json(
+					200,
+					patrimonioDeExemplo({
+						correcao_ipca: {
+							...correcao,
+							fonte: {
+								...correcao.fonte,
+								coletado_em: "2026-02-30T01:30:00Z",
+							},
+						},
+					}),
+				);
+			},
+			"resposta-invalida",
+		],
+		[
+			"uma coleta do IPCA sem horário",
+			() => {
+				const correcao = correcaoDeExemplo();
+				return json(
+					200,
+					patrimonioDeExemplo({
+						correcao_ipca: {
+							...correcao,
+							fonte: { ...correcao.fonte, coletado_em: "2026-11-20" },
+						},
+					}),
+				);
+			},
+			"resposta-invalida",
+		],
+		[
 			"outro índice",
 			() =>
 				json(200, {

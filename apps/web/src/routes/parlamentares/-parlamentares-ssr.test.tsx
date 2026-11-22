@@ -12,6 +12,7 @@ import { NaoEncontrado } from "@/components/nao-encontrado";
 import { PaginaDeErro } from "@/components/pagina-de-erro";
 import {
 	detalheDeExemplo,
+	eleicaoDeExemplo,
 	listaDeExemplo,
 	patrimonioDeExemplo,
 	votosDeExemplo,
@@ -258,6 +259,32 @@ describe("o HTML das páginas dos parlamentares", () => {
 		for (const segredo of SEGREDOS) {
 			expect(html, segredo).not.toContain(segredo);
 		}
+	});
+
+	it("uma data de coleta inválida fica fora do HTML e o restante da página abre", async () => {
+		const eleicao = eleicaoDeExemplo();
+		apiDeExemplo(25, () =>
+			json(
+				200,
+				patrimonioDeExemplo({
+					eleicoes: [
+						{
+							...eleicao,
+							fonte: { ...eleicao.fonte, coletado_em: "data inválida" },
+						},
+					],
+				}),
+			),
+		);
+
+		const { status, html } = await pedir(CANONICO);
+		expect(status).toBe(200);
+		expect(html).toContain("O patrimônio declarado não carregou agora.");
+		expect(html).toContain(">Como votou</h2>");
+		expect(html.match(/<li class="voto-da-pessoa">/g)).toHaveLength(20);
+		expect(html).not.toMatch(
+			/data inválida|Coletado em undefined|eleicao-do-patrimonio/,
+		);
 	});
 
 	it("a segunda página de votos leva o número no título e volta à primeira sem o ?pagina", async () => {

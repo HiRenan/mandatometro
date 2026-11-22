@@ -59,6 +59,12 @@ describe("os alvos de toque", () => {
 			"min-height: 3.25rem;",
 		);
 	});
+
+	it("as citações do patrimônio e de Como votou têm pelo menos 44 px de altura", () => {
+		const citacao = regra(css, ".fonte-das-regras a");
+		expect(citacao).toContain("display: inline-grid;");
+		expect(citacao).toContain("min-height: 2.75rem;");
+	});
 });
 
 describe("os nomes longos", () => {
@@ -154,6 +160,20 @@ describe("o patrimônio declarado", () => {
 				".eleicao-do-patrimonio",
 			),
 		).toContain("grid-template-columns: minmax(0, 1fr);");
+	});
+
+	it("o valor exato encolhe na coluna e o declarado tem altura para as linhas que quebra", () => {
+		const valorExato = regra(patrimonio, ".valor-exato-da-eleicao");
+		expect(valorExato).toContain("display: inline-block;");
+		expect(valorExato).toContain("max-inline-size: 100%;");
+		for (const regraDeTexto of [
+			regra(patrimonio, ".declarado-na-eleicao"),
+			valorExato,
+		]) {
+			expect(regraDeTexto).not.toMatch(
+				/(?:^|; )(?:max-)?(?:height|block-size):|overflow(?:-y)?: (?:hidden|clip)/,
+			);
+		}
 	});
 
 	it("a barra é de tinta, com 4 px no mínimo, e continua à vista nas cores forçadas", () => {
