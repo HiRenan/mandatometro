@@ -1013,8 +1013,8 @@ describe("o HTML do servidor do perfil", () => {
 	});
 });
 
-// As telas da conta no cartaz (DESIGN.md, "Telas da conta"): o site sem a API,
-// como nas prévias dos PRs, e o site sem JavaScript.
+// As telas da conta no cartaz (DESIGN.md, "Telas da conta"): a aba, o site sem
+// a API, como nas prévias dos PRs, e o site sem JavaScript.
 describe("o HTML do servidor das telas da conta", () => {
 	const TELAS = [
 		["/login", "Entrar"],
@@ -1025,6 +1025,15 @@ describe("o HTML do servidor das telas da conta", () => {
 		["/cadastro/redefinir", "Definir nova senha"],
 		["/cadastro/excluir", "Excluir conta"],
 	] as const;
+
+	it.each([...TELAS, ["/perfil", "Meu perfil"] as const])(
+		"%s tem a aba com o título e o ponto: %s · Mandatômetro",
+		async (caminho, titulo) => {
+			const { pagina } = await pedir(caminho);
+
+			expect(pagina.title).toBe(`${titulo} · Mandatômetro`);
+		},
+	);
 
 	it.each(TELAS)(
 		"%s, sem a API, nasce sem formulário e com a frase de que a conta não funciona ali",

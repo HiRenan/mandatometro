@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { FormularioConta } from "@/components/formulario-conta";
+import { FormularioConta, titulos } from "@/components/formulario-conta";
 import { usePerfil } from "@/lib/use-perfil";
 
 export const Route = createFileRoute("/login")({
 	head: () => ({
 		meta: [
-			{ title: "Entrar na conta | Mandatômetro" },
+			{ title: `${titulos.login} · Mandatômetro` },
 			{ name: "robots", content: "noindex" },
 		],
 	}),
