@@ -148,6 +148,7 @@ erDiagram
     fonte ||--o{ mandato : "comprova"
     fonte ||--o{ candidatura : "comprova"
     fonte ||--o{ candidatura_patrimonio : "comprova candidatura e bens"
+    fonte ||--o{ ipca_mensal : "comprova o índice"
     fonte ||--o{ proposicao : "comprova"
     fonte ||--o{ proposicao_tema : "classifica"
     fonte ||--o{ votacao : "comprova"
@@ -209,6 +210,11 @@ erDiagram
         int candidatura_id PK,FK
         int tipo PK "código do tipo de bem do TSE"
         bigint valor_centavos "nominal, agregado por tipo"
+    }
+    ipca_mensal {
+        date mes PK "primeiro dia do mês"
+        numeric variacao_percentual "variação mensal em %"
+        int fonte_id FK
     }
     proposicao {
         int id PK
@@ -498,6 +504,14 @@ uv run mandatometro coleta bens-tse --diretorio-zips /caminho/dos/zips
 ```
 
 A carga de bens usa os ZIPs `consulta_cand` e `bem_candidato` das seis eleições gerais de 2006 a 2026. O resumo JSON mostra as contagens por ano e a saída 1 indica falha na carga. A API entrega o patrimônio nominal de cada eleição em `GET /parlamentares/{id}/patrimonio`. A série usa `null` quando o total está indisponível. [Campos e regras dos bens](docs/dicionario-de-dados.md#bens-declarados-ao-tse)
+
+**Coleta do IPCA.** Em `apps/backend`, aplique as migrations e passe `DATABASE_URL` para o banco de destino.
+
+```bash
+uv run mandatometro coleta ipca
+```
+
+O comando atualiza a série mensal do Banco Central desde janeiro de 2006. O resumo JSON mostra quantos meses foram gravados e até que mês. Saída 1 indica falha e preserva a carga anterior. A rota de patrimônio usa a série gravada para acrescentar o total corrigido de cada eleição. [Fonte e cálculo](docs/dicionario-de-dados.md#ipca-mensal) · [Disparo na hospedagem](docs/hospedagem.md#coletar-o-ipca)
 
 ### Edição semanal
 

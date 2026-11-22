@@ -1916,7 +1916,7 @@
           "parlamentares"
         ],
         "summary": "Listar o patrimônio declarado ao TSE por eleição",
-        "description": "Eleições com vínculo confirmado, em ordem crescente de ano.",
+        "description": "Eleições com vínculo confirmado, em ordem crescente de ano, com os totais nominais e a correção pelo IPCA quando disponível.",
         "operationId": "obter_patrimonio_parlamentar",
         "parameters": [
           {
@@ -2547,6 +2547,32 @@
         ],
         "title": "ContagemVotosParlamentar"
       },
+      "CorrecaoIpca": {
+        "properties": {
+          "indice": {
+            "type": "string",
+            "const": "IPCA",
+            "title": "Indice"
+          },
+          "mes_fim": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+            "title": "Mes Fim",
+            "description": "Último mês do IPCA disponível, incluído na correção."
+          },
+          "fonte": {
+            "$ref": "#/components/schemas/FontePatrimonio",
+            "description": "Observação do IPCA do mês final no Banco Central."
+          }
+        },
+        "type": "object",
+        "required": [
+          "indice",
+          "mes_fim",
+          "fonte"
+        ],
+        "title": "CorrecaoIpca"
+      },
       "DetalheParlamentar": {
         "properties": {
           "id": {
@@ -2841,6 +2867,26 @@
           },
           "fonte": {
             "$ref": "#/components/schemas/FontePatrimonio"
+          },
+          "mes_inicio": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+            "title": "Mes Inicio",
+            "description": "Outubro do ano da eleição, incluído na correção."
+          },
+          "total_corrigido_centavos": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 9007199254740991.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Corrigido Centavos",
+            "description": "Total em centavos corrigido pelo IPCA. Nulo sem total, sem cobertura completa do período ou acima do limite de centavos da API."
           }
         },
         "type": "object",
@@ -2849,7 +2895,9 @@
           "cargo",
           "uf",
           "total_centavos",
-          "fonte"
+          "fonte",
+          "mes_inicio",
+          "total_corrigido_centavos"
         ],
         "title": "EleicaoPatrimonio"
       },
@@ -3442,11 +3490,23 @@
             },
             "type": "array",
             "title": "Eleicoes"
+          },
+          "correcao_ipca": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CorrecaoIpca"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nula sem a série do IPCA no banco."
           }
         },
         "type": "object",
         "required": [
-          "eleicoes"
+          "eleicoes",
+          "correcao_ipca"
         ],
         "title": "PatrimonioParlamentar"
       },

@@ -116,7 +116,15 @@ def test_push_de_migration_e_manual_usam_mesmo_banco_e_fila(branch, ambiente):
 
 
 @pytest.mark.parametrize(
-    "nome", ["coleta.yml", "coleta-tse.yml", "migrar.yml", "enviar-edicao.yml", "agenda-sabado.yml"]
+    "nome",
+    [
+        "coleta.yml",
+        "coleta-tse.yml",
+        "coleta-ipca.yml",
+        "migrar.yml",
+        "enviar-edicao.yml",
+        "agenda-sabado.yml",
+    ],
 )
 def test_fila_nao_cancela_migration_pendente_ao_chegar_coleta(nome):
     workflow = ler(nome)
@@ -125,8 +133,9 @@ def test_fila_nao_cancela_migration_pendente_ao_chegar_coleta(nome):
     assert workflow["concurrency"]["queue"] == "max"
 
 
-def test_tse_so_dispara_manualmente_no_banco_da_branch():
-    workflow = ler("coleta-tse.yml")
+@pytest.mark.parametrize("nome", ["coleta-tse.yml", "coleta-ipca.yml"])
+def test_coleta_so_dispara_manualmente_no_banco_da_branch(nome):
+    workflow = ler(nome)
     job = workflow["jobs"]["coletar"]
     assert set(workflow["on"]) == {"workflow_dispatch"}
     for branch, ambiente in (("main", "producao"), ("develop", "desenvolvimento")):

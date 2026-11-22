@@ -21,6 +21,7 @@ TABELAS_DO_MVP = {
     "candidatura",
     "candidatura_patrimonio",
     "bem_declarado",
+    "ipca_mensal",
     "proposicao",
     "proposicao_tema",
     "video_sessao",

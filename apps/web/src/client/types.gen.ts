@@ -167,6 +167,26 @@ export type ContagemVotosParlamentar = {
 };
 
 /**
+ * CorrecaoIpca
+ */
+export type CorrecaoIpca = {
+    /**
+     * Indice
+     */
+    indice: 'IPCA';
+    /**
+     * Mes Fim
+     *
+     * Último mês do IPCA disponível, incluído na correção.
+     */
+    mes_fim: string;
+    /**
+     * Observação do IPCA do mês final no Banco Central.
+     */
+    fonte: FontePatrimonio;
+};
+
+/**
  * DetalheParlamentar
  */
 export type DetalheParlamentar = {
@@ -328,6 +348,18 @@ export type EleicaoPatrimonio = {
      */
     total_centavos: number | null;
     fonte: FontePatrimonio;
+    /**
+     * Mes Inicio
+     *
+     * Outubro do ano da eleição, incluído na correção.
+     */
+    mes_inicio: string;
+    /**
+     * Total Corrigido Centavos
+     *
+     * Total em centavos corrigido pelo IPCA. Nulo sem total, sem cobertura completa do período ou acima do limite de centavos da API.
+     */
+    total_corrigido_centavos: number | null;
 };
 
 /**
@@ -697,6 +729,10 @@ export type PatrimonioParlamentar = {
      * Eleicoes
      */
     eleicoes: Array<EleicaoPatrimonio>;
+    /**
+     * Nula sem a série do IPCA no banco.
+     */
+    correcao_ipca: CorrecaoIpca | null;
 };
 
 /**

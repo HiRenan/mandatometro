@@ -437,7 +437,7 @@ export const obterPatrimonioParlamentarQueryKey = (options: Options<ObterPatrimo
 /**
  * Listar o patrimônio declarado ao TSE por eleição
  *
- * Eleições com vínculo confirmado, em ordem crescente de ano.
+ * Eleições com vínculo confirmado, em ordem crescente de ano, com os totais nominais e a correção pelo IPCA quando disponível.
  */
 export const obterPatrimonioParlamentarOptions = (options: Options<ObterPatrimonioParlamentarData>) => queryOptions<ObterPatrimonioParlamentarResponse, ObterPatrimonioParlamentarError, ObterPatrimonioParlamentarResponse, ReturnType<typeof obterPatrimonioParlamentarQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

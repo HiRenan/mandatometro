@@ -1,6 +1,8 @@
 import csv
 import json
 from collections import Counter
+from datetime import UTC, date, datetime
+from decimal import Decimal
 from functools import partial
 from io import StringIO
 from pathlib import Path
@@ -9,7 +11,7 @@ from zipfile import ZipFile
 import httpx2
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import func, select, text, update
+from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.orm import Session
 
 from mandatometro.api.app import app
@@ -21,6 +23,7 @@ from mandatometro.db.modelos import (
     Candidatura,
     CandidaturaPatrimonio,
     Fonte,
+    IpcaMensal,
     Mandato,
     Parlamentar,
 )
@@ -206,6 +209,7 @@ def test_patrimonio_publico_distingue_total_zero_de_ausencia(
     with TestClient(app) as cliente:
         resposta = cliente.get(f"/parlamentares/{primeiro}/patrimonio")
         assert resposta.status_code == 200
+        assert resposta.json()["correcao_ipca"] is None
         eleicoes = resposta.json()["eleicoes"]
         assert [e["ano"] for e in eleicoes] == [2006, 2010, 2018, 2022, 2026]
         assert eleicoes[1]["uf"] == "BR"
@@ -214,7 +218,8 @@ def test_patrimonio_publico_distingue_total_zero_de_ausencia(
         assert eleicoes[-1]["total_centavos"] == 10030
         assert eleicoes[-1]["fonte"]["url"].endswith("/bem_candidato_2026.zip")
         assert eleicoes[-1]["fonte"]["coletado_em"].endswith("Z")
-        assert set(eleicoes[-1]) == {"ano", "cargo", "uf", "total_centavos", "fonte"}
+        assert eleicoes[-1]["mes_inicio"] == "2026-10"
+        assert all(e["total_corrigido_centavos"] is None for e in eleicoes)
         eleicoes = cliente.get(f"/parlamentares/{segundo}/patrimonio").json()["eleicoes"]
         assert [(e["ano"], e["total_centavos"]) for e in eleicoes] == [
             (2006, 6030),
@@ -223,10 +228,63 @@ def test_patrimonio_publico_distingue_total_zero_de_ausencia(
             (2022, 0),
             (2026, None),
         ]
-        assert cliente.get(f"/parlamentares/{terceiro}/patrimonio").json() == {"eleicoes": []}
+        assert cliente.get(f"/parlamentares/{terceiro}/patrimonio").json() == {
+            "eleicoes": [],
+            "correcao_ipca": None,
+        }
         ausente = cliente.get("/parlamentares/2147483647/patrimonio")
         assert ausente.status_code == 404
         assert ausente.json() == {"erro": "parlamentar_nao_encontrado"}
+
+
+def test_patrimonio_corrige_outubro_inclusive_e_exige_o_intervalo_completo(
+    arquivos, parlamentares, sessao, capsys
+):
+    _carregar(arquivos, capsys)
+    primeiro, segundo, terceiro, *_ = parlamentares
+    inicio = date(2022, 10, 1)
+    fim = date(2026, 10, 1)
+    fonte = Fonte(url="https://ipca.example/serie", coletado_em=datetime(2026, 11, 22, tzinfo=UTC))
+    taxas = {inicio: Decimal("10.00"), fim: Decimal("-5.00")}
+    sessao.add_all(
+        IpcaMensal(mes=mes, variacao_percentual=taxas.get(mes, Decimal("0.00")), fonte=fonte)
+        for ano in range(inicio.year, fim.year + 1)
+        for mes_do_ano in range(1, 13)
+        if inicio <= (mes := date(ano, mes_do_ano, 1)) <= fim
+    )
+    sessao.flush()
+
+    with TestClient(app) as cliente:
+        rota = f"/parlamentares/{primeiro}/patrimonio"
+        patrimonio = cliente.get(rota).json()
+        correcao = {
+            "indice": "IPCA",
+            "mes_fim": "2026-10",
+            "fonte": {"url": fonte.url, "coletado_em": "2026-11-22T00:00:00Z"},
+        }
+        assert patrimonio["correcao_ipca"] == correcao
+        assert cliente.get(f"/parlamentares/{terceiro}/patrimonio").json() == {
+            "eleicoes": [],
+            "correcao_ipca": correcao,
+        }
+        assert [
+            (e["ano"], e["mes_inicio"], e["total_centavos"], e["total_corrigido_centavos"])
+            for e in patrimonio["eleicoes"][-2:]
+        ] == [(2022, "2022-10", 444, 464), (2026, "2026-10", 10030, 9529)]
+        outros = cliente.get(f"/parlamentares/{segundo}/patrimonio").json()["eleicoes"]
+        assert [(e["total_centavos"], e["total_corrigido_centavos"]) for e in outros[-2:]] == [
+            (0, 0),
+            (None, None),
+        ]
+
+        sessao.execute(delete(IpcaMensal).where(IpcaMensal.mes == date(2024, 1, 1)))
+        eleicoes = cliente.get(rota).json()["eleicoes"]
+        assert [e["total_corrigido_centavos"] for e in eleicoes[-2:]] == [None, 9529]
+
+        sessao.execute(delete(IpcaMensal).where(IpcaMensal.mes == fim))
+        patrimonio = cliente.get(rota).json()
+        assert patrimonio["correcao_ipca"]["mes_fim"] == "2026-09"
+        assert patrimonio["eleicoes"][-1]["total_corrigido_centavos"] is None
 
 
 def test_repetir_atualiza_os_totais_sem_duplicar(arquivos, parlamentares, sessao, capsys):
