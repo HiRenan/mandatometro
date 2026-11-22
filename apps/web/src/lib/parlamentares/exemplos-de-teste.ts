@@ -204,6 +204,7 @@ export function votacaoDeExemplo(
 			},
 		],
 		url_oficial: "https://www.exemplo.leg.br/votacao/139",
+		url_video: null,
 		coletado_em: "2026-11-21T01:30:00+00:00",
 		casa: "camara",
 		placar: {

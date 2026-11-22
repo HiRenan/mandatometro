@@ -194,6 +194,47 @@ describe("o HTML da página da votação", () => {
 		expect(html).not.toContain("Limpar os filtros");
 	});
 
+	it("com o vídeo da sessão, a capa vem no HTML, entre o placar e o placar por partido, sem nada do YouTube", async () => {
+		api(() =>
+			json(
+				200,
+				votacaoDeExemplo({
+					url_video: "https://www.youtube.com/watch?v=Mnd268Cam01",
+				}),
+			),
+		);
+
+		const { status, html } = await pedir("/votacoes/139");
+
+		expect(status).toBe(200);
+		const video = html.indexOf('<section aria-labelledby="video-da-sessao"');
+		expect(video).toBeGreaterThan(html.indexOf('<h2 id="placar"'));
+		expect(video).toBeLessThan(html.indexOf("Placar por partido"));
+		expect(html).toContain(
+			'<a href="https://www.youtube.com/watch?v=Mnd268Cam01" class="capa-do-video">',
+		);
+		expect(html).toContain(
+			"publicado pela Câmara dos Deputados no YouTube, e não começa no momento desta votação.",
+		);
+		expect(html).not.toContain("<iframe");
+		expect(html).not.toContain("youtube-nocookie");
+	});
+
+	it("sem o vídeo, ou com um endereço fora do contrato, o bloco não aparece", async () => {
+		for (const url_video of [null, "https://youtu.be/Mnd268Cam01"]) {
+			api(() => json(200, votacaoDeExemplo({ url_video })));
+
+			const { html } = await pedir("/votacoes/139");
+
+			expect(html).toContain("Mostrando 5 de 5 nomes");
+			// O endereço vai nos dados da página, para a hidratação, e não vira
+			// link nem player.
+			expect(html).not.toContain("video-da-sessao");
+			expect(html).not.toContain("capa-do-video");
+			expect(html).not.toContain("<iframe");
+		}
+	});
+
 	it("o filtro do endereço mostra só o estado escolhido, com o campo marcado e o Limpar os filtros", async () => {
 		api(() => json(200, votacaoDeExemplo()));
 

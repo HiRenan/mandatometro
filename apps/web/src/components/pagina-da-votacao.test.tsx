@@ -163,9 +163,68 @@ describe("a página da votação", () => {
 	});
 });
 
+describe("o vídeo da sessão, na página da votação", () => {
+	const VIDEO = "https://www.youtube.com/watch?v=Mnd268Cam01";
+
+	it("a capa é um link para o YouTube; o toque põe no lugar o player do nocookie, com o foco nele", async () => {
+		await abrir(votacaoDeExemplo({ url_video: VIDEO }));
+		const bloco = screen.getByRole("region", { name: "Vídeo da sessão" });
+		const capa = within(bloco).getByRole("link", {
+			name: "Assistir ao vídeo da sessão Sessão de 20 de novembro de 2026 · Câmara dos Deputados · YouTube",
+		});
+
+		expect(capa.getAttribute("href")).toBe(VIDEO);
+		expect(document.querySelector("iframe")).toBeNull();
+		expect(bloco.textContent).toContain(
+			"O vídeo é da sessão inteira do Plenário, publicado pela Câmara dos Deputados no YouTube, e não começa no momento desta votação. O player do YouTube, do Google, só carrega depois do toque.",
+		);
+
+		capa.focus();
+		fireEvent.click(capa);
+
+		const player = await within(bloco).findByTitle(
+			"Vídeo da sessão de 20 de novembro de 2026, no YouTube",
+		);
+		expect(player.getAttribute("src")).toBe(
+			"https://www.youtube-nocookie.com/embed/Mnd268Cam01?autoplay=1",
+		);
+		expect(document.activeElement).toBe(player);
+		// A capa fica na caixa, para guardar a altura, mas fora do teclado.
+		expect(capa.hasAttribute("inert")).toBe(true);
+	});
+
+	it("com o Ctrl, o clique segue o link para o YouTube, sem o player", async () => {
+		await abrir(votacaoDeExemplo({ url_video: VIDEO }));
+		const capa = screen.getByRole("link", { name: /^Assistir ao vídeo/ });
+		let seguiu: boolean | undefined;
+		// O jsdom não navega: aqui, só se confere que o site deixou o link seguir.
+		const conferir = (evento: Event) => {
+			seguiu = !evento.defaultPrevented;
+			evento.preventDefault();
+		};
+		document.addEventListener("click", conferir);
+
+		fireEvent.click(capa, { ctrlKey: true });
+
+		document.removeEventListener("click", conferir);
+		expect(seguiu).toBe(true);
+		expect(document.querySelector("iframe")).toBeNull();
+	});
+
+	it("no Senado, a nota e a capa dizem Senado Federal", async () => {
+		await abrir(votacaoDeExemplo({ casa: "senado", url_video: VIDEO }));
+		const bloco = screen.getByRole("region", { name: "Vídeo da sessão" });
+
+		expect(bloco.textContent).toContain(
+			"publicado pelo Senado Federal no YouTube",
+		);
+		expect(bloco.textContent).toContain("· Senado Federal · YouTube");
+	});
+});
+
 describe("o quadro da votação, na edição e no painel", () => {
 	/** O quadro num site de mentira, com o id da votação ou sem ele, como no painel. */
-	async function mostrar(id?: number) {
+	async function mostrar(id?: number, video?: string | null) {
 		const raiz = createRootRoute({ component: () => <Outlet /> });
 		const inicio = createRoute({
 			getParentRoute: () => raiz,
@@ -179,6 +238,7 @@ describe("o quadro da votação, na edição e no painel", () => {
 					}}
 					Titulo="h3"
 					id={id}
+					video={video}
 				/>
 			),
 		});
@@ -206,8 +266,31 @@ describe("o quadro da votação, na edição e no painel", () => {
 	});
 
 	it("sem o id, como no painel de revisão, fica sem o link", async () => {
-		await mostrar();
+		await mostrar(undefined, "https://www.youtube.com/watch?v=Mnd268Cam01");
 
 		expect(screen.queryByRole("link")).toBeNull();
+	});
+
+	it("com o vídeo da sessão, o Vídeo da sessão leva ao bloco dele na página da votação", async () => {
+		await mostrar(139, "https://www.youtube.com/watch?v=Mnd268Cam01");
+
+		expect(
+			screen
+				.getByRole("link", {
+					name: "Vídeo da sessão da votação de 20 de novembro de 2026",
+				})
+				.getAttribute("href"),
+		).toBe("/votacoes/139#video-da-sessao");
+	});
+
+	it("sem o vídeo, ou com um endereço fora do contrato, só o Ver quem votou", async () => {
+		for (const video of [null, "https://youtu.be/Mnd268Cam01"]) {
+			await mostrar(139, video);
+
+			expect(
+				screen.getAllByRole("link").map((link) => link.textContent),
+			).toEqual(["Ver quem votou na votação de 20 de novembro de 2026"]);
+			cleanup();
+		}
 	});
 });
