@@ -439,7 +439,7 @@ uv run mandatometro coleta tse
 uv run mandatometro coleta tse --diretorio-zips /caminho/dos/zips
 ```
 
-O primeiro comando baixa os quatro ZIPs oficiais de candidaturas e redes de 2022 e 2026. O segundo lê as cópias da pasta indicada. A carga repete as mesmas chaves e acrescenta uma observação de fonte por arquivo concluído. O resumo JSON mostra, por Casa e ano, os pares ligados, sem par, em conflito e descartados por incompatibilidade com o mandato. Se um arquivo falhar, a execução tenta os demais e retorna 1. A gravação de candidaturas depende da leitura completa dos dois arquivos de candidaturas. Cada arquivo de redes atualiza os links do próprio ano. Consulte os [campos do TSE](docs/dicionario-de-dados.md#candidaturas-e-redes-do-tse) e o [disparo manual na hospedagem](docs/hospedagem.md#coletar-o-tse).
+O primeiro comando baixa os quatro ZIPs oficiais de candidaturas e redes de 2022 e 2026. O segundo lê as cópias da pasta indicada. A carga repete as mesmas chaves e acrescenta uma observação de fonte por arquivo concluído. O resumo JSON mostra, por Casa e ano, os pares ligados, sem par, em conflito e descartados por incompatibilidade com o mandato. Em 2026, `outro_cargo` conta as candidaturas à outra Casa alcançadas pelo CPF da âncora de 2022. Se um arquivo falhar, a execução tenta os demais e retorna 1. A gravação de candidaturas depende da leitura completa dos dois arquivos de candidaturas. Cada arquivo de redes atualiza os links do próprio ano. Consulte os [campos do TSE](docs/dicionario-de-dados.md#candidaturas-e-redes-do-tse) e o [disparo manual na hospedagem](docs/hospedagem.md#coletar-o-tse).
 
 ### Edição semanal
 
