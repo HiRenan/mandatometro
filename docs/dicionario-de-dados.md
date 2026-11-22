@@ -9,7 +9,7 @@ Bases, as duas sem chave de acesso:
 - **Câmara:** `https://dadosabertos.camara.leg.br/api/v2`
 - **Senado:** `https://legis.senado.leg.br/dadosabertos`
 
-Os endpoints de depois do MVP seguem nas notas da #10 e da #11. O TSE entra depois do MVP, nas issues #12 e #13.
+Os endpoints de depois do MVP seguem nas notas da #10 e da #11. A #12 cobre as candidaturas e redes do TSE, e a #13 trata dos bens declarados.
 
 ## Como ler este documento
 
@@ -608,12 +608,42 @@ Atos de pessoal da seção 2 e contratos e editais da seção 3 ficam fora do re
 
 Sem `FIRECRAWL_API_KEY`, o comando sai com código 2. A coleta confirma a conexão com o banco antes do primeiro pedido. Se o banco não responder, a saída é 1 e o resumo registra zero chamadas. Falha do provedor ou de gravação também sai com código 1 e mantém os atos já confirmados. Respostas HTTP 429 e 5xx permitem até três pedidos da mesma página. O cliente respeita o `Retry-After` e encerra a coleta se a espera solicitada exceder 60 segundos.
 
+## Candidaturas e redes do TSE
+
+O CDN do TSE publica `consulta_cand_AAAA.zip` e `rede_social_candidato_AAAA.zip`, ambos na pasta `consulta_cand`. Em 2022 e 2026, cada ZIP contém 27 CSVs de UF, o CSV `BR`, o consolidado `BRASIL` e `leiame.pdf`. O consolidado repete exatamente as linhas das partes. A coleta lê só `*_BRASIL.csv` em fluxo. Os CSVs dos dois anos usam latin-1, ponto e vírgula, aspas duplas e CRLF, com 50 colunas de candidaturas e 11 de redes. [Candidaturas de 2022](https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand/consulta_cand_2022.zip) · [Redes de 2022](https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand/rede_social_candidato_2022.zip) · [Candidaturas de 2026](https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand/consulta_cand_2026.zip) · [Redes de 2026](https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand/rede_social_candidato_2026.zip)
+
+| Registro | Campo | Procedência |
+| --- | --- | --- |
+| `candidatura` | `id` | Identificador interno gerado pelo banco. |
+| | `ano`, `codigo_eleicao` e `id_externo` | Chave única com `ANO_ELEICAO`, `CD_ELEICAO` e `SQ_CANDIDATO`. O último pode ter 12 dígitos. |
+| | `cargo` | `CD_CARGO` vale 6 para deputado federal, 5 para senador, 9 para primeiro suplente e 10 para segundo suplente. |
+| | `uf`, `partido`, `numero` e `nome_urna` | `SG_UF`, `SG_PARTIDO`, `NR_CANDIDATO` como texto e `NM_URNA_CANDIDATO`. |
+| | `resultado` e `resultado_bruto` | `CD_SIT_TOT_TURNO`. Os códigos 1, 2, 3, 4 e 5 viram `eleito`, `eleito_por_qp`, `eleito_por_media`, `nao_eleito` e `suplente`. O código -1 (`#NULO`) vira `sem_resultado`. Um código novo entra como `outro` e é conservado em `resultado_bruto`. |
+| | `parlamentar_id` | FK para o parlamentar identificado no cadastro do Congresso. |
+| | `fonte_id` | FK da observação do ZIP de candidaturas. |
+| `link_candidatura` | `candidatura_id` | FK obtida por `AA_ELEICAO`, `CD_ELEICAO` e `SQ_CANDIDATO`. A UF também deve coincidir. |
+| | `ordem` e `url` | `NR_ORDEM_REDE_SOCIAL` e `DS_URL`. A ordem é única na candidatura. |
+| | `fonte_id` | FK da observação do ZIP de redes. |
+
+Em 2026, `CD_SITUACAO_CANDIDATURA` veio todo como `-3` (`#NE`) no recorte. O resultado eleitoral é `CD_SIT_TOT_TURNO`. A fonte guarda a URL oficial do ZIP e a hora da coleta. Para as redes, endereços repetidos conservam a menor ordem, domínios sem esquema recebem HTTPS e endereços malformados entram nos descartes. A validação do endereço é local.
+
+### Ligação com os parlamentares
+
+A coleta começa pelo nome parlamentar, comparado aos nomes de urna e civil com caixa, acentos, pontuação e espaços normalizados. A UF do mandato e o grupo de cargos da Casa limitam essa busca. Um par nominal único pode fornecer um CPF do TSE para buscar os dois anos e reconhecer uma troca de UF. O CPF serve apenas durante a execução. O vínculo final precisa ser único tanto para o parlamentar naquele ano quanto para a candidatura.
+
+Sem confirmação pelo mesmo CPF nos dois anos, a candidatura de 2022 precisa ser compatível com o mandato. Para mandato iniciado em 2023, o resultado precisa ser de eleito ou suplente. O mandato de senador iniciado em 2019 fica fora dessa ligação nominal de 2022. A candidatura de 2026 pode ter qualquer resultado, pois a eleição é posterior ao início dos mandatos do recorte.
+
+O JSON conta `ligados`, `sem_par`, `em_conflito` e `derrubados_pela_trava` por Casa e ano, além das gravações, fontes, descartes e falhas por arquivo. Uma linha com quantidade errada de campos ou valor inválido entra nos descartes e as demais seguem. Um ZIP ausente, membro ou cabeçalho inválido, CSV ilegível ou falha de gravação deixa o resto da carga seguir e retorna código 1. Os campos do ano de um arquivo ausente ficam zerados para a ligação. Uma recoleta com os dois ZIPs de candidaturas íntegros reconcilia os vínculos de quem está em exercício. Uma falha de leitura preserva os registros anteriores do arquivo.
+
+Para ligar as eleições históricas na #13, as chaves das candidaturas ligadas permitem reler `consulta_cand` e recuperar os identificadores em memória. A busca percorre todas as UFs. Em 2024 o CPF vem vazio e em 2012 falta em parte das linhas, segundo as notas da #13. Nesses casos, a ligação usa título de eleitor com data de nascimento. [Issue da série de bens](https://github.com/HiRenan/mandatometro/issues/13)
+
 ## Campos pessoais
 
 As regras de uso, exposição e descarte estão em [dados pessoais](dados-pessoais.md).
 
 - **Câmara:** `/deputados/{id}` devolve `cpf` e `dataNascimento`. A [fixture da Câmara](../apps/backend/tests/fixtures/README.md#dados-pessoais) tem valores fictícios.
 - O Senado **não** devolve CPF nos endpoints que usamos. O `/senador/{cod}`, que não usamos, traz `DadosBasicosParlamentar.DataNascimento`, `Naturalidade`, `UfNaturalidade` e `EnderecoParlamentar`: quem gravar essa resposta troca a data de nascimento, como no `/deputados/{id}`.
+- **TSE.** `NR_CPF_CANDIDATO`, `NR_TITULO_ELEITORAL_CANDIDATO` e `DT_NASCIMENTO` servem exclusivamente para ligação em memória. Os arquivos de teste da #12 usam valores inventados.
 
 Nome, partido, UF e voto de parlamentar **não** são dados pessoais protegidos neste sentido: são atos públicos de agente público, e é justamente o que a newsletter mostra.
 
@@ -621,6 +651,4 @@ Nome, partido, UF e voto de parlamentar **não** são dados pessoais protegidos 
 
 - **Separar a votação de mérito das de rito.** Das 27 votações do plenário da Câmara na semana do exemplo, a maioria é procedimental ("Aprovada a Emenda de Redação", "Aprovada a Redação Final"), e as 4 do Senado eram todas da mesma PEC. A newsletter precisa de um critério para escolher o que contar. Fica para a #22, que monta a edição.
 - **As orientações de bancada,** depois do MVP (decisão do Renan na #7): o banco do MVP não tem tabela para elas.
-- **O TSE,** depois do MVP (#12 e #13). `SQ_CANDIDATO` liga os arquivos dentro de uma eleição.
-- Os CSVs do TSE vêm em latin-1, separados por `;`, um por UF dentro de cada ZIP.
-- A mesma pessoa se liga entre eleições do TSE pelo CPF. Em 2024 o CPF vem vazio e em 2012 falta em parte das linhas: nesses anos, use o título de eleitor e confira a data de nascimento.
+- **A série de bens do TSE** de 2006 a 2026 fica na #13 e usa os vínculos da #12 como ponto de partida.

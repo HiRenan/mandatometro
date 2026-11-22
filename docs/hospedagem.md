@@ -65,6 +65,7 @@ Comece depois de conferir a inscrição de teste no ambiente anterior. A publica
 | --- | --- | --- |
 | Coleta diária | 03h17 de Brasília (`17 6 * * *` UTC), se `COLETAS_ATIVAS=true` | YAML da `develop`, checkout da `main`, banco `producao` |
 | Coleta manual | Botão Run workflow | `develop` → `desenvolvimento`; `main` → `producao` |
+| Coletar TSE | Somente Run workflow | Commit do disparo. `develop` usa `desenvolvimento` e `main` usa `producao` |
 | Agenda de sábado | 04h47 de Brasília (`47 7 * * 6` UTC), se `AGENDA_SABADO_ATIVA=true` | YAML da `develop`, checkout da `main`, banco `producao` |
 | Preparo manual da edição | Botão Run workflow, com período opcional | Commit do disparo (`github.sha`). `develop` usa `desenvolvimento` e `main` usa `producao` |
 | Envio dominical | 10h37 de Brasília (`37 13 * * 0` UTC), se `ENVIOS_ATIVOS=true` | YAML da `develop`, checkout da `main`, banco `producao` |
@@ -77,6 +78,14 @@ Sem o secret da URL direta, a migration no push mostra um aviso e pula antes de 
 As duas Casas rodam uma por vez, com até 30 minutos cada, e a segunda é tentada mesmo se a primeira falhar. Coleta, agenda de sábado, migration e envio compartilham a fila `banco-producao` ou `banco-desenvolvimento`. `cancel-in-progress: false` deixa terminar quem já começou, e `queue: max` preserva até 100 execuções pendentes. A ordem pelo horário do push pode variar. Falha ou cancelamento pede conferir o último sucesso e, se necessário, disparar a migration de reserva. O cron pode atrasar ou ser descartado. Em repositório público, fica inativo após 60 dias sem atividade. [Concorrência](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency), [agendamento](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
 
 Para recuperar uma lacuna maior, preencha **inicio e fim juntos**, em `AAAA-MM-DD`, no disparo manual da coleta. Sem datas, valem os sete dias completos anteriores em Brasília. O deploy da Vercel não espera o Actions. Na hospedagem, siga as [convenções de migrations](../AGENTS.md#conventions). Não há migration na importação, no build ou na requisição da API.
+
+## Coletar o TSE
+
+1. Confirme que **Migrar banco** aplicou a revisão `0012` e que **Coletar Congresso** carregou os parlamentares em exercício na mesma branch.
+2. Em **Actions → Coletar TSE → Run workflow**, escolha `develop` para desenvolvimento ou `main` para produção. O job usa o segredo `DATABASE_URL` com pool do ambiente, aguarda a fila desse banco e tem até 10 minutos.
+3. Confira o commit executado e a linha JSON. `completa: true` confirma os quatro arquivos, e as contagens por Casa e ano indicam a cobertura da ligação. Se um arquivo falhar, a execução tenta os demais e fica vermelha. Repita o disparo para recuperar a carga.
+
+Os ZIPs são temporários no runner. O resumo contém apenas contagens e os registros confirmados ficam no banco com a URL oficial de cada arquivo. [Campos e ligação do TSE](dicionario-de-dados.md#candidaturas-e-redes-do-tse)
 
 ## Ativar e recuperar a agenda de sábado
 
