@@ -11,7 +11,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from mandatometro.coleta.cli import (
-    adicionar_argumento_videos,
+    adicionar_argumentos_de_preenchimento,
     adicionar_argumentos_periodo,
     mostrar_resumo,
     resolver_periodo,
@@ -26,6 +26,7 @@ from mandatometro.coleta.persistencia import (
     salvar_votacao,
     sincronizar_votos,
 )
+from mandatometro.coleta.temas import coletar_temas, preencher_temas
 from mandatometro.coleta.tipos import DadosVoto, ResumoColeta
 from mandatometro.coleta.videos import (
     URL_RECUSADA,
@@ -533,6 +534,13 @@ def coletar(
         resumo.completa = False
         resumo.erro = _erro_seguro(erro)
     coletar_videos(resumo, sessoes, http=http, abrir_sessao=abrir_sessao, consultar=_video_encontro)
+    coletar_temas(
+        resumo,
+        sorted(coleta.proposicoes),
+        http=http,
+        abrir_sessao=abrir_sessao,
+        processos=coleta.processos,
+    )
     resumo.chamadas = http.chamadas
     resumo.tentativas_extras = http.tentativas_extras
     resumo.duracao_s = round(time.monotonic() - comeco, 3)
@@ -546,7 +554,9 @@ def _executar(args: argparse.Namespace) -> int:
         print(str(erro))
         return 2
     with ClienteHttp(BASE) as http:
-        if args.somente_videos:
+        if args.somente_temas:
+            resumo = preencher_temas(inicio, fim, casa="senado", http=http, abrir_sessao=sessao)
+        elif args.somente_videos:
             resumo = preencher_videos(
                 inicio,
                 fim,
@@ -565,5 +575,5 @@ def _executar(args: argparse.Namespace) -> int:
 def registrar(casas: argparse._SubParsersAction) -> None:
     parser = casas.add_parser("senado", help="coleta votações e senadores em exercício")
     adicionar_argumentos_periodo(parser)
-    adicionar_argumento_videos(parser)
+    adicionar_argumentos_de_preenchimento(parser)
     parser.set_defaults(rodar=_executar)

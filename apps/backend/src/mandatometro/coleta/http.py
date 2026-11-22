@@ -29,6 +29,23 @@ class ErroJsonInvalido(ErroColeta):
     """A resposta HTTP foi bem-sucedida, mas o conteúdo não é JSON UTF-8 válido."""
 
 
+class ErroColetaTemporario(ErroColeta):
+    """A fonte segue indisponível após as tentativas ou pediu uma espera longa."""
+
+
+class PrazoConsultaEsgotado(ErroColeta):
+    """A consulta opcional não cabe no tempo que resta."""
+
+    def __init__(self):
+        super().__init__("Prazo da consulta opcional esgotado.")
+
+
+def _dormir(segundos: float, prazo: float | None) -> None:
+    if prazo is not None and time.monotonic() + segundos >= prazo:
+        raise PrazoConsultaEsgotado()
+    time.sleep(segundos)
+
+
 @dataclass(frozen=True)
 class Resposta:
     url: str
@@ -91,12 +108,14 @@ class ClienteHttp:
             raise ErroColeta("Link fora da base oficial da coleta.")
         return url
 
-    def _pausar(self) -> None:
+    def _pausar(self, prazo: float | None) -> None:
         espera_da_fonte = self._adiado_ate - time.monotonic()
         if espera_da_fonte > 60:
-            raise ErroColeta("A fonte ainda exige espera superior a 60 segundos; tente mais tarde.")
+            raise ErroColetaTemporario(
+                "A fonte ainda exige espera superior a 60 segundos; tente mais tarde."
+            )
         if espera_da_fonte > 0:
-            time.sleep(espera_da_fonte)
+            _dormir(espera_da_fonte, prazo)
         self._adiado_ate = 0
         intervalo = self._intervalo
         if self._robots:
@@ -108,7 +127,7 @@ class ClienteHttp:
         if self._ultimo_inicio is not None:
             espera = intervalo - (agora - self._ultimo_inicio)
             if espera > 0:
-                time.sleep(espera)
+                _dormir(espera, prazo)
         self._ultimo_inicio = time.monotonic()
 
     def _espera(self, resposta: httpx2.Response | None, tentativa: int) -> float:
@@ -126,14 +145,21 @@ class ClienteHttp:
             espera = max(espera, adicional)
             self._adiado_ate = max(self._adiado_ate, time.monotonic() + max(0, adicional))
         if espera > 60:
-            raise ErroColeta("A fonte solicitou espera superior a 60 segundos; tente mais tarde.")
+            raise ErroColetaTemporario(
+                "A fonte solicitou espera superior a 60 segundos; tente mais tarde."
+            )
         return espera
 
-    def _enviar(self, url: str, *, robots: bool = False) -> httpx2.Response:
+    def _enviar(self, url: str, *, robots: bool, prazo: float | None) -> httpx2.Response:
         for tentativa in range(self._tentativas):
             if tentativa:
                 self.tentativas_extras += 1
-            self._pausar()
+            self._pausar(prazo)
+            timeout = self._timeout
+            if prazo is not None:
+                timeout = min(timeout, prazo - time.monotonic())
+                if timeout <= 0:
+                    raise PrazoConsultaEsgotado()
             self.chamadas += 1
             resposta = None
             try:
@@ -143,7 +169,7 @@ class ClienteHttp:
                         "User-Agent": USER_AGENT,
                         "Accept": "text/plain" if robots else "application/json",
                     },
-                    timeout=self._timeout,
+                    timeout=timeout,
                     follow_redirects=False,
                 )
             except httpx2.TransportError:
@@ -153,16 +179,16 @@ class ClienteHttp:
                     return resposta
             espera = self._espera(resposta, tentativa)
             if tentativa + 1 < self._tentativas:
-                time.sleep(espera)
-        raise ErroColeta("Falha transitória na fonte após esgotar as tentativas.")
+                _dormir(espera, prazo)
+        raise ErroColetaTemporario("Falha transitória na fonte após esgotar as tentativas.")
 
-    def _obter(self, url: str, *, robots: bool = False) -> httpx2.Response:
+    def _obter(self, url: str, *, robots: bool = False, prazo: float | None) -> httpx2.Response:
         for _ in range(6):
             if not robots:
                 url = self._url(url)
                 if not self._robots.can_fetch("mandatometro", url):
                     raise ErroColeta("Consulta proibida pelo robots.txt.")
-            resposta = self._enviar(url, robots=robots)
+            resposta = self._enviar(url, robots=robots, prazo=prazo)
             if resposta.status_code not in (301, 302, 303, 307, 308):
                 return resposta
             destino = resposta.headers.get("location")
@@ -173,11 +199,11 @@ class ClienteHttp:
                 raise ErroColeta("Redirecionamento fora de HTTPS.")
         raise ErroColeta("Limite de redirecionamentos excedido na fonte.")
 
-    def _ler_robots(self) -> None:
+    def _ler_robots(self, prazo: float | None) -> None:
         if self._robots is not None and time.monotonic() - self._robots_em < 86400:
             return
         url = f"{self._base.scheme}://{self._base.netloc}/robots.txt"
-        resposta = self._obter(url, robots=True)
+        resposta = self._obter(url, robots=True, prazo=prazo)
         parser = RobotFileParser(url)
         if 400 <= resposta.status_code < 500:
             # RFC 9309 §2.3.1.3: indisponibilidade do arquivo, inclusive 403, não é uma regra REP.
@@ -195,12 +221,13 @@ class ClienteHttp:
         caminho: str,
         *,
         params: Mapping[str, str | int] | None = None,
+        prazo: float | None = None,
     ) -> Resposta:
         url = self._url(caminho)
         if params:
             url = str(httpx2.URL(url, params=params))
-        self._ler_robots()
-        resposta = self._obter(url)
+        self._ler_robots(prazo)
+        resposta = self._obter(url, prazo=prazo)
         if not resposta.is_success:
             raise ErroColeta(
                 f"A fonte respondeu HTTP {resposta.status_code}.",

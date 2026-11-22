@@ -18,6 +18,11 @@ on:
         description: "Somente vídeos"
         type: boolean
         default: false
+      somente_temas:
+        description: "Preenche somente os temas das proposições de votações já gravadas"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -70,3 +75,4 @@ jobs:
         run: >-
           uv run --no-sync python scripts/tarefas.py coletar "$CASA"
           ${{ github.event_name == 'workflow_dispatch' && inputs.somente_videos && '--somente-videos' || '' }}
+          ${{ github.event_name == 'workflow_dispatch' && inputs.somente_temas && '--somente-temas' || '' }}

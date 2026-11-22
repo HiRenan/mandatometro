@@ -14,8 +14,14 @@ def adicionar_argumentos_periodo(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--fim", metavar="AAAA-MM-DD", help="último dia, inclusive")
 
 
-def adicionar_argumento_videos(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument(
+def adicionar_argumentos_de_preenchimento(parser: argparse.ArgumentParser) -> None:
+    modos = parser.add_mutually_exclusive_group()
+    modos.add_argument(
+        "--somente-temas",
+        action="store_true",
+        help="preenche temas pelas proposições das votações já gravadas",
+    )
+    modos.add_argument(
         "--somente-videos", action="store_true", help="preenche apenas vídeos de votações gravadas"
     )
 

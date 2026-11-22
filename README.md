@@ -141,6 +141,7 @@ erDiagram
     video_sessao |o--o{ votacao : "registra"
     votacao ||--o{ votacao_proposicao : "afeta"
     proposicao ||--o{ votacao_proposicao : "é afetada"
+    proposicao ||--o{ proposicao_tema : "tem"
     edicao ||--o{ item_edicao : "tem"
     edicao |o--o{ inscrito : "última aceita"
     fonte ||--o{ parlamentar : "comprova"
@@ -148,6 +149,7 @@ erDiagram
     fonte ||--o{ candidatura : "comprova"
     fonte ||--o{ candidatura_patrimonio : "comprova candidatura e bens"
     fonte ||--o{ proposicao : "comprova"
+    fonte ||--o{ proposicao_tema : "classifica"
     fonte ||--o{ votacao : "comprova"
     fonte ||--o{ video_sessao : "comprova"
     fonte ||--o{ voto : "comprova"
@@ -218,6 +220,11 @@ erDiagram
         string ementa
         string apelido
         string url_inteiro_teor
+        int fonte_id FK
+    }
+    proposicao_tema {
+        int proposicao_id PK, FK
+        string tema PK
         int fonte_id FK
     }
     votacao {
@@ -444,6 +451,15 @@ uv run mandatometro coleta senado --somente-videos --inicio 2026-11-13 --fim 202
 A coleta normal renova as fontes editoriais mesmo quando o único dado novo é o vídeo. Para um rascunho pronto para publicar, use `--somente-videos` para conservar a revisão.
 
 O resumo inclui as contagens em `videos`. Consulte [vídeos das sessões](docs/dicionario-de-dados.md#vídeos-das-sessões) e o [preenchimento em hospedagem](docs/hospedagem.md#preencher-vídeos-das-sessões).
+
+**Preencher temas de votações já gravadas.** Em `apps/backend`, com as migrations aplicadas e `DATABASE_URL` explícito, use a janela das votações que quer cobrir.
+
+```bash
+uv run mandatometro coleta camara --somente-temas --inicio 2026-11-13 --fim 2026-11-20
+uv run mandatometro coleta senado --somente-temas --inicio 2026-11-13 --fim 2026-11-20
+```
+
+Os comandos consultam as proposições ainda sem tema que estão ligadas a votações salvas no período e gravam só os temas oficiais convertidos e suas fontes. A coleta normal também preenche temas. Confira `temas` no resumo de cada Casa. Falha de consulta ou gravação temática dá saída 1 no modo `--somente-temas` e fica no resumo da coleta normal, preservando a votação e os temas já gravados. [Regras de conversão](docs/dicionario-de-dados.md#temas-das-proposições-e-das-votações) · [Preenchimento na hospedagem](docs/hospedagem.md#preencher-temas-de-votações-já-coletadas)
 
 **Coleta de atos da legislação federal.** Em `apps/backend`, aplique as migrations e passe `DATABASE_URL` com o banco de destino.
 

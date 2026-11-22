@@ -15,7 +15,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from mandatometro.coleta.cli import (
-    adicionar_argumento_videos,
+    adicionar_argumentos_de_preenchimento,
     adicionar_argumentos_periodo,
     mostrar_resumo,
     resolver_periodo,
@@ -30,6 +30,7 @@ from mandatometro.coleta.persistencia import (
     salvar_votacao,
     sincronizar_votos,
 )
+from mandatometro.coleta.temas import coletar_temas, preencher_temas
 from mandatometro.coleta.tipos import DadosVoto, ResumoColeta
 from mandatometro.coleta.videos import (
     URL_RECUSADA,
@@ -50,6 +51,9 @@ from mandatometro.db.modelos import (
 BASE = "https://dadosabertos.camara.leg.br/api/v2"
 PUBLICA = "https://www.camara.leg.br"
 ID_PLENARIO = 180
+LIMITE_TEMAS_S = 4 * 60
+# O job tem teto de 30 min, incluindo o preparo do ambiente e a saída do CLI.
+LIMITE_COLETA_COM_TEMAS_S = 25 * 60
 logger = logging.getLogger(__name__)
 FALHAS = (ErroColeta, ValueError, KeyError, TypeError, SQLAlchemyError)
 
@@ -571,6 +575,13 @@ def coletar(
         )
         logger.error("Coleta interrompida: %s", resumo.erro)
     coletar_videos(resumo, sessoes, http=http, abrir_sessao=criar_sessao, consultar=_video_evento)
+    coletar_temas(
+        resumo,
+        sorted(coleta.proposicoes_gravadas),
+        http=http,
+        abrir_sessao=criar_sessao,
+        prazo=min(time.monotonic() + LIMITE_TEMAS_S, comeco + LIMITE_COLETA_COM_TEMAS_S),
+    )
     resumo.chamadas = http.chamadas
     resumo.tentativas_extras = http.tentativas_extras
     resumo.duracao_s = round(time.monotonic() - comeco, 2)
@@ -580,7 +591,7 @@ def coletar(
 def registrar_comando(casas) -> None:
     parser = casas.add_parser("camara", help="coleta plenário e deputados em exercício da Câmara")
     adicionar_argumentos_periodo(parser)
-    adicionar_argumento_videos(parser)
+    adicionar_argumentos_de_preenchimento(parser)
 
     def rodar(args: argparse.Namespace) -> int:
         try:
@@ -588,7 +599,11 @@ def registrar_comando(casas) -> None:
         except ValueError as erro:
             parser.error(str(erro))
         with ClienteHttp(BASE) as http:
-            if args.somente_videos:
+            if args.somente_temas:
+                resumo = preencher_temas(
+                    inicio, fim, casa="camara", http=http, abrir_sessao=sessao_do_banco
+                )
+            elif args.somente_videos:
                 resumo = preencher_videos(
                     inicio,
                     fim,
