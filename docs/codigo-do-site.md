@@ -10,7 +10,7 @@ O `DESIGN.md` e o `PRODUCT.md`, na raiz, seguem o formato do Impeccable.
 
 ## Jogo das Comissões
 
-- A rolagem interna mede o trecho novo da folha junto do botão, depois que o React atualiza o palco. O foco usa `preventScroll` para preservar esse enquadramento. Uma fala seguida de outra conserva a posição, com a altura reservada pelas duas versões do rótulo do botão e pelas falas do grupo.
+- A rolagem interna mede o trecho novo da folha junto do botão, depois que o React atualiza o palco. O foco usa `preventScroll` para preservar esse enquadramento. A caixa reserva a altura das duas versões do rótulo do botão e das falas do grupo. Com letra grande, o Tab até “Continuar” pode levar o começo da caixa para cima da janela. Nesse caso, a fala seguinte traz o começo de volta. Nas demais falas seguidas, a rolagem fica onde a pessoa a deixou.
 - No Edge, o `pointerdown` do toque chegou cedo demais para iniciar a trilha. O jogo começa a tocar no `click` nativo do palco, que também chega ao acionar um botão pelo teclado. Ao sair da rota, a desmontagem silencia o áudio local. O `pagehide` faz o mesmo quando o navegador guarda o documento para a volta pelo histórico.
 
 ## Regras do visual

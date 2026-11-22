@@ -177,6 +177,30 @@ describe("a tela do jogo", () => {
 		expect(window.scrollTo).toHaveBeenCalledTimes(1);
 	});
 
+	it("traz de volta o começo da fala seguinte depois de rolar até Continuar", async () => {
+		vi.stubGlobal("matchMedia", () => ({ matches: true }));
+		const caixas: Record<string, [number, number]> = {
+			"jogo-caixa": [12, 1046],
+		};
+		medirCaixas(caixas);
+		mostrar();
+		fireEvent.click(await iniciarPartida());
+
+		// Em letra grande, o teclado leva a página até o botão no pé da fala.
+		vi.stubGlobal("scrollY", 1408);
+		caixas["jogo-caixa"] = [-640, 394];
+		vi.mocked(window.scrollTo).mockClear();
+		fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+
+		expect(document.activeElement).toBe(
+			document.querySelector(".jogo-caixa [data-foco]"),
+		);
+		expect(window.scrollTo).toHaveBeenCalledExactlyOnceWith({
+			top: 756,
+			behavior: "auto",
+		});
+	});
+
 	it("reserva a altura das falas seguidas e lê quem está falando junto do texto", async () => {
 		mostrar();
 		fireEvent.click(await iniciarPartida());

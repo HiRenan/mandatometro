@@ -42,13 +42,17 @@ function falasSeguidas(passos: Passo[], indice: number): string[] {
 	return [...falas];
 }
 
-function rolarParaOPasso(bloco: Element) {
+function rolarParaOPasso(bloco: Element, falaSeguida: boolean) {
 	const inicio = bloco.querySelector("[data-inicio-do-passo]") ?? bloco;
 	const topo = inicio.getBoundingClientRect().top;
-	const fim = bloco.getBoundingClientRect().bottom;
 	const janela = window.visualViewport;
-	const altura = janela?.height ?? window.innerHeight;
 	const alto = janela?.offsetTop ?? 0;
+	if (falaSeguida && topo >= alto) {
+		return;
+	}
+
+	const fim = bloco.getBoundingClientRect().bottom;
+	const altura = janela?.height ?? window.innerHeight;
 	const baixo = alto + altura;
 	const sobra = altura - (fim - topo);
 	const respiro = 12;
@@ -101,9 +105,8 @@ export function Jogo({
 	const tipo = escolha ? "resposta" : (passo?.tipo ?? partida.fase);
 	const tipoAnterior = useRef(tipo);
 
-	// O foco acompanha cada passo. A rolagem só enquadra o conteúdo quando
-	// muda o tipo do passo, inclusive da pergunta para a resposta. Na primeira
-	// abertura, o lugar da página é o da navegação do site.
+	// A primeira abertura segue a navegação do site. Entre falas, a página
+	// conserva a posição enquanto o começo da caixa continuar à vista.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: duas falas têm o mesmo tipo, mas cada uma precisa receber o foco quando a cena ou o passo muda.
 	useLayoutEffect(() => {
 		const mudouOTipo = tipoAnterior.current !== tipo;
@@ -116,8 +119,8 @@ export function Jogo({
 		bloco
 			.querySelector<HTMLElement>("[data-foco]")
 			?.focus({ preventScroll: true });
-		if (mudouOTipo) {
-			rolarParaOPasso(bloco);
+		if (mudouOTipo || tipo === "fala") {
+			rolarParaOPasso(bloco, !mudouOTipo);
 		}
 	}, [tipo, partida.cena, partida.passo]);
 
