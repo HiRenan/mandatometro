@@ -1,5 +1,6 @@
 // biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
 
+import { useId } from "react";
 import { BOTAO_CONTINUAR } from "@/components/botao-continuar";
 import { classes } from "@/lib/classes";
 import { semCliqueDuplo } from "@/lib/clique";
@@ -37,7 +38,21 @@ export function Decisao({
 	aoEscolher: (opcao: string) => void;
 	aoAvancar: () => void;
 }) {
+	const id = useId();
 	const escolhida = escolha?.opcao;
+	const descricao =
+		decisao.natureza === "regra"
+			? [
+					...decisao.opcoes.flatMap((opcao, indice) =>
+						opcao.texto === escolhida || opcao.resultado === "certa"
+							? [`${id}-opcao-${indice}`]
+							: [],
+					),
+					`${id}-fundamento`,
+				].join(" ")
+			: decisao.desfecho
+					.map((_, indice) => `${id}-desfecho-${indice}`)
+					.join(" ");
 
 	return (
 		<div className="jogo-decisao">
@@ -48,13 +63,24 @@ export function Decisao({
 				className="jogo-pergunta"
 				tabIndex={-1}
 				data-foco={escolhida === undefined ? "true" : undefined}
+				aria-describedby={`${id}-natureza`}
 			>
 				{decisao.pergunta}
 			</p>
-			<p className="jogo-natureza">{AVISO_DA_NATUREZA[decisao.natureza]}</p>
-			<ul role="list" className="jogo-opcoes">
-				{decisao.opcoes.map((opcao) => (
-					<li key={opcao.texto}>
+			<p className="jogo-natureza" id={`${id}-natureza`}>
+				{AVISO_DA_NATUREZA[decisao.natureza]}
+			</p>
+			<ul
+				role="list"
+				className="jogo-opcoes"
+				data-inicio-do-passo={
+					escolhida !== undefined && decisao.natureza === "regra"
+						? "true"
+						: undefined
+				}
+			>
+				{decisao.opcoes.map((opcao, indice) => (
+					<li key={opcao.texto} id={`${id}-opcao-${indice}`}>
 						<button
 							type="button"
 							className="jogo-opcao"
@@ -77,31 +103,36 @@ export function Decisao({
 				))}
 			</ul>
 			{escolhida !== undefined ? (
-				<div className="jogo-feedback" tabIndex={-1} data-foco="true">
+				<div
+					className="jogo-feedback"
+					data-inicio-do-passo={
+						decisao.natureza === "opiniao" ? "true" : undefined
+					}
+				>
+					<p
+						className="jogo-eco"
+						tabIndex={-1}
+						data-foco="true"
+						aria-describedby={descricao}
+					>
+						{decisao.natureza === "opiniao"
+							? `Você ${decisao.eco === "votou" ? "votou" : "escolheu"} ${escolhida.toLocaleLowerCase("pt-BR")}.`
+							: `Você escolheu “${escolhida}”. ${escolha?.comoNoRegimento ? "É o instrumento do regimento." : "O instrumento do regimento era outro."}`}
+					</p>
 					{decisao.natureza === "opiniao" ? (
-						<>
-							<p className="jogo-eco">
-								Você {decisao.eco === "votou" ? "votou" : "escolheu"}{" "}
-								{escolhida.toLocaleLowerCase("pt-BR")}.
+						decisao.desfecho.map((paragrafo, indice) => (
+							<p id={`${id}-desfecho-${indice}`} key={paragrafo}>
+								{paragrafo}
 							</p>
-							{decisao.desfecho.map((paragrafo) => (
-								<p key={paragrafo}>{paragrafo}</p>
-							))}
-						</>
+						))
 					) : (
-						<p className="jogo-eco">
-							Você escolheu “{escolhida}”.{" "}
-							{escolha?.comoNoRegimento
-								? "É o instrumento do regimento."
-								: "O instrumento do regimento era outro."}
-						</p>
-					)}
-					{decisao.natureza === "regra" ? (
 						<>
 							{decisao.carimbo ? <Carimbo selo={decisao.carimbo} /> : null}
-							<p className="jogo-fundamento">{decisao.fundamento}</p>
+							<p className="jogo-fundamento" id={`${id}-fundamento`}>
+								{decisao.fundamento}
+							</p>
 						</>
-					) : null}
+					)}
 					<div className="jogo-acoes">
 						<button
 							type="button"
