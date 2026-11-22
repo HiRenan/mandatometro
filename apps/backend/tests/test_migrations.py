@@ -50,6 +50,8 @@ def test_as_migrations_sobem_do_zero_descem_e_batem_com_os_modelos(engine_de_tes
     assert _tabelas(engine_de_teste) == set()
     assert not _tem_a_extensao_vector(engine_de_teste)
 
+    alembic("upgrade", "0013")
+    assert {"candidatura", "link_candidatura"} <= _tabelas(engine_de_teste)
     alembic("upgrade", "head")
     assert _tabelas(engine_de_teste) == TABELAS_DO_MVP
     assert _tem_a_extensao_vector(engine_de_teste)

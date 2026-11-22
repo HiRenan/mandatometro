@@ -1,6 +1,6 @@
 """cria candidaturas do tse
 
-Revision ID: 0012
+Revision ID: 0013
 Revises: 0011
 Create Date: 2026-11-21 23:43:48.051532
 """
@@ -10,7 +10,7 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0012"
+revision: str = "0013"
 down_revision: str | Sequence[str] | None = "0011"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

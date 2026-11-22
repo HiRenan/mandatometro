@@ -614,6 +614,8 @@ O CDN do TSE publica `consulta_cand_AAAA.zip` e `rede_social_candidato_AAAA.zip`
 
 O download tem limite de 50 MB por arquivo, e o CSV aberto tem limite de 300 MB. A coleta conta os bytes durante a leitura. BOM, bytes nulos e sequências de UTF-8 multibyte invalidam o arquivo.
 
+A migration `0013` cria `candidatura` e `link_candidatura`.
+
 | Registro | Campo | Procedência |
 | --- | --- | --- |
 | `candidatura` | `id` | Identificador interno gerado pelo banco. |

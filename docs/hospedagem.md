@@ -81,7 +81,7 @@ Para recuperar uma lacuna maior, preencha **inicio e fim juntos**, em `AAAA-MM-D
 
 ## Coletar o TSE
 
-1. Confirme que **Migrar banco** aplicou a revisão `0012` e que **Coletar Congresso** carregou os parlamentares em exercício na mesma branch.
+1. Confirme que **Migrar banco** aplicou a revisão `0013` e que **Coletar Congresso** carregou os parlamentares em exercício na mesma branch.
 2. Em **Actions → Coletar TSE → Run workflow**, escolha `develop` para desenvolvimento ou `main` para produção. O job usa o segredo `DATABASE_URL` com pool do ambiente, aguarda a fila desse banco e tem até 10 minutos.
 3. Confira o commit executado e a linha JSON. `completa: true` confirma os quatro arquivos, e as contagens por Casa e ano indicam a cobertura da ligação. Se um arquivo falhar, a execução tenta os demais e fica vermelha. Repita o disparo para recuperar a carga.
 

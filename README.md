@@ -432,7 +432,7 @@ uv run mandatometro coleta destaques
 
 O comando grava os destaques da seção 1 pela data de publicação, incluindo portarias. Passe as duas datas ou use os sete dias completos anteriores no fuso de Brasília. Quando a coleta roda, o resumo é uma linha JSON com gravações, descartes e falhas. Saída 1 sinaliza falha ou coleta incompleta. O comando confere a conexão com o banco antes de pedir a primeira página. Se o banco não responder, o resumo traz o erro e zero chamadas. Sem a chave ou com datas inválidas, o comando imprime uma linha de texto fixo e sai com código 2. [Campos e paginação](docs/dicionario-de-dados.md#destaques-da-imprensa-nacional).
 
-**Coleta do TSE.** Em `apps/backend`, use `DATABASE_URL` para o banco de destino com a migration `0012` aplicada e os mandatos em exercício carregados.
+**Coleta do TSE.** Em `apps/backend`, use `DATABASE_URL` para o banco de destino com a migration `0013` aplicada e os mandatos em exercício carregados.
 
 ```bash
 uv run mandatometro coleta tse
