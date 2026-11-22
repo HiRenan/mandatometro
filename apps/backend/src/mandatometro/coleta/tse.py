@@ -7,7 +7,7 @@ import time
 import unicodedata
 import zlib
 from collections import Counter, defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from itertools import batched, chain
@@ -47,6 +47,7 @@ _CHAVE_CANDIDATURA = ("ano", "codigo_eleicao", "id_externo")
 type ChaveCandidatura = tuple[int, ChaveTse]
 type ParesNominais = dict[int, dict[ChaveTse, CandidaturaTse]]
 type CandidaturasGravadas = dict[ChaveCandidatura, CandidaturaTse | None]
+type ContagensLigacao = dict[int, dict[str, dict[str, int]]]
 
 
 @dataclass(frozen=True, repr=False)
@@ -56,6 +57,13 @@ class EmExercicio:
     nome: str
     uf: str
     legislatura: int
+
+
+@dataclass(repr=False)
+class LigacaoCandidaturas:
+    ligadas: dict[int, dict[ChaveTse, tuple[CandidaturaTse, int]]]
+    conflitos: set[int]
+    contagens: ContagensLigacao
 
 
 @dataclass
@@ -184,11 +192,11 @@ def _conflitos_das_cadeias(
 
 
 def _ligar(
-    parlamentares: list[EmExercicio],
+    parlamentares: Iterable[EmExercicio],
     arquivos: dict[int, list[CandidaturaTse]],
     donos: dict[ChaveCandidatura, int],
-    contagens: dict[int, dict[str, dict[str, int]]],
-) -> dict[int, dict[ChaveTse, tuple[CandidaturaTse, int]]]:
+) -> LigacaoCandidaturas:
+    contagens = _contagens_da_ligacao()
     nominais = defaultdict(list)
     por_cpf = defaultdict(list)
     por_chave = {}
@@ -230,6 +238,7 @@ def _ligar(
         }
         ponte = _ponte_por_cpf(mandatos, unicos, compativeis, por_cpf)
         if pessoa in conflitos or ponte is None or any(len(cs) > 1 for cs in pares.values()):
+            conflitos.add(pessoa)
             for ano in ANOS:
                 contagens[ano][p.casa]["em_conflito"] += 1
             continue
@@ -247,6 +256,7 @@ def _ligar(
                 ano_gravado == ano and chave != c.chave for ano_gravado, chave in historico
             )
             if conflito_historico or outra_ficha_no_ano:
+                conflitos.add(pessoa)
                 resumo["em_conflito"] += 1
                 # O veto a vínculos novos permite atualizar uma ficha já ligada ao titular.
                 if c and not outra_ficha_no_ano and (ano, c.chave) in historico:
@@ -259,7 +269,7 @@ def _ligar(
                 ligadas[ano][c.chave] = c, pessoa
             else:
                 resumo["sem_par"] += 1
-    return ligadas
+    return LigacaoCandidaturas(ligadas, conflitos, contagens)
 
 
 def _gravar_candidaturas(
@@ -300,28 +310,32 @@ def _gravar_candidaturas(
         )
 
 
+def _em_exercicio(s: Session) -> list[EmExercicio]:
+    return [
+        EmExercicio(*linha)
+        for linha in s.execute(
+            select(
+                Parlamentar.id,
+                Parlamentar.casa,
+                Parlamentar.nome,
+                Mandato.uf,
+                Mandato.legislatura,
+            )
+            .join(Mandato)
+            .where(Mandato.em_exercicio.is_(True))
+        )
+    ]
+
+
 def _coletar(
     diretorio: Path | None,
     cliente: httpx2.Client,
     criar_sessao: Callable[[], Session],
-    contagens: dict[int, dict[str, dict[str, int]]],
+    contagens: ContagensLigacao,
     resumos: dict[int, ResumoArquivo],
 ) -> None:
     with criar_sessao() as s:
-        em_exercicio = [
-            EmExercicio(*linha)
-            for linha in s.execute(
-                select(
-                    Parlamentar.id,
-                    Parlamentar.casa,
-                    Parlamentar.nome,
-                    Mandato.uf,
-                    Mandato.legislatura,
-                )
-                .join(Mandato)
-                .where(Mandato.em_exercicio.is_(True))
-            )
-        ]
+        em_exercicio = _em_exercicio(s)
     if not em_exercicio:
         raise ArquivoInvalido("Cadastre os parlamentares em exercício antes da coleta.")
 
@@ -360,7 +374,9 @@ def _coletar(
                     )
                 )
             }
-            ligadas = _ligar(em_exercicio, candidaturas, donos, contagens)
+            ligacao = _ligar(em_exercicio, candidaturas, donos)
+            contagens.update(ligacao.contagens)
+            ligadas = ligacao.ligadas
             for ano, instante in instantes.items():
                 _gravar_candidaturas(s, ano, instante, ligadas[ano])
     except SQLAlchemyError as erro:
@@ -374,9 +390,8 @@ def _coletar(
             contagens[ano][CASA_POR_CARGO[c.cargo]]["ligados"] += 1
 
 
-def _executar(args: argparse.Namespace) -> int:
-    comeco = time.monotonic()
-    contagens = {
+def _contagens_da_ligacao() -> ContagensLigacao:
+    return {
         ano: {
             casa: dict.fromkeys(
                 ("ligados", "sem_par", "em_conflito", "derrubados_pela_trava", "outro_cargo"), 0
@@ -385,6 +400,11 @@ def _executar(args: argparse.Namespace) -> int:
         }
         for ano in ANOS
     }
+
+
+def _executar(args: argparse.Namespace) -> int:
+    comeco = time.monotonic()
+    contagens = _contagens_da_ligacao()
     resumos = {ano: ResumoArquivo() for ano in ANOS}
     falhas_gerais = 0
     try:

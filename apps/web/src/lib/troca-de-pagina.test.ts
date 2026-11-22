@@ -183,6 +183,25 @@ describe("sentidoDaTroca", () => {
 		expect(sentidoDaTroca("/trilhas", "/edicoes/7")).toBe("avancar");
 	});
 
+	it("os parlamentares ficam ao lado das edições, e a votação vem depois de uma edição e de uma pessoa", () => {
+		expect(sentidoDaTroca("/", "/parlamentares")).toBe("avancar");
+		expect(
+			sentidoDaTroca("/parlamentares", "/parlamentares/81-agata-cedrolume"),
+		).toBe("avancar");
+		// "Ver quem votou", na edição e na página da pessoa, e o caminho de volta.
+		expect(sentidoDaTroca("/edicoes/7", "/votacoes/139")).toBe("avancar");
+		expect(
+			sentidoDaTroca("/parlamentares/81-agata-cedrolume", "/votacoes/139"),
+		).toBe("avancar");
+		expect(
+			sentidoDaTroca("/votacoes/139", "/parlamentares/81-agata-cedrolume"),
+		).toBe("voltar");
+		expect(sentidoDaTroca("/votacoes/139", "/edicoes/7")).toBe("voltar");
+		expect(sentidoDaTroca("/parlamentares/81-agata-cedrolume", "/")).toBe(
+			"voltar",
+		);
+	});
+
 	it("a página não encontrada fica no fundo do bloco", () => {
 		expect(sentidoDaTroca(TRILHA, "/pagina-que-nao-existe")).toBe("avancar");
 		expect(sentidoDaTroca("/pagina-que-nao-existe", "/")).toBe("voltar");

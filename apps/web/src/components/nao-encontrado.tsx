@@ -17,12 +17,23 @@ export function EdicaoNaoEncontrada() {
 	return <PaginaNaoEncontrada para="/edicoes" texto="Ver as edições" />;
 }
 
+/**
+ * A página de não encontrado dos parlamentares e das votações: o parlamentar ou
+ * a votação que não existe, o endereço que não pode ser de um deles e a página
+ * de votos depois da última. Ela leva à lista dos parlamentares.
+ */
+export function ParlamentarNaoEncontrado() {
+	return (
+		<PaginaNaoEncontrada para="/parlamentares" texto="Ver os parlamentares" />
+	);
+}
+
 /** O cartaz do 404, com a ação principal de cada lugar do site e o início. */
 function PaginaNaoEncontrada({
 	para,
 	texto,
 }: {
-	para: "/trilhas" | "/edicoes";
+	para: "/trilhas" | "/edicoes" | "/parlamentares";
 	texto: string;
 }) {
 	return (

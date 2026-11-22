@@ -1,0 +1,1105 @@
+/*
+ * Os parlamentares e as votações (DESIGN.md). As três páginas usam o cartaz das
+ * páginas de dentro, com o painel de dados (o Renan, em 21/11/2026): na lista,
+ * o Brasil em 27 azulejos; na votação, o plenário, um azulejo por voto; na
+ * página da pessoa, o painel de enfeite. Embaixo do cartaz, o corpo segue a
+ * margem da página (o .artigos do index.css). Daqui, saem o mapa, o campo
+ * "Estado", as listas de nomes, os mandatos, como votou, os votos da pessoa, o
+ * plenário, o placar por partido, quem votou como, o "Ver quem votou" da edição
+ * e o bloco da página inicial. As telas ficam em components/pagina-dos-
+ * parlamentares.tsx, pagina-do-parlamentar.tsx, pagina-da-votacao.tsx e em
+ * components/parlamentares/.
+ *
+ * Tudo em papel e tinta: o voto não tem cor (o Sim não é verde, e o Não não é
+ * vermelho), e a fita só aparece como tira, sem texto em cima.
+ */
+@layer components {
+	/* ───── A lista: o mapa e o campo "Estado" ───── */
+
+	/*
+	 * O mapa, uma grade de 6 colunas e 8 fileiras, com um azulejo por estado, na
+	 * posição aproximada dele (lib/parlamentares/estados.ts). No celular e no
+	 * tablet, ele vem depois do pé do cartaz, até 26 rem de largura; a partir do
+	 * lg, fica nos 30% da direita, no lugar do painel de enfeite, que só fica no
+	 * celular, como a faixa de cima das outras páginas.
+	 */
+	.mapa-dos-estados {
+		container: mapa / inline-size;
+		width: 100%;
+		max-width: 26rem;
+	}
+
+	.mapa {
+		display: grid;
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+		grid-template-rows: repeat(8, auto);
+		gap: 4px;
+	}
+
+	/*
+	 * Cada azulejo: a folha clara com fio de tinta e a tira da fita da posição em
+	 * cima. A sigla, grande, e o número de deputados, pequeno, ficam no papel. O
+	 * estado aberto fica em tinta. Quando o ponteiro passa, o azulejo sobe, com a
+	 * sombra dura, como as folhas.
+	 */
+	.estado-no-mapa {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		aspect-ratio: 1;
+		min-height: 2.75rem;
+		padding-top: 5px;
+		border: 2px solid var(--tinta);
+		background: var(--folha);
+		box-shadow: inset 0 5px 0 var(--fita);
+		color: var(--tinta);
+		line-height: 1;
+		text-decoration: none;
+		transition:
+			translate 0.3s var(--ease-mola),
+			box-shadow 0.3s;
+	}
+
+	.estado-no-mapa:hover {
+		translate: 0 -3px;
+		box-shadow:
+			inset 0 5px 0 var(--fita),
+			0 4px 0 var(--tinta);
+	}
+
+	.estado-no-mapa:focus-visible {
+		outline: 3px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	.estado-no-mapa[aria-current="page"] {
+		background: var(--tinta);
+		color: var(--papel);
+	}
+
+	.estado-no-mapa .sigla {
+		font-family: var(--font-sans);
+		font-size: 1.125rem;
+		font-stretch: 62%;
+		font-weight: 900;
+	}
+
+	.estado-no-mapa .numero {
+		margin-top: 0.15rem;
+		font-family: var(--font-sans);
+		font-size: 0.75rem;
+		font-weight: 650;
+		font-variant-numeric: lining-nums tabular-nums;
+	}
+
+	/* No mapa, o nome do estado fica só para o leitor de tela. */
+	.estado-no-mapa .nome {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	/*
+	 * A lista dos estados, em ordem alfabética, no lugar do mapa quando o azulejo
+	 * ficaria com menos de 44 px: seis de 44 px e cinco vãos de 4 px pedem 17,75
+	 * rem. A régua é a da letra: com a letra a 200%, a lista aparece em toda tela
+	 * de celular.
+	 */
+	.lista-de-estados {
+		display: none;
+	}
+
+	@container mapa (width < 17.75rem) {
+		.mapa {
+			display: none;
+		}
+
+		.lista-de-estados {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr);
+			border-top: 2px solid var(--tinta);
+		}
+	}
+
+	/*
+	 * Na lista, o nome do estado fica com a linha toda, ao lado do número: com a
+	 * sigla numa terceira coluna, a 320 px e a letra a 200%, o nome quebrava no
+	 * meio da palavra ("Pernam-buco"). A sigla, que repete o nome, sai da lista e
+	 * do nome do link.
+	 */
+	.estado-na-lista {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.75rem;
+		align-items: baseline;
+		min-height: 2.75rem;
+		padding: 0.6rem 0;
+		border-bottom: 1px solid var(--tinta);
+		color: var(--tinta);
+		text-decoration: none;
+	}
+
+	.estado-na-lista .sigla {
+		display: none;
+	}
+
+	.estado-na-lista .nome {
+		font-family: var(--font-sans);
+		font-weight: 600;
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+	}
+
+	.estado-na-lista .numero {
+		font-variant-numeric: lining-nums tabular-nums;
+		color: var(--tinta-suave);
+	}
+
+	.estado-na-lista[aria-current="page"] {
+		background: var(--tinta);
+		color: var(--papel);
+	}
+
+	.estado-na-lista[aria-current="page"] .numero {
+		color: var(--papel);
+	}
+
+	.estado-na-lista:focus-visible {
+		outline: 3px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	/*
+	 * O campo "Estado" e o botão, como o formulário da newsletter: o rótulo em
+	 * cima, e o botão desce para a linha de baixo quando os dois não cabem lado a
+	 * lado.
+	 */
+	.escolha-do-estado {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.5rem;
+		width: 100%;
+		max-width: 40rem;
+	}
+
+	.escolha-linha {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+
+	.escolha-linha > .campo {
+		flex: 1 1 12rem;
+		cursor: pointer;
+	}
+
+	.escolha-linha > .botao {
+		flex: none;
+		max-width: 100%;
+	}
+
+	@media (width >= 62rem) {
+		.cartaz-dos-parlamentares .mural-do-celular {
+			display: none;
+		}
+
+		.mapa-dos-estados {
+			position: absolute;
+			inset: 0 0 0 auto;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			width: 30%;
+			max-width: none;
+			padding: 1.5rem 0.75rem;
+			border-left: 2px solid var(--tinta);
+			background: var(--papel-2);
+		}
+	}
+
+	/* ───── A lista: os nomes de cada Casa ───── */
+
+	.parlamentares-do-estado {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: clamp(2.5rem, 6vw, 4rem);
+	}
+
+	.lista-da-casa > h2,
+	.secao-dos-parlamentares > h2,
+	.video-da-sessao > h2,
+	.placar-por-partido > h2,
+	.quem-votou-como > h2 {
+		--letra: clamp(1.875rem, 1.4rem + 2vw, 3rem);
+		margin-bottom: 1rem;
+	}
+
+	/* Os nomes em colunas de pelo menos 16 rem, que descem uma embaixo da outra. */
+	.nomes-da-casa {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+		column-gap: var(--respiro);
+		border-top: 2px solid var(--tinta);
+	}
+
+	/* O partido fica à direita, na primeira linha, quando o nome quebra em duas. */
+	.nome-na-lista {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: baseline;
+		gap: 0.75rem;
+		min-height: 2.75rem;
+		padding: 0.6rem 0;
+		border-bottom: 1px solid var(--tinta);
+		color: var(--tinta);
+		text-decoration: none;
+	}
+
+	.nome-na-lista .nome {
+		font-family: var(--font-sans);
+		font-size: 1.0625rem;
+		font-weight: 600;
+		line-height: 1.3;
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+	}
+
+	.nome-na-lista:hover .nome {
+		text-decoration-thickness: 2px;
+	}
+
+	.nome-na-lista:focus-visible {
+		outline: 3px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	.partido {
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		font-weight: 650;
+		letter-spacing: calc(0.06em * var(--espacado));
+		color: var(--tinta-suave);
+	}
+
+	.sem-nomes,
+	.texto-sem-votos {
+		max-width: 39rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.5;
+	}
+
+	/* ───── A página do parlamentar ───── */
+
+	/* O nome é mais comprido que o título das outras páginas: a letra é menor. */
+	.cartaz-do-parlamentar h1 {
+		--letra: clamp(2.75rem, 1.2rem + 5.5vw, 7.5rem);
+	}
+
+	.corpo-dos-parlamentares {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: clamp(2.5rem, 6vw, 4rem);
+	}
+
+	.mandatos {
+		display: grid;
+		gap: 0.6rem;
+		max-width: 39rem;
+	}
+
+	.mandatos .rotulo {
+		color: var(--tinta);
+	}
+
+	/*
+	 * Como votou: cada voto numa linha, com o número grande em tinta à esquerda,
+	 * e o nome, a regra e o artigo do regimento à direita. Com a letra grande, o
+	 * número vai para cima do nome.
+	 */
+	.tipos-de-voto {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		max-width: 46rem;
+		border-top: 2px solid var(--tinta);
+	}
+
+	.tipo-de-voto {
+		display: grid;
+		grid-template-columns: 5.5rem minmax(0, 1fr);
+		grid-template-areas:
+			"numero nome"
+			"numero regra";
+		column-gap: var(--respiro);
+		row-gap: 0.3rem;
+		padding: 1rem 0;
+		border-bottom: 1px solid var(--tinta);
+	}
+
+	.nome-do-tipo {
+		grid-area: nome;
+		font-family: var(--font-sans);
+		font-size: 1.0625rem;
+		font-weight: 800;
+		line-height: 1.25;
+		letter-spacing: calc(0.04em * var(--espacado));
+		text-transform: var(--caixa-alta);
+	}
+
+	.numero-do-tipo {
+		grid-area: numero;
+		font-family: var(--font-sans);
+		font-size: clamp(2.5rem, 2rem + 2vw, 3.25rem);
+		font-stretch: 62%;
+		font-weight: 900;
+		line-height: 0.9;
+		font-variant-numeric: lining-nums tabular-nums;
+	}
+
+	.regra-do-tipo {
+		grid-area: regra;
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.5;
+	}
+
+	.artigo-da-regra {
+		color: var(--tinta-suave);
+	}
+
+	.fonte-das-regras {
+		max-width: 39rem;
+		margin-top: 1rem;
+		font-family: var(--font-serif);
+		font-size: 0.9375rem;
+		line-height: 1.5;
+		color: var(--tinta-suave);
+	}
+
+	.fonte-das-regras a {
+		color: var(--tinta);
+	}
+
+	@media (width < 40rem) {
+		.tipo-de-voto {
+			grid-template-columns: 4.25rem minmax(0, 1fr);
+		}
+	}
+
+	@media (width < 22rem) {
+		.tipo-de-voto {
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-areas:
+				"numero"
+				"nome"
+				"regra";
+		}
+	}
+
+	/*
+	 * Os votos da pessoa: cada um entre fios de tinta, com o voto num carimbo de
+	 * tinta à esquerda, a partir de 40 rem; antes, o carimbo vem em cima do
+	 * título. O título vem antes no HTML, para quem navega pelos títulos.
+	 */
+	.total-de-votos {
+		margin-bottom: 1rem;
+		color: var(--tinta-suave);
+	}
+
+	.corpo-dos-parlamentares #votos {
+		scroll-margin-top: 1rem;
+	}
+
+	.votos-do-parlamentar {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		border-top: 2px solid var(--tinta);
+	}
+
+	.voto-da-pessoa {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-areas:
+			"carimbo"
+			"titulo"
+			"fatos"
+			"texto"
+			"links"
+			"coletado";
+		row-gap: 0.4rem;
+		padding: 1.25rem 0;
+		border-bottom: 1px solid var(--tinta);
+	}
+
+	.titulo-do-voto {
+		grid-area: titulo;
+		font-family: var(--font-sans);
+		font-size: 1.25rem;
+		font-stretch: 68%;
+		font-weight: 900;
+		line-height: 1.15;
+		text-transform: uppercase;
+	}
+
+	.fatos-do-voto {
+		grid-area: fatos;
+	}
+
+	.carimbo-do-voto {
+		grid-area: carimbo;
+		justify-self: start;
+		align-self: start;
+		padding: 0.35rem 0.6rem 0.3rem;
+		background: var(--tinta);
+		color: var(--papel);
+		font-family: var(--font-sans);
+		font-size: 1.125rem;
+		font-stretch: 62%;
+		font-weight: 900;
+		line-height: 1.1;
+		letter-spacing: calc(0.04em * var(--espacado));
+		text-transform: uppercase;
+	}
+
+	.texto-do-voto {
+		grid-area: texto;
+		max-width: 42rem;
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.5;
+	}
+
+	.links-do-voto {
+		grid-area: links;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0 1.5rem;
+	}
+
+	.voto-da-pessoa > .coletado-em {
+		grid-area: coletado;
+		color: var(--tinta-suave);
+	}
+
+	@media (width >= 40rem) {
+		.voto-da-pessoa {
+			grid-template-columns: 7.5rem minmax(0, 1fr);
+			grid-template-areas:
+				"carimbo titulo"
+				"carimbo fatos"
+				"carimbo texto"
+				"carimbo links"
+				"carimbo coletado";
+			column-gap: var(--respiro);
+		}
+	}
+
+	/* Sem voto registrado: a folha clara com fio de tinta, como a lista sem edição. */
+	.sem-votos {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem;
+		justify-items: start;
+		padding: clamp(1.5rem, 4vw, 3rem) var(--respiro);
+		border: 2px solid var(--tinta);
+		background: var(--folha);
+	}
+
+	.sem-votos > h2 {
+		--letra: clamp(2.25rem, 1.4rem + 3.6vw, 4.5rem);
+		--recuo: calc(2 * var(--respiro) + 4px);
+	}
+
+	.sem-votos > p {
+		max-width: 39rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		line-height: 1.5;
+	}
+
+	/* ───── A página da votação: o plenário ───── */
+
+	/*
+	 * O plenário: no celular, uma faixa no alto do cartaz, com o desenho largo;
+	 * a partir do lg, os 30% da direita, com o desenho alto. A legenda vem
+	 * embaixo do desenho, nas duas larguras.
+	 */
+	.painel-da-votacao {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
+	}
+
+	/* Abaixo do lg, a faixa vai de borda a borda, como a dos azulejos (index.css). */
+	@media (width < 62rem) {
+		.painel-da-votacao {
+			margin: 0 calc(var(--margem) * -1);
+			padding: 1rem var(--margem);
+			border-bottom: 2px solid var(--tinta);
+			background: var(--papel-2);
+		}
+	}
+
+	.plenario {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+
+	.plenario-alto {
+		display: none;
+	}
+
+	.plenario path,
+	.amostra path {
+		fill: var(--tinta);
+		fill-rule: evenodd;
+	}
+
+	.plenario .voto-nao_votou,
+	.amostra .voto-nao_votou {
+		fill: var(--papel-3);
+	}
+
+	.legenda-do-plenario {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem 1rem;
+		color: var(--tinta-suave);
+	}
+
+	.legenda-do-plenario li {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.amostra {
+		width: 0.75rem;
+		height: 0.75rem;
+		flex: none;
+	}
+
+	@media (width >= 62rem) {
+		.painel-da-votacao {
+			position: absolute;
+			inset: 0 0 0 auto;
+			grid-template-rows: minmax(0, 1fr) auto;
+			width: 30%;
+			padding: 1.5rem;
+			border-left: 2px solid var(--tinta);
+			background: var(--papel-2);
+		}
+
+		.plenario-largo {
+			display: none;
+		}
+
+		.plenario-alto {
+			display: block;
+			height: 100%;
+			min-height: 0;
+		}
+	}
+
+	/*
+	 * O pé do cartaz da votação: a faixa com a Casa, o dia e o resultado vem
+	 * primeiro, como a da edição; a partir do lg, ela atravessa as duas colunas, e
+	 * a ementa, a descrição oficial e a página oficial descem uma fileira.
+	 */
+	@media (width >= 62rem) {
+		.cartaz-pe.pe-da-votacao > .faixa-da-votacao {
+			grid-row: 1;
+			grid-column: 1 / -1;
+		}
+
+		.cartaz-pe.pe-da-votacao > .abertura {
+			grid-row: 2;
+		}
+
+		.cartaz-pe.pe-da-votacao > .para-quem {
+			grid-row: 3;
+		}
+
+		.cartaz-pe.pe-da-votacao:not(:has(> .abertura)) > .para-quem {
+			grid-row: 2;
+		}
+
+		.cartaz-pe.pe-da-votacao > .cartaz-acao {
+			grid-row: 2 / span 2;
+		}
+	}
+
+	/* A ementa e a descrição oficial, no pé do cartaz. */
+	.ementas {
+		display: grid;
+		gap: 0.6rem;
+	}
+
+	.descricao-oficial {
+		display: grid;
+		gap: 0.3rem;
+	}
+
+	.descricao-oficial .rotulo {
+		color: var(--tinta-suave);
+	}
+
+	.cartaz-acao > .coletado-em {
+		color: var(--tinta-suave);
+	}
+
+	/*
+	 * O "Ver quem votou", embaixo do quadro de cada votação da edição, e, quando
+	 * a votação tem vídeo, o "Vídeo da sessão" ao lado, como os links de cada voto:
+	 * uma lista, porque o <p> em flex sai da árvore de acessibilidade (a #152).
+	 */
+	.ver-quem-votou {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0 1.5rem;
+		margin-top: 0.5rem;
+	}
+
+	/* ───── A página da votação: o vídeo da sessão ───── */
+
+	/*
+	 * A capa, na caixa 16:9 do servidor, com o fio de tinta e o papel do painel:
+	 * o azulejo de tinta com o play e, ao lado, a chamada e a linha da sessão.
+	 * Com a letra grande numa tela estreita, a caixa cresce para caber a capa.
+	 * Depois do toque, a capa fica na caixa, escondida, e o player ocupa a caixa
+	 * inteira, por cima: a altura não muda. A caixa é o contêiner da capa: abaixo
+	 * de 26rem, o azulejo fica em cima do texto.
+	 */
+	.video-da-sessao > h2 {
+		scroll-margin-top: 1rem;
+	}
+
+	.caixa-do-video {
+		container-type: inline-size;
+		position: relative;
+		display: grid;
+		max-width: 39rem;
+		aspect-ratio: 16 / 9;
+		border: 2px solid var(--tinta);
+		background: var(--papel-2);
+	}
+
+	.caixa-do-video:has(> .player-do-video):focus-within {
+		outline: 3px solid var(--ring);
+		outline-offset: 3px;
+	}
+
+	.capa-do-video {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem 1.25rem;
+		padding: 1.25rem;
+		color: var(--tinta);
+		text-decoration: none;
+	}
+
+	.capa-do-video[inert] {
+		visibility: hidden;
+	}
+
+	/* O azulejo é enfeite: acompanha a largura da caixa, e não a letra. */
+	.azulejo-do-play {
+		display: grid;
+		flex: none;
+		place-items: center;
+		width: clamp(48px, 14cqi, 88px);
+		aspect-ratio: 1;
+		background: var(--tinta);
+	}
+
+	.azulejo-do-play svg {
+		width: 55%;
+		height: 55%;
+	}
+
+	.azulejo-do-play path {
+		fill: var(--papel);
+	}
+
+	.texto-da-capa {
+		display: grid;
+		gap: 0.4rem;
+		min-width: 0;
+		max-width: 20rem;
+	}
+
+	.chamada-do-video {
+		font-family: var(--font-sans);
+		font-size: clamp(1.25rem, 1rem + 1vw, 1.625rem);
+		font-stretch: 68%;
+		font-weight: 900;
+		line-height: 1.05;
+		text-transform: uppercase;
+		text-decoration-line: underline;
+		text-decoration-color: transparent;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 0.15em;
+	}
+
+	.capa-do-video:hover .chamada-do-video {
+		text-decoration-color: currentColor;
+	}
+
+	.linha-da-capa {
+		color: var(--tinta-suave);
+	}
+
+	@container (width < 26rem) {
+		.capa-do-video {
+			flex-direction: column;
+			padding: 1rem;
+			text-align: center;
+		}
+
+		.texto-da-capa {
+			justify-items: center;
+		}
+	}
+
+	.player-do-video {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		border: 0;
+		background: var(--tinta);
+	}
+
+	.nota-do-video {
+		max-width: 39rem;
+		margin-top: 0.75rem;
+		font-family: var(--font-serif);
+		font-size: 0.9375rem;
+		line-height: 1.5;
+		color: var(--tinta-suave);
+	}
+
+	/* ───── A página da votação: o placar por partido ───── */
+
+	/*
+	 * A tabela, a partir do lg, com o nome do partido à esquerda e uma coluna por
+	 * voto, os números em algarismos da mesma largura. Antes, a lista, com os
+	 * votos de cada partido numa linha.
+	 */
+	.tabela-por-partido {
+		display: none;
+		width: 100%;
+		max-width: 60rem;
+		border-collapse: collapse;
+		table-layout: fixed;
+	}
+
+	.tabela-por-partido th,
+	.tabela-por-partido td {
+		padding: 0.6rem 0.5rem;
+		border-bottom: 1px solid var(--tinta);
+		text-align: right;
+		overflow-wrap: anywhere;
+	}
+
+	.tabela-por-partido thead th {
+		border-bottom: 2px solid var(--tinta);
+		font-family: var(--font-sans);
+		font-size: 0.75rem;
+		font-weight: 650;
+		line-height: 1.3;
+		letter-spacing: calc(0.04em * var(--espacado));
+		text-transform: var(--caixa-alta);
+		color: var(--tinta-suave);
+		vertical-align: bottom;
+	}
+
+	.tabela-por-partido th:first-child {
+		width: 22%;
+		padding-left: 0;
+		text-align: left;
+	}
+
+	.tabela-por-partido tbody th {
+		font-family: var(--font-sans);
+		font-weight: 800;
+	}
+
+	.tabela-por-partido td {
+		font-family: var(--font-sans);
+		font-size: 1.0625rem;
+		font-weight: 600;
+		font-variant-numeric: lining-nums tabular-nums;
+	}
+
+	.lista-por-partido {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		border-top: 2px solid var(--tinta);
+	}
+
+	.lista-por-partido > li {
+		padding: 0.75rem 0;
+		border-bottom: 1px solid var(--tinta);
+	}
+
+	.partido-da-lista {
+		font-family: var(--font-sans);
+		font-size: 1.0625rem;
+		font-weight: 800;
+	}
+
+	/*
+	 * O parágrafo fica em bloco, sem flex (a #152): cada voto fica inteiro numa
+	 * linha, e a margem no fim dele faz o espaço até o próximo.
+	 */
+	.votos-do-partido {
+		margin-top: 0.2rem;
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		line-height: 1.7;
+		color: var(--tinta-suave);
+	}
+
+	.votos-do-partido > span {
+		margin-inline-end: 0.75rem;
+		white-space: nowrap;
+	}
+
+	.votos-do-partido strong {
+		font-weight: 800;
+		font-variant-numeric: lining-nums tabular-nums;
+		color: var(--tinta);
+	}
+
+	@media (width >= 62rem) {
+		.tabela-por-partido {
+			display: table;
+		}
+
+		.lista-por-partido {
+			display: none;
+		}
+	}
+
+	/* ───── A página da votação: quem votou como ───── */
+
+	/*
+	 * O filtro: o estado, o partido e o botão, lado a lado quando cabem. Embaixo,
+	 * quantos nomes aparecem e o "Limpar os filtros".
+	 */
+	.filtro-dos-votos {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: end;
+		gap: 0.75rem 1rem;
+		max-width: 52rem;
+	}
+
+	.campo-do-filtro {
+		display: grid;
+		flex: 1 1 13rem;
+		gap: 0.5rem;
+	}
+
+	.filtro-dos-votos > .botao {
+		flex: none;
+		max-width: 100%;
+	}
+
+	.resumo-do-filtro {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0 1.5rem;
+		margin: 1rem 0 0.5rem;
+	}
+
+	.mostrando {
+		color: var(--tinta-suave);
+	}
+
+	.grupos-de-voto {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		border-top: 2px solid var(--tinta);
+	}
+
+	.grupo-de-voto {
+		border-bottom: 1px solid var(--tinta);
+	}
+
+	/*
+	 * O nome do grupo, como a abertura de uma sanfona: o voto em maiúsculas e o
+	 * número de nomes, com o sinal de abrir desenhado no CSS, que gira quando o
+	 * grupo abre.
+	 */
+	.grupo-de-voto > summary {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0 0.75rem;
+		min-height: 3.25rem;
+		padding: 0.6rem 0;
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.grupo-de-voto > summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.grupo-de-voto > summary::before {
+		content: "";
+		flex: none;
+		width: 0.6rem;
+		height: 0.6rem;
+		border-right: 3px solid var(--tinta);
+		border-bottom: 3px solid var(--tinta);
+		rotate: -45deg;
+		transition: rotate 0.25s var(--ease-golpe);
+	}
+
+	.grupo-de-voto[open] > summary::before {
+		rotate: 45deg;
+	}
+
+	.grupo-de-voto > summary:focus-visible {
+		outline: 3px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	.nome-do-grupo {
+		font-family: var(--font-sans);
+		font-size: 1.25rem;
+		font-stretch: 68%;
+		font-weight: 900;
+		text-transform: uppercase;
+	}
+
+	.numero-do-grupo {
+		font-family: var(--font-sans);
+		font-size: 1.25rem;
+		font-stretch: 62%;
+		font-weight: 900;
+		font-variant-numeric: lining-nums tabular-nums;
+		color: var(--tinta-suave);
+	}
+
+	/* Os nomes descem em colunas de pelo menos 16 rem, até três. */
+	.nomes-do-grupo {
+		columns: 16rem 3;
+		column-gap: var(--respiro);
+		padding-bottom: 1rem;
+	}
+
+	/*
+	 * Cada nome é um link de 44 px de altura, para o toque: a altura fica no link,
+	 * e não no item, que só a dava ao texto (21 px). O partido e a UF seguem a
+	 * linha de base do nome.
+	 */
+	.nomes-do-grupo > li {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0 0.5rem;
+		break-inside: avoid;
+	}
+
+	.nomes-do-grupo a {
+		display: inline-flex;
+		align-items: center;
+		min-height: 2.75rem;
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 600;
+		line-height: 1.3;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+	}
+
+	.partido-e-uf {
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		font-weight: 650;
+		color: var(--tinta-suave);
+	}
+
+	/* ───── A página inicial: quem representa o seu estado ───── */
+
+	/*
+	 * O bloco depois do caminho: o título, a frase e o campo, entre o fio de cima
+	 * e a folha da newsletter. A partir do md, o mapa de enfeite fica à direita,
+	 * com os 27 azulejos nas cinco fitas, sem texto.
+	 */
+	.quem-representa {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2rem 3rem;
+		align-items: center;
+		padding: clamp(3rem, 7vw, 5.5rem) var(--margem);
+		border-top: 2px solid var(--tinta);
+	}
+
+	.quem-representa-texto {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem;
+		justify-items: start;
+	}
+
+	.quem-representa h2 {
+		--letra: clamp(2.5rem, 1.5rem + 4.5vw, 5.5rem);
+	}
+
+	.quem-representa-abertura {
+		max-width: 34rem;
+		font-family: var(--font-serif);
+		font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.25rem);
+		line-height: 1.5;
+	}
+
+	.mapa-de-enfeite {
+		display: none;
+	}
+
+	@media (width >= 48rem) {
+		.quem-representa {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 13rem);
+		}
+
+		.quem-representa h2 {
+			--recuo: 16rem;
+		}
+
+		.mapa-de-enfeite {
+			display: grid;
+			grid-template-columns: repeat(6, minmax(0, 1fr));
+			gap: 4px;
+		}
+
+		.mapa-de-enfeite > span {
+			aspect-ratio: 1;
+			border: 2px solid var(--tinta);
+			background: var(--fita);
+		}
+	}
+
+	@media (width >= 62rem) {
+		.quem-representa {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 18rem);
+		}
+
+		.quem-representa h2 {
+			--recuo: 21rem;
+		}
+	}
+}

@@ -223,6 +223,7 @@ def _candidatura(
 ):
     return {
         "ANO_ELEICAO": ano,
+        "CD_TIPO_ELEICAO": "2",
         "CD_ELEICAO": 4230 + ano,
         "SQ_CANDIDATO": id_,
         "SG_UF": uf,

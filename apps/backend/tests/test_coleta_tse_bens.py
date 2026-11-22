@@ -1,25 +1,30 @@
+import csv
 import json
+from collections import Counter
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from functools import partial
+from io import StringIO
 from pathlib import Path
 from zipfile import ZipFile
 
 import httpx2
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.orm import Session
 
 from mandatometro.api.app import app
 from mandatometro.cli import main
 from mandatometro.coleta import tse_bens
+from mandatometro.coleta.tse_arquivos import ler_candidaturas
 from mandatometro.db.modelos import (
     BemDeclarado,
     Candidatura,
     CandidaturaPatrimonio,
     Fonte,
     IpcaMensal,
+    Mandato,
     Parlamentar,
 )
 
@@ -49,6 +54,39 @@ def _alterar_zip(pasta, nome, transformar):
         zip_.writestr(membro, alterados)
 
 
+def _alterar_linhas(pasta, nome, transformar):
+    def reescrever(dados):
+        leitor = csv.DictReader(StringIO(dados.decode("latin-1"), newline=""), delimiter=";")
+        linhas = list(leitor)
+        transformar(linhas)
+        saida = StringIO(newline="")
+        escritor = csv.DictWriter(saida, leitor.fieldnames, delimiter=";", quoting=csv.QUOTE_ALL)
+        escritor.writeheader()
+        escritor.writerows(linhas)
+        return saida.getvalue().encode("latin-1")
+
+    _alterar_zip(pasta, nome, reescrever)
+
+
+def _registrar_ancora(sessao, fonte, pessoa, ano, externo, uf, cargo):
+    sessao.add(
+        Candidatura(
+            ano=ano,
+            codigo_eleicao=ano,
+            id_externo=externo,
+            cargo=cargo,
+            uf=uf,
+            partido="FIC",
+            numero="001",
+            nome_urna="Urna Inventada",
+            resultado="eleito",
+            resultado_bruto=1,
+            parlamentar_id=pessoa,
+            fonte=fonte,
+        )
+    )
+
+
 @pytest.fixture
 def parlamentares(sessao, monkeypatch):
     conexao = sessao.connection()
@@ -59,35 +97,24 @@ def parlamentares(sessao, monkeypatch):
     )
     monkeypatch.setattr("mandatometro.db.engine", lambda: conexao)
     fonte = Fonte(url="https://cadastro.example/ancoras")
-    pessoas = [
-        Parlamentar(casa="camara", nome=f"Parlamentar Inventado {n}", id_externo=n, fonte=fonte)
-        for n in range(1, 6)
-    ]
-    sessao.add_all(pessoas)
+    pessoas = []
+    for i, (casa, uf) in enumerate(
+        [("camara", "SP"), ("senado", "SC"), ("camara", "RJ"), ("senado", "RJ"), ("camara", "DF")]
+    ):
+        pessoa = Parlamentar(casa=casa, nome="Urna de Teste", id_externo=i + 1, fonte=fonte)
+        sessao.add(
+            Mandato(parlamentar=pessoa, legislatura=57, uf=uf, em_exercicio=i < 4, fonte=fonte)
+        )
+        pessoas.append(pessoa)
     sessao.flush()
     for i, ano, externo, uf, cargo in (
         (0, 2022, 41, "SP", 6),
         (1, 2022, 42, "SC", 5),
         (1, 2026, 52, "SC", 5),
         (2, 2022, 43, "RJ", 6),
-        (3, 2026, 53, "RJ", 7),
+        (3, 2026, 53, "RJ", 5),
     ):
-        sessao.add(
-            Candidatura(
-                ano=ano,
-                codigo_eleicao=ano,
-                id_externo=externo,
-                cargo=cargo,
-                uf=uf,
-                partido="FIC",
-                numero="001",
-                nome_urna="Urna Inventada",
-                resultado="eleito",
-                resultado_bruto=1,
-                parlamentar_id=pessoas[i].id,
-                fonte=fonte,
-            )
-        )
+        _registrar_ancora(sessao, fonte, pessoas[i].id, ano, externo, uf, cargo)
     sessao.flush()
     return [p.id for p in pessoas]
 
@@ -114,6 +141,22 @@ def _bens(sessao):
     )
 
 
+def _serie(sessao, pessoa):
+    return set(
+        sessao.execute(
+            select(
+                CandidaturaPatrimonio.ano,
+                CandidaturaPatrimonio.id_externo,
+                CandidaturaPatrimonio.fonte_candidatura_id,
+                CandidaturaPatrimonio.fonte_bens_id,
+                BemDeclarado.valor_centavos,
+            )
+            .outerjoin(BemDeclarado)
+            .where(CandidaturaPatrimonio.parlamentar_id == pessoa)
+        )
+    )
+
+
 def test_carga_em_varios_anos_prova_identidade_e_agrega_por_tipo(
     arquivos,
     parlamentares,
@@ -123,7 +166,7 @@ def test_carga_em_varios_anos_prova_identidade_e_agrega_por_tipo(
 ):
     primeiro, segundo, terceiro, quarto, _ = parlamentares
     resumo = _carregar(arquivos, capsys)
-    assert resumo["ancoras"]["em_conflito"] == 2
+    assert resumo["ancoras"]["em_conflito_na_ligacao"] == 2
     assert resumo["anos"]["2010"]["candidaturas"]["sem_cpf"] == 1
     assert resumo["anos"]["2014"]["em_conflito"] == 1
     assert resumo["anos"]["2026"]["bens"]["tipo_desconhecido"] == 1
@@ -344,7 +387,7 @@ def test_candidatura_ja_gravada_conserva_o_dono(arquivos, parlamentares, sessao,
     )
     sessao.flush()
     resumo = _carregar(arquivos, capsys)
-    assert resumo["anos"]["2006"]["em_conflito"] == 1
+    assert resumo["ancoras"]["em_conflito_na_cadeia"] >= 2
     assert (
         sessao.scalar(
             select(CandidaturaPatrimonio.parlamentar_id).where(
@@ -354,7 +397,11 @@ def test_candidatura_ja_gravada_conserva_o_dono(arquivos, parlamentares, sessao,
         )
         == outro
     )
-    assert (2010, primeiro, 11, 2002) in _bens(sessao)
+    assert not sessao.scalar(
+        select(func.count())
+        .select_from(CandidaturaPatrimonio)
+        .where(CandidaturaPatrimonio.parlamentar_id == primeiro)
+    )
 
 
 def test_cpf_atual_precisa_confirmar_os_vinculos_persistidos(
@@ -393,7 +440,7 @@ def test_cpfs_diferentes_nas_ancoras_bloqueiam_a_pessoa(arquivos, parlamentares,
         arquivos, "consulta_cand_2026", lambda b: b.replace(b"00000000002", b"00000000004")
     )
     resumo = _carregar(arquivos, capsys)
-    assert resumo["ancoras"]["em_conflito"] == 3
+    assert resumo["ancoras"]["em_conflito_na_ligacao"] == 3
     assert (
         sessao.scalar(
             select(func.count())
@@ -402,3 +449,183 @@ def test_cpfs_diferentes_nas_ancoras_bloqueiam_a_pessoa(arquivos, parlamentares,
         )
         == 0
     )
+
+
+def test_ancora_sem_par_atual_ainda_veta_cpf_divergente(arquivos, parlamentares, sessao, capsys):
+    def trocar(linhas):
+        linhas[1].update(
+            NM_URNA_CANDIDATO="Urna de Outra Pessoa Inventada",
+            NM_CANDIDATO="Civil de Outra Pessoa Inventada",
+            NR_CPF_CANDIDATO="00000000004",
+        )
+
+    _alterar_linhas(arquivos, "consulta_cand_2026", trocar)
+    resumo = _carregar(arquivos, capsys)
+    assert resumo["ancoras"]["em_conflito"] == 1
+    assert not _serie(sessao, parlamentares[1])
+
+
+def test_recusa_do_historico_na_ligacao_veta_ate_ancora_que_o_tse_atualizaria(
+    arquivos, parlamentares, sessao, capsys
+):
+    primeiro = parlamentares[0]
+    ficha = {}
+
+    def guardar(linhas):
+        ficha.update(linhas.pop(0))
+
+    _alterar_linhas(arquivos, "consulta_cand_2026", guardar)
+    _carregar(arquivos, capsys)
+    antes = _serie(sessao, primeiro)
+    assert any(r[0] == 2022 for r in antes)
+
+    _registrar_ancora(
+        sessao, Fonte(url="https://cadastro.example/antiga"), primeiro, 2026, 99, "SP", 6
+    )
+    sessao.flush()
+    ficha.update(SG_UF="SP", CD_CARGO="6")
+    _alterar_linhas(arquivos, "consulta_cand_2026", lambda linhas: linhas.append(ficha))
+    _alterar_zip(arquivos, "bem_candidato_2022", lambda b: b.replace(b'"4,44"', b'"8,88"'))
+    resumo = _carregar(arquivos, capsys)
+    assert resumo["ancoras"]["em_conflito_na_ligacao"] == 3
+    assert _serie(sessao, primeiro) == antes
+
+
+def test_ancora_renomeada_para_outra_pessoa_preserva_a_serie(
+    arquivos, parlamentares, sessao, capsys
+):
+    primeiro = parlamentares[0]
+    _carregar(arquivos, capsys)
+    antes = _serie(sessao, primeiro)
+
+    def trocar(linhas):
+        linhas[0].update(
+            NM_URNA_CANDIDATO="Urna de Outra Pessoa Inventada",
+            NM_CANDIDATO="Civil de Outra Pessoa Inventada",
+            NR_CPF_CANDIDATO="00000000004",
+        )
+
+    _alterar_linhas(arquivos, "consulta_cand_2022", trocar)
+    _alterar_zip(arquivos, "bem_candidato_2022", lambda b: b.replace(b'"4,44"', b'"8,88"'))
+    resumo = _carregar(arquivos, capsys)
+    assert resumo["ancoras"]["sem_ancora_valida"] == 3
+    assert _serie(sessao, primeiro) == antes
+
+
+def test_bens_respeitam_disputa_com_senador_sem_ancora(arquivos, parlamentares, sessao, capsys):
+    fonte = Fonte(url="https://cadastro.example/senado")
+    senador = Parlamentar(casa="senado", nome="Urna de Teste", id_externo=99, fonte=fonte)
+    sessao.add(
+        Mandato(parlamentar=senador, legislatura=57, uf="RS", em_exercicio=True, fonte=fonte)
+    )
+    sessao.flush()
+    resumo = _carregar(arquivos, capsys)
+    assert resumo["ancoras"]["em_conflito_na_ligacao"] == 3
+    assert not _serie(sessao, parlamentares[0])
+    assert not _serie(sessao, senador.id)
+    assert sessao.scalar(select(func.count()).select_from(Candidatura)) == 5
+
+
+def test_fora_do_exercicio_preserva_a_serie_ate_voltar(arquivos, parlamentares, sessao, capsys):
+    primeiro = parlamentares[0]
+    _carregar(arquivos, capsys)
+    antes = _serie(sessao, primeiro)
+    mandato = sessao.scalar(select(Mandato).where(Mandato.parlamentar_id == primeiro))
+    mandato.em_exercicio = False
+    sessao.flush()
+    _alterar_zip(arquivos, "bem_candidato_2006", lambda b: b.replace(b'"10,15"', b'"42,15"'))
+    resumo = _carregar(arquivos, capsys)
+    assert resumo["ancoras"]["sem_ancora_valida"] == 3
+    assert _serie(sessao, primeiro) == antes
+    mandato.em_exercicio = True
+    sessao.flush()
+    _carregar(arquivos, capsys)
+    assert (2006, primeiro, 99, 4216) in _bens(sessao)
+
+
+def test_mudanca_no_exercicio_durante_a_leitura_cancela_a_gravacao(
+    arquivos, parlamentares, sessao, capsys, monkeypatch
+):
+    _carregar(arquivos, capsys)
+    antes = _bens(sessao)
+    fontes = sessao.scalar(select(func.count()).select_from(Fonte))
+    ler_bens = tse_bens.ler_bens
+
+    def ler(arquivo, ano, contagens, *, chaves):
+        if ano == 2006:
+            sessao.execute(
+                update(Mandato)
+                .where(Mandato.parlamentar_id == parlamentares[0])
+                .values(em_exercicio=False)
+            )
+        return ler_bens(arquivo, ano, contagens, chaves=chaves)
+
+    monkeypatch.setattr(tse_bens, "ler_bens", ler)
+    resumo = _carregar(arquivos, capsys, completa=False)
+    assert resumo["falhas"] == {"invalido": 1}
+    assert _bens(sessao) == antes
+    assert sessao.scalar(select(func.count()).select_from(Fonte)) == fontes
+
+
+def test_suplementar_nao_disputa_com_a_ordinaria_nem_vira_ancora(
+    arquivos, parlamentares, sessao, capsys
+):
+    def suplementar(linhas):
+        linhas[0].update(CD_TIPO_ELEICAO="1", CD_ELEICAO="9999")
+
+    _alterar_linhas(arquivos, "consulta_cand_2014", suplementar)
+    _alterar_linhas(arquivos, "bem_candidato_2014", suplementar)
+    _alterar_linhas(arquivos, "consulta_cand_2026", suplementar)
+    _alterar_linhas(arquivos, "bem_candidato_2026", suplementar)
+    resumo = _carregar(arquivos, capsys)
+    primeiro = parlamentares[0]
+    assert resumo["anos"]["2014"]["candidaturas"]["fora_das_gerais"] == 1
+    assert resumo["anos"]["2026"]["candidaturas"]["fora_das_gerais"] == 1
+    assert (2014, primeiro, 11, 3001) in _bens(sessao)
+    assert not any(r[0] == 2026 for r in _serie(sessao, primeiro))
+    descartes = Counter()
+    with ZipFile(arquivos / "consulta_cand_2026.zip") as zip_:
+        lidas = ler_candidaturas(zip_, 2026, descartes)
+    assert descartes["fora_das_gerais"] == 1
+    assert {c.chave for c in lidas} == {(2026, 52), (2026, 53)}
+
+
+@pytest.mark.parametrize(("ano", "tipo"), [(2006, "2"), (2018, "1"), (2026, "999")])
+def test_ano_sem_ordinaria_invalida_a_carga(arquivos, parlamentares, sessao, capsys, ano, tipo):
+    _carregar(arquivos, capsys)
+    antes = _bens(sessao)
+    fontes = sessao.scalar(select(func.count()).select_from(Fonte))
+
+    def mudar_tipo(linhas):
+        for linha in linhas:
+            linha["CD_TIPO_ELEICAO"] = tipo
+
+    _alterar_linhas(arquivos, f"consulta_cand_{ano}", mudar_tipo)
+    resumo = _carregar(arquivos, capsys, completa=False)
+    assert resumo["anos"][str(ano)]["candidaturas"]["fora_das_gerais"] > 0
+    assert _bens(sessao) == antes
+    assert sessao.scalar(select(func.count()).select_from(Fonte)) == fontes
+
+
+def test_mesmo_sq_e_uf_em_outra_eleicao_fica_fora_da_soma(arquivos, parlamentares, sessao, capsys):
+    def acrescentar(linhas):
+        linhas.append(linhas[0] | {"CD_ELEICAO": "9999", "VR_BEM_CANDIDATO": "99,99"})
+
+    _alterar_linhas(arquivos, "bem_candidato_2006", acrescentar)
+    _carregar(arquivos, capsys)
+    assert (2006, parlamentares[0], 99, 1016) in _bens(sessao)
+
+
+def test_falha_no_ultimo_ano_desfaz_os_anos_anteriores(arquivos, parlamentares, sessao, capsys):
+    fontes = sessao.scalar(select(func.count()).select_from(Fonte))
+    sessao.execute(
+        text(
+            "ALTER TABLE candidatura_patrimonio ADD CONSTRAINT teste_ultimo_ano CHECK (ano <> 2026)"
+        )
+    )
+    resumo = _carregar(arquivos, capsys, completa=False)
+    assert resumo["falhas"] == {"gravacao": 1}
+    assert not sessao.scalar(select(func.count()).select_from(CandidaturaPatrimonio))
+    assert not _bens(sessao)
+    assert sessao.scalar(select(func.count()).select_from(Fonte)) == fontes
+    assert sessao.scalar(select(func.count()).select_from(Candidatura)) == 5

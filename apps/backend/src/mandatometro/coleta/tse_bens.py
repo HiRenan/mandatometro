@@ -17,6 +17,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
+from mandatometro.coleta import tse
 from mandatometro.coleta.http import Resposta
 from mandatometro.coleta.persistencia import registrar_fonte
 from mandatometro.coleta.tse import ANOS as ANOS_ANCORAS
@@ -25,6 +26,7 @@ from mandatometro.coleta.tse_arquivos import (
     BENS,
     CANDIDATURAS,
     ArquivoInvalido,
+    CandidaturaTse,
     abrir_zip,
     url_arquivo,
 )
@@ -34,6 +36,7 @@ from mandatometro.coleta.tse_bens_arquivos import (
     TotaisPorTipo,
     ler_bens,
     ler_candidaturas_patrimonio,
+    ler_candidaturas_recentes,
 )
 from mandatometro.db import sessao
 from mandatometro.db.modelos import BemDeclarado, Candidatura, CandidaturaPatrimonio
@@ -44,6 +47,13 @@ _CHAVE = ("ano", "codigo_eleicao", "uf", "id_externo")
 type ChaveDaSerie = tuple[int, ChavePatrimonio]
 type Ancoras = dict[ChaveDaSerie, int]
 type Historico = dict[ChaveDaSerie, tuple[int, int]]  # Parlamentar e fonte de bens vigente.
+
+
+@dataclass(frozen=True, repr=False)
+class Vinculos:
+    ancoras: Ancoras
+    historico: Historico
+    em_exercicio: frozenset[tse.EmExercicio]
 
 
 @dataclass(repr=False)
@@ -70,7 +80,7 @@ class CargaAno:
         }
 
 
-def _vinculos(s: Session) -> tuple[Ancoras, Historico]:
+def _vinculos(s: Session) -> Vinculos:
     ancoras = {
         (ano, (eleicao, uf, externo)): dono
         for ano, eleicao, uf, externo, dono in s.execute(
@@ -97,7 +107,7 @@ def _vinculos(s: Session) -> tuple[Ancoras, Historico]:
             ).where(modelo.ano.in_(ANOS))
         )
     }
-    return ancoras, historico
+    return Vinculos(ancoras, historico, frozenset(tse._em_exercicio(s)))
 
 
 def _ler[T](
@@ -121,54 +131,78 @@ def _ler[T](
 
 def _cpfs_das_ancoras(
     ancoras: Ancoras,
+    confirmadas: Ancoras,
     recentes: dict[int, dict[ChavePatrimonio, CandidaturaLida]],
     resumo: Counter[str],
 ) -> dict[int, str]:
     cpfs = defaultdict(set)
-    pessoas_por_cpf = defaultdict(set)
+    com_cpf_confirmado = set()
     for (ano, chave), pessoa in ancoras.items():
         candidatura = recentes[ano].get(chave)
         if candidatura and candidatura.cpf:
             cpfs[pessoa].add(candidatura.cpf)
-            pessoas_por_cpf[candidatura.cpf].add(pessoa)
+            if (ano, chave) in confirmadas:
+                com_cpf_confirmado.add(pessoa)
         else:
             resumo["candidaturas_sem_cpf"] += 1
 
-    pessoas = set(ancoras.values())
-    resumo["sem_cpf"] = len(pessoas - cpfs.keys())
+    resumo["sem_cpf"] = len(set(confirmadas.values()) - com_cpf_confirmado)
     identidades = {}
-    for pessoa, documentos in cpfs.items():
-        if len(documentos) == 1 and len(pessoas_por_cpf[cpf := next(iter(documentos))]) == 1:
-            identidades[pessoa] = cpf
+    for pessoa in com_cpf_confirmado:
+        documentos = cpfs[pessoa]
+        if len(documentos) == 1:
+            identidades[pessoa] = next(iter(documentos))
         else:
             resumo["em_conflito"] += 1
     return identidades
 
 
+def _confirmar_ancoras(
+    vinculos: Vinculos, arquivos: dict[int, list[CandidaturaTse]], resumo: Counter[str]
+) -> Ancoras:
+    donos = {
+        (ano, (eleicao, externo)): pessoa
+        for (ano, (eleicao, _uf, externo)), pessoa in vinculos.ancoras.items()
+    }
+    ligacao = tse._ligar(vinculos.em_exercicio, arquivos, donos)
+    confirmadas = {}
+    for ano, pares in ligacao.ligadas.items():
+        for (eleicao, externo), (candidatura, pessoa) in pares.items():
+            chave = (ano, (eleicao, candidatura.uf, externo))
+            if vinculos.ancoras.get(chave) == pessoa and pessoa not in ligacao.conflitos:
+                confirmadas[chave] = pessoa
+
+    titulares = set(vinculos.ancoras.values()) | {dono for dono, _ in vinculos.historico.values()}
+    resumo["sem_ancora_valida"] = len(titulares - set(confirmadas.values()))
+    resumo["em_conflito_na_ligacao"] = len(titulares & ligacao.conflitos)
+    return confirmadas
+
+
 def _ligar_candidaturas(
     cargas: dict[int, CargaAno],
-    ancoras: Ancoras,
-    historico: Historico,
+    vinculos: Vinculos,
+    confirmadas: Ancoras,
     resumo: Counter[str],
     ler: Callable[[int], dict[ChavePatrimonio, CandidaturaLida]],
 ) -> None:
     recentes = {ano: ler(ano) for ano in ANOS_ANCORAS}
-    cpfs = _cpfs_das_ancoras(ancoras, recentes, resumo)
-    por_cpf = {cpf: pessoa for pessoa, cpf in cpfs.items()}
+    cpfs = _cpfs_das_ancoras(vinculos.ancoras, confirmadas, recentes, resumo)
+    cpfs_que_ligam = set(cpfs.values())
 
     donos = defaultdict(set)
     por_pessoa = defaultdict(set)
     for (ano, chave), pessoa in chain(
-        ancoras.items(), ((k, dono) for k, (dono, _) in historico.items())
+        vinculos.ancoras.items(), ((k, dono) for k, (dono, _) in vinculos.historico.items())
     ):
         donos[ano, chave].add(pessoa)
         por_pessoa[ano, pessoa].add(chave)
 
     passadas = defaultdict(dict)
-    for (ano, chave), (pessoa, _) in historico.items():
+    for (ano, chave), (pessoa, _) in vinculos.historico.items():
         passadas[ano][chave] = pessoa
 
     nao_confirmadas = set()
+    reivindicacoes = defaultdict(set)
     for ano, carga in cargas.items():
         candidaturas = recentes.pop(ano) if ano in recentes else ler(ano)
         for chave, pessoa in passadas[ano].items():
@@ -178,27 +212,41 @@ def _ligar_candidaturas(
 
         alcancadas = defaultdict(list)
         for chave, candidatura in candidaturas.items():
-            if candidatura.cpf in por_cpf:
-                alcancadas[por_cpf[candidatura.cpf]].append((chave, candidatura.cargo))
-        for pessoa, registros in alcancadas.items():
+            cpf = candidatura.cpf
+            if cpf is not None and (titulares := donos.get((ano, chave))):
+                # Uma ficha gravada é evidência de disputa mesmo sem âncora válida.
+                reivindicacoes[cpf].update(titulares)
+            if cpf in cpfs_que_ligam:
+                alcancadas[cpf].append((chave, candidatura.cargo))
+
+        for pessoa, cpf in cpfs.items():
+            registros = alcancadas.get(cpf)
+            if not registros:
+                continue
             chave, cargo = registros[0]
-            if (
-                len(registros) > 1
-                or donos[ano, chave] - {pessoa}
-                or por_pessoa[ano, pessoa] - {chave}
-            ):
+            if len(registros) > 1:
+                carga.contagens["cpf_repetido"] += 1
+                carga.contagens["em_conflito"] += 1
+            elif por_pessoa[ano, pessoa] - {chave}:
                 carga.contagens["em_conflito"] += 1
             else:
                 carga.ligadas[chave] = pessoa, cargo
 
     ancora_confirmada = {
         pessoa
-        for (ano, chave), pessoa in ancoras.items()
+        for (ano, chave), pessoa in confirmadas.items()
         if chave in cargas[ano].ligadas and cargas[ano].ligadas[chave][0] == pessoa
+    }
+    conflitos_da_cadeia = {
+        pessoa
+        for titulares in chain(donos.values(), reivindicacoes.values())
+        if len(titulares) > 1
+        for pessoa in titulares
     }
     resumo["sem_ancora_unica"] = len(cpfs.keys() - ancora_confirmada)
     resumo["vinculos_nao_confirmados"] = len(nao_confirmadas)
-    aptas = ancora_confirmada - nao_confirmadas
+    resumo["em_conflito_na_cadeia"] = len(conflitos_da_cadeia)
+    aptas = ancora_confirmada - nao_confirmadas - conflitos_da_cadeia
     for carga in cargas.values():
         carga.ligadas = {
             chave: (pessoa, cargo)
@@ -267,21 +315,32 @@ def _coletar(
     resumo_ancoras: Counter[str],
 ) -> None:
     with sessao() as s:
-        ancoras, historico = _vinculos(s)
-    if not ancoras:
+        vinculos = _vinculos(s)
+    if not vinculos.ancoras:
         raise ArquivoInvalido("Carregue as candidaturas antes dos bens do TSE.")
 
-    def ler_candidaturas(ano):
+    def ler_consulta(ano, leitor):
         return _ler(
             ano,
             CANDIDATURAS,
             cargas[ano],
             diretorio,
             cliente,
-            ler_candidaturas_patrimonio,
+            leitor,
         )
 
-    _ligar_candidaturas(cargas, ancoras, historico, resumo_ancoras, ler_candidaturas)
+    recentes = {ano: ler_consulta(ano, ler_candidaturas_recentes) for ano in ANOS_ANCORAS}
+    confirmadas = _confirmar_ancoras(
+        vinculos, {ano: nominais for ano, (_, nominais) in recentes.items()}, resumo_ancoras
+    )
+
+    def ler_candidaturas(ano):
+        if ano in recentes:
+            lidas, _ = recentes.pop(ano)
+            return lidas
+        return ler_consulta(ano, ler_candidaturas_patrimonio)
+
+    _ligar_candidaturas(cargas, vinculos, confirmadas, resumo_ancoras, ler_candidaturas)
     for ano, carga in cargas.items():
         carga.valores = _ler(
             ano,
@@ -298,9 +357,11 @@ def _coletar(
             s.execute(
                 select(func.pg_advisory_xact_lock(func.hashtext("mandatometro.coleta.tse"), ano))
             )
-        if _vinculos(s) != (ancoras, historico):
+        if _vinculos(s) != vinculos:
             raise ArquivoInvalido("Os vínculos mudaram durante a leitura dos arquivos.")
-        gravacoes = {ano: _gravar_ano(s, ano, carga, historico) for ano, carga in cargas.items()}
+        gravacoes = {
+            ano: _gravar_ano(s, ano, carga, vinculos.historico) for ano, carga in cargas.items()
+        }
     for ano, (candidaturas, totais) in gravacoes.items():
         cargas[ano].contagens.update(candidaturas_gravadas=candidaturas, totais_gravados=totais)
 
