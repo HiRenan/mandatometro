@@ -102,6 +102,7 @@ export function useSom(): boolean {
 // A narração da fala da vez. É uma por vez: a fala nova para a anterior, para
 // duas vozes não falarem juntas.
 let narrando: HTMLAudioElement | undefined;
+const efeitosEmCurso = new Set<HTMLAudioElement>();
 
 const VOLUME_DA_VOZ = 1;
 
@@ -133,6 +134,15 @@ export function pararVoz(): void {
 	narrando = undefined;
 }
 
+/** Silencia o que já começou a tocar quando a pessoa desliga o som ou sai. */
+export function pararSons(): void {
+	pararVoz();
+	for (const som of efeitosEmCurso) {
+		som.pause();
+	}
+	efeitosEmCurso.clear();
+}
+
 /**
  * Toca um efeito, se a pessoa ligou o som. Com o som desligado, não cria nem
  * baixa nada. A falha do navegador em tocar não interrompe o jogo.
@@ -144,7 +154,12 @@ export function tocar(efeito: Efeito): void {
 	try {
 		const som = new Audio(enderecoDoEfeito(efeito));
 		som.volume = VOLUME_DO_EFEITO;
-		void som.play()?.catch(() => undefined);
+		const soltar = () => efeitosEmCurso.delete(som);
+		som.onended = soltar;
+		som.onerror = soltar;
+		const tocando = som.play();
+		efeitosEmCurso.add(som);
+		void tocando?.catch(soltar);
 	} catch {
 		// Sem som, o jogo segue: a tela diz tudo em palavras.
 	}

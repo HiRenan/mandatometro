@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { BOTAO_CONTINUAR } from "@/components/botao-continuar";
 import { classes } from "@/lib/classes";
 import { semCliqueDuplo } from "@/lib/clique";
@@ -18,35 +18,33 @@ const PASSOS_DA_CONTAGEM = 24;
 
 const MS_DA_CONTAGEM = 40;
 
-function useContagem(ate: number, ligado: boolean): number {
-	const [valor, setValor] = useState(0);
+function useContagem(ligado: boolean): number {
+	const [progresso, setProgresso] = useState(0);
 
 	useEffect(() => {
 		if (!ligado) {
 			return;
 		}
+		tocar("painel");
 		if (
 			movimentoReduzido() ||
 			typeof Element.prototype.animate !== "function"
 		) {
-			setValor(ate);
+			setProgresso(1);
 			return;
 		}
-		tocar("painel");
 		let passo = 0;
 		const relogio = setInterval(() => {
 			passo += 1;
-			if (passo >= PASSOS_DA_CONTAGEM) {
+			setProgresso(passo / PASSOS_DA_CONTAGEM);
+			if (passo === PASSOS_DA_CONTAGEM) {
 				clearInterval(relogio);
-				setValor(ate);
-				return;
 			}
-			setValor(Math.round((ate * passo) / PASSOS_DA_CONTAGEM));
 		}, MS_DA_CONTAGEM);
 		return () => clearInterval(relogio);
-	}, [ate, ligado]);
+	}, [ligado]);
 
-	return valor;
+	return progresso;
 }
 
 export function PainelDeVotos({
@@ -56,23 +54,29 @@ export function PainelDeVotos({
 	painel: Painel;
 	aoAvancar: () => void;
 }) {
+	const placar = useId();
 	const nominal = painel.modo === "nominal";
-	const sim = useContagem(nominal ? painel.sim : 0, nominal);
-	const nao = useContagem(nominal ? painel.nao : 0, nominal);
+	const progresso = useContagem(nominal);
 
 	return (
 		<div className="jogo-painel" data-modo={painel.modo}>
 			{nominal ? (
-				<dl className="jogo-votos">
-					<div>
-						<dt>Sim</dt>
-						<dd>{sim}</dd>
-					</div>
-					<div>
-						<dt>Não</dt>
-						<dd>{nao}</dd>
-					</div>
-				</dl>
+				<>
+					{/* biome-ignore lint/a11y/noAriaHiddenOnFocusable: o placar não recebe foco e o texto abaixo dá os votos finais desde o início. */}
+					<dl className="jogo-votos" aria-hidden="true">
+						<div>
+							<dt>Sim</dt>
+							<dd>{Math.round(painel.sim * progresso)}</dd>
+						</div>
+						<div>
+							<dt>Não</dt>
+							<dd>{Math.round(painel.nao * progresso)}</dd>
+						</div>
+					</dl>
+					<span className="sr-only" id={placar}>
+						Sim, {painel.sim} votos. Não, {painel.nao} votos.
+					</span>
+				</>
 			) : (
 				<>
 					<Carimbo selo={painel.selo} />
@@ -82,7 +86,12 @@ export function PainelDeVotos({
 					</p>
 				</>
 			)}
-			<p className="jogo-legenda" tabIndex={-1} data-foco="true">
+			<p
+				className="jogo-legenda"
+				tabIndex={-1}
+				data-foco="true"
+				aria-describedby={nominal ? placar : undefined}
+			>
 				{painel.legenda}
 				{nominal ? ` Votação de ${formatarData(painel.data)}.` : null}
 			</p>

@@ -89,6 +89,7 @@ export function Jogo({
 	comApi: boolean;
 }) {
 	const [partida, setPartida] = useState<Partida>(comecar);
+	const palco = useRef<HTMLDivElement>(null);
 	const frente = useRef<HTMLDivElement>(null);
 	const hidratado = useHidratado();
 
@@ -141,6 +142,7 @@ export function Jogo({
 			// A fala fica em cima da cena, como numa visual novel; a decisão, o
 			// painel e o cartão, que são altos, ficam embaixo dela.
 			data-sobre-a-cena={fala ? "true" : undefined}
+			ref={palco}
 		>
 			<div className="jogo-cena" aria-hidden="true">
 				<img
@@ -290,7 +292,7 @@ export function Jogo({
 			{partida.fase === "fim" ? null : (
 				<div className="jogo-pe">
 					<CaminhoDoProjeto casas={caminho(jogo, partida)} />
-					{hidratado ? <BotaoDeSom /> : null}
+					{hidratado ? <BotaoDeSom palco={palco} /> : null}
 					{naCena ? (
 						<p className="jogo-onde">
 							Cena {cena.cena} de {jogo.cenas.length}: {cena.titulo}

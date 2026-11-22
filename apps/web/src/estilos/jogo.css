@@ -343,10 +343,6 @@
 		padding-top: 0.875rem;
 	}
 
-	.jogo-feedback:focus-visible {
-		outline: none;
-	}
-
 	.jogo-eco {
 		font-family: var(--font-sans);
 		font-weight: 700;

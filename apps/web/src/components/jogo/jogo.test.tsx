@@ -106,7 +106,7 @@ function mostrar({ comApi = true } = {}) {
 		routeTree: raiz,
 		history: createMemoryHistory({ initialEntries: ["/jogos"] }),
 	});
-	render(<RouterProvider router={router} />);
+	return render(<RouterProvider router={router} />);
 }
 
 describe("a tela do jogo", () => {
@@ -151,6 +151,7 @@ describe("a tela do jogo", () => {
 
 	it("enquadra a primeira fala e mantém a posição e a ordem do foco na seguinte", async () => {
 		medirCaixas({ "jogo-caixa": [450, 680] });
+		const focar = vi.spyOn(HTMLElement.prototype, "focus");
 		mostrar();
 		const comecar = await iniciarPartida();
 		// O router aplica a posição inicial da navegação.
@@ -162,6 +163,7 @@ describe("a tela do jogo", () => {
 		fireEvent.click(comecar);
 		const primeiraFala = document.querySelector("[data-foco]");
 		expect(document.activeElement).toBe(primeiraFala);
+		expect(focar).toHaveBeenLastCalledWith({ preventScroll: true });
 		expect(window.scrollTo).toHaveBeenCalledExactlyOnceWith({
 			top: 92,
 			behavior: "smooth",
@@ -204,6 +206,82 @@ describe("a tela do jogo", () => {
 		expect(document.activeElement?.querySelector(".sr-only")?.textContent).toBe(
 			"Lia Moraes. Pronto, gabinete montado. Por onde a gente começa?",
 		);
+	});
+
+	it("espera uma interação no jogo e silencia a trilha, a voz e os efeitos ao desligar ou sair", async () => {
+		const tocados = () =>
+			vi
+				.mocked(HTMLMediaElement.prototype.play)
+				.mock.contexts.map(
+					(audio) => new URL((audio as HTMLMediaElement).src).pathname,
+				);
+		const pausados = () =>
+			vi
+				.mocked(HTMLMediaElement.prototype.pause)
+				.mock.contexts.map(
+					(audio) => new URL((audio as HTMLMediaElement).src).pathname,
+				);
+		const { unmount } = mostrar();
+		const comecar = await iniciarPartida();
+		fireEvent.click(document.body);
+		expect(tocados()).toEqual([]);
+
+		fireEvent.click(comecar);
+		expect(tocados()).toEqual([
+			"/jogo/audio/musica-tema.ogg",
+			"/jogo/audio/sfx-campainha.ogg",
+			"/jogo/vo/c1-01.mp3",
+		]);
+
+		fireEvent.click(screen.getByRole("button", { name: "Desligar o som" }));
+		expect(pausados()).toEqual(expect.arrayContaining(tocados()));
+		expect(window.localStorage.getItem("mandatometro:jogo-som")).toBe(
+			"desligado",
+		);
+
+		vi.mocked(HTMLMediaElement.prototype.pause).mockClear();
+		fireEvent.click(screen.getByRole("button", { name: "Ligar o som" }));
+		fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+		expect(tocados()).toContain("/jogo/vo/c1-02.mp3");
+		unmount();
+		expect(pausados()).toEqual(
+			expect.arrayContaining([
+				"/jogo/audio/musica-tema.ogg",
+				"/jogo/vo/c1-02.mp3",
+			]),
+		);
+	});
+
+	it("anuncia a natureza da decisão, a justificativa da escolha e os votos reais", async () => {
+		vi.stubGlobal("matchMedia", () => ({ matches: true }));
+		const descricao = () =>
+			document.activeElement
+				?.getAttribute("aria-describedby")
+				?.split(" ")
+				.map((id) => document.getElementById(id)?.textContent)
+				.join(" ");
+		mostrar();
+		fireEvent.click(await iniciarPartida());
+		jogarAte(".jogo-pergunta");
+		expect(descricao()).toContain("Esta tem resposta certa");
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Mandar para o Senado decidir" }),
+		);
+		expect(descricao()).toContain("Não resolve");
+		expect(descricao()).toContain("O autor pede o desarquivamento");
+		expect(document.activeElement?.textContent).not.toContain("Continuar");
+
+		jogarAte('.jogo-painel[data-modo="nominal"]');
+		expect(descricao()).toBe("Sim, 45 votos. Não, 14 votos.");
+		const efeitos = vi
+			.mocked(HTMLMediaElement.prototype.play)
+			.mock.contexts.map(
+				(audio) => new URL((audio as HTMLMediaElement).src).pathname,
+			);
+		expect(
+			efeitos.filter((src) => src.endsWith("/sfx-painel.ogg")),
+		).toHaveLength(1);
 	});
 
 	it("começa pelo conteúdo novo quando as explicações da decisão são altas", async () => {
