@@ -1,5 +1,5 @@
 // biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
-import type { CSSProperties } from "react";
+import { type CSSProperties, Fragment } from "react";
 import type { CorrecaoIpca } from "@/client";
 import { enderecoSeguro } from "@/lib/edicoes/conteudo-da-edicao";
 import {
@@ -19,6 +19,8 @@ import { FaixaDeInformacoes } from "../faixa-de-informacoes";
 /** A Lei das Eleições: o § 1º, IV, do art. 11 pede a declaração de bens no registro. */
 const LEI_DAS_ELEICOES =
 	"https://www.planalto.gov.br/ccivil_03/leis/l9504.htm#art11";
+const LEI_DO_IMPOSTO_DE_RENDA =
+	"https://www.planalto.gov.br/ccivil_03/leis/l9250.htm#art25";
 
 /**
  * O patrimônio declarado ao TSE (o Renan, em 22/11/2026): uma linha por eleição,
@@ -76,7 +78,13 @@ function ConteudoDoPatrimonio({
 		);
 	}
 	const linhas = linhasDoPatrimonio(eleicoes, correcao);
-	const corrigida = linhas.some((linha) => linha.valor.tipo === "corrigido");
+	const correcaoAplicada = linhas.some(
+		({ valor }) => valor.tipo === "corrigido",
+	)
+		? correcao
+		: null;
+	const parcial = linhas.some(({ valor }) => valor.tipo === "sem-correcao");
+	const mes = correcaoAplicada && formatarMes(correcaoAplicada.mes_fim);
 	return (
 		<>
 			<p className="texto-do-patrimonio">
@@ -85,15 +93,17 @@ function ConteudoDoPatrimonio({
 				{nome} declarou nas eleições gerais em que concorreu.
 				{correcao === null
 					? " Os valores aparecem como foram declarados, sem a correção pela inflação: a série do IPCA não está nos dados usados agora."
-					: corrigida &&
-						` Para comparar anos diferentes, cada total aparece também em reais de hoje, corrigido pela inflação até ${formatarMes(correcao.mes_fim)}.`}
+					: mes &&
+						(parcial
+							? ` Para comparar anos diferentes, os totais aparecem também em reais de hoje, corrigidos pela inflação até ${mes}, quando a série do IPCA cobre a eleição.`
+							: ` Para comparar anos diferentes, cada total aparece também em reais de hoje, corrigido pela inflação até ${mes}.`)}
 			</p>
 			<p className="texto-do-patrimonio aviso-do-patrimonio">
 				É o valor que a própria pessoa declarou ao registrar a candidatura, e
-				não o patrimônio de hoje. A Justiça Eleitoral publica a declaração como
-				recebeu, sem avaliar os bens, e cada bem costuma entrar pelo preço de
-				compra: uma casa comprada há 20 anos pode aparecer pelo valor daquela
-				época.
+				não o patrimônio de hoje. A Justiça Eleitoral dá acesso à declaração
+				como ela foi entregue, e cada bem costuma entrar pelo preço de compra,
+				como na declaração do Imposto de Renda: uma casa comprada há 20 anos
+				pode aparecer pelo valor daquela época.
 			</p>
 			<ol role="list" className="eleicoes-do-patrimonio">
 				{linhas.map((linha) => (
@@ -105,14 +115,20 @@ function ConteudoDoPatrimonio({
 			</ol>
 			<p className="texto-do-patrimonio nota-do-patrimonio">
 				Só aparecem as eleições em que deu para ligar, com segurança, a
-				candidatura no TSE a {nome}. O arquivo de cada ano traz as declarações
-				de todas as candidaturas daquela eleição.
+				candidatura no TSE a {nome}. O arquivo de cada ano é o do TSE com os
+				bens declarados naquela eleição, e não só os desta pessoa.
 			</p>
-			{correcao && <CorrecaoPeloIpca correcao={correcao} />}
+			{correcaoAplicada && (
+				<CorrecaoPeloIpca correcao={correcaoAplicada} parcial={parcial} />
+			)}
 			<p className="fonte-das-regras">
-				Fonte da regra:{" "}
+				Fontes das regras:{" "}
 				<a href={LEI_DAS_ELEICOES}>
 					{semQuebrarCitacao("Lei 9.504/1997, art. 11")}
+				</a>{" "}
+				e{" "}
+				<a href={LEI_DO_IMPOSTO_DE_RENDA}>
+					{semQuebrarCitacao("Lei 9.250/1995, art. 25")}
 				</a>
 				.
 			</p>
@@ -142,10 +158,7 @@ function EleicaoDoPatrimonio({ linha }: { linha: LinhaDoPatrimonio }) {
 			</div>
 			<div className="detalhes-da-eleicao">
 				{valor.tipo !== "sem-total" && (
-					<p className="declarado-na-eleicao">
-						{/* O ano não se separa do "em" na quebra: com a letra grande numa tela estreita, "2018:" ficava sozinho numa linha. */}
-						{`Declarado em\u00a0${ano}: ${valor.declarado}`}
-					</p>
+					<ValorDeclarado ano={ano} valor={valor.declarado} />
 				)}
 				{fonte.endereco ? (
 					<a href={fonte.endereco} className="acao-de-texto">
@@ -158,6 +171,27 @@ function EleicaoDoPatrimonio({ linha }: { linha: LinhaDoPatrimonio }) {
 				<p className="rotulo coletado-em">Coletado em {fonte.coletado}</p>
 			</div>
 		</li>
+	);
+}
+
+/** As quebras ficam no texto visual. O leitor de tela recebe o número inteiro. */
+function ValorDeclarado({ ano, valor }: { ano: number; valor: string }) {
+	const rotulo = `Declarado em\u00a0${ano}: `;
+	return (
+		<p className="declarado-na-eleicao">
+			<span className="sr-only">{rotulo + valor}</span>
+			<span aria-hidden="true">
+				{rotulo}
+				<span className="valor-exato-da-eleicao">
+					{Array.from(valor.matchAll(/[^.]+\.?/g), ({ 0: grupo, index }) => (
+						<Fragment key={index}>
+							{index > 0 && <wbr />}
+							{grupo}
+						</Fragment>
+					))}
+				</span>
+			</span>
+		</p>
 	);
 }
 
@@ -194,13 +228,20 @@ function ValorDestacado({ valor }: { valor: ValorDaEleicao }) {
 }
 
 /** De onde vem a correção: o índice, até que mês ela vai e a série do Banco Central. */
-function CorrecaoPeloIpca({ correcao }: { correcao: CorrecaoIpca }) {
+function CorrecaoPeloIpca({
+	correcao,
+	parcial,
+}: {
+	correcao: CorrecaoIpca;
+	parcial: boolean;
+}) {
 	const serie = enderecoSeguro(correcao.fonte.url);
 	return (
 		<div className="correcao-do-patrimonio">
 			<p className="texto-do-patrimonio">
 				A correção usa o IPCA, a inflação oficial medida pelo IBGE, de outubro
-				do ano de cada eleição até {formatarMes(correcao.mes_fim)}.
+				do ano {parcial ? "da eleição" : "de cada eleição"} até{" "}
+				{formatarMes(correcao.mes_fim)}.
 			</p>
 			{serie && (
 				<a href={serie} className="acao-de-texto">

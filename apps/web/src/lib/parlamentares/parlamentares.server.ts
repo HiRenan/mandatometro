@@ -488,7 +488,19 @@ function pareceFonte(dados: unknown): boolean {
 	return (
 		ehObjeto(dados) &&
 		typeof dados.url === "string" &&
-		typeof dados.coletado_em === "string"
+		pareceDataEHora(dados.coletado_em)
+	);
+}
+
+/** O instante de coleta tem dia de calendário, horário e fuso. */
+function pareceDataEHora(valor: unknown): boolean {
+	return (
+		typeof valor === "string" &&
+		/^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/i.test(
+			valor,
+		) &&
+		pareceDia(valor) &&
+		Number.isFinite(Date.parse(valor))
 	);
 }
 

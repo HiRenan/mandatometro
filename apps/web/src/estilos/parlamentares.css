@@ -383,6 +383,9 @@
 	}
 
 	.fonte-das-regras a {
+		display: inline-grid;
+		align-items: center;
+		min-height: 2.75rem;
 		color: var(--tinta);
 	}
 
@@ -674,6 +677,12 @@
 		font-weight: 600;
 		line-height: 1.4;
 		font-variant-numeric: lining-nums tabular-nums;
+		max-inline-size: 100%;
+	}
+
+	.valor-exato-da-eleicao {
+		display: inline-block;
+		max-inline-size: 100%;
 	}
 
 	.nota-do-patrimonio {
