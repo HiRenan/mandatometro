@@ -326,6 +326,47 @@ def test_catalogo_parcial_preserva_partidos_e_coleta_biografias(
         assert "Resposta da fonte com compressão inválida." in caplog.messages
 
 
+def test_pagina_divergente_da_camara_preserva_catalogo_e_fontes(
+    pessoas, rodar, fontes_http, sessao
+):
+    respostas, chamadas = fontes_http
+    pagina_dois = f"{PARTIDOS_CAMARA}&pagina=2"
+    pagina_tres = f"{PARTIDOS_CAMARA}&pagina=3"
+    respostas[PARTIDOS_CAMARA]["links"] = [
+        {"rel": "next", "href": pagina_dois},
+        {"rel": "last", "href": pagina_dois},
+    ]
+    respostas[pagina_dois] = {
+        "dados": [{"sigla": "PÁG", "nome": "Partido Águas de Garoa"}],
+        "links": [{"rel": "self", "href": pagina_dois}],
+    }
+    assert rodar()["partidos"] == 3
+    catalogo = select(Partido.sigla, Partido.nome, Partido.fonte_id).order_by(Partido.sigla)
+    fontes = (
+        select(Fonte.id, Fonte.url, Fonte.coletado_em)
+        .where(Fonte.url.startswith(f"{camara.BASE}/partidos"))
+        .order_by(Fonte.id)
+    )
+    partidos_antes = sessao.execute(catalogo).all()
+    fontes_antes = sessao.execute(fontes).all()
+    respostas[pagina_dois] = httpx2.Response(302, headers={"Location": pagina_tres})
+    respostas[pagina_tres] = {
+        "dados": [{"sigla": "EXQ", "nome": "Partido de Exemplo"}],
+        "links": [{"rel": "self", "href": pagina_tres}],
+    }
+    respostas[DEPUTADO]["dados"]["escolaridade"] = "Mestrado"
+
+    resumo = rodar(1)
+    assert pagina_tres in chamadas
+    assert resumo["completa"] is False
+    assert resumo["falha_partidos"] is True
+    assert resumo["partidos"] == resumo["falhas_parlamentares"] == 0
+    assert resumo["biografias"] == 2
+    assert sessao.execute(catalogo).all() == partidos_antes
+    assert sessao.execute(fontes).all() == fontes_antes
+    assert detalhe(pessoas[0])["biografia"]["escolaridade"] == "Mestrado"
+
+
 @pytest.mark.parametrize("casa", ["camara", "senado"])
 def test_catalogo_sem_siglas_preserva_partidos_e_coleta_biografias(
     pessoas, rodar, fontes_http, sessao, casa

@@ -49,7 +49,11 @@ def _rotulos(itens: Iterable[dict], campo: str) -> list[str]:
 
 
 def _consultar_json(
-    http: ClienteHttp, caminho: str, *, params: dict[str, int] | None = None
+    http: ClienteHttp,
+    caminho: str,
+    *,
+    params: dict[str, int] | None = None,
+    pagina_esperada: int | None = None,
 ) -> Resposta:
     url = str(httpx2.URL(http.base_url + caminho, params=params))
     try:
@@ -58,6 +62,8 @@ def _consultar_json(
         mensagem = "Resposta da fonte com compressão inválida."
         logger.warning(mensagem)
         raise ErroColeta(mensagem) from None
+    if pagina_esperada is not None and camara._numero_pagina(resposta.url) != pagina_esperada:
+        raise ErroColeta("Paginação inconsistente na Câmara.")
     return replace(resposta, url=url)
 
 
@@ -110,7 +116,7 @@ def _paginas_partidos_camara(http: ClienteHttp) -> Iterator[tuple[list, Resposta
     pagina, ultima_anunciada = 1, 1
     params = {"itens": 100}
     while True:
-        resposta = _consultar_json(http, "/partidos", params=params)
+        resposta = _consultar_json(http, "/partidos", params=params, pagina_esperada=pagina)
         envelope = camara._objeto(resposta.dados)
         links = [camara._objeto(link) for link in camara._lista(envelope["links"])]
         proximas = [
