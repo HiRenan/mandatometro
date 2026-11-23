@@ -98,19 +98,21 @@ describe("as linhas do patrimônio", () => {
 		});
 	});
 
-	it("põem o valor de hoje em destaque, o declarado exato embaixo e a barra pelo maior valor da pessoa", () => {
+	it("põem o valor de hoje em destaque, o declarado arredondado, que a página mostra primeiro, o exato embaixo e a barra pelo maior valor da pessoa", () => {
 		const linhas = linhasDoPatrimonio(eleicoes, correcao_ipca);
 
 		expect(linhas.map((linha) => linha.valor)).toEqual([
 			{
 				tipo: "corrigido",
 				destaque: reais("352 mil"),
+				arredondado: reais("198 mil"),
 				declarado: reais("198.300,00"),
 				barra: 0.1459,
 			},
 			{
 				tipo: "corrigido",
 				destaque: reais("1,1 milhão"),
+				arredondado: reais("812 mil"),
 				declarado: reais("812.400,00"),
 				barra: 0.4558,
 			},
@@ -118,6 +120,7 @@ describe("as linhas do patrimônio", () => {
 			{
 				tipo: "corrigido",
 				destaque: reais("2,4 milhões"),
+				arredondado: reais("2,4 milhões"),
 				declarado: reais("2.410.000,00"),
 				barra: 1,
 			},
@@ -133,6 +136,7 @@ describe("as linhas do patrimônio", () => {
 		expect(linha.valor).toEqual({
 			tipo: "corrigido",
 			destaque: reais("1,1 milhão"),
+			arredondado: reais("812 mil"),
 			declarado: reais("812.400,00"),
 			barra: null,
 		});
@@ -164,18 +168,21 @@ describe("as linhas do patrimônio", () => {
 			{
 				tipo: "corrigido",
 				destaque: reais("0"),
+				arredondado: reais("0"),
 				declarado: reais("0,00"),
 				barra: null,
 			},
 			{
 				tipo: "corrigido",
 				destaque: reais("12 mil"),
+				arredondado: reais("6 mil"),
 				declarado: reais("6.000,00"),
 				barra: 0.0001,
 			},
 			{
 				tipo: "corrigido",
 				destaque: reais("380 milhões"),
+				arredondado: reais("300 milhões"),
 				declarado: reais("300.000.000,00"),
 				barra: 1,
 			},
@@ -200,12 +207,14 @@ describe("as linhas do patrimônio", () => {
 			{
 				tipo: "corrigido",
 				destaque: reais("1,1 milhão"),
+				arredondado: reais("812 mil"),
 				declarado: reais("812.400,00"),
 				barra: 1,
 			},
 			{
 				tipo: "corrigido",
 				destaque: reais("550 mil"),
+				arredondado: reais("812 mil"),
 				declarado: reais("812.400,00"),
 				barra: 0.5,
 			},

@@ -4,7 +4,7 @@
  * o mapa do Brasil; na votação, o plenário, um azulejo por voto; na
  * página da pessoa, o painel de enfeite. Embaixo do cartaz, o corpo segue a
  * margem da página (o .artigos do index.css). Daqui, saem o mapa, o campo
- * "Estado", as listas de nomes, os mandatos, como votou, os votos da pessoa, o
+ * "Estado", as listas de nomes, a ficha da pessoa, como votou, os votos dela, o
  * plenário, o placar por partido, quem votou como, o "Ver quem votou" da edição
  * e o bloco da página inicial. As telas ficam em components/pagina-dos-
  * parlamentares.tsx, pagina-do-parlamentar.tsx, pagina-da-votacao.tsx e em
@@ -883,20 +883,215 @@
 		}
 	}
 
+	/*
+	 * A ficha no pé do cartaz (o Renan, em 23/11/2026: "A · Ficha em quadro"):
+	 * embaixo do nome e da faixa, um quadro de fatos, cada um com o fio de tinta em
+	 * cima, o rótulo, o valor e a fonte. O pé fica numa coluna só também no
+	 * computador, onde o das outras páginas se divide em duas. As colunas saem da
+	 * largura da própria ficha: três a partir de 44rem, duas a partir de 24rem e
+	 * uma abaixo disso. Cada fato é uma subgrade de três linhas, e os rótulos, os
+	 * valores e as fontes de uma fileira ficam na mesma altura. As eleições ocupam
+	 * a largura toda, numa faixa de células que desce em lista quando não cabe.
+	 * Nada leva cor: os números vão na letra dos números do patrimônio, em tinta.
+	 */
+	.cartaz-do-parlamentar .cartaz-pe {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.ficha-do-parlamentar {
+		container: ficha / inline-size;
+	}
+
+	.itens-da-ficha {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		column-gap: var(--respiro);
+	}
+
+	@container ficha (width >= 24rem) {
+		.itens-da-ficha {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@container ficha (width >= 44rem) {
+		.itens-da-ficha {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+	}
+
+	.item-da-ficha {
+		display: grid;
+		grid-row: span 3;
+		grid-template-rows: subgrid;
+		align-content: start;
+		row-gap: 0.4rem;
+		padding: 0.75rem 0 1.1rem;
+		border-top: 1px solid var(--tinta);
+	}
+
+	.item-da-ficha > dt {
+		color: var(--tinta-suave);
+	}
+
+	.eleicoes-da-ficha {
+		grid-column: 1 / -1;
+	}
+
+	.valor-da-ficha {
+		font-family: var(--font-sans);
+		font-size: 1.0625rem;
+		font-weight: 700;
+		line-height: 1.3;
+	}
+
+	/* O voto, o patrimônio e o ano de cada eleição: a letra dos números. */
+	.numero-da-ficha {
+		display: block;
+		font-family: var(--font-sans);
+		font-size: clamp(1.75rem, 1.45rem + 1.2vw, 2.5rem);
+		font-stretch: 62%;
+		font-weight: 900;
+		line-height: 1;
+		font-variant-numeric: lining-nums tabular-nums;
+	}
+
+	.sigla-do-partido {
+		display: block;
+		font-size: 1.375rem;
+		font-weight: 800;
+		line-height: 1.1;
+	}
+
+	.nome-do-partido,
+	.ano-do-patrimonio {
+		display: block;
+		margin-top: 0.3rem;
+		font-family: var(--font-serif);
+		font-size: 0.9375rem;
+		font-weight: 400;
+		line-height: 1.4;
+	}
+
+	/* O dado que falta vem em palavras, na letra do texto, e não na dos dados. */
+	.falta-na-ficha {
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		font-weight: 400;
+		line-height: 1.45;
+	}
+
+	.fonte-da-ficha {
+		font-family: var(--font-serif);
+		font-size: 0.875rem;
+		line-height: 1.45;
+		color: var(--tinta-suave);
+	}
+
+	.fonte-da-ficha a {
+		display: inline-grid;
+		align-items: center;
+		min-height: 2.75rem;
+		color: var(--tinta);
+	}
+
+	/* O dia da coleta, embaixo do link, que fecha a linha dele sem pontuação. */
+	.coleta-da-ficha {
+		display: block;
+	}
+
+	/*
+	 * Um mandato que quebra de linha continua junto: as linhas dele se encostam,
+	 * e o vão entre um mandato e outro é maior.
+	 */
+	.mandatos-da-ficha {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	/* As partes do mandato, em tinta, entram com o pé do cartaz, e não sozinhas. */
+	.ficha-do-parlamentar span.faixa {
+		color: var(--tinta);
+		animation: none;
+	}
+
+	/*
+	 * Na célula estreita, as partes do mandato quebram de linha. O quadradinho vai
+	 * no recuo antes de cada parte, e não depois dela, e o da parte que abre uma
+	 * linha fica sob a borda da célula (a faixa recua o mesmo 1.9em, e o corte o
+	 * esconde): nenhuma linha começa nem termina com ele, e a parte longa que
+	 * quebra continua alinhada. Ele tem o tamanho, as margens e a altura do
+	 * quadradinho da faixa (index.css), e, nas cores forçadas, fica em CanvasText,
+	 * como o dela: sem isso, o fundo vira o do papel, e ele some.
+	 */
+	.mandatos-da-ficha .rotulo {
+		overflow-x: clip;
+	}
+
+	.mandatos-da-ficha .faixa {
+		row-gap: 0;
+		margin-left: -1.9em;
+	}
+
+	.mandatos-da-ficha .parte-do-mandato {
+		padding-left: 1.9em;
+	}
+
+	.mandatos-da-ficha .parte-do-mandato::before {
+		content: "" / "";
+		display: inline-block;
+		width: 0.3em;
+		height: 0.3em;
+		margin: 0 0.8em 0 -1.1em;
+		vertical-align: 0.2em;
+		background: currentColor;
+	}
+
+	@media (forced-colors: active) {
+		.mandatos-da-ficha .parte-do-mandato::before {
+			forced-color-adjust: none;
+			background: CanvasText;
+		}
+	}
+
+	.mandatos-da-ficha .parte-do-mandato:not(:last-child)::after {
+		display: none;
+	}
+
+	.lista-das-eleicoes {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
+		gap: 0.75rem var(--respiro);
+		margin-top: 0.2rem;
+	}
+
+	.eleicao-da-ficha {
+		display: grid;
+		align-content: start;
+		row-gap: 0.2rem;
+		padding-left: 0.75rem;
+		border-left: 1px solid var(--tinta);
+	}
+
+	.eleicao-da-ficha > .numero-da-ficha {
+		font-size: 1.5rem;
+	}
+
+	.cargo-na-ficha {
+		font-size: 1rem;
+	}
+
+	.resultado-na-ficha {
+		font-family: var(--font-serif);
+		font-size: 0.9375rem;
+		font-weight: 400;
+		line-height: 1.4;
+	}
+
 	.corpo-dos-parlamentares {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: clamp(2.5rem, 6vw, 4rem);
-	}
-
-	.mandatos {
-		display: grid;
-		gap: 0.6rem;
-		max-width: 39rem;
-	}
-
-	.mandatos .rotulo {
-		color: var(--tinta);
 	}
 
 	/*
@@ -1094,6 +1289,10 @@
 		font-family: var(--font-serif);
 		font-size: 1rem;
 		line-height: 1.5;
+	}
+
+	.corpo-do-parlamentar .texto-do-voto {
+		max-width: 39rem;
 	}
 
 	.links-do-voto {
@@ -1472,6 +1671,194 @@
 				"cargo"
 				"valor"
 				"detalhes";
+		}
+	}
+
+	/*
+	 * A chave "Mostrar os valores" (o Renan, em 23/11/2026: "Chave no alto da
+	 * lista"): as duas opções lado a lado, com o fio de tinta e 44 px de altura, e
+	 * uma embaixo da outra quando não cabem. A marcada fica em tinta, com a letra
+	 * clara e o quadradinho cheio, que continua à vista nas cores forçadas. O rádio
+	 * fica invisível por cima da opção, como no quiz, e o anel do foco contorna a
+	 * opção. Não há transição: a troca é na hora, também com menos movimento.
+	 */
+	.chave-dos-valores {
+		min-width: 0;
+		margin: 1.5rem 0 0;
+		padding: 0;
+		border: 0;
+	}
+
+	.chave-dos-valores > legend {
+		float: left;
+		width: 100%;
+		margin-bottom: 0.6rem;
+		padding: 0;
+		color: var(--tinta-suave);
+	}
+
+	.opcoes-dos-valores {
+		clear: both;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.opcao-dos-valores {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6rem;
+		min-height: 2.75rem;
+		padding: 0.45rem 1rem;
+		border: 2px solid var(--tinta);
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 700;
+		line-height: 1.2;
+		cursor: pointer;
+	}
+
+	.opcao-dos-valores input {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		margin: 0;
+		opacity: 0;
+		cursor: pointer;
+	}
+
+	.marca-da-opcao {
+		flex: none;
+		width: 0.75rem;
+		height: 0.75rem;
+		border: 2px solid currentColor;
+	}
+
+	.opcao-dos-valores:has(input:checked) {
+		background: var(--tinta);
+		color: var(--papel);
+	}
+
+	.opcao-dos-valores:has(input:checked) .marca-da-opcao {
+		background: currentColor;
+	}
+
+	.opcao-dos-valores:has(input:focus-visible) {
+		outline: 3px solid var(--ring);
+		outline-offset: 3px;
+	}
+
+	@media (forced-colors: active) {
+		.marca-da-opcao {
+			forced-color-adjust: none;
+			border-color: CanvasText;
+		}
+
+		.opcao-dos-valores:has(input:checked) .marca-da-opcao {
+			background: CanvasText;
+		}
+	}
+
+	/*
+	 * Cada eleição vem no HTML com as duas versões do valor, e o gráfico, o aviso da
+	 * diferença e o "Como calculamos" vêm sempre: aparece só o que é da opção
+	 * marcada, e o leitor de tela ouve só isso. Sem o JavaScript, a chave funciona
+	 * do mesmo jeito. Num navegador sem o :has(), a chave, a frase da abertura que
+	 * fala dela e os reais de hoje somem, e fica o valor declarado.
+	 */
+	.patrimonio-declarado:not(
+			:has(.chave-dos-valores input[value="de-hoje"]:checked)
+		)
+		.so-de-hoje,
+	.patrimonio-declarado:has(.chave-dos-valores input[value="de-hoje"]:checked)
+		.so-declarado {
+		display: none;
+	}
+
+	@supports not selector(:has(*)) {
+		.chave-dos-valores,
+		.patrimonio-declarado .so-de-hoje,
+		.patrimonio-declarado .so-com-chave {
+			display: none;
+		}
+	}
+
+	/* ───── A página do parlamentar: a tela larga ───── */
+
+	/*
+	 * A tela larga (o Renan, em 23/11/2026): a partir de 75rem, o corpo da página
+	 * do parlamentar fica em duas colunas, com a explicação e o resumo à esquerda
+	 * e as listas à direita. O patrimônio ocupa as duas e se divide como o corpo:
+	 * o título, a abertura e o aviso de um lado; a chave, o gráfico, a lista e o
+	 * resto do outro. Embaixo, "Como votou" à esquerda e os votos à direita, que
+	 * vão em duas colunas a partir de 100rem. O texto corrido continua até 39rem,
+	 * e a ordem do HTML é a da tela. Abaixo de 75rem, uma coluna, como antes.
+	 */
+	.corpo-do-parlamentar #patrimonio {
+		scroll-margin-top: 1rem;
+	}
+
+	@media (width >= 75rem) {
+		.corpo-do-parlamentar {
+			--colunas: minmax(0, 2fr) minmax(0, 3fr);
+			--entre-colunas: clamp(2.5rem, 4vw, 5rem);
+			grid-template-columns: var(--colunas);
+			column-gap: var(--entre-colunas);
+			align-items: start;
+		}
+
+		.corpo-do-parlamentar > .patrimonio-declarado,
+		.corpo-do-parlamentar > .sem-votos {
+			grid-column: 1 / -1;
+		}
+
+		.corpo-do-parlamentar > .patrimonio-declarado {
+			display: grid;
+			grid-template-columns: var(--colunas);
+			grid-template-rows: auto 1fr;
+			column-gap: var(--entre-colunas);
+			align-items: start;
+		}
+
+		.patrimonio-declarado > .abertura-do-patrimonio {
+			grid-column: 1;
+		}
+
+		/* Os dados ou, sem eleição, a frase que diz por quê: à direita, desde o alto. */
+		.patrimonio-declarado > .dados-do-patrimonio,
+		.patrimonio-declarado > .texto-do-patrimonio {
+			grid-column: 2;
+			grid-row: 1 / span 2;
+		}
+
+		.dados-do-patrimonio > :first-child {
+			margin-top: 0;
+		}
+	}
+
+	@media (width >= 100rem) {
+		.corpo-do-parlamentar .votos-do-parlamentar {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			column-gap: var(--respiro);
+		}
+
+		/*
+		 * Em duas colunas, o carimbo do voto fica em cima, como no celular. O voto
+		 * mais curto da fileira estica até a altura do vizinho, e as linhas dele
+		 * ficam no alto, sem espalhar o vão: os títulos de uma fileira se alinham.
+		 */
+		.corpo-do-parlamentar .voto-da-pessoa {
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-areas:
+				"carimbo"
+				"titulo"
+				"fatos"
+				"texto"
+				"links"
+				"coletado";
+			align-content: start;
 		}
 	}
 

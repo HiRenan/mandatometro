@@ -66,6 +66,13 @@ describe("os alvos de toque", () => {
 		expect(citacao).toContain("min-height: 2.75rem;");
 	});
 
+	it("os links das fontes da ficha e as opções da chave do patrimônio têm pelo menos 44 px de altura", () => {
+		const fonte = regra(css, ".fonte-da-ficha a");
+		expect(fonte).toContain("display: inline-grid;");
+		expect(fonte).toContain("min-height: 2.75rem;");
+		expect(regra(css, ".opcao-dos-valores")).toContain("min-height: 2.75rem;");
+	});
+
 	it("a licença ao lado do crédito do mapa tem pelo menos 44 px de altura", () => {
 		const licenca = regra(css, ".credito-do-mapa a");
 		expect(licenca).toContain("display: inline-grid;");
@@ -324,6 +331,97 @@ describe("a página do parlamentar", () => {
 		css.indexOf("/* ───── A página do parlamentar: o patrimônio", inicio),
 	);
 
+	/** Só as regras da ficha do cartaz. */
+	const ficha = pagina.slice(
+		pagina.indexOf("A ficha no pé do cartaz"),
+		pagina.indexOf(".corpo-dos-parlamentares {"),
+	);
+
+	it("a ficha fica numa coluna do pé do cartaz também no computador, e as colunas dela saem da largura dela: três a partir de 44rem, duas a partir de 24rem", () => {
+		expect(ficha.length).toBeGreaterThan(0);
+		expect(regra(ficha, ".cartaz-do-parlamentar .cartaz-pe")).toBe(
+			"grid-template-columns: minmax(0, 1fr);",
+		);
+		expect(regra(ficha, ".ficha-do-parlamentar")).toBe(
+			"container: ficha / inline-size;",
+		);
+		expect(regra(ficha, ".itens-da-ficha")).toContain(
+			"grid-template-columns: minmax(0, 1fr);",
+		);
+		expect(
+			regra(
+				bloco(ficha, "@container ficha (width >= 24rem)"),
+				".itens-da-ficha",
+			),
+		).toBe("grid-template-columns: repeat(2, minmax(0, 1fr));");
+		expect(
+			regra(
+				bloco(ficha, "@container ficha (width >= 44rem)"),
+				".itens-da-ficha",
+			),
+		).toBe("grid-template-columns: repeat(3, minmax(0, 1fr));");
+	});
+
+	it("cada fato da ficha é uma subgrade de três linhas, com o fio de tinta em cima, e as eleições ocupam a largura toda, em células que descem no celular", () => {
+		const fato = regra(ficha, ".item-da-ficha");
+		expect(fato).toContain("grid-row: span 3;");
+		expect(fato).toContain("grid-template-rows: subgrid;");
+		expect(fato).toContain("border-top: 1px solid var(--tinta);");
+		expect(regra(ficha, ".eleicoes-da-ficha")).toBe("grid-column: 1 / -1;");
+		expect(regra(ficha, ".lista-das-eleicoes")).toContain(
+			"grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));",
+		);
+	});
+
+	it("a ficha não leva cor: os números e as partes do mandato ficam em tinta, e as partes entram com o pé do cartaz, e não sozinhas", () => {
+		expect(ficha).not.toMatch(/--fita|#[0-9a-f]{3,8}\b|rgb\(|hsl\(|oklch\(/i);
+		expect(regra(ficha, ".numero-da-ficha")).toContain(
+			"font-variant-numeric: lining-nums tabular-nums;",
+		);
+		expect(regra(ficha, ".ficha-do-parlamentar span.faixa")).toBe(
+			"color: var(--tinta); animation: none;",
+		);
+	});
+
+	it("o dia da coleta fica embaixo do link da fonte, que fecha a linha sem pontuação", () => {
+		expect(regra(ficha, ".coleta-da-ficha")).toBe("display: block;");
+	});
+
+	it("as partes do mandato quebram sem o quadradinho no começo nem no fim da linha: ele vai no recuo antes de cada parte, e o que abre a linha fica sob o corte", () => {
+		expect(regra(ficha, ".mandatos-da-ficha .rotulo")).toBe(
+			"overflow-x: clip;",
+		);
+		// As linhas de um mandato se encostam, e o vão entre os mandatos é maior.
+		expect(regra(ficha, ".mandatos-da-ficha")).toBe(
+			"display: grid; gap: 0.75rem;",
+		);
+		expect(regra(ficha, ".mandatos-da-ficha .faixa")).toBe(
+			"row-gap: 0; margin-left: -1.9em;",
+		);
+		expect(regra(ficha, ".mandatos-da-ficha .parte-do-mandato")).toBe(
+			"padding-left: 1.9em;",
+		);
+		// O quadradinho da faixa (index.css), no recuo: a margem, o quadradinho e a
+		// margem dão 0.8 + 0.3 + 0.8 = 1.9em. Nas cores forçadas, ele fica em
+		// CanvasText, como o da faixa.
+		expect(regra(ficha, ".mandatos-da-ficha .parte-do-mandato::before")).toBe(
+			'content: "" / ""; display: inline-block; width: 0.3em; height: 0.3em; margin: 0 0.8em 0 -1.1em; vertical-align: 0.2em; background: currentColor;',
+		);
+		expect(
+			regra(
+				bloco(ficha, "@media (forced-colors: active)"),
+				".mandatos-da-ficha .parte-do-mandato::before",
+			),
+		).toBe("forced-color-adjust: none; background: CanvasText;");
+		// O seletor vence o ".faixa > span:not(:last-child)::after" do index.css.
+		expect(
+			regra(
+				ficha,
+				".mandatos-da-ficha .parte-do-mandato:not(:last-child)::after",
+			),
+		).toBe("display: none;");
+	});
+
 	it("a moldura da foto guarda o lugar com o azulejo cru, e sem o JavaScript o ::after cobre a foto quebrada", () => {
 		expect(inicio).toBeGreaterThan(0);
 		expect(regra(pagina, ".moldura-da-foto")).toContain(
@@ -389,12 +487,23 @@ describe("a página do parlamentar", () => {
 		const barra = regra(pagina, ".barra-do-tipo");
 		expect(barra).toContain("width: max(4px, calc(var(--parte) * 100%));");
 		expect(barra).toContain("background: var(--tinta);");
+		// O bloco das cores forçadas que vem depois da barra: a ficha tem o dela antes.
 		const forcadas = regra(
-			bloco(pagina, "@media (forced-colors: active)"),
+			bloco(
+				pagina.slice(pagina.indexOf(".barra-do-tipo {")),
+				"@media (forced-colors: active)",
+			),
 			".barra-do-tipo",
 		);
 		expect(forcadas).toContain("forced-color-adjust: none;");
 		expect(forcadas).toContain("background: CanvasText;");
+	});
+
+	it("a ementa na página do parlamentar tem teto de 39rem e a regra comum mantém 42rem", () => {
+		expect(regra(pagina, ".corpo-do-parlamentar .texto-do-voto")).toBe(
+			"max-width: 39rem;",
+		);
+		expect(regra(pagina, ".texto-do-voto")).toContain("max-width: 42rem;");
 	});
 
 	it("a barra de como votou se risca ao entrar na tela, como a do patrimônio, e para com o movimento reduzido", () => {
@@ -546,6 +655,113 @@ describe("o patrimônio declarado", () => {
 		);
 		expect(link).not.toBeNull();
 		expect(regra(patrimonio, ".arquivo-sem-link")).toContain(link?.[0]);
+	});
+
+	it("a chave mostra só a versão da opção marcada: sem os reais de hoje marcados, eles somem; marcados, some o declarado", () => {
+		expect(patrimonio).toMatch(
+			/\.patrimonio-declarado:not\(\s*:has\(\.chave-dos-valores input\[value="de-hoje"\]:checked\)\s*\)\s*\.so-de-hoje,\s*\.patrimonio-declarado:has\(\.chave-dos-valores input\[value="de-hoje"\]:checked\)\s*\.so-declarado \{\s*display: none;\s*\}/,
+		);
+	});
+
+	it("num navegador sem o :has(), a chave, a frase dela e os reais de hoje somem, e fica o valor declarado", () => {
+		expect(
+			bloco(patrimonio, "@supports not selector(:has(*))")
+				.replace(/\s+/g, " ")
+				.trim(),
+		).toBe(
+			".chave-dos-valores, .patrimonio-declarado .so-de-hoje, .patrimonio-declarado .so-com-chave { display: none; }",
+		);
+	});
+
+	it("a opção marcada fica em tinta, com a letra clara e o quadradinho cheio, que continua à vista nas cores forçadas, e o anel do foco contorna a opção", () => {
+		expect(regra(patrimonio, ".opcao-dos-valores input")).toContain(
+			"opacity: 0;",
+		);
+		expect(regra(patrimonio, ".opcao-dos-valores:has(input:checked)")).toBe(
+			"background: var(--tinta); color: var(--papel);",
+		);
+		expect(
+			regra(
+				patrimonio,
+				".opcao-dos-valores:has(input:checked) .marca-da-opcao",
+			),
+		).toBe("background: currentColor;");
+		expect(
+			regra(patrimonio, ".opcao-dos-valores:has(input:focus-visible)"),
+		).toBe("outline: 3px solid var(--ring); outline-offset: 3px;");
+		const forcadas = bloco(
+			patrimonio.slice(patrimonio.indexOf(".marca-da-opcao {")),
+			"@media (forced-colors: active)",
+		);
+		expect(regra(forcadas, ".marca-da-opcao")).toBe(
+			"forced-color-adjust: none; border-color: CanvasText;",
+		);
+		expect(
+			regra(forcadas, ".opcao-dos-valores:has(input:checked) .marca-da-opcao"),
+		).toBe("background: CanvasText;");
+	});
+});
+
+describe("a tela larga da página do parlamentar", () => {
+	/** Só a seção da tela larga. */
+	const inicio = css.indexOf("/* ───── A página do parlamentar: a tela larga");
+	const larga = css.slice(inicio, css.indexOf("/* ───── A página da votação"));
+	const ate75 = bloco(larga, "@media (width >= 75rem)");
+	const ate100 = bloco(larga, "@media (width >= 100rem)");
+
+	it("a partir de 75rem, o corpo fica em duas colunas, e o patrimônio e a folha sem votos ocupam as duas", () => {
+		expect(inicio).toBeGreaterThan(0);
+		const corpo = regra(ate75, ".corpo-do-parlamentar");
+		expect(corpo).toContain("--colunas: minmax(0, 2fr) minmax(0, 3fr);");
+		expect(corpo).toContain("grid-template-columns: var(--colunas);");
+		expect(ate75).toMatch(
+			/\.corpo-do-parlamentar > \.patrimonio-declarado,\s*\.corpo-do-parlamentar > \.sem-votos \{\s*grid-column: 1 \/ -1;\s*\}/,
+		);
+	});
+
+	it("o patrimônio se divide como o corpo: a abertura à esquerda, e os dados ou a frase sem eleição à direita, desde o alto", () => {
+		expect(regra(ate75, ".corpo-do-parlamentar > .patrimonio-declarado")).toBe(
+			"display: grid; grid-template-columns: var(--colunas); grid-template-rows: auto 1fr; column-gap: var(--entre-colunas); align-items: start;",
+		);
+		expect(
+			regra(ate75, ".patrimonio-declarado > .abertura-do-patrimonio"),
+		).toBe("grid-column: 1;");
+		expect(ate75).toMatch(
+			/\.patrimonio-declarado > \.dados-do-patrimonio,\s*\.patrimonio-declarado > \.texto-do-patrimonio \{\s*grid-column: 2;\s*grid-row: 1 \/ span 2;\s*\}/,
+		);
+		expect(regra(ate75, ".dados-do-patrimonio > :first-child")).toBe(
+			"margin-top: 0;",
+		);
+	});
+
+	it("a partir de 100rem, os votos vão em duas colunas, com o carimbo em cima", () => {
+		expect(regra(ate100, ".corpo-do-parlamentar .votos-do-parlamentar")).toBe(
+			"grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--respiro);",
+		);
+		const voto = regra(ate100, ".corpo-do-parlamentar .voto-da-pessoa");
+		expect(voto).toContain("grid-template-columns: minmax(0, 1fr);");
+		// O voto mais curto da fileira não espalha as linhas pela altura do vizinho.
+		expect(voto).toContain("align-content: start;");
+	});
+
+	it("as regras da tela larga ficam presas à página do parlamentar: a lista e a votação, que também usam o corpo dos parlamentares, não mudam", () => {
+		const seletores = `${ate75}\n${ate100}`
+			.replace(/\/\*[\s\S]*?\*\//g, "")
+			.match(/[^{};]+(?=\{)/g);
+		expect(seletores?.length).toBeGreaterThan(0);
+		for (const lista of seletores ?? []) {
+			for (const seletor of lista.split(",")) {
+				expect(seletor.trim(), seletor).toMatch(
+					/^\.(corpo-do-parlamentar|patrimonio-declarado|dados-do-patrimonio)\b/,
+				);
+			}
+		}
+	});
+
+	it("o título do patrimônio, aberto pelo link da ficha, fica 1rem abaixo do alto da tela", () => {
+		expect(regra(larga, ".corpo-do-parlamentar #patrimonio")).toBe(
+			"scroll-margin-top: 1rem;",
+		);
 	});
 });
 
