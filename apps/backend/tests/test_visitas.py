@@ -217,7 +217,16 @@ def test_openapi_da_visita_documenta_o_corpo_e_respostas_sem_conteudo():
 def _rotas_estaticas(pasta: Path) -> set[str]:
     rotas = set()
     for arquivo in pasta.rglob("*"):
-        if arquivo.suffix not in {".ts", ".tsx", ".js", ".jsx"} or not arquivo.is_file():
+        eh_arquivo = arquivo.is_file()
+        if (eh_arquivo and arquivo.stem.endswith("__virtual")) or any(
+            caractere in arquivo.name for caractere in "[]{}"
+        ):
+            raise AssertionError(
+                f"{arquivo.relative_to(pasta).as_posix()} usa uma convenção desconhecida. "
+                "O coletor de rotas precisa aprender essa convenção antes de a página "
+                "entrar na contagem."
+            )
+        if not eh_arquivo or arquivo.suffix not in {".ts", ".tsx", ".js", ".jsx"}:
             continue
         partes = arquivo.relative_to(pasta).with_suffix("").parts
         if any(parte.startswith(("-", ".")) for parte in partes):
@@ -240,6 +249,18 @@ def _rotas_estaticas(pasta: Path) -> set[str]:
         if "$" not in caminho:
             rotas.add(f"/{caminho}")
     return rotas
+
+
+@pytest.mark.parametrize("nome", ["ajuda/__virtual.ts", "[index].tsx", "{-$pagina}.tsx"])
+def test_coletor_de_rotas_rejeita_convencao_desconhecida(tmp_path, nome):
+    arquivo = tmp_path / nome
+    arquivo.parent.mkdir(parents=True, exist_ok=True)
+    arquivo.touch()
+
+    with pytest.raises(AssertionError, match="O coletor de rotas precisa aprender") as erro:
+        _rotas_estaticas(tmp_path)
+
+    assert nome in str(erro.value)
 
 
 def test_catalogo_de_visitas_e_leituras_acompanha_o_conteudo_do_site():
