@@ -1,5 +1,6 @@
 import type {
 	MediaEtapa,
+	MediaPiloto,
 	SituacaoPiloto,
 	TotalDiario,
 	TotalSemanal,
@@ -8,6 +9,7 @@ import type {
 import {
 	comMilhares,
 	dataEmBrasilia,
+	diaEMes,
 	formatarData,
 	formatarDia,
 } from "@/lib/formatar";
@@ -56,17 +58,59 @@ export function fraseDaSemanaAtual(semanas: readonly TotalSemanal[]): string {
 	return `${comMilhares(semanas.at(-1)?.total ?? 0)} nesta semana`;
 }
 
+/** O item de maior total, o primeiro quando empata, ou nenhum sem total acima de zero. */
+export function oDeMaisTotal<T extends { total: number }>(
+	lista: readonly T[],
+): T | undefined {
+	let maior: T | undefined;
+	for (const item of lista) {
+		if (item.total > (maior?.total ?? 0)) {
+			maior = item;
+		}
+	}
+	return maior;
+}
+
 /** O dia com mais visitas, o primeiro quando empata, ou nenhum sem visita. */
 export function diaDeMaisVisitas(
 	dias: readonly TotalDiario[],
 ): TotalDiario | undefined {
-	let maior: TotalDiario | undefined;
-	for (const dia of dias) {
-		if (dia.total > (maior?.total ?? 0)) {
-			maior = dia;
-		}
+	return oDeMaisTotal(dias);
+}
+
+/** O dia curto, nas pontas dos gráficos: "2026-10-25" vira "25 out". */
+export function diaCurto(dia: string): string {
+	const { dia: numero, mes } = diaEMes(dia);
+	return `${numero === "01" ? "1º" : Number(numero)} ${mes}`;
+}
+
+/**
+ * As semanas em palavras, para quem não vê as colunas: a semana de hoje, que é a
+ * última da lista, e a semana com mais. No número que é um mínimo, como as
+ * contas ativas, a frase diz "pelo menos".
+ */
+export function fraseDasSemanas(
+	semanas: readonly TotalSemanal[],
+	{ minimo = false }: { minimo?: boolean } = {},
+): string {
+	const atual = semanas.at(-1);
+	if (!atual) {
+		return "Nenhum registro ainda.";
 	}
-	return maior;
+	const quantos = (total: number) =>
+		minimo && total > 0
+			? `pelo menos ${comMilhares(total)}`
+			: comMilhares(total);
+	const hoje = quantos(atual.total);
+	const comeco = `${hoje.charAt(0).toUpperCase()}${hoje.slice(1)} na semana de ${formatarDia(atual.semana)}`;
+	const maior = oDeMaisTotal(semanas);
+	if (semanas.length === 1 || !maior) {
+		return `${comeco}.`;
+	}
+	if (maior === atual) {
+		return `${comeco}, a semana com mais até agora.`;
+	}
+	return `${comeco}. A semana com mais foi a de ${formatarDia(maior.semana)}, com ${quantos(maior.total)}.`;
 }
 
 /**
@@ -105,12 +149,29 @@ export function horaEmBrasilia(horario: string): string {
 	return `${Number(horas)}h${minutos}`;
 }
 
+/** O dia e a hora de um horário da API, em Brasília: "16 de novembro de 2026, às 10h37". */
+function diaEHora(horario: string): string {
+	return `${formatarData(dataEmBrasilia(horario))}, às ${horaEmBrasilia(horario)}`;
+}
+
 /** A última coleta de uma fonte, em Brasília, ou que ela nunca aconteceu. */
 export function fraseDaColeta(horario: string | null): string {
-	if (!horario) {
-		return "Nunca coletada";
-	}
-	return `${formatarData(dataEmBrasilia(horario))}, às ${horaEmBrasilia(horario)}`;
+	return horario ? diaEHora(horario) : "Nunca coletada";
+}
+
+/** Quando a última edição saiu, ou que nenhuma saiu ainda. */
+export function fraseDaUltimaEdicao(horario: string | null): string {
+	return horario
+		? `A última saiu em ${diaEHora(horario)}.`
+		: "Nenhuma edição publicada ainda.";
+}
+
+/**
+ * Quando a tela leu os números, na faixa: a hora da resposta, em Brasília. A API
+ * não manda a hora dela, e a página não guarda os números entre as visitas.
+ */
+export function fraseDaLeitura(instante: string): string {
+	return `Lidos em ${formatarDia(dataEmBrasilia(instante))}, às ${horaEmBrasilia(instante)}`;
 }
 
 /** O que a tela diz no lugar de uma média que a API não manda. */
@@ -168,6 +229,46 @@ export function diferencaNaTela(pares: {
 	return `${quantos} ${unidade} a ${pontos > 0 ? "mais" : "menos"} depois da trilha`;
 }
 
+/** Quem fez as duas etapas do piloto e quem fez uma só. */
+export function fraseDasParticipacoes({
+	pareadas,
+	somente_antes,
+	somente_depois,
+}: {
+	pareadas: number;
+	somente_antes: number;
+	somente_depois: number;
+}): string {
+	const fizeram =
+		pareadas === 1
+			? "1 pessoa fez"
+			: `${comMilhares(pareadas)} pessoas fizeram`;
+	return `${fizeram} as duas etapas, ${comMilhares(somente_antes)} só o antes e ${comMilhares(somente_depois)} só o depois.`;
+}
+
+/**
+ * Quem fez as duas etapas: a média antes e depois e a diferença, ou a frase da
+ * situação quando a API não manda os números.
+ */
+export function fraseDosPares(pares: {
+	antes: MediaPiloto;
+	depois: MediaPiloto;
+	diferenca_pontos_percentuais: number | null;
+	situacao: SituacaoPiloto;
+}): string {
+	const antes = pares.antes.percentual;
+	const depois = pares.depois.percentual;
+	if (
+		pares.situacao !== "disponivel" ||
+		pares.diferenca_pontos_percentuais === null ||
+		antes === null ||
+		depois === null
+	) {
+		return FRASE_DA_SITUACAO[pares.situacao];
+	}
+	return `A média foi de ${porcentagem(antes)} antes e de ${porcentagem(depois)} depois: ${diferencaNaTela(pares)}.`;
+}
+
 /**
  * Quem voltou depois da semana do cadastro. O número é um mínimo: o login vem
  * das sessões que ainda estão guardadas.
@@ -179,6 +280,48 @@ export function fraseDosQueVoltaram(quantas: number): string {
 	return quantas === 1
 		? "Pelo menos 1 conta voltou depois da semana do cadastro."
 		: `Pelo menos ${comMilhares(quantas)} contas voltaram depois da semana do cadastro.`;
+}
+
+/** Em quantas trilhas houve leitura, para o resumo: "em 2 trilhas". */
+export function fraseDasTrilhasLidas(lidos: readonly TotalTrilha[]): string {
+	const quantas = lidos.filter(({ total }) => total > 0).length;
+	if (quantas === 0) {
+		return "em nenhuma trilha";
+	}
+	return quantas === 1 ? "em 1 trilha" : `em ${quantas} trilhas`;
+}
+
+/** Os artigos lidos de uma trilha, nas contas. */
+export function fraseDosLidos(quantos: number): string {
+	if (quantos === 0) {
+		return "Nenhum artigo lido";
+	}
+	return quantos === 1
+		? "1 artigo lido"
+		: `${comMilhares(quantos)} artigos lidos`;
+}
+
+/** As contas que marcaram todos os artigos de uma trilha. */
+export function fraseDasConclusoes(quantas: number): string {
+	if (quantas === 0) {
+		return "Nenhuma conta concluiu a trilha";
+	}
+	return quantas === 1
+		? "1 conta concluiu a trilha"
+		: `${comMilhares(quantas)} contas concluíram a trilha`;
+}
+
+/** O nome de uma página mais vista: o caminho, e a inicial pelo nome. */
+export function nomeDoCaminho(caminho: string): string {
+	return caminho === "/" ? "Página inicial" : caminho;
+}
+
+/**
+ * O link de uma página mais vista: só um caminho deste site, que começa com uma
+ * barra só. A API só conta as páginas públicas, e a tela confere de novo.
+ */
+export function linkDoCaminho(caminho: string): string | null {
+	return caminho.startsWith("/") && !caminho.startsWith("//") ? caminho : null;
 }
 
 export type TrilhaNoUso = {

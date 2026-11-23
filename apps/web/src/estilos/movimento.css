@@ -31,6 +31,13 @@
 	}
 }
 
+/* A coluna do gráfico sobe da base, como a barra se risca da esquerda. */
+@keyframes ergue {
+	from {
+		transform: scaleY(0);
+	}
+}
+
 /* O que entra sobe um pouco e aparece. */
 @keyframes sobe {
 	from {
@@ -293,6 +300,24 @@
 		 */
 		.barra-do-patrimonio {
 			animation: risca linear both;
+			animation-timeline: view();
+			animation-range: entry 0 entry 7rem;
+		}
+
+		/*
+		 * Nos números do painel, as barras se riscam do mesmo jeito, e as colunas
+		 * dos gráficos sobem da base. Cada coluna mede a própria entrada: a mais
+		 * alta, que entra antes, sobe antes, e o gráfico cresce da maior para a
+		 * menor durante a rolagem.
+		 */
+		.barra-dos-numeros {
+			animation: risca linear both;
+			animation-timeline: view();
+			animation-range: entry 0 entry 7rem;
+		}
+
+		.coluna {
+			animation: ergue linear both;
 			animation-timeline: view();
 			animation-range: entry 0 entry 7rem;
 		}

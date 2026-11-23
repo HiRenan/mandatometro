@@ -2,14 +2,25 @@ import { describe, expect, it } from "vitest";
 import type { MediaEtapa, SituacaoPiloto } from "@/lib/contrato-da-297";
 import { comMilhares } from "@/lib/formatar";
 import {
+	diaCurto,
 	diaDeMaisVisitas,
 	diferencaNaTela,
 	fraseDaColeta,
+	fraseDaLeitura,
 	fraseDaSemanaAtual,
+	fraseDasConclusoes,
+	fraseDasParticipacoes,
+	fraseDasSemanas,
+	fraseDasTrilhasLidas,
 	fraseDasVisitas,
+	fraseDaUltimaEdicao,
+	fraseDosLidos,
+	fraseDosPares,
 	fraseDosQueVoltaram,
 	horaEmBrasilia,
+	linkDoCaminho,
 	mediaNaTela,
+	nomeDoCaminho,
 	partesDoMaior,
 	porcentagem,
 	somaDosTotais,
@@ -112,6 +123,75 @@ describe("as semanas e os dias", () => {
 		);
 		expect(fraseDaColeta(null)).toBe("Nunca coletada");
 	});
+
+	it("as pontas do gráfico levam o dia curto", () => {
+		expect(diaCurto("2026-10-25")).toBe("25 out");
+		expect(diaCurto("2026-11-01")).toBe("1º nov");
+	});
+
+	it("a faixa diz quando os números foram lidos, em Brasília", () => {
+		expect(fraseDaLeitura("2026-11-23T17:05:00.000Z")).toBe(
+			"Lidos em 23 de novembro, às 14h05",
+		);
+		expect(fraseDaLeitura("2026-11-24T01:30:00.000Z")).toBe(
+			"Lidos em 23 de novembro, às 22h30",
+		);
+	});
+});
+
+describe("as semanas em palavras", () => {
+	it("diz a semana de hoje e a semana com mais", () => {
+		expect(
+			fraseDasSemanas([
+				{ semana: "2026-11-09", total: 30 },
+				{ semana: "2026-11-16", total: 12 },
+				{ semana: "2026-11-23", total: 6 },
+			]),
+		).toBe(
+			"6 na semana de 23 de novembro. A semana com mais foi a de 9 de novembro, com 30.",
+		);
+	});
+
+	it("quando a semana de hoje é a com mais, diz uma vez", () => {
+		expect(
+			fraseDasSemanas([
+				{ semana: "2026-11-16", total: 2 },
+				{ semana: "2026-11-23", total: 9 },
+			]),
+		).toBe("9 na semana de 23 de novembro, a semana com mais até agora.");
+		expect(fraseDasSemanas([{ semana: "2026-11-23", total: 6 }])).toBe(
+			"6 na semana de 23 de novembro.",
+		);
+	});
+
+	it("no número que é um mínimo, diz pelo menos", () => {
+		expect(
+			fraseDasSemanas(
+				[
+					{ semana: "2026-11-16", total: 25 },
+					{ semana: "2026-11-23", total: 19 },
+				],
+				{ minimo: true },
+			),
+		).toBe(
+			"Pelo menos 19 na semana de 23 de novembro. A semana com mais foi a de 16 de novembro, com pelo menos 25.",
+		);
+		expect(
+			fraseDasSemanas(
+				[
+					{ semana: "2026-11-16", total: 4 },
+					{ semana: "2026-11-23", total: 0 },
+				],
+				{ minimo: true },
+			),
+		).toBe(
+			"0 na semana de 23 de novembro. A semana com mais foi a de 16 de novembro, com pelo menos 4.",
+		);
+	});
+
+	it("sem semana, diz que não há registro", () => {
+		expect(fraseDasSemanas([])).toBe("Nenhum registro ainda.");
+	});
 });
 
 describe("o piloto", () => {
@@ -162,6 +242,69 @@ describe("o piloto", () => {
 			"Poucas respostas: a média só aparece a partir de 5 pessoas.",
 		);
 	});
+
+	it("as participações dizem quem fez as duas etapas e quem fez uma só", () => {
+		expect(
+			fraseDasParticipacoes({
+				pareadas: 20,
+				somente_antes: 7,
+				somente_depois: 4,
+			}),
+		).toBe("20 pessoas fizeram as duas etapas, 7 só o antes e 4 só o depois.");
+		expect(
+			fraseDasParticipacoes({
+				pareadas: 1,
+				somente_antes: 0,
+				somente_depois: 2,
+			}),
+		).toBe("1 pessoa fez as duas etapas, 0 só o antes e 2 só o depois.");
+	});
+
+	it("os pares dizem as duas médias e a diferença, ou a frase da situação", () => {
+		expect(
+			fraseDosPares({
+				antes: { acertos: 5.5, percentual: 45.83 },
+				depois: { acertos: 8.5, percentual: 70.83 },
+				diferenca_pontos_percentuais: 25,
+				situacao: "disponivel",
+			}),
+		).toBe(
+			"A média foi de 45,8% antes e de 70,8% depois: 25 pontos percentuais a mais depois da trilha.",
+		);
+		expect(
+			fraseDosPares({
+				antes: { acertos: null, percentual: null },
+				depois: { acertos: null, percentual: null },
+				diferenca_pontos_percentuais: null,
+				situacao: "protecao_de_subgrupo",
+			}),
+		).toBe("A média não aparece para não revelar um grupo pequeno.");
+	});
+});
+
+describe("a newsletter", () => {
+	it("diz quando saiu a última edição, ou que nenhuma saiu", () => {
+		expect(fraseDaUltimaEdicao("2026-11-16T13:37:00+00:00")).toBe(
+			"A última saiu em 16 de novembro de 2026, às 10h37.",
+		);
+		expect(fraseDaUltimaEdicao(null)).toBe("Nenhuma edição publicada ainda.");
+	});
+});
+
+describe("as páginas mais vistas", () => {
+	it("a página inicial ganha o nome, e as outras ficam pelo caminho", () => {
+		expect(nomeDoCaminho("/")).toBe("Página inicial");
+		expect(nomeDoCaminho("/trilhas/constituicao")).toBe(
+			"/trilhas/constituicao",
+		);
+	});
+
+	it("só um caminho deste site vira link", () => {
+		expect(linkDoCaminho("/votacoes/139")).toBe("/votacoes/139");
+		expect(linkDoCaminho("//outro-site.example.com")).toBeNull();
+		expect(linkDoCaminho("https://outro-site.example.com")).toBeNull();
+		expect(linkDoCaminho("javascript:alert(1)")).toBeNull();
+	});
 });
 
 describe("os números que são mínimos", () => {
@@ -179,6 +322,31 @@ describe("os números que são mínimos", () => {
 });
 
 describe("as trilhas", () => {
+	it("o resumo diz em quantas trilhas houve leitura", () => {
+		expect(
+			fraseDasTrilhasLidas([
+				{ trilha: "constituicao", total: 140 },
+				{ trilha: "processo-legislativo", total: 212 },
+				{ trilha: "tres-poderes", total: 0 },
+			]),
+		).toBe("em 2 trilhas");
+		expect(fraseDasTrilhasLidas([{ trilha: "constituicao", total: 1 }])).toBe(
+			"em 1 trilha",
+		);
+		expect(fraseDasTrilhasLidas([{ trilha: "constituicao", total: 0 }])).toBe(
+			"em nenhuma trilha",
+		);
+	});
+
+	it("cada trilha diz os artigos lidos e as contas que a concluíram", () => {
+		expect(fraseDosLidos(3204)).toBe("3.204 artigos lidos");
+		expect(fraseDosLidos(1)).toBe("1 artigo lido");
+		expect(fraseDosLidos(0)).toBe("Nenhum artigo lido");
+		expect(fraseDasConclusoes(5)).toBe("5 contas concluíram a trilha");
+		expect(fraseDasConclusoes(1)).toBe("1 conta concluiu a trilha");
+		expect(fraseDasConclusoes(0)).toBe("Nenhuma conta concluiu a trilha");
+	});
+
 	const catalogo = [
 		{ slug: "processo-legislativo", titulo: "Processo legislativo" },
 		{ slug: "constituicao", titulo: "A Constituição" },
