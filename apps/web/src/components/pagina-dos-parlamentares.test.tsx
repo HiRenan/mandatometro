@@ -13,6 +13,7 @@ import {
 	fireEvent,
 	render,
 	screen,
+	waitFor,
 	within,
 } from "@testing-library/react";
 import { hydrateRoot, type Root } from "react-dom/client";
@@ -26,14 +27,18 @@ import { Route } from "@/routes/parlamentares/index";
 // existe no site.
 vi.mock("@/env", () => ({ ENV: { API_URL: "https://api.exemplo.test" } }));
 
+/** O corpo que a API de mentira manda: a lista de exemplo, que um teste pode trocar. */
+let corpoDaApi: unknown;
+
 beforeEach(() => {
+	corpoDaApi = listaDeExemplo();
 	// O jsdom não rola a janela.
 	vi.spyOn(window, "scrollTo").mockImplementation(() => {});
 	vi.stubGlobal(
 		"fetch",
 		vi.fn(
 			async () =>
-				new Response(JSON.stringify(listaDeExemplo()), {
+				new Response(JSON.stringify(corpoDaApi), {
 					headers: { "Content-Type": "application/json" },
 				}),
 		),
@@ -417,5 +422,221 @@ describe("a lista dos parlamentares", () => {
 		).toBeTruthy();
 		expect(router.state.location.search).toEqual({ uf: "BA" });
 		expect(carregar.mock.lastCall?.[0].deps).toEqual({ uf: "BA" });
+	});
+});
+
+describe("os retratos da lista", () => {
+	/** O endereço da foto oficial de mentira de um nome, no site da Casa dele. */
+	function enderecoDaFoto({ id, casa }: { id: number; casa: string }) {
+		const numero = `9${String(id).padStart(7, "0")}`;
+		return casa === "camara"
+			? `https://www.camara.leg.br/internet/deputado/bandep/${numero}.jpg`
+			: `https://legis.senado.leg.br/senadores/fotos-oficiais/${numero}`;
+	}
+
+	/**
+	 * A lista de exemplo com a foto de cada nome das `casas`, uma diferente por
+	 * id, menos os ids de `semFoto`, que ficam sem o campo, como na API de antes
+	 * da #303.
+	 */
+	function listaComFotos({
+		casas = ["camara", "senado"],
+		semFoto = [] as number[],
+	} = {}) {
+		return {
+			parlamentares: listaDeExemplo().parlamentares.map(
+				({ foto: _, ...semAFoto }) => {
+					if (!casas.includes(semAFoto.casa) || semFoto.includes(semAFoto.id)) {
+						return semAFoto;
+					}
+					return {
+						...semAFoto,
+						foto: {
+							url: enderecoDaFoto(semAFoto),
+							credito:
+								semAFoto.casa === "camara"
+									? "Câmara dos Deputados"
+									: "Senado Federal",
+						},
+					};
+				},
+			),
+		};
+	}
+
+	const fotosDaLista = () => [
+		...document.querySelectorAll<HTMLImageElement>(".nomes-da-casa img"),
+	];
+
+	it("cada nome leva o retrato antes do nome, dentro do link e fora do leitor de tela, com a foto lazy, sem o endereço da página e com o tamanho no HTML", async () => {
+		corpoDaApi = listaComFotos();
+		await abrir("/parlamentares?uf=SC");
+		const camara = screen.getByRole("region", { name: "Câmara dos Deputados" });
+
+		const link = within(camara).getByRole("link", {
+			name: "Ágata Cedrolume PFT",
+		});
+		const retrato = link.firstElementChild;
+		expect(retrato?.classList.contains("retrato-na-lista")).toBe(true);
+		expect(retrato?.getAttribute("aria-hidden")).toBe("true");
+		expect(retrato?.nextElementSibling?.textContent).toBe("Ágata Cedrolume");
+		const foto = retrato?.querySelector("img");
+		expect(
+			Object.fromEntries(
+				["src", "alt", "loading", "decoding", "referrerpolicy"].map((nome) => [
+					nome,
+					foto?.getAttribute(nome),
+				]),
+			),
+		).toEqual({
+			src: enderecoDaFoto({ id: 81, casa: "camara" }),
+			alt: "",
+			loading: "lazy",
+			decoding: "async",
+			referrerpolicy: "no-referrer",
+		});
+		expect([foto?.getAttribute("width"), foto?.getAttribute("height")]).toEqual(
+			["300", "400"],
+		);
+		// O nome de cada link continua sendo o nome e o partido, e nenhuma foto
+		// chega ao leitor de tela.
+		const senado = screen.getByRole("region", { name: "Senado Federal" });
+		for (const casa of [camara, senado]) {
+			expect(within(casa).queryAllByRole("img")).toEqual([]);
+			expect(within(casa).queryAllByRole("presentation")).toEqual([]);
+		}
+		expect(
+			within(camara)
+				.getAllByRole("link")
+				.map(
+					(nome) =>
+						nome.querySelector<HTMLImageElement>(".retrato-na-lista img")?.src,
+				),
+		).toEqual([81, 82, 83].map((id) => enderecoDaFoto({ id, casa: "camara" })));
+		expect(
+			within(senado)
+				.getAllByRole("link")
+				.map(
+					(nome) =>
+						nome.querySelector<HTMLImageElement>(".retrato-na-lista img")?.src,
+				),
+		).toEqual([501, 502].map((id) => enderecoDaFoto({ id, casa: "senado" })));
+	});
+
+	it("o crédito das fotos de cada Casa fica logo embaixo do título dela, antes dos nomes", async () => {
+		corpoDaApi = listaComFotos();
+		await abrir("/parlamentares?uf=SC");
+
+		for (const [casa, credito] of [
+			["Câmara dos Deputados", "Fotos: Câmara dos Deputados"],
+			["Senado Federal", "Fotos: Senado Federal"],
+		]) {
+			const titulo = screen.getByRole("heading", { level: 2, name: casa });
+			const linha = titulo.nextElementSibling;
+			expect(linha?.textContent, casa).toBe(credito);
+			expect(linha?.classList.contains("credito-das-fotos"), casa).toBe(true);
+			expect(
+				linha?.nextElementSibling?.hasAttribute("data-com-retratos"),
+				casa,
+			).toBe(true);
+		}
+	});
+
+	it("o nome sem foto nos dados leva a moldura vazia, com o azulejo cru, e a Casa continua com o crédito", async () => {
+		corpoDaApi = listaComFotos({ semFoto: [82] });
+		await abrir("/parlamentares?uf=SC");
+		const camara = screen.getByRole("region", { name: "Câmara dos Deputados" });
+
+		const retratos = within(camara)
+			.getAllByRole("link")
+			.map((link) => link.querySelector(".retrato-na-lista"));
+		expect(retratos.map((retrato) => retrato?.childElementCount)).toEqual([
+			1, 0, 1,
+		]);
+		expect(
+			within(camara).getByText("Fotos: Câmara dos Deputados"),
+		).toBeTruthy();
+	});
+
+	it("a foto que não carrega sai, e a moldura fica no lugar, fora do leitor de tela, com o mesmo nome no link", async () => {
+		corpoDaApi = listaComFotos();
+		await abrir("/parlamentares?uf=SC");
+		const link = screen.getByRole("link", { name: "Ágata Cedrolume PFT" });
+
+		fireEvent.error(link.querySelector("img") as HTMLImageElement);
+
+		expect(link.querySelector("img")).toBeNull();
+		expect(
+			link.querySelector(".retrato-na-lista")?.getAttribute("aria-hidden"),
+		).toBe("true");
+		expect(screen.getByRole("link", { name: "Ágata Cedrolume PFT" })).toBe(
+			link,
+		);
+		expect(fotosDaLista()).toHaveLength(4);
+	});
+
+	it("a foto que falhou antes de o JavaScript chegar também sai: o React não recebe mais o aviso da falha", async () => {
+		vi.spyOn(HTMLImageElement.prototype, "complete", "get").mockReturnValue(
+			true,
+		);
+		vi.spyOn(HTMLImageElement.prototype, "naturalWidth", "get").mockReturnValue(
+			0,
+		);
+		corpoDaApi = listaComFotos();
+
+		await abrir("/parlamentares?uf=SC");
+
+		await waitFor(() => expect(fotosDaLista()).toEqual([]));
+		expect(document.querySelectorAll(".retrato-na-lista")).toHaveLength(5);
+	});
+
+	it.each([
+		["a foto que chegou antes do JavaScript", true, 300],
+		["a foto lazy que ainda não foi pedida", false, 0],
+	])("%s fica", async (_, completa, largura) => {
+		vi.spyOn(HTMLImageElement.prototype, "complete", "get").mockReturnValue(
+			completa,
+		);
+		vi.spyOn(HTMLImageElement.prototype, "naturalWidth", "get").mockReturnValue(
+			largura,
+		);
+		corpoDaApi = listaComFotos();
+
+		await abrir("/parlamentares?uf=SC");
+		await act(async () => {});
+
+		expect(fotosDaLista()).toHaveLength(5);
+	});
+
+	it("a Casa sem nenhuma foto nos dados fica como era, sem os retratos e sem o crédito", async () => {
+		corpoDaApi = listaComFotos({ casas: ["camara"] });
+		await abrir("/parlamentares?uf=SC");
+		const senado = screen.getByRole("region", { name: "Senado Federal" });
+
+		expect(senado.querySelector(".retrato-na-lista")).toBeNull();
+		expect(senado.querySelector(".credito-das-fotos")).toBeNull();
+		expect(
+			senado.querySelector(".nomes-da-casa")?.hasAttribute("data-com-retratos"),
+		).toBe(false);
+		expect(
+			within(senado).getByRole("link", { name: "Lia Quinemar PRV" }),
+		).toBeTruthy();
+		// A Câmara, com as fotos, continua com os retratos e o crédito.
+		const camara = screen.getByRole("region", { name: "Câmara dos Deputados" });
+		expect(camara.querySelectorAll(".retrato-na-lista img")).toHaveLength(3);
+		expect(camara.querySelector(".credito-das-fotos")).toBeTruthy();
+	});
+
+	it("sem nenhuma foto nos dados, como na API de antes da #303, a lista fica como era", async () => {
+		corpoDaApi = listaComFotos({ casas: [] });
+		await abrir("/parlamentares?uf=SC");
+
+		expect(document.querySelector(".retrato-na-lista")).toBeNull();
+		expect(screen.queryByText(/^Fotos:/)).toBeNull();
+		expect(document.querySelector("[data-com-retratos]")).toBeNull();
+		expect(
+			screen.getByRole("link", { name: "Ágata Cedrolume PFT" })
+				.firstElementChild?.className,
+		).toBe("nome");
 	});
 });
