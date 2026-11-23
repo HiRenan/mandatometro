@@ -1,0 +1,48 @@
+{
+  "ListaPartidos": {
+    "noNamespaceSchemaLocation": "https://legis.senado.leg.br/dadosabertos/dados/ListaPartidosv2.xsd",
+    "Metadados": {
+      "Versao": "23/11/2026 01:21:29",
+      "VersaoServico": "2",
+      "DataVersaoServico": "2017-02-01",
+      "DescricaoDataSet": "Lista os Partidos Políticos em atividade e/ou extintos."
+    },
+    "Partidos": {
+      "Partido": [
+        {
+          "Codigo": "9001",
+          "Sigla": "PFT",
+          "Nome": "Partido de Fábulas de Teste",
+          "DataCriacao": "2000-01-01"
+        },
+        {
+          "Codigo": "9002",
+          "Sigla": "PRV",
+          "Nome": "Partido dos Rios e Vales",
+          "DataCriacao": "2000-01-01"
+        },
+        {
+          "Codigo": "9003",
+          "Sigla": "PRV",
+          "Nome": "Partido da Rede de Vilas",
+          "DataCriacao": "2000-01-01",
+          "DataExtincao": "2001-01-01"
+        },
+        {
+          "Codigo": "9004",
+          "Sigla": "PX",
+          "Nome": "Partido de Xilogravura de Teste",
+          "DataCriacao": "2000-01-01",
+          "DataExtincao": "2001-01-01"
+        },
+        {
+          "Codigo": "9005",
+          "Sigla": "PX",
+          "Nome": "Partido Xadrez de Teste",
+          "DataCriacao": "2000-01-01",
+          "DataExtincao": "2001-01-01"
+        }
+      ]
+    }
+  }
+}

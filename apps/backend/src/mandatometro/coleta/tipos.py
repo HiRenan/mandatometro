@@ -72,3 +72,18 @@ class ResumoAtos:
     duracao_s: float = 0
     completa: bool = True
     erro: str | None = None
+
+
+@dataclass
+class ResumoBiografias:
+    parlamentares: int = 0
+    biografias: int = 0
+    sem_biografia: int = 0
+    falhas_parlamentares: int = 0
+    partidos: int = 0
+    falha_partidos: bool = False
+    chamadas: int = 0
+    tentativas_extras: int = 0
+    duracao_s: float = 0
+    completa: bool = True
+    erro: str | None = None

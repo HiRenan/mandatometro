@@ -396,15 +396,23 @@ function Perfil() {
 								{ERRO_AO_SAIR}
 							</p>
 						)}
-						{/* A revisão da edição da semana, só para a administradora. Fica no
-						    fim, sem lugar guardado, como as linhas do piloto: o lugar
-						    deixaria um vão no perfil de todas as outras contas. */}
+						{/* A revisão da edição da semana e os números do site, só para a
+						    administradora. Ficam no fim, sem lugar guardado, como as
+						    linhas do piloto: o lugar deixaria um vão no perfil de todas as
+						    outras contas. */}
 						{aberta && sessao.papel === "administradora" && (
-							<p>
-								<Link to="/painel" className="acao-de-texto">
-									<span>Revisar a edição da semana</span>
-								</Link>
-							</p>
+							<>
+								<p>
+									<Link to="/painel" className="acao-de-texto">
+										<span>Revisar a edição da semana</span>
+									</Link>
+								</p>
+								<p>
+									<Link to="/painel/numeros" className="acao-de-texto">
+										<span>Ver os números do site</span>
+									</Link>
+								</p>
+							</>
 						)}
 					</div>
 				</section>

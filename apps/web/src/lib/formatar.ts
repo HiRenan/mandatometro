@@ -107,6 +107,14 @@ export function posicaoDaSemana(data: string): number {
 	return Math.floor((dias + 3) / 7) + 1;
 }
 
+/**
+ * O inteiro com o ponto do milhar: 812400 vira "812.400". À mão, como o
+ * formatarData, para o servidor e o navegador escreverem igual.
+ */
+export function comMilhares(inteiro: number): string {
+	return String(inteiro).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
 export function plural(
 	quantidade: number,
 	singular: string,

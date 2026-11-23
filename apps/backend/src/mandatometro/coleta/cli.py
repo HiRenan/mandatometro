@@ -6,7 +6,7 @@ from dataclasses import asdict
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from mandatometro.coleta.tipos import ResumoAtos, ResumoColeta
+from mandatometro.coleta.tipos import ResumoAtos, ResumoBiografias, ResumoColeta
 
 
 def adicionar_argumentos_periodo(parser: argparse.ArgumentParser) -> None:
@@ -48,6 +48,6 @@ def resolver_periodo(
     return primeiro, ultimo
 
 
-def mostrar_resumo(resumo: ResumoColeta | ResumoAtos) -> None:
+def mostrar_resumo(resumo: ResumoColeta | ResumoAtos | ResumoBiografias) -> None:
     """Uma linha JSON para o agendamento, com contagens confirmadas e falhas sem payload."""
     print(json.dumps(asdict(resumo), ensure_ascii=False, default=str))

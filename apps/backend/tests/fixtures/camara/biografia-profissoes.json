@@ -1,0 +1,15 @@
+{
+  "dados": [
+    {
+      "dataHora": "2000-01-01T00:00",
+      "codTipoProfissao": 1,
+      "titulo": "Restauradora"
+    }
+  ],
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://dadosabertos.camara.leg.br/api/v2/deputados/900031/profissoes"
+    }
+  ]
+}

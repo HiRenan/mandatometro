@@ -28,6 +28,7 @@ import {
 	acompanharProgressoDaConta,
 	relerProgressoDaConta,
 } from "../lib/progresso";
+import { acompanharVisitas } from "../lib/visitas";
 
 export interface RouterAppContext {
 	queryClient: QueryClient;
@@ -140,6 +141,9 @@ function Documento({ children }: { children: ReactNode }) {
 					</div>
 				</ProvedorDaBusca>
 				<FocoNaPaginaNova />
+				{/* As páginas vistas, sem cookie, só onde o site fala com a API
+				    (lib/visitas.ts). */}
+				{ENV.API_URL ? <ContadorDeVisitas /> : null}
 				{/* O clique feito durante a troca de página chega à página nova
 				    (components/clique-na-troca.tsx). */}
 				<CliqueNaTroca />
@@ -169,6 +173,18 @@ function FocoNaPaginaNova() {
 			}),
 		[router],
 	);
+
+	return null;
+}
+
+/**
+ * Cada página vista avisa a API uma vez: a da primeira carga e cada página nova
+ * do router. O painel e as telas da conta não contam (lib/visitas.ts).
+ */
+function ContadorDeVisitas() {
+	const router = useRouter();
+
+	useEffect(() => acompanharVisitas(router), [router]);
 
 	return null;
 }

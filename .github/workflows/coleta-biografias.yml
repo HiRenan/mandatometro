@@ -1,0 +1,49 @@
+name: Coletar biografias parlamentares
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.ref == 'refs/heads/main' && 'banco-producao' || 'banco-desenvolvimento' }}
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  coletar:
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' &&
+          (github.ref == 'refs/heads/develop' ||
+            (github.ref == 'refs/heads/main' && github.triggering_actor == github.repository_owner)) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: ${{ github.ref == 'refs/heads/main' && 'producao' || 'desenvolvimento' }}
+    defaults:
+      run:
+        working-directory: apps/backend
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Registrar o código executado
+        run: git rev-parse HEAD
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.7"
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: apps/backend/uv.lock
+      - run: uv sync --locked --no-dev
+      - name: Coletar biografias e mostrar as contagens
+        run: |
+          if [[ -z "$DATABASE_URL" ]]; then
+            echo "::error::Defina DATABASE_URL no ambiente selecionado."
+            exit 2
+          fi
+          uv run --no-sync mandatometro coleta biografias

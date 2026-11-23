@@ -1,0 +1,30 @@
+{
+  "dados": [
+    {
+      "id": 9001,
+      "sigla": "PFT",
+      "nome": "Partido Fictício de Teste",
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/partidos/9001"
+    },
+    {
+      "id": 9002,
+      "sigla": "PNX",
+      "nome": null,
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/partidos/9002"
+    }
+  ],
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://dadosabertos.camara.leg.br/api/v2/partidos?itens=100&pagina=1"
+    },
+    {
+      "rel": "first",
+      "href": "https://dadosabertos.camara.leg.br/api/v2/partidos?itens=100&pagina=1"
+    },
+    {
+      "rel": "last",
+      "href": "https://dadosabertos.camara.leg.br/api/v2/partidos?itens=100&pagina=1"
+    }
+  ]
+}

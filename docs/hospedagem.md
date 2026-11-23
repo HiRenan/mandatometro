@@ -67,6 +67,7 @@ Comece depois de conferir a inscrição de teste no ambiente anterior. A publica
 | Coleta manual | Botão Run workflow, com datas e modo Somente vídeos opcionais | `develop` → `desenvolvimento`; `main` → `producao` |
 | Coletar TSE | Somente Run workflow | Commit do disparo. `develop` usa `desenvolvimento` e `main` usa `producao` |
 | Coletar IPCA | Somente Run workflow | Commit do disparo. `develop` usa `desenvolvimento` e `main` usa `producao` |
+| Coletar biografias parlamentares | Somente Run workflow. Na `main`, com disparo do Renan | Commit do disparo. `develop` usa `desenvolvimento` e `main` usa `producao` |
 | Agenda de sábado | 04h47 de Brasília (`47 7 * * 6` UTC), se `AGENDA_SABADO_ATIVA=true` | YAML da `develop`, checkout da `main`, banco `producao` |
 | Preparo manual da edição | Botão Run workflow, com período opcional | Commit do disparo (`github.sha`). `develop` usa `desenvolvimento` e `main` usa `producao` |
 | Envio dominical | 10h37 de Brasília (`37 13 * * 0` UTC), se `ENVIOS_ATIVOS=true` | YAML da `develop`, checkout da `main`, banco `producao` |
@@ -115,6 +116,12 @@ Os ZIPs são temporários no runner. O resumo contém apenas contagens e os regi
 3. Confira o commit executado e a linha JSON. `completa: true` confirma que todos os `meses` da carga foram gravados até `mes_fim`. Em caso de falha, a API continua lendo a série gravada. Repita o workflow depois de resolver a falha.
 
 A carga roda por disparo manual e pode ser repetida quando o Banco Central publicar um mês novo ou revisar uma taxa. [Fonte e cálculo](dicionario-de-dados.md#ipca-mensal)
+
+## Coletar biografias parlamentares
+
+1. Confirme que **Migrar banco** aplicou a revisão `0019` e que **Coletar Congresso** cadastrou parlamentares no ambiente de destino.
+2. Em **Actions → Coletar biografias parlamentares → Run workflow**, escolha `develop` para desenvolvimento. Na `main`, o job exige que o disparo seja do dono do repositório, Renan, inclusive em uma reexecução. O job usa `DATABASE_URL` com pool, aguarda a fila do banco da branch e tem até 20 minutos.
+3. Confira o commit e o resumo JSON. `parlamentares` conta as pessoas consultadas e `biografias` e `sem_biografia` contam os resultados confirmados. Veja também `partidos`, `falhas_parlamentares` e `falha_partidos`. Se `completa` for falso, o workflow falha e pode ser repetido depois de resolver a causa. A API continua lendo o último dado gravado para as consultas que falharam. [Campos e fontes](dicionario-de-dados.md#biografia-oficial-e-nome-do-partido)
 
 ## Ativar e recuperar a agenda de sábado
 

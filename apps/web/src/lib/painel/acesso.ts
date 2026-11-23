@@ -1,6 +1,7 @@
 import { notFound, redirect } from "@tanstack/react-router";
 import { consultarPerfil } from "@/client";
 import { ENV } from "@/env";
+import { sinalComPrazo } from "@/lib/prazo";
 
 // Na hospedagem, o cookie da sessão é do host da API. A guarda do painel roda
 // no navegador, que envia o cookie à API. O rascunho só é pedido depois dela.
@@ -26,11 +27,10 @@ export type Acesso =
  * Um papel que a tela não conhece não abre o painel.
  */
 export async function consultarAcesso(signal?: AbortSignal): Promise<Acesso> {
-	const prazo = AbortSignal.timeout(PRAZO);
 	const { data, response } = await consultarPerfil({
 		credentials: "include",
 		cache: "no-store",
-		signal: signal ? AbortSignal.any([signal, prazo]) : prazo,
+		signal: sinalComPrazo(PRAZO, signal),
 	});
 	// Sem internet ou com o prazo esgotado, o cliente gerado devolve a resposta
 	// vazia, embora o tipo dele diga que ela sempre vem.

@@ -36,7 +36,7 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from mandatometro.db import Base
@@ -231,6 +231,47 @@ class Parlamentar(Base):
     fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
 
     fonte: Mapped[Fonte] = relationship()
+
+
+class BiografiaParlamentar(Base):
+    """Profissões e escolaridade publicadas pela Casa, com a fonte de cada campo."""
+
+    __tablename__ = "biografia_parlamentar"
+    __table_args__ = (
+        CheckConstraint(
+            "cardinality(profissoes) > 0 OR escolaridade IS NOT NULL", name="preenchida"
+        ),
+        CheckConstraint(
+            "(cardinality(profissoes) > 0) = (fonte_profissoes_id IS NOT NULL)",
+            name="profissoes_com_fonte",
+        ),
+        CheckConstraint(
+            "(escolaridade IS NOT NULL) = (fonte_escolaridade_id IS NOT NULL)"
+            " AND (escolaridade IS NULL OR btrim(escolaridade) <> '')",
+            name="escolaridade_com_fonte",
+        ),
+    )
+
+    parlamentar_id: Mapped[int] = mapped_column(
+        ForeignKey("parlamentar.id", ondelete="CASCADE"), primary_key=True
+    )
+    profissoes: Mapped[list[str]] = mapped_column(ARRAY(Text), server_default=text("'{}'::text[]"))
+    escolaridade: Mapped[str | None] = mapped_column(Text)
+    fonte_profissoes_id: Mapped[int | None] = mapped_column(ForeignKey("fonte.id"))
+    fonte_escolaridade_id: Mapped[int | None] = mapped_column(ForeignKey("fonte.id"))
+
+
+class Partido(Base):
+    """Nome por extenso do catálogo oficial, pela sigla em maiúsculas."""
+
+    __tablename__ = "partido"
+    __table_args__ = (
+        CheckConstraint("btrim(sigla) <> '' AND btrim(nome) <> ''", name="sigla_e_nome"),
+    )
+
+    sigla: Mapped[str] = mapped_column(Text, primary_key=True)
+    nome: Mapped[str] = mapped_column(Text)
+    fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
 
 
 class Mandato(Base):
