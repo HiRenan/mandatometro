@@ -89,6 +89,7 @@ O `/painel/numeros` (a #298) mostra os números do site e do sistema, só para a
 - **Sem o cookie:** o `POST /visitas` leva só o caminho, com `credentials: "omit"`, o `keepalive` e o prazo de 10 s. O site não espera a resposta, e uma falha não aparece para quem visita, nem no console. Sem JavaScript, nada conta.
 - **O cliente fica fora do pacote de toda página:** o aviso importa o cliente da API na hora (`import()`), como o progresso. O pedaço que não carrega cai no mesmo `catch`.
 - **O modo estrito do React:** no dev, o React monta o efeito do contador, desmonta e monta de novo, e a primeira página contava duas vezes. O `acompanharVisitas` guarda num `WeakSet` os routers que já contaram a primeira página: ligar de novo no mesmo router só volta a ouvir as trocas. O build não monta duas vezes, e a conferência da contagem no navegador vale para os dois.
+- **O navegador sem janela não soma:** o Chrome e o Edge sem janela se apresentam como `HeadlessChrome`, e a API trata esse nome como robô (o `_ROBOS`, em `api/visitas.py`): responde 204 e não guarda a visita. Para ver a soma num teste pelo CDP, troque o agente pelo `Network.setUserAgentOverride`, sem o `Headless`. Na #298, a primeira rodada com a API de verdade mandou 4 avisos, todos com 204, e o dia continuou em 0.
 
 ## Rotas
 
