@@ -1,8 +1,10 @@
 import { sementeDe } from "@/lib/azulejos";
+import { classes } from "@/lib/classes";
 import { estiloDoTeto } from "@/lib/conteudo/regua";
 import { enderecoSeguro } from "@/lib/edicoes/conteudo-da-edicao";
 import { dataEmBrasilia, formatarData } from "@/lib/formatar";
 import type { PaginaDaVotacao as Pagina } from "@/lib/parlamentares";
+import { idDoVideo } from "@/lib/parlamentares/video";
 import {
 	type Filtro,
 	NOME_DA_CASA,
@@ -31,6 +33,13 @@ import { VideoDaSessao } from "./parlamentares/video-da-sessao";
  * Sem o voto de cada um, como na votação simbólica, o painel volta a ser de
  * enfeite, o quadro diz que o placar não está disponível, e quem votou como
  * explica por quê.
+ *
+ * Na tela larga, o corpo fica lado a lado (o Renan, em 23/11/2026, na #306): o
+ * corpo-com-video e o corpo-sem-votos dizem ao CSS qual dos quatro casos
+ * arrumar, e a ordem do HTML não muda. Os nomes levam o corpo- na frente: o
+ * sem-votos sozinho já é a folha da página do parlamentar. O vídeo conta pelo
+ * mesmo idDoVideo do VideoDaSessao: o endereço fora do contrato não abre a
+ * coluna do vídeo.
  */
 export function PaginaDaVotacao({
 	pagina,
@@ -45,6 +54,7 @@ export function PaginaDaVotacao({
 	const { votacao } = pagina;
 	const titulo = tituloDaVotacao(votacao);
 	const comVotos = votacao.votos.length > 0;
+	const comVideo = idDoVideo(votacao.url_video) !== null;
 	const oficial = votacao.url_oficial && enderecoSeguro(votacao.url_oficial);
 	const ementas = votacao.proposicoes.filter((proposicao) => proposicao.ementa);
 	return (
@@ -113,8 +123,17 @@ export function PaginaDaVotacao({
 					</div>
 				</div>
 			</section>
-			<div className="artigos corpo-dos-parlamentares">
-				<section aria-labelledby="placar" className="secao-dos-parlamentares">
+			<div
+				className={classes(
+					"artigos corpo-dos-parlamentares corpo-da-votacao",
+					comVideo && "corpo-com-video",
+					!comVotos && "corpo-sem-votos",
+				)}
+			>
+				<section
+					aria-labelledby="placar"
+					className="secao-dos-parlamentares placar-da-votacao"
+				>
 					<h2
 						id="placar"
 						className="subtitulo-condensado letra-com-teto [--palavra:3.26]"
