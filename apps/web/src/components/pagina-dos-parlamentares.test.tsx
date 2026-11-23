@@ -15,6 +15,8 @@ import {
 	screen,
 	within,
 } from "@testing-library/react";
+import { hydrateRoot, type Root } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { listaDeExemplo } from "@/lib/parlamentares/exemplos-de-teste";
 import { lerParlamentares } from "@/lib/parlamentares/parlamentares.server";
@@ -48,7 +50,7 @@ afterEach(() => {
  * A lista num site de mentira. A rota entra na árvore como no routeTree.gen.ts,
  * e o loader lê a API de exemplo direto, sem a função do servidor.
  */
-async function abrir(endereco: string) {
+function criarRouter(endereco: string) {
 	const carregar = vi.fn(({ deps }: { deps: { uf?: string } }) =>
 		lerParlamentares(deps.uf),
 	);
@@ -63,6 +65,11 @@ async function abrir(endereco: string) {
 		routeTree: raiz.addChildren([pagina]),
 		history: createMemoryHistory({ initialEntries: [endereco] }),
 	});
+	return { router, carregar };
+}
+
+async function abrir(endereco: string) {
+	const { router, carregar } = criarRouter(endereco);
 	const { container } = render(<RouterProvider router={router} />);
 	await screen.findByRole("heading", { level: 1 });
 	return { router, carregar, container };
@@ -233,6 +240,49 @@ describe("a lista dos parlamentares", () => {
 
 		fireEvent.blur(noMapa(container, "BA"));
 		expect(ficha(container)).toBe("Acre" + "Norte" + "0 deputados");
+	});
+
+	it("o foco do teclado que veio antes da hidratação mantém a linha e a região em destaque sobre o ponteiro", async () => {
+		const { router } = criarRouter("/parlamentares");
+		await router.load();
+		const pagina = <RouterProvider router={router} />;
+		const raiz = document.createElement("div");
+		raiz.innerHTML = renderToString(pagina);
+		document.body.append(raiz);
+
+		let hidratada: Root | undefined;
+		try {
+			const df = noMapa(raiz, "DF");
+			focarPeloTeclado(df);
+			expect(document.activeElement).toBe(df);
+			expect(df.matches(":focus-visible")).toBe(true);
+			expect(ficha(raiz)).toBe("Escolha um estado.");
+
+			const erros = vi.fn();
+			await act(async () => {
+				hidratada = hydrateRoot(raiz, pagina, { onRecoverableError: erros });
+			});
+			expect(erros).not.toHaveBeenCalled();
+			const fichaAoHidratar = ficha(raiz);
+			fireEvent.pointerEnter(noMapa(raiz, "MG"));
+
+			expect(document.activeElement).toBe(df);
+			expect(ficha(raiz)).toBe(
+				"Distrito Federal" + "Centro-Oeste" + "0 deputados",
+			);
+			expect(fichaAoHidratar).toBe(ficha(raiz));
+			expect(
+				[...raiz.querySelectorAll(".regiao-do-mapa:not(.apagada)")].map(
+					(regiao) => regiao.getAttribute("aria-label"),
+				),
+			).toEqual(["Centro-Oeste"]);
+
+			act(() => (df as SVGElement).blur());
+			expect(ficha(raiz)).toBe("Minas Gerais" + "Sudeste" + "0 deputados");
+		} finally {
+			act(() => hidratada?.unmount());
+			raiz.remove();
+		}
 	});
 
 	it("o foco que vem do clique fica sem o anel: o mouse dá o foco ao link antes de navegar", async () => {

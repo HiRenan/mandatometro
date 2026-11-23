@@ -1,6 +1,12 @@
 // biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
 import { Link } from "@tanstack/react-router";
-import { type FocusEvent, useId, useState } from "react";
+import {
+	type FocusEvent,
+	useId,
+	useLayoutEffect,
+	useRef,
+	useState,
+} from "react";
 import { classes } from "@/lib/classes";
 import { plural } from "@/lib/formatar";
 import {
@@ -59,6 +65,7 @@ export function MapaDosEstados({
 	escolhido?: string;
 }) {
 	const idDoMapa = useId();
+	const desenho = useRef<SVGSVGElement>(null);
 	const deputados = new Map(
 		estados.map((estado) => [estado.sigla, estado.deputados]),
 	);
@@ -70,6 +77,14 @@ export function MapaDosEstados({
 	const destaque = estadoDaSigla(focado ?? apontado);
 	const comFoco = destaque !== null && destaque.sigla === focado;
 	const naFicha = destaque ?? estadoDaSigla(escolhido);
+
+	// Um Tab antes da hidratação já deu foco ao link, sem passar pelo onFocus.
+	useLayoutEffect(() => {
+		const sigla = desenho.current?.querySelector<SVGAElement>(
+			".estado-no-mapa:focus-visible",
+		)?.dataset.uf;
+		if (sigla) setFocado(sigla);
+	}, []);
 
 	const apontar = (sigla: string) => ({
 		onPointerEnter: () => setApontado(sigla),
@@ -88,6 +103,7 @@ export function MapaDosEstados({
 			<div className="mapa">
 				<style>{REGRAS_DO_FOCO_NATIVO}</style>
 				<svg
+					ref={desenho}
 					viewBox={`0 0 ${LARGURA_DO_TRACADO} ${ALTURA_DO_TRACADO}`}
 					role="presentation"
 					className="desenho-do-brasil"
