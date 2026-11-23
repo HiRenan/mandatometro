@@ -167,7 +167,8 @@ export function Quiz({
 	fim?: (partes: PartesDoQuiz) => ReactNode;
 	/**
 	 * Uma ação a mais nas do fim do quiz, depois do "Rever as respostas": é por
-	 * ela que o fim do quiz final leva ao Jogo das Comissões (routes/jogos.tsx).
+	 * ela que o fim do quiz final leva ao Jogo das Comissões
+	 * (routes/jogos/$jogo.tsx).
 	 * O fim do piloto, que vem no `fim`, fica sem ela.
 	 */
 	depoisDoFim?: ReactNode;

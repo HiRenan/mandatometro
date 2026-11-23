@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { jogos } from "../jogo/paginas.server";
 import {
 	COMO_APARECE,
 	type EstiloDeTitulo,
@@ -25,7 +26,8 @@ const passoAPasso = codigo("components/infografico-em-linha.tsx");
 const caminhoDaTrilha = codigo("components/infografico.tsx");
 const outrosArtigos = codigo("components/outros-artigos.tsx");
 const paginaDasEdicoes = codigo("components/pagina-das-edicoes.tsx");
-const paginaDosJogos = codigo("routes/jogos.tsx");
+const listaDosJogos = codigo("routes/jogos/index.tsx");
+const paginaDoJogo = codigo("routes/jogos/$jogo.tsx");
 const css = codigo("index.css");
 
 // A régua (largura, palavras e a FOLGA) mora em regua.ts, que também dá o teto dos
@@ -145,8 +147,24 @@ const TETOS = {
 	jogo: {
 		lugar: "no título da página do jogo",
 		estilo: "titulo-condensado",
-		palavra: tetoNoCodigo(paginaDosJogos, "routes/jogos.tsx", [
+		palavra: tetoNoCodigo(paginaDoJogo, "routes/jogos/$jogo.tsx", [
 			"titulo-condensado",
+			"letra-com-teto",
+		]),
+	},
+	jogos: {
+		lugar: "no título da lista dos jogos",
+		estilo: "titulo-condensado",
+		palavra: tetoNoCodigo(listaDosJogos, "routes/jogos/index.tsx", [
+			"titulo-condensado",
+			"letra-com-teto",
+		]),
+	},
+	jogoNaLista: {
+		lugar: "no título do jogo, em /jogos",
+		estilo: "titulo-condensado",
+		palavra: tetoNoCodigo(listaDosJogos, "routes/jogos/index.tsx", [
+			"titulo-de-folha",
 			"letra-com-teto",
 		]),
 	},
@@ -358,12 +376,19 @@ describe("as palavras dos títulos", () => {
 		).toEqual([]);
 	});
 
-	it("o título da página do jogo cabe no teto", () => {
-		// O título vem do conteudo/jogo/comissoes/jogo.md, e o roteiro.test.ts
-		// prende o texto: o teto fica escrito no código, com o [--palavra:N] dele.
-		expect(
-			largasDe("routes/jogos.tsx", "Jogo das Comissões", [TETOS.jogo]),
-		).toEqual([]);
+	it("os títulos dos jogos cabem no teto, na página e na lista", () => {
+		// Cada título vem do conteudo/jogo/<jogo>/jogo.md e aparece em dois lugares,
+		// a página do jogo e a folha dele em /jogos, cada um com o [--palavra:N]
+		// escrito no código. "Jogos", o título da lista, também fica no código.
+		expect([
+			...jogos.flatMap((jogo) =>
+				largasDe(`conteudo/jogo/${jogo.slug}/jogo.md`, jogo.titulo, [
+					TETOS.jogo,
+					TETOS.jogoNaLista,
+				]),
+			),
+			...largasDe("routes/jogos/index.tsx", "Jogos", [TETOS.jogos]),
+		]).toEqual([]);
 	});
 
 	it("os títulos fixos das páginas das edições cabem no teto", () => {

@@ -1,5 +1,7 @@
-// O que a página do jogo usa do roteiro: os tipos e a função que pede a página
-// pronta ao servidor. A leitura dos arquivos fica em paginas.server.ts.
+// O que as páginas dos jogos usam do roteiro: os tipos e as funções que pedem a
+// lista e a página pronta ao servidor. A leitura dos arquivos fica em
+// paginas.server.ts.
+export { JOGO_DAS_COMISSOES } from "./comissoes";
 export type {
 	Carimbo,
 	Cena,
@@ -14,9 +16,10 @@ export type {
 	Relogio,
 	Revelacao,
 } from "./ler";
-export { buscarJogo } from "./paginas.functions";
+export { buscarJogo, buscarJogos } from "./paginas.functions";
 export type {
 	ArtigoDaCena,
 	CenaNaPagina,
+	JogoNaLista,
 	JogoNaPagina,
 } from "./paginas.server";

@@ -168,6 +168,9 @@ const SIMBOLO_DA_TRILHA = new Map<string, NomeDoSimbolo>([
 	["processo-legislativo", "congresso"],
 ]);
 
+/** O símbolo de cada jogo, pelo nome da pasta do roteiro dele. */
+const SIMBOLO_DO_JOGO = new Map<string, NomeDoSimbolo>([["comissoes", "mesa"]]);
+
 /** O símbolo de cada passo do caminho, pelo endereço do passo (idDoPasso). */
 const SIMBOLO_DO_PASSO = new Map<string, NomeDoSimbolo>([
 	["passo-apresentacao", "folha"],
@@ -189,4 +192,13 @@ export function simboloDaTrilha(slug: string): NomeDoSimbolo | undefined {
 /** O símbolo de um passo do caminho, pelo título. Fora do mapa, fica sem. */
 export function simboloDoPasso(titulo: string): NomeDoSimbolo | undefined {
 	return SIMBOLO_DO_PASSO.get(idDoPasso(titulo));
+}
+
+/**
+ * O símbolo de um jogo, pelo endereço dele. O jogo que não está no mapa fica sem
+ * símbolo, com o azulejo da posição, e o teste de lib/simbolos.test.ts não deixa
+ * ele chegar ao site assim.
+ */
+export function simboloDoJogo(slug: string): NomeDoSimbolo | undefined {
+	return SIMBOLO_DO_JOGO.get(slug);
 }

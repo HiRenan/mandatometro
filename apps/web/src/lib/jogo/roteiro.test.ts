@@ -131,8 +131,9 @@ describe("o roteiro do Jogo das Comissões", () => {
 	});
 
 	it("tem o título que a página mede no teto da letra", () => {
-		// O [--palavra:N] de routes/jogos.tsx foi medido para este título, e o
-		// titulos.test.ts confere a conta. Mudou o título: meça de novo.
+		// Os [--palavra:N] de routes/jogos/$jogo.tsx e de routes/jogos/index.tsx
+		// foram medidos para este título, e o titulos.test.ts confere a conta.
+		// Mudou o título: meça de novo.
 		expect(jogo.titulo).toBe("Jogo das Comissões");
 		expect(tetoDoTitulo(jogo.titulo, "titulo-condensado")).toBe(4.49);
 	});
