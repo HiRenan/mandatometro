@@ -90,6 +90,45 @@ function focarPeloTeclado(elemento: Element) {
 }
 
 describe("a lista dos parlamentares", () => {
+	it("o campo Estado oferece as 27 opções em ordem alfabética pelo nome", async () => {
+		await abrir("/parlamentares");
+		const campo = screen.getByRole("combobox", { name: "Estado" });
+		expect(
+			within(campo)
+				.getAllByRole("option")
+				.map((opcao) => opcao.textContent),
+		).toEqual([
+			"Escolha o estado",
+			"Acre",
+			"Alagoas",
+			"Amapá",
+			"Amazonas",
+			"Bahia",
+			"Ceará",
+			"Distrito Federal",
+			"Espírito Santo",
+			"Goiás",
+			"Maranhão",
+			"Mato Grosso",
+			"Mato Grosso do Sul",
+			"Minas Gerais",
+			"Pará",
+			"Paraíba",
+			"Paraná",
+			"Pernambuco",
+			"Piauí",
+			"Rio de Janeiro",
+			"Rio Grande do Norte",
+			"Rio Grande do Sul",
+			"Rondônia",
+			"Roraima",
+			"Santa Catarina",
+			"São Paulo",
+			"Sergipe",
+			"Tocantins",
+		]);
+	});
+
 	it("no mapa, cada estado é um link com o nome e o número de deputados, no singular quando é um", async () => {
 		await abrir("/parlamentares");
 		const mapa = screen.getByRole("navigation", { name: "Estados" });
