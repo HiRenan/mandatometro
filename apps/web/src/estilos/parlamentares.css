@@ -586,6 +586,102 @@
 		line-height: 1.5;
 	}
 
+	/*
+	 * O retrato: a foto oficial em 3:4, de 48 × 64 px, numa margem de papel de
+	 * 3 px com o fio de tinta de 2 px, como o retrato da página da pessoa
+	 * (components/parlamentares/retrato-na-lista.tsx). O tamanho fica em px: com
+	 * a letra grande, o nome ganha o espaço. A moldura guarda o lugar com o
+	 * azulejo cru, papel sobre papel, enquanto a foto chega e quando ela não
+	 * chega, e o rosto fica no alto do corte.
+	 */
+	.retrato-na-lista {
+		--azulejo-cru: radial-gradient(
+				circle at 0 0,
+				var(--papel-3) 70.2%,
+				transparent 70.8%
+			)
+			var(--papel-2);
+		display: block;
+		width: 58px;
+		height: 74px;
+		padding: 3px;
+		border: 2px solid var(--tinta);
+		background: var(--azulejo-cru);
+		background-clip: content-box;
+		box-shadow: inset 0 0 0 3px var(--papel);
+	}
+
+	.retrato-na-lista img {
+		position: relative;
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: 50% 0;
+	}
+
+	/* Sem o JavaScript, a foto que não chega fica coberta pelo azulejo cru: o
+	   ::after só aparece na imagem quebrada. */
+	.retrato-na-lista img::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: var(--azulejo-cru);
+	}
+
+	/* Nas cores forçadas, o navegador tira a margem de papel e o azulejo cru: o
+	   fio da moldura fica na cor do texto do sistema, e a foto continua à vista. */
+	@media (forced-colors: active) {
+		.retrato-na-lista {
+			border-color: CanvasText;
+		}
+	}
+
+	/*
+	 * Com as fotos nos dados (o Renan, em 23/11/2026, na #305: "Chamada com
+	 * retrato"), cada nome leva o retrato à esquerda, e o partido desce para baixo
+	 * do nome. O nome e o partido ficam no meio da altura do retrato e crescem
+	 * para baixo quando o nome quebra. Sem nenhuma foto na Casa, a linha fica
+	 * como era, com o partido à direita. O item da lista é uma grade, e o link
+	 * estica até a altura da fileira: ao lado de um nome que quebra em três
+	 * linhas, os fios de baixo da fileira continuam alinhados. Estas regras vêm
+	 * depois das do retrato e do .partido, e o :where tira o peso da marca no
+	 * item: assim, nenhum seletor mais leve vem depois de um mais pesado (o
+	 * noDescendingSpecificity do Biome).
+	 */
+	.nomes-da-casa:where([data-com-retratos]) > li {
+		display: grid;
+	}
+
+	.nomes-da-casa[data-com-retratos] .nome-na-lista {
+		grid-template-columns: auto minmax(0, 1fr);
+		column-gap: 12px;
+		row-gap: 2px;
+		padding: 8px 0;
+	}
+
+	.nomes-da-casa[data-com-retratos] .retrato-na-lista {
+		grid-row: span 2;
+		align-self: center;
+	}
+
+	.nomes-da-casa[data-com-retratos] .nome {
+		grid-column: 2;
+		align-self: end;
+	}
+
+	.nomes-da-casa[data-com-retratos] .partido {
+		grid-column: 2;
+		align-self: start;
+	}
+
+	/* O crédito das fotos de uma Casa, logo embaixo do título dela (o Renan, na
+	   #305: "Uma linha por Casa"), em tinta suave. */
+	.lista-da-casa > .credito-das-fotos {
+		margin: -0.25rem 0 1rem;
+		color: var(--tinta-suave);
+	}
+
 	/* ───── A página do parlamentar ───── */
 
 	/* O nome é mais comprido que o título das outras páginas: a letra é menor. */

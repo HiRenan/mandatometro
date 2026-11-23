@@ -1,7 +1,6 @@
 // biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import type { ParlamentarPublico } from "@/client";
 import { sementeDe } from "@/lib/azulejos";
 import { estiloDoTeto } from "@/lib/conteudo/regua";
 import { plural } from "@/lib/formatar";
@@ -9,6 +8,7 @@ import {
 	enderecoDoParlamentar,
 	estadoDaSigla,
 	type ListaDosParlamentares,
+	type ParlamentarDaLista,
 } from "@/lib/parlamentares";
 import { Painel } from "./azulejo";
 import { EnquantoIsso } from "./pagina-das-edicoes";
@@ -16,6 +16,7 @@ import { Palavras } from "./palavras";
 import { EscolhaDoEstado } from "./parlamentares/escolha-do-estado";
 import { MapaDosEstados } from "./parlamentares/mapa-dos-estados";
 import { Partido } from "./parlamentares/partido";
+import { RetratoNaLista } from "./parlamentares/retrato-na-lista";
 
 /** A Constituição, arts. 45 e 46: quantos deputados e senadores cada estado tem. */
 const CONSTITUICAO =
@@ -177,25 +178,41 @@ function CartazDosParlamentares({
 	);
 }
 
-/** Os nomes de uma Casa, em ordem alfabética, cada um com o partido. */
-function NomesDaCasa({ nomes }: { nomes: ParlamentarPublico[] }) {
+/**
+ * Os nomes de uma Casa, em ordem alfabética, cada um com o partido. Com alguma
+ * foto nos dados, cada nome leva o retrato à esquerda, com o partido embaixo do
+ * nome (o Renan, em 23/11/2026, na #305: "Chamada com retrato"), e o crédito da
+ * Casa fica embaixo do título dela ("Uma linha por Casa"). O nome sem a foto leva
+ * a moldura com o azulejo cru. A Casa sem nenhuma foto, como na API de antes da
+ * #303, fica sem os retratos e sem o crédito.
+ */
+function NomesDaCasa({ nomes }: { nomes: ParlamentarDaLista[] }) {
 	if (nomes.length === 0) {
 		return <p className="sem-nomes">Nenhum nome nos dados usados.</p>;
 	}
+	const credito = nomes.find((parlamentar) => parlamentar.foto)?.foto?.credito;
 	return (
-		<ul role="list" className="nomes-da-casa">
-			{nomes.map((parlamentar) => (
-				<li key={parlamentar.id}>
-					<Link
-						to="/parlamentares/$id"
-						params={{ id: enderecoDoParlamentar(parlamentar) }}
-						className="nome-na-lista"
-					>
-						<span className="nome">{parlamentar.nome}</span>{" "}
-						<Partido sigla={parlamentar.partido} />
-					</Link>
-				</li>
-			))}
-		</ul>
+		<>
+			{credito && <p className="rotulo credito-das-fotos">Fotos: {credito}</p>}
+			<ul
+				role="list"
+				className="nomes-da-casa"
+				data-com-retratos={credito ? "" : undefined}
+			>
+				{nomes.map((parlamentar) => (
+					<li key={parlamentar.id}>
+						<Link
+							to="/parlamentares/$id"
+							params={{ id: enderecoDoParlamentar(parlamentar) }}
+							className="nome-na-lista"
+						>
+							{credito && <RetratoNaLista foto={parlamentar.foto} />}
+							<span className="nome">{parlamentar.nome}</span>{" "}
+							<Partido sigla={parlamentar.partido} />
+						</Link>
+					</li>
+				))}
+			</ul>
+		</>
 	);
 }
