@@ -31,6 +31,23 @@
 	}
 }
 
+/*
+ * A coluna do gráfico sobe da base, como a barra se risca da esquerda, mas por
+ * recorte, e não por scaleY: a animação de rolagem do transform deixa cada coluna
+ * numa camada própria, e a coluna em posição fracionada fica com um contorno
+ * claro e um fio de papel embaixo, mesmo parada. O `to` fica escrito porque o
+ * recorte não passa aos poucos para o `none`.
+ */
+@keyframes ergue {
+	from {
+		clip-path: inset(100% 0 0 0);
+	}
+
+	to {
+		clip-path: inset(0);
+	}
+}
+
 /* O que entra sobe um pouco e aparece. */
 @keyframes sobe {
 	from {
@@ -295,6 +312,25 @@
 		.barra-do-patrimonio,
 		.barra-do-tipo {
 			animation: risca linear both;
+			animation-timeline: view();
+			animation-range: entry 0 entry 7rem;
+		}
+
+		/*
+		 * Nos números do painel, as barras se riscam do mesmo jeito, e as colunas
+		 * dos gráficos sobem da base. Cada coluna mede a própria entrada: a mais
+		 * alta, que entra antes, sobe antes, e o gráfico cresce da maior para a
+		 * menor durante a rolagem. Depois do trecho, o recorte sai (backwards): o
+		 * recorte parado deixa a beirada da coluna esfumada.
+		 */
+		.barra-dos-numeros {
+			animation: risca linear both;
+			animation-timeline: view();
+			animation-range: entry 0 entry 7rem;
+		}
+
+		.coluna {
+			animation: ergue linear backwards;
 			animation-timeline: view();
 			animation-range: entry 0 entry 7rem;
 		}

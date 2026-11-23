@@ -48,6 +48,7 @@ import { TRILHA_DO_PILOTO } from "@/lib/piloto";
 import { Route as RotaRaiz } from "@/routes/__root";
 import { Route as RotaAutenticada } from "@/routes/_autenticado";
 import { Route as RotaDoPainel } from "@/routes/_autenticado/painel";
+import { Route as RotaDosNumeros } from "@/routes/_autenticado/painel_.numeros";
 import { Route as ContaConfirmar } from "@/routes/cadastro/confirmar";
 import { Route as ContaExcluir } from "@/routes/cadastro/excluir";
 import { Route as ContaIndex } from "@/routes/cadastro/index";
@@ -363,7 +364,9 @@ function criarRouter() {
 			RotaDeSair.update(naRaiz("/newsletter/sair")),
 			RotaDoTermo.update(naRaiz("/termo")),
 			// O layout do painel roda só no navegador, com a guarda: aqui, ele roda no
-			// servidor, sem a guarda, e a página mostra o título e o carregando.
+			// servidor, sem a guarda, e cada página mostra o título e o carregando.
+			// Os números ficam ao lado da revisão, com o id do painel_ diferente do
+			// path, como no routeTree.gen.ts.
 			RotaAutenticada.update({
 				id: "/_autenticado",
 				getParentRoute: () => raiz,
@@ -371,6 +374,16 @@ function criarRouter() {
 				ssr: true,
 			} as never).addChildren([
 				RotaDoPainel.update(dentroDe(RotaAutenticada, "/painel")),
+				RotaDosNumeros.update({
+					id: "/painel_/numeros",
+					path: "/painel/numeros",
+					getParentRoute: () => RotaAutenticada,
+					loader: () =>
+						listarTrilhas(trilhas).map(({ slug, titulo }) => ({
+							slug,
+							titulo,
+						})),
+				} as never),
 			]),
 			RotaDasEdicoes.update(
 				naRaiz("/edicoes/", ({ deps }: { deps: { pagina: number } }) =>
@@ -475,6 +488,7 @@ const QUE_ABREM = [
 	"/edicoes",
 	"/edicoes/7",
 	"/painel",
+	"/painel/numeros",
 	"/parlamentares",
 	"/parlamentares/81-agata-cedrolume",
 	"/votacoes/139",

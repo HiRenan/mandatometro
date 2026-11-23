@@ -53,6 +53,20 @@ describe("a guarda do painel", () => {
 		expect(pedidos[0].cache).toBe("no-store");
 	});
 
+	it("confere a sessão também sem AbortSignal.timeout nem AbortSignal.any", async () => {
+		const { any, timeout } = AbortSignal;
+		Reflect.set(AbortSignal, "any", undefined);
+		Reflect.set(AbortSignal, "timeout", undefined);
+		try {
+			const { pedidos } = api(() => json(200, { papel: "administradora" }));
+			expect(await guarda(new AbortController())).toBeUndefined();
+			expect(pedidos).toHaveLength(1);
+		} finally {
+			Reflect.set(AbortSignal, "any", any);
+			Reflect.set(AbortSignal, "timeout", timeout);
+		}
+	});
+
 	it("leva quem não entrou ao login, no lugar do painel", async () => {
 		api(() => json(401, { detail: "Sessão ausente ou expirada." }));
 		const erro = await guarda();

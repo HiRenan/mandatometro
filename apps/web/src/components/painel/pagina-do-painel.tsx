@@ -23,6 +23,7 @@ import {
 import { Aviso, useAviso } from "../aviso";
 import { BOTAO_CONTINUAR } from "../botao-continuar";
 import { FaixaDeInformacoes } from "../faixa-de-informacoes";
+import { CabecaDoPainel } from "./cabeca-do-painel";
 import { FichaDoItem } from "./ficha-do-item";
 import { FolhaPorCima } from "./folha-por-cima";
 import { IndiceDaRevisao, type LinhaDoIndice } from "./indice-da-revisao";
@@ -86,13 +87,7 @@ export function PaginaDoPainel() {
 			<div className="parede">
 				<div className="artigo-grade">
 					<article className="folha artigo-folha caixa-do-teto">
-						<nav aria-label="Caminho" className="migalhas rotulo">
-							<ol>
-								<li>
-									<Link to="/perfil">Conta</Link>
-								</li>
-							</ol>
-						</nav>
+						<CabecaDoPainel atual="revisao" />
 						{/* A folha é a caixa do teto dos títulos de dentro, como na edição: o
 						    título mede a letra pela largura dela, com a palavra mais
 						    larga ("Revisão", na régua de lib/conteudo/regua.ts). */}
