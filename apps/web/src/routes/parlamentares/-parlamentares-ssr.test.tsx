@@ -348,6 +348,51 @@ describe("o HTML das páginas dos parlamentares", () => {
 		expect(html).toMatch(/<form [^>]*action="\/parlamentares" method="get"/);
 	});
 
+	it("o foco de teclado já vem no SVG para os 27 estados, por cima dos vizinhos e fora do leitor de tela", async () => {
+		apiDeExemplo();
+		const { html } = await pedir("/parlamentares");
+		const svg = /class="desenho-do-brasil">(.*?)<\/svg>/s.exec(html)?.[1] ?? "";
+		const camada = /<g class="focos-nativos" aria-hidden="true">(.*)/s.exec(
+			svg,
+		);
+		expect(camada?.index ?? -1).toBeGreaterThan(
+			svg.indexOf('class="contorno-do-brasil"'),
+		);
+		const focos = [
+			...(camada?.[1] ?? "").matchAll(
+				/<g class="foco-nativo[^"]*" data-uf="([A-Z]{2})">(.*?)<\/g>/g,
+			),
+		];
+		expect(focos).toHaveLength(27);
+		for (const [, uf, foco] of focos) {
+			const link = new RegExp(`data-uf="${uf}"[^>]*><path id="([^"]+)"`).exec(
+				svg,
+			);
+			expect(link?.[1], uf).toBeDefined();
+			expect(
+				[...foco.matchAll(/<use href="([^"]+)" class="([^"]+)"/g)].map(
+					([, href, classe]) => [href, classe],
+				),
+				uf,
+			).toEqual(
+				["fio-claro", "anel", "estado"].map((classe) => [
+					`#${link?.[1]}`,
+					classe,
+				]),
+			);
+		}
+	});
+
+	it("o crédito do mapa leva ao aviso da licença no HTML do servidor", async () => {
+		apiDeExemplo();
+		const { html } = await pedir("/parlamentares");
+		const credito = /class="credito-do-mapa">(.*?)<\/p>/.exec(html)?.[1];
+		expect(credito).toContain("Traçado dos estados: IBGE");
+		expect(credito).toContain(
+			'<a href="/licenca-do-tracado.txt">Licença MIT</a>',
+		);
+	});
+
 	it("a lista com Santa Catarina: as contas no título da aba, o estado aberto no mapa e os nomes de cada Casa", async () => {
 		apiDeExemplo();
 

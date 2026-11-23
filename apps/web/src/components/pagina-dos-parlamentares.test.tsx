@@ -134,7 +134,9 @@ describe("a lista dos parlamentares", () => {
 		const mapa = screen.getByRole("navigation", { name: "Estados" });
 
 		// O mapa e a lista, que fica no lugar dele na tela estreita.
-		expect(within(mapa).getAllByRole("link")).toHaveLength(54);
+		expect(
+			within(mapa).getAllByRole("link", { name: /deputados?$/ }),
+		).toHaveLength(54);
 		expect(
 			within(mapa)
 				.getAllByRole("link", { name: "SC Santa Catarina, 3 deputados" })
@@ -307,7 +309,7 @@ describe("a lista dos parlamentares", () => {
 			["Centro-Oeste", "fita-vermelha"],
 		]);
 		expect(container.querySelector(".credito-do-mapa")?.textContent).toBe(
-			"Traçado dos estados: IBGE",
+			"Traçado dos estados: IBGE · Licença MIT",
 		);
 	});
 

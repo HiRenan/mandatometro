@@ -74,16 +74,31 @@ describe("o traçado dos estados", () => {
 		}
 	});
 
-	it("o arquivo pesa menos de 50 kB e traz a fonte e o aviso da licença MIT, que a licença pede em toda cópia", () => {
+	it("o arquivo pesa menos de 50 kB e traz a fonte do traçado", () => {
 		expect(Buffer.byteLength(arquivo)).toBeLessThan(50_000);
 		expect(arquivo).toContain(
 			"https://github.com/luizpedone/municipal-brazilian-geodata/blob/8a2e7476faf34899c26d74bea03373a2fbb800fb/data/Brasil.json",
 		);
 		expect(arquivo).toContain("Fonte: IBGE");
-		expect(arquivo).toContain("// MIT License");
-		expect(arquivo).toContain("// Copyright (c) 2017 Luiz Pedone");
-		expect(arquivo).toContain(
-			"// The above copyright notice and this permission notice shall be included in all",
+	});
+
+	it("o mesmo aviso MIT completo vai no comentário legal do JS e no texto público", () => {
+		const comentario = /\/\*!\s*([\s\S]+?)\s*\*\//.exec(arquivo)?.[1];
+		expect(comentario).toContain(
+			"MIT License\n\nCopyright (c) 2017 Luiz Pedone",
 		);
+		expect(comentario).toContain(
+			"Permission is hereby granted, free of charge",
+		);
+		expect(comentario).toContain(
+			"The above copyright notice and this permission notice shall be included in all",
+		);
+		expect(comentario).toContain('THE SOFTWARE IS PROVIDED "AS IS"');
+		expect(comentario?.endsWith("SOFTWARE.")).toBe(true);
+		const publico = readFileSync(
+			new URL("../../../public/licenca-do-tracado.txt", import.meta.url),
+			"utf8",
+		).trim();
+		expect(publico).toBe(comentario);
 	});
 });

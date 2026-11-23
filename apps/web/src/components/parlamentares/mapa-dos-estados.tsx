@@ -1,6 +1,6 @@
 // biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
 import { Link } from "@tanstack/react-router";
-import { type FocusEvent, useState } from "react";
+import { type FocusEvent, useId, useState } from "react";
 import { classes } from "@/lib/classes";
 import { plural } from "@/lib/formatar";
 import {
@@ -28,6 +28,12 @@ import { FaixaDeInformacoes } from "../faixa-de-informacoes";
  */
 const ESTREITOS = new Set(["AL", "PB", "PE", "RN", "SE", "ES", "RJ", "DF"]);
 
+// Cada link acende o contorno da mesma UF na camada de cima do SVG.
+const REGRAS_DO_FOCO_NATIVO = `${ESTADOS.map(
+	({ sigla }) =>
+		`.desenho-do-brasil:has(.estado-no-mapa[data-uf="${sigla}"]:focus-visible) .foco-nativo[data-uf="${sigla}"]`,
+).join(",\n")} { display: inline; }`;
+
 /**
  * O mapa do Brasil, no painel do cartaz da lista (o Renan, em 22/11/2026, na
  * #289: "Mapa de verdade"). Cada estado é um link para a lista dele (?uf=SC), na
@@ -52,6 +58,7 @@ export function MapaDosEstados({
 	/** A sigla do estado aberto, que a linha embaixo do mapa diz em repouso. */
 	escolhido?: string;
 }) {
+	const idDoMapa = useId();
 	const deputados = new Map(
 		estados.map((estado) => [estado.sigla, estado.deputados]),
 	);
@@ -79,6 +86,7 @@ export function MapaDosEstados({
 	return (
 		<nav aria-label="Estados" className="mapa-dos-estados">
 			<div className="mapa">
+				<style>{REGRAS_DO_FOCO_NATIVO}</style>
 				<svg
 					viewBox={`0 0 ${LARGURA_DO_TRACADO} ${ALTURA_DO_TRACADO}`}
 					role="presentation"
@@ -108,10 +116,15 @@ export function MapaDosEstados({
 											activeOptions={{ exact: true }}
 											aria-label={nomeDoLink(estado, quantos(estado))}
 											className="estado-no-mapa"
+											data-uf={estado.sigla}
 											{...apontar(estado.sigla)}
 											{...focar(estado.sigla)}
 										>
-											<path d={CAMINHOS[estado.sigla]} />
+											<path
+												id={`${idDoMapa}-${estado.sigla}`}
+												d={CAMINHOS[estado.sigla]}
+												vectorEffect="non-scaling-stroke"
+											/>
 										</Link>
 									</g>
 								),
@@ -120,6 +133,29 @@ export function MapaDosEstados({
 					))}
 					<path d={FRONTEIRAS_DAS_REGIOES} className="fronteiras-das-regioes" />
 					<path d={CONTORNO} className="contorno-do-brasil" />
+					{/* O foco nativo reaproveita cada caminho no alto do SVG: desenhado
+					    dentro do link, o anel ficaria embaixo dos vizinhos seguintes. */}
+					{/* biome-ignore lint/a11y/noAriaHiddenOnFocusable: o g só tem cópias decorativas de caminhos, sem foco. */}
+					<g className="focos-nativos" aria-hidden="true">
+						{ESTADOS.map(({ sigla, regiao }) => {
+							const href = `#${idDoMapa}-${sigla}`;
+							return (
+								<g
+									key={sigla}
+									className={classes(
+										"foco-nativo",
+										classeDaRegiao(regiao),
+										sigla === escolhido && "aberto",
+									)}
+									data-uf={sigla}
+								>
+									<use href={href} className="fio-claro" />
+									<use href={href} className="anel" />
+									<use href={href} className="estado" />
+								</g>
+							);
+						})}
+					</g>
 					{/* O SVG não tem z-index: o estado em destaque sobe numa cópia, que
 					    vem depois de tudo. Os caminhos sem nome ficam fora do leitor de
 					    tela. */}
@@ -188,7 +224,10 @@ export function MapaDosEstados({
 						</li>
 					))}
 				</ul>
-				<p className="credito-do-mapa">Traçado dos estados: IBGE</p>
+				<p className="credito-do-mapa">
+					Traçado dos estados: IBGE ·{" "}
+					<a href="/licenca-do-tracado.txt">Licença MIT</a>
+				</p>
 			</div>
 			<ul role="list" className="lista-de-estados">
 				{ESTADOS_PELO_NOME.map((estado) => (

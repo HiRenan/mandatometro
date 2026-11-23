@@ -5,8 +5,8 @@
 // fetch do Node.
 //
 // Uso: pnpm --filter web tracado
-// Grava src/lib/parlamentares/tracado.ts. Para mudar o traçado, mude este
-// roteiro e gere de novo, sem editar o arquivo gravado.
+// Grava src/lib/parlamentares/tracado.ts e public/licenca-do-tracado.txt. Para
+// mudar o traçado, mude este roteiro e gere de novo.
 import { writeFileSync } from "node:fs";
 
 const COMMIT = "8a2e7476faf34899c26d74bea03373a2fbb800fb";
@@ -303,12 +303,6 @@ if (siglas.length !== 27) {
 	throw new Error(`o traçado tem ${siglas.length} estados, e não 27`);
 }
 
-const comentario = (texto) =>
-	texto
-		.split("\n")
-		.map((linhaDoTexto) => `// ${linhaDoTexto}`.trimEnd())
-		.join("\n");
-
 const arquivo = `// Gerado por imagens/tracado.mjs (pnpm --filter web tracado). Para mudar o
 // traçado, mude o roteiro e gere de novo, sem editar este arquivo.
 //
@@ -320,8 +314,9 @@ const arquivo = `// Gerado por imagens/tracado.mjs (pnpm --filter web tracado). 
 // Fonte: IBGE, malhas territoriais, pela compilação de Luiz Pedone:
 // ${FONTE}
 // A licença da compilação, que vale para este traçado:
-//
-${comentario(licenca)}
+/*!
+${licenca}
+*/
 
 /** A largura e a altura do desenho, no viewBox. */
 export const LARGURA_DO_TRACADO = ${LARGURA};
@@ -343,6 +338,10 @@ export const CONTORNO =
 
 const destino = new URL("../src/lib/parlamentares/tracado.ts", import.meta.url);
 writeFileSync(destino, arquivo);
+writeFileSync(
+	new URL("../public/licenca-do-tracado.txt", import.meta.url),
+	`${licenca}\n`,
+);
 const compartilhados = [...trechos.values()].filter(
 	(t) => t.donos.length === 2,
 ).length;

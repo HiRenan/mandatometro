@@ -189,6 +189,40 @@ describe("o mapa dos estados", () => {
 		expect(largura(fio)).toBe(largura(anel) + 4);
 	});
 
+	it("o foco nativo usa o mesmo anel azul e fio claro, acima do SVG e fora do caminho do ponteiro", () => {
+		expect(regra(mapa, ".focos-nativos")).toBe("pointer-events: none;");
+		expect(regra(mapa, ".foco-nativo")).toBe("display: none;");
+		for (const camada of ["anel", "fio-claro"]) {
+			const seletores = new RegExp(
+				`\\.foco-nativo \\.${camada},\\s*\\.estado-em-destaque \\.${camada} \\{`,
+			);
+			expect(mapa).toMatch(seletores);
+			expect(bloco(mapa, "@media (forced-colors: active)")).toMatch(seletores);
+		}
+		expect(
+			regra(
+				mapa,
+				".desenho-do-brasil:has(.estado-em-destaque.com-foco) .focos-nativos",
+			),
+		).toBe("display: none;");
+	});
+
+	it("sem a cópia do React, o CSS apaga as outras regiões, com o foco do teclado à frente do ponteiro", () => {
+		const antesDaCopia = bloco(
+			mapa,
+			".desenho-do-brasil:not(:has(.estado-em-destaque))",
+		).replace(/\s+>\s+/g, " > ");
+		expect(antesDaCopia).toContain(
+			"&:has(.estado-no-mapa:focus-visible) > .regiao-do-mapa:not(:has(.estado-no-mapa:focus-visible)),",
+		);
+		expect(
+			regra(
+				antesDaCopia,
+				"&:not(:has(.estado-no-mapa:focus-visible)):has(.estado-no-mapa:hover) > .regiao-do-mapa:not(:has(.estado-no-mapa:hover))",
+			),
+		).toBe("--fita: var(--papel-3);");
+	});
+
 	it("na lista, a sigla sai, e o nome do estado fica com a linha", () => {
 		expect(regra(css, ".estado-na-lista .sigla")).toBe("display: none;");
 	});

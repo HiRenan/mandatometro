@@ -79,6 +79,16 @@
 		--fita: var(--papel-3);
 	}
 
+	/* Antes do destaque do React, a região responde ao foco ou ao ponteiro. */
+	.desenho-do-brasil:not(:has(.estado-em-destaque)) {
+		&:has(.estado-no-mapa:focus-visible)
+			> .regiao-do-mapa:not(:has(.estado-no-mapa:focus-visible)),
+		&:not(:has(.estado-no-mapa:focus-visible)):has(.estado-no-mapa:hover)
+			> .regiao-do-mapa:not(:has(.estado-no-mapa:hover)) {
+			--fita: var(--papel-3);
+		}
+	}
+
 	/*
 	 * O link do estado repete a fita e o fio do grupo: o Chrome pinta o link
 	 * visitado com as cores das regras dele mesmo, e o fill herdado de um pai que
@@ -91,14 +101,23 @@
 		cursor: pointer;
 	}
 
-	/*
-	 * O anel do foco fica na cópia que sobe (embaixo). Antes de o JavaScript
-	 * carregar, ele fica no próprio estado.
-	 */
-	.estado-no-mapa:focus-visible {
-		outline: none;
-		stroke: var(--ring);
-		stroke-width: 4px;
+	/* O foco que vem no HTML dá lugar ao anel da cópia que sobe. */
+	@supports selector(:has(*)) {
+		.estado-no-mapa:focus-visible {
+			outline: none;
+		}
+	}
+
+	.focos-nativos {
+		pointer-events: none;
+	}
+
+	.foco-nativo {
+		display: none;
+	}
+
+	.desenho-do-brasil:has(.estado-em-destaque.com-foco) .focos-nativos {
+		display: none;
 	}
 
 	/* O estado aberto fica em tinta. */
@@ -131,27 +150,32 @@
 		animation: estado-sobe 0.3s var(--ease-mola) both;
 	}
 
+	.foco-nativo .estado,
 	.estado-em-destaque .estado {
 		fill: var(--fita);
 		stroke: var(--tinta);
 		stroke-width: 2px;
 	}
 
-	.estado-em-destaque.aberto .estado {
-		fill: var(--tinta);
-	}
-
+	.foco-nativo .estado,
 	.estado-em-destaque.com-foco .estado {
 		stroke-width: 4px;
 		paint-order: stroke;
 	}
 
+	.foco-nativo.aberto .estado,
+	.estado-em-destaque.aberto .estado {
+		fill: var(--tinta);
+	}
+
+	.foco-nativo .anel,
 	.estado-em-destaque .anel {
 		fill: none;
 		stroke: var(--ring);
 		stroke-width: 10px;
 	}
 
+	.foco-nativo .fio-claro,
 	.estado-em-destaque .fio-claro {
 		fill: none;
 		stroke: var(--folha);
@@ -299,6 +323,10 @@
 		color: var(--tinta-suave);
 	}
 
+	.credito-do-mapa a {
+		text-decoration: underline;
+	}
+
 	@media (forced-colors: active) {
 		.desenho-do-brasil {
 			forced-color-adjust: none;
@@ -315,11 +343,12 @@
 			stroke: CanvasText;
 		}
 
-		.estado-no-mapa:focus-visible,
+		.foco-nativo .anel,
 		.estado-em-destaque .anel {
 			stroke: Highlight;
 		}
 
+		.foco-nativo .fio-claro,
 		.estado-em-destaque .fio-claro {
 			stroke: Canvas;
 		}
@@ -329,12 +358,14 @@
 			stroke: CanvasText;
 		}
 
+		.foco-nativo .estado,
 		.estado-em-destaque .estado {
 			fill: Highlight;
 			stroke: CanvasText;
 		}
 
 		.estado-no-mapa[aria-current="page"],
+		.foco-nativo.aberto .estado,
 		.estado-em-destaque.aberto .estado {
 			fill: CanvasText;
 		}
