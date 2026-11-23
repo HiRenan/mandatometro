@@ -801,7 +801,6 @@
 		width: 100%;
 		height: max(2px, calc(var(--parte) * 100%));
 		background: var(--tinta);
-		transform-origin: 50% 100%;
 	}
 
 	.maximo-das-colunas {
