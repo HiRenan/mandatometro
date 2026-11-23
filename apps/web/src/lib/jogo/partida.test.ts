@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-	acharJogo,
-	JOGO_DAS_COMISSOES,
-	type JogoNaPagina,
-	jogos,
-} from "./paginas.server";
+import { JOGO_DAS_COMISSOES } from "./comissoes";
+import { acharJogo, type JogoNaPagina, jogos } from "./paginas.server";
 import {
 	avancar,
 	caminho,

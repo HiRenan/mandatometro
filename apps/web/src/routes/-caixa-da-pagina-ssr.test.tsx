@@ -30,11 +30,8 @@ import {
 	edicaoDeExemplo,
 	listaDeExemplo,
 } from "@/lib/edicoes/exemplos-de-teste";
-import {
-	acharJogo,
-	JOGO_DAS_COMISSOES,
-	jogos,
-} from "@/lib/jogo/paginas.server";
+import { JOGO_DAS_COMISSOES } from "@/lib/jogo/comissoes";
+import { acharJogo, jogos, listarJogos } from "@/lib/jogo/paginas.server";
 import {
 	detalheDeExemplo,
 	listaDeExemplo as listaDosParlamentares,
@@ -60,7 +57,8 @@ import { Route as ContaReenvio } from "@/routes/cadastro/reenvio";
 import { Route as RotaDaEdicao } from "@/routes/edicoes/$id";
 import { Route as RotaDasEdicoes } from "@/routes/edicoes/index";
 import { Route as RotaInicial } from "@/routes/index";
-import { Route as RotaDoJogo } from "@/routes/jogos";
+import { Route as RotaDoJogo } from "@/routes/jogos/$jogo";
+import { Route as RotaDosJogos } from "@/routes/jogos/index";
 import { Route as Login } from "@/routes/login";
 import { Route as RotaDeSair } from "@/routes/newsletter/sair";
 import { Route as RotaDoParlamentar } from "@/routes/parlamentares/$id";
@@ -348,8 +346,11 @@ function criarRouter() {
 			RotaDoPiloto.update(
 				naRaiz("/piloto", () => acharQuizFinal(trilhas, TRILHA_DO_PILOTO)),
 			),
+			RotaDosJogos.update(naRaiz("/jogos/", () => listarJogos(jogos))),
 			RotaDoJogo.update(
-				naRaiz("/jogos", () => acharJogo(jogos, JOGO_DAS_COMISSOES)),
+				naRaiz("/jogos/$jogo", ({ params }: { params: { jogo: string } }) =>
+					acharJogo(jogos, params.jogo),
+				),
 			),
 			ContaIndex.update(naRaiz("/cadastro/")),
 			Perfil.update(naRaiz("/perfil", () => listarTrilhas(trilhas))),
@@ -468,6 +469,7 @@ const QUE_ABREM = [
 	]),
 	"/piloto",
 	"/jogos",
+	`/jogos/${JOGO_DAS_COMISSOES}`,
 	"/newsletter/sair",
 	"/termo",
 	"/edicoes",

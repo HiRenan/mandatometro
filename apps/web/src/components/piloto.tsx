@@ -6,6 +6,7 @@ import { classes } from "@/lib/classes";
 import { semCliqueDuplo } from "@/lib/clique";
 import type { QuizNaPagina } from "@/lib/conteudo";
 import { classeDaFita } from "@/lib/formatar";
+import { JOGO_DAS_COMISSOES } from "@/lib/jogo/comissoes";
 import { TRILHA_DO_JOGO } from "@/lib/jogo/trilha";
 import {
 	comecarComoOutraPessoa,
@@ -561,11 +562,17 @@ export function QuizFinal({
 /**
  * O convite para o Jogo das Comissões, no fim do quiz final da trilha do
  * processo legislativo: o jogo continua a trilha, fora dela, e nada do que a
- * pessoa faz ali muda a medição do piloto (docs/jogo-das-comissoes.md).
+ * pessoa faz ali muda a medição do piloto (docs/jogo-das-comissoes.md). O link
+ * vai direto ao jogo, e não à lista de /jogos: a medição conta os cliques daqui
+ * até o jogo, e a lista seria um passo a mais no meio dela.
  */
 function ChamadaDoJogo() {
 	return (
-		<Link to="/jogos" className={classes(BOTAO_CONTINUAR, "vazado")}>
+		<Link
+			to="/jogos/$jogo"
+			params={{ jogo: JOGO_DAS_COMISSOES }}
+			className={classes(BOTAO_CONTINUAR, "vazado")}
+		>
 			Jogar o Jogo das Comissões
 		</Link>
 	);

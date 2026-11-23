@@ -1,6 +1,6 @@
 # Jogo das Comissões
 
-O jogo conta, em cinco cenas, a tramitação real do PL 104/2015, que virou a [Lei nº 15.100, de 2025](https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2025/Lei/L15100.htm), sobre o uso de celular nas escolas. Em cada cena a pessoa decide o próximo passo e depois vê o que aconteceu de verdade, com o link da fonte oficial. Ele fica em `/jogos`, fora da trilha, e o fim do quiz final da trilha do processo legislativo leva até lá: assim a medição do piloto não muda ([medição do piloto](medicao-do-piloto.md)).
+O jogo conta, em cinco cenas, a tramitação real do PL 104/2015, que virou a [Lei nº 15.100, de 2025](https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2025/Lei/L15100.htm), sobre o uso de celular nas escolas. Em cada cena a pessoa decide o próximo passo e depois vê o que aconteceu de verdade, com o link da fonte oficial. Ele fica em `/jogos/comissoes`, fora da trilha, e o fim do quiz final da trilha do processo legislativo leva direto até lá, sem passar pela lista: assim a medição do piloto não muda ([medição do piloto](medicao-do-piloto.md)). O `/jogos` é a lista dos jogos, com uma folha por jogo.
 
 O projeto escolhido passa por quase tudo que a trilha ensina: arquivamento e desarquivamento, duas comissões, poder conclusivo, prazo de recurso, mudança de número entre as Casas, urgência, votação simbólica e sanção sem vetos.
 
