@@ -11,7 +11,7 @@ from pathlib import Path
 
 from mandatometro import contas_cli
 from mandatometro.avisos.cli import ParserEnvio
-from mandatometro.coleta import camara, destaques, ipca, legislacao, tse, tse_bens
+from mandatometro.coleta import biografias, camara, destaques, ipca, legislacao, tse, tse_bens
 from mandatometro.coleta.senado import registrar as registrar_senado
 from mandatometro.ia import cli as edicao
 from mandatometro.piloto.cli import registrar_comando as registrar_piloto
@@ -56,6 +56,7 @@ def main(argv: list[str] | None = None) -> int:
     tse.registrar(casas)
     tse_bens.registrar(casas)
     ipca.registrar(casas)
+    biografias.registrar(casas)
     edicao.registrar_comando(comandos)
     registrar_piloto(comandos)
     contas_cli.registrar_comando(comandos)

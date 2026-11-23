@@ -84,7 +84,7 @@ Três avisos sobre essas chaves:
 
 ## Foto oficial do parlamentar
 
-`GET /parlamentares/{id}` devolve `foto` com o endereço oficial e o crédito. A API monta o endereço com a Casa e o `id_externo` já gravados. O navegador solicita a foto diretamente à Casa.
+`GET /parlamentares` e `GET /parlamentares/{id}` devolvem `foto` com o endereço oficial e o crédito. A API monta o endereço com a Casa e o `id_externo` já gravados. O navegador solicita a foto diretamente à Casa.
 
 | Casa | `foto.url` | `foto.credito` |
 | --- | --- | --- |
@@ -95,6 +95,26 @@ Na Câmara, o endereço segue o `urlFoto` gravado na resposta. No Senado, o cami
 
 - A Câmara permite reproduzir informações do portal com crédito à Câmara dos Deputados e menção à autoria quando houver. [Termos gerais de uso da Câmara](https://www2.camara.leg.br/termo-de-uso-e-politica-de-privacidade/termos-gerais)
 - O Senado permite reutilizar o conteúdo do portal para fins lícitos com citação da fonte. [Política de uso do portal do Senado](https://www12.senado.leg.br/institucional/documentos/politica-de-uso-do-portal-do-senado-federal)
+
+## Biografia oficial e nome do partido
+
+O comando `mandatometro coleta biografias` lê as duas Casas para todos os parlamentares já cadastrados. As rotas são relativas às bases de Dados Abertos da [Câmara](https://dadosabertos.camara.leg.br/api/v2) e do [Senado](https://legis.senado.leg.br/dadosabertos/).
+
+| Dado | Câmara | Senado |
+| --- | --- | --- |
+| Profissões | `/deputados/{id}/profissoes`, `dados[].titulo` | `/senador/{codigo}/profissao.json`, `HistoricoAcademicoParlamentar.Parlamentar.Profissoes.Profissao[].NomeProfissao` |
+| Escolaridade | `/deputados/{id}`, `dados.escolaridade` | `/senador/{codigo}/historicoAcademico.json`, `HistoricoAcademicoParlamentar.Parlamentar.HistoricoAcademico.Curso[].GrauInstrucao` |
+| Nome do partido | `/partidos?itens=100`, `dados[].sigla` e `nome`, seguindo as páginas | `/senador/partidos.json`, `ListaPartidos.Partidos.Partido[].Sigla`, `Nome` e `DataExtincao`. A rota redireciona para `/dados/ListaPartidos.json`. |
+
+A coleta conserva a ordem da fonte e elimina repetições. A escolaridade do Senado reúne os graus distintos numa string, com vírgula e espaço entre eles. A fonte de cada campo preenchido fica ligada a `biografia_parlamentar`, com o endereço da consulta e a data e hora da resposta (`coletado_em`). A coleta monta o caminho e os parâmetros de cada fonte de biografia e de partido. No catálogo da Câmara, os links indicam os números das páginas, e a coleta monta as consultas com `itens` e `pagina`. Os destinos de redirecionamento servem apenas para obter a resposta.
+
+Antes de gravar o catálogo da Câmara, a coleta confere se o número da página no endereço final da resposta corresponde ao pedido. Se houver divergência, o catálogo anterior e suas fontes são preservados, o resumo traz `falha_partidos: true` e o comando retorna 1. A coleta de biografias segue.
+
+`GET /parlamentares/{id}` devolve `biografia` com `profissoes`, `escolaridade` e `fonte`. O endereço e o horário públicos são os da escolaridade quando disponível, ou os das profissões. `profissoes` pode ser uma lista vazia e `escolaridade` pode ser nula. A biografia inteira é nula antes da coleta ou quando a Casa responde sem ambos os dados. Uma falha de consulta, validação ou gravação preserva a biografia anterior e entra na contagem de falhas.
+
+A compressão inválida de uma resposta conta como falha de consulta. A coleta registra uma mensagem fixa, preserva os dados anteriores da pessoa ou do catálogo afetado e consulta as demais pessoas. O comando devolve saída 1 com o resumo parcial.
+
+A sigla em `partido` continua vindo do voto mais recente. A API lê seu nome por extenso do catálogo gravado em `partido`, pela sigla sem distinção entre maiúsculas e minúsculas. O catálogo da Câmara tem prioridade. Para as demais siglas, vale um único nome ativo no Senado ou, quando há só registros históricos, um nome comum a todos eles. `partido_nome` é nulo sem correspondência. Se um dos catálogos falhar, a versão anterior é preservada. Cada catálogo precisa ter pelo menos uma sigla válida, com ou sem nome. Um catálogo sem siglas gera `falha_partidos: true` no resumo, saída 1 e a coleta de biografias segue. [Regras de dados pessoais](dados-pessoais.md#parlamentares-e-candidatos)
 
 ## Câmara dos Deputados
 
@@ -291,7 +311,8 @@ O detalhe acrescenta:
 | `ultimoStatus.situacao`, `condicaoEleitoral` | texto | ex.: `Exercício`, `Titular` | sim |
 | `ultimoStatus.gabinete` | objeto | sala e telefone | não |
 | `urlWebsite`, `redeSocial` | — | site e redes; servem para as promessas, depois do MVP | não |
-| `sexo`, `municipioNascimento`, `ufNascimento`, `escolaridade` | texto | — | não |
+| `sexo`, `municipioNascimento`, `ufNascimento` | texto | — | não |
+| `escolaridade` | texto | escolaridade publicada | sim, na coleta de biografias |
 | **`cpf`** | texto | **dado pessoal** | **só ligação, não exibir** |
 | **`dataNascimento`** | data | **dado pessoal** | **só ligação, não exibir** |
 

@@ -1,0 +1,29 @@
+{
+  "HistoricoAcademicoParlamentar": {
+    "noNamespaceSchemaLocation": "https://legis.senado.leg.br/dadosabertos/dados/HistoricoAcademicoParlamentarv1.xsd",
+    "Metadados": {
+      "Versao": "23/11/2026 14:37:03",
+      "VersaoServico": "1",
+      "DataVersaoServico": "2021-09-09",
+      "DescricaoDataSet": "Retorna a relação de Cursos feitos pelo Senador informado no parâmetro."
+    },
+    "Parlamentar": {
+      "Codigo": "900041",
+      "Nome": "Ari Luz de Exemplo",
+      "HistoricoAcademico": {
+        "Curso": [
+          {
+            "NomeCurso": "Curso fictício",
+            "GrauInstrucao": "Superior",
+            "Estabelecimento": "Faculdade de Exemplo"
+          },
+          {
+            "NomeCurso": "Curso fictício",
+            "GrauInstrucao": "Mestrado",
+            "Estabelecimento": "Faculdade de Exemplo"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -161,6 +161,11 @@ class ErroParlamentar(BaseModel):
     erro: Literal["dados_invalidos", "parlamentar_nao_encontrado", "servico_indisponivel"]
 
 
+class FotoParlamentar(BaseModel):
+    url: str
+    credito: str
+
+
 class ParlamentarPublico(BaseModel):
     id: int = Field(description="Id interno do parlamentar.")
     nome: str
@@ -173,6 +178,7 @@ class ParlamentarPublico(BaseModel):
         description="Sigla registrada no voto mais recente pela data da votação, com desempate "
         "pelo maior id interno da votação. Nula se o voto não informa partido ou se não há voto."
     )
+    foto: FotoParlamentar = Field(description="Endereço da foto oficial e crédito da Casa.")
 
 
 class ListaParlamentares(BaseModel):
@@ -196,13 +202,26 @@ class ContagemVotosParlamentar(BaseModel):
     outro: int
 
 
-class FotoParlamentar(BaseModel):
+class FonteBiografia(BaseModel):
     url: str
-    credito: str
+    coletado_em: datetime
+
+
+class BiografiaParlamentar(BaseModel):
+    profissoes: list[str] = Field(description="Profissões distintas na ordem publicada pela Casa.")
+    escolaridade: str | None
+    fonte: FonteBiografia = Field(
+        description="Fonte da escolaridade quando disponível, ou das profissões."
+    )
 
 
 class DetalheParlamentar(ParlamentarPublico):
-    foto: FotoParlamentar = Field(description="Endereço da foto oficial e crédito da Casa.")
+    partido_nome: str | None = Field(
+        description="Nome oficial da sigla em partido. Nulo quando não há nome para a sigla."
+    )
+    biografia: BiografiaParlamentar | None = Field(
+        description="Informações publicadas pela Casa. Nula antes da coleta ou sem dados na fonte."
+    )
     mandatos: list[MandatoPublico]
     contagem_votos: ContagemVotosParlamentar = Field(
         description="Contagem dos registros de voto deste parlamentar, por valor normalizado. "

@@ -2466,6 +2466,40 @@
         ],
         "title": "ArtigoDaEdicao"
       },
+      "BiografiaParlamentar": {
+        "properties": {
+          "profissoes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Profissoes",
+            "description": "Profissões distintas na ordem publicada pela Casa."
+          },
+          "escolaridade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escolaridade"
+          },
+          "fonte": {
+            "$ref": "#/components/schemas/FonteBiografia",
+            "description": "Fonte da escolaridade quando disponível, ou das profissões."
+          }
+        },
+        "type": "object",
+        "required": [
+          "profissoes",
+          "escolaridade",
+          "fonte"
+        ],
+        "title": "BiografiaParlamentar"
+      },
       "Cadastro": {
         "properties": {
           "senha": {
@@ -2739,6 +2773,29 @@
             "$ref": "#/components/schemas/FotoParlamentar",
             "description": "Endereço da foto oficial e crédito da Casa."
           },
+          "partido_nome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partido Nome",
+            "description": "Nome oficial da sigla em partido. Nulo quando não há nome para a sigla."
+          },
+          "biografia": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BiografiaParlamentar"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Informações publicadas pela Casa. Nula antes da coleta ou sem dados na fonte."
+          },
           "mandatos": {
             "items": {
               "$ref": "#/components/schemas/MandatoPublico"
@@ -2759,6 +2816,8 @@
           "uf",
           "partido",
           "foto",
+          "partido_nome",
+          "biografia",
           "mandatos",
           "contagem_votos"
         ],
@@ -3272,6 +3331,25 @@
           "votacoes"
         ],
         "title": "FatosPublicos"
+      },
+      "FonteBiografia": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "coletado_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Coletado Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "coletado_em"
+        ],
+        "title": "FonteBiografia"
       },
       "FontePatrimonio": {
         "properties": {
@@ -3917,6 +3995,10 @@
             ],
             "title": "Partido",
             "description": "Sigla registrada no voto mais recente pela data da votação, com desempate pelo maior id interno da votação. Nula se o voto não informa partido ou se não há voto."
+          },
+          "foto": {
+            "$ref": "#/components/schemas/FotoParlamentar",
+            "description": "Endereço da foto oficial e crédito da Casa."
           }
         },
         "type": "object",
@@ -3925,7 +4007,8 @@
           "nome",
           "casa",
           "uf",
-          "partido"
+          "partido",
+          "foto"
         ],
         "title": "ParlamentarPublico"
       },

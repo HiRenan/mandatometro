@@ -1,0 +1,15 @@
+{
+  "HistoricoAcademicoParlamentar": {
+    "noNamespaceSchemaLocation": "https://legis.senado.leg.br/dadosabertos/dados/HistoricoAcademicoParlamentarv1.xsd",
+    "Metadados": {
+      "Versao": "23/11/2026 14:36:28",
+      "VersaoServico": "1",
+      "DataVersaoServico": "2021-09-09",
+      "DescricaoDataSet": "Retorna a relação das Profissões do Senador informado no parâmetro."
+    },
+    "Parlamentar": {
+      "Codigo": "900042",
+      "Nome": "Ari Luz de Exemplo"
+    }
+  }
+}

@@ -8,7 +8,9 @@ Desde a decisão de 21/11/2026, CPF, título de eleitor e data de nascimento de 
 
 A API, o front, os logs e os fixtures de teste identificam pessoas pelo id interno.
 
-A API do detalhe devolve o endereço da foto oficial com o crédito da Casa. O endereço é derivado do código oficial já cadastrado. A foto e seu endereço ficam fora do banco, e o navegador de quem visita pede o arquivo diretamente à Casa. [Foto oficial no dicionário de dados](dicionario-de-dados.md#foto-oficial-do-parlamentar)
+A API devolve o endereço da foto oficial com o crédito da Casa na lista e no detalhe. O endereço é derivado do código oficial já cadastrado. A foto e seu endereço ficam fora do banco, e o navegador de quem visita pede o arquivo diretamente à Casa. [Foto oficial no dicionário de dados](dicionario-de-dados.md#foto-oficial-do-parlamentar)
+
+A coleta de biografias grava as profissões e a escolaridade publicadas pela Casa de cada parlamentar cadastrado, com a URL e a data e hora de cada consulta que forneceu um desses campos. O catálogo guarda a sigla e o nome por extenso de partidos com a fonte oficial. O detalhe entrega essas informações com a fonte da escolaridade quando disponível, ou a das profissões. CPF, título de eleitor, data e lugar de nascimento, sexo, endereço, telefone, e-mail, nome civil, nomes de cursos e instituições ficam fora da coleta de biografias e do retorno novo da API. O corpo das respostas fica só na memória durante a leitura. Os logs, os erros e o resumo usam mensagens fixas e contagens, e as fixtures usam dados pessoais inventados. [Campos e fontes da biografia](dicionario-de-dados.md#biografia-oficial-e-nome-do-partido)
 
 O banco recebe candidaturas com par único entre os parlamentares em exercício, ligadas pelo id interno. A carga guarda o nome de urna para essas candidaturas. Nome civil, documentos, nascimento e demais dados de cadastro ficam fora da tabela de candidaturas. Os resumos e logs trazem contagens, e as fixtures do TSE usam dados inventados. Veja os [campos pessoais das fontes](dicionario-de-dados.md#campos-pessoais).
 
