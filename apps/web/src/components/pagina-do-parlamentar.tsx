@@ -1,7 +1,7 @@
 // biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
 import { Link } from "@tanstack/react-router";
 import type { CSSProperties } from "react";
-import type { MandatoPublico, VotoParlamentar } from "@/client";
+import type { VotoParlamentar } from "@/client";
 import { sementeDe } from "@/lib/azulejos";
 import { classes } from "@/lib/classes";
 import { estiloDoTeto } from "@/lib/conteudo/regua";
@@ -29,18 +29,19 @@ import {
 import { Painel } from "./azulejo";
 import { FaixaDeInformacoes } from "./faixa-de-informacoes";
 import { ParlamentaresIndisponiveis } from "./pagina-dos-parlamentares";
+import { FichaDoParlamentar } from "./parlamentares/ficha-do-parlamentar";
 import { FotoOficial } from "./parlamentares/foto-oficial";
 import { PatrimonioDeclarado } from "./parlamentares/patrimonio-declarado";
 import { ARTIGO_DA_VOTACAO } from "./parlamentares/quem-votou-como";
 
 /**
  * A página de um parlamentar, em /parlamentares/81-nome: o cartaz das páginas de
- * dentro, com o nome gigante, a Casa, o estado e o partido, o painel de enfeite,
- * com a semente do id, e a foto oficial colada nele, com o crédito; embaixo, os
- * mandatos, o patrimônio declarado ao TSE em cada eleição, como a pessoa votou,
- * com a barra, a regra de cada voto e o artigo do regimento, e os votos, do mais
- * novo para o mais antigo, 20 por página. Sem voto registrado, a página explica
- * por quê, com a votação simbólica e o link da trilha.
+ * dentro, com o nome gigante, a Casa e o estado, a ficha com a fonte de cada
+ * dado, o painel de enfeite, com a semente do id, e a foto oficial colada nele,
+ * com o crédito; embaixo, o patrimônio declarado ao TSE em cada eleição, como a
+ * pessoa votou, com a barra, a regra de cada voto e o artigo do regimento, e os
+ * votos, do mais novo para o mais antigo, 20 por página. Sem voto registrado, a
+ * página explica por quê, com a votação simbólica e o link da trilha.
  */
 export function PaginaDoParlamentar({ pagina }: { pagina: Pagina }) {
 	if (pagina.tipo === "sem-api") {
@@ -100,37 +101,15 @@ export function PaginaDoParlamentar({ pagina }: { pagina: Pagina }) {
 					<FaixaDeInformacoes>
 						<span>{NOME_DA_CASA[parlamentar.casa]}</span>
 						{estado && <span>{estado.nome}</span>}
-						{parlamentar.partido && <span>{parlamentar.partido}</span>}
 					</FaixaDeInformacoes>
-					{!parlamentar.partido && (
-						<p className="para-quem">
-							Sem partido nos dados usados: o partido vem do último voto
-							registrado.
-						</p>
-					)}
+					<FichaDoParlamentar
+						parlamentar={parlamentar}
+						patrimonio={patrimonio}
+						votos={total}
+					/>
 				</div>
 			</section>
-			<div className="artigos corpo-dos-parlamentares">
-				{parlamentar.mandatos.length > 0 && (
-					<section
-						aria-labelledby="mandatos"
-						className="secao-dos-parlamentares"
-					>
-						<h2
-							id="mandatos"
-							className="subtitulo-condensado letra-com-teto [--palavra:4.65]"
-						>
-							Mandatos
-						</h2>
-						<ul role="list" className="mandatos">
-							{parlamentar.mandatos.map((mandato) => (
-								<li key={`${mandato.legislatura}-${mandato.uf}`}>
-									<Mandato mandato={mandato} />
-								</li>
-							))}
-						</ul>
-					</section>
-				)}
+			<div className="artigos corpo-dos-parlamentares corpo-do-parlamentar">
 				<PatrimonioDeclarado patrimonio={patrimonio} nome={parlamentar.nome} />
 				{total === 0 ? (
 					<SemVotos nome={parlamentar.nome} />
@@ -169,20 +148,6 @@ export function PaginaDoParlamentar({ pagina }: { pagina: Pagina }) {
 				)}
 			</div>
 		</>
-	);
-}
-
-/** Um mandato: "57ª legislatura · Santa Catarina · titular · em exercício". */
-function Mandato({ mandato }: { mandato: MandatoPublico }) {
-	return (
-		<FaixaDeInformacoes>
-			<span>{mandato.legislatura}ª legislatura</span>
-			<span>{estadoDaSigla(mandato.uf)?.nome ?? mandato.uf}</span>
-			{mandato.condicao && (
-				<span>{mandato.condicao.toLocaleLowerCase("pt-BR")}</span>
-			)}
-			{mandato.em_exercicio && <span>em exercício</span>}
-		</FaixaDeInformacoes>
 	);
 }
 

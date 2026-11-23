@@ -24,6 +24,7 @@ import type {
 } from "@/client";
 import type { PaginaDoParlamentar, Patrimonio } from "@/lib/parlamentares";
 import {
+	biografiaDeExemplo,
 	CONTAGEM_ZERADA,
 	correcaoDeExemplo,
 	detalheDeExemplo,
@@ -108,19 +109,25 @@ const reais = (numero: string) => `R$${SEM_QUEBRA}${numero}`;
  * Cada eleição do patrimônio, parte por parte: o ano, o cargo e o lugar, o
  * resultado, o valor em destaque, a diferença (como o leitor de tela ouve e
  * como a tela mostra), o período da correção e os detalhes, com o arquivo do TSE.
+ * Com a chave, cada eleição tem duas versões do valor, e o CSS mostra uma: aqui,
+ * a dos reais de hoje ou, pedida, a do valor declarado.
  */
-function eleicoes() {
+function eleicoes(vista: "de-hoje" | "declarado" = "de-hoje") {
 	return Array.from(
 		document.querySelectorAll(".eleicao-do-patrimonio"),
 		(linha) => {
-			const diferenca = linha.querySelector(".diferenca-da-eleicao");
+			const valor =
+				linha.querySelector(`.valor-da-eleicao.so-${vista}`) ??
+				linha.querySelector(".valor-da-eleicao");
+			if (!valor) throw new Error("a eleição está sem o valor");
+			const diferenca = valor.querySelector(".diferenca-da-eleicao");
 			return {
 				ano: linha.querySelector("h3")?.textContent,
 				cargo: textos(linha, ".faixa > span"),
 				resultado:
 					linha.querySelector(".resultado-da-eleicao")?.textContent ?? null,
 				valor: textos(
-					linha,
+					valor,
 					".destaque-do-valor, .legenda-do-valor, .sem-total-da-eleicao",
 				),
 				diferenca: diferenca && {
@@ -128,7 +135,7 @@ function eleicoes() {
 					tela: visto(diferenca),
 				},
 				periodo:
-					linha.querySelector(".periodo-da-eleicao")?.textContent ?? null,
+					valor.querySelector(".periodo-da-eleicao")?.textContent ?? null,
 				detalhes: textos(
 					linha,
 					".declarado-na-eleicao > .sr-only, .detalhes-da-eleicao > :not(.declarado-na-eleicao)",
@@ -208,6 +215,46 @@ function barrasDeComoVotou() {
 				.querySelector<HTMLElement>(".barra-do-tipo")
 				?.style.getPropertyValue("--parte") ?? null,
 	);
+}
+
+/**
+ * Cada item da ficha do cartaz, como o leitor de tela lê: o rótulo, o valor e a
+ * fonte. Os mandatos e as eleições vêm em lista, cada um com as partes dele (a
+ * parte do mandato tem a classe do recuo com o quadradinho). A fonte com o dia
+ * da coleta vem em duas linhas: a fonte e a coleta.
+ */
+function itensDaFicha() {
+	return Array.from(document.querySelectorAll(".item-da-ficha"), (item) => {
+		const valor = item.querySelector(".valor-da-ficha");
+		const fonte = item.querySelector(".fonte-da-ficha");
+		const itens = valor?.querySelectorAll("li") ?? [];
+		return {
+			rotulo: item.querySelector("dt")?.textContent,
+			valor:
+				itens.length > 0
+					? Array.from(itens, (linha) =>
+							textos(linha, ".faixa > .parte-do-mandato, :scope > span"),
+						)
+					: valor?.textContent,
+			fonte: fonte && linhasDaFonte(fonte),
+		};
+	});
+}
+
+/** A fonte como o leitor de tela lê, com o dia da coleta, quando há, à parte. */
+function linhasDaFonte(fonte: Element) {
+	const coleta = fonte.querySelector(".coleta-da-ficha");
+	if (!coleta) return lido(fonte);
+	const semColeta = fonte.cloneNode(true) as Element;
+	semColeta.querySelector(".coleta-da-ficha")?.remove();
+	return [lido(semColeta)?.trim(), lido(coleta)];
+}
+
+/** As partes da faixa do cartaz, embaixo do nome. */
+function faixaDoCartaz() {
+	const faixa = document.querySelector(".cartaz-pe > p.rotulo");
+	if (!faixa) throw new Error("o cartaz está sem a faixa");
+	return textos(faixa, ".faixa > span");
 }
 
 describe("a página do parlamentar", () => {
@@ -314,7 +361,7 @@ describe("a página do parlamentar", () => {
 		expect(
 			screen.getByRole("link", { name: "Regimento Interno do Senado Federal" }),
 		).toBeTruthy();
-		expect(screen.getByText("Senado Federal")).toBeTruthy();
+		expect(faixaDoCartaz()).toEqual(["Senado Federal", "Santa Catarina"]);
 	});
 
 	it("cada voto leva a quem votou como, com um nome de link só dele, e à página oficial só quando ela existe", async () => {
@@ -488,8 +535,370 @@ describe("a foto oficial no cartaz", () => {
 	});
 });
 
+describe("a ficha no cartaz", () => {
+	const NA_CAMARA = [
+		"Fonte: Câmara dos Deputados",
+		"Coletada em 20 de novembro de 2026.",
+	];
+
+	it("fica no pé do cartaz, depois do nome e da faixa, que leva só a Casa e o estado, e o título Ficha é só do leitor de tela", async () => {
+		await abrir(detalheDeExemplo());
+
+		const titulo = screen.getByRole("heading", { level: 2, name: "Ficha" });
+		expect(titulo.classList).toContain("sr-only");
+		const ficha = titulo.closest("section");
+		expect(ficha?.parentElement?.classList).toContain("cartaz-pe");
+		expect(ficha?.previousElementSibling?.classList).toContain("rotulo");
+		expect(
+			ficha?.querySelectorAll(":scope > dl > div.item-da-ficha"),
+		).toHaveLength(7);
+		expect(faixaDoCartaz()).toEqual(["Câmara dos Deputados", "Santa Catarina"]);
+	});
+
+	it("cada item, na ordem da tela, com o rótulo, o valor e a fonte", async () => {
+		await abrir(detalheDeExemplo());
+
+		expect(itensDaFicha()).toEqual([
+			{
+				rotulo: "Partido",
+				valor: "PFT Partido Fictício do Trabalho",
+				fonte: "Fonte: o último voto registrado.",
+			},
+			{
+				rotulo: "Profissões",
+				valor: "Professora e Advogada",
+				fonte: NA_CAMARA,
+			},
+			{ rotulo: "Escolaridade", valor: "Superior", fonte: NA_CAMARA },
+			{
+				rotulo: "Mandatos",
+				valor: [
+					["57ª legislatura", "titular", "em exercício"],
+					["56ª legislatura"],
+				],
+				fonte: "Fonte: Câmara dos Deputados.",
+			},
+			{
+				rotulo: "Votos registrados",
+				valor: "1",
+				fonte:
+					"Fonte: as votações nominais da Câmara dos Deputados. Ver os votos",
+			},
+			{
+				rotulo: "Último patrimônio declarado",
+				valor: `${reais("2,4 milhões")} em 2026`,
+				fonte: [
+					"Fonte: arquivo do TSE (ZIP) com os bens declarados em 2026",
+					"Coletado em 20 de novembro de 2026.",
+				],
+			},
+			{
+				rotulo: "Eleições desde 2006",
+				valor: [
+					["2014", "Deputado estadual", "Ganhou pelo quociente partidário"],
+					["2018", "Deputado federal", "Ganhou pela média"],
+					["2022", "Deputado federal", "Ficou como suplente"],
+					["2026", "Senador", "Ganhou"],
+				],
+				fonte: "Fonte: TSE. Ver o patrimônio de cada eleição",
+			},
+		]);
+	});
+
+	it("as fontes levam à página oficial da pessoa, ao arquivo do TSE da última eleição e, na própria página, aos votos e ao patrimônio de cada eleição", async () => {
+		await abrir(detalheDeExemplo());
+
+		const casa = screen.getAllByRole("link", { name: "Câmara dos Deputados" });
+		expect(casa.map((link) => link.getAttribute("href"))).toEqual([
+			"https://www.camara.leg.br/deputados/90000123",
+			"https://www.camara.leg.br/deputados/90000123",
+		]);
+		expect(
+			screen
+				.getByRole("link", {
+					name: "arquivo do TSE (ZIP) com os bens declarados em 2026",
+				})
+				.getAttribute("href"),
+		).toBe(
+			"https://cdn.tse.jus.br/estatistica/sead/odsele/bem_candidato/bem_candidato_2026.zip",
+		);
+		for (const [nome, trecho] of [
+			["Ver os votos", "votos"],
+			["Ver o patrimônio de cada eleição", "patrimonio"],
+		]) {
+			expect(
+				screen.getByRole("link", { name: nome }).getAttribute("href"),
+			).toBe(`#${trecho}`);
+			expect(document.getElementById(trecho)?.tagName).toBe("H2");
+		}
+	});
+
+	it("nenhum link das fontes vem seguido de pontuação, que começaria a linha de baixo quando ele quebra numa coluna estreita", async () => {
+		await abrir(detalheDeExemplo());
+
+		const links = Array.from(document.querySelectorAll(".fonte-da-ficha a"));
+		expect(links).toHaveLength(5);
+		for (const link of links) {
+			expect(link.nextSibling?.textContent ?? "", lido(link) ?? "").not.toMatch(
+				/^[,.;:]/,
+			);
+		}
+	});
+
+	it("sem o nome do partido, só a sigla; sem partido, a frase diz de onde ele viria, e a faixa fica só com a Casa e o estado", async () => {
+		await abrir(detalheDeExemplo({ partido_nome: null }));
+		expect(itensDaFicha()[0]).toEqual({
+			rotulo: "Partido",
+			valor: "PFT",
+			fonte: "Fonte: o último voto registrado.",
+		});
+
+		cleanup();
+		await abrir(detalheDeExemplo({ partido: null }));
+		expect(itensDaFicha()[0]).toEqual({
+			rotulo: "Partido",
+			valor: "Sem partido nos dados usados",
+			fonte: "O partido vem do último voto registrado.",
+		});
+		expect(faixaDoCartaz()).toEqual(["Câmara dos Deputados", "Santa Catarina"]);
+		expect(document.querySelector(".cartaz-pe .para-quem")).toBeNull();
+	});
+
+	it("sem a biografia, a profissão e a escolaridade saem; com ela, o que a Casa não publica fica dito", async () => {
+		await abrir(detalheDeExemplo({ biografia: null }));
+		expect(itensDaFicha().map(({ rotulo }) => rotulo)).toEqual([
+			"Partido",
+			"Mandatos",
+			"Votos registrados",
+			"Último patrimônio declarado",
+			"Eleições desde 2006",
+		]);
+
+		cleanup();
+		await abrir(
+			detalheDeExemplo({
+				biografia: biografiaDeExemplo("camara", {
+					profissoes: [],
+					escolaridade: null,
+				}),
+			}),
+		);
+		expect(itensDaFicha().slice(1, 3)).toEqual([
+			{
+				rotulo: "Profissão",
+				valor: "A Câmara dos Deputados não publica a profissão.",
+				fonte: NA_CAMARA,
+			},
+			{
+				rotulo: "Escolaridade",
+				valor: "A Câmara dos Deputados não publica a escolaridade.",
+				fonte: NA_CAMARA,
+			},
+		]);
+	});
+
+	it("no Senado, as fontes e o que falta falam do Senado Federal, e a profissão única vai no singular", async () => {
+		await abrir(
+			detalheDeExemplo({
+				id: 501,
+				nome: "Lia Quinemar",
+				casa: "senado",
+				biografia: biografiaDeExemplo("senado", {
+					profissoes: ["Agricultora"],
+					escolaridade: null,
+				}),
+			}),
+		);
+		const NO_SENADO = [
+			"Fonte: Senado Federal",
+			"Coletada em 20 de novembro de 2026.",
+		];
+
+		expect(itensDaFicha().slice(1, 5)).toEqual([
+			{ rotulo: "Profissão", valor: "Agricultora", fonte: NO_SENADO },
+			{
+				rotulo: "Escolaridade",
+				valor: "O Senado Federal não publica a escolaridade.",
+				fonte: NO_SENADO,
+			},
+			expect.objectContaining({
+				rotulo: "Mandatos",
+				fonte: "Fonte: Senado Federal.",
+			}),
+			expect.objectContaining({
+				fonte: "Fonte: as votações nominais do Senado Federal. Ver os votos",
+			}),
+		]);
+		expect(
+			screen
+				.getAllByRole("link", { name: "Senado Federal" })[0]
+				.getAttribute("href"),
+		).toBe(
+			"https://www25.senado.leg.br/web/senadores/senador/-/perfil/90000124",
+		);
+	});
+
+	it("o mandato único vai no singular, e o mandato por outro estado leva o nome dele", async () => {
+		await abrir(
+			detalheDeExemplo({
+				mandatos: [
+					{
+						legislatura: 55,
+						uf: "PR",
+						condicao: "Suplente",
+						em_exercicio: false,
+					},
+				],
+			}),
+		);
+
+		expect(itensDaFicha()[3]).toMatchObject({
+			rotulo: "Mandato",
+			valor: [["55ª legislatura", "Paraná", "suplente"]],
+		});
+	});
+
+	it("sem mandato registrado, a linha dos mandatos sai da ficha", async () => {
+		await abrir(detalheDeExemplo({ mandatos: [] }));
+
+		expect(itensDaFicha().map(({ rotulo }) => rotulo)).toEqual([
+			"Partido",
+			"Profissões",
+			"Escolaridade",
+			"Votos registrados",
+			"Último patrimônio declarado",
+			"Eleições desde 2006",
+		]);
+	});
+
+	it("sem voto registrado, a ficha diz em palavras, sem o link para os votos", async () => {
+		await abrir(detalheDeExemplo(), []);
+
+		expect(itensDaFicha()[4]).toEqual({
+			rotulo: "Votos registrados",
+			valor: "Nenhum voto registrado ainda",
+			fonte: "Fonte: as votações nominais da Câmara dos Deputados.",
+		});
+		expect(screen.queryByRole("link", { name: "Ver os votos" })).toBeNull();
+	});
+
+	it("sem eleição ligada à pessoa, ou com o patrimônio que não carregou, o patrimônio e as eleições saem da ficha", async () => {
+		const rotulos = () => itensDaFicha().map(({ rotulo }) => rotulo);
+		const SEM_PATRIMONIO = [
+			"Partido",
+			"Profissões",
+			"Escolaridade",
+			"Mandatos",
+			"Votos registrados",
+		];
+
+		await abrirComPatrimonio(patrimonioNaPagina({ eleicoes: [] }));
+		expect(rotulos()).toEqual(SEM_PATRIMONIO);
+
+		cleanup();
+		await abrirComPatrimonio({ tipo: "indisponivel" });
+		expect(rotulos()).toEqual(SEM_PATRIMONIO);
+	});
+
+	it("o último patrimônio é o da eleição mais nova com total, e a eleição sem resultado fica sem ele", async () => {
+		await abrirComPatrimonio(
+			patrimonioNaPagina({
+				eleicoes: [
+					eleicaoDeExemplo({ ano: 2018 }),
+					eleicaoDeExemplo({
+						ano: 2022,
+						total_centavos: null,
+						total_corrigido_centavos: null,
+					}),
+				],
+			}),
+		);
+
+		expect(itensDaFicha().slice(5)).toEqual([
+			{
+				rotulo: "Último patrimônio declarado",
+				valor: `${reais("812 mil")} em 2018`,
+				fonte: [
+					"Fonte: arquivo do TSE (ZIP) com os bens declarados em 2018",
+					"Coletado em 20 de novembro de 2026.",
+				],
+			},
+			expect.objectContaining({
+				valor: [
+					["2018", "Deputado federal"],
+					["2022", "Deputado federal"],
+				],
+			}),
+		]);
+	});
+
+	it("a eleição por outro estado leva o nome dele, e a de presidente, Brasil", async () => {
+		await abrirComPatrimonio(
+			patrimonioNaPagina({
+				eleicoes: [
+					eleicaoDeExemplo({ ano: 2018, uf: "PR" }),
+					eleicaoDeExemplo({
+						ano: 2022,
+						cargo: { codigo: 1, nome: "Presidente" },
+						uf: "BR",
+					}),
+					eleicaoDeExemplo({ ano: 2026 }),
+				],
+			}),
+		);
+
+		expect(itensDaFicha()[6].valor).toEqual([
+			["2018", "Deputado federal, Paraná"],
+			["2022", "Presidente, Brasil"],
+			["2026", "Deputado federal"],
+		]);
+	});
+
+	it("a página oficial fora dos sites da Casa fica escrita, sem link", async () => {
+		await abrir(
+			detalheDeExemplo({
+				biografia: biografiaDeExemplo("camara", {
+					fonte: {
+						url: "https://outro.example.com/perfil",
+						coletado_em: "2026-11-20T15:00:00+00:00",
+					},
+				}),
+			}),
+		);
+
+		expect(itensDaFicha()[1].fonte).toEqual(NA_CAMARA);
+		expect(
+			screen.queryByRole("link", { name: "Câmara dos Deputados" }),
+		).toBeNull();
+	});
+
+	it("o arquivo do TSE fora dos sites oficiais fica escrito, sem link e sem o ZIP", async () => {
+		await abrirComPatrimonio(
+			patrimonioNaPagina({
+				eleicoes: [
+					eleicaoDeExemplo({
+						fonte: {
+							url: "https://outro.example.com/bens.zip",
+							coletado_em: "2026-11-20T15:00:00+00:00",
+						},
+					}),
+				],
+			}),
+		);
+
+		expect(itensDaFicha()[5]).toEqual({
+			rotulo: "Último patrimônio declarado",
+			valor: `${reais("812 mil")} em 2018`,
+			fonte: ["Fonte: arquivo do TSE", "Coletado em 20 de novembro de 2026."],
+		});
+		expect(
+			document.querySelectorAll(".item-da-ficha")[5].querySelector("a"),
+		).toBeNull();
+	});
+});
+
 describe("o patrimônio declarado ao TSE", () => {
-	it("vem depois dos mandatos e antes de como votou; sem voto, antes da folha dos votos", async () => {
+	it("vem depois da ficha e antes de como votou; sem voto, antes da folha dos votos", async () => {
 		const titulos = () =>
 			screen
 				.getAllByRole("heading", { level: 2 })
@@ -497,7 +906,7 @@ describe("o patrimônio declarado ao TSE", () => {
 
 		await abrir(detalheDeExemplo());
 		expect(titulos()).toEqual([
-			"Mandatos",
+			"Ficha",
 			"Patrimônio declarado ao TSE",
 			"Como votou",
 			"Votos",
@@ -506,10 +915,108 @@ describe("o patrimônio declarado ao TSE", () => {
 		cleanup();
 		await abrir(detalheDeExemplo(), []);
 		expect(titulos()).toEqual([
-			"Mandatos",
+			"Ficha",
 			"Patrimônio declarado ao TSE",
 			"Nenhum voto registrado ainda",
 		]);
+	});
+
+	it("abre no valor declarado: a chave Mostrar os valores abre a coluna dos dados, com o valor declarado marcado", async () => {
+		await abrir(detalheDeExemplo());
+
+		const chave = within(blocoDoPatrimonio()).getByRole("group", {
+			name: "Mostrar os valores",
+		});
+		expect(chave.tagName).toBe("FIELDSET");
+		expect(chave.parentElement?.className).toBe("dados-do-patrimonio");
+		expect(chave.parentElement?.firstElementChild).toBe(chave);
+		const declarado = within(chave).getByRole<HTMLInputElement>("radio", {
+			name: "Valor declarado",
+		});
+		const deHoje = within(chave).getByRole<HTMLInputElement>("radio", {
+			name: "Em reais de hoje",
+		});
+		expect([declarado.checked, deHoje.checked]).toEqual([true, false]);
+		expect(deHoje.name).toBe(declarado.name);
+	});
+
+	it("cada eleição traz o valor declarado, arredondado, antes da versão dos reais de hoje, que tem a diferença e o período", async () => {
+		await abrir(detalheDeExemplo());
+
+		expect(
+			eleicoes("declarado").map(({ valor, diferenca, periodo }) => [
+				valor,
+				diferenca,
+				periodo,
+			]),
+		).toEqual([
+			[[reais("198 mil"), "valor declarado"], null, null],
+			[[reais("812 mil"), "valor declarado"], null, null],
+			[
+				["Os dados do TSE desta eleição não trazem um total de bens."],
+				null,
+				null,
+			],
+			[[reais("2,4 milhões"), "valor declarado"], null, null],
+		]);
+		const [primeira, , semTotal] = document.querySelectorAll(
+			".eleicao-do-patrimonio",
+		);
+		expect(
+			Array.from(
+				primeira.querySelectorAll(".valor-da-eleicao"),
+				(versao) => versao.className,
+			),
+		).toEqual(["valor-da-eleicao so-declarado", "valor-da-eleicao so-de-hoje"]);
+		// Sem o total, as duas versões diriam o mesmo: fica uma só.
+		expect(
+			Array.from(
+				semTotal.querySelectorAll(".valor-da-eleicao"),
+				(versao) => versao.className,
+			),
+		).toEqual(["valor-da-eleicao"]);
+	});
+
+	it("o gráfico, o aviso da diferença e o Como calculamos são só dos reais de hoje, e a frase da abertura sobre eles vem à parte", async () => {
+		await abrir(detalheDeExemplo());
+		const bloco = blocoDoPatrimonio();
+
+		expect(
+			Array.from(
+				bloco.querySelectorAll(".dados-do-patrimonio > .so-de-hoje"),
+				(parte) => parte.className,
+			),
+		).toEqual([
+			"grafico-do-patrimonio so-de-hoje",
+			"texto-do-patrimonio aviso-do-patrimonio so-de-hoje",
+			"correcao-do-patrimonio so-de-hoje",
+		]);
+		expect(bloco.querySelector(".so-com-chave")?.textContent).toBe(
+			" Para comparar anos diferentes, você pode ver cada total em reais de hoje, corrigido pela inflação até outubro de 2026.",
+		);
+	});
+
+	it("sem a série do IPCA, ou sem eleição corrigida, não há chave nem segunda versão do valor", async () => {
+		for (const patrimonio of [
+			patrimonioNaPagina({ correcao_ipca: null }),
+			patrimonioNaPagina({
+				eleicoes: [
+					eleicaoDeExemplo({ ano: 2026, total_corrigido_centavos: null }),
+				],
+				correcao_ipca: correcaoDeExemplo({ mes_fim: "2026-09" }),
+			}),
+		]) {
+			await abrirComPatrimonio(patrimonio);
+			const bloco = blocoDoPatrimonio();
+
+			expect(
+				within(bloco).queryByRole("group", { name: "Mostrar os valores" }),
+			).toBeNull();
+			expect(
+				bloco.querySelector(".so-declarado, .so-de-hoje, .so-com-chave"),
+			).toBeNull();
+			cleanup();
+		}
 	});
 
 	it("cada eleição, da mais antiga para a mais nova: o ano, o cargo, o estado e o resultado, o valor de hoje, a diferença, o período, o declarado e o arquivo do TSE", async () => {
@@ -602,13 +1109,13 @@ describe("o patrimônio declarado ao TSE", () => {
 		).toBeNull();
 	});
 
-	it("o gráfico dos valores de hoje vem entre o aviso e a lista, numa régua só e fora do leitor de tela", async () => {
+	it("o gráfico dos valores de hoje vem entre a chave e a lista, numa régua só e fora do leitor de tela", async () => {
 		await abrir(detalheDeExemplo());
 		const desenho = blocoDoPatrimonio().querySelector(".grafico-do-patrimonio");
 
 		expect(desenho?.getAttribute("aria-hidden")).toBe("true");
 		expect(desenho?.previousElementSibling?.classList).toContain(
-			"aviso-do-patrimonio",
+			"chave-dos-valores",
 		);
 		expect(desenho?.nextElementSibling?.classList).toContain(
 			"eleicoes-do-patrimonio",
@@ -744,18 +1251,28 @@ describe("o patrimônio declarado ao TSE", () => {
 		await abrir(detalheDeExemplo());
 		const bloco = blocoDoPatrimonio();
 
-		expect(
-			within(bloco).getByText(
-				"Quem se candidata entrega à Justiça Eleitoral uma lista dos próprios bens, como casas, carros e dinheiro no banco. Aqui está o total que Ágata Cedrolume declarou nas eleições gerais em que concorreu. Para comparar anos diferentes, cada total aparece também em reais de hoje, corrigido pela inflação até outubro de 2026.",
-			),
-		).toBeTruthy();
+		expect(bloco.querySelector(".texto-do-patrimonio")?.textContent).toBe(
+			"Quem se candidata entrega à Justiça Eleitoral uma lista dos próprios bens, como casas, carros e dinheiro no banco. Aqui está o total que Ágata Cedrolume declarou nas eleições gerais em que concorreu. Para comparar anos diferentes, você pode ver cada total em reais de hoje, corrigido pela inflação até outubro de 2026.",
+		);
 		const aviso = within(bloco).getByText(
 			"É o valor que a própria pessoa declarou ao registrar a candidatura, e não o patrimônio de hoje. A Justiça Eleitoral dá acesso à declaração como ela foi entregue, e cada bem costuma entrar pelo preço de compra, como na declaração do Imposto de Renda: uma casa comprada há 20 anos pode aparecer pelo valor daquela época.",
 		);
 		const lista = bloco.querySelector<HTMLElement>(".eleicoes-do-patrimonio");
 		if (!lista) throw new Error("sem a lista das eleições");
-		// Entre o aviso e a lista, só o gráfico, fora do leitor de tela.
-		expect(aviso.nextElementSibling?.nextElementSibling).toBe(lista);
+		// A abertura e o aviso numa coluna; na outra, a chave, o gráfico (fora do
+		// leitor de tela), a lista e o resto, na ordem da tela larga.
+		const [abertura, dados] = bloco.querySelectorAll(":scope > div");
+		expect(aviso.parentElement).toBe(abertura);
+		expect(abertura.lastElementChild).toBe(aviso);
+		expect(Array.from(dados.children, (parte) => parte.className)).toEqual([
+			"chave-dos-valores",
+			"grafico-do-patrimonio so-de-hoje",
+			"eleicoes-do-patrimonio",
+			"texto-do-patrimonio aviso-do-patrimonio so-de-hoje",
+			"texto-do-patrimonio nota-do-patrimonio",
+			"correcao-do-patrimonio so-de-hoje",
+			"fonte-das-regras",
+		]);
 		expect(within(lista).getAllByRole("listitem")).toHaveLength(4);
 		expect(
 			within(bloco).getByText(
@@ -963,8 +1480,14 @@ describe("o patrimônio declarado ao TSE", () => {
 			["2022", "0.5", reais("550 mil")],
 			["2026", null, "sem o valor de hoje"],
 		]);
+		// No valor declarado, a eleição sem a correção é como as outras.
+		expect(eleicoes("declarado").map(({ valor }) => valor)).toEqual([
+			[reais("812 mil"), "valor declarado"],
+			[reais("812 mil"), "valor declarado"],
+			[reais("2,4 milhões"), "valor declarado"],
+		]);
 		expect(bloco.textContent).toContain(
-			"Para comparar anos diferentes, os totais aparecem também em reais de hoje, corrigidos pela inflação até setembro de 2026, quando a série do IPCA cobre a eleição.",
+			"Para comparar anos diferentes, você pode ver os totais em reais de hoje, corrigidos pela inflação até setembro de 2026, quando a série do IPCA cobre a eleição.",
 		);
 		expect(bloco.textContent).toContain(
 			"A correção usa o IPCA, a inflação oficial medida pelo IBGE, de outubro do ano da eleição até setembro de 2026.",
@@ -1047,5 +1570,46 @@ describe("o patrimônio declarado ao TSE", () => {
 		expect(texto).not.toMatch(
 			/aument|diminu|cresc|dobr|enriquec|suspeit|evolu|salto|saltou|dispar|despenc|explod/i,
 		);
+	});
+});
+
+describe("a tela larga", () => {
+	/** As partes de um bloco, pelo que o CSS das duas colunas usa: o id ou a classe. */
+	const partes = (bloco: Element) =>
+		Array.from(bloco.children, (parte) => parte.id || parte.className);
+
+	it("o corpo e o patrimônio têm as classes e a ordem que as duas colunas usam: o título e a abertura de um lado, os dados do outro", async () => {
+		await abrir(detalheDeExemplo());
+		const bloco = blocoDoPatrimonio();
+		const corpo = bloco.parentElement;
+
+		expect(corpo?.className).toBe(
+			"artigos corpo-dos-parlamentares corpo-do-parlamentar",
+		);
+		expect(corpo?.firstElementChild).toBe(bloco);
+		expect(bloco.classList).toContain("patrimonio-declarado");
+		expect(partes(bloco)).toEqual([
+			"patrimonio",
+			"abertura-do-patrimonio",
+			"dados-do-patrimonio",
+		]);
+		expect(
+			corpo?.querySelector(".votos-do-parlamentar > .voto-da-pessoa"),
+		).not.toBeNull();
+	});
+
+	it("sem eleição, a frase do patrimônio fica no lugar dos dados; sem voto, a folha dos votos vem logo depois, no corpo", async () => {
+		await abrir(
+			detalheDeExemplo(),
+			[],
+			1,
+			undefined,
+			patrimonioNaPagina({ eleicoes: [] }),
+		);
+		const bloco = blocoDoPatrimonio();
+
+		expect(partes(bloco)).toEqual(["patrimonio", "texto-do-patrimonio"]);
+		expect(bloco.nextElementSibling?.className).toBe("sem-votos");
+		expect(bloco.parentElement?.classList).toContain("corpo-do-parlamentar");
 	});
 });

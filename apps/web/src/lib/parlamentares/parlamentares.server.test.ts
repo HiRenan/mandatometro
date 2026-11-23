@@ -2,6 +2,7 @@ import { isNotFound } from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TEMPO_DE_ESPERA } from "@/lib/edicoes/edicoes.server";
 import {
+	biografiaDeExemplo,
 	correcaoDeExemplo,
 	detalheDeExemplo,
 	eleicaoDeExemplo,
@@ -383,6 +384,130 @@ describe("a foto oficial na página do parlamentar", () => {
 			});
 		}
 		expect(erros).not.toHaveBeenCalled();
+	});
+});
+
+describe("o partido por extenso e a biografia na página do parlamentar", () => {
+	it("chegam à página com a pessoa, sem linha no log", async () => {
+		apiDoParlamentar(3);
+
+		const pagina = await lerParlamentar("81", 1);
+
+		expect(pagina).toMatchObject({
+			tipo: "parlamentar",
+			parlamentar: {
+				partido: "PFT",
+				partido_nome: "Partido Fictício do Trabalho",
+				biografia: biografiaDeExemplo(),
+			},
+		});
+		expect(erros).not.toHaveBeenCalled();
+	});
+
+	it("sem os campos da #303, como na API de antes, cada um vale nulo, e a página abre sem linha no log", async () => {
+		const {
+			partido_nome: _nome,
+			biografia: _biografia,
+			...semFicha
+		} = detalheDeExemplo();
+		for (const detalhe of [
+			semFicha,
+			{ ...semFicha, partido_nome: null, biografia: null },
+		]) {
+			apiDoParlamentar(3, undefined, detalhe);
+
+			expect(await lerParlamentar("81", 1)).toMatchObject({
+				tipo: "parlamentar",
+				parlamentar: { partido_nome: null, biografia: null },
+			});
+		}
+		expect(erros).not.toHaveBeenCalled();
+	});
+
+	it("a profissão vazia sai da lista, e o texto vazio vale nulo, sem linha no log", async () => {
+		apiDoParlamentar(3, undefined, {
+			...detalheDeExemplo(),
+			partido_nome: "  ",
+			biografia: biografiaDeExemplo("camara", {
+				profissoes: ["", " Professora ", "   "],
+				escolaridade: " ",
+			}),
+		});
+
+		expect(await lerParlamentar("81", 1)).toMatchObject({
+			parlamentar: {
+				partido_nome: null,
+				biografia: { profissoes: ["Professora"], escolaridade: null },
+			},
+		});
+		expect(erros).not.toHaveBeenCalled();
+	});
+
+	const biografias = [
+		["que não é objeto", "Professora"],
+		[
+			"sem a lista das profissões",
+			{ ...biografiaDeExemplo(), profissoes: null },
+		],
+		[
+			"com uma profissão que não é texto",
+			{ ...biografiaDeExemplo(), profissoes: ["Professora", 7] },
+		],
+		[
+			"com a escolaridade que não é texto",
+			{ ...biografiaDeExemplo(), escolaridade: 3 },
+		],
+		["sem a fonte", { ...biografiaDeExemplo(), fonte: null }],
+		[
+			"com a fonte sem endereço",
+			{
+				...biografiaDeExemplo(),
+				fonte: { coletado_em: "2026-11-20T15:00:00+00:00" },
+			},
+		],
+		[
+			"com a data da coleta inválida",
+			{
+				...biografiaDeExemplo(),
+				fonte: {
+					url: "https://www.camara.leg.br/deputados/90000123",
+					coletado_em: "2026-02-30T15:00:00+00:00",
+				},
+			},
+		],
+	] as const;
+
+	it.each(biografias)(
+		"a biografia %s fica nula, com a linha fixa no log, e a página abre inteira",
+		async (_, biografia) => {
+			apiDoParlamentar(3, undefined, { ...detalheDeExemplo(), biografia });
+
+			expect(await lerParlamentar("81", 1)).toMatchObject({
+				tipo: "parlamentar",
+				parlamentar: {
+					id: 81,
+					partido_nome: "Partido Fictício do Trabalho",
+					biografia: null,
+				},
+				total: 3,
+				patrimonio: { tipo: "patrimonio" },
+			});
+			expect(erros.mock.calls).toEqual([
+				["[parlamentares] A biografia não veio no formato esperado."],
+			]);
+		},
+	);
+
+	it("o nome do partido que não é texto fica nulo, com a linha fixa no log, e a página abre", async () => {
+		apiDoParlamentar(3, undefined, { ...detalheDeExemplo(), partido_nome: 7 });
+
+		expect(await lerParlamentar("81", 1)).toMatchObject({
+			tipo: "parlamentar",
+			parlamentar: { partido: "PFT", partido_nome: null },
+		});
+		expect(erros.mock.calls).toEqual([
+			["[parlamentares] O nome do partido não veio no formato esperado."],
+		]);
 	});
 });
 

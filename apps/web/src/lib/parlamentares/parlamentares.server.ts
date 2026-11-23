@@ -1,5 +1,6 @@
 import { notFound } from "@tanstack/react-router";
 import {
+	type BiografiaParlamentar,
 	type CorrecaoIpca,
 	type DetalheParlamentar,
 	type DetalheVotacao,
@@ -75,7 +76,8 @@ export type Patrimonio =
 
 /**
  * A pessoa como a página a recebe: a foto da API não vai junto, porque só chega
- * à página depois de conferida, no `foto` da página.
+ * à página depois de conferida, no `foto` da página. O nome do partido e a
+ * biografia chegam conferidos, e o que falta vale nulo.
  */
 export type ParlamentarDaPagina = Omit<DetalheParlamentar, "foto">;
 
@@ -197,10 +199,19 @@ export async function lerParlamentar(
 	if (pagina > 1 && deslocamento >= lista.data.total) {
 		throw notFound();
 	}
-	const { foto, ...parlamentar } = detalhe.data;
+	const { foto, ...dados } = detalhe.data;
+	// Os campos da #303 chegam conferidos aqui: a API de antes não os manda.
+	const { partido_nome, biografia, ...parlamentar } = dados as typeof dados & {
+		partido_nome?: unknown;
+		biografia?: unknown;
+	};
 	return {
 		tipo: "parlamentar",
-		parlamentar,
+		parlamentar: {
+			...parlamentar,
+			partido_nome: nomeDoPartidoDaPagina(partido_nome),
+			biografia: biografiaDaPagina(biografia),
+		},
 		foto: fotoDaPagina(parlamentar.casa, foto),
 		votos: lista.data.votos,
 		total: lista.data.total,
@@ -322,6 +333,58 @@ function fotoDaPagina(
 		return { url: foto.url, credito: esperada.credito };
 	}
 	console.error("[parlamentares] A foto não veio no formato esperado.");
+	return null;
+}
+
+/**
+ * O nome por extenso do partido. O que falta, ou vem vazio, vale nulo, e a
+ * ficha mostra só a sigla. O que não é texto também, com uma linha fixa no log.
+ */
+function nomeDoPartidoDaPagina(nome: unknown): string | null {
+	if (nome === undefined || nome === null) {
+		return null;
+	}
+	if (typeof nome === "string") {
+		return nome.trim() || null;
+	}
+	console.error(
+		"[parlamentares] O nome do partido não veio no formato esperado.",
+	);
+	return null;
+}
+
+/**
+ * A biografia oficial que vai à página: as profissões em texto, sem as vazias,
+ * a escolaridade em texto ou nula e a fonte com o endereço e a coleta. A que
+ * falta vale nula, sem linha no log; a que vem fora do formato também, com uma
+ * linha fixa. Ela nunca derruba a página.
+ */
+function biografiaDaPagina(biografia: unknown): BiografiaParlamentar | null {
+	if (biografia === undefined || biografia === null) {
+		return null;
+	}
+	if (
+		ehObjeto(biografia) &&
+		Array.isArray(biografia.profissoes) &&
+		biografia.profissoes.every((profissao) => typeof profissao === "string") &&
+		textoOuNulo(biografia.escolaridade) &&
+		pareceFonte(biografia.fonte)
+	) {
+		const { profissoes, escolaridade } = biografia as {
+			profissoes: string[];
+			escolaridade: string | null;
+		};
+		const { url, coletado_em } =
+			biografia.fonte as BiografiaParlamentar["fonte"];
+		return {
+			profissoes: profissoes
+				.map((profissao) => profissao.trim())
+				.filter((profissao) => profissao !== ""),
+			escolaridade: escolaridade?.trim() || null,
+			fonte: { url, coletado_em },
+		};
+	}
+	console.error("[parlamentares] A biografia não veio no formato esperado.");
 	return null;
 }
 
