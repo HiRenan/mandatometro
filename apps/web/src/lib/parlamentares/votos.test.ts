@@ -11,6 +11,7 @@ import {
 	filtrarVotos,
 	gruposAbertos,
 	opcoesDoFiltro,
+	parteDoVoto,
 	partidoDaBusca,
 	SEM_PARTIDO,
 	totalDaContagem,
@@ -95,6 +96,15 @@ describe("as contagens e as explicações", () => {
 			"outro",
 		);
 		expect(totalDaContagem({ ...CONTAGEM_ZERADA, sim: 2, outro: 1 })).toBe(3);
+	});
+
+	it("a barra de cada voto é a parte dele no total, com quatro casas, e o voto raro não some", () => {
+		expect(parteDoVoto(12, 20)).toBe(0.6);
+		expect(parteDoVoto(1, 3)).toBe(0.3333);
+		expect(parteDoVoto(20, 20)).toBe(1);
+		expect(parteDoVoto(1, 40_000)).toBe(0.0001);
+		expect(parteDoVoto(0, 20)).toBeNull();
+		expect(parteDoVoto(0, 0)).toBeNull();
 	});
 
 	it("cada regra traz o artigo dos dois regimentos; o que descreve os dados, nenhum", () => {
