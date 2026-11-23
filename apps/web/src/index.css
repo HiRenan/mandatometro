@@ -715,11 +715,13 @@
 
 	.topo-links a,
 	.entrada-da-conta a {
+		/* A altura do traço (4 px) e o vão abaixo da linha de texto (2 px). */
+		--espaco-do-traco: 6px;
 		position: relative;
 		display: inline-flex;
 		align-items: center;
-		min-height: 2.75rem;
-		padding: 0 0.9rem;
+		min-height: max(44px, 2.75rem);
+		padding: var(--espaco-do-traco) 0.9rem;
 		font-family: var(--font-sans);
 		font-size: 0.875rem;
 		font-weight: 700;
@@ -729,13 +731,17 @@
 		text-decoration: none;
 	}
 
-	/* O traço da seção: ele se risca quando o ponteiro passa e fica na seção aberta. */
+	/*
+	 * O traço se risca quando o ponteiro passa e fica na seção aberta.
+	 * A linha de texto ocupa 1em no centro. Se o traço subir demais com a
+	 * letra, o recuo do fundo diminui para deixá-lo abaixo da linha.
+	 */
 	.topo-links a::after,
 	.entrada-da-conta a::after {
 		content: "";
 		position: absolute;
 		right: 0.9rem;
-		bottom: 0.3rem;
+		bottom: min(0.3rem, 50% - 0.5em - var(--espaco-do-traco));
 		left: 0.9rem;
 		height: 4px;
 		background: var(--papel);
@@ -770,7 +776,7 @@
 
 		.topo-links a,
 		.entrada-da-conta a {
-			padding: 0 10px;
+			padding-inline: 10px;
 		}
 
 		.topo-links a::after,
@@ -821,7 +827,7 @@
 
 		.topo-links a,
 		.entrada-da-conta a {
-			padding: 0 6px;
+			padding-inline: 6px;
 		}
 
 		.topo-links a::after,
@@ -838,9 +844,10 @@
 	 * 23/11/2026). Nas duas linhas, os vãos se encontram no meio da lista: o
 	 * Trilhas e o Jogos se encostam nele pela direita, e o Parlamentares e o
 	 * Edições, pela esquerda. A coluna mais larga cresce até caber, e o meio
-	 * corre um pouco para o lado. Cada linha tem 44 px, em px, para o cabeçalho
-	 * não crescer com a letra. A medida é a largura da lista: os quatro pedem até
-	 * 27,05rem numa linha, com a letra a 100%, de 480 a 767 px (medido no Edge).
+	 * corre um pouco para o lado. Cada link tem pelo menos 44 px. A linha só
+	 * cresce se a letra com o respiro precisar de mais altura. Pela largura da
+	 * lista, os quatro pedem até 27,05rem numa linha, com a letra a 100%, de 480
+	 * a 767 px (medido no Edge).
 	 * A partir de 768 px, com mais respiro, pedem 29,25rem, e a lista tem mais de
 	 * 42rem.
 	 */

@@ -82,7 +82,7 @@ describe("o CSS do cabeçalho", () => {
 
 	it("no celular estreito, os links e a conta se apertam", () => {
 		const aperta =
-			/\.topo-links a,\s*\.entrada-da-conta a \{\s*padding: 0 (\d+)px;\s*\}/;
+			/\.topo-links a,\s*\.entrada-da-conta a \{\s*padding-inline: (\d+)px;\s*\}/;
 		// O respiro cai duas vezes: no celular (o 48rem) e, mais, no celular
 		// estreito. Aqui vale a faixa mais estreita das duas.
 		const [midia] = ate
@@ -125,7 +125,7 @@ describe("o CSS do cabeçalho", () => {
 		expect(duasLinhas?.corpo).toMatch(
 			/\.topo-links\[data-com-api\] > li:nth-child\(even\) \{\s*justify-self: start;\s*\}/,
 		);
-		// Cada linha tem 44 px, em px: o cabeçalho não cresce com a letra.
+		// Cada link tem pelo menos 44 px nas duas linhas.
 		expect(duasLinhas?.corpo).toMatch(
 			/\.topo-links\[data-com-api\] a \{\s*min-height: 44px;\s*\}/,
 		);
@@ -173,6 +173,24 @@ describe("o CSS do cabeçalho", () => {
 		expect(css).toMatch(
 			/html:not\(\[data-conta-aberta\]\) \.entrada-da-conta > \[data-para="quem-entrou"\],\s*html\[data-conta-aberta\] \.entrada-da-conta > \[data-para="quem-nao-entrou"\] \{\s*visibility: hidden;\s*\}/,
 		);
+	});
+
+	it("o traço de 4 px guarda 2 px de respiro abaixo da linha de texto", () => {
+		const link = regra(css, ".topo-links a,\n\t.entrada-da-conta a");
+		const traco = regra(
+			css,
+			".topo-links a::after,\n\t.entrada-da-conta a::after",
+		);
+
+		expect(traco).toContain(
+			"bottom: min(0.3rem, 50% - 0.5em - var(--espaco-do-traco));",
+		);
+		expect(traco).toContain("height: 4px;");
+		expect(link).toContain("--espaco-do-traco: 6px;");
+		expect(link).toContain("padding: var(--espaco-do-traco) 0.9rem;");
+		expect(link).toContain("align-items: center;");
+		expect(link).toContain("line-height: 1;");
+		expect(link).toContain("min-height: max(44px, 2.75rem);");
 	});
 
 	it("nas cores forçadas, o traço da seção usa a cor de texto do sistema", () => {
