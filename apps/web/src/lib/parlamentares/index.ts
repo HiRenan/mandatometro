@@ -3,10 +3,13 @@
 // parlamentares.server.ts.
 export { enderecoDoParlamentar, idDaVotacao } from "./endereco";
 export {
+	classeDaRegiao,
 	ESTADOS,
 	ESTADOS_PELO_NOME,
 	type Estado,
 	estadoDaSigla,
+	REGIOES,
+	type Regiao,
 	ufDaBusca,
 } from "./estados";
 export {
