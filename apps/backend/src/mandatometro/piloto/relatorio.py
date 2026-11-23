@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from sqlalchemy import Engine, and_, func, select
+from sqlalchemy import Connection, Engine, and_, func, select
 
 from mandatometro.db.modelos import TentativaPiloto
 from mandatometro.piloto import TOTAL_PERGUNTAS, conferir_versao
@@ -88,7 +88,11 @@ def resumir(versao_quiz: str, totais: Totais) -> dict:
 
 def resultado(banco: Engine, versao_quiz: str) -> dict:
     conferir_versao(versao_quiz)
+    with banco.connect() as conexao:
+        return resultado_na_conexao(conexao, versao_quiz)
 
+
+def resultado_na_conexao(conexao: Connection, versao_quiz: str) -> dict:
     def etapa(nome):
         return (
             select(TentativaPiloto.participacao, TentativaPiloto.acertos)
@@ -108,6 +112,5 @@ def resultado(banco: Engine, versao_quiz: str) -> dict:
         func.coalesce(func.sum(depois.c.acertos).filter(pares), 0).label("acertos_depois_pares"),
     ).select_from(antes.join(depois, antes.c.participacao == depois.c.participacao, full=True))
     # Uma consulta/snapshot evita contagens incompatíveis se um POST chegar durante a leitura.
-    with banco.connect() as conexao:
-        totais = Totais(**conexao.execute(consulta).mappings().one())
+    totais = Totais(**conexao.execute(consulta).mappings().one())
     return resumir(versao_quiz, totais)

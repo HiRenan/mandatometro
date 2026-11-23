@@ -8,12 +8,13 @@ criar o banco e rodar está no README, em "Como rodar".
 
 import os
 from collections.abc import Callable, Iterator
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import Connection, Engine, create_engine, make_url, text
+from sqlalchemy import Connection, Engine, create_engine, event, make_url, text
 from sqlalchemy.orm import Session
 
 PYPROJECT = Path(__file__).resolve().parents[1] / "pyproject.toml"
@@ -76,3 +77,19 @@ def sessao(engine_de_teste: Engine) -> Iterator[Session]:
         with Session(bind=conexao, join_transaction_mode="create_savepoint") as s:
             yield s
         transacao.rollback()
+
+
+@pytest.fixture
+def relogio_db(engine_de_teste: Engine) -> Iterator[list[datetime]]:
+    instantes = [datetime(2026, 11, 23, 14, tzinfo=UTC)]
+
+    def congelar(_conexao, _cursor, sql, parametros, _contexto, _lote):
+        if sql.startswith("SELECT clock_timestamp()"):
+            return "SELECT CAST(%(instante)s AS timestamptz)", {"instante": instantes[0]}
+        return sql, parametros
+
+    event.listen(engine_de_teste, "before_cursor_execute", congelar, retval=True)
+    try:
+        yield instantes
+    finally:
+        event.remove(engine_de_teste, "before_cursor_execute", congelar)
