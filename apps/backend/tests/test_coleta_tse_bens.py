@@ -300,6 +300,108 @@ def test_repetir_atualiza_os_totais_sem_duplicar(arquivos, parlamentares, sessao
 
 
 @pytest.mark.parametrize(
+    ("texto", "resultado"),
+    [
+        ("ELEITO", "eleito"),
+        ("ELEITO POR QP", "eleito_por_qp"),
+        ("ELEITO POR MÉDIA", "eleito_por_media"),
+        ("MÉDIA", "eleito_por_media"),
+        ("SUPLENTE", "suplente"),
+        ("NÃO ELEITO", "nao_eleito"),
+        ("#NULO", "sem_resultado"),
+        ("#NULO#", "sem_resultado"),
+        ("2º TURNO", "sem_resultado"),
+        ("CASSADO COM RECURSO", "sem_resultado"),
+        ("INDEFERIDO COM RECURSO", "sem_resultado"),
+        ("REGISTRO NEGADO ANTES DA ELEIÇÃO", "sem_resultado"),
+        ("REGISTRO NEGADO APÓS A ELEIÇÃO", "sem_resultado"),
+        ("RENÚNCIA/FALECIMENTO COM SUBSTITUIÇÃO", "sem_resultado"),
+        ("RENÚNCIA/FALECIMENTO/CASSAÇÃO ANTES DA ELEIÇÃO", "sem_resultado"),
+        ("RENÚNCIA/FALECIMENTO/CASSAÇÃO APÓS A ELEIÇÃO", "sem_resultado"),
+        ("SUBSTITUÍDO", "sem_resultado"),
+        ("SITUAÇÃO FICTÍCIA DE AUDITORIA ", "outro"),
+    ],
+)
+def test_resultado_da_serie_usa_texto_do_tse(
+    arquivos, parlamentares, sessao, capsys, texto, resultado
+):
+    def trocar(linhas):
+        linhas[0].update(NR_TURNO="1", DS_SIT_TOT_TURNO=texto, CD_SIT_TOT_TURNO="123")
+
+    _alterar_linhas(arquivos, "consulta_cand_2010", trocar)
+    _carregar(arquivos, capsys)
+    eleicao = CandidaturaPatrimonio
+    bruto = sessao.execute(
+        select(eleicao.resultado_bruto).where(
+            eleicao.ano == 2010, eleicao.parlamentar_id == parlamentares[0]
+        )
+    ).scalar_one()
+    assert bruto == (texto if resultado == "outro" else None)
+
+    with TestClient(app) as cliente:
+        resposta = cliente.get(f"/parlamentares/{parlamentares[0]}/patrimonio")
+        assert resposta.status_code == 200
+        item = next(e for e in resposta.json()["eleicoes"] if e["ano"] == 2010)
+    assert item["resultado"] == resultado
+    assert "resultado_bruto" not in item
+
+
+@pytest.mark.parametrize("codigo_distinto", [False, True])
+def test_recoleta_grava_resultado_do_ultimo_turno_na_mesma_candidatura(
+    arquivos, parlamentares, sessao, capsys, codigo_distinto
+):
+    _carregar(arquivos, capsys)
+    eleicao = CandidaturaPatrimonio
+    consulta = select(eleicao).where(
+        eleicao.ano == 2010, eleicao.parlamentar_id == parlamentares[0]
+    )
+    antes = sessao.scalars(consulta).one()
+    id_anterior, codigo_anterior = antes.id, antes.codigo_eleicao
+    bens = _bens(sessao)
+
+    def novo_turno(linhas):
+        primeiro = linhas[0]
+        primeiro.update(NR_TURNO="1", DS_SIT_TOT_TURNO="2º TURNO")
+        ultimo = primeiro | {"NR_TURNO": "2", "DS_SIT_TOT_TURNO": "ELEITO"}
+        if codigo_distinto:
+            ultimo["CD_ELEICAO"] = str(codigo_anterior + 1)
+        linhas.insert(0, ultimo)
+
+    _alterar_linhas(arquivos, "consulta_cand_2010", novo_turno)
+    _carregar(arquivos, capsys)
+    atual = sessao.scalars(consulta.execution_options(populate_existing=True)).one()
+    assert (atual.id, atual.codigo_eleicao, atual.resultado) == (
+        id_anterior,
+        codigo_anterior,
+        "eleito",
+    )
+    assert _bens(sessao) == bens
+
+
+def test_recoleta_atualiza_resultado_quando_o_total_anterior_e_preservado(
+    arquivos, parlamentares, sessao, capsys
+):
+    _carregar(arquivos, capsys)
+    eleicao = CandidaturaPatrimonio
+    consulta = select(eleicao).where(
+        eleicao.ano == 2018, eleicao.parlamentar_id == parlamentares[0]
+    )
+    fonte_bens = sessao.scalars(consulta).one().fonte_bens_id
+    bens = _bens(sessao)
+
+    def trocar_resultado(linhas):
+        linhas[0].update(NR_TURNO="1", DS_SIT_TOT_TURNO="NÃO ELEITO")
+
+    _alterar_linhas(arquivos, "consulta_cand_2018", trocar_resultado)
+    _alterar_zip(arquivos, "bem_candidato_2018", lambda b: b.replace(b'"3,50"', b'"ERRO"'))
+    _carregar(arquivos, capsys)
+    atual = sessao.scalars(consulta.execution_options(populate_existing=True)).one()
+    assert atual.resultado == "nao_eleito"
+    assert atual.fonte_bens_id == fonte_bens
+    assert _bens(sessao) == bens
+
+
+@pytest.mark.parametrize(
     ("valor", "contagem"),
     [(b"", "valor_vazio"), (b"-1,00", "valor_negativo"), (b"1.999,00", "valor_malformado")],
 )
