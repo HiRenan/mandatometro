@@ -26,7 +26,10 @@ afterEach(() => {
 });
 
 /** Simula a API: cada pedido recebe 204, e o pedido fica guardado. */
-function api(responder: () => Promise<Response> = async () => new Response(null, { status: 204 })) {
+function api(
+	responder: () => Promise<Response> = async () =>
+		new Response(null, { status: 204 }),
+) {
 	const pedidos: Request[] = [];
 	const fetch = vi.fn(async (pedido: Request) => {
 		pedidos.push(pedido);

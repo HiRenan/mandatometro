@@ -125,9 +125,11 @@ type ConsultarNumerosPainelData = {
 export const consultarNumerosPainel = <ThrowOnError extends boolean = false>(
 	options?: Options<ConsultarNumerosPainelData, ThrowOnError>,
 ) =>
-	(options?.client ?? client).get<{ 200: NumerosPainel }, unknown, ThrowOnError>(
-		{ url: "/painel/numeros", ...options },
-	);
+	(options?.client ?? client).get<
+		{ 200: NumerosPainel },
+		unknown,
+		ThrowOnError
+	>({ url: "/painel/numeros", ...options });
 
 type RegistrarVisitaData = {
 	body: { caminho: string };
@@ -139,7 +141,7 @@ type RegistrarVisitaData = {
 export const registrarVisita = <ThrowOnError extends boolean = false>(
 	options: Options<RegistrarVisitaData, ThrowOnError>,
 ) =>
-	(options.client ?? client).post<{ 204: void }, unknown, ThrowOnError>({
+	(options.client ?? client).post<{ 204: undefined }, unknown, ThrowOnError>({
 		url: "/visitas",
 		...options,
 		headers: {
