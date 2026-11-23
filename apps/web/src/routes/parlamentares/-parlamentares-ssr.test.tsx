@@ -209,6 +209,23 @@ describe("o HTML das páginas dos parlamentares", () => {
 		expect(html).toMatch(
 			/<h1 class="titulo-de-folha letra-com-teto"[^>]*>Ágata Cedrolume<\/h1>/,
 		);
+		// Depois do nome, a figura reúne a foto oficial e o crédito da Casa.
+		const figura = /<figure class="foto-oficial"[^>]*>.*?<\/figure>/s.exec(
+			html,
+		);
+		expect(figura?.index ?? -1).toBeGreaterThan(html.indexOf("</h1>"));
+		const htmlDaFigura = figura?.[0] ?? "";
+		const foto = /<img [^>]*>/.exec(htmlDaFigura)?.[0] ?? "";
+		expect(foto).toContain(
+			'src="https://www.camara.leg.br/internet/deputado/bandep/90000123.jpg"',
+		);
+		expect(foto).toContain('alt="Ágata Cedrolume"');
+		expect(foto).toContain('width="300"');
+		expect(foto).toContain('height="400"');
+		expect(foto).toContain('referrerPolicy="no-referrer"');
+		expect(htmlDaFigura).toContain(
+			'<figcaption class="rotulo credito-da-foto">Foto: Câmara dos Deputados</figcaption>',
+		);
 		expect(html).toContain("57ª legislatura");
 		// A regra de cada voto, com o artigo do regimento da Câmara, sem quebra
 		// entre o "art." e o número.

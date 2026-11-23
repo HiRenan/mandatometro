@@ -1,11 +1,9 @@
 // biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
 import { Link } from "@tanstack/react-router";
-import type {
-	DetalheParlamentar,
-	MandatoPublico,
-	VotoParlamentar,
-} from "@/client";
+import type { CSSProperties } from "react";
+import type { MandatoPublico, VotoParlamentar } from "@/client";
 import { sementeDe } from "@/lib/azulejos";
+import { classes } from "@/lib/classes";
 import { estiloDoTeto } from "@/lib/conteudo/regua";
 import { enderecoSeguro } from "@/lib/edicoes/conteudo-da-edicao";
 import { TRECHO_DOS_VOTOS } from "@/lib/foco";
@@ -14,41 +12,50 @@ import {
 	enderecoDoParlamentar,
 	estadoDaSigla,
 	type PaginaDoParlamentar as Pagina,
+	type ParlamentarDaPagina,
 } from "@/lib/parlamentares";
 import {
 	artigoDaRegra,
 	EXPLICACAO_DO_VOTO,
 	NOME_DA_CASA,
 	NOME_DO_VOTO,
+	parteDoVoto,
 	REGIMENTOS,
 	RESULTADO,
 	tituloDaVotacao,
+	totalDaContagem,
 	valoresDaContagem,
 } from "@/lib/parlamentares/votos";
 import { Painel } from "./azulejo";
 import { FaixaDeInformacoes } from "./faixa-de-informacoes";
 import { ParlamentaresIndisponiveis } from "./pagina-dos-parlamentares";
+import { FotoOficial } from "./parlamentares/foto-oficial";
 import { PatrimonioDeclarado } from "./parlamentares/patrimonio-declarado";
 import { ARTIGO_DA_VOTACAO } from "./parlamentares/quem-votou-como";
 
 /**
  * A página de um parlamentar, em /parlamentares/81-nome: o cartaz das páginas de
- * dentro, com o nome gigante, a Casa, o estado e o partido, e o painel de
- * enfeite, com a semente do id; embaixo, os mandatos, o patrimônio declarado ao
- * TSE em cada eleição, como a pessoa votou, com a regra de cada voto e o artigo
- * do regimento, e os votos, do mais novo para o mais antigo, 20 por página. Sem
- * voto registrado, a página explica por quê, com a votação simbólica e o link da
- * trilha.
+ * dentro, com o nome gigante, a Casa, o estado e o partido, o painel de enfeite,
+ * com a semente do id, e a foto oficial colada nele, com o crédito; embaixo, os
+ * mandatos, o patrimônio declarado ao TSE em cada eleição, como a pessoa votou,
+ * com a barra, a regra de cada voto e o artigo do regimento, e os votos, do mais
+ * novo para o mais antigo, 20 por página. Sem voto registrado, a página explica
+ * por quê, com a votação simbólica e o link da trilha.
  */
 export function PaginaDoParlamentar({ pagina }: { pagina: Pagina }) {
 	if (pagina.tipo === "sem-api") {
 		return <ParlamentaresIndisponiveis />;
 	}
-	const { parlamentar, votos, total, paginas, patrimonio } = pagina;
+	const { parlamentar, foto, votos, total, paginas, patrimonio } = pagina;
 	const estado = estadoDaSigla(parlamentar.uf);
 	return (
 		<>
-			<section className="cartaz cartaz-medio cartaz-do-parlamentar">
+			<section
+				className={classes(
+					"cartaz cartaz-medio cartaz-do-parlamentar",
+					foto && "com-foto",
+				)}
+			>
 				<Painel
 					semente={sementeDe(`parlamentar-${parlamentar.id}`)}
 					colunas={4}
@@ -86,6 +93,9 @@ export function PaginaDoParlamentar({ pagina }: { pagina: Pagina }) {
 				>
 					{parlamentar.nome}
 				</h1>
+				{/* A foto vem depois do nome no HTML, e o leitor de tela ouve o nome
+				    antes dela. Na tela, ela fica no painel (estilos/parlamentares.css). */}
+				{foto && <FotoOficial foto={foto} nome={parlamentar.nome} />}
 				<div className="cartaz-pe">
 					<FaixaDeInformacoes>
 						<span>{NOME_DA_CASA[parlamentar.casa]}</span>
@@ -177,13 +187,16 @@ function Mandato({ mandato }: { mandato: MandatoPublico }) {
 }
 
 /**
- * Como a pessoa votou: quantas vezes cada voto aparece, com o número em tinta, e
+ * Como a pessoa votou: quantas vezes cada voto aparece, com o número em tinta, a
+ * barra da parte dele no total (o Renan, em 23/11/2026: "Barra em cada voto") e
  * o que cada um quer dizer, com o artigo do regimento da Casa dela. O Outro
- * registro só aparece quando passa de zero.
+ * registro só aparece quando passa de zero. As barras ficam fora do leitor de
+ * tela, junto com a frase que as explica: os números já estão escritos.
  */
-function ComoVotou({ parlamentar }: { parlamentar: DetalheParlamentar }) {
+function ComoVotou({ parlamentar }: { parlamentar: ParlamentarDaPagina }) {
 	const { casa, contagem_votos: contagem } = parlamentar;
 	const regimento = REGIMENTOS[casa];
+	const soma = totalDaContagem(contagem);
 	return (
 		<section aria-labelledby="como-votou" className="secao-dos-parlamentares">
 			<h2
@@ -192,13 +205,26 @@ function ComoVotou({ parlamentar }: { parlamentar: DetalheParlamentar }) {
 			>
 				Como votou
 			</h2>
+			<p className="rotulo legenda-das-barras" aria-hidden="true">
+				A barra mostra a parte de cada voto no total de{" "}
+				{plural(soma, "voto registrado", "votos registrados")}
+			</p>
 			<dl className="tipos-de-voto">
 				{valoresDaContagem(contagem).map((valor) => {
 					const artigo = artigoDaRegra(valor, casa);
+					const parte = parteDoVoto(contagem[valor], soma);
 					return (
 						<div key={valor} className="tipo-de-voto">
 							<dt className="nome-do-tipo">{NOME_DO_VOTO[valor]}</dt>
 							<dd className="numero-do-tipo">{contagem[valor]}</dd>
+							<dd className="trilho-do-tipo" aria-hidden="true">
+								{parte !== null && (
+									<span
+										className="barra-do-tipo"
+										style={{ "--parte": String(parte) } as CSSProperties}
+									/>
+								)}
+							</dd>
 							<dd className="regra-do-tipo">
 								{EXPLICACAO_DO_VOTO[valor].texto}
 								{artigo && (

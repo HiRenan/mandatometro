@@ -2,19 +2,25 @@ import type {
 	CorrecaoIpca,
 	EleicaoPatrimonio,
 	FontePatrimonio,
+	VariacaoPatrimonio,
 } from "@/client";
 import { enderecoSeguro } from "@/lib/edicoes/conteudo-da-edicao";
-import { dataEmBrasilia, formatarData } from "@/lib/formatar";
+import { dataEmBrasilia, formatarData, formatarMes } from "@/lib/formatar";
 import { estadoDaSigla } from "./estados";
 
 // Os números do patrimônio declarado ao TSE, prontos para a página do
-// parlamentar. As contas vêm da API (o total de cada eleição e o total corrigido
-// pelo IPCA): aqui só se escrevem os números e se mede a barra de cada eleição.
+// parlamentar. As contas vêm da API (o total de cada eleição, o total corrigido
+// pelo IPCA, o fator, a alta dos preços e a diferença para a eleição anterior):
+// aqui só se escrevem os números e as frases e se mede a barra de cada eleição.
 // Tudo à mão, e não com o Intl, para o servidor e o navegador escreverem igual na
-// hidratação, como o formatarData.
+// hidratação, como o formatarData. Os números que a API manda como texto
+// ("2.9812" e "138.2") viram outro texto sem virar número quebrado.
 
 /** O espaço que não quebra: o "R$" não fica sozinho no fim da linha. */
 const SEM_QUEBRA = "\u00a0";
+
+/** O sinal de menos da tipografia, que não se confunde com o hífen. */
+const MENOS = "\u2212";
 
 /** O inteiro com o ponto do milhar: 812400 vira "812.400". */
 function comMilhares(inteiro: number): string {
@@ -98,12 +104,22 @@ export type ValorDaEleicao =
 	| { tipo: "sem-correcao"; destaque: string; declarado: string };
 
 export type LinhaDoPatrimonio = {
+	/** O que não se repete entre as eleições da pessoa: o ano, o cargo e o lugar. */
+	chave: string;
 	ano: number;
 	/** O cargo disputado naquela eleição, com o nome do TSE. */
 	cargo: string;
 	/** O estado por extenso ou, na eleição para presidente, o Brasil. */
 	lugar: string;
+	/** O resultado da eleição em palavras; sem o resultado nos dados, nada. */
+	resultado: string | null;
 	valor: ValorDaEleicao;
+	/** A diferença para a eleição anterior em reais de hoje; sem ela, nada. */
+	diferenca: Diferenca | null;
+	/** De que mês a que mês a inflação corrige o valor, só no valor de hoje. */
+	periodo: string | null;
+	/** A frase do "Como calculamos" e o link da calculadora, só no valor de hoje. */
+	calculo: CalculoDaEleicao | null;
 	fonte: {
 		/** O arquivo do TSE, só num site oficial: fora dele, a linha fica sem link. */
 		endereco: string | null;
@@ -134,16 +150,237 @@ export function linhasDoPatrimonio(
 		return valor === null ? [] : [valor];
 	});
 	const maior = valores.length >= 2 ? Math.max(...valores) : 0;
-	return eleicoes.map((eleicao) => ({
-		ano: eleicao.ano,
-		cargo: eleicao.cargo.nome,
-		lugar:
+	return eleicoes.map((eleicao) => {
+		const valor = valorDaEleicao(
+			eleicao.total_centavos,
+			deHoje(eleicao),
+			maior,
+		);
+		// A diferença, o período e o cálculo falam dos reais de hoje: ao lado de
+		// um valor sem a correção, eles confundiriam.
+		const fim = valor.tipo === "corrigido" ? (correcao?.mes_fim ?? null) : null;
+		const lugar =
 			eleicao.uf === "BR"
 				? "Brasil"
-				: (estadoDaSigla(eleicao.uf)?.nome ?? eleicao.uf),
-		valor: valorDaEleicao(eleicao.total_centavos, deHoje(eleicao), maior),
-		fonte: fonteDaEleicao(eleicao.fonte),
-	}));
+				: (estadoDaSigla(eleicao.uf)?.nome ?? eleicao.uf);
+		return {
+			chave: `${eleicao.ano}-${eleicao.cargo.nome}-${lugar}`,
+			ano: eleicao.ano,
+			cargo: eleicao.cargo.nome,
+			lugar,
+			resultado: fraseDoResultado(eleicao.resultado, eleicao.cargo.codigo),
+			valor,
+			diferenca: fim === null ? null : diferencaDaEleicao(eleicao.variacao),
+			periodo: fim === null ? null : periodoDaCorrecao(eleicao.mes_inicio, fim),
+			calculo: fim === null ? null : calculoDaEleicao(eleicao, fim),
+			fonte: fonteDaEleicao(eleicao.fonte),
+		};
+	});
+}
+
+/**
+ * Uma linha do gráfico do alto do bloco, na ordem da lista: o ano, o valor de
+ * hoje arredondado e a parte da barra. A eleição sem o valor de hoje fica com o
+ * valor nulo, e o gráfico diz isso em palavras; o zero fica sem barra.
+ */
+export type LinhaDoGrafico = {
+	chave: string;
+	ano: number;
+	valor: string | null;
+	/** A parte do maior valor de hoje (de 0,0001 a 1); no zero, nada. */
+	parte: number | null;
+};
+
+/**
+ * O gráfico "Em reais de hoje", com uma linha por eleição. Com menos de dois
+ * valores de hoje, não há o que comparar, e o gráfico não aparece.
+ */
+export function graficoDoPatrimonio(
+	linhas: LinhaDoPatrimonio[],
+): LinhaDoGrafico[] | null {
+	const deHoje = linhas.filter(({ valor }) => valor.tipo === "corrigido");
+	if (deHoje.length < 2) {
+		return null;
+	}
+	return linhas.map(({ chave, ano, valor }) =>
+		valor.tipo === "corrigido"
+			? { chave, ano, valor: valor.destaque, parte: valor.barra }
+			: { chave, ano, valor: null, parte: null },
+	);
+}
+
+/** O resultado de uma eleição, como a API manda. */
+export type Resultado = NonNullable<EleicaoPatrimonio["resultado"]>;
+
+/**
+ * O 1º e o 2º suplente de senador (os cargos 9 e 10 do TSE). Quando a chapa
+ * ganha, o TSE marca o suplente como eleito, e o cargo dele já diz que é
+ * suplente: a frase fala da chapa, para não parecer que ele ganhou a vaga.
+ */
+const SUPLENTES_DE_SENADOR: readonly number[] = [9, 10];
+
+/** O resultado em palavras simples e sem gênero: a frase vale para qualquer pessoa. */
+const FRASE_DO_RESULTADO: Record<Resultado, string> = {
+	eleito: "Ganhou a eleição.",
+	eleito_por_qp:
+		"Ganhou a eleição pelo quociente partidário, a conta que reparte as vagas entre os partidos.",
+	eleito_por_media:
+		"Ganhou a eleição pela média, a conta que reparte as vagas que sobram.",
+	suplente: "Ficou como suplente.",
+	nao_eleito: "Não ganhou a eleição.",
+	sem_resultado: "Os dados do TSE não trazem o resultado.",
+	outro: "O TSE registrou outra situação para esta candidatura.",
+};
+
+/** O resultado da eleição em palavras. Sem o resultado nos dados, nada. */
+export function fraseDoResultado(
+	resultado: Resultado | null,
+	cargo: number,
+): string | null {
+	if (resultado === null) {
+		return null;
+	}
+	if (SUPLENTES_DE_SENADOR.includes(cargo)) {
+		if (resultado === "nao_eleito") {
+			return "A chapa não ganhou a eleição.";
+		}
+		if (resultado.startsWith("eleito")) {
+			return "A chapa ganhou a eleição.";
+		}
+	}
+	return FRASE_DO_RESULTADO[resultado];
+}
+
+/** O texto da API que vale zero, com ou sem o sinal: "0.0" e "-0.0". */
+function valeZero(numero: string): boolean {
+	return /^-?0+\.0+$/.test(numero);
+}
+
+/** O percentual da API sem o sinal e com a vírgula: "-22.4" vira "22,4". */
+function semSinal(percentual: string): string {
+	return percentual.replace(/^-/, "").replace(".", ",");
+}
+
+/**
+ * A diferença para a eleição anterior: a frase na tela, com o percentual entre
+ * parênteses e o sinal, e a frase do leitor de tela, com "a mais" ou "a menos"
+ * em palavras também no percentual.
+ */
+export type Diferenca = { texto: string; leitor: string };
+
+/**
+ * A diferença em reais de hoje, como no esboço do Renan (22/11/2026): "R$ 367
+ * mil a mais que em 2014 (+138,2%)". Ela vem arredondada como o destaque e exata
+ * abaixo de R$ 1, para não virar "R$ 0". O percentual só aparece quando a API
+ * manda: com a eleição anterior de R$ 50 mil ou menos, ele é nulo. O lado (a mais
+ * ou a menos) sai da diferença, e o número, do percentual.
+ */
+export function diferencaDaEleicao(
+	variacao: VariacaoPatrimonio | null,
+): Diferenca | null {
+	if (variacao === null) {
+		return null;
+	}
+	const { ano_anterior: ano, diferenca_centavos: centavos } = variacao;
+	if (centavos === 0) {
+		const texto = `O mesmo valor de ${ano}, em reais de hoje.`;
+		return { texto, leitor: texto };
+	}
+	const tamanho = Math.abs(centavos);
+	const valor =
+		tamanho < 100 ? reaisExatos(tamanho) : reaisArredondados(tamanho);
+	const lado = centavos > 0 ? "a mais" : "a menos";
+	const frase = `${valor} ${lado} que em ${ano}`;
+	const { percentual } = variacao;
+	if (percentual === null) {
+		return { texto: frase, leitor: frase };
+	}
+	const sinal = centavos > 0 ? "+" : MENOS;
+	if (valeZero(percentual)) {
+		return {
+			texto: `${frase} (entre 0 e ${sinal}0,1%)`,
+			leitor: `${frase}, ou menos de 0,1% ${lado}`,
+		};
+	}
+	const numero = semSinal(percentual);
+	return {
+		texto: `${frase} (${sinal}${numero}%)`,
+		leitor: `${frase}, ou ${numero}% ${lado}`,
+	};
+}
+
+/**
+ * De que mês a que mês a inflação corrige o valor: "Corrigido de outubro de 2018
+ * a outubro de 2026" ou, no mesmo mês, "Corrigido pela inflação de outubro de
+ * 2026".
+ */
+export function periodoDaCorrecao(inicio: string, fim: string): string {
+	return inicio === fim
+		? `Corrigido pela inflação de ${formatarMes(fim)}`
+		: `Corrigido de ${formatarMes(inicio)} a ${formatarMes(fim)}`;
+}
+
+/** A frase de uma eleição no "Como calculamos" e o link da Calculadora do Cidadão. */
+export type CalculoDaEleicao = {
+	ano: number;
+	frase: string;
+	calculadora: string;
+};
+
+/**
+ * Como a inflação corrige uma eleição, com o fator e a alta da API: "De outubro
+ * de 2018 a outubro de 2026, os preços subiram 38,1%: cada R$ 100 de 2018 vale
+ * R$ 138,12 hoje.". O exemplo é de R$ 100 porque a Calculadora do Cidadão corrige
+ * R$ 100,00: o valor da frase é o que ela mostra, com as quatro casas do fator. O
+ * sentido (subiram, caíram ou ficaram iguais) sai do fator, e o tamanho, da alta.
+ * Sem o fator ou a alta, nada.
+ */
+export function calculoDaEleicao(
+	eleicao: EleicaoPatrimonio,
+	fim: string,
+): CalculoDaEleicao | null {
+	const { ano, mes_inicio: inicio, fator_ipca: fator } = eleicao;
+	const alta = eleicao.alta_ipca_percentual;
+	if (fator === null || alta === null) {
+		return null;
+	}
+	// R$ 100 são 10.000 centavos, e 10.000 vezes um fator de quatro casas é o
+	// fator sem o ponto: "1.3812" vira 13.812 centavos, R$ 138,12.
+	const [inteiro, casas] = fator.split(".");
+	const centavos = Number(inteiro) * 10_000 + Number(casas);
+	let precos = "os preços ficaram iguais";
+	if (centavos !== 10_000) {
+		const sentido = centavos > 10_000 ? "subiram" : "caíram";
+		precos = `os preços ${sentido} ${valeZero(alta) ? "menos de 0,1" : semSinal(alta)}%`;
+	}
+	const quando =
+		inicio === fim
+			? `Em ${formatarMes(fim)}`
+			: `De ${formatarMes(inicio)} a ${formatarMes(fim)}`;
+	return {
+		ano,
+		frase: `${quando}, ${precos}: cada R$${SEM_QUEBRA}100 de ${ano} vale ${reaisExatos(centavos)} hoje.`,
+		calculadora: linkDaCalculadora(inicio, fim),
+	};
+}
+
+/** A Calculadora do Cidadão do Banco Central, na correção por um índice. */
+const CALCULADORA =
+	"https://www3.bcb.gov.br/CALCIDADAO/publico/corrigirPorIndice.do?method=corrigirPorIndice";
+
+/** O mês no formato da calculadora: "2018-10" vira "10/2018". */
+function mesDaCalculadora(mes: string): string {
+	const [ano, numero] = mes.split("-");
+	return `${numero}/${ano}`;
+}
+
+/**
+ * O link da Calculadora do Cidadão com as datas da eleição: R$ 100,00 corrigidos
+ * pelo IPCA (a série 433) do mês da eleição ao último mês da correção, como na
+ * frase do "Como calculamos".
+ */
+export function linkDaCalculadora(inicio: string, fim: string): string {
+	return `${CALCULADORA}&dataInicial=${mesDaCalculadora(inicio)}&dataFinal=${mesDaCalculadora(fim)}&valorCorrecao=100,00&selIndice=00433IPCA`;
 }
 
 function valorDaEleicao(
