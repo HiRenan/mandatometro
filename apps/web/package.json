@@ -15,6 +15,7 @@
 		"imagens": "node imagens/gerar.mjs",
 		"vozes": "node vozes/gerar.mjs",
 		"mapa": "node imagens/mapa.mjs",
+		"tracado": "node imagens/tracado.mjs",
 		"generate:client": "openapi-ts"
 	},
 	"dependencies": {
