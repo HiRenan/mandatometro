@@ -1619,6 +1619,81 @@
 		margin-top: 0.5rem;
 	}
 
+	/* ───── A página da votação: o corpo na tela larga ───── */
+
+	/*
+	 * A partir do lg, o corpo da votação fica em duas colunas, de 5/12 e 7/12 (o
+	 * Renan escolheu "Lado a lado" em 23/11/2026, na #306). Cada bloco ocupa a
+	 * largura toda, menos nos casos abaixo, e o HTML não muda de ordem: o bloco
+	 * seguinte vai para a direita ou para baixo, e a tela lê em Z, na ordem do
+	 * leitor de tela e do Tab.
+	 * - Com o vídeo (o corpo-com-video), o placar fica à esquerda e o vídeo à
+	 *   direita.
+	 * - Sem os votos (o corpo-sem-votos), quem votou como só explica por quê e
+	 *   fica à direita do placar. Com o vídeo também, ele desce para baixo do
+	 *   placar, e o vídeo ocupa a direita nas duas linhas. A grade põe na linha
+	 *   de baixo o bloco que volta para uma coluna mais à esquerda; o 1fr da
+	 *   segunda linha leva a sobra da altura do vídeo, e o placar fica junto da
+	 *   explicação.
+	 * Abaixo do lg e com a letra a 200%, o corpo fica numa coluna, como antes.
+	 */
+	@media (width >= 62rem) {
+		.corpo-dos-parlamentares.corpo-da-votacao {
+			grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+			align-items: start;
+		}
+
+		.corpo-da-votacao > * {
+			grid-column: 1 / -1;
+		}
+
+		.corpo-da-votacao.corpo-com-video > .placar-da-votacao {
+			grid-column: 1;
+		}
+
+		.corpo-da-votacao.corpo-com-video > .video-da-sessao {
+			grid-column: 2;
+		}
+
+		.corpo-da-votacao.corpo-sem-votos > .placar-da-votacao {
+			grid-column: 1;
+		}
+
+		.corpo-da-votacao.corpo-sem-votos > .quem-votou-como {
+			grid-column: 2;
+		}
+
+		.corpo-da-votacao.corpo-sem-votos.corpo-com-video {
+			grid-template-rows: auto 1fr;
+		}
+
+		.corpo-da-votacao.corpo-sem-votos.corpo-com-video > .video-da-sessao {
+			grid-row: span 2;
+		}
+
+		.corpo-da-votacao.corpo-sem-votos.corpo-com-video > .quem-votou-como {
+			grid-column: 1;
+		}
+
+		/*
+		 * O quadro do placar enche a coluna dele, sem o limite de 39rem do quadro
+		 * da edição (edicoes.css). Numa coluna com menos de 34rem, como a da
+		 * esquerda a 1366 px, os quatro números ficam em 2 × 2: em quatro, as
+		 * colunas ficariam justas no "Abstenções", a palavra mais larga, que pede
+		 * pouco mais de 30rem para as quatro.
+		 */
+		.corpo-da-votacao .votacao {
+			container: quadro-da-votacao / inline-size;
+			max-width: none;
+		}
+
+		@container quadro-da-votacao (width < 34rem) {
+			.corpo-da-votacao .votacao > dl {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+		}
+	}
+
 	/* ───── A página da votação: o vídeo da sessão ───── */
 
 	/*
@@ -1627,7 +1702,8 @@
 	 * Com a letra grande numa tela estreita, a caixa cresce para caber a capa.
 	 * Depois do toque, a capa fica na caixa, escondida, e o player ocupa a caixa
 	 * inteira, por cima: a altura não muda. A caixa é o contêiner da capa: abaixo
-	 * de 26rem, o azulejo fica em cima do texto.
+	 * de 26rem, o azulejo fica em cima do texto. Na tela larga, a caixa enche a
+	 * coluna da direita (a #306); a nota continua com até 39rem, como o texto.
 	 */
 	.video-da-sessao > h2 {
 		scroll-margin-top: 1rem;
@@ -1641,6 +1717,12 @@
 		aspect-ratio: 16 / 9;
 		border: 2px solid var(--tinta);
 		background: var(--papel-2);
+	}
+
+	@media (width >= 62rem) {
+		.corpo-da-votacao .caixa-do-video {
+			max-width: none;
+		}
 	}
 
 	.caixa-do-video:has(> .player-do-video):focus-within {
@@ -1744,14 +1826,19 @@
 	/*
 	 * A tabela, a partir do lg, com o nome do partido à esquerda e uma coluna por
 	 * voto, os números em algarismos da mesma largura. Antes, a lista, com os
-	 * votos de cada partido numa linha.
+	 * votos de cada partido numa linha. A tabela acompanha a largura da página
+	 * (a #306), e a linha sob o ponteiro ganha o Papel 2, para o olho seguir o
+	 * partido até o último número.
 	 */
 	.tabela-por-partido {
 		display: none;
 		width: 100%;
-		max-width: 60rem;
 		border-collapse: collapse;
 		table-layout: fixed;
+	}
+
+	.tabela-por-partido tbody tr:hover {
+		background: var(--papel-2);
 	}
 
 	.tabela-por-partido th,
@@ -1946,9 +2033,12 @@
 		color: var(--tinta-suave);
 	}
 
-	/* Os nomes descem em colunas de pelo menos 16 rem, até três. */
+	/*
+	 * Os nomes descem em colunas de pelo menos 16 rem, até seis (a #306): seis a
+	 * 1920 px, quatro a 1366, três a 1024 e uma no celular.
+	 */
 	.nomes-do-grupo {
-		columns: 16rem 3;
+		columns: 16rem 6;
 		column-gap: var(--respiro);
 		padding-bottom: 1rem;
 	}

@@ -349,3 +349,98 @@ describe("o HTML da página da votação", () => {
 		expect(fetch).not.toHaveBeenCalled();
 	});
 });
+
+// Na tela larga, o corpo da página fica lado a lado (a #306). O CSS arruma cada
+// caso pelas classes do corpo, e a ordem do HTML é a da leitura, a mesma da tela
+// em Z, do leitor de tela e do Tab.
+describe("o corpo da página da votação na tela larga", () => {
+	const VIDEO = "https://www.youtube.com/watch?v=Mnd268Cam01";
+
+	/** As classes do corpo, embaixo do cartaz. */
+	function classesDoCorpo(html: string) {
+		return /<div class="([^"]*\bcorpo-dos-parlamentares\b[^"]*)">/
+			.exec(html)?.[1]
+			.split(" ");
+	}
+
+	it.each([
+		{
+			caso: "com os votos e o vídeo",
+			votacao: () => votacaoDeExemplo({ url_video: VIDEO }),
+			classes: ["corpo-com-video"],
+		},
+		{
+			caso: "com os votos, sem o vídeo",
+			votacao: () => votacaoDeExemplo(),
+			classes: [],
+		},
+		{
+			caso: "sem os votos, com o vídeo",
+			votacao: () => ({ ...votacaoSemVotosDeExemplo(), url_video: VIDEO }),
+			classes: ["corpo-com-video", "corpo-sem-votos"],
+		},
+		{
+			caso: "sem os votos e sem o vídeo",
+			votacao: () => votacaoSemVotosDeExemplo(),
+			classes: ["corpo-sem-votos"],
+		},
+		{
+			caso: "com o endereço do vídeo fora do contrato, como sem o vídeo",
+			votacao: () =>
+				votacaoDeExemplo({ url_video: "https://youtu.be/Mnd268Cam01" }),
+			classes: [],
+		},
+	])(
+		"$caso, o corpo leva só as classes do caso",
+		async ({ votacao, classes }) => {
+			const dados = votacao();
+			api(() => json(200, dados));
+
+			const { status, html } = await pedir(`/votacoes/${dados.id}`);
+
+			expect(status).toBe(200);
+			expect(classesDoCorpo(html)).toEqual([
+				"artigos",
+				"corpo-dos-parlamentares",
+				"corpo-da-votacao",
+				...classes,
+			]);
+		},
+	);
+
+	it.each([
+		{
+			caso: "com os votos e o vídeo",
+			votacao: () => votacaoDeExemplo({ url_video: VIDEO }),
+			secoes: ["placar", "video-da-sessao", "placar-por-partido", "quem"],
+		},
+		{
+			caso: "sem os votos, com o vídeo",
+			votacao: () => ({ ...votacaoSemVotosDeExemplo(), url_video: VIDEO }),
+			secoes: ["placar", "video-da-sessao", "quem"],
+		},
+	])(
+		"$caso, as seções saem na ordem de leitura",
+		async ({ votacao, secoes }) => {
+			const dados = votacao();
+			api(() => json(200, dados));
+
+			const { html } = await pedir(`/votacoes/${dados.id}`);
+
+			const ABERTURAS: Record<string, string> = {
+				placar:
+					'<section aria-labelledby="placar" class="secao-dos-parlamentares placar-da-votacao">',
+				"video-da-sessao":
+					'<section aria-labelledby="video-da-sessao" class="video-da-sessao">',
+				"placar-por-partido":
+					'<section aria-labelledby="placar-por-partido" class="placar-por-partido">',
+				quem: '<section aria-labelledby="quem-votou-como" class="quem-votou-como">',
+			};
+			const posicoes = secoes.map((secao) => html.indexOf(ABERTURAS[secao]));
+			for (const [indice, posicao] of posicoes.entries()) {
+				expect(posicao, secoes[indice]).toBeGreaterThan(-1);
+			}
+			expect(posicoes).toEqual([...posicoes].sort((a, b) => a - b));
+		},
+	);
+});
