@@ -1572,3 +1572,44 @@ describe("o patrimônio declarado ao TSE", () => {
 		);
 	});
 });
+
+describe("a tela larga", () => {
+	/** As partes de um bloco, pelo que o CSS das duas colunas usa: o id ou a classe. */
+	const partes = (bloco: Element) =>
+		Array.from(bloco.children, (parte) => parte.id || parte.className);
+
+	it("o corpo e o patrimônio têm as classes e a ordem que as duas colunas usam: o título e a abertura de um lado, os dados do outro", async () => {
+		await abrir(detalheDeExemplo());
+		const bloco = blocoDoPatrimonio();
+		const corpo = bloco.parentElement;
+
+		expect(corpo?.className).toBe(
+			"artigos corpo-dos-parlamentares corpo-do-parlamentar",
+		);
+		expect(corpo?.firstElementChild).toBe(bloco);
+		expect(bloco.classList).toContain("patrimonio-declarado");
+		expect(partes(bloco)).toEqual([
+			"patrimonio",
+			"abertura-do-patrimonio",
+			"dados-do-patrimonio",
+		]);
+		expect(
+			corpo?.querySelector(".votos-do-parlamentar > .voto-da-pessoa"),
+		).not.toBeNull();
+	});
+
+	it("sem eleição, a frase do patrimônio fica no lugar dos dados; sem voto, a folha dos votos vem logo depois, no corpo", async () => {
+		await abrir(
+			detalheDeExemplo(),
+			[],
+			1,
+			undefined,
+			patrimonioNaPagina({ eleicoes: [] }),
+		);
+		const bloco = blocoDoPatrimonio();
+
+		expect(partes(bloco)).toEqual(["patrimonio", "texto-do-patrimonio"]);
+		expect(bloco.nextElementSibling?.className).toBe("sem-votos");
+		expect(bloco.parentElement?.classList).toContain("corpo-do-parlamentar");
+	});
+});

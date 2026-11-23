@@ -623,3 +623,66 @@ describe("o patrimônio declarado", () => {
 		).toBe("background: CanvasText;");
 	});
 });
+
+describe("a tela larga da página do parlamentar", () => {
+	/** Só a seção da tela larga. */
+	const inicio = css.indexOf("/* ───── A página do parlamentar: a tela larga");
+	const larga = css.slice(inicio, css.indexOf("/* ───── A página da votação"));
+	const ate75 = bloco(larga, "@media (width >= 75rem)");
+	const ate100 = bloco(larga, "@media (width >= 100rem)");
+
+	it("a partir de 75rem, o corpo fica em duas colunas, e o patrimônio e a folha sem votos ocupam as duas", () => {
+		expect(inicio).toBeGreaterThan(0);
+		const corpo = regra(ate75, ".corpo-do-parlamentar");
+		expect(corpo).toContain("--colunas: minmax(0, 2fr) minmax(0, 3fr);");
+		expect(corpo).toContain("grid-template-columns: var(--colunas);");
+		expect(ate75).toMatch(
+			/\.corpo-do-parlamentar > \.patrimonio-declarado,\s*\.corpo-do-parlamentar > \.sem-votos \{\s*grid-column: 1 \/ -1;\s*\}/,
+		);
+	});
+
+	it("o patrimônio se divide como o corpo: a abertura à esquerda, e os dados ou a frase sem eleição à direita, desde o alto", () => {
+		expect(regra(ate75, ".corpo-do-parlamentar > .patrimonio-declarado")).toBe(
+			"display: grid; grid-template-columns: var(--colunas); grid-template-rows: auto 1fr; column-gap: var(--entre-colunas); align-items: start;",
+		);
+		expect(
+			regra(ate75, ".patrimonio-declarado > .abertura-do-patrimonio"),
+		).toBe("grid-column: 1;");
+		expect(ate75).toMatch(
+			/\.patrimonio-declarado > \.dados-do-patrimonio,\s*\.patrimonio-declarado > \.texto-do-patrimonio \{\s*grid-column: 2;\s*grid-row: 1 \/ span 2;\s*\}/,
+		);
+		expect(regra(ate75, ".dados-do-patrimonio > :first-child")).toBe(
+			"margin-top: 0;",
+		);
+	});
+
+	it("a partir de 100rem, os votos vão em duas colunas, com o carimbo em cima", () => {
+		expect(regra(ate100, ".corpo-do-parlamentar .votos-do-parlamentar")).toBe(
+			"grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--respiro);",
+		);
+		const voto = regra(ate100, ".corpo-do-parlamentar .voto-da-pessoa");
+		expect(voto).toContain("grid-template-columns: minmax(0, 1fr);");
+		// O voto mais curto da fileira não espalha as linhas pela altura do vizinho.
+		expect(voto).toContain("align-content: start;");
+	});
+
+	it("as regras da tela larga ficam presas à página do parlamentar: a lista e a votação, que também usam o corpo dos parlamentares, não mudam", () => {
+		const seletores = `${ate75}\n${ate100}`
+			.replace(/\/\*[\s\S]*?\*\//g, "")
+			.match(/[^{};]+(?=\{)/g);
+		expect(seletores?.length).toBeGreaterThan(0);
+		for (const lista of seletores ?? []) {
+			for (const seletor of lista.split(",")) {
+				expect(seletor.trim(), seletor).toMatch(
+					/^\.(corpo-do-parlamentar|patrimonio-declarado|dados-do-patrimonio)\b/,
+				);
+			}
+		}
+	});
+
+	it("o título do patrimônio, aberto pelo link da ficha, fica 1rem abaixo do alto da tela", () => {
+		expect(regra(larga, ".corpo-do-parlamentar #patrimonio")).toBe(
+			"scroll-margin-top: 1rem;",
+		);
+	});
+});

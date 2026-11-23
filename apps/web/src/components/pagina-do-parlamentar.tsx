@@ -109,7 +109,7 @@ export function PaginaDoParlamentar({ pagina }: { pagina: Pagina }) {
 					/>
 				</div>
 			</section>
-			<div className="artigos corpo-dos-parlamentares">
+			<div className="artigos corpo-dos-parlamentares corpo-do-parlamentar">
 				<PatrimonioDeclarado patrimonio={patrimonio} nome={parlamentar.nome} />
 				{total === 0 ? (
 					<SemVotos nome={parlamentar.nome} />

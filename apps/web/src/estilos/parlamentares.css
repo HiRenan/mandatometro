@@ -1685,6 +1685,83 @@
 		}
 	}
 
+	/* ───── A página do parlamentar: a tela larga ───── */
+
+	/*
+	 * A tela larga (o Renan, em 23/11/2026): a partir de 75rem, o corpo da página
+	 * do parlamentar fica em duas colunas, com a explicação e o resumo à esquerda
+	 * e as listas à direita. O patrimônio ocupa as duas e se divide como o corpo:
+	 * o título, a abertura e o aviso de um lado; a chave, o gráfico, a lista e o
+	 * resto do outro. Embaixo, "Como votou" à esquerda e os votos à direita, que
+	 * vão em duas colunas a partir de 100rem. O texto corrido continua até 39rem,
+	 * e a ordem do HTML é a da tela. Abaixo de 75rem, uma coluna, como antes.
+	 */
+	.corpo-do-parlamentar #patrimonio {
+		scroll-margin-top: 1rem;
+	}
+
+	@media (width >= 75rem) {
+		.corpo-do-parlamentar {
+			--colunas: minmax(0, 2fr) minmax(0, 3fr);
+			--entre-colunas: clamp(2.5rem, 4vw, 5rem);
+			grid-template-columns: var(--colunas);
+			column-gap: var(--entre-colunas);
+			align-items: start;
+		}
+
+		.corpo-do-parlamentar > .patrimonio-declarado,
+		.corpo-do-parlamentar > .sem-votos {
+			grid-column: 1 / -1;
+		}
+
+		.corpo-do-parlamentar > .patrimonio-declarado {
+			display: grid;
+			grid-template-columns: var(--colunas);
+			grid-template-rows: auto 1fr;
+			column-gap: var(--entre-colunas);
+			align-items: start;
+		}
+
+		.patrimonio-declarado > .abertura-do-patrimonio {
+			grid-column: 1;
+		}
+
+		/* Os dados ou, sem eleição, a frase que diz por quê: à direita, desde o alto. */
+		.patrimonio-declarado > .dados-do-patrimonio,
+		.patrimonio-declarado > .texto-do-patrimonio {
+			grid-column: 2;
+			grid-row: 1 / span 2;
+		}
+
+		.dados-do-patrimonio > :first-child {
+			margin-top: 0;
+		}
+	}
+
+	@media (width >= 100rem) {
+		.corpo-do-parlamentar .votos-do-parlamentar {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			column-gap: var(--respiro);
+		}
+
+		/*
+		 * Em duas colunas, o carimbo do voto fica em cima, como no celular. O voto
+		 * mais curto da fileira estica até a altura do vizinho, e as linhas dele
+		 * ficam no alto, sem espalhar o vão: os títulos de uma fileira se alinham.
+		 */
+		.corpo-do-parlamentar .voto-da-pessoa {
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-areas:
+				"carimbo"
+				"titulo"
+				"fatos"
+				"texto"
+				"links"
+				"coletado";
+			align-content: start;
+		}
+	}
+
 	/* ───── A página da votação: o plenário ───── */
 
 	/*
