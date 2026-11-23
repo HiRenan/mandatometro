@@ -1733,6 +1733,48 @@
         }
       }
     },
+    "/painel/numeros": {
+      "get": {
+        "tags": [
+          "painel"
+        ],
+        "summary": "Consultar os números do painel",
+        "description": "Agregados do site e das coletas. O acesso é exclusivo da administradora.",
+        "operationId": "consultar_numeros_painel",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NumerosPainel"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rota não encontrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha inesperada na consulta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/parlamentares": {
       "get": {
         "tags": [
@@ -2242,6 +2284,57 @@
         }
       }
     },
+    "/visitas": {
+      "post": {
+        "tags": [
+          "visitas"
+        ],
+        "summary": "Contar uma página vista",
+        "description": "Aceita o caminho de uma página pública do site, sem query ou fragmento. A contagem usa o dia em Brasília. Caminhos inválidos e robôs conhecidos são ignorados com a mesma resposta vazia de uma visita contada.",
+        "operationId": "registrar_visita",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "caminho": {
+                    "type": "string",
+                    "maxLength": 160,
+                    "title": "Caminho"
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "caminho"
+                ],
+                "title": "PedidoVisita"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "429": {
+            "description": "Cota global por minuto atingida.",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até o próximo minuto.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Operação no banco não confirmada."
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -2547,6 +2640,32 @@
         ],
         "title": "ContagemVotosParlamentar"
       },
+      "ContasPainel": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "confirmadas": {
+            "type": "integer",
+            "title": "Confirmadas"
+          },
+          "novas_por_semana": {
+            "items": {
+              "$ref": "#/components/schemas/TotalSemanal"
+            },
+            "type": "array",
+            "title": "Novas Por Semana"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "confirmadas",
+          "novas_por_semana"
+        ],
+        "title": "ContasPainel"
+      },
       "CorrecaoIpca": {
         "properties": {
           "indice": {
@@ -2616,6 +2735,10 @@
             "title": "Partido",
             "description": "Sigla registrada no voto mais recente pela data da votação, com desempate pelo maior id interno da votação. Nula se o voto não informa partido ou se não há voto."
           },
+          "foto": {
+            "$ref": "#/components/schemas/FotoParlamentar",
+            "description": "Endereço da foto oficial e crédito da Casa."
+          },
           "mandatos": {
             "items": {
               "$ref": "#/components/schemas/MandatoPublico"
@@ -2635,6 +2758,7 @@
           "casa",
           "uf",
           "partido",
+          "foto",
           "mandatos",
           "contagem_votos"
         ],
@@ -2887,6 +3011,64 @@
             ],
             "title": "Total Corrigido Centavos",
             "description": "Total em centavos corrigido pelo IPCA. Nulo sem total, sem cobertura completa do período ou acima do limite de centavos da API."
+          },
+          "resultado": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "eleito",
+                  "eleito_por_qp",
+                  "eleito_por_media",
+                  "suplente",
+                  "nao_eleito",
+                  "sem_resultado",
+                  "outro"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultado",
+            "description": "Resultado final do TSE, do último turno. Nulo até a coleta do resultado."
+          },
+          "fator_ipca": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]{4}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fator Ipca",
+            "description": "Fator de correção com quatro casas. Nulo sem cobertura completa do período."
+          },
+          "alta_ipca_percentual": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^-?[0-9]+\\.[0-9]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alta Ipca Percentual",
+            "description": "Variação dos preços pelo IPCA com uma casa. Nula sem cobertura completa."
+          },
+          "variacao": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VariacaoPatrimonio"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Comparação com a eleição anterior com total corrigido. Nula quando um dos dois totais corrigidos falta."
           }
         },
         "type": "object",
@@ -2897,7 +3079,11 @@
           "total_centavos",
           "fonte",
           "mes_inicio",
-          "total_corrigido_centavos"
+          "total_corrigido_centavos",
+          "resultado",
+          "fator_ipca",
+          "alta_ipca_percentual",
+          "variacao"
         ],
         "title": "EleicaoPatrimonio"
       },
@@ -3136,6 +3322,45 @@
           "trecho"
         ],
         "title": "FontePublica"
+      },
+      "FotoParlamentar": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "credito": {
+            "type": "string",
+            "title": "Credito"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "credito"
+        ],
+        "title": "FotoParlamentar"
+      },
+      "InscritosPainel": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "novos_por_semana": {
+            "items": {
+              "$ref": "#/components/schemas/TotalSemanal"
+            },
+            "type": "array",
+            "title": "Novos Por Semana"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "novos_por_semana"
+        ],
+        "title": "InscritosPainel"
       },
       "ItemPublico": {
         "properties": {
@@ -3428,6 +3653,228 @@
         ],
         "title": "MandatoPublico"
       },
+      "MediaEtapa": {
+        "properties": {
+          "acertos": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acertos"
+          },
+          "percentual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentual"
+          },
+          "quantidade": {
+            "type": "integer",
+            "title": "Quantidade"
+          },
+          "situacao": {
+            "type": "string",
+            "enum": [
+              "sem_respostas",
+              "amostra_pequena",
+              "disponivel",
+              "protecao_de_subgrupo"
+            ],
+            "title": "Situacao"
+          }
+        },
+        "type": "object",
+        "required": [
+          "acertos",
+          "percentual",
+          "quantidade",
+          "situacao"
+        ],
+        "title": "MediaEtapa"
+      },
+      "MediaPiloto": {
+        "properties": {
+          "acertos": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acertos"
+          },
+          "percentual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentual"
+          }
+        },
+        "type": "object",
+        "required": [
+          "acertos",
+          "percentual"
+        ],
+        "title": "MediaPiloto"
+      },
+      "MediasPiloto": {
+        "properties": {
+          "antes": {
+            "$ref": "#/components/schemas/MediaEtapa"
+          },
+          "depois": {
+            "$ref": "#/components/schemas/MediaEtapa"
+          }
+        },
+        "type": "object",
+        "required": [
+          "antes",
+          "depois"
+        ],
+        "title": "MediasPiloto"
+      },
+      "NewsletterPainel": {
+        "properties": {
+          "edicoes_publicadas": {
+            "type": "integer",
+            "title": "Edicoes Publicadas"
+          },
+          "inscritos_com_a_ultima_edicao": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inscritos Com A Ultima Edicao"
+          },
+          "ultima_publicada_em": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ultima Publicada Em"
+          }
+        },
+        "type": "object",
+        "required": [
+          "edicoes_publicadas",
+          "inscritos_com_a_ultima_edicao",
+          "ultima_publicada_em"
+        ],
+        "title": "NewsletterPainel"
+      },
+      "NumerosPainel": {
+        "properties": {
+          "pessoas": {
+            "$ref": "#/components/schemas/PessoasPainel"
+          },
+          "uso": {
+            "$ref": "#/components/schemas/UsoPainel"
+          },
+          "visitas": {
+            "$ref": "#/components/schemas/VisitasPainel"
+          },
+          "newsletter": {
+            "$ref": "#/components/schemas/NewsletterPainel"
+          },
+          "piloto": {
+            "$ref": "#/components/schemas/PilotoPainel"
+          },
+          "sistema": {
+            "$ref": "#/components/schemas/SistemaPainel"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pessoas",
+          "uso",
+          "visitas",
+          "newsletter",
+          "piloto",
+          "sistema"
+        ],
+        "title": "NumerosPainel"
+      },
+      "ParesPiloto": {
+        "properties": {
+          "quantidade": {
+            "type": "integer",
+            "title": "Quantidade"
+          },
+          "antes": {
+            "$ref": "#/components/schemas/MediaPiloto"
+          },
+          "depois": {
+            "$ref": "#/components/schemas/MediaPiloto"
+          },
+          "diferenca_acertos": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diferenca Acertos"
+          },
+          "diferenca_pontos_percentuais": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diferenca Pontos Percentuais"
+          },
+          "situacao": {
+            "type": "string",
+            "enum": [
+              "sem_respostas",
+              "amostra_pequena",
+              "disponivel",
+              "protecao_de_subgrupo"
+            ],
+            "title": "Situacao"
+          }
+        },
+        "type": "object",
+        "required": [
+          "quantidade",
+          "antes",
+          "depois",
+          "diferenca_acertos",
+          "diferenca_pontos_percentuais",
+          "situacao"
+        ],
+        "title": "ParesPiloto"
+      },
       "ParlamentarPublico": {
         "properties": {
           "id": {
@@ -3481,6 +3928,44 @@
           "partido"
         ],
         "title": "ParlamentarPublico"
+      },
+      "ParticipacoesPainel": {
+        "properties": {
+          "antes": {
+            "type": "integer",
+            "title": "Antes"
+          },
+          "depois": {
+            "type": "integer",
+            "title": "Depois"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "pareadas": {
+            "type": "integer",
+            "title": "Pareadas"
+          },
+          "somente_antes": {
+            "type": "integer",
+            "title": "Somente Antes"
+          },
+          "somente_depois": {
+            "type": "integer",
+            "title": "Somente Depois"
+          }
+        },
+        "type": "object",
+        "required": [
+          "antes",
+          "depois",
+          "total",
+          "pareadas",
+          "somente_antes",
+          "somente_depois"
+        ],
+        "title": "ParticipacoesPainel"
       },
       "PatrimonioParlamentar": {
         "properties": {
@@ -3613,6 +4098,57 @@
           "papel"
         ],
         "title": "PerfilConta"
+      },
+      "PessoasPainel": {
+        "properties": {
+          "contas": {
+            "$ref": "#/components/schemas/ContasPainel"
+          },
+          "inscritos": {
+            "$ref": "#/components/schemas/InscritosPainel"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contas",
+          "inscritos"
+        ],
+        "title": "PessoasPainel"
+      },
+      "PilotoPainel": {
+        "properties": {
+          "versao_quiz": {
+            "type": "string",
+            "const": "processo-legislativo-final-v1",
+            "title": "Versao Quiz"
+          },
+          "total_perguntas": {
+            "type": "integer",
+            "title": "Total Perguntas"
+          },
+          "tentativas": {
+            "$ref": "#/components/schemas/TentativasPainel"
+          },
+          "participacoes": {
+            "$ref": "#/components/schemas/ParticipacoesPainel"
+          },
+          "medias": {
+            "$ref": "#/components/schemas/MediasPiloto"
+          },
+          "pares": {
+            "$ref": "#/components/schemas/ParesPiloto"
+          }
+        },
+        "type": "object",
+        "required": [
+          "versao_quiz",
+          "total_perguntas",
+          "tentativas",
+          "participacoes",
+          "medias",
+          "pares"
+        ],
+        "title": "PilotoPainel"
       },
       "PlacarPorPartido": {
         "properties": {
@@ -3901,6 +4437,68 @@
         ],
         "title": "Saude"
       },
+      "SistemaPainel": {
+        "properties": {
+          "parlamentares": {
+            "type": "integer",
+            "title": "Parlamentares"
+          },
+          "mandatos": {
+            "type": "integer",
+            "title": "Mandatos"
+          },
+          "proposicoes": {
+            "type": "integer",
+            "title": "Proposicoes"
+          },
+          "votacoes": {
+            "type": "integer",
+            "title": "Votacoes"
+          },
+          "votos": {
+            "type": "integer",
+            "title": "Votos"
+          },
+          "atos": {
+            "type": "integer",
+            "title": "Atos"
+          },
+          "videos": {
+            "type": "integer",
+            "title": "Videos"
+          },
+          "proposicoes_com_tema": {
+            "type": "integer",
+            "title": "Proposicoes Com Tema"
+          },
+          "bens": {
+            "type": "integer",
+            "title": "Bens"
+          },
+          "meses_ipca": {
+            "type": "integer",
+            "title": "Meses Ipca"
+          },
+          "ultimas_coletas": {
+            "$ref": "#/components/schemas/UltimasColetas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parlamentares",
+          "mandatos",
+          "proposicoes",
+          "votacoes",
+          "votos",
+          "atos",
+          "videos",
+          "proposicoes_com_tema",
+          "bens",
+          "meses_ipca",
+          "ultimas_coletas"
+        ],
+        "title": "SistemaPainel"
+      },
       "TemaId": {
         "type": "string",
         "enum": [
@@ -3942,6 +4540,29 @@
         ],
         "title": "TemaPublico"
       },
+      "TentativasPainel": {
+        "properties": {
+          "antes": {
+            "type": "integer",
+            "title": "Antes"
+          },
+          "depois": {
+            "type": "integer",
+            "title": "Depois"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "antes",
+          "depois",
+          "total"
+        ],
+        "title": "TentativasPainel"
+      },
       "Termo": {
         "properties": {
           "versao": {
@@ -3959,6 +4580,247 @@
           "url"
         ],
         "title": "Termo"
+      },
+      "TotalDiario": {
+        "properties": {
+          "dia": {
+            "type": "string",
+            "format": "date",
+            "title": "Dia"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dia",
+          "total"
+        ],
+        "title": "TotalDiario"
+      },
+      "TotalPagina": {
+        "properties": {
+          "caminho": {
+            "type": "string",
+            "title": "Caminho"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "caminho",
+          "total"
+        ],
+        "title": "TotalPagina"
+      },
+      "TotalSemanal": {
+        "properties": {
+          "semana": {
+            "type": "string",
+            "format": "date",
+            "title": "Semana"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "semana",
+          "total"
+        ],
+        "title": "TotalSemanal"
+      },
+      "TotalTrilha": {
+        "properties": {
+          "trilha": {
+            "type": "string",
+            "title": "Trilha"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trilha",
+          "total"
+        ],
+        "title": "TotalTrilha"
+      },
+      "UltimasColetas": {
+        "properties": {
+          "camara": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Camara"
+          },
+          "senado": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Senado"
+          },
+          "diario_oficial": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diario Oficial"
+          },
+          "tse": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tse"
+          },
+          "banco_central": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Banco Central"
+          }
+        },
+        "type": "object",
+        "required": [
+          "camara",
+          "senado",
+          "diario_oficial",
+          "tse",
+          "banco_central"
+        ],
+        "title": "UltimasColetas"
+      },
+      "UsoPainel": {
+        "properties": {
+          "artigos_lidos_por_trilha": {
+            "items": {
+              "$ref": "#/components/schemas/TotalTrilha"
+            },
+            "type": "array",
+            "title": "Artigos Lidos Por Trilha"
+          },
+          "trilhas_concluidas": {
+            "items": {
+              "$ref": "#/components/schemas/TotalTrilha"
+            },
+            "type": "array",
+            "title": "Trilhas Concluidas"
+          },
+          "contas_ativas_por_semana": {
+            "items": {
+              "$ref": "#/components/schemas/TotalSemanal"
+            },
+            "type": "array",
+            "title": "Contas Ativas Por Semana"
+          },
+          "contas_que_voltaram": {
+            "type": "integer",
+            "title": "Contas Que Voltaram"
+          }
+        },
+        "type": "object",
+        "required": [
+          "artigos_lidos_por_trilha",
+          "trilhas_concluidas",
+          "contas_ativas_por_semana",
+          "contas_que_voltaram"
+        ],
+        "title": "UsoPainel"
+      },
+      "VariacaoPatrimonio": {
+        "properties": {
+          "ano_anterior": {
+            "type": "integer",
+            "title": "Ano Anterior"
+          },
+          "diferenca_centavos": {
+            "type": "integer",
+            "title": "Diferenca Centavos",
+            "description": "Total corrigido atual menos o anterior."
+          },
+          "percentual": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^-?[0-9]+\\.[0-9]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentual",
+            "description": "Diferença percentual com uma casa. Nula se o total corrigido anterior for de R$ 50.000,00 ou menos."
+          }
+        },
+        "type": "object",
+        "required": [
+          "ano_anterior",
+          "diferenca_centavos",
+          "percentual"
+        ],
+        "title": "VariacaoPatrimonio"
+      },
+      "VisitasPainel": {
+        "properties": {
+          "por_dia": {
+            "items": {
+              "$ref": "#/components/schemas/TotalDiario"
+            },
+            "type": "array",
+            "title": "Por Dia"
+          },
+          "paginas_mais_vistas": {
+            "items": {
+              "$ref": "#/components/schemas/TotalPagina"
+            },
+            "type": "array",
+            "title": "Paginas Mais Vistas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "por_dia",
+          "paginas_mais_vistas"
+        ],
+        "title": "VisitasPainel"
       },
       "VotacaoPublica": {
         "properties": {

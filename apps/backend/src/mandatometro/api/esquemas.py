@@ -196,7 +196,13 @@ class ContagemVotosParlamentar(BaseModel):
     outro: int
 
 
+class FotoParlamentar(BaseModel):
+    url: str
+    credito: str
+
+
 class DetalheParlamentar(ParlamentarPublico):
+    foto: FotoParlamentar = Field(description="Endereço da foto oficial e crédito da Casa.")
     mandatos: list[MandatoPublico]
     contagem_votos: ContagemVotosParlamentar = Field(
         description="Contagem dos registros de voto deste parlamentar, por valor normalizado. "
@@ -215,12 +221,31 @@ class FontePatrimonio(BaseModel):
 
 
 MesIpca = Annotated[str, Field(pattern=r"^[0-9]{4}-(0[1-9]|1[0-2])$")]
+PercentualPatrimonio = Annotated[str, Field(pattern=r"^-?[0-9]+\.[0-9]$")]
+ResultadoPatrimonio = Literal[
+    "eleito",
+    "eleito_por_qp",
+    "eleito_por_media",
+    "suplente",
+    "nao_eleito",
+    "sem_resultado",
+    "outro",
+]
 
 
 class CorrecaoIpca(BaseModel):
     indice: Literal["IPCA"]
     mes_fim: MesIpca = Field(description="Último mês do IPCA disponível, incluído na correção.")
     fonte: FontePatrimonio = Field(description="Observação do IPCA do mês final no Banco Central.")
+
+
+class VariacaoPatrimonio(BaseModel):
+    ano_anterior: int
+    diferenca_centavos: int = Field(description="Total corrigido atual menos o anterior.")
+    percentual: PercentualPatrimonio | None = Field(
+        description="Diferença percentual com uma casa. Nula se o total corrigido anterior "
+        "for de R$ 50.000,00 ou menos."
+    )
 
 
 class EleicaoPatrimonio(BaseModel):
@@ -239,6 +264,19 @@ class EleicaoPatrimonio(BaseModel):
         le=MAXIMO_CENTAVOS,
         description="Total em centavos corrigido pelo IPCA. Nulo sem total, sem cobertura "
         "completa do período ou acima do limite de centavos da API.",
+    )
+    resultado: ResultadoPatrimonio | None = Field(
+        description="Resultado final do TSE, do último turno. Nulo até a coleta do resultado."
+    )
+    fator_ipca: Annotated[str, Field(pattern=r"^[0-9]+\.[0-9]{4}$")] | None = Field(
+        description="Fator de correção com quatro casas. Nulo sem cobertura completa do período."
+    )
+    alta_ipca_percentual: PercentualPatrimonio | None = Field(
+        description="Variação dos preços pelo IPCA com uma casa. Nula sem cobertura completa."
+    )
+    variacao: VariacaoPatrimonio | None = Field(
+        description="Comparação com a eleição anterior com total corrigido. "
+        "Nula quando um dos dois totais corrigidos falta."
     )
 
 

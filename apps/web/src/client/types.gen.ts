@@ -167,6 +167,24 @@ export type ContagemVotosParlamentar = {
 };
 
 /**
+ * ContasPainel
+ */
+export type ContasPainel = {
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Confirmadas
+     */
+    confirmadas: number;
+    /**
+     * Novas Por Semana
+     */
+    novas_por_semana: Array<TotalSemanal>;
+};
+
+/**
  * CorrecaoIpca
  */
 export type CorrecaoIpca = {
@@ -216,6 +234,10 @@ export type DetalheParlamentar = {
      * Sigla registrada no voto mais recente pela data da votação, com desempate pelo maior id interno da votação. Nula se o voto não informa partido ou se não há voto.
      */
     partido: string | null;
+    /**
+     * Endereço da foto oficial e crédito da Casa.
+     */
+    foto: FotoParlamentar;
     /**
      * Mandatos
      */
@@ -360,6 +382,28 @@ export type EleicaoPatrimonio = {
      * Total em centavos corrigido pelo IPCA. Nulo sem total, sem cobertura completa do período ou acima do limite de centavos da API.
      */
     total_corrigido_centavos: number | null;
+    /**
+     * Resultado
+     *
+     * Resultado final do TSE, do último turno. Nulo até a coleta do resultado.
+     */
+    resultado: 'eleito' | 'eleito_por_qp' | 'eleito_por_media' | 'suplente' | 'nao_eleito' | 'sem_resultado' | 'outro' | null;
+    /**
+     * Fator Ipca
+     *
+     * Fator de correção com quatro casas. Nulo sem cobertura completa do período.
+     */
+    fator_ipca: string | null;
+    /**
+     * Alta Ipca Percentual
+     *
+     * Variação dos preços pelo IPCA com uma casa. Nula sem cobertura completa.
+     */
+    alta_ipca_percentual: string | null;
+    /**
+     * Comparação com a eleição anterior com total corrigido. Nula quando um dos dois totais corrigidos falta.
+     */
+    variacao: VariacaoPatrimonio | null;
 };
 
 /**
@@ -506,6 +550,34 @@ export type FontePublica = {
      * Trecho
      */
     trecho: string | null;
+};
+
+/**
+ * FotoParlamentar
+ */
+export type FotoParlamentar = {
+    /**
+     * Url
+     */
+    url: string;
+    /**
+     * Credito
+     */
+    credito: string;
+};
+
+/**
+ * InscritosPainel
+ */
+export type InscritosPainel = {
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Novos Por Semana
+     */
+    novos_por_semana: Array<TotalSemanal>;
 };
 
 /**
@@ -690,6 +762,104 @@ export type MandatoPublico = {
 };
 
 /**
+ * MediaEtapa
+ */
+export type MediaEtapa = {
+    /**
+     * Acertos
+     */
+    acertos: number | null;
+    /**
+     * Percentual
+     */
+    percentual: number | null;
+    /**
+     * Quantidade
+     */
+    quantidade: number;
+    /**
+     * Situacao
+     */
+    situacao: 'sem_respostas' | 'amostra_pequena' | 'disponivel' | 'protecao_de_subgrupo';
+};
+
+/**
+ * MediaPiloto
+ */
+export type MediaPiloto = {
+    /**
+     * Acertos
+     */
+    acertos: number | null;
+    /**
+     * Percentual
+     */
+    percentual: number | null;
+};
+
+/**
+ * MediasPiloto
+ */
+export type MediasPiloto = {
+    antes: MediaEtapa;
+    depois: MediaEtapa;
+};
+
+/**
+ * NewsletterPainel
+ */
+export type NewsletterPainel = {
+    /**
+     * Edicoes Publicadas
+     */
+    edicoes_publicadas: number;
+    /**
+     * Inscritos Com A Ultima Edicao
+     */
+    inscritos_com_a_ultima_edicao: number | null;
+    /**
+     * Ultima Publicada Em
+     */
+    ultima_publicada_em: string | null;
+};
+
+/**
+ * NumerosPainel
+ */
+export type NumerosPainel = {
+    pessoas: PessoasPainel;
+    uso: UsoPainel;
+    visitas: VisitasPainel;
+    newsletter: NewsletterPainel;
+    piloto: PilotoPainel;
+    sistema: SistemaPainel;
+};
+
+/**
+ * ParesPiloto
+ */
+export type ParesPiloto = {
+    /**
+     * Quantidade
+     */
+    quantidade: number;
+    antes: MediaPiloto;
+    depois: MediaPiloto;
+    /**
+     * Diferenca Acertos
+     */
+    diferenca_acertos: number | null;
+    /**
+     * Diferenca Pontos Percentuais
+     */
+    diferenca_pontos_percentuais: number | null;
+    /**
+     * Situacao
+     */
+    situacao: 'sem_respostas' | 'amostra_pequena' | 'disponivel' | 'protecao_de_subgrupo';
+};
+
+/**
  * ParlamentarPublico
  */
 export type ParlamentarPublico = {
@@ -719,6 +889,36 @@ export type ParlamentarPublico = {
      * Sigla registrada no voto mais recente pela data da votação, com desempate pelo maior id interno da votação. Nula se o voto não informa partido ou se não há voto.
      */
     partido: string | null;
+};
+
+/**
+ * ParticipacoesPainel
+ */
+export type ParticipacoesPainel = {
+    /**
+     * Antes
+     */
+    antes: number;
+    /**
+     * Depois
+     */
+    depois: number;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Pareadas
+     */
+    pareadas: number;
+    /**
+     * Somente Antes
+     */
+    somente_antes: number;
+    /**
+     * Somente Depois
+     */
+    somente_depois: number;
 };
 
 /**
@@ -797,6 +997,32 @@ export type PerfilConta = {
      * Papel
      */
     papel: 'comum' | 'administradora';
+};
+
+/**
+ * PessoasPainel
+ */
+export type PessoasPainel = {
+    contas: ContasPainel;
+    inscritos: InscritosPainel;
+};
+
+/**
+ * PilotoPainel
+ */
+export type PilotoPainel = {
+    /**
+     * Versao Quiz
+     */
+    versao_quiz: 'processo-legislativo-final-v1';
+    /**
+     * Total Perguntas
+     */
+    total_perguntas: number;
+    tentativas: TentativasPainel;
+    participacoes: ParticipacoesPainel;
+    medias: MediasPiloto;
+    pares: ParesPiloto;
 };
 
 /**
@@ -985,6 +1211,53 @@ export type Saude = {
 };
 
 /**
+ * SistemaPainel
+ */
+export type SistemaPainel = {
+    /**
+     * Parlamentares
+     */
+    parlamentares: number;
+    /**
+     * Mandatos
+     */
+    mandatos: number;
+    /**
+     * Proposicoes
+     */
+    proposicoes: number;
+    /**
+     * Votacoes
+     */
+    votacoes: number;
+    /**
+     * Votos
+     */
+    votos: number;
+    /**
+     * Atos
+     */
+    atos: number;
+    /**
+     * Videos
+     */
+    videos: number;
+    /**
+     * Proposicoes Com Tema
+     */
+    proposicoes_com_tema: number;
+    /**
+     * Bens
+     */
+    bens: number;
+    /**
+     * Meses Ipca
+     */
+    meses_ipca: number;
+    ultimas_coletas: UltimasColetas;
+};
+
+/**
  * TemaId
  */
 export type TemaId = 'saude' | 'educacao' | 'economia' | 'trabalho' | 'previdencia_assistencia' | 'direitos_cidadania' | 'seguranca_defesa' | 'justica' | 'meio_ambiente' | 'agropecuaria' | 'infraestrutura' | 'cidades_moradia' | 'ciencia_tecnologia' | 'cultura_esporte' | 'politica_governo' | 'orcamento_publico' | 'relacoes_internacionais' | 'homenagens';
@@ -1001,6 +1274,24 @@ export type TemaPublico = {
 };
 
 /**
+ * TentativasPainel
+ */
+export type TentativasPainel = {
+    /**
+     * Antes
+     */
+    antes: number;
+    /**
+     * Depois
+     */
+    depois: number;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
  * Termo
  */
 export type Termo = {
@@ -1012,6 +1303,146 @@ export type Termo = {
      * Url
      */
     url: string;
+};
+
+/**
+ * TotalDiario
+ */
+export type TotalDiario = {
+    /**
+     * Dia
+     */
+    dia: string;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * TotalPagina
+ */
+export type TotalPagina = {
+    /**
+     * Caminho
+     */
+    caminho: string;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * TotalSemanal
+ */
+export type TotalSemanal = {
+    /**
+     * Semana
+     */
+    semana: string;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * TotalTrilha
+ */
+export type TotalTrilha = {
+    /**
+     * Trilha
+     */
+    trilha: string;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * UltimasColetas
+ */
+export type UltimasColetas = {
+    /**
+     * Camara
+     */
+    camara: string | null;
+    /**
+     * Senado
+     */
+    senado: string | null;
+    /**
+     * Diario Oficial
+     */
+    diario_oficial: string | null;
+    /**
+     * Tse
+     */
+    tse: string | null;
+    /**
+     * Banco Central
+     */
+    banco_central: string | null;
+};
+
+/**
+ * UsoPainel
+ */
+export type UsoPainel = {
+    /**
+     * Artigos Lidos Por Trilha
+     */
+    artigos_lidos_por_trilha: Array<TotalTrilha>;
+    /**
+     * Trilhas Concluidas
+     */
+    trilhas_concluidas: Array<TotalTrilha>;
+    /**
+     * Contas Ativas Por Semana
+     */
+    contas_ativas_por_semana: Array<TotalSemanal>;
+    /**
+     * Contas Que Voltaram
+     */
+    contas_que_voltaram: number;
+};
+
+/**
+ * VariacaoPatrimonio
+ */
+export type VariacaoPatrimonio = {
+    /**
+     * Ano Anterior
+     */
+    ano_anterior: number;
+    /**
+     * Diferenca Centavos
+     *
+     * Total corrigido atual menos o anterior.
+     */
+    diferenca_centavos: number;
+    /**
+     * Percentual
+     *
+     * Diferença percentual com uma casa. Nula se o total corrigido anterior for de R$ 50.000,00 ou menos.
+     */
+    percentual: string | null;
+};
+
+/**
+ * VisitasPainel
+ */
+export type VisitasPainel = {
+    /**
+     * Por Dia
+     */
+    por_dia: Array<TotalDiario>;
+    /**
+     * Paginas Mais Vistas
+     */
+    paginas_mais_vistas: Array<TotalPagina>;
 };
 
 /**
@@ -2020,6 +2451,35 @@ export type PublicarEdicaoResponses = {
 
 export type PublicarEdicaoResponse = PublicarEdicaoResponses[keyof PublicarEdicaoResponses];
 
+export type ConsultarNumerosPainelData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/painel/numeros';
+};
+
+export type ConsultarNumerosPainelErrors = {
+    /**
+     * Rota não encontrada.
+     */
+    404: ErroPainel;
+    /**
+     * Falha inesperada na consulta.
+     */
+    500: ErroPainel;
+};
+
+export type ConsultarNumerosPainelError = ConsultarNumerosPainelErrors[keyof ConsultarNumerosPainelErrors];
+
+export type ConsultarNumerosPainelResponses = {
+    /**
+     * Successful Response
+     */
+    200: NumerosPainel;
+};
+
+export type ConsultarNumerosPainelResponse = ConsultarNumerosPainelResponses[keyof ConsultarNumerosPainelResponses];
+
 export type ListarParlamentaresData = {
     body?: never;
     path?: never;
@@ -2275,6 +2735,41 @@ export type ObterVotacaoResponses = {
 };
 
 export type ObterVotacaoResponse = ObterVotacaoResponses[keyof ObterVotacaoResponses];
+
+export type RegistrarVisitaData = {
+    /**
+     * PedidoVisita
+     */
+    body: {
+        /**
+         * Caminho
+         */
+        caminho: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/visitas';
+};
+
+export type RegistrarVisitaErrors = {
+    /**
+     * Cota global por minuto atingida.
+     */
+    429: unknown;
+    /**
+     * Operação no banco não confirmada.
+     */
+    503: unknown;
+};
+
+export type RegistrarVisitaResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type RegistrarVisitaResponse = RegistrarVisitaResponses[keyof RegistrarVisitaResponses];
 
 export type HealthData = {
     body?: never;

@@ -87,8 +87,20 @@ export function listaDeExemplo(): ListaParlamentares {
 export function detalheDeExemplo(
 	mudancas: Partial<DetalheParlamentar> = {},
 ): DetalheParlamentar {
+	const parlamentar = parlamentarDeExemplo();
+	const casa = mudancas.casa ?? parlamentar.casa;
 	return {
-		...parlamentarDeExemplo(),
+		...parlamentar,
+		foto:
+			casa === "camara"
+				? {
+						url: "https://www.camara.leg.br/internet/deputado/bandep/90000123.jpg",
+						credito: "Câmara dos Deputados",
+					}
+				: {
+						url: "https://legis.senado.leg.br/senadores/fotos-oficiais/90000124",
+						credito: "Senado Federal",
+					},
 		mandatos: [
 			{ legislatura: 57, uf: "SC", condicao: "Titular", em_exercicio: true },
 			{ legislatura: 56, uf: "SC", condicao: null, em_exercicio: false },
@@ -263,17 +275,35 @@ export function eleicaoDeExemplo(
 	mudancas: Partial<EleicaoPatrimonio> = {},
 ): EleicaoPatrimonio {
 	const ano = mudancas.ano ?? 2018;
+	const total =
+		mudancas.total_centavos === undefined
+			? 81_240_000
+			: mudancas.total_centavos;
+	const corrigido =
+		mudancas.total_corrigido_centavos === undefined
+			? 110_000_000
+			: mudancas.total_corrigido_centavos;
+	let fator: number | null = null;
+	if (total !== null && corrigido !== null) {
+		fator = total > 0 ? corrigido / total : 1;
+	}
+
 	return {
 		ano,
 		cargo: { codigo: 6, nome: "Deputado federal" },
 		uf: "SC",
-		total_centavos: 81_240_000,
+		total_centavos: total,
 		fonte: {
 			url: `https://cdn.tse.jus.br/estatistica/sead/odsele/bem_candidato/bem_candidato_${ano}.zip`,
 			coletado_em: "2026-11-20T15:00:00+00:00",
 		},
 		mes_inicio: `${ano}-10`,
-		total_corrigido_centavos: 110_000_000,
+		total_corrigido_centavos: corrigido,
+		resultado: null,
+		fator_ipca: fator?.toFixed(4) ?? null,
+		alta_ipca_percentual:
+			fator === null ? null : ((fator - 1) * 100).toFixed(1),
+		variacao: null,
 		...mudancas,
 	};
 }
@@ -295,7 +325,9 @@ export function correcaoDeExemplo(
 
 /**
  * O patrimônio de Ágata Cedrolume: quatro eleições, de 2014 a 2026, uma delas
- * (2022) sem total nos dados do TSE.
+ * (2022) sem total nos dados do TSE, cada uma com o resultado. A diferença de
+ * 2018 é para 2014, e a de 2026, para 2018: a eleição sem total fica de fora da
+ * comparação, como na API.
  */
 export function patrimonioDeExemplo(
 	mudancas: Partial<PatrimonioParlamentar> = {},
@@ -307,18 +339,34 @@ export function patrimonioDeExemplo(
 				cargo: { codigo: 7, nome: "Deputado estadual" },
 				total_centavos: 19_830_000,
 				total_corrigido_centavos: 35_212_300,
+				resultado: "eleito_por_qp",
 			}),
-			eleicaoDeExemplo({ ano: 2018 }),
+			eleicaoDeExemplo({
+				ano: 2018,
+				resultado: "eleito_por_media",
+				variacao: {
+					ano_anterior: 2014,
+					diferenca_centavos: 74_787_700,
+					percentual: "212.4",
+				},
+			}),
 			eleicaoDeExemplo({
 				ano: 2022,
 				total_centavos: null,
 				total_corrigido_centavos: null,
+				resultado: "suplente",
 			}),
 			eleicaoDeExemplo({
 				ano: 2026,
 				cargo: { codigo: 5, nome: "Senador" },
 				total_centavos: 241_000_000,
 				total_corrigido_centavos: 241_337_400,
+				resultado: "eleito",
+				variacao: {
+					ano_anterior: 2018,
+					diferenca_centavos: 131_337_400,
+					percentual: "119.4",
+				},
 			}),
 		],
 		correcao_ipca: correcaoDeExemplo(),

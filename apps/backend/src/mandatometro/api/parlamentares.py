@@ -28,12 +28,14 @@ from mandatometro.api.esquemas import (
     EleicaoPatrimonio,
     ErroParlamentar,
     FontePatrimonio,
+    FotoParlamentar,
     ListaParlamentares,
     ListaVotosParlamentar,
     MandatoPublico,
     ParlamentarPublico,
     PatrimonioParlamentar,
     TemaPublico,
+    VariacaoPatrimonio,
     VotoParlamentar,
 )
 from mandatometro.db import sessao as sessao_do_banco
@@ -51,6 +53,7 @@ from mandatometro.temas import TemaId
 from mandatometro.tse_catalogos import CARGOS_TSE, MAXIMO_CENTAVOS
 
 ORDEM_DOS_VOTOS = (Votacao.data.desc(), Votacao.id.desc())
+PISO_PERCENTUAL_CENTAVOS = 5_000_000
 
 
 router = APIRouter(
@@ -112,6 +115,19 @@ def listar_parlamentares(
         )
 
 
+def _foto_parlamentar(parlamentar: Parlamentar) -> FotoParlamentar:
+    codigo = parlamentar.id_externo
+    if parlamentar.casa == "camara":
+        return FotoParlamentar(
+            url=f"https://www.camara.leg.br/internet/deputado/bandep/{codigo}.jpg",
+            credito="Câmara dos Deputados",
+        )
+    return FotoParlamentar(
+        url=f"https://legis.senado.leg.br/senadores/fotos-oficiais/{codigo}",
+        credito="Senado Federal",
+    )
+
+
 @router.get(
     "/{id}",
     summary="Ler um parlamentar, seus mandatos e a contagem de votos gravados",
@@ -148,6 +164,7 @@ def obter_parlamentar(id: IdCongresso):
             casa=parlamentar.casa,
             uf=mandatos[0].uf if mandatos else None,
             partido=recente.partido if recente else None,
+            foto=_foto_parlamentar(parlamentar),
             mandatos=mandatos,
             contagem_votos=contagem_por_valor(contagem),
         )
@@ -193,6 +210,27 @@ def _total_corrigido(total: int | None, fator: Decimal | None) -> int | None:
     return centavos if centavos <= MAXIMO_CENTAVOS else None
 
 
+def _indicadores_ipca(fator: Decimal | None) -> tuple[str | None, str | None]:
+    if fator is None:
+        return None, None
+    with localcontext() as contexto:
+        digitos = fator.as_tuple()
+        # A subtração alinha o 1 à escala do fator, mesmo em uma deflação acumulada.
+        contexto.prec = max(len(digitos.digits), 1 - digitos.exponent) + 4
+        contexto.rounding = ROUND_HALF_UP
+        return f"{fator:.4f}", f"{(fator - 1) * 100:.1f}"
+
+
+def _variacao_patrimonio(atual: int, anterior: tuple[int, int]) -> VariacaoPatrimonio:
+    ano, total_anterior = anterior
+    diferenca = atual - total_anterior
+    percentual = None
+    if total_anterior > PISO_PERCENTUAL_CENTAVOS:
+        taxa = Decimal(diferenca) * 100 / total_anterior
+        percentual = str(taxa.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
+    return VariacaoPatrimonio(ano_anterior=ano, diferenca_centavos=diferenca, percentual=percentual)
+
+
 @router.get(
     "/{id}/patrimonio",
     summary="Listar o patrimônio declarado ao TSE por eleição",
@@ -211,6 +249,7 @@ def obter_patrimonio_parlamentar(id: IdCongresso):
                 eleicao.ano,
                 eleicao.cargo,
                 eleicao.uf,
+                eleicao.resultado,
                 func.sum(BemDeclarado.valor_centavos),
                 Fonte.url,
                 Fonte.coletado_em,
@@ -224,9 +263,18 @@ def obter_patrimonio_parlamentar(id: IdCongresso):
         ).all()
         correcao, fatores = _correcao_ipca(sessao)
         eleicoes = []
-        for ano, cargo, uf, total, url, coletado_em in registros:
+        anterior = None
+        for ano, cargo, uf, resultado, total, url, coletado_em in registros:
             inicio = date(ano, 10, 1)
             nominal = int(total) if total is not None else None
+            fator = fatores.get(inicio)
+            corrigido = _total_corrigido(nominal, fator)
+            fator_ipca, alta_ipca_percentual = _indicadores_ipca(fator)
+            variacao = None
+            if corrigido is not None:
+                if anterior is not None:
+                    variacao = _variacao_patrimonio(corrigido, anterior)
+                anterior = ano, corrigido
             eleicoes.append(
                 EleicaoPatrimonio(
                     ano=ano,
@@ -237,7 +285,11 @@ def obter_patrimonio_parlamentar(id: IdCongresso):
                     total_centavos=nominal,
                     fonte=FontePatrimonio(url=url, coletado_em=coletado_em),
                     mes_inicio=inicio.strftime("%Y-%m"),
-                    total_corrigido_centavos=_total_corrigido(nominal, fatores.get(inicio)),
+                    total_corrigido_centavos=corrigido,
+                    resultado=resultado,
+                    fator_ipca=fator_ipca,
+                    alta_ipca_percentual=alta_ipca_percentual,
+                    variacao=variacao,
                 )
             )
         return PatrimonioParlamentar(eleicoes=eleicoes, correcao_ipca=correcao)

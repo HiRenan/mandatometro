@@ -561,6 +561,28 @@ describe("página inicial", () => {
 		).toBe("true");
 	});
 
+	it("ao lado do bloco dos parlamentares, o enfeite é o mapa da lista: os 27 estados nas fitas das regiões, sem link", async () => {
+		await mostrar(pagina, { parlamentares: true });
+		const enfeite = screen
+			.getByRole("region", { name: "Quem representa o seu estado" })
+			.querySelector("svg.mapa-de-enfeite");
+
+		expect(enfeite?.getAttribute("aria-hidden")).toBe("true");
+		expect(enfeite?.querySelector("a")).toBeNull();
+		expect(
+			[...(enfeite?.querySelectorAll(".regiao-do-mapa") ?? [])].map(
+				(regiao) =>
+					`${regiao.classList[1]} ${regiao.querySelectorAll("path").length}`,
+			),
+		).toEqual([
+			"fita-verde 7",
+			"fita-amarela 9",
+			"fita-azul 4",
+			"fita-rosa 3",
+			"fita-vermelha 4",
+		]);
+	});
+
 	it("sem a API, o bloco dos parlamentares não aparece", async () => {
 		await mostrar();
 

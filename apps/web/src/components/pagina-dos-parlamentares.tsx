@@ -24,7 +24,7 @@ const CONSTITUICAO =
 /**
  * Os parlamentares por estado, em /parlamentares (o Renan, em 21/11/2026: o
  * cartaz com painel de dados). O cartaz das páginas de dentro tem, no lugar do
- * painel de enfeite, o Brasil em 27 azulejos (o MapaDosEstados), e o campo
+ * painel de enfeite, o mapa do Brasil (o MapaDosEstados), e o campo
  * "Estado", que funciona sem o JavaScript. Com um estado no endereço (?uf=SC),
  * o título vira o nome dele, e embaixo vêm os deputados e os senadores em
  * exercício, cada nome com o partido e o link para a página da pessoa. No
@@ -46,7 +46,7 @@ export function PaginaDosParlamentares({
 			<CartazDosParlamentares
 				titulo={estado ? estado.nome : "Parlamentares"}
 				migalha={Boolean(estado)}
-				mapa={<MapaDosEstados estados={estados} />}
+				mapa={<MapaDosEstados estados={estados} escolhido={escolhido?.sigla} />}
 			>
 				{estado && escolhido ? (
 					<>

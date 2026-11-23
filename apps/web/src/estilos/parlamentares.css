@@ -1,7 +1,7 @@
 /*
  * Os parlamentares e as votações (DESIGN.md). As três páginas usam o cartaz das
  * páginas de dentro, com o painel de dados (o Renan, em 21/11/2026): na lista,
- * o Brasil em 27 azulejos; na votação, o plenário, um azulejo por voto; na
+ * o mapa do Brasil; na votação, o plenário, um azulejo por voto; na
  * página da pessoa, o painel de enfeite. Embaixo do cartaz, o corpo segue a
  * margem da página (o .artigos do index.css). Daqui, saem o mapa, o campo
  * "Estado", as listas de nomes, os mandatos, como votou, os votos da pessoa, o
@@ -11,17 +11,19 @@
  * components/parlamentares/.
  *
  * Tudo em papel e tinta: o voto não tem cor (o Sim não é verde, e o Não não é
- * vermelho), e a fita só aparece como tira, sem texto em cima.
+ * vermelho), e a fita nunca leva texto em cima: aparece como tira ou, no mapa,
+ * no desenho dos estados.
  */
 @layer components {
 	/* ───── A lista: o mapa e o campo "Estado" ───── */
 
 	/*
-	 * O mapa, uma grade de 6 colunas e 8 fileiras, com um azulejo por estado, na
-	 * posição aproximada dele (lib/parlamentares/estados.ts). No celular e no
-	 * tablet, ele vem depois do pé do cartaz, até 26 rem de largura; a partir do
-	 * lg, fica nos 30% da direita, no lugar do painel de enfeite, que só fica no
-	 * celular, como a faixa de cima das outras páginas.
+	 * O mapa do Brasil, com cada estado na fita da região (lib/parlamentares/
+	 * tracado.ts). No celular e no tablet, ele vem depois do pé do cartaz, até
+	 * 26 rem de largura; a partir do lg, fica nos 30% da direita, no lugar do
+	 * painel de enfeite, que só fica no celular, como a faixa de cima das outras
+	 * páginas. Embaixo do desenho vêm a linha do estado, os azulejos dos estados
+	 * estreitos e a legenda.
 	 */
 	.mapa-dos-estados {
 		container: mapa / inline-size;
@@ -30,24 +32,221 @@
 	}
 
 	.mapa {
-		display: grid;
-		grid-template-columns: repeat(6, minmax(0, 1fr));
-		grid-template-rows: repeat(8, auto);
-		gap: 4px;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
 	}
 
 	/*
-	 * Cada azulejo: a folha clara com fio de tinta e a tira da fita da posição em
-	 * cima. A sigla, grande, e o número de deputados, pequeno, ficam no papel. O
-	 * estado aberto fica em tinta. Quando o ponteiro passa, o azulejo sobe, com a
-	 * sombra dura, como as folhas.
+	 * O desenho, que serve também ao enfeite da página inicial: o fio de 1 px
+	 * entre os estados e o de 2 px entre as regiões e em volta do país, com a
+	 * mesma largura em qualquer tamanho. As regiões se leem também sem a cor.
+	 */
+	.desenho-do-brasil {
+		display: block;
+		width: 100%;
+		height: auto;
+		overflow: visible;
+		stroke-linejoin: round;
+	}
+
+	.desenho-do-brasil path {
+		vector-effect: non-scaling-stroke;
+	}
+
+	/* Cada estado herda do grupo da região a fita e o fio. */
+	.regiao-do-mapa {
+		fill: var(--fita);
+		stroke: var(--tinta);
+		stroke-width: 1px;
+	}
+
+	.regiao-do-mapa path {
+		transition: fill 0.2s;
+	}
+
+	.fronteiras-das-regioes,
+	.contorno-do-brasil {
+		fill: none;
+		stroke: var(--tinta);
+		stroke-width: 2px;
+		stroke-linecap: round;
+		pointer-events: none;
+	}
+
+	/* Com um estado em destaque, as outras regiões ficam no papel, como o azulejo cru. */
+	.regiao-do-mapa.apagada {
+		--fita: var(--papel-3);
+	}
+
+	/* Antes do destaque do React, a região responde ao foco ou ao ponteiro. */
+	.desenho-do-brasil:not(:has(.estado-em-destaque)) {
+		&:has(.estado-no-mapa:focus-visible)
+			> .regiao-do-mapa:not(:has(.estado-no-mapa:focus-visible)),
+		&:not(:has(.estado-no-mapa:focus-visible)):has(.estado-no-mapa:hover)
+			> .regiao-do-mapa:not(:has(.estado-no-mapa:hover)) {
+			--fita: var(--papel-3);
+		}
+	}
+
+	/*
+	 * O link do estado repete a fita e o fio do grupo: o Chrome pinta o link
+	 * visitado com as cores das regras dele mesmo, e o fill herdado de um pai que
+	 * não é link cai no preto. Sem isso, cada estado já aberto pelo mapa ficava em
+	 * tinta, como o aberto.
 	 */
 	.estado-no-mapa {
+		fill: var(--fita);
+		stroke: var(--tinta);
+		cursor: pointer;
+	}
+
+	/* O foco que vem no HTML dá lugar ao anel da cópia que sobe. */
+	@supports selector(:has(*)) {
+		.estado-no-mapa:focus-visible {
+			outline: none;
+		}
+	}
+
+	.focos-nativos {
+		pointer-events: none;
+	}
+
+	.foco-nativo {
+		display: none;
+	}
+
+	.desenho-do-brasil:has(.estado-em-destaque.com-foco) .focos-nativos {
+		display: none;
+	}
+
+	/* O estado aberto fica em tinta. */
+	.estado-no-mapa[aria-current="page"] {
+		fill: var(--tinta);
+	}
+
+	/*
+	 * O estado em destaque, numa cópia que vem depois de tudo, porque o SVG não
+	 * tem z-index: a sombra de tinta fica no lugar, e o estado sobe 8 unidades do
+	 * desenho, uns 3 px no painel de 1366 px, como os azulejos. Com o foco do
+	 * teclado, ele leva um fio de tinta de 2 px, o anel de 3 px em volta e um fio
+	 * claro de 2 px por fora: a tinta tem contraste com as cinco fitas; o anel,
+	 * com o papel e o amarelo; e o fio claro, com o verde, o azul, o rosa e o
+	 * vermelho dos vizinhos da mesma região, contra os quais o anel some, e com a
+	 * tinta do estado aberto.
+	 */
+	.estado-em-destaque {
+		pointer-events: none;
+	}
+
+	.estado-em-destaque .sombra {
+		fill: var(--tinta);
+		stroke: var(--tinta);
+		stroke-width: 4px;
+	}
+
+	.estado-em-destaque .subida {
+		translate: 0 -8px;
+		animation: estado-sobe 0.3s var(--ease-mola) both;
+	}
+
+	.foco-nativo .estado,
+	.estado-em-destaque .estado {
+		fill: var(--fita);
+		stroke: var(--tinta);
+		stroke-width: 2px;
+	}
+
+	.foco-nativo .estado,
+	.estado-em-destaque.com-foco .estado {
+		stroke-width: 4px;
+		paint-order: stroke;
+	}
+
+	.foco-nativo.aberto .estado,
+	.estado-em-destaque.aberto .estado {
+		fill: var(--tinta);
+	}
+
+	.foco-nativo .anel,
+	.estado-em-destaque .anel {
+		fill: none;
+		stroke: var(--ring);
+		stroke-width: 10px;
+	}
+
+	.foco-nativo .fio-claro,
+	.estado-em-destaque .fio-claro {
+		fill: none;
+		stroke: var(--folha);
+		stroke-width: 14px;
+	}
+
+	@keyframes estado-sobe {
+		from {
+			translate: 0 0;
+		}
+	}
+
+	/*
+	 * A linha do estado em destaque: o nome e, numa faixa, a região e os
+	 * deputados. Em repouso, o estado aberto, ou "Escolha um estado.". A altura
+	 * fica guardada para as duas linhas: o que vem embaixo não pula.
+	 */
+	.ficha-do-mapa {
+		display: grid;
+		align-content: center;
+		gap: 0.2rem;
+		min-height: 3rem;
+	}
+
+	/*
+	 * A faixa da linha fica sem a entrada da faixa do cartaz (o .cartaz-medio
+	 * .faixa do index.css): ela nasce de novo a cada volta do "Escolha um
+	 * estado.", e a entrada a esconderia por 0,5 s, com o nome já à vista. O span
+	 * no seletor deixa a regra mais específica que a do index.css, que vem depois.
+	 */
+	.ficha-do-mapa span.faixa {
+		animation: none;
+	}
+
+	.nome-na-ficha {
+		font-family: var(--font-sans);
+		font-size: 1.0625rem;
+		font-weight: 700;
+		line-height: 1.25;
+	}
+
+	.ficha-vazia {
+		font-family: var(--font-serif);
+		color: var(--tinta-suave);
+	}
+
+	/*
+	 * Os azulejos dos estados estreitos: oito numa fileira onde cabem (oito de
+	 * 44 px e sete vãos de 4 px pedem 23,75 rem), senão duas de quatro. Cada um é
+	 * a folha clara com fio de tinta e a fita da região numa tira em cima, com a
+	 * sigla grande e o número de deputados pequeno, no papel. O estado aberto fica
+	 * em tinta. O azulejo sobe com o ponteiro, nele ou no estado do mapa, e mostra
+	 * o anel quando o estado do mapa tem o foco do teclado.
+	 */
+	.atalhos-do-mapa {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 4px;
+	}
+
+	@container mapa (width >= 23.75rem) {
+		.atalhos-do-mapa {
+			grid-template-columns: repeat(8, minmax(0, 1fr));
+		}
+	}
+
+	.atalho-do-estado {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		aspect-ratio: 1;
 		min-height: 2.75rem;
 		padding-top: 5px;
 		border: 2px solid var(--tinta);
@@ -61,31 +260,32 @@
 			box-shadow 0.3s;
 	}
 
-	.estado-no-mapa:hover {
+	.atalho-do-estado:hover,
+	.atalho-do-estado.aceso {
 		translate: 0 -3px;
 		box-shadow:
 			inset 0 5px 0 var(--fita),
 			0 4px 0 var(--tinta);
 	}
 
-	.estado-no-mapa:focus-visible {
+	.atalho-do-estado.com-foco {
 		outline: 3px solid var(--ring);
 		outline-offset: 2px;
 	}
 
-	.estado-no-mapa[aria-current="page"] {
+	.atalho-do-estado[aria-current="page"] {
 		background: var(--tinta);
 		color: var(--papel);
 	}
 
-	.estado-no-mapa .sigla {
+	.atalho-do-estado .sigla {
 		font-family: var(--font-sans);
 		font-size: 1.125rem;
 		font-stretch: 62%;
 		font-weight: 900;
 	}
 
-	.estado-no-mapa .numero {
+	.atalho-do-estado .numero {
 		margin-top: 0.15rem;
 		font-family: var(--font-sans);
 		font-size: 0.75rem;
@@ -93,35 +293,109 @@
 		font-variant-numeric: lining-nums tabular-nums;
 	}
 
-	/* No mapa, o nome do estado fica só para o leitor de tela. */
-	.estado-no-mapa .nome {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
+	/* A legenda: as cinco regiões em palavras, cada uma com o quadradinho da fita. */
+	.legenda-do-mapa {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem 0.9rem;
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		font-weight: 600;
+	}
+
+	.legenda-do-mapa li {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.legenda-do-mapa li::before {
+		content: "";
+		width: 0.75rem;
+		height: 0.75rem;
+		border: 1px solid var(--tinta);
+		background: var(--fita);
+	}
+
+	.credito-do-mapa {
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		color: var(--tinta-suave);
+	}
+
+	.credito-do-mapa a {
+		display: inline-grid;
+		align-items: center;
+		min-height: 2.75rem;
+		text-decoration: underline;
+	}
+
+	@media (forced-colors: active) {
+		.desenho-do-brasil {
+			forced-color-adjust: none;
+		}
+
+		.regiao-do-mapa,
+		.estado-no-mapa {
+			fill: Canvas;
+			stroke: CanvasText;
+		}
+
+		.fronteiras-das-regioes,
+		.contorno-do-brasil {
+			stroke: CanvasText;
+		}
+
+		.foco-nativo .anel,
+		.estado-em-destaque .anel {
+			stroke: Highlight;
+		}
+
+		.foco-nativo .fio-claro,
+		.estado-em-destaque .fio-claro {
+			stroke: Canvas;
+		}
+
+		.estado-em-destaque .sombra {
+			fill: CanvasText;
+			stroke: CanvasText;
+		}
+
+		.foco-nativo .estado,
+		.estado-em-destaque .estado {
+			fill: Highlight;
+			stroke: CanvasText;
+		}
+
+		.estado-no-mapa[aria-current="page"],
+		.foco-nativo.aberto .estado,
+		.estado-em-destaque.aberto .estado {
+			fill: CanvasText;
+		}
 	}
 
 	/*
-	 * A lista dos estados, em ordem alfabética, no lugar do mapa quando o azulejo
-	 * ficaria com menos de 44 px: seis de 44 px e cinco vãos de 4 px pedem 17,75
-	 * rem. A régua é a da letra: com a letra a 200%, a lista aparece em toda tela
-	 * de celular.
+	 * A lista dos estados, em ordem alfabética, no lugar do mapa quando ele fica
+	 * com menos de 17,75 rem, como a 320 px. A régua é a da letra: com a letra a
+	 * 200%, a lista aparece em toda tela de celular. A partir do lg, o mapa fica
+	 * sempre: no painel de 992 px, ele tem menos de 17,75 rem, e a lista de 27
+	 * linhas passaria do cartaz.
 	 */
 	.lista-de-estados {
 		display: none;
 	}
 
-	@container mapa (width < 17.75rem) {
-		.mapa {
-			display: none;
-		}
+	@media (width < 62rem) {
+		@container mapa (width < 17.75rem) {
+			.mapa {
+				display: none;
+			}
 
-		.lista-de-estados {
-			display: grid;
-			grid-template-columns: minmax(0, 1fr);
-			border-top: 2px solid var(--tinta);
+			.lista-de-estados {
+				display: grid;
+				grid-template-columns: minmax(0, 1fr);
+				border-top: 2px solid var(--tinta);
+			}
 		}
 	}
 
@@ -220,6 +494,23 @@
 			border-left: 2px solid var(--tinta);
 			background: var(--papel-2);
 		}
+
+		/*
+		 * O desenho toma a altura que sobra depois da linha, dos azulejos e da
+		 * legenda: na tela larga e baixa, ele encolhe, e nada passa do cartaz.
+		 */
+		.mapa {
+			min-height: 0;
+		}
+
+		.mapa > * {
+			flex: none;
+		}
+
+		.mapa > .desenho-do-brasil {
+			flex: 0 1 auto;
+			min-height: 0;
+		}
 	}
 
 	/* ───── A lista: os nomes de cada Casa ───── */
@@ -302,6 +593,200 @@
 		--letra: clamp(2.75rem, 1.2rem + 5.5vw, 7.5rem);
 	}
 
+	/*
+	 * A foto oficial, como um retrato colado nos azulejos (o Renan, em 23/11/2026:
+	 * "Retrato na parede"): a foto numa margem de papel, com o fio de tinta e o
+	 * crédito da Casa. A moldura guarda o lugar com o azulejo cru, papel sobre
+	 * papel, enquanto a foto chega e quando ela não chega: nada pula
+	 * (components/parlamentares/foto-oficial.tsx). O rosto fica no alto da foto, e
+	 * o corte, quando há, sai de baixo. O --passe é a margem de papel em volta da
+	 * foto dentro da moldura.
+	 */
+	.moldura-da-foto {
+		--passe: 0px;
+		position: relative;
+		overflow: clip;
+		background: var(--azulejo-cru);
+		background-clip: content-box;
+	}
+
+	.foto-oficial {
+		margin: 0;
+		--azulejo-cru: radial-gradient(
+				circle at 0 0,
+				var(--papel-3) 70.2%,
+				transparent 70.8%
+			)
+			var(--papel-2);
+	}
+
+	.moldura-da-foto img {
+		position: absolute;
+		inset: var(--passe);
+		width: calc(100% - 2 * var(--passe));
+		height: calc(100% - 2 * var(--passe));
+		object-fit: cover;
+		object-position: 50% 0;
+	}
+
+	/* Sem o JavaScript, a foto que não chega fica coberta pelo azulejo cru: o
+	   ::after só aparece na imagem quebrada, por cima do ícone e do nome. */
+	.moldura-da-foto img::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: var(--azulejo-cru);
+	}
+
+	.credito-da-foto {
+		color: var(--tinta-suave);
+	}
+
+	/* A foto que não chegou esconde o crédito, mas o lugar dele fica: sem ele,
+	   o nome subiria no celular, e a área da foto poderia crescer no computador. */
+	.foto-que-falhou .credito-da-foto {
+		visibility: hidden;
+	}
+
+	/*
+	 * No computador, o retrato toma o lugar de 2 × 3 azulejos do painel (da segunda
+	 * e da terceira coluna, a partir da segunda fileira), com o fio de tinta sobre
+	 * o rejunte em volta e o crédito embaixo, na margem de papel. O lado do azulejo
+	 * vem da largura do painel: 30% da página (o 30cqi), com as quatro colunas e os
+	 * 2 px de rejunte. O retrato fica por cima do painel e fora do fluxo, e o nome
+	 * e o pé do cartaz não mudam de lugar. O cartaz cresce só se o retrato e uma
+	 * fileira embaixo dele não couberem, numa tela muito larga.
+	 * A área da foto fica em 3:4, e o crédito fica no meio da margem de papel
+	 * que sobra embaixo. A foto pode encolher quando o crédito usa mais linhas.
+	 */
+	@media (width >= 62rem) {
+		.cartaz-do-parlamentar.com-foto {
+			--azulejo: calc((30cqi - 6px) / 4);
+			min-height: max(
+				min(44rem, calc(100svh - var(--topo))),
+				calc(5 * var(--azulejo) + 8px)
+			);
+		}
+
+		.foto-oficial {
+			position: absolute;
+			z-index: 1;
+			top: var(--azulejo);
+			right: var(--azulejo);
+			display: flex;
+			flex-direction: column;
+			width: calc(2 * var(--azulejo) + 6px);
+			height: calc(3 * var(--azulejo) + 8px);
+			padding: 8px 8px 0;
+			border: 2px solid var(--tinta);
+			background: var(--papel);
+		}
+
+		.moldura-da-foto {
+			flex: 0 1 auto;
+			min-height: 0;
+			aspect-ratio: 3 / 4;
+		}
+
+		.credito-da-foto {
+			flex: 1 0 auto;
+			align-content: center;
+		}
+	}
+
+	/*
+	 * No celular e no tablet, o retrato cola na faixa de azulejos, por cima da
+	 * segunda fileira e alinhado à margem do texto, com a migalha e o crédito ao
+	 * lado. A foto vem depois do nome no HTML: a grade põe cada peça no lugar. O
+	 * tamanho vai em px e cqi, como a margem do celular, e não cresce com a letra.
+	 * A --fileira é a altura de uma fileira da faixa (6 azulejos; 10 a partir de
+	 * 40rem), e o --vao, o vão entre as peças do cartaz médio.
+	 */
+	@media (width < 62rem) {
+		.cartaz-do-parlamentar.com-foto {
+			--foto: clamp(96px, 30cqi, 160px);
+			--fileira: calc((100cqi - 10px) / 6);
+			--vao: clamp(1rem, 2.5vh, 1.75rem);
+			display: grid;
+			grid-template-columns: var(--foto) minmax(0, 1fr);
+			grid-template-areas:
+				"mural mural"
+				"foto migalhas"
+				"foto credito"
+				"titulo titulo"
+				"pe pe";
+			grid-template-rows: auto auto 1fr auto auto;
+			column-gap: 16px;
+			row-gap: var(--vao);
+		}
+
+		.com-foto > .mural {
+			grid-area: mural;
+		}
+
+		.com-foto > .migalhas {
+			grid-area: migalhas;
+			align-self: start;
+		}
+
+		.com-foto > h1 {
+			grid-area: titulo;
+		}
+
+		.com-foto > .cartaz-pe {
+			grid-area: pe;
+		}
+
+		.com-foto > .foto-oficial {
+			display: contents;
+		}
+
+		.com-foto .moldura-da-foto {
+			--passe: 5px;
+			grid-area: foto;
+			z-index: 1;
+			aspect-ratio: 3 / 4;
+			margin-top: calc(-1 * (var(--fileira) + var(--vao)));
+			padding: var(--passe);
+			border: 2px solid var(--tinta);
+			box-shadow: inset 0 0 0 var(--passe) var(--papel);
+		}
+
+		.com-foto .credito-da-foto {
+			grid-area: credito;
+			align-self: end;
+		}
+	}
+
+	@media (width >= 40rem) and (width < 62rem) {
+		.cartaz-do-parlamentar.com-foto {
+			--fileira: calc((100cqi - 18px) / 10);
+		}
+	}
+
+	/* Com a letra grande, a migalha e o crédito descem para baixo da foto. */
+	@media (width < 22rem) {
+		.cartaz-do-parlamentar.com-foto {
+			grid-template-columns: var(--foto) minmax(0, 1fr);
+			grid-template-areas:
+				"mural mural"
+				"foto foto"
+				"credito credito"
+				"migalhas migalhas"
+				"titulo titulo"
+				"pe pe";
+			grid-template-rows: auto;
+		}
+
+		.com-foto .moldura-da-foto {
+			width: var(--foto);
+		}
+
+		.com-foto .credito-da-foto {
+			margin-top: calc(-0.5 * var(--vao));
+		}
+	}
+
 	.corpo-dos-parlamentares {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
@@ -320,9 +805,15 @@
 
 	/*
 	 * Como votou: cada voto numa linha, com o número grande em tinta à esquerda,
-	 * e o nome, a regra e o artigo do regimento à direita. Com a letra grande, o
-	 * número vai para cima do nome.
+	 * e o nome, a barra, a regra e o artigo do regimento à direita. Com a letra
+	 * grande, o número vai para cima do nome.
 	 */
+	.legenda-das-barras {
+		max-width: 46rem;
+		margin-bottom: 1rem;
+		color: var(--tinta-suave);
+	}
+
 	.tipos-de-voto {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
@@ -335,11 +826,41 @@
 		grid-template-columns: 5.5rem minmax(0, 1fr);
 		grid-template-areas:
 			"numero nome"
+			"numero barra"
 			"numero regra";
 		column-gap: var(--respiro);
 		row-gap: 0.3rem;
 		padding: 1rem 0;
 		border-bottom: 1px solid var(--tinta);
+	}
+
+	/*
+	 * A barra de cada voto (o Renan, em 23/11/2026: "Barra em cada voto"): a parte
+	 * dele no total da contagem (o --parte), em tinta, sobre um trilho em Papel 2,
+	 * que mostra o total inteiro. Com 4 px no mínimo, um voto acima de zero não
+	 * some. Ela se risca quando entra na tela, como a do patrimônio
+	 * (estilos/movimento.css).
+	 */
+	.trilho-do-tipo {
+		grid-area: barra;
+		height: 0.5rem;
+		margin-block: 0.2rem;
+		background: var(--papel-2);
+	}
+
+	.barra-do-tipo {
+		display: block;
+		width: max(4px, calc(var(--parte) * 100%));
+		height: 100%;
+		background: var(--tinta);
+		transform-origin: 0 50%;
+	}
+
+	@media (forced-colors: active) {
+		.barra-do-tipo {
+			forced-color-adjust: none;
+			background: CanvasText;
+		}
 	}
 
 	.nome-do-tipo {
@@ -401,6 +922,7 @@
 			grid-template-areas:
 				"numero"
 				"nome"
+				"barra"
 				"regra";
 		}
 	}
@@ -529,11 +1051,12 @@
 	/* ───── A página do parlamentar: o patrimônio declarado ───── */
 
 	/*
-	 * O patrimônio declarado ao TSE: o texto, o aviso com o fio de tinta do desvio
-	 * e uma linha por eleição entre fios, como os votos. O ano fica em número
-	 * grande à esquerda, como em "Como votou"; a partir de 48rem, o valor em
-	 * destaque e a barra vão para uma terceira coluna, à direita. As grades ficam
-	 * em volta dos parágrafos, e não neles (a #152).
+	 * O patrimônio declarado ao TSE: o texto, o aviso com o fio de tinta do desvio,
+	 * o gráfico dos valores de hoje e uma linha por eleição entre fios, como os
+	 * votos. O ano fica em número grande à esquerda, como em "Como votou"; a partir
+	 * de 48rem, o valor em destaque, a diferença e o período vão para uma terceira
+	 * coluna, à direita. As grades ficam em volta dos parágrafos, e não neles (a
+	 * #152).
 	 */
 	.texto-do-patrimonio {
 		max-width: 39rem;
@@ -546,6 +1069,86 @@
 		margin-top: 1rem;
 		padding-left: 1rem;
 		border-left: 5px solid var(--tinta);
+	}
+
+	/*
+	 * O gráfico "Em reais de hoje" (o Renan, em 23/11/2026: "Um gráfico só, no
+	 * alto"): uma linha por eleição, com o ano, a barra e o valor arredondado. As
+	 * linhas ficam numa grade só, cada uma como subgrade, para a coluna do valor
+	 * ter a mesma largura em todas e as barras, a mesma régua. Com a coluna
+	 * estreita (a letra grande ou a tela pequena), o valor sobe para cima da barra.
+	 */
+	.grafico-do-patrimonio {
+		container: grafico-do-patrimonio / inline-size;
+		max-width: 46rem;
+		margin-top: 1.5rem;
+	}
+
+	.titulo-do-grafico {
+		margin-bottom: 0.75rem;
+		color: var(--tinta-suave);
+	}
+
+	.linhas-do-grafico {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		column-gap: 0.75rem;
+		row-gap: 0.5rem;
+	}
+
+	.linha-do-grafico {
+		display: grid;
+		grid-column: 1 / -1;
+		grid-template-columns: subgrid;
+		align-items: center;
+	}
+
+	.ano-do-grafico,
+	.valor-do-grafico {
+		font-family: var(--font-sans);
+		font-size: 1.125rem;
+		font-stretch: 62%;
+		font-weight: 900;
+		line-height: 1.15;
+		font-variant-numeric: lining-nums tabular-nums;
+	}
+
+	.sem-valor-do-grafico {
+		grid-column: 2 / -1;
+		font-family: var(--font-serif);
+		font-size: 0.9375rem;
+		line-height: 1.4;
+		color: var(--tinta-suave);
+	}
+
+	@container grafico-do-patrimonio (width < 20rem) {
+		.linhas-do-grafico {
+			grid-template-columns: auto minmax(0, 1fr);
+			row-gap: 0.75rem;
+		}
+
+		.linha-do-grafico {
+			row-gap: 0.25rem;
+		}
+
+		.ano-do-grafico {
+			grid-row: 1 / span 2;
+			align-self: start;
+		}
+
+		.valor-do-grafico {
+			grid-row: 1;
+			grid-column: 2;
+		}
+
+		.trilho-do-grafico {
+			grid-row: 2;
+			grid-column: 2;
+		}
+
+		.sem-valor-do-grafico {
+			grid-column: 2;
+		}
 	}
 
 	.eleicoes-do-patrimonio {
@@ -622,30 +1225,56 @@
 	}
 
 	.legenda-do-valor,
+	.periodo-da-eleicao,
 	.arquivo-sem-link,
 	.detalhes-da-eleicao > .coletado-em,
 	.correcao-do-patrimonio > .coletado-em {
 		color: var(--tinta-suave);
 	}
 
-	.sem-total-da-eleicao {
+	.sem-total-da-eleicao,
+	.resultado-da-eleicao {
 		max-width: 30rem;
 		font-family: var(--font-serif);
 		font-size: 1rem;
 		line-height: 1.5;
 	}
 
+	.resultado-da-eleicao {
+		margin-top: 0.5rem;
+	}
+
 	/*
-	 * A barra: a parte do maior valor de hoje da pessoa (o --parte, que vem do
-	 * servidor), em tinta, sem cor de ganho nem de perda. Com 4 px no mínimo, um
-	 * valor acima de zero não some. Ela se risca a partir da esquerda quando entra
-	 * na tela (estilos/movimento.css).
+	 * A diferença para a eleição anterior, como no esboço do Renan (22/11/2026):
+	 * em tinta, sem cor de ganho nem de perda. O "a mais" e o "a menos" vão em
+	 * palavras, e o sinal fica no percentual. Embaixo, de que mês a que mês a
+	 * inflação corrige o valor.
+	 */
+	.diferenca-da-eleicao {
+		margin-top: 0.3rem;
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 700;
+		line-height: 1.4;
+		font-variant-numeric: lining-nums;
+	}
+
+	.periodo-da-eleicao {
+		font-family: var(--font-serif);
+		font-size: 0.9375rem;
+		line-height: 1.4;
+	}
+
+	/*
+	 * A barra do gráfico: a parte do maior valor de hoje da pessoa (o --parte, que
+	 * vem do servidor), em tinta, sem cor de ganho nem de perda. Com 4 px no
+	 * mínimo, um valor acima de zero não some. Ela se risca a partir da esquerda
+	 * quando entra na tela (estilos/movimento.css).
 	 */
 	.barra-do-patrimonio {
 		display: block;
 		width: max(4px, calc(var(--parte) * 100%));
 		height: 0.75rem;
-		margin-top: 0.4rem;
 		background: var(--tinta);
 		transform-origin: 0 50%;
 	}
@@ -689,11 +1318,38 @@
 		margin-top: 1rem;
 	}
 
+	/*
+	 * Como calculamos os reais de hoje: o método, uma frase por eleição com o link
+	 * da Calculadora do Cidadão e, no fim, a série do IPCA.
+	 */
 	.correcao-do-patrimonio {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		justify-items: start;
-		margin-top: 1rem;
+		margin-top: 2rem;
+	}
+
+	.titulo-da-correcao {
+		margin-bottom: 0.6rem;
+		font-family: var(--font-sans);
+		font-size: 1.25rem;
+		font-stretch: 68%;
+		font-weight: 900;
+		line-height: 1.15;
+		text-transform: uppercase;
+	}
+
+	.calculos-do-patrimonio {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		justify-items: start;
+		margin-top: 0.75rem;
+	}
+
+	.calculo-da-eleicao {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		justify-items: start;
 	}
 
 	@media (width >= 40rem) {
@@ -1237,8 +1893,9 @@
 
 	/*
 	 * O bloco depois do caminho: o título, a frase e o campo, entre o fio de cima
-	 * e a folha da newsletter. A partir do md, o mapa de enfeite fica à direita,
-	 * com os 27 azulejos nas cinco fitas, sem texto.
+	 * e a folha da newsletter. A partir do md, o mapa de enfeite fica à direita:
+	 * o mesmo desenho do mapa da lista, nas fitas das regiões, sem link e sem
+	 * texto.
 	 */
 	.quem-representa {
 		display: grid;
@@ -1281,15 +1938,7 @@
 		}
 
 		.mapa-de-enfeite {
-			display: grid;
-			grid-template-columns: repeat(6, minmax(0, 1fr));
-			gap: 4px;
-		}
-
-		.mapa-de-enfeite > span {
-			aspect-ratio: 1;
-			border: 2px solid var(--tinta);
-			background: var(--fita);
+			display: block;
 		}
 	}
 

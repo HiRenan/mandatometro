@@ -1,64 +1,75 @@
-// Os 27 estados, com o nome, a preposição e o lugar no mapa da lista dos
-// parlamentares (/parlamentares). O mapa é uma grade de 6 colunas e 8 fileiras,
-// um azulejo por estado, na posição aproximada dele no Brasil: o Norte em cima
-// à esquerda, o Nordeste em cima à direita e o Sul embaixo. A ordem da lista é
-// a das fileiras do desenho, da esquerda para a direita, e o HTML segue essa
-// ordem: o Tab anda pelo mapa como o olho.
+import { classeDaFita } from "@/lib/formatar";
+
+// Os 27 estados, com o nome, a preposição e a região do IBGE. A ordem é a do
+// mapa da lista dos parlamentares (/parlamentares): as regiões na ordem do IBGE
+// e, dentro de cada uma, os estados em ordem alfabética do nome. O HTML segue
+// essa ordem: o Tab anda pelo mapa uma região de cada vez.
+
+/** As cinco regiões, na ordem do IBGE. */
+export const REGIOES = [
+	"Norte",
+	"Nordeste",
+	"Sudeste",
+	"Sul",
+	"Centro-Oeste",
+] as const;
+
+export type Regiao = (typeof REGIOES)[number];
 
 export type Estado = {
 	sigla: string;
 	nome: string;
 	/** "de Santa Catarina", "da Bahia", "do Acre". */
 	comPreposicao: string;
-	/** A fileira e a coluna do azulejo no mapa, a partir de 1. */
-	fileira: number;
-	coluna: number;
+	regiao: Regiao;
 };
 
 const estado = (
 	sigla: string,
 	nome: string,
 	preposicao: "de" | "da" | "do",
-	fileira: number,
-	coluna: number,
-): Estado => ({
-	sigla,
-	nome,
-	comPreposicao: `${preposicao} ${nome}`,
-	fileira,
-	coluna,
-});
+	regiao: Regiao,
+): Estado => ({ sigla, nome, comPreposicao: `${preposicao} ${nome}`, regiao });
 
-/** Os estados na ordem do mapa: fileira por fileira, da esquerda para a direita. */
+/** Os estados na ordem do mapa: região por região, e o nome em ordem alfabética. */
 export const ESTADOS: readonly Estado[] = [
-	estado("RR", "Roraima", "de", 1, 1),
-	estado("AP", "Amapá", "do", 1, 2),
-	estado("AM", "Amazonas", "do", 2, 1),
-	estado("PA", "Pará", "do", 2, 2),
-	estado("MA", "Maranhão", "do", 2, 3),
-	estado("PI", "Piauí", "do", 2, 4),
-	estado("CE", "Ceará", "do", 2, 5),
-	estado("RN", "Rio Grande do Norte", "do", 2, 6),
-	estado("AC", "Acre", "do", 3, 1),
-	estado("RO", "Rondônia", "de", 3, 2),
-	estado("TO", "Tocantins", "do", 3, 3),
-	estado("BA", "Bahia", "da", 3, 4),
-	estado("PE", "Pernambuco", "de", 3, 5),
-	estado("PB", "Paraíba", "da", 3, 6),
-	estado("MT", "Mato Grosso", "de", 4, 2),
-	estado("GO", "Goiás", "de", 4, 3),
-	estado("MG", "Minas Gerais", "de", 4, 4),
-	estado("SE", "Sergipe", "de", 4, 5),
-	estado("AL", "Alagoas", "de", 4, 6),
-	estado("MS", "Mato Grosso do Sul", "de", 5, 2),
-	estado("DF", "Distrito Federal", "do", 5, 3),
-	estado("SP", "São Paulo", "de", 5, 4),
-	estado("RJ", "Rio de Janeiro", "do", 5, 5),
-	estado("ES", "Espírito Santo", "do", 5, 6),
-	estado("PR", "Paraná", "do", 6, 2),
-	estado("SC", "Santa Catarina", "de", 7, 2),
-	estado("RS", "Rio Grande do Sul", "do", 8, 2),
+	estado("AC", "Acre", "do", "Norte"),
+	estado("AP", "Amapá", "do", "Norte"),
+	estado("AM", "Amazonas", "do", "Norte"),
+	estado("PA", "Pará", "do", "Norte"),
+	estado("RO", "Rondônia", "de", "Norte"),
+	estado("RR", "Roraima", "de", "Norte"),
+	estado("TO", "Tocantins", "do", "Norte"),
+	estado("AL", "Alagoas", "de", "Nordeste"),
+	estado("BA", "Bahia", "da", "Nordeste"),
+	estado("CE", "Ceará", "do", "Nordeste"),
+	estado("MA", "Maranhão", "do", "Nordeste"),
+	estado("PB", "Paraíba", "da", "Nordeste"),
+	estado("PE", "Pernambuco", "de", "Nordeste"),
+	estado("PI", "Piauí", "do", "Nordeste"),
+	estado("RN", "Rio Grande do Norte", "do", "Nordeste"),
+	estado("SE", "Sergipe", "de", "Nordeste"),
+	estado("ES", "Espírito Santo", "do", "Sudeste"),
+	estado("MG", "Minas Gerais", "de", "Sudeste"),
+	estado("RJ", "Rio de Janeiro", "do", "Sudeste"),
+	estado("SP", "São Paulo", "de", "Sudeste"),
+	estado("PR", "Paraná", "do", "Sul"),
+	estado("RS", "Rio Grande do Sul", "do", "Sul"),
+	estado("SC", "Santa Catarina", "de", "Sul"),
+	estado("DF", "Distrito Federal", "do", "Centro-Oeste"),
+	estado("GO", "Goiás", "de", "Centro-Oeste"),
+	estado("MT", "Mato Grosso", "de", "Centro-Oeste"),
+	estado("MS", "Mato Grosso do Sul", "de", "Centro-Oeste"),
 ];
+
+/**
+ * A fita de uma região, nos mapas: a da posição dela na ordem do IBGE (Norte
+ * verde, Nordeste amarela, Sudeste azul, Sul rosa e Centro-Oeste vermelha). O
+ * Renan escolheu em 22/11/2026, na #289: "Pela ordem do IBGE".
+ */
+export function classeDaRegiao(regiao: Regiao): string {
+	return classeDaFita(REGIOES.indexOf(regiao) + 1);
+}
 
 const POR_SIGLA = new Map(ESTADOS.map((item) => [item.sigla, item]));
 

@@ -20,7 +20,7 @@ O DataSenado encontrou mais apoio à democracia entre pessoas com mais escolarid
 
 - **Trilhas.** Artigos curtos explicam como a política funciona com exemplos reais. Na trilha do processo legislativo, um infográfico mostra como uma ideia vira lei. Há um quiz no meio e outro no fim.
 - **Newsletter semanal.** O jornal legislativo pode reunir o que o Congresso votou na semana e os destaques do Diário Oficial da União. Cada item traz uma explicação simples e a fonte oficial. As edições publicadas ficam no site e o envio semanal é programado para domingo. Se já houver uma edição publicada, o sistema tenta enviá-la logo depois da inscrição. [Diário Oficial na newsletter](docs/adr/0004-newsletter-do-dou.md)
-- **Jogo das Comissões.** Em `/jogos`, cinco cenas contam a tramitação real do projeto que virou a Lei 15.100/2025, a do celular na escola. Em cada cena você decide o próximo passo e depois vê o que aconteceu de verdade, com o link da fonte oficial. O jogo fica fora da trilha, e o fim do quiz final leva até ele. [Roteiro e regras](docs/jogo-das-comissoes.md)
+- **Jogo das Comissões.** Em `/jogos/comissoes`, pela lista de `/jogos`, cinco cenas contam a tramitação real do projeto que virou a Lei 15.100/2025, a do celular na escola. Em cada cena você decide o próximo passo e depois vê o que aconteceu de verdade, com o link da fonte oficial. O jogo fica fora da trilha, e o fim do quiz final leva até ele. [Roteiro e regras](docs/jogo-das-comissoes.md)
 - **Busca.** Use Ctrl+K ou a busca no alto da página para procurar nas trilhas, nos artigos e nas edições publicadas mais recentes. Você pode digitar só o começo da palavra, com ou sem acento. A busca ignora maiúsculas, funciona sem IA e mantém no navegador o que você digita.
 
 As trilhas são abertas e a newsletter pede só o e-mail. O navegador guarda os artigos lidos. Se você criar uma conta, o progresso também fica no perfil para continuar em outro aparelho.
@@ -88,6 +88,7 @@ O banco guarda os dados da Câmara, do Senado e do TSE, os atos do Diário Ofici
 - **Ausência sem motivo:** toda ausência reconhecida do Senado (`AP`, `LS`, `MIS`, `NCom`, `LAP` e `LP`, em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, para a licença saúde ficar igual às outras. O voto só guarda os códigos de voto e de presença da lista `CODIGOS_GRAVADOS`, e o banco recusa os demais. Um código ainda não classificado, como `NA`, entra como `outro`, sem o código, e o log não leva o código nem a pessoa: a coleta registra só a votação e quantos códigos desconhecidos vieram nela.
 - **Quem assina** deixa o e-mail, a data e o código do link de sair; a última edição aceita permite retomar um envio. Sair apaga a linha e esse marcador.
 - **Medição do piloto:** cada conclusão guarda apenas código aleatório, versão do quiz, etapa e total de acertos. Não tem ligação com conta ou newsletter; não guarda turma, data nem hora da tentativa.
+- **Visitas** guardam a contagem por página pública e dia de Brasília. A cota do contador tem só o minuto e a quantidade, sem vínculo com quem visita.
 
 ```mermaid
 erDiagram
@@ -202,6 +203,8 @@ erDiagram
         string uf UK
         bigint id_externo UK "SQ_CANDIDATO"
         smallint cargo "código do TSE"
+        string resultado "opcional, do último turno"
+        text resultado_bruto "opcional, para texto desconhecido"
         int parlamentar_id FK,UK
         int fonte_candidatura_id FK
         int fonte_bens_id FK
@@ -316,6 +319,15 @@ erDiagram
     limite_piloto {
         timestamptz janela PK "o minuto da cota global do piloto"
         int quantidade "tentativas admitidas, sem identificar pessoas"
+    }
+    visita {
+        date dia PK "dia em Brasília"
+        string caminho PK "página pública"
+        bigint quantidade "páginas vistas"
+    }
+    limite_visita {
+        timestamptz janela PK "o minuto da cota global de visitas"
+        int quantidade "visitas admitidas"
     }
 ```
 

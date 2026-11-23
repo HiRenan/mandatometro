@@ -26,9 +26,6 @@ export const jogos: Jogo[] = lerJogos(
 	new Set(artigosDaTrilha.keys()),
 );
 
-/** O jogo que a rota /jogos abre. */
-export const JOGO_DAS_COMISSOES = "comissoes";
-
 /** O artigo da trilha que explica a cena, com o título para o link. */
 export type ArtigoDaCena = { slug: string; titulo: string };
 
@@ -40,6 +37,36 @@ export type JogoNaPagina = Omit<Jogo, "cenas"> & {
 	cenas: CenaNaPagina[];
 	trilha: { slug: string; titulo: string };
 };
+
+/** Um jogo na lista de /jogos: o que a folha mostra, sem o roteiro inteiro. */
+export type JogoNaLista = {
+	slug: string;
+	titulo: string;
+	resumo: string;
+	/** Quantas cenas o jogo tem. */
+	cenas: number;
+	/** Quantas decisões a pessoa toma, somando as de regra e as de opinião. */
+	decisoes: number;
+};
+
+/**
+ * Os jogos para a lista de /jogos, na ordem em que o roteiro foi lido, que é a
+ * das pastas de conteudo/jogo/: a posição de cada um dá a cor e o azulejo da
+ * folha dele.
+ */
+export function listarJogos(todos: Jogo[]): JogoNaLista[] {
+	return todos.map((jogo) => ({
+		slug: jogo.slug,
+		titulo: jogo.titulo,
+		resumo: jogo.resumo,
+		cenas: jogo.cenas.length,
+		decisoes: jogo.cenas.reduce(
+			(soma, cena) =>
+				soma + cena.passos.filter((passo) => passo.tipo === "decisao").length,
+			0,
+		),
+	}));
+}
 
 /**
  * O jogo pelo nome da pasta, pronto para a página: cada cena com o título do

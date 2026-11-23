@@ -31,6 +31,7 @@ from mandatometro.coleta.tse_arquivos import (
     url_arquivo,
 )
 from mandatometro.coleta.tse_bens_arquivos import (
+    RESULTADOS_POR_TEXTO,
     CandidaturaLida,
     ChavePatrimonio,
     TotaisPorTipo,
@@ -46,7 +47,7 @@ _CHAVE = ("ano", "codigo_eleicao", "uf", "id_externo")
 
 type ChaveDaSerie = tuple[int, ChavePatrimonio]
 type Ancoras = dict[ChaveDaSerie, int]
-type Historico = dict[ChaveDaSerie, tuple[int, int]]  # Parlamentar e fonte de bens vigente.
+type Historico = dict[ChaveDaSerie, tuple[int, int, int]]  # Parlamentar e as duas fontes vigentes.
 
 
 @dataclass(frozen=True, repr=False)
@@ -58,7 +59,7 @@ class Vinculos:
 
 @dataclass(repr=False)
 class CargaAno:
-    ligadas: dict[ChavePatrimonio, tuple[int, int]] = field(default_factory=dict)
+    ligadas: dict[ChavePatrimonio, tuple[int, int, str]] = field(default_factory=dict)
     valores: dict[ChavePatrimonio, TotaisPorTipo | None] = field(default_factory=dict)
     contagens: Counter[str] = field(default_factory=Counter)
     instantes: dict[str, datetime] = field(default_factory=dict)
@@ -95,14 +96,15 @@ def _vinculos(s: Session) -> Vinculos:
     }
     modelo = CandidaturaPatrimonio
     historico = {
-        (ano, (eleicao, uf, externo)): (dono, fonte)
-        for ano, eleicao, uf, externo, dono, fonte in s.execute(
+        (ano, (eleicao, uf, externo)): (dono, fonte_cand, fonte_bens)
+        for ano, eleicao, uf, externo, dono, fonte_cand, fonte_bens in s.execute(
             select(
                 modelo.ano,
                 modelo.codigo_eleicao,
                 modelo.uf,
                 modelo.id_externo,
                 modelo.parlamentar_id,
+                modelo.fonte_candidatura_id,
                 modelo.fonte_bens_id,
             ).where(modelo.ano.in_(ANOS))
         )
@@ -172,7 +174,9 @@ def _confirmar_ancoras(
             if vinculos.ancoras.get(chave) == pessoa and pessoa not in ligacao.conflitos:
                 confirmadas[chave] = pessoa
 
-    titulares = set(vinculos.ancoras.values()) | {dono for dono, _ in vinculos.historico.values()}
+    titulares = set(vinculos.ancoras.values()) | {
+        dono for dono, _, _ in vinculos.historico.values()
+    }
     resumo["sem_ancora_valida"] = len(titulares - set(confirmadas.values()))
     resumo["em_conflito_na_ligacao"] = len(titulares & ligacao.conflitos)
     return confirmadas
@@ -192,13 +196,13 @@ def _ligar_candidaturas(
     donos = defaultdict(set)
     por_pessoa = defaultdict(set)
     for (ano, chave), pessoa in chain(
-        vinculos.ancoras.items(), ((k, dono) for k, (dono, _) in vinculos.historico.items())
+        vinculos.ancoras.items(), ((k, dono) for k, (dono, _, _) in vinculos.historico.items())
     ):
         donos[ano, chave].add(pessoa)
         por_pessoa[ano, pessoa].add(chave)
 
     passadas = defaultdict(dict)
-    for (ano, chave), (pessoa, _) in vinculos.historico.items():
+    for (ano, chave), (pessoa, _, _) in vinculos.historico.items():
         passadas[ano][chave] = pessoa
 
     nao_confirmadas = set()
@@ -217,20 +221,21 @@ def _ligar_candidaturas(
                 # Uma ficha gravada é evidência de disputa mesmo sem âncora válida.
                 reivindicacoes[cpf].update(titulares)
             if cpf in cpfs_que_ligam:
-                alcancadas[cpf].append((chave, candidatura.cargo))
+                alcancadas[cpf].append((chave, candidatura))
 
         for pessoa, cpf in cpfs.items():
             registros = alcancadas.get(cpf)
             if not registros:
                 continue
-            chave, cargo = registros[0]
+            chave, candidatura = registros[0]
             if len(registros) > 1:
                 carga.contagens["cpf_repetido"] += 1
                 carga.contagens["em_conflito"] += 1
             elif por_pessoa[ano, pessoa] - {chave}:
                 carga.contagens["em_conflito"] += 1
             else:
-                carga.ligadas[chave] = pessoa, cargo
+                situacoes = candidatura.situacoes_por_turno
+                carga.ligadas[chave] = pessoa, candidatura.cargo, situacoes[max(situacoes)]
 
     ancora_confirmada = {
         pessoa
@@ -249,36 +254,45 @@ def _ligar_candidaturas(
     aptas = ancora_confirmada - nao_confirmadas - conflitos_da_cadeia
     for carga in cargas.values():
         carga.ligadas = {
-            chave: (pessoa, cargo)
-            for chave, (pessoa, cargo) in carga.ligadas.items()
+            chave: (pessoa, cargo, texto)
+            for chave, (pessoa, cargo, texto) in carga.ligadas.items()
             if pessoa in aptas
         }
 
 
 def _gravar_ano(s: Session, ano: int, carga: CargaAno, historico: Historico) -> tuple[int, int]:
-    candidaturas = [
-        (chave, pessoa, cargo)
-        for chave, (pessoa, cargo) in carga.ligadas.items()
-        if (ano, chave) not in historico or carga.valores.get(chave, {}) is not None
-    ]
-    if not candidaturas:
+    if not carga.ligadas:
         return 0, 0
 
+    fontes_preservadas = {
+        chave: fonte
+        for (ano_anterior, chave), (_, _, fonte) in historico.items()
+        if ano_anterior == ano and chave in carga.ligadas and carga.valores.get(chave, {}) is None
+    }
     fonte_cand = registrar_fonte(s, Resposta(url_arquivo(ano), carga.instantes[CANDIDATURAS], None))
-    fonte_bens = registrar_fonte(s, Resposta(url_arquivo(ano, BENS), carga.instantes[BENS], None))
-    valores = [
-        {
-            "ano": ano,
-            "codigo_eleicao": eleicao,
-            "uf": uf,
-            "id_externo": externo,
-            "cargo": cargo,
-            "parlamentar_id": pessoa,
-            "fonte_candidatura_id": fonte_cand.id,
-            "fonte_bens_id": fonte_bens.id,
-        }
-        for (eleicao, uf, externo), pessoa, cargo in candidaturas
-    ]
+    fonte_bens_id = None
+    if len(fontes_preservadas) < len(carga.ligadas):
+        fonte_bens_id = registrar_fonte(
+            s, Resposta(url_arquivo(ano, BENS), carga.instantes[BENS], None)
+        ).id
+    valores = []
+    for chave, (pessoa, cargo, texto) in carga.ligadas.items():
+        eleicao, uf, externo = chave
+        resultado = RESULTADOS_POR_TEXTO.get(texto, "outro")
+        valores.append(
+            {
+                "ano": ano,
+                "codigo_eleicao": eleicao,
+                "uf": uf,
+                "id_externo": externo,
+                "cargo": cargo,
+                "resultado": resultado,
+                "resultado_bruto": texto if resultado == "outro" else None,
+                "parlamentar_id": pessoa,
+                "fonte_candidatura_id": fonte_cand.id,
+                "fonte_bens_id": fontes_preservadas.get(chave, fonte_bens_id),
+            }
+        )
     modelo = CandidaturaPatrimonio
     ids = {}
     for lote in batched(valores, 500, strict=False):
@@ -288,16 +302,29 @@ def _gravar_ano(s: Session, ano: int, carga: CargaAno, historico: Historico) -> 
                 index_elements=_CHAVE,
                 set_={
                     coluna: comando.excluded[coluna]
-                    for coluna in ("cargo", "fonte_candidatura_id", "fonte_bens_id")
+                    for coluna in (
+                        "cargo",
+                        "resultado",
+                        "resultado_bruto",
+                        "fonte_candidatura_id",
+                        "fonte_bens_id",
+                    )
                 },
                 where=modelo.parlamentar_id == comando.excluded.parlamentar_id,
             ).returning(modelo.codigo_eleicao, modelo.uf, modelo.id_externo, modelo.id)
         ).all()
         if len(linhas) != len(lote):
             raise ArquivoInvalido("A titularidade de uma candidatura mudou durante a carga.")
-        ids.update({(eleicao, uf, externo): id_ for eleicao, uf, externo, id_ in linhas})
+        ids.update(
+            {
+                (eleicao, uf, externo): id_
+                for eleicao, uf, externo, id_ in linhas
+                if (eleicao, uf, externo) not in fontes_preservadas
+            }
+        )
 
-    s.execute(delete(BemDeclarado).where(BemDeclarado.candidatura_id.in_(ids.values())))
+    if ids:
+        s.execute(delete(BemDeclarado).where(BemDeclarado.candidatura_id.in_(ids.values())))
     totais = [
         {"candidatura_id": id_, "tipo": tipo, "valor_centavos": total}
         for chave, id_ in ids.items()
@@ -305,7 +332,7 @@ def _gravar_ano(s: Session, ano: int, carga: CargaAno, historico: Historico) -> 
     ]
     if totais:
         s.execute(insert(BemDeclarado), totais)
-    return len(ids), len(totais)
+    return len(valores), len(totais)
 
 
 def _coletar(

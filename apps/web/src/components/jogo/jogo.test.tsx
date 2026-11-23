@@ -14,12 +14,8 @@ import {
 	within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	acharJogo,
-	JOGO_DAS_COMISSOES,
-	type JogoNaPagina,
-	jogos,
-} from "@/lib/jogo/paginas.server";
+import { JOGO_DAS_COMISSOES } from "@/lib/jogo/comissoes";
+import { acharJogo, type JogoNaPagina, jogos } from "@/lib/jogo/paginas.server";
 import { Jogo } from "./jogo";
 
 // A tela do jogo com o roteiro de verdade. O que este teste prende é a regra do
@@ -104,7 +100,9 @@ function mostrar({ comApi = true } = {}) {
 	});
 	const router = createRouter({
 		routeTree: raiz,
-		history: createMemoryHistory({ initialEntries: ["/jogos"] }),
+		history: createMemoryHistory({
+			initialEntries: [`/jogos/${JOGO_DAS_COMISSOES}`],
+		}),
 	});
 	return render(<RouterProvider router={router} />);
 }
