@@ -428,6 +428,13 @@ describe("a página do parlamentar", () => {
 		expect(forcadas).toContain("background: CanvasText;");
 	});
 
+	it("a ementa na página do parlamentar tem teto de 39rem e a regra comum mantém 42rem", () => {
+		expect(regra(pagina, ".corpo-do-parlamentar .texto-do-voto")).toBe(
+			"max-width: 39rem;",
+		);
+		expect(regra(pagina, ".texto-do-voto")).toContain("max-width: 42rem;");
+	});
+
 	it("a barra de como votou se risca ao entrar na tela, como a do patrimônio, e para com o movimento reduzido", () => {
 		const movimento = readFileSync(
 			new URL("./movimento.css", import.meta.url),

@@ -1195,6 +1195,10 @@
 		line-height: 1.5;
 	}
 
+	.corpo-do-parlamentar .texto-do-voto {
+		max-width: 39rem;
+	}
+
 	.links-do-voto {
 		grid-area: links;
 		display: flex;
