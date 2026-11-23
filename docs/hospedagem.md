@@ -120,7 +120,7 @@ A carga roda por disparo manual e pode ser repetida quando o Banco Central publi
 ## Coletar biografias parlamentares
 
 1. Confirme que **Migrar banco** aplicou a revisão `0019` e que **Coletar Congresso** cadastrou parlamentares no ambiente de destino.
-2. Em **Actions → Coletar biografias parlamentares → Run workflow**, escolha `develop` para desenvolvimento. Na `main`, o job exige que o disparo seja do dono do repositório, Renan, inclusive em uma reexecução. O job usa `DATABASE_URL` com pool, aguarda a fila do banco da branch e tem até 20 minutos.
+2. Em **Actions → Coletar biografias parlamentares → Run workflow**, escolha `develop` para desenvolvimento. Na `main`, o job exige que o disparo seja do dono do repositório, Renan, inclusive em uma reexecução. O job usa `DATABASE_URL` com pool, aguarda a fila do banco da branch e tem até 45 minutos. A primeira coleta na `develop`, em 23/11/2026, levou 930 s para 600 parlamentares.
 3. Confira o commit e o resumo JSON. `parlamentares` conta as pessoas consultadas e `biografias` e `sem_biografia` contam os resultados confirmados. Veja também `partidos`, `falhas_parlamentares` e `falha_partidos`. Se `completa` for falso, o workflow falha e pode ser repetido depois de resolver a causa. A API continua lendo o último dado gravado para as consultas que falharam. [Campos e fontes](dicionario-de-dados.md#biografia-oficial-e-nome-do-partido)
 
 ## Ativar e recuperar a agenda de sábado
