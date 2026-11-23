@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 // As regras das páginas dos parlamentares e das votações que dependem do
@@ -475,5 +475,134 @@ describe("o patrimônio declarado", () => {
 		);
 		expect(link).not.toBeNull();
 		expect(regra(patrimonio, ".arquivo-sem-link")).toContain(link?.[0]);
+	});
+});
+
+describe("a página da votação na tela larga", () => {
+	/** As regras do corpo da votação a partir do lg (a #306). */
+	const inicio = css.indexOf(
+		"/* ───── A página da votação: o corpo na tela larga",
+	);
+	const corpo = bloco(css.slice(inicio), "@media (width >= 62rem)");
+
+	it("a partir do lg, o corpo fica em duas colunas de 5/12 e 7/12, com o minmax(0, …): o texto longo não alarga a página", () => {
+		expect(inicio).toBeGreaterThan(0);
+		const grade = regra(corpo, ".corpo-dos-parlamentares.corpo-da-votacao");
+		expect(grade).toContain(
+			"grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);",
+		);
+		expect(grade).toContain("align-items: start;");
+	});
+
+	it("cada bloco ocupa a largura toda, menos o placar e o vídeo, lado a lado, e o placar e quem votou como sem os votos", () => {
+		expect(regra(corpo, ".corpo-da-votacao > *")).toBe("grid-column: 1 / -1;");
+		for (const [seletor, coluna] of [
+			[".corpo-da-votacao.corpo-com-video > .placar-da-votacao", 1],
+			[".corpo-da-votacao.corpo-com-video > .video-da-sessao", 2],
+			[".corpo-da-votacao.corpo-sem-votos > .placar-da-votacao", 1],
+			[".corpo-da-votacao.corpo-sem-votos > .quem-votou-como", 2],
+		] as const) {
+			expect(regra(corpo, seletor), seletor).toBe(`grid-column: ${coluna};`);
+		}
+	});
+
+	it("sem os votos e com o vídeo, o vídeo ocupa as duas linhas da direita, quem votou como desce para baixo do placar, e a sobra da altura vai para a segunda linha", () => {
+		const caso = ".corpo-da-votacao.corpo-sem-votos.corpo-com-video";
+		expect(regra(corpo, caso)).toBe("grid-template-rows: auto 1fr;");
+		expect(regra(corpo, `${caso} > .video-da-sessao`)).toBe(
+			"grid-row: span 2;",
+		);
+		expect(regra(corpo, `${caso} > .quem-votou-como`)).toBe("grid-column: 1;");
+	});
+
+	it("a ordem do HTML continua a da leitura: nenhum bloco muda de ordem, e só o vídeo sem os votos muda de linha", () => {
+		expect(corpo).not.toMatch(/(?:^|[;{\s])order\s*:/);
+		expect(corpo.match(/grid-row\s*:/g)).toHaveLength(1);
+	});
+
+	it("as classes dos casos vão presas ao corpo da votação, e nenhuma outra regra do site usa o mesmo nome: o sem-votos sozinho já era a folha da página do parlamentar", () => {
+		const modificadores = new Set(
+			[...corpo.matchAll(/\.corpo-da-votacao((?:\.[\w-]+)+)/g)].flatMap(
+				([, cadeia = ""]) => cadeia.split(".").filter(Boolean),
+			),
+		);
+		expect([...modificadores].sort()).toEqual([
+			"corpo-com-video",
+			"corpo-sem-votos",
+		]);
+		const doSite = [
+			new URL("../index.css", import.meta.url),
+			...readdirSync(new URL(".", import.meta.url))
+				.filter((nome) => nome.endsWith(".css"))
+				.map((nome) => new URL(`./${nome}`, import.meta.url)),
+		]
+			.map((arquivo) =>
+				readFileSync(arquivo, "utf8").replace(/\/\*[\s\S]*?\*\//g, ""),
+			)
+			.join("\n");
+		const seletores = [...doSite.matchAll(/([^{};]+)\{/g)].flatMap(
+			([, lista = ""]) => lista.split(","),
+		);
+		for (const classe of [...modificadores, "placar-da-votacao"]) {
+			const usos = seletores.filter((seletor) =>
+				new RegExp(`\\.${classe}(?![\\w-])`).test(seletor),
+			);
+			expect(usos.length, classe).toBeGreaterThan(0);
+			for (const seletor of usos) {
+				expect(seletor, classe).toContain(".corpo-da-votacao");
+			}
+		}
+	});
+
+	it("o quadro do placar enche a coluna só na página da votação e a partir do lg; numa caixa com menos de 34rem, os números ficam em 2 × 2", () => {
+		const quadro = regra(corpo, ".corpo-da-votacao .votacao");
+		expect(quadro).toContain("container: quadro-da-votacao / inline-size;");
+		expect(quadro).toContain("max-width: none;");
+		expect(css.split(".corpo-da-votacao .votacao {")).toHaveLength(2);
+		expect(
+			regra(
+				bloco(corpo, "@container quadro-da-votacao (width < 34rem)"),
+				".corpo-da-votacao .votacao > dl",
+			),
+		).toBe("grid-template-columns: repeat(2, minmax(0, 1fr));");
+		// O quadro da edição e do painel continua como era.
+		const edicoes = readFileSync(
+			new URL("./edicoes.css", import.meta.url),
+			"utf8",
+		);
+		expect(regra(edicoes, ".votacao")).toContain("max-width: 39rem;");
+	});
+
+	it("a caixa do vídeo enche a coluna dela a partir do lg; antes, e na nota, o limite continua em 39rem", () => {
+		const secao = css.slice(
+			css.indexOf("/* ───── A página da votação: o vídeo da sessão"),
+		);
+		expect(regra(css, ".caixa-do-video")).toContain("max-width: 39rem;");
+		expect(
+			regra(
+				bloco(secao, "@media (width >= 62rem)"),
+				".corpo-da-votacao .caixa-do-video",
+			),
+		).toBe("max-width: none;");
+		expect(regra(css, ".nota-do-video")).toContain("max-width: 39rem;");
+	});
+
+	it("o texto sem os votos continua com até 39rem", () => {
+		expect(regra(css, ".sem-nomes,\n\t.texto-sem-votos")).toContain(
+			"max-width: 39rem;",
+		);
+	});
+
+	it("a tabela por partido acompanha a página, e a linha sob o ponteiro ganha o Papel 2, para o olho seguir o partido até o último número", () => {
+		const tabela = regra(css, ".tabela-por-partido");
+		expect(tabela).toContain("width: 100%;");
+		expect(tabela).not.toContain("max-width");
+		expect(regra(css, ".tabela-por-partido tbody tr:hover")).toBe(
+			"background: var(--papel-2);",
+		);
+	});
+
+	it("os nomes descem em até seis colunas de pelo menos 16rem", () => {
+		expect(regra(css, ".nomes-do-grupo")).toContain("columns: 16rem 6;");
 	});
 });
