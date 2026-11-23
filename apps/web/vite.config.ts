@@ -17,6 +17,10 @@ export default defineConfig({
 	server: {
 		port: 3001,
 	},
+	build: {
+		// O bundle minificado precisa levar o aviso MIT junto com o traçado.
+		rolldownOptions: { output: { comments: { legal: true } } },
+	},
 	resolve: {
 		tsconfigPaths: true,
 	},
