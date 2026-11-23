@@ -1,5 +1,6 @@
 import { notFound } from "@tanstack/react-router";
 import {
+	type BiografiaParlamentar,
 	type CorrecaoIpca,
 	type DetalheParlamentar,
 	type DetalheVotacao,
@@ -74,28 +75,11 @@ export type Patrimonio =
 	| { tipo: "indisponivel" };
 
 /**
- * A biografia oficial da pessoa, como o contrato da #303 a descreve: as
- * profissões, na ordem da fonte (a lista vazia: a Casa não publica), a
- * escolaridade, como a Casa escreve, e a página oficial de onde saíram, com a
- * coleta. Fica aqui até o cliente gerado trazer o tipo.
- */
-export type BiografiaParlamentar = {
-	profissoes: string[];
-	escolaridade: string | null;
-	fonte: { url: string; coletado_em: string };
-};
-
-/**
  * A pessoa como a página a recebe: a foto da API não vai junto, porque só chega
  * à página depois de conferida, no `foto` da página. O nome do partido e a
  * biografia chegam conferidos, e o que falta vale nulo.
  */
-export type ParlamentarDaPagina = Omit<DetalheParlamentar, "foto"> & {
-	/** O nome por extenso do partido da sigla; sem ele na fonte, nulo. */
-	partido_nome: string | null;
-	/** Nula antes da primeira coleta ou quando a Casa não publica nada. */
-	biografia: BiografiaParlamentar | null;
-};
+export type ParlamentarDaPagina = Omit<DetalheParlamentar, "foto">;
 
 export type PaginaDoParlamentar =
 	| { tipo: "sem-api" }

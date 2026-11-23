@@ -17,6 +17,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
+	DetalheParlamentar,
 	FotoParlamentar,
 	PatrimonioParlamentar,
 	VotoParlamentar,
@@ -26,7 +27,6 @@ import {
 	biografiaDeExemplo,
 	CONTAGEM_ZERADA,
 	correcaoDeExemplo,
-	type DetalheComFicha,
 	detalheDeExemplo,
 	eleicaoDeExemplo,
 	patrimonioDeExemplo,
@@ -55,7 +55,7 @@ afterEach(() => {
  * servidor nem o redirecionamento. A foto vai à parte, como o servidor manda.
  */
 async function abrir(
-	{ foto: fotoDaApi, ...parlamentar }: DetalheComFicha,
+	{ foto: fotoDaApi, ...parlamentar }: DetalheParlamentar,
 	votos: VotoParlamentar[] = [votoDoParlamentarDeExemplo(139)],
 	paginaAtual = 1,
 	total = votos.length,

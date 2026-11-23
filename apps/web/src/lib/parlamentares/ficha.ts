@@ -1,8 +1,11 @@
-import type { EleicaoPatrimonio, MandatoPublico } from "@/client";
+import type {
+	BiografiaParlamentar,
+	EleicaoPatrimonio,
+	MandatoPublico,
+} from "@/client";
 import { enderecoSeguro } from "@/lib/edicoes/conteudo-da-edicao";
 import { dataEmBrasilia, formatarData } from "@/lib/formatar";
 import { estadoDaSigla } from "./estados";
-import type { BiografiaParlamentar } from "./parlamentares.server";
 import {
 	fonteDaEleicao,
 	type LinhaDoPatrimonio,

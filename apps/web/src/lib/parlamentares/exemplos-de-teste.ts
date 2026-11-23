@@ -1,4 +1,5 @@
 import type {
+	BiografiaParlamentar,
 	ContagemVotosParlamentar,
 	CorrecaoIpca,
 	DetalheParlamentar,
@@ -11,7 +12,6 @@ import type {
 	VotoNominal,
 	VotoParlamentar,
 } from "@/client";
-import type { BiografiaParlamentar } from "./parlamentares.server";
 
 // Parlamentares e votações de mentira para os testes, no formato da API
 // (GET /parlamentares, /parlamentares/{id}, /parlamentares/{id}/votos,
@@ -97,15 +97,6 @@ export function listaDeExemplo(): ListaParlamentares {
 }
 
 /**
- * O detalhe de GET /parlamentares/{id} com os campos da #303: o nome do partido
- * por extenso e a biografia oficial. Fica aqui até o cliente gerado trazê-los.
- */
-export type DetalheComFicha = DetalheParlamentar & {
-	partido_nome: string | null;
-	biografia: BiografiaParlamentar | null;
-};
-
-/**
  * A biografia oficial de mentira, com a página da Casa da pessoa: duas
  * profissões, a escolaridade e a coleta de 20 de novembro de 2026.
  */
@@ -128,8 +119,8 @@ export function biografiaDeExemplo(
 }
 
 export function detalheDeExemplo(
-	mudancas: Partial<DetalheComFicha> = {},
-): DetalheComFicha {
+	mudancas: Partial<DetalheParlamentar> = {},
+): DetalheParlamentar {
 	const parlamentar = parlamentarDeExemplo(mudancas);
 	return {
 		...parlamentar,
