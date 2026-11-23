@@ -65,6 +65,12 @@ describe("os alvos de toque", () => {
 		expect(citacao).toContain("display: inline-grid;");
 		expect(citacao).toContain("min-height: 2.75rem;");
 	});
+
+	it("a licença ao lado do crédito do mapa tem pelo menos 44 px de altura", () => {
+		const licenca = regra(css, ".credito-do-mapa a");
+		expect(licenca).toContain("display: inline-grid;");
+		expect(licenca).toContain("min-height: 2.75rem;");
+	});
 });
 
 describe("os nomes longos", () => {

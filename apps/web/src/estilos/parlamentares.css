@@ -324,6 +324,9 @@
 	}
 
 	.credito-do-mapa a {
+		display: inline-grid;
+		align-items: center;
+		min-height: 2.75rem;
 		text-decoration: underline;
 	}
 
