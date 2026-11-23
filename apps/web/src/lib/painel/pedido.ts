@@ -1,3 +1,5 @@
+import { sinalComPrazo } from "@/lib/prazo";
+
 // Os pedidos do painel à API: a revisão (use-revisao.ts) e os números
 // (use-numeros.ts). Cada pedido leva o cookie da sessão, que é da API
 // (credentials: "include"), não fica no cache do navegador e tem prazo.
@@ -50,7 +52,7 @@ export function opcoes(sinal: AbortSignal) {
 	return {
 		credentials: "include",
 		cache: "no-store",
-		signal: AbortSignal.any([sinal, AbortSignal.timeout(PRAZO)]),
+		signal: sinalComPrazo(PRAZO, sinal),
 	} as const;
 }
 

@@ -1,5 +1,6 @@
 import type { AnyRouter } from "@tanstack/react-router";
 import { ENV } from "@/env";
+import { sinalComPrazo } from "./prazo";
 
 // A contagem das páginas vistas (a #298): a cada página, o navegador avisa a
 // API, sem o cookie (credentials: "omit"), e a API soma 1 no dia e no caminho.
@@ -36,7 +37,7 @@ export async function avisarVisita(pathname: string): Promise<void> {
 			body: { caminho },
 			credentials: "omit",
 			keepalive: true,
-			signal: AbortSignal.timeout(PRAZO),
+			signal: sinalComPrazo(PRAZO),
 		});
 	} catch {
 		// A visita é um complemento: sem rede ou sem API, a página segue igual.

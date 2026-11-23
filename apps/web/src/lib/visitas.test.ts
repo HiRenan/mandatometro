@@ -88,6 +88,19 @@ describe("o aviso da visita", () => {
 		expect(await pedido.json()).toEqual({ caminho: "/trilhas" });
 	});
 
+	it("avisa a visita quando o navegador não tem AbortSignal.timeout", async () => {
+		const timeout = AbortSignal.timeout;
+		Reflect.set(AbortSignal, "timeout", undefined);
+		try {
+			const { pedidos } = api();
+			await avisarVisita("/jogos");
+			expect(pedidos).toHaveLength(1);
+			expect(await pedidos[0].json()).toEqual({ caminho: "/jogos" });
+		} finally {
+			Reflect.set(AbortSignal, "timeout", timeout);
+		}
+	});
+
 	it("o painel e as telas da conta não avisam", async () => {
 		const { fetch } = api();
 
