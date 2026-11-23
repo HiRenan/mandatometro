@@ -98,12 +98,14 @@ describe("o aviso da visita", () => {
 	});
 
 	it("sem o API_URL, nada é pedido", async () => {
-		ambiente.API_URL = "";
 		const { fetch } = api();
-
+		// O cliente já carregado, com um endereço: sem o API_URL, nem ele pede.
 		await avisarVisita("/trilhas");
+		ambiente.API_URL = "";
 
-		expect(fetch).not.toHaveBeenCalled();
+		await avisarVisita("/votacoes");
+
+		expect(fetch).toHaveBeenCalledTimes(1);
 	});
 
 	it("com a rede caída, o aviso some sem erro e sem console", async () => {
@@ -115,6 +117,25 @@ describe("o aviso da visita", () => {
 
 		expect(erro).not.toHaveBeenCalled();
 		expect(aviso).not.toHaveBeenCalled();
+	});
+
+	it("se o código do aviso não carrega, o aviso some sem erro e sem console", async () => {
+		// O cliente da API chega num pedaço à parte, que pode falhar ao carregar.
+		const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+		const { fetch } = api();
+		vi.resetModules();
+		vi.doMock("./contrato-da-297", () => {
+			throw new Error("Failed to fetch dynamically imported module");
+		});
+
+		try {
+			await expect(avisarVisita("/trilhas")).resolves.toBeUndefined();
+		} finally {
+			vi.doUnmock("./contrato-da-297");
+		}
+
+		expect(fetch).not.toHaveBeenCalled();
+		expect(erro).not.toHaveBeenCalled();
 	});
 
 	it("com a API fora do ar, o aviso some sem erro", async () => {
