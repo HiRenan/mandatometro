@@ -4,7 +4,7 @@ import type {
 	FontePatrimonio,
 } from "@/client";
 import { enderecoSeguro } from "@/lib/edicoes/conteudo-da-edicao";
-import { dataEmBrasilia, formatarData } from "@/lib/formatar";
+import { comMilhares, dataEmBrasilia, formatarData } from "@/lib/formatar";
 import { estadoDaSigla } from "./estados";
 
 // Os números do patrimônio declarado ao TSE, prontos para a página do
@@ -15,11 +15,6 @@ import { estadoDaSigla } from "./estados";
 
 /** O espaço que não quebra: o "R$" não fica sozinho no fim da linha. */
 const SEM_QUEBRA = "\u00a0";
-
-/** O inteiro com o ponto do milhar: 812400 vira "812.400". */
-function comMilhares(inteiro: number): string {
-	return String(inteiro).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-}
 
 /**
  * O valor exato, com os centavos: 81240000 centavos viram "R$ 812.400,00". A
