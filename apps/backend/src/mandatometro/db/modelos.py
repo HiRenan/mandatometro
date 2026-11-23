@@ -695,3 +695,34 @@ class LimitePiloto(Base):
 
     janela: Mapped[datetime] = mapped_column(primary_key=True)
     quantidade: Mapped[int]
+
+
+TAMANHO_CAMINHO_VISITA = 160
+PADRAO_CAMINHO_VISITA = r"^/([a-z0-9-]+(/[a-z0-9-]+)*)?$"
+
+
+class Visita(Base):
+    """Contagem de páginas vistas por dia de Brasília, sem identificador de visitante."""
+
+    __tablename__ = "visita"
+    __table_args__ = (
+        CheckConstraint(f"""caminho COLLATE "C" ~ '{PADRAO_CAMINHO_VISITA}'""", name="caminho"),
+        CheckConstraint("quantidade > 0", name="quantidade_positiva"),
+    )
+
+    dia: Mapped[date] = mapped_column(primary_key=True)
+    caminho: Mapped[str] = mapped_column(String(TAMANHO_CAMINHO_VISITA), primary_key=True)
+    quantidade: Mapped[int] = mapped_column(BigInteger, server_default="1")
+
+
+class LimiteVisita(Base):
+    """Janela da cota global, independente das visitas por página."""
+
+    __tablename__ = "limite_visita"
+    __table_args__ = (
+        CheckConstraint("janela = date_trunc('minute', janela)", name="janela_minuto"),
+        CheckConstraint("quantidade > 0", name="quantidade_positiva"),
+    )
+
+    janela: Mapped[datetime] = mapped_column(primary_key=True)
+    quantidade: Mapped[int] = mapped_column(server_default="1")

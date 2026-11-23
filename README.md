@@ -88,6 +88,7 @@ O banco guarda os dados da Câmara, do Senado e do TSE, os atos do Diário Ofici
 - **Ausência sem motivo:** toda ausência reconhecida do Senado (`AP`, `LS`, `MIS`, `NCom`, `LAP` e `LP`, em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, para a licença saúde ficar igual às outras. O voto só guarda os códigos de voto e de presença da lista `CODIGOS_GRAVADOS`, e o banco recusa os demais. Um código ainda não classificado, como `NA`, entra como `outro`, sem o código, e o log não leva o código nem a pessoa: a coleta registra só a votação e quantos códigos desconhecidos vieram nela.
 - **Quem assina** deixa o e-mail, a data e o código do link de sair; a última edição aceita permite retomar um envio. Sair apaga a linha e esse marcador.
 - **Medição do piloto:** cada conclusão guarda apenas código aleatório, versão do quiz, etapa e total de acertos. Não tem ligação com conta ou newsletter; não guarda turma, data nem hora da tentativa.
+- **Visitas** guardam a contagem por página pública e dia de Brasília. A cota do contador tem só o minuto e a quantidade, sem vínculo com quem visita.
 
 ```mermaid
 erDiagram
@@ -318,6 +319,15 @@ erDiagram
     limite_piloto {
         timestamptz janela PK "o minuto da cota global do piloto"
         int quantidade "tentativas admitidas, sem identificar pessoas"
+    }
+    visita {
+        date dia PK "dia em Brasília"
+        string caminho PK "página pública"
+        bigint quantidade "páginas vistas"
+    }
+    limite_visita {
+        timestamptz janela PK "o minuto da cota global de visitas"
+        int quantidade "visitas admitidas"
     }
 ```
 

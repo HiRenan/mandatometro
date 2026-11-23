@@ -52,6 +52,12 @@ E-mail, id de conta, id de inscrito e dados da sessão ficam fora das respostas.
 
 A tela `/painel` guarda o rascunho só na memória da página, e nada dele vai para o console, o endereço, o armazenamento do navegador, o HTML do servidor ou os logs do site. Quando a API do painel responde com a recusa de acesso (`401` ou `404`), o rascunho e os ajustes locais saem da tela na hora, enquanto a guarda verifica a sessão e o papel da conta. [O painel no código do site](codigo-do-site.md#painel-de-revisão)
 
+## Números do painel e visitas
+
+`GET /painel/numeros` dá à administradora contagens e médias agregadas, datas dos períodos e das publicações e coletas, e endereços ou slugs de páginas públicas. As contas e as inscrições da newsletter são contadas separadamente, sem cruzar e-mails. Nome, e-mail, identificadores de contas, marcas individuais de leitura, dados opcionais e texto livre ficam fora da resposta. A medição do piloto aplica a mesma supressão do relatório agregado.
+
+`POST /visitas` guarda só o dia de Brasília, o caminho da página pública e a contagem. O contador não usa cookie nem guarda IP, agente de usuário ou identificação de quem visitou. Endereços de parlamentares entram só pelo id público, sem o nome no sufixo. Pedidos com query no caminho, telas da conta e do painel e robôs conhecidos ficam fora da contagem. A cota guarda apenas o minuto e a quantidade global. Os registros de acesso da hospedagem seguem as regras da seção de inscrição e conta. [Contador e agregados no dicionário](dicionario-de-dados.md#contador-de-visitas-e-números-do-painel)
+
 ## Trilhas e piloto
 
 Nenhum dado pessoal entra no texto publicado das trilhas. As trilhas não pedem dados pessoais. As respostas do quiz não identificam quem respondeu. O piloto segue o [contrato de medição](medicao-do-piloto.md#conteúdo-e-dados).

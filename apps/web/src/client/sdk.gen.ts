@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AbrirSaidaData, AbrirSaidaErrors, AlterarProgressoContaData, AlterarProgressoContaErrors, AlterarProgressoContaResponses, CadastrarContaData, CadastrarContaErrors, CadastrarContaResponses, ConfirmarContaData, ConfirmarContaErrors, ConfirmarContaResponses, ConsultarPerfilData, ConsultarPerfilErrors, ConsultarPerfilResponses, ConsultarProgressoContaData, ConsultarProgressoContaErrors, ConsultarProgressoContaResponses, EntrarContaData, EntrarContaErrors, EntrarContaResponses, ExcluirContaData, ExcluirContaErrors, ExcluirContaResponses, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, LerRascunhoData, LerRascunhoErrors, LerRascunhoResponses, ListarEdicoesData, ListarEdicoesErrors, ListarEdicoesResponses, ListarParlamentaresData, ListarParlamentaresErrors, ListarParlamentaresResponses, ListarTemasData, ListarTemasResponses, ListarVotosParlamentarData, ListarVotosParlamentarErrors, ListarVotosParlamentarResponses, ObterEdicaoData, ObterEdicaoErrors, ObterEdicaoResponses, ObterParlamentarData, ObterParlamentarErrors, ObterParlamentarResponses, ObterPatrimonioParlamentarData, ObterPatrimonioParlamentarErrors, ObterPatrimonioParlamentarResponses, ObterVotacaoData, ObterVotacaoErrors, ObterVotacaoResponses, PublicarEdicaoData, PublicarEdicaoErrors, PublicarEdicaoResponses, RecuperarContaData, RecuperarContaErrors, RecuperarContaResponses, RedefinirSenhaData, RedefinirSenhaErrors, RedefinirSenhaResponses, ReenviarConfirmacaoData, ReenviarConfirmacaoErrors, ReenviarConfirmacaoResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, SairContaData, SairContaErrors, SairContaResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses, SalvarRevisaoData, SalvarRevisaoErrors, SalvarRevisaoResponses, TermoContaData, TermoContaErrors, TermoContaResponses } from './types.gen';
+import type { AbrirSaidaData, AbrirSaidaErrors, AlterarProgressoContaData, AlterarProgressoContaErrors, AlterarProgressoContaResponses, CadastrarContaData, CadastrarContaErrors, CadastrarContaResponses, ConfirmarContaData, ConfirmarContaErrors, ConfirmarContaResponses, ConsultarNumerosPainelData, ConsultarNumerosPainelErrors, ConsultarNumerosPainelResponses, ConsultarPerfilData, ConsultarPerfilErrors, ConsultarPerfilResponses, ConsultarProgressoContaData, ConsultarProgressoContaErrors, ConsultarProgressoContaResponses, EntrarContaData, EntrarContaErrors, EntrarContaResponses, ExcluirContaData, ExcluirContaErrors, ExcluirContaResponses, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, LerRascunhoData, LerRascunhoErrors, LerRascunhoResponses, ListarEdicoesData, ListarEdicoesErrors, ListarEdicoesResponses, ListarParlamentaresData, ListarParlamentaresErrors, ListarParlamentaresResponses, ListarTemasData, ListarTemasResponses, ListarVotosParlamentarData, ListarVotosParlamentarErrors, ListarVotosParlamentarResponses, ObterEdicaoData, ObterEdicaoErrors, ObterEdicaoResponses, ObterParlamentarData, ObterParlamentarErrors, ObterParlamentarResponses, ObterPatrimonioParlamentarData, ObterPatrimonioParlamentarErrors, ObterPatrimonioParlamentarResponses, ObterVotacaoData, ObterVotacaoErrors, ObterVotacaoResponses, PublicarEdicaoData, PublicarEdicaoErrors, PublicarEdicaoResponses, RecuperarContaData, RecuperarContaErrors, RecuperarContaResponses, RedefinirSenhaData, RedefinirSenhaErrors, RedefinirSenhaResponses, ReenviarConfirmacaoData, ReenviarConfirmacaoErrors, ReenviarConfirmacaoResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, RegistrarVisitaData, RegistrarVisitaErrors, RegistrarVisitaResponses, SairContaData, SairContaErrors, SairContaResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses, SalvarRevisaoData, SalvarRevisaoErrors, SalvarRevisaoResponses, TermoContaData, TermoContaErrors, TermoContaResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -197,6 +197,13 @@ export const salvarRevisao = <ThrowOnError extends boolean = false>(options: Opt
 export const publicarEdicao = <ThrowOnError extends boolean = false>(options: Options<PublicarEdicaoData, ThrowOnError>): RequestResult<PublicarEdicaoResponses, PublicarEdicaoErrors, ThrowOnError> => (options.client ?? client).post<PublicarEdicaoResponses, PublicarEdicaoErrors, ThrowOnError>({ url: '/painel/edicoes/{id}/publicar', ...options });
 
 /**
+ * Consultar os números do painel
+ *
+ * Agregados do site e das coletas. O acesso é exclusivo da administradora.
+ */
+export const consultarNumerosPainel = <ThrowOnError extends boolean = false>(options?: Options<ConsultarNumerosPainelData, ThrowOnError>): RequestResult<ConsultarNumerosPainelResponses, ConsultarNumerosPainelErrors, ThrowOnError> => (options?.client ?? client).get<ConsultarNumerosPainelResponses, ConsultarNumerosPainelErrors, ThrowOnError>({ url: '/painel/numeros', ...options });
+
+/**
  * Listar os parlamentares em exercício
  *
  * Lista completa em ordem alfabética, com filtros opcionais por UF e Casa.
@@ -242,6 +249,20 @@ export const registrarTentativaPiloto = <ThrowOnError extends boolean = false>(o
  * A lista contém todos os votos individuais gravados. Quando a votação não tem registros individuais, a lista de votos e a de partidos vêm vazias e o placar vem zerado.
  */
 export const obterVotacao = <ThrowOnError extends boolean = false>(options: Options<ObterVotacaoData, ThrowOnError>): RequestResult<ObterVotacaoResponses, ObterVotacaoErrors, ThrowOnError> => (options.client ?? client).get<ObterVotacaoResponses, ObterVotacaoErrors, ThrowOnError>({ url: '/votacoes/{id}', ...options });
+
+/**
+ * Contar uma página vista
+ *
+ * Aceita o caminho de uma página pública do site, sem query ou fragmento. A contagem usa o dia em Brasília. Caminhos inválidos e robôs conhecidos são ignorados com a mesma resposta vazia de uma visita contada.
+ */
+export const registrarVisita = <ThrowOnError extends boolean = false>(options: Options<RegistrarVisitaData, ThrowOnError>): RequestResult<RegistrarVisitaResponses, RegistrarVisitaErrors, ThrowOnError> => (options.client ?? client).post<RegistrarVisitaResponses, RegistrarVisitaErrors, ThrowOnError>({
+    url: '/visitas',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Health
