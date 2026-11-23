@@ -806,6 +806,21 @@ Cada eleição traz `mes_inicio` em `AAAA-MM` e `total_corrigido_centavos`. O co
 
 `variacao` compara o total corrigido em centavos com o da última eleição anterior que também tem total corrigido. Traz `ano_anterior` e `diferenca_centavos`, o total atual menos o anterior, inclusive quando a diferença é negativa ou zero. `percentual` é a diferença dividida pelo total anterior e multiplicada por 100, como texto com uma casa, em `Decimal` e com `ROUND_HALF_UP`. O percentual fica nulo até R$ 50.000,00 de total corrigido anterior, inclusive. A variação inteira fica nula se faltar o total corrigido atual ou se ainda não houver um total corrigido anterior.
 
+## Contador de visitas e números do painel
+
+| Tabela | Campos | Regra |
+| --- | --- | --- |
+| `visita` | `dia` (date), `caminho` (string de até 160 caracteres), `quantidade` (bigint) | Chave primária por dia em Brasília e caminho público. A primeira visita começa em 1. As seguintes somam 1 na mesma linha. |
+| `limite_visita` | `janela` (timestamptz), `quantidade` (int) | Chave primária no minuto, com a contagem global de até 600 visitas admitidas. O próximo pedido válido limpa as janelas anteriores ao minuto precedente. |
+
+`POST /visitas` recebe apenas `{"caminho":"/trilhas"}`. O site envia o caminho via JavaScript com as credenciais omitidas. A API só admite páginas públicas conhecidas, consulta o id dos itens no banco e retém apenas o id público no caminho do parlamentar. A lista de trilhas, artigos, quizzes e jogos do backend acompanha os arquivos publicados do site. A resposta é 204, inclusive para robô, caminho inválido ou corpo inválido. Quando a cota se esgota, responde 429 com `Retry-After`. Uma falha no banco recebe 503. Cada uma dessas respostas vem sem corpo.
+
+O painel usa semanas iniciadas na segunda-feira em Brasília. Cada série semanal vai do primeiro evento disponível à semana atual, com zero nas lacunas. Os totais de contas e de inscritos usam os cadastros que ainda existem. Sair da newsletter apaga a inscrição. `inscritos_com_a_ultima_edicao` conta os inscritos cujo marcador de envio aceito pelo provedor aponta para a edição publicada mais recente. O banco guarda só o último marcador de cada inscrito. Sem edição publicada, esse total e `ultima_publicada_em` ficam nulos.
+
+Uma conta está ativa na semana em que abriu uma sessão ou marcou uma leitura. A abertura é inferida pela expiração menos a validade de sete dias. Cada conta entra uma vez por semana. O retorno conta cada conta com pelo menos uma atividade numa semana posterior à do cadastro. Atividade e retorno são mínimos observados. Só contam sessões e marcas de leitura ainda registradas no banco. As leituras por trilha usam as marcas dos artigos do catálogo público. Uma conclusão exige que a mesma conta tenha marcado todos os artigos atuais da trilha.
+
+As visitas diárias e as dez páginas mais vistas usam os últimos 30 dias, incluindo o dia atual. O sistema conta sessões com vídeo, proposições distintas com tema, bens agregados por candidatura e tipo e os meses presentes na série do IPCA. `ultimas_coletas` usa a maior data de `fonte.coletado_em` por domínio de coleta da Câmara, do Senado, da Imprensa Nacional, do TSE e do Banco Central. Um domínio sem coleta registrada fica nulo. [Privacidade do contador e dos agregados](dados-pessoais.md#números-do-painel-e-visitas)
+
 ## Campos pessoais
 
 As regras de uso, exposição e descarte estão em [dados pessoais](dados-pessoais.md).

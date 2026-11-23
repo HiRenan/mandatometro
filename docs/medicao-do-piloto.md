@@ -68,7 +68,7 @@ A tela é da #92: `apps/web/src/lib/piloto.ts` guarda o piloto no navegador, `li
 
 ## Relatório para o time
 
-A leitura é só por CLI. Em `apps/backend`, com as migrations aplicadas e `DATABASE_URL` explícito para o banco escolhido, executar:
+O painel da administradora traz o mesmo resultado agregado pelo campo `piloto` de `GET /painel/numeros`. Para ler pelo CLI, rode este comando em `apps/backend` com as migrations aplicadas e `DATABASE_URL` explícito para o banco escolhido.
 
 ```text
 uv run mandatometro piloto resultado --versao processo-legislativo-final-v1
