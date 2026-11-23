@@ -4,6 +4,7 @@ import {
 	type DetalheParlamentar,
 	type DetalheVotacao,
 	type EleicaoPatrimonio,
+	type FotoParlamentar,
 	type ListaParlamentares,
 	type ListaVotosParlamentar,
 	listarParlamentares,
@@ -72,11 +73,22 @@ export type Patrimonio =
 	  }
 	| { tipo: "indisponivel" };
 
+/**
+ * A pessoa como a página a recebe: a foto da API não vai junto, porque só chega
+ * à página depois de conferida, no `foto` da página.
+ */
+export type ParlamentarDaPagina = Omit<DetalheParlamentar, "foto">;
+
 export type PaginaDoParlamentar =
 	| { tipo: "sem-api" }
 	| {
 			tipo: "parlamentar";
-			parlamentar: DetalheParlamentar;
+			parlamentar: ParlamentarDaPagina;
+			/**
+			 * A foto oficial, só no endereço da Casa da pessoa e com o crédito dela;
+			 * fora disso, ou sem a foto nos dados, nula.
+			 */
+			foto: FotoParlamentar | null;
 			/** Do mais novo para o mais velho, como a API manda. */
 			votos: VotoParlamentar[];
 			total: number;
@@ -185,9 +197,11 @@ export async function lerParlamentar(
 	if (pagina > 1 && deslocamento >= lista.data.total) {
 		throw notFound();
 	}
+	const { foto, ...parlamentar } = detalhe.data;
 	return {
 		tipo: "parlamentar",
-		parlamentar: detalhe.data,
+		parlamentar,
+		foto: fotoDaPagina(parlamentar.casa, foto),
 		votos: lista.data.votos,
 		total: lista.data.total,
 		pagina,
@@ -223,7 +237,7 @@ async function lerPatrimonio(
 		}
 		return {
 			tipo: "patrimonio",
-			eleicoes: data.eleicoes,
+			eleicoes: data.eleicoes.map(comOsCamposNovos),
 			correcao: data.correcao_ipca,
 		};
 	} catch (erro) {
@@ -250,6 +264,92 @@ function patrimonioDaPagina(
 		`[parlamentares] O patrimônio não carregou: ${leitura.motivo}.`,
 	);
 	return { tipo: "indisponivel" };
+}
+
+/**
+ * Os campos que a #291 trouxe a cada eleição. O campo que falta vale nulo, para
+ * a janela em que o site e a API sobem em horas diferentes; o malformado já
+ * deixou o bloco sem o patrimônio, no parecePatrimonio.
+ */
+function comOsCamposNovos(eleicao: EleicaoPatrimonio): EleicaoPatrimonio {
+	return {
+		...eleicao,
+		resultado: eleicao.resultado ?? null,
+		fator_ipca: eleicao.fator_ipca ?? null,
+		alta_ipca_percentual: eleicao.alta_ipca_percentual ?? null,
+		variacao: eleicao.variacao ?? null,
+	};
+}
+
+/**
+ * O endereço da foto oficial de cada Casa e o crédito que vai junto, como a API
+ * monta (a #291): a Câmara com o número e o .jpg, o Senado só com o número.
+ */
+const FOTO_DA_CASA = {
+	camara: {
+		site: "www.camara.leg.br",
+		caminho: /^\/internet\/deputado\/bandep\/\d+\.jpg$/,
+		credito: "Câmara dos Deputados",
+	},
+	senado: {
+		site: "legis.senado.leg.br",
+		caminho: /^\/senadores\/fotos-oficiais\/\d+$/,
+		credito: "Senado Federal",
+	},
+} as const;
+
+/**
+ * A foto que vai à página. Ela só passa em https, no endereço e com o crédito da
+ * Casa da pessoa: a imagem sai direto do site oficial para o navegador, e uma
+ * foto de outro lugar ou com o crédito trocado não aparece. A foto fora do
+ * formato fica de fora, com uma linha fixa no log, sem o endereço; a que falta
+ * nos dados fica de fora sem a linha. Ela nunca derruba a página.
+ */
+function fotoDaPagina(
+	casa: DetalheParlamentar["casa"],
+	foto: unknown,
+): FotoParlamentar | null {
+	if (foto === undefined || foto === null) {
+		return null;
+	}
+	const esperada = FOTO_DA_CASA[casa];
+	if (
+		ehObjeto(foto) &&
+		typeof foto.url === "string" &&
+		foto.credito === esperada.credito &&
+		enderecoDaFoto(foto.url, esperada)
+	) {
+		return { url: foto.url, credito: esperada.credito };
+	}
+	console.error("[parlamentares] A foto não veio no formato esperado.");
+	return null;
+}
+
+/**
+ * O endereço exato da foto: https, o site da Casa, o caminho da foto e nada além
+ * (sem porta, usuário, busca nem âncora). O endereço tem de sair igual da
+ * leitura, para nenhuma variação de escrita passar.
+ */
+function enderecoDaFoto(
+	url: string,
+	esperada: (typeof FOTO_DA_CASA)[keyof typeof FOTO_DA_CASA],
+): boolean {
+	let endereco: URL;
+	try {
+		endereco = new URL(url);
+	} catch {
+		return false;
+	}
+	return (
+		endereco.href === url &&
+		endereco.protocol === "https:" &&
+		endereco.host === esperada.site &&
+		endereco.username === "" &&
+		endereco.password === "" &&
+		endereco.search === "" &&
+		endereco.hash === "" &&
+		esperada.caminho.test(endereco.pathname)
+	);
 }
 
 /**
@@ -465,13 +565,71 @@ function pareceEleicao(dados: unknown): boolean {
 		ehObjeto(dados) &&
 		inteiroPositivo(dados.ano) &&
 		ehObjeto(dados.cargo) &&
+		inteiroPositivo(dados.cargo.codigo) &&
 		typeof dados.cargo.nome === "string" &&
 		dados.cargo.nome.trim() !== "" &&
 		(dados.uf === "BR" || estadoDaSigla(dados.uf) !== null) &&
 		centavosOuNulo(dados.total_centavos) &&
 		centavosOuNulo(dados.total_corrigido_centavos) &&
 		pareceMes(dados.mes_inicio) &&
-		pareceFonte(dados.fonte)
+		pareceFonte(dados.fonte) &&
+		ausenteOu(dados.resultado, pareceResultado) &&
+		ausenteOu(dados.fator_ipca, pareceFator) &&
+		ausenteOu(dados.alta_ipca_percentual, parecePercentual) &&
+		ausenteOu(dados.variacao, (variacao) =>
+			pareceVariacao(variacao, dados.ano as number),
+		)
+	);
+}
+
+/** Os resultados de uma eleição que a API manda (a #291). */
+const RESULTADOS_DA_ELEICAO = [
+	"eleito",
+	"eleito_por_qp",
+	"eleito_por_media",
+	"suplente",
+	"nao_eleito",
+	"sem_resultado",
+	"outro",
+];
+
+/** O campo novo que falta ou vem nulo passa; o que vem confere com o formato. */
+function ausenteOu(valor: unknown, parece: (valor: unknown) => boolean) {
+	return valor === undefined || valor === null || parece(valor);
+}
+
+function pareceResultado(valor: unknown): boolean {
+	return RESULTADOS_DA_ELEICAO.includes(valor as string);
+}
+
+/**
+ * O fator do IPCA, com quatro casas ("2.9812"). Sem o ponto, ele é um inteiro
+ * exato do JavaScript, porque a frase do cálculo faz a conta nele.
+ */
+function pareceFator(valor: unknown): boolean {
+	return (
+		typeof valor === "string" &&
+		/^\d+\.\d{4}$/.test(valor) &&
+		Number.isSafeInteger(Number(valor.replace(".", "")))
+	);
+}
+
+/** Um percentual com uma casa e o sinal, se for negativo ("-22.4"). */
+function parecePercentual(valor: unknown): boolean {
+	return typeof valor === "string" && /^-?\d+\.\d$/.test(valor);
+}
+
+/**
+ * A diferença para uma eleição de antes desta: a diferença em centavos é um
+ * inteiro exato (com o sinal), e o percentual vem nulo ou com uma casa.
+ */
+function pareceVariacao(dados: unknown, ano: number): boolean {
+	return (
+		ehObjeto(dados) &&
+		inteiroPositivo(dados.ano_anterior) &&
+		(dados.ano_anterior as number) < ano &&
+		Number.isSafeInteger(dados.diferenca_centavos) &&
+		(dados.percentual === null || parecePercentual(dados.percentual))
 	);
 }
 

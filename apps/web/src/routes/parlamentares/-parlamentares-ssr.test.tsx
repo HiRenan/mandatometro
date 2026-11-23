@@ -209,6 +209,21 @@ describe("o HTML das páginas dos parlamentares", () => {
 		expect(html).toMatch(
 			/<h1 class="titulo-de-folha letra-com-teto"[^>]*>Ágata Cedrolume<\/h1>/,
 		);
+		// A foto oficial já vem no HTML, depois do nome, com a largura e a altura
+		// (a página não pula quando ela chega), sem o endereço da página e com o
+		// crédito da Casa.
+		const foto = /<img [^>]*>/.exec(html)?.[0] ?? "";
+		expect(foto).toContain(
+			'src="https://www.camara.leg.br/internet/deputado/bandep/90000123.jpg"',
+		);
+		expect(foto).toContain('alt="Ágata Cedrolume"');
+		expect(foto).toContain('width="300"');
+		expect(foto).toContain('height="400"');
+		expect(foto).toContain('referrerPolicy="no-referrer"');
+		expect(html.indexOf(foto)).toBeGreaterThan(html.indexOf("</h1>"));
+		expect(html).toContain(
+			'<p class="rotulo credito-da-foto">Foto: Câmara dos Deputados</p>',
+		);
 		expect(html).toContain("57ª legislatura");
 		// A regra de cada voto, com o artigo do regimento da Câmara, sem quebra
 		// entre o "art." e o número.

@@ -245,6 +245,91 @@ describe("os pontos de quebra", () => {
 	});
 });
 
+describe("a página do parlamentar", () => {
+	/** Só a seção da página do parlamentar, antes do patrimônio. */
+	const inicio = css.indexOf("/* ───── A página do parlamentar ─────");
+	const pagina = css.slice(
+		inicio,
+		css.indexOf("/* ───── A página do parlamentar: o patrimônio", inicio),
+	);
+
+	it("a moldura da foto guarda o lugar com o azulejo cru, e sem o JavaScript o ::after cobre a foto quebrada", () => {
+		expect(inicio).toBeGreaterThan(0);
+		expect(regra(pagina, ".moldura-da-foto")).toContain(
+			"background: var(--azulejo-cru);",
+		);
+		const quebrada = regra(pagina, ".moldura-da-foto img::after");
+		expect(quebrada).toContain('content: "";');
+		expect(quebrada).toContain("inset: 0;");
+		expect(quebrada).toContain("background: var(--azulejo-cru);");
+	});
+
+	it("a foto que falhou esconde o crédito sem tirar o lugar dele: o nome não sobe", () => {
+		expect(regra(pagina, ".foto-que-falhou .credito-da-foto")).toContain(
+			"visibility: hidden;",
+		);
+	});
+
+	it("a foto preenche a moldura e corta embaixo: o rosto fica no alto", () => {
+		const foto = regra(pagina, ".moldura-da-foto img");
+		expect(foto).toContain("object-fit: cover;");
+		expect(foto).toContain("object-position: 50% 0;");
+	});
+
+	it("no computador, o retrato fica por cima de 2 × 3 azulejos do painel, fora do fluxo do cartaz", () => {
+		const largo = bloco(pagina, "@media (width >= 62rem)");
+		expect(regra(largo, ".cartaz-do-parlamentar.com-foto")).toContain(
+			"--azulejo: calc((30cqi - 6px) / 4);",
+		);
+		const retrato = regra(largo, ".foto-oficial");
+		expect(retrato).toContain("position: absolute;");
+		expect(retrato).toContain("width: calc(2 * var(--azulejo) + 6px);");
+		expect(retrato).toContain("height: calc(3 * var(--azulejo) + 8px);");
+	});
+
+	it("no celular, a caixa da foto é 3 por 4, em px e cqi: ela não cresce com a letra", () => {
+		const estreito = bloco(pagina, "@media (width < 62rem)");
+		expect(regra(estreito, ".cartaz-do-parlamentar.com-foto")).toContain(
+			"--foto: clamp(96px, 30cqi, 160px);",
+		);
+		expect(regra(estreito, ".com-foto .moldura-da-foto")).toContain(
+			"aspect-ratio: 3 / 4;",
+		);
+	});
+
+	it("como votou: a barra é de tinta sobre o trilho em Papel 2, com 4 px no mínimo, e continua à vista nas cores forçadas", () => {
+		expect(regra(pagina, ".trilho-do-tipo")).toContain(
+			"background: var(--papel-2);",
+		);
+		const barra = regra(pagina, ".barra-do-tipo");
+		expect(barra).toContain("width: max(4px, calc(var(--parte) * 100%));");
+		expect(barra).toContain("background: var(--tinta);");
+		const forcadas = regra(
+			bloco(pagina, "@media (forced-colors: active)"),
+			".barra-do-tipo",
+		);
+		expect(forcadas).toContain("forced-color-adjust: none;");
+		expect(forcadas).toContain("background: CanvasText;");
+	});
+
+	it("a barra de como votou se risca ao entrar na tela, como a do patrimônio, e para com o movimento reduzido", () => {
+		const movimento = readFileSync(
+			new URL("./movimento.css", import.meta.url),
+			"utf8",
+		).replace(/\/\*[\s\S]*?\*\//g, "");
+		const risca = /([^{}]+)\{\s*animation: risca linear both;/.exec(
+			bloco(movimento, "@supports (animation-timeline: view())"),
+		)?.[1];
+		expect(risca?.split(",").map((seletor) => seletor.trim())).toEqual([
+			".barra-do-patrimonio",
+			".barra-do-tipo",
+		]);
+		expect(
+			bloco(movimento, "@media (prefers-reduced-motion: reduce)"),
+		).toContain("animation: none !important;");
+	});
+});
+
 describe("o patrimônio declarado", () => {
 	/** Só a seção do patrimônio, para os pontos de quebra dela. */
 	const inicio = css.indexOf(
@@ -314,6 +399,36 @@ describe("o patrimônio declarado", () => {
 		expect(regra(patrimonio, ".aviso-do-patrimonio")).toContain(
 			"border-left: 5px solid var(--tinta);",
 		);
+	});
+
+	it("o gráfico é uma grade só, com cada linha em subgrade: a coluna do valor e a régua das barras são as mesmas em todas as eleições", () => {
+		expect(regra(patrimonio, ".linhas-do-grafico")).toContain(
+			"grid-template-columns: auto minmax(0, 1fr) auto;",
+		);
+		const linha = regra(patrimonio, ".linha-do-grafico");
+		expect(linha).toContain("grid-column: 1 / -1;");
+		expect(linha).toContain("grid-template-columns: subgrid;");
+	});
+
+	it("com o gráfico estreito (a letra grande ou a tela pequena), o valor sobe para cima da barra", () => {
+		expect(regra(patrimonio, ".grafico-do-patrimonio")).toContain(
+			"container: grafico-do-patrimonio / inline-size;",
+		);
+		const estreito = bloco(
+			patrimonio,
+			"@container grafico-do-patrimonio (width < 20rem)",
+		);
+		expect(regra(estreito, ".linhas-do-grafico")).toContain(
+			"grid-template-columns: auto minmax(0, 1fr);",
+		);
+		expect(regra(estreito, ".valor-do-grafico")).toContain("grid-row: 1;");
+		expect(regra(estreito, ".trilho-do-grafico")).toContain("grid-row: 2;");
+	});
+
+	it("a diferença fica em tinta, sem cor de ganho nem de perda", () => {
+		const diferenca = regra(patrimonio, ".diferenca-da-eleicao");
+		expect(diferenca).toContain("font-weight: 700;");
+		expect(diferenca).not.toMatch(/(?:^|; )(?:color|background)/);
 	});
 
 	it("numa coluna estreita, o cargo e o estado ficam um embaixo do outro, sem o quadradinho: ele não fica sozinho no fim da linha", () => {

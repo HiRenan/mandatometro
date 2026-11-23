@@ -7,10 +7,18 @@ import {
 	Outlet,
 	RouterProvider,
 } from "@tanstack/react-router";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
 	DetalheParlamentar,
+	FotoParlamentar,
 	PatrimonioParlamentar,
 	VotoParlamentar,
 } from "@/client";
@@ -43,14 +51,15 @@ afterEach(() => {
 /**
  * A página de uma pessoa num site de mentira, já no endereço certo. A rota entra
  * na árvore como no routeTree.gen.ts, e os dados vêm prontos, sem a função do
- * servidor nem o redirecionamento.
+ * servidor nem o redirecionamento. A foto vai à parte, como o servidor manda.
  */
 async function abrir(
-	parlamentar: DetalheParlamentar,
+	{ foto: fotoDaApi, ...parlamentar }: DetalheParlamentar,
 	votos: VotoParlamentar[] = [votoDoParlamentarDeExemplo(139)],
 	paginaAtual = 1,
 	total = votos.length,
 	patrimonio: Patrimonio = patrimonioNaPagina(),
+	foto: FotoParlamentar | null = fotoDaApi,
 ) {
 	const raiz = createRootRoute({ component: () => <Outlet /> });
 	const pagina = Route.update({
@@ -60,6 +69,7 @@ async function abrir(
 		loader: (): PaginaDoParlamentar => ({
 			tipo: "parlamentar",
 			parlamentar,
+			foto,
 			votos,
 			total,
 			pagina: paginaAtual,
@@ -95,26 +105,49 @@ const SEM_QUEBRA = "\u00a0";
 const reais = (numero: string) => `R$${SEM_QUEBRA}${numero}`;
 
 /**
- * Cada eleição do patrimônio, parte por parte: o ano, o cargo e o lugar, o valor
- * em destaque, a fração da barra (ou nada) e os detalhes, com o arquivo do TSE.
+ * Cada eleição do patrimônio, parte por parte: o ano, o cargo e o lugar, o
+ * resultado, o valor em destaque, a diferença (como o leitor de tela ouve e
+ * como a tela mostra), o período da correção e os detalhes, com o arquivo do TSE.
  */
 function eleicoes() {
 	return Array.from(
 		document.querySelectorAll(".eleicao-do-patrimonio"),
-		(linha) => ({
-			ano: linha.querySelector("h3")?.textContent,
-			cargo: textos(linha, ".faixa > span"),
-			valor: textos(linha, ".valor-da-eleicao > p"),
-			barra:
-				linha
-					.querySelector<HTMLElement>(".barra-do-patrimonio")
-					?.style.getPropertyValue("--parte") ?? null,
-			detalhes: textos(
-				linha,
-				".declarado-na-eleicao > .sr-only, .detalhes-da-eleicao > :not(.declarado-na-eleicao)",
-			),
-		}),
+		(linha) => {
+			const diferenca = linha.querySelector(".diferenca-da-eleicao");
+			return {
+				ano: linha.querySelector("h3")?.textContent,
+				cargo: textos(linha, ".faixa > span"),
+				resultado:
+					linha.querySelector(".resultado-da-eleicao")?.textContent ?? null,
+				valor: textos(
+					linha,
+					".destaque-do-valor, .legenda-do-valor, .sem-total-da-eleicao",
+				),
+				diferenca: diferenca && {
+					leitor: lido(diferenca),
+					tela: visto(diferenca),
+				},
+				periodo:
+					linha.querySelector(".periodo-da-eleicao")?.textContent ?? null,
+				detalhes: textos(
+					linha,
+					".declarado-na-eleicao > .sr-only, .detalhes-da-eleicao > :not(.declarado-na-eleicao)",
+				),
+			};
+		},
 	);
+}
+
+/** Cada linha do gráfico "Em reais de hoje": o ano, a parte da barra e o valor. */
+function grafico() {
+	return Array.from(document.querySelectorAll(".linha-do-grafico"), (linha) => [
+		linha.querySelector(".ano-do-grafico")?.textContent,
+		linha
+			.querySelector<HTMLElement>(".barra-do-patrimonio")
+			?.style.getPropertyValue("--parte") ?? null,
+		linha.querySelector(".valor-do-grafico, .sem-valor-do-grafico")
+			?.textContent,
+	]);
 }
 
 function textos(dentro: Element, seletor: string) {
@@ -122,6 +155,24 @@ function textos(dentro: Element, seletor: string) {
 		dentro.querySelectorAll(seletor),
 		(parte) => parte.textContent,
 	);
+}
+
+/** O texto que o leitor de tela ouve: sem o que fica fora dele (aria-hidden). */
+function lido(elemento: Element) {
+	const copia = elemento.cloneNode(true) as Element;
+	for (const fora of copia.querySelectorAll('[aria-hidden="true"]')) {
+		fora.remove();
+	}
+	return copia.textContent;
+}
+
+/** O texto que a tela mostra: sem o que é só do leitor de tela (sr-only). */
+function visto(elemento: Element) {
+	const copia = elemento.cloneNode(true) as Element;
+	for (const fora of copia.querySelectorAll(".sr-only")) {
+		fora.remove();
+	}
+	return copia.textContent;
 }
 
 /** O bloco do patrimônio, pelo título. */
@@ -135,10 +186,27 @@ function blocoDoPatrimonio() {
 	return bloco;
 }
 
-/** Cada voto de "Como votou": o nome, o número e a regra, como o leitor de tela lê. */
+/**
+ * Cada voto de "Como votou": o nome, o número e a regra, como o leitor de tela
+ * lê. A barra fica de fora dele (barrasDeComoVotou).
+ */
 function comoVotou() {
 	return Array.from(document.querySelectorAll(".tipo-de-voto"), (linha) =>
-		Array.from(linha.children, (celula) => celula.textContent),
+		Array.from(
+			linha.querySelectorAll(":scope > :not([aria-hidden='true'])"),
+			(celula) => celula.textContent,
+		),
+	);
+}
+
+/** A parte da barra de cada voto de "Como votou", ou nada, sem barra. */
+function barrasDeComoVotou() {
+	return Array.from(
+		document.querySelectorAll(".tipo-de-voto"),
+		(linha) =>
+			linha
+				.querySelector<HTMLElement>(".barra-do-tipo")
+				?.style.getPropertyValue("--parte") ?? null,
 	);
 }
 
@@ -187,6 +255,39 @@ describe("a página do parlamentar", () => {
 		).toBe(
 			"https://www2.camara.leg.br/atividade-legislativa/legislacao/regimento-interno-da-camara-dos-deputados",
 		);
+	});
+
+	it("como votou: a barra de cada voto é a parte dele no total, fora do leitor de tela, com a frase que a explica", async () => {
+		await abrir(detalheDeExemplo());
+
+		// 12, 5, 1, 0, 0 e 2 dos 20 votos.
+		expect(barrasDeComoVotou()).toEqual([
+			"0.6",
+			"0.25",
+			"0.05",
+			null,
+			null,
+			"0.1",
+		]);
+		const trilhos = document.querySelectorAll(".trilho-do-tipo");
+		expect(trilhos).toHaveLength(6);
+		for (const trilho of trilhos) {
+			expect(trilho.getAttribute("aria-hidden")).toBe("true");
+		}
+		const legenda = document.querySelector(".legenda-das-barras");
+		expect(legenda?.textContent).toBe(
+			"A barra mostra a parte de cada voto no total de 20 votos registrados",
+		);
+		expect(legenda?.getAttribute("aria-hidden")).toBe("true");
+
+		cleanup();
+		await abrir(
+			detalheDeExemplo({ contagem_votos: { ...CONTAGEM_ZERADA, sim: 1 } }),
+		);
+		expect(document.querySelector(".legenda-das-barras")?.textContent).toBe(
+			"A barra mostra a parte de cada voto no total de 1 voto registrado",
+		);
+		expect(barrasDeComoVotou()[0]).toBe("1");
 	});
 
 	it("no Senado, a regra cita o Regimento do Senado, e o Outro registro aparece quando passa de zero, sem artigo", async () => {
@@ -285,6 +386,103 @@ describe("a página do parlamentar", () => {
 	);
 });
 
+describe("a foto oficial no cartaz", () => {
+	const NOME = "Ágata Cedrolume";
+
+	it("vem depois do nome, com o nome no texto alternativo, a largura e a altura, sem o endereço da página e com o crédito da Casa", async () => {
+		await abrir(detalheDeExemplo());
+
+		const foto = screen.getByRole("img", { name: NOME });
+		expect(foto.getAttribute("src")).toBe(
+			"https://www.camara.leg.br/internet/deputado/bandep/90000123.jpg",
+		);
+		expect(foto.getAttribute("width")).toBe("300");
+		expect(foto.getAttribute("height")).toBe("400");
+		expect(foto.getAttribute("referrerpolicy")).toBe("no-referrer");
+		expect(screen.getByText("Foto: Câmara dos Deputados")).toBeTruthy();
+		const titulo = screen.getByRole("heading", { level: 1, name: NOME });
+		expect(
+			titulo.compareDocumentPosition(foto) & Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+		expect(titulo.closest("section")?.classList).toContain("com-foto");
+	});
+
+	it("no Senado, o crédito é do Senado Federal", async () => {
+		await abrir(
+			detalheDeExemplo({ id: 501, nome: "Lia Quinemar", casa: "senado" }),
+		);
+
+		expect(
+			screen.getByRole("img", { name: "Lia Quinemar" }).getAttribute("src"),
+		).toBe("https://legis.senado.leg.br/senadores/fotos-oficiais/90000124");
+		expect(screen.getByText("Foto: Senado Federal")).toBeTruthy();
+	});
+
+	it("a foto que não carrega sai, e a moldura fica com o azulejo cru, fora do leitor de tela, com o crédito escondido no mesmo lugar", async () => {
+		await abrir(detalheDeExemplo());
+
+		fireEvent.error(screen.getByRole("img", { name: NOME }));
+
+		expect(screen.queryByRole("img", { name: NOME })).toBeNull();
+		const foto = document.querySelector(".foto-oficial");
+		expect(foto?.getAttribute("aria-hidden")).toBe("true");
+		expect(foto?.querySelector(".moldura-da-foto")).toBeTruthy();
+		// O CSS esconde o crédito da foto que falhou (estilos/parlamentares.test.ts):
+		// ele continua na página, para o nome não subir.
+		expect(
+			screen
+				.getByText("Foto: Câmara dos Deputados")
+				.closest(".foto-que-falhou"),
+		).toBe(foto);
+		expect(screen.getByRole("heading", { level: 1, name: NOME })).toBeTruthy();
+	});
+
+	it("a foto que falhou antes de o JavaScript chegar também sai: o React não recebe mais o aviso da falha", async () => {
+		vi.spyOn(HTMLImageElement.prototype, "complete", "get").mockReturnValue(
+			true,
+		);
+		vi.spyOn(HTMLImageElement.prototype, "naturalWidth", "get").mockReturnValue(
+			0,
+		);
+
+		await abrir(detalheDeExemplo());
+
+		await waitFor(() =>
+			expect(screen.queryByRole("img", { name: NOME })).toBeNull(),
+		);
+		expect(
+			screen
+				.getByText("Foto: Câmara dos Deputados")
+				.closest(".foto-que-falhou"),
+		).toBeTruthy();
+	});
+
+	it("a foto que chegou antes do JavaScript fica", async () => {
+		vi.spyOn(HTMLImageElement.prototype, "complete", "get").mockReturnValue(
+			true,
+		);
+		vi.spyOn(HTMLImageElement.prototype, "naturalWidth", "get").mockReturnValue(
+			300,
+		);
+
+		await abrir(detalheDeExemplo());
+
+		expect(screen.getByRole("img", { name: NOME })).toBeTruthy();
+		expect(screen.getByText("Foto: Câmara dos Deputados")).toBeTruthy();
+	});
+
+	it("sem a foto, o cartaz fica como antes, sem moldura nem crédito", async () => {
+		await abrir(detalheDeExemplo(), undefined, 1, undefined, undefined, null);
+
+		expect(document.querySelector(".foto-oficial")).toBeNull();
+		expect(screen.queryByText(/^Foto:/)).toBeNull();
+		expect(
+			screen.getByRole("heading", { level: 1, name: NOME }).closest("section")
+				?.classList,
+		).not.toContain("com-foto");
+	});
+});
+
 describe("o patrimônio declarado ao TSE", () => {
 	it("vem depois dos mandatos e antes de como votou; sem voto, antes da folha dos votos", async () => {
 		const titulos = () =>
@@ -309,7 +507,7 @@ describe("o patrimônio declarado ao TSE", () => {
 		]);
 	});
 
-	it("cada eleição, da mais antiga para a mais nova: o ano, o cargo e o estado, o valor de hoje com a barra, o declarado e o arquivo do TSE", async () => {
+	it("cada eleição, da mais antiga para a mais nova: o ano, o cargo, o estado e o resultado, o valor de hoje, a diferença, o período, o declarado e o arquivo do TSE", async () => {
 		await abrir(detalheDeExemplo());
 
 		const arquivo = (ano: number) => [
@@ -320,8 +518,11 @@ describe("o patrimônio declarado ao TSE", () => {
 			{
 				ano: "2014",
 				cargo: ["Deputado estadual", "Santa Catarina"],
+				resultado:
+					"Ganhou a eleição pelo quociente partidário, a conta que reparte as vagas entre os partidos.",
 				valor: [reais("352 mil"), "em reais de hoje"],
-				barra: "0.1459",
+				diferenca: null,
+				periodo: "Corrigido de outubro de 2014 a outubro de 2026",
 				detalhes: [
 					`Declarado em${SEM_QUEBRA}2014: ${reais("198.300,00")}`,
 					...arquivo(2014),
@@ -330,8 +531,14 @@ describe("o patrimônio declarado ao TSE", () => {
 			{
 				ano: "2018",
 				cargo: ["Deputado federal", "Santa Catarina"],
+				resultado:
+					"Ganhou a eleição pela média, a conta que reparte as vagas que sobram.",
 				valor: [reais("1,1 milhão"), "em reais de hoje"],
-				barra: "0.4558",
+				diferenca: {
+					leitor: `${reais("748 mil")} a mais que em 2014, ou 212,4% a mais`,
+					tela: `${reais("748 mil")} a mais que em 2014 (+212,4%)`,
+				},
+				periodo: "Corrigido de outubro de 2018 a outubro de 2026",
 				detalhes: [
 					`Declarado em${SEM_QUEBRA}2018: ${reais("812.400,00")}`,
 					...arquivo(2018),
@@ -340,15 +547,22 @@ describe("o patrimônio declarado ao TSE", () => {
 			{
 				ano: "2022",
 				cargo: ["Deputado federal", "Santa Catarina"],
+				resultado: "Ficou como suplente.",
 				valor: ["Os dados do TSE desta eleição não trazem um total de bens."],
-				barra: null,
+				diferenca: null,
+				periodo: null,
 				detalhes: arquivo(2022),
 			},
 			{
 				ano: "2026",
 				cargo: ["Senador", "Santa Catarina"],
+				resultado: "Ganhou a eleição.",
 				valor: [reais("2,4 milhões"), "em reais de hoje"],
-				barra: "1",
+				diferenca: {
+					leitor: `${reais("1,3 milhão")} a mais que em 2018, ou 119,4% a mais`,
+					tela: `${reais("1,3 milhão")} a mais que em 2018 (+119,4%)`,
+				},
+				periodo: "Corrigido pela inflação de outubro de 2026",
 				detalhes: [
 					`Declarado em${SEM_QUEBRA}2026: ${reais("2.410.000,00")}`,
 					...arquivo(2026),
@@ -364,16 +578,161 @@ describe("o patrimônio declarado ao TSE", () => {
 		).toBe(
 			"https://cdn.tse.jus.br/estatistica/sead/odsele/bem_candidato/bem_candidato_2018.zip",
 		);
-		// O ano é o título de cada eleição, para quem anda pelos títulos.
+		// O ano é o título de cada eleição, para quem anda pelos títulos, e o
+		// "Como calculamos" vem depois delas.
 		expect(
 			within(blocoDoPatrimonio())
 				.getAllByRole("heading", { level: 3 })
 				.map((titulo) => titulo.textContent),
-		).toEqual(["2014", "2018", "2022", "2026"]);
-		// A barra é enfeite para o leitor de tela: o número já está escrito.
-		for (const barra of document.querySelectorAll(".barra-do-patrimonio")) {
-			expect(barra.getAttribute("aria-hidden")).toBe("true");
-		}
+		).toEqual([
+			"2014",
+			"2018",
+			"2022",
+			"2026",
+			"Como calculamos os reais de hoje",
+		]);
+		// As barras ficam só no gráfico do alto: a lista tem os números.
+		expect(
+			document.querySelector(".eleicoes-do-patrimonio .barra-do-patrimonio"),
+		).toBeNull();
+	});
+
+	it("o gráfico dos valores de hoje vem entre o aviso e a lista, numa régua só e fora do leitor de tela", async () => {
+		await abrir(detalheDeExemplo());
+		const desenho = blocoDoPatrimonio().querySelector(".grafico-do-patrimonio");
+
+		expect(desenho?.getAttribute("aria-hidden")).toBe("true");
+		expect(desenho?.previousElementSibling?.classList).toContain(
+			"aviso-do-patrimonio",
+		);
+		expect(desenho?.nextElementSibling?.classList).toContain(
+			"eleicoes-do-patrimonio",
+		);
+		expect(desenho?.querySelector(".titulo-do-grafico")?.textContent).toBe(
+			"Em reais de hoje",
+		);
+		expect(grafico()).toEqual([
+			["2014", "0.1459", reais("352 mil")],
+			["2018", "0.4558", reais("1,1 milhão")],
+			["2022", null, "sem o valor de hoje"],
+			["2026", "1", reais("2,4 milhões")],
+		]);
+	});
+
+	it("depois da lista, o aviso da diferença; ele só aparece quando há uma, e a diferença zero tem a frase dela", async () => {
+		const AVISO =
+			"A diferença pode vir de compra, venda, herança ou doação de bens: sozinha, não diz por quê.";
+		await abrir(detalheDeExemplo());
+
+		const aviso = within(blocoDoPatrimonio()).getByText(AVISO);
+		expect(aviso.classList).toContain("aviso-do-patrimonio");
+		expect(aviso.previousElementSibling?.classList).toContain(
+			"eleicoes-do-patrimonio",
+		);
+
+		cleanup();
+		await abrirComPatrimonio(
+			patrimonioNaPagina({
+				eleicoes: [
+					eleicaoDeExemplo({ ano: 2014 }),
+					eleicaoDeExemplo({ ano: 2018 }),
+				],
+			}),
+		);
+		expect(blocoDoPatrimonio().textContent).not.toContain(AVISO);
+
+		cleanup();
+		await abrirComPatrimonio(
+			patrimonioNaPagina({
+				eleicoes: [
+					eleicaoDeExemplo({ ano: 2014 }),
+					eleicaoDeExemplo({
+						ano: 2018,
+						variacao: {
+							ano_anterior: 2014,
+							diferenca_centavos: 0,
+							percentual: "0.0",
+						},
+					}),
+				],
+			}),
+		);
+		const mesmo = "O mesmo valor de 2014, em reais de hoje.";
+		expect(eleicoes()[1].diferenca).toEqual({ leitor: mesmo, tela: mesmo });
+		expect(blocoDoPatrimonio().textContent).toContain(AVISO);
+	});
+
+	it("a diferença a menos leva o sinal de menos na tela, e o leitor de tela ouve a menos", async () => {
+		await abrirComPatrimonio(
+			patrimonioNaPagina({
+				eleicoes: [
+					eleicaoDeExemplo({ ano: 2018 }),
+					eleicaoDeExemplo({
+						ano: 2022,
+						total_corrigido_centavos: 85_800_000,
+						variacao: {
+							ano_anterior: 2018,
+							diferenca_centavos: -24_200_000,
+							percentual: "-22.0",
+						},
+					}),
+				],
+			}),
+		);
+
+		expect(eleicoes()[1].diferenca).toEqual({
+			leitor: `${reais("242 mil")} a menos que em 2018, ou 22,0% a menos`,
+			tela: `${reais("242 mil")} a menos que em 2018 (−22,0%)`,
+		});
+	});
+
+	it("o suplente de senador fala da chapa, e o resultado nulo não mostra nada", async () => {
+		await abrirComPatrimonio(
+			patrimonioNaPagina({
+				eleicoes: [
+					eleicaoDeExemplo({
+						ano: 2018,
+						cargo: { codigo: 9, nome: "1º suplente" },
+						resultado: "eleito",
+					}),
+					eleicaoDeExemplo({ ano: 2022, resultado: null }),
+				],
+			}),
+		);
+
+		expect(eleicoes().map(({ resultado }) => resultado)).toEqual([
+			"A chapa ganhou a eleição.",
+			null,
+		]);
+	});
+
+	it("como calculamos: o método, uma frase por eleição corrigida com o link da Calculadora do Cidadão, e a série do IPCA", async () => {
+		await abrir(detalheDeExemplo());
+		const bloco = within(blocoDoPatrimonio());
+
+		const correcao = bloco
+			.getByRole("heading", {
+				level: 3,
+				name: "Como calculamos os reais de hoje",
+			})
+			.closest<HTMLElement>(".correcao-do-patrimonio");
+		if (!correcao) throw new Error("o título fora da correção");
+		expect(textos(correcao, ".calculo-da-eleicao > p")).toEqual([
+			`De outubro de 2014 a outubro de 2026, os preços subiram 77,6%: cada ${reais("100")} de 2014 vale ${reais("177,57")} hoje.`,
+			`De outubro de 2018 a outubro de 2026, os preços subiram 35,4%: cada ${reais("100")} de 2018 vale ${reais("135,40")} hoje.`,
+			`Em outubro de 2026, os preços subiram 0,1%: cada ${reais("100")} de 2026 vale ${reais("100,14")} hoje.`,
+		]);
+		const calculadoras = within(correcao).getAllByRole("link", {
+			name: /^Conferir na Calculadora do Cidadão/,
+		});
+		expect(calculadoras.map((link) => lido(link))).toEqual([
+			"Conferir na Calculadora do Cidadão a correção de 2014",
+			"Conferir na Calculadora do Cidadão a correção de 2018",
+			"Conferir na Calculadora do Cidadão a correção de 2026",
+		]);
+		expect(calculadoras[1].getAttribute("href")).toBe(
+			"https://www3.bcb.gov.br/CALCIDADAO/publico/corrigirPorIndice.do?method=corrigirPorIndice&dataInicial=10/2018&dataFinal=10/2026&valorCorrecao=100,00&selIndice=00433IPCA",
+		);
 	});
 
 	it("com todos os totais corrigidos, a abertura diz até que mês vai a correção e o aviso e as fontes explicam os dados", async () => {
@@ -388,8 +747,10 @@ describe("o patrimônio declarado ao TSE", () => {
 		const aviso = within(bloco).getByText(
 			"É o valor que a própria pessoa declarou ao registrar a candidatura, e não o patrimônio de hoje. A Justiça Eleitoral dá acesso à declaração como ela foi entregue, e cada bem costuma entrar pelo preço de compra, como na declaração do Imposto de Renda: uma casa comprada há 20 anos pode aparecer pelo valor daquela época.",
 		);
-		const lista = within(bloco).getByRole("list");
-		expect(aviso.nextElementSibling).toBe(lista);
+		const lista = bloco.querySelector<HTMLElement>(".eleicoes-do-patrimonio");
+		if (!lista) throw new Error("sem a lista das eleições");
+		// Entre o aviso e a lista, só o gráfico, fora do leitor de tela.
+		expect(aviso.nextElementSibling?.nextElementSibling).toBe(lista);
 		expect(within(lista).getAllByRole("listitem")).toHaveLength(4);
 		expect(
 			within(bloco).getByText(
@@ -484,18 +845,19 @@ describe("o patrimônio declarado ao TSE", () => {
 		]);
 	});
 
-	it("com uma eleição só, não há barra: não há com o que comparar", async () => {
+	it("com uma eleição só, não há gráfico: não há com o que comparar", async () => {
 		await abrirComPatrimonio(
 			patrimonioNaPagina({ eleicoes: [eleicaoDeExemplo()] }),
 		);
 
 		expect(eleicoes()).toMatchObject([
-			{ valor: [reais("1,1 milhão"), "em reais de hoje"], barra: null },
+			{ valor: [reais("1,1 milhão"), "em reais de hoje"] },
 		]);
+		expect(document.querySelector(".grafico-do-patrimonio")).toBeNull();
 		expect(document.querySelector(".barra-do-patrimonio")).toBeNull();
 	});
 
-	it("o zero declarado aparece como R$ 0, sem barra, e o valor muito menor que o maior fica com o traço mínimo", async () => {
+	it("o zero declarado aparece como R$ 0, sem barra no gráfico, e o valor muito menor que o maior fica com o traço mínimo", async () => {
 		await abrirComPatrimonio(
 			patrimonioNaPagina({
 				eleicoes: [
@@ -521,39 +883,55 @@ describe("o patrimônio declarado ao TSE", () => {
 		expect(eleicoes()).toMatchObject([
 			{
 				valor: [reais("0"), "em reais de hoje"],
-				barra: null,
 				detalhes: [
 					`Declarado em${SEM_QUEBRA}2006: ${reais("0,00")}`,
 					expect.any(String),
 					expect.any(String),
 				],
 			},
-			{ valor: [reais("12 mil"), "em reais de hoje"], barra: "0.0001" },
-			{ valor: [reais("380 milhões"), "em reais de hoje"], barra: "1" },
+			{ valor: [reais("12 mil"), "em reais de hoje"] },
+			{ valor: [reais("380 milhões"), "em reais de hoje"] },
+		]);
+		expect(grafico()).toEqual([
+			["2006", null, reais("0")],
+			["2010", "0.0001", reais("12 mil")],
+			["2022", "1", reais("380 milhões")],
 		]);
 	});
 
-	it("sem a série do IPCA: o valor declarado, sem barras, e a abertura diz por quê", async () => {
+	it("sem a série do IPCA: o valor declarado, sem gráfico, diferença nem cálculo, e a abertura diz por quê", async () => {
 		await abrirComPatrimonio(patrimonioNaPagina({ correcao_ipca: null }));
 		const bloco = blocoDoPatrimonio();
 
-		expect(eleicoes().map(({ valor, barra }) => [valor, barra])).toEqual([
-			[[reais("198 mil"), "sem a correção pela inflação"], null],
-			[[reais("812 mil"), "sem a correção pela inflação"], null],
-			[["Os dados do TSE desta eleição não trazem um total de bens."], null],
-			[[reais("2,4 milhões"), "sem a correção pela inflação"], null],
+		expect(
+			eleicoes().map(({ valor, diferenca, periodo }) => [
+				valor,
+				diferenca,
+				periodo,
+			]),
+		).toEqual([
+			[[reais("198 mil"), "sem a correção pela inflação"], null, null],
+			[[reais("812 mil"), "sem a correção pela inflação"], null, null],
+			[
+				["Os dados do TSE desta eleição não trazem um total de bens."],
+				null,
+				null,
+			],
+			[[reais("2,4 milhões"), "sem a correção pela inflação"], null, null],
 		]);
 		expect(bloco.textContent).toContain(
 			"declarou nas eleições gerais em que concorreu. Os valores aparecem como foram declarados, sem a correção pela inflação: a série do IPCA não está nos dados usados agora.",
 		);
+		expect(bloco.querySelector(".grafico-do-patrimonio")).toBeNull();
 		expect(bloco.textContent).not.toContain("reais de hoje");
 		expect(bloco.textContent).not.toContain("A correção usa o IPCA");
+		expect(bloco.textContent).not.toContain("A diferença pode vir");
 		expect(
 			within(bloco).queryByRole("link", { name: /Banco Central/ }),
 		).toBeNull();
 	});
 
-	it("a eleição sem a correção mostra o declarado no destaque, e as outras continuam com a barra", async () => {
+	it("a eleição sem a correção mostra o declarado no destaque e fica sem barra no gráfico, e as outras continuam com ela", async () => {
 		await abrirComPatrimonio(
 			patrimonioNaPagina({
 				eleicoes: [
@@ -570,10 +948,15 @@ describe("o patrimônio declarado ao TSE", () => {
 		);
 		const bloco = blocoDoPatrimonio();
 
-		expect(eleicoes().map(({ valor, barra }) => [valor, barra])).toEqual([
-			[[reais("1,1 milhão"), "em reais de hoje"], "1"],
-			[[reais("550 mil"), "em reais de hoje"], "0.5"],
-			[[reais("2,4 milhões"), "sem a correção pela inflação"], null],
+		expect(eleicoes().map(({ valor }) => valor)).toEqual([
+			[reais("1,1 milhão"), "em reais de hoje"],
+			[reais("550 mil"), "em reais de hoje"],
+			[reais("2,4 milhões"), "sem a correção pela inflação"],
+		]);
+		expect(grafico()).toEqual([
+			["2018", "1", reais("1,1 milhão")],
+			["2022", "0.5", reais("550 mil")],
+			["2026", null, "sem o valor de hoje"],
 		]);
 		expect(bloco.textContent).toContain(
 			"Para comparar anos diferentes, os totais aparecem também em reais de hoje, corrigidos pela inflação até setembro de 2026, quando a série do IPCA cobre a eleição.",
@@ -651,11 +1034,13 @@ describe("o patrimônio declarado ao TSE", () => {
 		expect(screen.queryByRole("link", { name: /Arquivo do TSE/ })).toBeNull();
 	});
 
-	it("nenhuma palavra julga o número: sem subida, queda nem percentual", async () => {
+	it("nenhuma palavra julga a diferença: ela vem em reais e em percentual, com a mais ou a menos, sem adjetivo", async () => {
 		await abrir(detalheDeExemplo());
+		const texto = blocoDoPatrimonio().textContent;
 
-		expect(blocoDoPatrimonio().textContent).not.toMatch(
-			/aument|diminu|cresc|caiu|dobr|enriquec|ganh|perd|suspeit|evolu|varia|%/i,
+		expect(texto).toContain("a mais que em 2014");
+		expect(texto).not.toMatch(
+			/aument|diminu|cresc|dobr|enriquec|suspeit|evolu|salto|saltou|dispar|despenc|explod/i,
 		);
 	});
 });

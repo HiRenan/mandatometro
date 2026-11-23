@@ -177,6 +177,18 @@ export function totalDaContagem(contagem: ContagemVotosParlamentar): number {
 	return VALORES.reduce((soma, valor) => soma + contagem[valor], 0);
 }
 
+/**
+ * A parte de um voto no total da contagem, para a barra de "Como votou": de
+ * 0,0001 a 1, com quatro casas, para um voto acima de zero não sumir. O zero
+ * fica sem barra.
+ */
+export function parteDoVoto(quantos: number, total: number): number | null {
+	if (quantos <= 0 || total <= 0) {
+		return null;
+	}
+	return Math.max(0.0001, Math.round((quantos / total) * 10_000) / 10_000);
+}
+
 /** O filtro da página da votação, como vem do endereço (?uf=SC&partido=PFT). */
 export type Filtro = { uf?: string; partido?: string };
 

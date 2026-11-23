@@ -10,6 +10,10 @@ import {
 } from "@/lib/formatar";
 import type { Patrimonio } from "@/lib/parlamentares";
 import {
+	type CalculoDaEleicao,
+	type Diferenca,
+	graficoDoPatrimonio,
+	type LinhaDoGrafico,
 	type LinhaDoPatrimonio,
 	linhasDoPatrimonio,
 	type ValorDaEleicao,
@@ -24,10 +28,12 @@ const LEI_DO_IMPOSTO_DE_RENDA =
 
 /**
  * O patrimônio declarado ao TSE (o Renan, em 22/11/2026): uma linha por eleição,
- * da mais antiga para a mais nova, com o ano em número grande, o cargo disputado
- * e o estado, o total em reais de hoje em destaque, com a barra, e o valor exato
- * declarado, com o arquivo do TSE. O aviso do valor declarado fica logo antes da
- * lista. As contas são da API: aqui, só se escrevem os números.
+ * da mais antiga para a mais nova, com o ano em número grande, o cargo disputado,
+ * o estado e o resultado, o total em reais de hoje em destaque, a diferença para
+ * a eleição anterior, o período da correção e o valor exato declarado, com o
+ * arquivo do TSE. O aviso do valor declarado e o gráfico dos valores de hoje
+ * ficam logo antes da lista; o aviso da diferença e o "Como calculamos", depois.
+ * As contas são da API: aqui, só se escrevem os números.
  */
 export function PatrimonioDeclarado({
 	patrimonio,
@@ -85,6 +91,11 @@ function ConteudoDoPatrimonio({
 		: null;
 	const parcial = linhas.some(({ valor }) => valor.tipo === "sem-correcao");
 	const mes = correcaoAplicada && formatarMes(correcaoAplicada.mes_fim);
+	const grafico = graficoDoPatrimonio(linhas);
+	const comDiferenca = linhas.some(({ diferenca }) => diferenca !== null);
+	const calculos = linhas.flatMap(({ chave, calculo }) =>
+		calculo === null ? [] : [{ chave, ...calculo }],
+	);
 	return (
 		<>
 			<p className="texto-do-patrimonio">
@@ -105,21 +116,29 @@ function ConteudoDoPatrimonio({
 				como na declaração do Imposto de Renda: uma casa comprada há 20 anos
 				pode aparecer pelo valor daquela época.
 			</p>
+			{grafico && <GraficoDoPatrimonio linhas={grafico} />}
 			<ol role="list" className="eleicoes-do-patrimonio">
 				{linhas.map((linha) => (
-					<EleicaoDoPatrimonio
-						key={`${linha.ano}-${linha.cargo}-${linha.lugar}`}
-						linha={linha}
-					/>
+					<EleicaoDoPatrimonio key={linha.chave} linha={linha} />
 				))}
 			</ol>
+			{comDiferenca && (
+				<p className="texto-do-patrimonio aviso-do-patrimonio">
+					A diferença pode vir de compra, venda, herança ou doação de bens:
+					sozinha, não diz por quê.
+				</p>
+			)}
 			<p className="texto-do-patrimonio nota-do-patrimonio">
 				Só aparecem as eleições em que deu para ligar, com segurança, a
 				candidatura no TSE a {nome}. O arquivo de cada ano é o do TSE com os
 				bens declarados naquela eleição, e não só os desta pessoa.
 			</p>
 			{correcaoAplicada && (
-				<CorrecaoPeloIpca correcao={correcaoAplicada} parcial={parcial} />
+				<ComoCalculamos
+					correcao={correcaoAplicada}
+					parcial={parcial}
+					calculos={calculos}
+				/>
 			)}
 			<p className="fonte-das-regras">
 				Fontes das regras:{" "}
@@ -137,13 +156,52 @@ function ConteudoDoPatrimonio({
 }
 
 /**
- * Uma eleição: o ano, o cargo disputado e o estado, o valor em destaque, com a
- * barra, e embaixo o declarado exato e o arquivo do TSE, com a data da coleta. O
- * link tem um nome só dele para o leitor de tela; fora dos sites oficiais, o
- * arquivo fica escrito, sem link.
+ * O gráfico "Em reais de hoje" (o Renan, em 23/11/2026: "Um gráfico só, no
+ * alto"): uma linha por eleição, na ordem da lista, com o ano, a barra e o valor
+ * arredondado. As barras usam a mesma régua, a do maior valor de hoje da pessoa,
+ * e a eleição sem o valor de hoje diz isso no lugar da barra. O gráfico fica
+ * fora do leitor de tela: os números estão na lista, logo embaixo.
+ */
+function GraficoDoPatrimonio({ linhas }: { linhas: LinhaDoGrafico[] }) {
+	return (
+		<div className="grafico-do-patrimonio" aria-hidden="true">
+			<p className="rotulo titulo-do-grafico">Em reais de hoje</p>
+			<div className="linhas-do-grafico">
+				{linhas.map(({ chave, ano, valor, parte }) => (
+					<div key={chave} className="linha-do-grafico">
+						<span className="ano-do-grafico">{ano}</span>
+						{valor === null ? (
+							<span className="sem-valor-do-grafico">sem o valor de hoje</span>
+						) : (
+							<>
+								<span className="trilho-do-grafico">
+									{parte !== null && (
+										<span
+											className="barra-do-patrimonio"
+											style={{ "--parte": String(parte) } as CSSProperties}
+										/>
+									)}
+								</span>
+								<span className="valor-do-grafico">{valor}</span>
+							</>
+						)}
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
+/**
+ * Uma eleição: o ano, o cargo disputado, o estado e o resultado, o valor em
+ * destaque, a diferença para a eleição anterior e o período da correção, e
+ * embaixo o declarado exato e o arquivo do TSE, com a data da coleta. O link tem
+ * um nome só dele para o leitor de tela; fora dos sites oficiais, o arquivo fica
+ * escrito, sem link.
  */
 function EleicaoDoPatrimonio({ linha }: { linha: LinhaDoPatrimonio }) {
-	const { ano, cargo, lugar, valor, fonte } = linha;
+	const { ano, cargo, lugar, resultado, valor, diferenca, periodo, fonte } =
+		linha;
 	return (
 		<li className="eleicao-do-patrimonio">
 			<h3 className="ano-da-eleicao">{ano}</h3>
@@ -152,9 +210,12 @@ function EleicaoDoPatrimonio({ linha }: { linha: LinhaDoPatrimonio }) {
 					<span>{cargo}</span>
 					<span>{lugar}</span>
 				</FaixaDeInformacoes>
+				{resultado && <p className="resultado-da-eleicao">{resultado}</p>}
 			</div>
 			<div className="valor-da-eleicao">
 				<ValorDestacado valor={valor} />
+				{diferenca && <DiferencaDaEleicao diferenca={diferenca} />}
+				{periodo && <p className="periodo-da-eleicao">{periodo}</p>}
 			</div>
 			<div className="detalhes-da-eleicao">
 				{valor.tipo !== "sem-total" && (
@@ -196,9 +257,8 @@ function ValorDeclarado({ ano, valor }: { ano: number; valor: string }) {
 }
 
 /**
- * O valor em destaque: em reais de hoje, com a barra, ou o declarado, quando
- * falta a correção. Sem o total, a frase diz que os dados não trazem um. A barra
- * fica fora do leitor de tela: o número já está escrito.
+ * O valor em destaque: em reais de hoje ou o declarado, quando falta a correção.
+ * Sem o total, a frase diz que os dados não trazem um.
  */
 function ValorDestacado({ valor }: { valor: ValorDaEleicao }) {
 	if (valor.tipo === "sem-total") {
@@ -216,33 +276,69 @@ function ValorDestacado({ valor }: { valor: ValorDaEleicao }) {
 					? "em reais de hoje"
 					: "sem a correção pela inflação"}
 			</p>
-			{valor.tipo === "corrigido" && valor.barra !== null && (
-				<span
-					aria-hidden="true"
-					className="barra-do-patrimonio"
-					style={{ "--parte": String(valor.barra) } as CSSProperties}
-				/>
-			)}
 		</>
 	);
 }
 
-/** De onde vem a correção: o índice, até que mês ela vai e a série do Banco Central. */
-function CorrecaoPeloIpca({
+/**
+ * A diferença para a eleição anterior, em tinta, sem cor de ganho nem de perda:
+ * na tela, com o sinal do percentual entre parênteses; no leitor de tela, com "a
+ * mais" ou "a menos" em palavras também no percentual.
+ */
+function DiferencaDaEleicao({ diferenca }: { diferenca: Diferenca }) {
+	const { texto, leitor } = diferenca;
+	return (
+		<p className="diferenca-da-eleicao">
+			{texto === leitor ? (
+				texto
+			) : (
+				<>
+					<span className="sr-only">{leitor}</span>
+					<span aria-hidden="true">{texto}</span>
+				</>
+			)}
+		</p>
+	);
+}
+
+/**
+ * Como calculamos os reais de hoje: o índice e até que mês a correção vai, uma
+ * frase por eleição, com a alta dos preços e quanto R$ 100 daquele ano valem
+ * hoje, e o link da Calculadora do Cidadão do Banco Central com as datas dela; no
+ * fim, a série do IPCA, com a data da coleta. Cada link da calculadora tem um
+ * nome só dele para o leitor de tela.
+ */
+function ComoCalculamos({
 	correcao,
 	parcial,
+	calculos,
 }: {
 	correcao: CorrecaoIpca;
 	parcial: boolean;
+	calculos: (CalculoDaEleicao & { chave: string })[];
 }) {
 	const serie = enderecoSeguro(correcao.fonte.url);
 	return (
 		<div className="correcao-do-patrimonio">
+			<h3 className="titulo-da-correcao">Como calculamos os reais de hoje</h3>
 			<p className="texto-do-patrimonio">
 				A correção usa o IPCA, a inflação oficial medida pelo IBGE, de outubro
 				do ano {parcial ? "da eleição" : "de cada eleição"} até{" "}
 				{formatarMes(correcao.mes_fim)}.
 			</p>
+			{calculos.length > 0 && (
+				<ul role="list" className="calculos-do-patrimonio">
+					{calculos.map(({ chave, ano, frase, calculadora }) => (
+						<li key={chave} className="calculo-da-eleicao">
+							<p className="texto-do-patrimonio">{frase}</p>
+							<a href={calculadora} className="acao-de-texto">
+								<span>Conferir na Calculadora do Cidadão</span>{" "}
+								<span className="sr-only">a correção de {ano}</span>
+							</a>
+						</li>
+					))}
+				</ul>
+			)}
 			{serie && (
 				<a href={serie} className="acao-de-texto">
 					<span>Série do IPCA no Banco Central</span>

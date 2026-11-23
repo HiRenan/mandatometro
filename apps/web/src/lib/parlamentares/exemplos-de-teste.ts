@@ -325,7 +325,9 @@ export function correcaoDeExemplo(
 
 /**
  * O patrimônio de Ágata Cedrolume: quatro eleições, de 2014 a 2026, uma delas
- * (2022) sem total nos dados do TSE.
+ * (2022) sem total nos dados do TSE, cada uma com o resultado. A diferença de
+ * 2018 é para 2014, e a de 2026, para 2018: a eleição sem total fica de fora da
+ * comparação, como na API.
  */
 export function patrimonioDeExemplo(
 	mudancas: Partial<PatrimonioParlamentar> = {},
@@ -337,18 +339,34 @@ export function patrimonioDeExemplo(
 				cargo: { codigo: 7, nome: "Deputado estadual" },
 				total_centavos: 19_830_000,
 				total_corrigido_centavos: 35_212_300,
+				resultado: "eleito_por_qp",
 			}),
-			eleicaoDeExemplo({ ano: 2018 }),
+			eleicaoDeExemplo({
+				ano: 2018,
+				resultado: "eleito_por_media",
+				variacao: {
+					ano_anterior: 2014,
+					diferenca_centavos: 74_787_700,
+					percentual: "212.4",
+				},
+			}),
 			eleicaoDeExemplo({
 				ano: 2022,
 				total_centavos: null,
 				total_corrigido_centavos: null,
+				resultado: "suplente",
 			}),
 			eleicaoDeExemplo({
 				ano: 2026,
 				cargo: { codigo: 5, nome: "Senador" },
 				total_centavos: 241_000_000,
 				total_corrigido_centavos: 241_337_400,
+				resultado: "eleito",
+				variacao: {
+					ano_anterior: 2018,
+					diferenca_centavos: 131_337_400,
+					percentual: "119.4",
+				},
 			}),
 		],
 		correcao_ipca: correcaoDeExemplo(),

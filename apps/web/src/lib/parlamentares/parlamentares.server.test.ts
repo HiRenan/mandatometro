@@ -60,13 +60,15 @@ function json(status: number, corpo: unknown) {
 }
 
 /**
- * A API de um parlamentar: o detalhe, a página de votos pedida, de `total` votos,
- * e o patrimônio declarado, que `patrimonio` pode trocar, como por uma falha.
+ * A API de um parlamentar: o detalhe, que `detalhe` pode trocar, a página de
+ * votos pedida, de `total` votos, e o patrimônio declarado, que `patrimonio`
+ * pode trocar, como por uma falha.
  */
 function apiDoParlamentar(
 	total: number,
 	patrimonio: (pedido: Request) => Response | Promise<Response> = () =>
 		json(200, patrimonioDeExemplo()),
+	detalhe: unknown = detalheDeExemplo(),
 ) {
 	return api((pedido) => {
 		const endereco = new URL(pedido.url);
@@ -77,7 +79,28 @@ function apiDoParlamentar(
 		if (endereco.pathname.endsWith("/patrimonio")) {
 			return patrimonio(pedido);
 		}
-		return json(200, detalheDeExemplo());
+		return json(200, detalhe);
+	});
+}
+
+/** As eleições de exemplo com um campo trocado, no corpo que a API manda. */
+function comEleicao(mudancas: Record<string, unknown>) {
+	return () =>
+		json(200, {
+			...patrimonioDeExemplo(),
+			eleicoes: [{ ...eleicaoDeExemplo(), ...mudancas }],
+		});
+}
+
+/** A variação de 2018 de exemplo, com um campo trocado. */
+function comVariacao(mudancas: Record<string, unknown>) {
+	return comEleicao({
+		variacao: {
+			ano_anterior: 2014,
+			diferenca_centavos: 74_787_700,
+			percentual: "212.4",
+			...mudancas,
+		},
 	});
 }
 
@@ -247,7 +270,151 @@ describe("a página do parlamentar", () => {
 	});
 });
 
+describe("a foto oficial na página do parlamentar", () => {
+	const FOTO_DA_CAMARA =
+		"https://www.camara.leg.br/internet/deputado/bandep/90000123.jpg";
+	const FOTO_DO_SENADO =
+		"https://legis.senado.leg.br/senadores/fotos-oficiais/90000124";
+
+	it("a foto das duas Casas chega à página no endereço e com o crédito de cada uma, fora dos dados da pessoa", async () => {
+		apiDoParlamentar(3);
+		const deputada = await lerParlamentar("81", 1);
+
+		expect(deputada.tipo === "parlamentar" && deputada.foto).toEqual({
+			url: FOTO_DA_CAMARA,
+			credito: "Câmara dos Deputados",
+		});
+		expect(
+			deputada.tipo === "parlamentar" && "foto" in deputada.parlamentar,
+		).toBe(false);
+
+		apiDoParlamentar(
+			3,
+			undefined,
+			detalheDeExemplo({ id: 501, nome: "Lia Quinemar", casa: "senado" }),
+		);
+		const senadora = await lerParlamentar("501", 1);
+
+		expect(senadora.tipo === "parlamentar" && senadora.foto).toEqual({
+			url: FOTO_DO_SENADO,
+			credito: "Senado Federal",
+		});
+		expect(erros).not.toHaveBeenCalled();
+	});
+
+	const fotos = [
+		["em http", { url: FOTO_DA_CAMARA.replace("https:", "http:") }],
+		[
+			"de outro site",
+			{ url: FOTO_DA_CAMARA.replace("leg.br/", "leg.br.exemplo.test/") },
+		],
+		["em outro caminho", { url: FOTO_DA_CAMARA.replace(".jpg", ".png") }],
+		[
+			"com volta no caminho",
+			{ url: FOTO_DA_CAMARA.replace("bandep/", "bandep/../../outra/") },
+		],
+		["com busca", { url: `${FOTO_DA_CAMARA}?tamanho=grande` }],
+		["com âncora", { url: `${FOTO_DA_CAMARA}#rosto` }],
+		[
+			"fora da forma exata do endereço",
+			{ url: FOTO_DA_CAMARA.replace("https://www.", "HTTPS://WWW.") },
+		],
+		["com porta", { url: FOTO_DA_CAMARA.replace("leg.br/", "leg.br:8443/") }],
+		[
+			"com usuário",
+			{ url: FOTO_DA_CAMARA.replace("https://", "https://quem@") },
+		],
+		[
+			"com senha",
+			{ url: FOTO_DA_CAMARA.replace("https://", "https://:senha@") },
+		],
+		["com o crédito trocado", { credito: "Senado Federal" }],
+		["da outra Casa", { url: FOTO_DO_SENADO, credito: "Senado Federal" }],
+		["com o endereço em número", { url: 90000123 }],
+		["com um texto que não é endereço", { url: "não é um endereço" }],
+	] as const;
+
+	it.each(fotos)(
+		"a foto %s fica de fora, com a linha fixa no log, sem o endereço, e a página abre inteira",
+		async (_, mudancas) => {
+			const detalhe = detalheDeExemplo();
+			apiDoParlamentar(3, undefined, {
+				...detalhe,
+				foto: { ...detalhe.foto, ...mudancas },
+			});
+
+			const pagina = await lerParlamentar("81", 1);
+
+			expect(pagina).toMatchObject({
+				tipo: "parlamentar",
+				parlamentar: { id: 81 },
+				foto: null,
+				total: 3,
+				patrimonio: { tipo: "patrimonio" },
+			});
+			expect(erros.mock.calls).toEqual([
+				["[parlamentares] A foto não veio no formato esperado."],
+			]);
+		},
+	);
+
+	it("a foto que não é objeto também fica de fora, com a linha fixa", async () => {
+		apiDoParlamentar(3, undefined, {
+			...detalheDeExemplo(),
+			foto: FOTO_DA_CAMARA,
+		});
+
+		expect(await lerParlamentar("81", 1)).toMatchObject({ foto: null });
+		expect(erros.mock.calls).toEqual([
+			["[parlamentares] A foto não veio no formato esperado."],
+		]);
+	});
+
+	it("sem a foto nos dados, como na API antes da #291, a página abre sem ela e sem linha no log", async () => {
+		const { foto: _, ...semFoto } = detalheDeExemplo();
+		for (const detalhe of [semFoto, { ...semFoto, foto: null }]) {
+			apiDoParlamentar(3, undefined, detalhe);
+
+			expect(await lerParlamentar("81", 1)).toMatchObject({
+				tipo: "parlamentar",
+				foto: null,
+			});
+		}
+		expect(erros).not.toHaveBeenCalled();
+	});
+});
+
 describe("o patrimônio declarado na página do parlamentar", () => {
+	it("sem os campos novos, como na API antes da #291, cada um vale nulo, e o bloco abre sem linha no log", async () => {
+		const {
+			resultado: _r,
+			fator_ipca: _f,
+			alta_ipca_percentual: _a,
+			variacao: _v,
+			...semOsNovos
+		} = eleicaoDeExemplo();
+		apiDoParlamentar(3, () =>
+			json(200, { ...patrimonioDeExemplo(), eleicoes: [semOsNovos] }),
+		);
+
+		const pagina = await lerParlamentar("81", 1);
+
+		expect(pagina.tipo === "parlamentar" && pagina.patrimonio).toEqual({
+			tipo: "patrimonio",
+			eleicoes: [
+				{
+					...semOsNovos,
+					resultado: null,
+					fator_ipca: null,
+					alta_ipca_percentual: null,
+					variacao: null,
+				},
+			],
+			correcao: correcaoDeExemplo(),
+		});
+		expect(erros).not.toHaveBeenCalled();
+	});
+
 	it("sem a série do IPCA, a correção fica nula; sem eleição ligada à pessoa, a lista fica vazia", async () => {
 		apiDoParlamentar(3, () => json(200, { eleicoes: [], correcao_ipca: null }));
 
@@ -394,6 +561,71 @@ describe("o patrimônio declarado na página do parlamentar", () => {
 					...patrimonioDeExemplo(),
 					correcao_ipca: { ...correcaoDeExemplo(), indice: "INPC" },
 				}),
+			"resposta-invalida",
+		],
+		[
+			"o cargo sem o código",
+			comEleicao({ cargo: { nome: "Deputado federal" } }),
+			"resposta-invalida",
+		],
+		[
+			"um resultado fora da lista",
+			comEleicao({ resultado: "eleita" }),
+			"resposta-invalida",
+		],
+		[
+			"o fator com duas casas",
+			comEleicao({ fator_ipca: "1.35" }),
+			"resposta-invalida",
+		],
+		[
+			"o fator em número, e não em texto",
+			comEleicao({ fator_ipca: 1.354 }),
+			"resposta-invalida",
+		],
+		[
+			"o fator negativo",
+			comEleicao({ fator_ipca: "-1.3540" }),
+			"resposta-invalida",
+		],
+		[
+			"o fator grande demais para a conta exata",
+			comEleicao({ fator_ipca: "900719925474.0993" }),
+			"resposta-invalida",
+		],
+		[
+			"a alta com duas casas",
+			comEleicao({ alta_ipca_percentual: "35.40" }),
+			"resposta-invalida",
+		],
+		[
+			"a alta com o sinal de mais",
+			comEleicao({ alta_ipca_percentual: "+35.4" }),
+			"resposta-invalida",
+		],
+		[
+			"a variação em texto",
+			comEleicao({ variacao: "+212.4%" }),
+			"resposta-invalida",
+		],
+		[
+			"a variação para uma eleição que não é anterior",
+			comVariacao({ ano_anterior: 2018 }),
+			"resposta-invalida",
+		],
+		[
+			"a diferença com fração de centavo",
+			comVariacao({ diferenca_centavos: 10.5 }),
+			"resposta-invalida",
+		],
+		[
+			"o percentual sem a casa decimal",
+			comVariacao({ percentual: "212" }),
+			"resposta-invalida",
+		],
+		[
+			"a variação sem o percentual",
+			comVariacao({ percentual: undefined }),
 			"resposta-invalida",
 		],
 	] as const;
