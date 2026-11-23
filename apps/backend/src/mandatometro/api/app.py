@@ -8,10 +8,11 @@ from mandatometro.api.contas import router as contas
 from mandatometro.api.edicoes import router as edicoes
 from mandatometro.api.esquemas import TemaPublico
 from mandatometro.api.newsletter import router as newsletter
-from mandatometro.api.painel import AcessoPainel
+from mandatometro.api.painel import AcessoPainel, router_numeros
 from mandatometro.api.painel import router as painel
 from mandatometro.api.parlamentares import router as parlamentares
 from mandatometro.api.piloto import router as piloto
+from mandatometro.api.visitas import router as visitas
 from mandatometro.api.votacoes import router as votacoes
 from mandatometro.config import config
 from mandatometro.temas import TEMAS
@@ -37,9 +38,11 @@ app.include_router(newsletter)
 app.include_router(contas)
 app.include_router(edicoes)
 app.include_router(painel)
+app.include_router(router_numeros)
 app.include_router(parlamentares)
 app.include_router(piloto)
 app.include_router(votacoes)
+app.include_router(visitas)
 
 
 class Saude(BaseModel):

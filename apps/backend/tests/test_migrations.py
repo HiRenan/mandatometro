@@ -35,6 +35,8 @@ TABELAS_DO_MVP = {
     "limite_inscricao",
     "tentativa_piloto",
     "limite_piloto",
+    "visita",
+    "limite_visita",
 }
 
 

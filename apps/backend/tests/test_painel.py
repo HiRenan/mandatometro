@@ -725,7 +725,7 @@ def test_limite_aceita_revisao_de_treze_itens(cliente, admin, abrir, dados, sess
     assert _status(resposta, 200)["itens"] == 13
 
 
-def test_openapi_declara_as_tres_operacoes_e_seus_modelos():
+def test_openapi_declara_as_operacoes_do_painel_e_preserva_os_modelos_editoriais():
     contrato = app.openapi()
     caminhos = contrato["paths"]
     painel = {
@@ -737,6 +737,7 @@ def test_openapi_declara_as_tres_operacoes_e_seus_modelos():
         RASCUNHO: {"get"},
         _revisao("{id}"): {"post"},
         _publicacao("{id}"): {"post"},
+        "/painel/numeros": {"get"},
     }
     leitura = painel[RASCUNHO]["get"]
     revisao = painel[_revisao("{id}")]["post"]
