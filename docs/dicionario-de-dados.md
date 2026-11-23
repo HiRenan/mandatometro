@@ -108,6 +108,8 @@ O comando `mandatometro coleta biografias` lê as duas Casas para todos os parla
 
 A coleta conserva a ordem da fonte e elimina repetições. A escolaridade do Senado reúne os graus distintos numa string, com vírgula e espaço entre eles. A fonte de cada campo preenchido fica ligada a `biografia_parlamentar`, com o endereço da consulta e a data e hora da resposta (`coletado_em`). A coleta monta o caminho e os parâmetros de cada fonte de biografia e de partido. No catálogo da Câmara, os links indicam os números das páginas, e a coleta monta as consultas com `itens` e `pagina`. Os destinos de redirecionamento servem apenas para obter a resposta.
 
+Antes de gravar o catálogo da Câmara, a coleta confere se o número da página no endereço final da resposta corresponde ao pedido. Se houver divergência, o catálogo anterior e suas fontes são preservados, o resumo traz `falha_partidos: true` e o comando retorna 1. A coleta de biografias segue.
+
 `GET /parlamentares/{id}` devolve `biografia` com `profissoes`, `escolaridade` e `fonte`. O endereço e o horário públicos são os da escolaridade quando disponível, ou os das profissões. `profissoes` pode ser uma lista vazia e `escolaridade` pode ser nula. A biografia inteira é nula antes da coleta ou quando a Casa responde sem ambos os dados. Uma falha de consulta, validação ou gravação preserva a biografia anterior e entra na contagem de falhas.
 
 A compressão inválida de uma resposta conta como falha de consulta. A coleta registra uma mensagem fixa, preserva os dados anteriores da pessoa ou do catálogo afetado e consulta as demais pessoas. O comando devolve saída 1 com o resumo parcial.
