@@ -755,9 +755,9 @@ O comando `coleta bens-tse` só grava depois de ler os 12 arquivos completos, in
 
 ### Resultado por eleição
 
-A série normaliza `DS_SIT_TOT_TURNO` pelo texto. Em 2010, por exemplo, `CD_SIT_TOT_TURNO` usa o código 2 para suplente e o 5 para média. A coleta toma o maior `NR_TURNO` da candidatura. Nos arquivos da série, o TSE pode mudar o código da eleição entre turnos da mesma disputa. A série junta códigos distintos quando o CPF confirmado, a UF, a sequência da candidatura e o cargo são iguais e cada turno aparece sob uma única chave. A série conserva a chave já ligada ou usa a chave do primeiro turno disponível. Chaves concorrentes no mesmo turno seguem a regra de conflito do ano.
+A série normaliza `DS_SIT_TOT_TURNO` pelo texto. Em 2010, por exemplo, `CD_SIT_TOT_TURNO` usa o código 2 para suplente e o 5 para média. A coleta toma o maior `NR_TURNO` dentro da mesma chave de candidatura. Nos arquivos da série, o TSE pode mudar o código da eleição entre turnos da mesma disputa. Quando o CPF aponta para as duas chaves no mesmo ano, a coleta conta `cpf_repetido` e `em_conflito` e deixa a eleição fora das novas gravações da série, como antes da #291.
 
-A coleta lê os bens de todas as chaves confirmadas da disputa. Quando uma só delas tem declaração, o total vem dessa declaração. Se há declarações em chaves diferentes, a eleição fica em conflito e a carga pula a gravação daquele ano para a pessoa, preservando o histórico confirmado em cargas anteriores.
+A coleta lê os bens apenas pela chave da série. Se já houver uma ficha gravada para a eleição em conflito, a coleta preserva a ficha e a declaração publicadas.
 
 | Texto de `DS_SIT_TOT_TURNO` | Valor gravado |
 | --- | --- |
