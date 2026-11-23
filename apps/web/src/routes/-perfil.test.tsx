@@ -386,9 +386,12 @@ describe("o perfil com a conta aberta", () => {
 		expect(
 			screen.queryByRole("link", { name: "Revisar a edição da semana" }),
 		).toBeNull();
+		expect(
+			screen.queryByRole("link", { name: "Ver os números do site" }),
+		).toBeNull();
 	});
 
-	it("leva a administradora à revisão da edição", async () => {
+	it("leva a administradora à revisão da edição e aos números", async () => {
 		perfil.mockResolvedValue(
 			resposta(200, { nome: "Ana Fictícia", papel: "administradora" }),
 		);
@@ -399,6 +402,11 @@ describe("o perfil com a conta aberta", () => {
 			name: "Revisar a edição da semana",
 		});
 		expect(link.getAttribute("href")).toBe("/painel");
+		expect(
+			screen
+				.getByRole("link", { name: "Ver os números do site" })
+				.getAttribute("href"),
+		).toBe("/painel/numeros");
 	});
 
 	it("sem nada lido, começa pelo primeiro artigo", async () => {

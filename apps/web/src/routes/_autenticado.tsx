@@ -2,8 +2,8 @@ import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { VerificandoSessao } from "@/components/painel/verificando-sessao";
 import { exigirAdministradora } from "@/lib/painel/acesso";
 
-// O layout das páginas da administradora, sem caminho próprio: hoje, só o
-// /painel. Na hospedagem, o cookie da sessão é do host da API. A guarda (o
+// O layout das páginas da administradora, sem caminho próprio: hoje, o /painel
+// e o /painel/numeros. Na hospedagem, o cookie da sessão é do host da API. A guarda (o
 // beforeLoad) e as páginas rodam no navegador (ssr: false), e o servidor
 // manda só o "Verificando sua sessão…", mesmo quando os hosts coincidem.
 //
