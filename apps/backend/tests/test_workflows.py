@@ -166,6 +166,11 @@ def test_coleta_de_biografias_na_main_exige_disparo_do_dono():
     assert "uv run --no-sync mandatometro coleta biografias" in job["steps"][-1]["run"]
 
 
+def test_coleta_de_biografias_tem_teto_de_45_minutos():
+    job = ler("coleta-biografias.yml")["jobs"]["coletar"]
+    assert job["timeout-minutes"] == "45"
+
+
 @pytest.mark.parametrize(
     "evento,branch,envios,coletas,esperado,ambiente",
     [
