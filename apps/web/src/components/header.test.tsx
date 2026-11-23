@@ -54,16 +54,16 @@ afterEach(() => {
 
 /** O cabeçalho num site de mentira, com as páginas dos links dele. */
 async function mostrar({
-	comEdicoes = false,
+	comApi = false,
 	endereco = "/",
 }: {
-	comEdicoes?: boolean;
+	comApi?: boolean;
 	endereco?: string;
 } = {}) {
 	const raiz = createRootRoute({
 		component: () => (
 			<>
-				<Header comEdicoes={comEdicoes} />
+				<Header comApi={comApi} />
 				<Outlet />
 			</>
 		),
@@ -75,6 +75,10 @@ async function mostrar({
 			[
 				"/",
 				"/trilhas",
+				"/parlamentares",
+				"/parlamentares/$id",
+				"/votacoes/$id",
+				"/jogos",
 				"/edicoes",
 				"/edicoes/$id",
 				"/login",
@@ -109,7 +113,7 @@ function linksDe(lista: HTMLElement) {
 }
 
 describe("cabeçalho", () => {
-	it("tem o pulo para o conteúdo, o nome, o lema e os três links nas duas listas", async () => {
+	it("tem o pulo para o conteúdo, o nome, o lema e os dois links nas duas listas", async () => {
 		const cabecalho = await mostrar();
 		const listas = asListas(cabecalho);
 
@@ -129,64 +133,93 @@ describe("cabeçalho", () => {
 		// A conta fica fora das listas, ao lado da busca.
 		expect(listas.map(linksDe)).toEqual([
 			[
-				["Início", "/"],
 				["Trilhas", "/trilhas"],
 				["Jogos", "/jogos"],
 			],
 			[
-				["Início", "/"],
 				["Trilhas", "/trilhas"],
 				["Jogos", "/jogos"],
 			],
 		]);
 	});
 
-	it("onde o site tem a API, as edições entram nas duas listas, e elas dizem isso ao CSS", async () => {
-		const cabecalho = await mostrar({ comEdicoes: true });
+	it("onde o site tem a API, os parlamentares e as edições entram nas duas listas, e elas dizem isso ao CSS", async () => {
+		const cabecalho = await mostrar({ comApi: true });
 		const listas = asListas(cabecalho);
 
 		expect(listas).toHaveLength(2);
 		for (const lista of listas) {
 			expect(linksDe(lista)).toEqual([
-				["Início", "/"],
 				["Trilhas", "/trilhas"],
+				["Parlamentares", "/parlamentares"],
 				["Jogos", "/jogos"],
 				["Edições", "/edicoes"],
 			]);
-			// A coluna da letra grande depende de quantos links a lista tem.
-			expect(lista.querySelector("ul")?.hasAttribute("data-com-edicoes")).toBe(
+			// As duas linhas de dois e a coluna dependem de quantos links a lista tem.
+			expect(lista.querySelector("ul")?.hasAttribute("data-com-api")).toBe(
 				true,
 			);
 		}
 	});
 
-	it("sem a API, ficam os três links, sem a marca das edições", async () => {
+	it("sem a API, ficam os dois links, sem a marca da API", async () => {
 		const cabecalho = await mostrar();
 
 		for (const lista of cabecalho.querySelectorAll(".topo-links")) {
-			expect(lista.hasAttribute("data-com-edicoes")).toBe(false);
+			expect(lista.hasAttribute("data-com-api")).toBe(false);
 		}
-		expect(within(cabecalho).queryByRole("link", { name: "Edições" })).toBe(
+		for (const nome of ["Parlamentares", "Edições"]) {
+			expect(within(cabecalho).queryByRole("link", { name: nome })).toBe(null);
+		}
+	});
+
+	it("o Início saiu dos links: o nome leva ao início, e na página inicial nenhum link fica marcado", async () => {
+		const cabecalho = await mostrar({ comApi: true });
+
+		expect(within(cabecalho).queryByRole("link", { name: "Início" })).toBe(
 			null,
 		);
+		for (const lista of asListas(cabecalho)) {
+			expect(lista.querySelector('a[href="/"]')).toBeNull();
+			expect(lista.querySelector("a[data-na-secao]")).toBeNull();
+			expect(lista.querySelector("a[aria-current]")).toBeNull();
+		}
 	});
 
 	it("numa edição, o traço fica nas edições, e o link não é a página atual", async () => {
 		const cabecalho = await mostrar({
-			comEdicoes: true,
+			comApi: true,
 			endereco: "/edicoes/7",
 		});
 		const edicoes = within(cabecalho).getAllByRole("link", { name: "Edições" });
-		const inicio = within(cabecalho).getAllByRole("link", { name: "Início" });
+		const trilhas = within(cabecalho).getAllByRole("link", { name: "Trilhas" });
 
 		expect(edicoes).toHaveLength(2);
 		for (const link of edicoes) {
 			expect(link.hasAttribute("data-na-secao")).toBe(true);
 			expect(link.hasAttribute("aria-current")).toBe(false);
 		}
-		for (const link of inicio) {
+		for (const link of trilhas) {
 			expect(link.hasAttribute("data-na-secao")).toBe(false);
 		}
+	});
+
+	it.each([
+		["na lista sem estado, que é a página do link", "/parlamentares", "page"],
+		["na lista de um estado", "/parlamentares?uf=PR", null],
+		["na página de uma pessoa", "/parlamentares/81-agata-cedrolume", null],
+		["na página de uma votação", "/votacoes/139", null],
+	])("o traço fica no Parlamentares %s", async (_, endereco, atual) => {
+		const cabecalho = await mostrar({ comApi: true, endereco });
+
+		const marcados = within(cabecalho)
+			.getAllByRole("link")
+			.filter((link) => link.hasAttribute("data-na-secao"))
+			.map((link) => [link.textContent, link.getAttribute("aria-current")]);
+		expect(marcados).toEqual([
+			["Parlamentares", atual],
+			["Parlamentares", atual],
+		]);
 	});
 
 	it("o nome tem a mesma letra no rodapé, com o teto da letra grande", async () => {
@@ -224,14 +257,14 @@ describe("cabeçalho", () => {
 	});
 
 	it("marca a seção aberta, e só a página do link é a página atual", async () => {
-		const cabecalho = await mostrar();
+		const cabecalho = await mostrar({ endereco: "/trilhas" });
 
 		for (const lista of asListas(cabecalho)) {
-			const [inicio, trilhas] = lista.querySelectorAll("a");
-			expect(inicio.hasAttribute("data-na-secao")).toBe(true);
-			expect(inicio.getAttribute("aria-current")).toBe("page");
-			expect(trilhas.hasAttribute("data-na-secao")).toBe(false);
-			expect(trilhas.hasAttribute("aria-current")).toBe(false);
+			const [trilhas, jogos] = lista.querySelectorAll("a");
+			expect(trilhas.hasAttribute("data-na-secao")).toBe(true);
+			expect(trilhas.getAttribute("aria-current")).toBe("page");
+			expect(jogos.hasAttribute("data-na-secao")).toBe(false);
+			expect(jogos.hasAttribute("aria-current")).toBe(false);
 		}
 	});
 
