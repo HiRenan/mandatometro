@@ -46,9 +46,9 @@ function bloco(texto: string, cabeca: string): string {
 }
 
 describe("os alvos de toque", () => {
-	it("cada link de estado, de nome e de grupo tem pelo menos 44 px de altura", () => {
+	it("cada azulejo de estado, link da lista, de nome e de grupo tem pelo menos 44 px de altura", () => {
 		for (const seletor of [
-			".estado-no-mapa",
+			".atalho-do-estado",
 			".estado-na-lista",
 			".nome-na-lista",
 			".nomes-do-grupo a",
@@ -95,16 +95,98 @@ it("a caixa do vídeo mostra o anel enquanto o player tem foco", () => {
 });
 
 describe("o mapa dos estados", () => {
-	it("seis azulejos de 44 px e cinco vãos de 4 px pedem 17,75 rem; abaixo disso, a lista toma o lugar do mapa", () => {
-		const mapa = regra(css, ".mapa");
-		expect(mapa).toContain("grid-template-columns: repeat(6, minmax(0, 1fr));");
-		expect(mapa).toContain("gap: 4px;");
-		expect(6 * 44 + 5 * 4).toBe(17.75 * 16);
+	/** Só a seção do mapa e do campo "Estado". */
+	const mapa = css.slice(
+		css.indexOf('/* ───── A lista: o mapa e o campo "Estado"'),
+		css.indexOf("/* ───── A lista: os nomes de cada Casa"),
+	);
 
-		const estreito = bloco(css, "@container mapa (width < 17.75rem)");
+	it("oito azulejos de 44 px e sete vãos de 4 px pedem 23,75 rem: numa fileira só a partir daí, senão em duas de quatro", () => {
+		const azulejos = regra(mapa, ".atalhos-do-mapa");
+		expect(azulejos).toContain(
+			"grid-template-columns: repeat(4, minmax(0, 1fr));",
+		);
+		expect(azulejos).toContain("gap: 4px;");
+		expect(8 * 44 + 7 * 4).toBe(23.75 * 16);
+		expect(
+			regra(
+				bloco(mapa, "@container mapa (width >= 23.75rem)"),
+				".atalhos-do-mapa",
+			),
+		).toContain("grid-template-columns: repeat(8, minmax(0, 1fr));");
+	});
+
+	it("abaixo de 17,75 rem, a lista toma o lugar do mapa, mas só abaixo do lg: no painel da tela larga, o mapa fica sempre", () => {
+		const celular = bloco(mapa, "@media (width < 62rem)");
+		const estreito = bloco(celular, "@container mapa (width < 17.75rem)");
 		expect(regra(estreito, ".mapa")).toBe("display: none;");
 		expect(regra(estreito, ".lista-de-estados")).toContain("display: grid;");
-		expect(regra(css, ".lista-de-estados")).toBe("display: none;");
+		expect(regra(mapa, ".lista-de-estados")).toBe("display: none;");
+		// A troca não aparece fora do bloco do celular.
+		expect(css.split("@container mapa (width < 17.75rem)")).toHaveLength(2);
+	});
+
+	it("o fio dos estados e o das regiões ficam com a mesma largura em qualquer tamanho do desenho", () => {
+		expect(regra(mapa, ".desenho-do-brasil path")).toContain(
+			"vector-effect: non-scaling-stroke;",
+		);
+		expect(regra(mapa, ".regiao-do-mapa")).toContain("stroke-width: 1px;");
+		expect(regra(mapa, ".contorno-do-brasil")).toContain("stroke-width: 2px;");
+	});
+
+	it("a cópia do estado em destaque fica fora do caminho do ponteiro: senão, ela tira o ponteiro do estado, e o destaque pisca", () => {
+		expect(regra(mapa, ".estado-em-destaque")).toBe("pointer-events: none;");
+		// O fio grosso das regiões e do contorno vem por cima dos estados.
+		expect(regra(mapa, ".contorno-do-brasil")).toContain(
+			"pointer-events: none;",
+		);
+	});
+
+	it("o link de cada estado repete a fita e o fio do grupo: o Chrome pinta de preto o link visitado que só herda o fill", () => {
+		// O jsdom não pinta o :visited: o teste confere a regra, e o relato da
+		// #289 mostra a foto do RS visitado no Edge.
+		const link = regra(mapa, ".estado-no-mapa");
+		expect(link).toContain("fill: var(--fita);");
+		expect(link).toContain("stroke: var(--tinta);");
+	});
+
+	it("a linha embaixo do mapa fica sem a entrada da faixa do cartaz, que a esconderia a cada troca", () => {
+		const indice = readFileSync(
+			new URL("../index.css", import.meta.url),
+			"utf8",
+		);
+		expect(regra(indice, ".cartaz-medio .faixa")).toContain("animation: sobe");
+		// Mais específica que a do index.css, que vem depois.
+		expect(regra(mapa, ".ficha-do-mapa span.faixa")).toBe("animation: none;");
+	});
+
+	it("nas cores forçadas, o desenho fica no Canvas com o fio do texto, e o estado em destaque, no Highlight", () => {
+		const forcadas = bloco(mapa, "@media (forced-colors: active)");
+		expect(regra(forcadas, ".desenho-do-brasil")).toBe(
+			"forced-color-adjust: none;",
+		);
+		// O enfeite da página inicial, sem links, fica com a regra do grupo.
+		expect(forcadas).toMatch(/\.regiao-do-mapa,\s*\.estado-no-mapa \{/);
+		expect(regra(forcadas, ".estado-no-mapa")).toBe(
+			"fill: Canvas; stroke: CanvasText;",
+		);
+		expect(regra(forcadas, ".estado-em-destaque .estado")).toBe(
+			"fill: Highlight; stroke: CanvasText;",
+		);
+		expect(regra(forcadas, ".estado-em-destaque .fio-claro")).toBe(
+			"stroke: Canvas;",
+		);
+	});
+
+	it("por fora do anel do foco vai um fio claro de folha, 2 px de cada lado: o azul do anel some contra as fitas escuras", () => {
+		const anel = regra(mapa, ".estado-em-destaque .anel");
+		const fio = regra(mapa, ".estado-em-destaque .fio-claro");
+		const largura = (corpo: string) =>
+			Number(/stroke-width: (\d+)px;/.exec(corpo)?.[1]);
+
+		expect(anel).toContain("stroke: var(--ring);");
+		expect(fio).toContain("stroke: var(--folha);");
+		expect(largura(fio)).toBe(largura(anel) + 4);
 	});
 
 	it("na lista, a sigla sai, e o nome do estado fica com a linha", () => {

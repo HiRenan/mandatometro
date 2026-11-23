@@ -334,9 +334,15 @@ describe("o HTML das páginas dos parlamentares", () => {
 
 		expect(status).toBe(200);
 		expect(html).toContain("<title>Parlamentares · Mandatômetro</title>");
-		// O mapa e a lista que fica no lugar dele na tela estreita: duas vezes
-		// cada estado.
-		expect(html.match(/href="\/parlamentares\?uf=[A-Z]{2}"/g)).toHaveLength(54);
+		// O mapa, os azulejos dos oito estados estreitos e a lista que fica no
+		// lugar do mapa na tela estreita: 27, 8 e 27 links.
+		expect(html.match(/href="\/parlamentares\?uf=[A-Z]{2}"/g)).toHaveLength(62);
+		// No desenho, cada região é uma lista com o nome dela, já no HTML.
+		expect(
+			[...html.matchAll(/<g role="list" aria-label="([^"]+)"/g)].map(
+				([, regiao]) => regiao,
+			),
+		).toEqual(["Norte", "Nordeste", "Sudeste", "Sul", "Centro-Oeste"]);
 		expect(html).toContain("Escolha o seu estado.");
 		// O campo "Estado" funciona sem JavaScript: o formulário pede a lista pelo GET.
 		expect(html).toMatch(/<form [^>]*action="\/parlamentares" method="get"/);
