@@ -524,15 +524,28 @@
 
 	/*
 	 * A migalha "Conta" e as páginas do painel, "Números" e "Revisão da edição":
-	 * na mesma linha quando cabem, a migalha à esquerda e as páginas à direita;
-	 * numa tela estreita, as páginas descem para a linha de baixo. A página
+	 * a partir de 40rem, na mesma linha, a migalha à esquerda e as páginas à
+	 * direita; abaixo, as páginas ficam na linha de baixo, inteiras. A página
 	 * aberta fica sem link, em tinta suave, como na migalha (o .migalhas).
 	 */
 	.cabeca-do-painel {
 		display: flex;
-		flex-wrap: wrap;
-		justify-content: space-between;
-		column-gap: 1.5rem;
+		flex-direction: column;
+	}
+
+	@media (width >= 40rem) {
+		.cabeca-do-painel {
+			flex-direction: row;
+			flex-wrap: wrap;
+			justify-content: space-between;
+			column-gap: 1.5rem;
+		}
+	}
+
+	/* A folha do painel não tem o azulejo do canto: a migalha não precisa
+	   deixar o lugar dele (o .artigo-folha .migalhas). */
+	.pagina-do-painel .cabeca-do-painel > .migalhas {
+		max-width: none;
 	}
 
 	.paginas-do-painel {
@@ -630,6 +643,11 @@
 		border-top: 6px solid var(--tinta);
 	}
 
+	/* A última seção deixa o respiro embaixo da folha, como os estados da revisão. */
+	.secao-dos-numeros:last-child {
+		padding-bottom: clamp(1.75rem, 4vw, 3rem);
+	}
+
 	.secao-dos-numeros > h2 {
 		--letra: clamp(1.75rem, 1.35rem + 1.8vw, 2.75rem);
 	}
@@ -687,6 +705,10 @@
 		gap: 1rem 2.5rem;
 	}
 
+	.secao-dos-numeros > .cifras {
+		margin-top: 1.5rem;
+	}
+
 	.cifras > div {
 		display: flex;
 		flex-direction: column-reverse;
@@ -742,8 +764,9 @@
 	 * O gráfico de colunas: a frase, as colunas e a tabela. As colunas ficam
 	 * fora do leitor de tela (aria-hidden) e têm até 3.25rem cada: poucas
 	 * semanas não viram colunas largas. O zero fica sem coluna, e o que passa
-	 * de zero tem pelo menos 2 px. No alto, o maior valor; com o ponteiro numa
-	 * coluna, o valor dela fica no lugar dele, e as outras clareiam.
+	 * de zero tem pelo menos 2 px. No alto, o maior valor, que quebra a linha
+	 * quando não cabe; com o ponteiro numa coluna, o valor dela fica no lugar
+	 * dele, e as outras clareiam.
 	 */
 	.grafico-de-colunas {
 		display: grid;
@@ -753,8 +776,11 @@
 
 	.colunas {
 		position: relative;
+	}
+
+	.colunas > ol,
+	.pontas-das-colunas {
 		max-width: calc(var(--quantas) * 3.25rem);
-		padding-top: 1.75rem;
 	}
 
 	.colunas > ol {
@@ -778,16 +804,15 @@
 		transform-origin: 50% 100%;
 	}
 
-	.maximo-das-colunas,
-	.leitura-da-coluna {
-		position: absolute;
-		top: 0;
-		left: 0;
-		white-space: nowrap;
+	.maximo-das-colunas {
+		margin-bottom: 0.5rem;
 		color: var(--tinta-suave);
 	}
 
+	/* A leitura de uma coluna, por cima do máximo, que fica invisível e guarda o lugar. */
 	.leitura-da-coluna {
+		position: absolute;
+		inset: 0 0 auto;
 		visibility: hidden;
 		color: var(--tinta);
 	}
@@ -859,8 +884,8 @@
 	}
 
 	/*
-	 * As tabelas: o desenho da do placar por partido, com o nome à esquerda e o
-	 * número à direita, em algarismos da mesma largura.
+	 * As tabelas dos gráficos: o desenho da do placar por partido, com o nome à
+	 * esquerda e o número à direita, em algarismos da mesma largura.
 	 */
 	.tabela-dos-numeros {
 		width: 100%;
@@ -912,8 +937,42 @@
 		font-variant-numeric: lining-nums tabular-nums;
 	}
 
-	.tabela-do-piloto {
-		max-width: 40rem;
+	/*
+	 * Os pares de nome e valor (o banco, as coletas e as tentativas do piloto),
+	 * no desenho das tabelas: o fio grosso em cima, o fino entre as linhas, o
+	 * nome à esquerda e o valor à direita. Quando a linha não cabe, o valor desce
+	 * para baixo do nome, ainda à direita, e a página não rola de lado.
+	 */
+	.valores-dos-numeros {
+		max-width: 34rem;
+		border-top: 2px solid var(--tinta);
+	}
+
+	.valores-dos-numeros > div {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		justify-content: space-between;
+		column-gap: 1rem;
+		padding: 0.55rem 0;
+		border-bottom: 1px solid var(--tinta);
+	}
+
+	.valores-dos-numeros dt {
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 600;
+		line-height: 1.35;
+	}
+
+	.valores-dos-numeros dd {
+		margin-left: auto;
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 750;
+		line-height: 1.35;
+		font-variant-numeric: lining-nums tabular-nums;
+		text-align: right;
 	}
 
 	/*

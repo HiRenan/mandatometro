@@ -11,6 +11,7 @@ import {
 	fraseDasConclusoes,
 	fraseDasParticipacoes,
 	fraseDasSemanas,
+	fraseDasTentativas,
 	fraseDasTrilhasLidas,
 	fraseDasVisitas,
 	fraseDaUltimaEdicao,
@@ -260,6 +261,14 @@ describe("o piloto", () => {
 		).toBe("1 pessoa fez as duas etapas, 0 só o antes e 2 só o depois.");
 	});
 
+	it("as tentativas de uma etapa vêm com as pessoas que as fizeram", () => {
+		expect(fraseDasTentativas(1203, 980)).toBe(
+			"1.203 tentativas de 980 pessoas",
+		);
+		expect(fraseDasTentativas(1, 1)).toBe("1 tentativa de 1 pessoa");
+		expect(fraseDasTentativas(0, 0)).toBe("Nenhuma tentativa");
+	});
+
 	it("os pares dizem as duas médias e a diferença, ou a frase da situação", () => {
 		expect(
 			fraseDosPares({
@@ -279,6 +288,15 @@ describe("o piloto", () => {
 				situacao: "protecao_de_subgrupo",
 			}),
 		).toBe("A média não aparece para não revelar um grupo pequeno.");
+		// Sem respostas, a frase fala das duas etapas, e não de uma.
+		expect(
+			fraseDosPares({
+				antes: { acertos: null, percentual: null },
+				depois: { acertos: null, percentual: null },
+				diferenca_pontos_percentuais: null,
+				situacao: "sem_respostas",
+			}),
+		).toBe("Ninguém fez as duas etapas ainda.");
 	});
 });
 

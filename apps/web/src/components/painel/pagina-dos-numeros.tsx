@@ -18,6 +18,7 @@ import {
 	fraseDasConclusoes,
 	fraseDasParticipacoes,
 	fraseDasSemanas,
+	fraseDasTentativas,
 	fraseDasTrilhasLidas,
 	fraseDasVisitas,
 	fraseDaUltimaEdicao,
@@ -249,6 +250,25 @@ function Cifras({ itens }: { itens: { nome: string; valor: string }[] }) {
 				<div key={nome}>
 					<dt className="rotulo">{nome}</dt>
 					<dd className="cifra">{valor}</dd>
+				</div>
+			))}
+		</dl>
+	);
+}
+
+/**
+ * Os pares de nome e valor em linhas, no desenho das tabelas, como as do banco
+ * e das coletas. O valor fica à direita do nome quando cabe e desce para a linha
+ * de baixo quando não cabe (a letra a 200% numa tela de 320 px): a página não
+ * rola de lado, e o número não se parte.
+ */
+function Valores({ itens }: { itens: { nome: string; valor: string }[] }) {
+	return (
+		<dl className="valores-dos-numeros">
+			{itens.map(({ nome, valor }) => (
+				<div key={nome}>
+					<dt>{nome}</dt>
+					<dd>{valor}</dd>
 				</div>
 			))}
 		</dl>
@@ -610,31 +630,23 @@ function Piloto({ piloto }: { piloto: NumerosPainel["piloto"] }) {
 				<span>Quiz {piloto.versao_quiz}</span>
 				<span>{plural(total_perguntas, "pergunta", "perguntas")}</span>
 			</FaixaDeInformacoes>
-			<table className="tabela-dos-numeros tabela-do-piloto">
-				<caption className="rotulo">Tentativas e pessoas</caption>
-				<thead>
-					<tr>
-						<td />
-						<th scope="col">Antes da trilha</th>
-						<th scope="col">Depois da trilha</th>
-						<th scope="col">No total</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<th scope="row">Tentativas</th>
-						<td>{comMilhares(tentativas.antes)}</td>
-						<td>{comMilhares(tentativas.depois)}</td>
-						<td>{comMilhares(tentativas.total)}</td>
-					</tr>
-					<tr>
-						<th scope="row">Pessoas</th>
-						<td>{comMilhares(participacoes.antes)}</td>
-						<td>{comMilhares(participacoes.depois)}</td>
-						<td>{comMilhares(participacoes.total)}</td>
-					</tr>
-				</tbody>
-			</table>
+			<h3 className="rotulo">Tentativas e pessoas</h3>
+			<Valores
+				itens={[
+					{
+						nome: "Antes da trilha",
+						valor: fraseDasTentativas(tentativas.antes, participacoes.antes),
+					},
+					{
+						nome: "Depois da trilha",
+						valor: fraseDasTentativas(tentativas.depois, participacoes.depois),
+					},
+					{
+						nome: "No total",
+						valor: fraseDasTentativas(tentativas.total, participacoes.total),
+					},
+				]}
+			/>
 			<p className="frase-do-grafico">{fraseDasParticipacoes(participacoes)}</p>
 			<h3 className="rotulo">Média de acertos</h3>
 			<div className="medias-do-piloto">
@@ -722,40 +734,24 @@ function Sistema({ sistema }: { sistema: NumerosPainel["sistema"] }) {
 	return (
 		<Secao id="numeros-sistema" titulo="Sistema">
 			<div className="grupos-dos-numeros">
-				<table className="tabela-dos-numeros">
-					<caption className="rotulo">No banco</caption>
-					<thead>
-						<tr>
-							<th scope="col">Dado</th>
-							<th scope="col">Quantos</th>
-						</tr>
-					</thead>
-					<tbody>
-						{NO_BANCO.map(([chave, nome]) => (
-							<tr key={chave}>
-								<th scope="row">{nome}</th>
-								<td>{comMilhares(sistema[chave])}</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-				<table className="tabela-dos-numeros">
-					<caption className="rotulo">Últimas coletas</caption>
-					<thead>
-						<tr>
-							<th scope="col">Fonte</th>
-							<th scope="col">Última coleta</th>
-						</tr>
-					</thead>
-					<tbody>
-						{COLETAS.map(([chave, nome]) => (
-							<tr key={chave}>
-								<th scope="row">{nome}</th>
-								<td>{fraseDaColeta(sistema.ultimas_coletas[chave])}</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
+				<div className="grupo-dos-numeros">
+					<h3 className="rotulo">No banco</h3>
+					<Valores
+						itens={NO_BANCO.map(([chave, nome]) => ({
+							nome,
+							valor: comMilhares(sistema[chave]),
+						}))}
+					/>
+				</div>
+				<div className="grupo-dos-numeros">
+					<h3 className="rotulo">Últimas coletas</h3>
+					<Valores
+						itens={COLETAS.map(([chave, nome]) => ({
+							nome,
+							valor: fraseDaColeta(sistema.ultimas_coletas[chave]),
+						}))}
+					/>
+				</div>
 			</div>
 		</Secao>
 	);

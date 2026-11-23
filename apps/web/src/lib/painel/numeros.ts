@@ -246,6 +246,18 @@ export function fraseDasParticipacoes({
 	return `${fizeram} as duas etapas, ${comMilhares(somente_antes)} só o antes e ${comMilhares(somente_depois)} só o depois.`;
 }
 
+/** As tentativas de uma etapa do piloto e as pessoas que as fizeram. */
+export function fraseDasTentativas(
+	tentativas: number,
+	pessoas: number,
+): string {
+	if (tentativas === 0) {
+		return "Nenhuma tentativa";
+	}
+	const deQuem = `${comMilhares(pessoas)} ${pessoas === 1 ? "pessoa" : "pessoas"}`;
+	return `${comMilhares(tentativas)} ${tentativas === 1 ? "tentativa" : "tentativas"} de ${deQuem}`;
+}
+
 /**
  * Quem fez as duas etapas: a média antes e depois e a diferença, ou a frase da
  * situação quando a API não manda os números.
@@ -264,7 +276,10 @@ export function fraseDosPares(pares: {
 		antes === null ||
 		depois === null
 	) {
-		return FRASE_DA_SITUACAO[pares.situacao];
+		// Sem respostas, a frase das médias fala de uma etapa; a dos pares, das duas.
+		return pares.situacao === "sem_respostas"
+			? "Ninguém fez as duas etapas ainda."
+			: FRASE_DA_SITUACAO[pares.situacao];
 	}
 	return `A média foi de ${porcentagem(antes)} antes e de ${porcentagem(depois)} depois: ${diferencaNaTela(pares)}.`;
 }

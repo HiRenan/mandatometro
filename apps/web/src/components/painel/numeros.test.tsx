@@ -281,6 +281,13 @@ async function abrirOsNumeros() {
 
 const secao = (nome: string) => screen.getByRole("region", { name: nome });
 
+/** As linhas da lista embaixo do título: o nome e o valor de cada uma. */
+const valoresDe = (titulo: HTMLElement) =>
+	[...(titulo.nextElementSibling?.children ?? [])].map((linha) => [
+		linha.querySelector("dt")?.textContent,
+		linha.querySelector("dd")?.textContent,
+	]);
+
 /** Cada número do resumo: o nome, o número e a referência, na ordem do HTML. */
 const resumo = () =>
 	[...document.querySelectorAll(".resumo-dos-numeros > div")].map((grupo) =>
@@ -533,6 +540,15 @@ describe("a folha dos números", () => {
 		).toBeTruthy();
 
 		const piloto = secao("Piloto");
+		expect(
+			valoresDe(
+				within(piloto).getByRole("heading", { name: "Tentativas e pessoas" }),
+			),
+		).toEqual([
+			["Antes da trilha", "30 tentativas de 27 pessoas"],
+			["Depois da trilha", "26 tentativas de 24 pessoas"],
+			["No total", "56 tentativas de 31 pessoas"],
+		]);
 		expect(within(piloto).getByText("46,7%")).toBeTruthy();
 		expect(within(piloto).getByText("72%")).toBeTruthy();
 		expect(
@@ -552,22 +568,30 @@ describe("a folha dos números", () => {
 		).toBeTruthy();
 
 		const sistema = secao("Sistema");
-		const banco = within(sistema).getByRole("table", { name: "No banco" });
-		expect(
-			within(banco).getByRole("rowheader", { name: "Votos" }).parentElement
-				?.textContent,
-		).toBe("Votos312.480");
-		const coletas = within(sistema).getByRole("table", {
-			name: "Últimas coletas",
-		});
-		expect(
-			within(coletas).getByRole("rowheader", { name: "TSE" }).parentElement
-				?.textContent,
-		).toBe("TSENunca coletada");
-		expect(
-			within(coletas).getByRole("rowheader", { name: "Câmara dos Deputados" })
-				.parentElement?.textContent,
-		).toBe("Câmara dos Deputados23 de novembro de 2026, às 6h10");
+		const banco = valoresDe(
+			within(sistema).getByRole("heading", { name: "No banco" }),
+		);
+		expect(banco.map(([nome]) => nome)).toEqual([
+			"Parlamentares",
+			"Mandatos",
+			"Proposições",
+			"Proposições com tema",
+			"Votações",
+			"Votos",
+			"Atos do Diário Oficial",
+			"Vídeos das sessões",
+			"Bens declarados ao TSE",
+			"Meses do IPCA",
+		]);
+		expect(banco).toContainEqual(["Votos", "312.480"]);
+		const coletas = valoresDe(
+			within(sistema).getByRole("heading", { name: "Últimas coletas" }),
+		);
+		expect(coletas).toContainEqual(["TSE", "Nunca coletada"]);
+		expect(coletas).toContainEqual([
+			"Câmara dos Deputados",
+			"23 de novembro de 2026, às 6h10",
+		]);
 	});
 
 	it("a média que a API não manda vira a frase da situação, e nunca o zero", async () => {
