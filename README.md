@@ -202,6 +202,8 @@ erDiagram
         string uf UK
         bigint id_externo UK "SQ_CANDIDATO"
         smallint cargo "código do TSE"
+        string resultado "opcional, do último turno"
+        text resultado_bruto "opcional, para texto desconhecido"
         int parlamentar_id FK,UK
         int fonte_candidatura_id FK
         int fonte_bens_id FK
