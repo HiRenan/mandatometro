@@ -57,10 +57,17 @@ class Vinculos:
     em_exercicio: frozenset[tse.EmExercicio]
 
 
+@dataclass(frozen=True, repr=False)
+class CandidaturaLigada:
+    pessoa: int
+    cargo: int
+    situacao_final: str
+    chaves: tuple[ChavePatrimonio, ...]
+
+
 @dataclass(repr=False)
 class CargaAno:
-    # Parlamentar, cargo e texto do último turno.
-    ligadas: dict[ChavePatrimonio, tuple[int, int, str]] = field(default_factory=dict)
+    ligadas: dict[ChavePatrimonio, CandidaturaLigada] = field(default_factory=dict)
     valores: dict[ChavePatrimonio, TotaisPorTipo | None] = field(default_factory=dict)
     contagens: Counter[str] = field(default_factory=Counter)
     instantes: dict[str, datetime] = field(default_factory=dict)
@@ -228,28 +235,38 @@ def _ligar_candidaturas(
             registros = alcancadas.get(cpf)
             if not registros:
                 continue
-            # O TSE pode trocar CD_ELEICAO entre turnos da mesma disputa.
+            situacoes = {
+                turno: texto
+                for _, ficha in registros
+                for turno, texto in ficha.situacoes_por_turno.items()
+            }
+            # Cada turno da disputa precisa pertencer a uma só chave.
             if len(registros) > 1 and (
                 len({(uf, externo, ficha.cargo) for (_, uf, externo), ficha in registros}) > 1
-                or len({ficha.turno for _, ficha in registros}) != len(registros)
+                or len(situacoes) != sum(len(ficha.situacoes_por_turno) for _, ficha in registros)
             ):
                 carga.contagens["cpf_repetido"] += 1
                 carga.contagens["em_conflito"] += 1
                 continue
             anteriores = por_pessoa[ano, pessoa]
             chave, candidatura = min(
-                registros, key=lambda par: (par[0] not in anteriores, par[1].turno)
+                registros,
+                key=lambda par: (par[0] not in anteriores, min(par[1].situacoes_por_turno)),
             )
             if anteriores - {chave}:
                 carga.contagens["em_conflito"] += 1
             else:
-                _, ultimo = max(registros, key=lambda par: par[1].turno)
-                carga.ligadas[chave] = pessoa, candidatura.cargo, ultimo.situacao_turno
+                carga.ligadas[chave] = CandidaturaLigada(
+                    pessoa,
+                    candidatura.cargo,
+                    situacoes[max(situacoes)],
+                    tuple(chave_turno for chave_turno, _ in registros),
+                )
 
     ancora_confirmada = {
         pessoa
         for (ano, chave), pessoa in confirmadas.items()
-        if chave in cargas[ano].ligadas and cargas[ano].ligadas[chave][0] == pessoa
+        if chave in cargas[ano].ligadas and cargas[ano].ligadas[chave].pessoa == pessoa
     }
     conflitos_da_cadeia = {
         pessoa
@@ -263,7 +280,7 @@ def _ligar_candidaturas(
     aptas = ancora_confirmada - nao_confirmadas - conflitos_da_cadeia
     for carga in cargas.values():
         carga.ligadas = {
-            chave: registro for chave, registro in carga.ligadas.items() if registro[0] in aptas
+            chave: ficha for chave, ficha in carga.ligadas.items() if ficha.pessoa in aptas
         }
 
 
@@ -283,7 +300,8 @@ def _gravar_ano(s: Session, ano: int, carga: CargaAno, historico: Historico) -> 
             s, Resposta(url_arquivo(ano, BENS), carga.instantes[BENS], None)
         ).id
     valores = []
-    for (eleicao, uf, externo), (pessoa, cargo, texto) in carga.ligadas.items():
+    for (eleicao, uf, externo), ficha in carga.ligadas.items():
+        texto = ficha.situacao_final
         resultado = RESULTADOS_POR_TEXTO.get(texto, "outro")
         valores.append(
             {
@@ -291,10 +309,10 @@ def _gravar_ano(s: Session, ano: int, carga: CargaAno, historico: Historico) -> 
                 "codigo_eleicao": eleicao,
                 "uf": uf,
                 "id_externo": externo,
-                "cargo": cargo,
+                "cargo": ficha.cargo,
                 "resultado": resultado,
                 "resultado_bruto": texto if resultado == "outro" else None,
-                "parlamentar_id": pessoa,
+                "parlamentar_id": ficha.pessoa,
                 "fonte_candidatura_id": fonte_cand.id,
                 "fonte_bens_id": fontes_preservadas.get((eleicao, uf, externo), fonte_bens_id),
             }
@@ -375,14 +393,22 @@ def _coletar(
 
     _ligar_candidaturas(cargas, vinculos, confirmadas, resumo_ancoras, ler_candidaturas)
     for ano, carga in cargas.items():
-        carga.valores = _ler(
+        chaves = {chave for ficha in carga.ligadas.values() for chave in ficha.chaves}
+        declaracoes = _ler(
             ano,
             BENS,
             carga,
             diretorio,
             cliente,
-            partial(ler_bens, chaves=set(carga.ligadas)),
+            partial(ler_bens, chaves=chaves),
         )
+        for chave, ficha in list(carga.ligadas.items()):
+            presentes = [origem for origem in ficha.chaves if origem in declaracoes]
+            if len(presentes) > 1:
+                carga.contagens["em_conflito"] += 1
+                del carga.ligadas[chave]
+            elif presentes:
+                carga.valores[chave] = declaracoes[presentes[0]]
 
     with sessao() as s, s.begin():
         # A mesma chave e ordem da coleta das candidaturas serializam os dois comandos.

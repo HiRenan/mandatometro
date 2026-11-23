@@ -60,8 +60,7 @@ type TotaisPorTipo = Counter[int]
 class CandidaturaLida:
     cargo: int
     cpf: str | None
-    turno: int
-    situacao_turno: str
+    situacoes_por_turno: dict[int, str]
 
 
 def _chave_patrimonio(linha: dict[str, str], ano: int) -> ChavePatrimonio:
@@ -98,16 +97,14 @@ def ler_candidaturas_patrimonio(
         contagens["linhas"] += 1
         if cpf is None:
             contagens["sem_cpf"] += 1
-        candidatura = CandidaturaLida(cargo, cpf, turno, linha["DS_SIT_TOT_TURNO"])
+        situacao = linha["DS_SIT_TOT_TURNO"]
         anterior = candidaturas.get(chave)
-        if anterior is not None:
-            if (anterior.cargo, anterior.cpf) != (cargo, cpf) or (
-                anterior.turno == turno and anterior != candidatura
-            ):
-                raise ArquivoInvalido("Candidaturas divergentes para a mesma chave.")
-            if anterior.turno >= turno:
-                continue
-        candidaturas[chave] = candidatura
+        if anterior is None:
+            candidaturas[chave] = CandidaturaLida(cargo, cpf, {turno: situacao})
+        elif (anterior.cargo, anterior.cpf) != (cargo, cpf) or (
+            anterior.situacoes_por_turno.setdefault(turno, situacao) != situacao
+        ):
+            raise ArquivoInvalido("Candidaturas divergentes para a mesma chave.")
     if contagens["linha_invalida"] or not candidaturas:
         raise ArquivoInvalido("CSV de candidaturas incompleto.")
     return candidaturas
