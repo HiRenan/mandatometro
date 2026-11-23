@@ -251,6 +251,39 @@ export function fraseDoResultado(
 	return FRASE_DO_RESULTADO[resultado];
 }
 
+/**
+ * O resultado curto, para a faixa das eleições da ficha do cartaz: a frase longa,
+ * com a explicação de cada conta, fica no patrimônio declarado.
+ */
+const RESULTADO_CURTO: Record<Resultado, string> = {
+	eleito: "Ganhou",
+	eleito_por_qp: "Ganhou pelo quociente partidário",
+	eleito_por_media: "Ganhou pela média",
+	suplente: "Ficou como suplente",
+	nao_eleito: "Não ganhou",
+	sem_resultado: "Sem o resultado no TSE",
+	outro: "Outra situação no TSE",
+};
+
+/** O resultado curto da eleição, com a chapa no suplente de senador. Sem ele, nada. */
+export function resultadoCurto(
+	resultado: Resultado | null,
+	cargo: number,
+): string | null {
+	if (resultado === null) {
+		return null;
+	}
+	if (SUPLENTES_DE_SENADOR.includes(cargo)) {
+		if (resultado === "nao_eleito") {
+			return "A chapa não ganhou";
+		}
+		if (resultado.startsWith("eleito")) {
+			return "A chapa ganhou";
+		}
+	}
+	return RESULTADO_CURTO[resultado];
+}
+
 /** O texto da API que vale zero, com ou sem o sinal: "0.0" e "-0.0". */
 function valeZero(numero: string): boolean {
 	return /^-?0+\.0+$/.test(numero);
@@ -410,7 +443,9 @@ function valorDaEleicao(
 	};
 }
 
-function fonteDaEleicao(fonte: FontePatrimonio): LinhaDoPatrimonio["fonte"] {
+export function fonteDaEleicao(
+	fonte: FontePatrimonio,
+): LinhaDoPatrimonio["fonte"] {
 	const endereco = enderecoSeguro(fonte.url);
 	return {
 		endereco,

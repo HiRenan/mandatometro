@@ -73,10 +73,12 @@ function api(responder: (pedido: Request) => Response) {
 /**
  * A API de exemplo: a lista, a pessoa, a página de votos pedida, de `votos`
  * votos, e o patrimônio declarado, que `patrimonio` pode trocar por uma falha.
+ * O `detalhe` troca a resposta da pessoa.
  */
 function apiDeExemplo(
 	votos = 25,
 	patrimonio: () => Response = () => json(200, patrimonioDeExemplo()),
+	detalhe: unknown = detalheDeExemplo(),
 ) {
 	return api((pedido) => {
 		const endereco = new URL(pedido.url);
@@ -90,7 +92,7 @@ function apiDeExemplo(
 		if (endereco.pathname.endsWith("/patrimonio")) {
 			return patrimonio();
 		}
-		return json(200, detalheDeExemplo());
+		return json(200, detalhe);
 	});
 }
 
@@ -239,7 +241,54 @@ describe("o HTML das páginas dos parlamentares", () => {
 		expect(html).toContain('href="/votacoes/139"');
 	});
 
-	it("o patrimônio declarado vem no HTML, entre os mandatos e como votou, com cada eleição e o arquivo do TSE", async () => {
+	it("a ficha vem no HTML, no pé do cartaz, com o partido por extenso, a biografia oficial e a fonte de cada dado", async () => {
+		apiDeExemplo();
+
+		const { status, html } = await pedir(CANONICO);
+
+		expect(status).toBe(200);
+		const ficha = html.indexOf('<h2 id="ficha" class="sr-only">Ficha</h2>');
+		const corpo = html.indexOf('class="artigos corpo-dos-parlamentares');
+		expect(ficha).toBeGreaterThan(html.indexOf("</h1>"));
+		expect(corpo).toBeGreaterThan(ficha);
+		const htmlDaFicha = html.slice(ficha, corpo);
+		expect(htmlDaFicha).toContain(
+			'<span class="sigla-do-partido">PFT</span> <span class="nome-do-partido">Partido Fictício do Trabalho</span>',
+		);
+		expect(htmlDaFicha).toContain("Professora e Advogada");
+		expect(htmlDaFicha).toContain(
+			'<a href="https://www.camara.leg.br/deputados/90000123">Câmara dos Deputados</a> <span class="coleta-da-ficha">Coletada em 20 de novembro de 2026.</span>',
+		);
+		expect(htmlDaFicha).toContain("57ª legislatura");
+		expect(htmlDaFicha).toContain('<a href="#votos">Ver os votos</a>');
+		expect(htmlDaFicha).toContain(
+			'href="https://cdn.tse.jus.br/estatistica/sead/odsele/bem_candidato/bem_candidato_2026.zip"',
+		);
+		expect(htmlDaFicha.match(/<li class="eleicao-da-ficha">/g)).toHaveLength(4);
+		expect(htmlDaFicha).toContain(
+			'<a href="#patrimonio">Ver o patrimônio de cada eleição</a>',
+		);
+	});
+
+	it("com a API de antes, sem o nome do partido e a biografia, a ficha abre com a sigla e sem a profissão e a escolaridade", async () => {
+		const {
+			partido_nome: _nome,
+			biografia: _biografia,
+			...semFicha
+		} = detalheDeExemplo();
+		apiDeExemplo(25, undefined, semFicha);
+
+		const { status, html } = await pedir(CANONICO);
+
+		expect(status).toBe(200);
+		expect(html).toContain('<span class="sigla-do-partido">PFT</span>');
+		expect(html).not.toContain("nome-do-partido");
+		expect(html).not.toMatch(/>Profiss(ão|ões)<|>Escolaridade</);
+		expect(html).toContain(">Votos registrados</dt>");
+		expect(console.error).not.toHaveBeenCalled();
+	});
+
+	it("o patrimônio declarado vem no HTML, entre a ficha e como votou, com cada eleição e o arquivo do TSE", async () => {
 		apiDeExemplo();
 
 		const { status, html } = await pedir(CANONICO);
@@ -248,11 +297,11 @@ describe("o HTML das páginas dos parlamentares", () => {
 		expect(html).toMatch(
 			/<h2 id="patrimonio" class="subtitulo-condensado letra-com-teto \[--palavra:5\.26\]"[^>]*>Patrimônio declarado ao TSE<\/h2>/,
 		);
-		const mandatos = html.indexOf(">Mandatos</h2>");
+		const ficha = html.indexOf(">Ficha</h2>");
 		const patrimonio = html.indexOf(">Patrimônio declarado ao TSE</h2>");
 		const comoVotou = html.indexOf(">Como votou</h2>");
-		expect(mandatos).toBeGreaterThan(0);
-		expect(patrimonio).toBeGreaterThan(mandatos);
+		expect(ficha).toBeGreaterThan(0);
+		expect(patrimonio).toBeGreaterThan(ficha);
 		expect(comoVotou).toBeGreaterThan(patrimonio);
 		expect(html.match(/<li class="eleicao-do-patrimonio">/g)).toHaveLength(4);
 		expect(html).toContain("corrigido pela inflação até outubro de 2026.");

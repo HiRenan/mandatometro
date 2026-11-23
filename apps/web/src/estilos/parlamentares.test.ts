@@ -253,6 +253,97 @@ describe("a página do parlamentar", () => {
 		css.indexOf("/* ───── A página do parlamentar: o patrimônio", inicio),
 	);
 
+	/** Só as regras da ficha do cartaz. */
+	const ficha = pagina.slice(
+		pagina.indexOf("A ficha no pé do cartaz"),
+		pagina.indexOf(".corpo-dos-parlamentares {"),
+	);
+
+	it("a ficha fica numa coluna do pé do cartaz também no computador, e as colunas dela saem da largura dela: três a partir de 44rem, duas a partir de 24rem", () => {
+		expect(ficha.length).toBeGreaterThan(0);
+		expect(regra(ficha, ".cartaz-do-parlamentar .cartaz-pe")).toBe(
+			"grid-template-columns: minmax(0, 1fr);",
+		);
+		expect(regra(ficha, ".ficha-do-parlamentar")).toBe(
+			"container: ficha / inline-size;",
+		);
+		expect(regra(ficha, ".itens-da-ficha")).toContain(
+			"grid-template-columns: minmax(0, 1fr);",
+		);
+		expect(
+			regra(
+				bloco(ficha, "@container ficha (width >= 24rem)"),
+				".itens-da-ficha",
+			),
+		).toBe("grid-template-columns: repeat(2, minmax(0, 1fr));");
+		expect(
+			regra(
+				bloco(ficha, "@container ficha (width >= 44rem)"),
+				".itens-da-ficha",
+			),
+		).toBe("grid-template-columns: repeat(3, minmax(0, 1fr));");
+	});
+
+	it("cada fato da ficha é uma subgrade de três linhas, com o fio de tinta em cima, e as eleições ocupam a largura toda, em células que descem no celular", () => {
+		const fato = regra(ficha, ".item-da-ficha");
+		expect(fato).toContain("grid-row: span 3;");
+		expect(fato).toContain("grid-template-rows: subgrid;");
+		expect(fato).toContain("border-top: 1px solid var(--tinta);");
+		expect(regra(ficha, ".eleicoes-da-ficha")).toBe("grid-column: 1 / -1;");
+		expect(regra(ficha, ".lista-das-eleicoes")).toContain(
+			"grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));",
+		);
+	});
+
+	it("a ficha não leva cor: os números e as partes do mandato ficam em tinta, e as partes entram com o pé do cartaz, e não sozinhas", () => {
+		expect(ficha).not.toMatch(/--fita|#[0-9a-f]{3,8}\b|rgb\(|hsl\(|oklch\(/i);
+		expect(regra(ficha, ".numero-da-ficha")).toContain(
+			"font-variant-numeric: lining-nums tabular-nums;",
+		);
+		expect(regra(ficha, ".ficha-do-parlamentar span.faixa")).toBe(
+			"color: var(--tinta); animation: none;",
+		);
+	});
+
+	it("o dia da coleta fica embaixo do link da fonte, que fecha a linha sem pontuação", () => {
+		expect(regra(ficha, ".coleta-da-ficha")).toBe("display: block;");
+	});
+
+	it("as partes do mandato quebram sem o quadradinho no começo nem no fim da linha: ele vai no recuo antes de cada parte, e o que abre a linha fica sob o corte", () => {
+		expect(regra(ficha, ".mandatos-da-ficha .rotulo")).toBe(
+			"overflow-x: clip;",
+		);
+		// As linhas de um mandato se encostam, e o vão entre os mandatos é maior.
+		expect(regra(ficha, ".mandatos-da-ficha")).toBe(
+			"display: grid; gap: 0.75rem;",
+		);
+		expect(regra(ficha, ".mandatos-da-ficha .faixa")).toBe(
+			"row-gap: 0; margin-left: -1.9em;",
+		);
+		expect(regra(ficha, ".mandatos-da-ficha .parte-do-mandato")).toBe(
+			"padding-left: 1.9em;",
+		);
+		// O quadradinho da faixa (index.css), no recuo: a margem, o quadradinho e a
+		// margem dão 0.8 + 0.3 + 0.8 = 1.9em. Nas cores forçadas, ele fica em
+		// CanvasText, como o da faixa.
+		expect(regra(ficha, ".mandatos-da-ficha .parte-do-mandato::before")).toBe(
+			'content: "" / ""; display: inline-block; width: 0.3em; height: 0.3em; margin: 0 0.8em 0 -1.1em; vertical-align: 0.2em; background: currentColor;',
+		);
+		expect(
+			regra(
+				bloco(ficha, "@media (forced-colors: active)"),
+				".mandatos-da-ficha .parte-do-mandato::before",
+			),
+		).toBe("forced-color-adjust: none; background: CanvasText;");
+		// O seletor vence o ".faixa > span:not(:last-child)::after" do index.css.
+		expect(
+			regra(
+				ficha,
+				".mandatos-da-ficha .parte-do-mandato:not(:last-child)::after",
+			),
+		).toBe("display: none;");
+	});
+
 	it("a moldura da foto guarda o lugar com o azulejo cru, e sem o JavaScript o ::after cobre a foto quebrada", () => {
 		expect(inicio).toBeGreaterThan(0);
 		expect(regra(pagina, ".moldura-da-foto")).toContain(
@@ -318,8 +409,12 @@ describe("a página do parlamentar", () => {
 		const barra = regra(pagina, ".barra-do-tipo");
 		expect(barra).toContain("width: max(4px, calc(var(--parte) * 100%));");
 		expect(barra).toContain("background: var(--tinta);");
+		// O bloco das cores forçadas que vem depois da barra: a ficha tem o dela antes.
 		const forcadas = regra(
-			bloco(pagina, "@media (forced-colors: active)"),
+			bloco(
+				pagina.slice(pagina.indexOf(".barra-do-tipo {")),
+				"@media (forced-colors: active)",
+			),
 			".barra-do-tipo",
 		);
 		expect(forcadas).toContain("forced-color-adjust: none;");

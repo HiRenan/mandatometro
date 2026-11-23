@@ -18,6 +18,7 @@ export {
 	buscarVotacao,
 } from "./parlamentares.functions";
 export type {
+	BiografiaParlamentar,
 	ContagemDoEstado,
 	ListaDosParlamentares,
 	PaginaDaVotacao,

@@ -17,15 +17,16 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
-	DetalheParlamentar,
 	FotoParlamentar,
 	PatrimonioParlamentar,
 	VotoParlamentar,
 } from "@/client";
 import type { PaginaDoParlamentar, Patrimonio } from "@/lib/parlamentares";
 import {
+	biografiaDeExemplo,
 	CONTAGEM_ZERADA,
 	correcaoDeExemplo,
+	type DetalheComFicha,
 	detalheDeExemplo,
 	eleicaoDeExemplo,
 	patrimonioDeExemplo,
@@ -54,7 +55,7 @@ afterEach(() => {
  * servidor nem o redirecionamento. A foto vai à parte, como o servidor manda.
  */
 async function abrir(
-	{ foto: fotoDaApi, ...parlamentar }: DetalheParlamentar,
+	{ foto: fotoDaApi, ...parlamentar }: DetalheComFicha,
 	votos: VotoParlamentar[] = [votoDoParlamentarDeExemplo(139)],
 	paginaAtual = 1,
 	total = votos.length,
@@ -210,6 +211,46 @@ function barrasDeComoVotou() {
 	);
 }
 
+/**
+ * Cada item da ficha do cartaz, como o leitor de tela lê: o rótulo, o valor e a
+ * fonte. Os mandatos e as eleições vêm em lista, cada um com as partes dele (a
+ * parte do mandato tem a classe do recuo com o quadradinho). A fonte com o dia
+ * da coleta vem em duas linhas: a fonte e a coleta.
+ */
+function itensDaFicha() {
+	return Array.from(document.querySelectorAll(".item-da-ficha"), (item) => {
+		const valor = item.querySelector(".valor-da-ficha");
+		const fonte = item.querySelector(".fonte-da-ficha");
+		const itens = valor?.querySelectorAll("li") ?? [];
+		return {
+			rotulo: item.querySelector("dt")?.textContent,
+			valor:
+				itens.length > 0
+					? Array.from(itens, (linha) =>
+							textos(linha, ".faixa > .parte-do-mandato, :scope > span"),
+						)
+					: valor?.textContent,
+			fonte: fonte && linhasDaFonte(fonte),
+		};
+	});
+}
+
+/** A fonte como o leitor de tela lê, com o dia da coleta, quando há, à parte. */
+function linhasDaFonte(fonte: Element) {
+	const coleta = fonte.querySelector(".coleta-da-ficha");
+	if (!coleta) return lido(fonte);
+	const semColeta = fonte.cloneNode(true) as Element;
+	semColeta.querySelector(".coleta-da-ficha")?.remove();
+	return [lido(semColeta)?.trim(), lido(coleta)];
+}
+
+/** As partes da faixa do cartaz, embaixo do nome. */
+function faixaDoCartaz() {
+	const faixa = document.querySelector(".cartaz-pe > p.rotulo");
+	if (!faixa) throw new Error("o cartaz está sem a faixa");
+	return textos(faixa, ".faixa > span");
+}
+
 describe("a página do parlamentar", () => {
 	it("como votou: o número e a regra de cada voto, com o artigo do Regimento da Câmara", async () => {
 		await abrir(detalheDeExemplo());
@@ -314,7 +355,7 @@ describe("a página do parlamentar", () => {
 		expect(
 			screen.getByRole("link", { name: "Regimento Interno do Senado Federal" }),
 		).toBeTruthy();
-		expect(screen.getByText("Senado Federal")).toBeTruthy();
+		expect(faixaDoCartaz()).toEqual(["Senado Federal", "Santa Catarina"]);
 	});
 
 	it("cada voto leva a quem votou como, com um nome de link só dele, e à página oficial só quando ela existe", async () => {
@@ -488,8 +529,370 @@ describe("a foto oficial no cartaz", () => {
 	});
 });
 
+describe("a ficha no cartaz", () => {
+	const NA_CAMARA = [
+		"Fonte: Câmara dos Deputados",
+		"Coletada em 20 de novembro de 2026.",
+	];
+
+	it("fica no pé do cartaz, depois do nome e da faixa, que leva só a Casa e o estado, e o título Ficha é só do leitor de tela", async () => {
+		await abrir(detalheDeExemplo());
+
+		const titulo = screen.getByRole("heading", { level: 2, name: "Ficha" });
+		expect(titulo.classList).toContain("sr-only");
+		const ficha = titulo.closest("section");
+		expect(ficha?.parentElement?.classList).toContain("cartaz-pe");
+		expect(ficha?.previousElementSibling?.classList).toContain("rotulo");
+		expect(
+			ficha?.querySelectorAll(":scope > dl > div.item-da-ficha"),
+		).toHaveLength(7);
+		expect(faixaDoCartaz()).toEqual(["Câmara dos Deputados", "Santa Catarina"]);
+	});
+
+	it("cada item, na ordem da tela, com o rótulo, o valor e a fonte", async () => {
+		await abrir(detalheDeExemplo());
+
+		expect(itensDaFicha()).toEqual([
+			{
+				rotulo: "Partido",
+				valor: "PFT Partido Fictício do Trabalho",
+				fonte: "Fonte: o último voto registrado.",
+			},
+			{
+				rotulo: "Profissões",
+				valor: "Professora e Advogada",
+				fonte: NA_CAMARA,
+			},
+			{ rotulo: "Escolaridade", valor: "Superior", fonte: NA_CAMARA },
+			{
+				rotulo: "Mandatos",
+				valor: [
+					["57ª legislatura", "titular", "em exercício"],
+					["56ª legislatura"],
+				],
+				fonte: "Fonte: Câmara dos Deputados.",
+			},
+			{
+				rotulo: "Votos registrados",
+				valor: "1",
+				fonte:
+					"Fonte: as votações nominais da Câmara dos Deputados. Ver os votos",
+			},
+			{
+				rotulo: "Último patrimônio declarado",
+				valor: `${reais("2,4 milhões")} em 2026`,
+				fonte: [
+					"Fonte: arquivo do TSE (ZIP) com os bens declarados em 2026",
+					"Coletado em 20 de novembro de 2026.",
+				],
+			},
+			{
+				rotulo: "Eleições desde 2006",
+				valor: [
+					["2014", "Deputado estadual", "Ganhou pelo quociente partidário"],
+					["2018", "Deputado federal", "Ganhou pela média"],
+					["2022", "Deputado federal", "Ficou como suplente"],
+					["2026", "Senador", "Ganhou"],
+				],
+				fonte: "Fonte: TSE. Ver o patrimônio de cada eleição",
+			},
+		]);
+	});
+
+	it("as fontes levam à página oficial da pessoa, ao arquivo do TSE da última eleição e, na própria página, aos votos e ao patrimônio de cada eleição", async () => {
+		await abrir(detalheDeExemplo());
+
+		const casa = screen.getAllByRole("link", { name: "Câmara dos Deputados" });
+		expect(casa.map((link) => link.getAttribute("href"))).toEqual([
+			"https://www.camara.leg.br/deputados/90000123",
+			"https://www.camara.leg.br/deputados/90000123",
+		]);
+		expect(
+			screen
+				.getByRole("link", {
+					name: "arquivo do TSE (ZIP) com os bens declarados em 2026",
+				})
+				.getAttribute("href"),
+		).toBe(
+			"https://cdn.tse.jus.br/estatistica/sead/odsele/bem_candidato/bem_candidato_2026.zip",
+		);
+		for (const [nome, trecho] of [
+			["Ver os votos", "votos"],
+			["Ver o patrimônio de cada eleição", "patrimonio"],
+		]) {
+			expect(
+				screen.getByRole("link", { name: nome }).getAttribute("href"),
+			).toBe(`#${trecho}`);
+			expect(document.getElementById(trecho)?.tagName).toBe("H2");
+		}
+	});
+
+	it("nenhum link das fontes vem seguido de pontuação, que começaria a linha de baixo quando ele quebra numa coluna estreita", async () => {
+		await abrir(detalheDeExemplo());
+
+		const links = Array.from(document.querySelectorAll(".fonte-da-ficha a"));
+		expect(links).toHaveLength(5);
+		for (const link of links) {
+			expect(link.nextSibling?.textContent ?? "", lido(link) ?? "").not.toMatch(
+				/^[,.;:]/,
+			);
+		}
+	});
+
+	it("sem o nome do partido, só a sigla; sem partido, a frase diz de onde ele viria, e a faixa fica só com a Casa e o estado", async () => {
+		await abrir(detalheDeExemplo({ partido_nome: null }));
+		expect(itensDaFicha()[0]).toEqual({
+			rotulo: "Partido",
+			valor: "PFT",
+			fonte: "Fonte: o último voto registrado.",
+		});
+
+		cleanup();
+		await abrir(detalheDeExemplo({ partido: null }));
+		expect(itensDaFicha()[0]).toEqual({
+			rotulo: "Partido",
+			valor: "Sem partido nos dados usados",
+			fonte: "O partido vem do último voto registrado.",
+		});
+		expect(faixaDoCartaz()).toEqual(["Câmara dos Deputados", "Santa Catarina"]);
+		expect(document.querySelector(".cartaz-pe .para-quem")).toBeNull();
+	});
+
+	it("sem a biografia, a profissão e a escolaridade saem; com ela, o que a Casa não publica fica dito", async () => {
+		await abrir(detalheDeExemplo({ biografia: null }));
+		expect(itensDaFicha().map(({ rotulo }) => rotulo)).toEqual([
+			"Partido",
+			"Mandatos",
+			"Votos registrados",
+			"Último patrimônio declarado",
+			"Eleições desde 2006",
+		]);
+
+		cleanup();
+		await abrir(
+			detalheDeExemplo({
+				biografia: biografiaDeExemplo("camara", {
+					profissoes: [],
+					escolaridade: null,
+				}),
+			}),
+		);
+		expect(itensDaFicha().slice(1, 3)).toEqual([
+			{
+				rotulo: "Profissão",
+				valor: "A Câmara dos Deputados não publica a profissão.",
+				fonte: NA_CAMARA,
+			},
+			{
+				rotulo: "Escolaridade",
+				valor: "A Câmara dos Deputados não publica a escolaridade.",
+				fonte: NA_CAMARA,
+			},
+		]);
+	});
+
+	it("no Senado, as fontes e o que falta falam do Senado Federal, e a profissão única vai no singular", async () => {
+		await abrir(
+			detalheDeExemplo({
+				id: 501,
+				nome: "Lia Quinemar",
+				casa: "senado",
+				biografia: biografiaDeExemplo("senado", {
+					profissoes: ["Agricultora"],
+					escolaridade: null,
+				}),
+			}),
+		);
+		const NO_SENADO = [
+			"Fonte: Senado Federal",
+			"Coletada em 20 de novembro de 2026.",
+		];
+
+		expect(itensDaFicha().slice(1, 5)).toEqual([
+			{ rotulo: "Profissão", valor: "Agricultora", fonte: NO_SENADO },
+			{
+				rotulo: "Escolaridade",
+				valor: "O Senado Federal não publica a escolaridade.",
+				fonte: NO_SENADO,
+			},
+			expect.objectContaining({
+				rotulo: "Mandatos",
+				fonte: "Fonte: Senado Federal.",
+			}),
+			expect.objectContaining({
+				fonte: "Fonte: as votações nominais do Senado Federal. Ver os votos",
+			}),
+		]);
+		expect(
+			screen
+				.getAllByRole("link", { name: "Senado Federal" })[0]
+				.getAttribute("href"),
+		).toBe(
+			"https://www25.senado.leg.br/web/senadores/senador/-/perfil/90000124",
+		);
+	});
+
+	it("o mandato único vai no singular, e o mandato por outro estado leva o nome dele", async () => {
+		await abrir(
+			detalheDeExemplo({
+				mandatos: [
+					{
+						legislatura: 55,
+						uf: "PR",
+						condicao: "Suplente",
+						em_exercicio: false,
+					},
+				],
+			}),
+		);
+
+		expect(itensDaFicha()[3]).toMatchObject({
+			rotulo: "Mandato",
+			valor: [["55ª legislatura", "Paraná", "suplente"]],
+		});
+	});
+
+	it("sem mandato registrado, a linha dos mandatos sai da ficha", async () => {
+		await abrir(detalheDeExemplo({ mandatos: [] }));
+
+		expect(itensDaFicha().map(({ rotulo }) => rotulo)).toEqual([
+			"Partido",
+			"Profissões",
+			"Escolaridade",
+			"Votos registrados",
+			"Último patrimônio declarado",
+			"Eleições desde 2006",
+		]);
+	});
+
+	it("sem voto registrado, a ficha diz em palavras, sem o link para os votos", async () => {
+		await abrir(detalheDeExemplo(), []);
+
+		expect(itensDaFicha()[4]).toEqual({
+			rotulo: "Votos registrados",
+			valor: "Nenhum voto registrado ainda",
+			fonte: "Fonte: as votações nominais da Câmara dos Deputados.",
+		});
+		expect(screen.queryByRole("link", { name: "Ver os votos" })).toBeNull();
+	});
+
+	it("sem eleição ligada à pessoa, ou com o patrimônio que não carregou, o patrimônio e as eleições saem da ficha", async () => {
+		const rotulos = () => itensDaFicha().map(({ rotulo }) => rotulo);
+		const SEM_PATRIMONIO = [
+			"Partido",
+			"Profissões",
+			"Escolaridade",
+			"Mandatos",
+			"Votos registrados",
+		];
+
+		await abrirComPatrimonio(patrimonioNaPagina({ eleicoes: [] }));
+		expect(rotulos()).toEqual(SEM_PATRIMONIO);
+
+		cleanup();
+		await abrirComPatrimonio({ tipo: "indisponivel" });
+		expect(rotulos()).toEqual(SEM_PATRIMONIO);
+	});
+
+	it("o último patrimônio é o da eleição mais nova com total, e a eleição sem resultado fica sem ele", async () => {
+		await abrirComPatrimonio(
+			patrimonioNaPagina({
+				eleicoes: [
+					eleicaoDeExemplo({ ano: 2018 }),
+					eleicaoDeExemplo({
+						ano: 2022,
+						total_centavos: null,
+						total_corrigido_centavos: null,
+					}),
+				],
+			}),
+		);
+
+		expect(itensDaFicha().slice(5)).toEqual([
+			{
+				rotulo: "Último patrimônio declarado",
+				valor: `${reais("812 mil")} em 2018`,
+				fonte: [
+					"Fonte: arquivo do TSE (ZIP) com os bens declarados em 2018",
+					"Coletado em 20 de novembro de 2026.",
+				],
+			},
+			expect.objectContaining({
+				valor: [
+					["2018", "Deputado federal"],
+					["2022", "Deputado federal"],
+				],
+			}),
+		]);
+	});
+
+	it("a eleição por outro estado leva o nome dele, e a de presidente, Brasil", async () => {
+		await abrirComPatrimonio(
+			patrimonioNaPagina({
+				eleicoes: [
+					eleicaoDeExemplo({ ano: 2018, uf: "PR" }),
+					eleicaoDeExemplo({
+						ano: 2022,
+						cargo: { codigo: 1, nome: "Presidente" },
+						uf: "BR",
+					}),
+					eleicaoDeExemplo({ ano: 2026 }),
+				],
+			}),
+		);
+
+		expect(itensDaFicha()[6].valor).toEqual([
+			["2018", "Deputado federal, Paraná"],
+			["2022", "Presidente, Brasil"],
+			["2026", "Deputado federal"],
+		]);
+	});
+
+	it("a página oficial fora dos sites da Casa fica escrita, sem link", async () => {
+		await abrir(
+			detalheDeExemplo({
+				biografia: biografiaDeExemplo("camara", {
+					fonte: {
+						url: "https://outro.example.com/perfil",
+						coletado_em: "2026-11-20T15:00:00+00:00",
+					},
+				}),
+			}),
+		);
+
+		expect(itensDaFicha()[1].fonte).toEqual(NA_CAMARA);
+		expect(
+			screen.queryByRole("link", { name: "Câmara dos Deputados" }),
+		).toBeNull();
+	});
+
+	it("o arquivo do TSE fora dos sites oficiais fica escrito, sem link e sem o ZIP", async () => {
+		await abrirComPatrimonio(
+			patrimonioNaPagina({
+				eleicoes: [
+					eleicaoDeExemplo({
+						fonte: {
+							url: "https://outro.example.com/bens.zip",
+							coletado_em: "2026-11-20T15:00:00+00:00",
+						},
+					}),
+				],
+			}),
+		);
+
+		expect(itensDaFicha()[5]).toEqual({
+			rotulo: "Último patrimônio declarado",
+			valor: `${reais("812 mil")} em 2018`,
+			fonte: ["Fonte: arquivo do TSE", "Coletado em 20 de novembro de 2026."],
+		});
+		expect(
+			document.querySelectorAll(".item-da-ficha")[5].querySelector("a"),
+		).toBeNull();
+	});
+});
+
 describe("o patrimônio declarado ao TSE", () => {
-	it("vem depois dos mandatos e antes de como votou; sem voto, antes da folha dos votos", async () => {
+	it("vem depois da ficha e antes de como votou; sem voto, antes da folha dos votos", async () => {
 		const titulos = () =>
 			screen
 				.getAllByRole("heading", { level: 2 })
@@ -497,7 +900,7 @@ describe("o patrimônio declarado ao TSE", () => {
 
 		await abrir(detalheDeExemplo());
 		expect(titulos()).toEqual([
-			"Mandatos",
+			"Ficha",
 			"Patrimônio declarado ao TSE",
 			"Como votou",
 			"Votos",
@@ -506,7 +909,7 @@ describe("o patrimônio declarado ao TSE", () => {
 		cleanup();
 		await abrir(detalheDeExemplo(), []);
 		expect(titulos()).toEqual([
-			"Mandatos",
+			"Ficha",
 			"Patrimônio declarado ao TSE",
 			"Nenhum voto registrado ainda",
 		]);

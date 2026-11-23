@@ -4,7 +4,7 @@
  * o mapa do Brasil; na votação, o plenário, um azulejo por voto; na
  * página da pessoa, o painel de enfeite. Embaixo do cartaz, o corpo segue a
  * margem da página (o .artigos do index.css). Daqui, saem o mapa, o campo
- * "Estado", as listas de nomes, os mandatos, como votou, os votos da pessoa, o
+ * "Estado", as listas de nomes, a ficha da pessoa, como votou, os votos dela, o
  * plenário, o placar por partido, quem votou como, o "Ver quem votou" da edição
  * e o bloco da página inicial. As telas ficam em components/pagina-dos-
  * parlamentares.tsx, pagina-do-parlamentar.tsx, pagina-da-votacao.tsx e em
@@ -787,20 +787,215 @@
 		}
 	}
 
+	/*
+	 * A ficha no pé do cartaz (o Renan, em 23/11/2026: "A · Ficha em quadro"):
+	 * embaixo do nome e da faixa, um quadro de fatos, cada um com o fio de tinta em
+	 * cima, o rótulo, o valor e a fonte. O pé fica numa coluna só também no
+	 * computador, onde o das outras páginas se divide em duas. As colunas saem da
+	 * largura da própria ficha: três a partir de 44rem, duas a partir de 24rem e
+	 * uma abaixo disso. Cada fato é uma subgrade de três linhas, e os rótulos, os
+	 * valores e as fontes de uma fileira ficam na mesma altura. As eleições ocupam
+	 * a largura toda, numa faixa de células que desce em lista quando não cabe.
+	 * Nada leva cor: os números vão na letra dos números do patrimônio, em tinta.
+	 */
+	.cartaz-do-parlamentar .cartaz-pe {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.ficha-do-parlamentar {
+		container: ficha / inline-size;
+	}
+
+	.itens-da-ficha {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		column-gap: var(--respiro);
+	}
+
+	@container ficha (width >= 24rem) {
+		.itens-da-ficha {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@container ficha (width >= 44rem) {
+		.itens-da-ficha {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+	}
+
+	.item-da-ficha {
+		display: grid;
+		grid-row: span 3;
+		grid-template-rows: subgrid;
+		align-content: start;
+		row-gap: 0.4rem;
+		padding: 0.75rem 0 1.1rem;
+		border-top: 1px solid var(--tinta);
+	}
+
+	.item-da-ficha > dt {
+		color: var(--tinta-suave);
+	}
+
+	.eleicoes-da-ficha {
+		grid-column: 1 / -1;
+	}
+
+	.valor-da-ficha {
+		font-family: var(--font-sans);
+		font-size: 1.0625rem;
+		font-weight: 700;
+		line-height: 1.3;
+	}
+
+	/* O voto, o patrimônio e o ano de cada eleição: a letra dos números. */
+	.numero-da-ficha {
+		display: block;
+		font-family: var(--font-sans);
+		font-size: clamp(1.75rem, 1.45rem + 1.2vw, 2.5rem);
+		font-stretch: 62%;
+		font-weight: 900;
+		line-height: 1;
+		font-variant-numeric: lining-nums tabular-nums;
+	}
+
+	.sigla-do-partido {
+		display: block;
+		font-size: 1.375rem;
+		font-weight: 800;
+		line-height: 1.1;
+	}
+
+	.nome-do-partido,
+	.ano-do-patrimonio {
+		display: block;
+		margin-top: 0.3rem;
+		font-family: var(--font-serif);
+		font-size: 0.9375rem;
+		font-weight: 400;
+		line-height: 1.4;
+	}
+
+	/* O dado que falta vem em palavras, na letra do texto, e não na dos dados. */
+	.falta-na-ficha {
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		font-weight: 400;
+		line-height: 1.45;
+	}
+
+	.fonte-da-ficha {
+		font-family: var(--font-serif);
+		font-size: 0.875rem;
+		line-height: 1.45;
+		color: var(--tinta-suave);
+	}
+
+	.fonte-da-ficha a {
+		display: inline-grid;
+		align-items: center;
+		min-height: 2.75rem;
+		color: var(--tinta);
+	}
+
+	/* O dia da coleta, embaixo do link, que fecha a linha dele sem pontuação. */
+	.coleta-da-ficha {
+		display: block;
+	}
+
+	/*
+	 * Um mandato que quebra de linha continua junto: as linhas dele se encostam,
+	 * e o vão entre um mandato e outro é maior.
+	 */
+	.mandatos-da-ficha {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	/* As partes do mandato, em tinta, entram com o pé do cartaz, e não sozinhas. */
+	.ficha-do-parlamentar span.faixa {
+		color: var(--tinta);
+		animation: none;
+	}
+
+	/*
+	 * Na célula estreita, as partes do mandato quebram de linha. O quadradinho vai
+	 * no recuo antes de cada parte, e não depois dela, e o da parte que abre uma
+	 * linha fica sob a borda da célula (a faixa recua o mesmo 1.9em, e o corte o
+	 * esconde): nenhuma linha começa nem termina com ele, e a parte longa que
+	 * quebra continua alinhada. Ele tem o tamanho, as margens e a altura do
+	 * quadradinho da faixa (index.css), e, nas cores forçadas, fica em CanvasText,
+	 * como o dela: sem isso, o fundo vira o do papel, e ele some.
+	 */
+	.mandatos-da-ficha .rotulo {
+		overflow-x: clip;
+	}
+
+	.mandatos-da-ficha .faixa {
+		row-gap: 0;
+		margin-left: -1.9em;
+	}
+
+	.mandatos-da-ficha .parte-do-mandato {
+		padding-left: 1.9em;
+	}
+
+	.mandatos-da-ficha .parte-do-mandato::before {
+		content: "" / "";
+		display: inline-block;
+		width: 0.3em;
+		height: 0.3em;
+		margin: 0 0.8em 0 -1.1em;
+		vertical-align: 0.2em;
+		background: currentColor;
+	}
+
+	@media (forced-colors: active) {
+		.mandatos-da-ficha .parte-do-mandato::before {
+			forced-color-adjust: none;
+			background: CanvasText;
+		}
+	}
+
+	.mandatos-da-ficha .parte-do-mandato:not(:last-child)::after {
+		display: none;
+	}
+
+	.lista-das-eleicoes {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
+		gap: 0.75rem var(--respiro);
+		margin-top: 0.2rem;
+	}
+
+	.eleicao-da-ficha {
+		display: grid;
+		align-content: start;
+		row-gap: 0.2rem;
+		padding-left: 0.75rem;
+		border-left: 1px solid var(--tinta);
+	}
+
+	.eleicao-da-ficha > .numero-da-ficha {
+		font-size: 1.5rem;
+	}
+
+	.cargo-na-ficha {
+		font-size: 1rem;
+	}
+
+	.resultado-na-ficha {
+		font-family: var(--font-serif);
+		font-size: 0.9375rem;
+		font-weight: 400;
+		line-height: 1.4;
+	}
+
 	.corpo-dos-parlamentares {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: clamp(2.5rem, 6vw, 4rem);
-	}
-
-	.mandatos {
-		display: grid;
-		gap: 0.6rem;
-		max-width: 39rem;
-	}
-
-	.mandatos .rotulo {
-		color: var(--tinta);
 	}
 
 	/*
