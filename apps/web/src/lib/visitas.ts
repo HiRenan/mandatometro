@@ -44,15 +44,25 @@ export async function avisarVisita(pathname: string): Promise<void> {
 }
 
 /**
+ * Os routers que já contaram a página da primeira carga. No dev, o React em
+ * modo estrito monta o efeito do contador, desmonta e monta de novo, e a
+ * primeira página contava duas vezes.
+ */
+const jaContaram = new WeakSet<object>();
+
+/**
  * Conta a página aberta agora e, depois, cada página nova do router. A troca
- * que muda só a busca ou o trecho do endereço não conta de novo. Devolve a
- * função que para de contar.
+ * que muda só a busca ou o trecho do endereço não conta de novo, nem ligar o
+ * contador outra vez no mesmo router. Devolve a função que para de contar.
  */
 export function acompanharVisitas(
 	router: Pick<AnyRouter, "state" | "subscribe">,
 	avisar: (caminho: string) => unknown = avisarVisita,
 ): () => void {
-	avisar(router.state.location.pathname);
+	if (!jaContaram.has(router)) {
+		jaContaram.add(router);
+		avisar(router.state.location.pathname);
+	}
 	return router.subscribe(
 		"onResolved",
 		({ fromLocation, pathChanged, toLocation }) => {

@@ -166,6 +166,19 @@ describe("as visitas na troca de página", () => {
 		parar();
 	});
 
+	it("ligar de novo no mesmo router não conta a primeira página outra vez", async () => {
+		// No dev, o React em modo estrito monta o efeito, desmonta e monta de novo.
+		const router = await site("/");
+		const avisar = vi.fn();
+
+		acompanharVisitas(router, avisar)();
+		const parar = acompanharVisitas(router, avisar);
+		await router.navigate({ to: "/trilhas" });
+
+		expect(avisar.mock.calls).toEqual([["/"], ["/trilhas"]]);
+		parar();
+	});
+
 	it("depois de parar, nada mais conta", async () => {
 		const router = await site("/");
 		const avisar = vi.fn();
