@@ -185,6 +185,7 @@ function abrir({ history }: { history?: RouterHistory } = {}) {
 			autenticado.addChildren([painel]),
 			pagina("/login", "Entrar na conta"),
 			pagina("/perfil", "Meu perfil"),
+			pagina("/painel/numeros", "Números do site"),
 			pagina("/edicoes", "Edições"),
 			pagina("/edicoes/$id", "Edição publicada"),
 		]),
@@ -872,6 +873,30 @@ describe("ao sair com alterações por salvar", () => {
 		await abrirORascunho();
 		fireEvent.click(screen.getByRole("link", { name: "Conta" }));
 		await screen.findByRole("heading", { name: "Meu perfil" });
+	});
+
+	it("marca a revisão como a página aberta e leva aos números", async () => {
+		await abrirORascunho();
+		const navegacao = screen.getByRole("navigation", {
+			name: "Páginas do painel",
+		});
+		expect(
+			within(navegacao)
+				.getByText("Revisão da edição")
+				.getAttribute("aria-current"),
+		).toBe("page");
+		fireEvent.click(within(navegacao).getByRole("link", { name: "Números" }));
+		await screen.findByRole("heading", { name: "Números do site" });
+	});
+
+	it("pergunta antes de ir aos números com alterações por salvar", async () => {
+		const router = await abrirORascunho();
+		fireEvent.change(within(ficha(1)).getByLabelText("Título"), {
+			target: { value: "Outro título" },
+		});
+		fireEvent.click(screen.getByRole("link", { name: "Números" }));
+		await screen.findByRole("dialog", { name: "Sair sem salvar?" });
+		expect(router.state.location.pathname).toBe("/painel");
 	});
 
 	it("pede o aviso do navegador ao fechar ou recarregar a aba", async () => {
