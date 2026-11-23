@@ -82,6 +82,20 @@ Três avisos sobre essas chaves:
 2. **No Senado, `idProcesso` e `codigoMateria` são números diferentes** para a mesma matéria. Quem resolve `/processo/{id}` é o `idProcesso`.
 3. **Entre as Casas não há id compartilhado.** O `/processo/{id}` traz `outrosNumeros[].idOutroProcesso`, mas esse número continua sendo um id do Senado para a versão da Câmara — não é o `idProposicao` da Câmara. Na PEC 18/2025, o Senado usa `9006525` para a própria tramitação e `9006524` para a da Câmara; nenhum dos dois aparece na API da Câmara. **A ligação possível é por tipo, número e ano.**
 
+## Foto oficial do parlamentar
+
+`GET /parlamentares/{id}` devolve `foto` com o endereço oficial e o crédito. A API monta o endereço com a Casa e o `id_externo` já gravados. O navegador solicita a foto diretamente à Casa.
+
+| Casa | `foto.url` | `foto.credito` |
+| --- | --- | --- |
+| Câmara | `https://www.camara.leg.br/internet/deputado/bandep/{id_externo}.jpg` | Câmara dos Deputados |
+| Senado | `https://legis.senado.leg.br/senadores/fotos-oficiais/{id_externo}` | Senado Federal |
+
+Na Câmara, o endereço segue o `urlFoto` gravado na resposta. No Senado, o caminho de `UrlFotoParlamentar` em HTTPS redireciona para o endereço da tabela.
+
+- A Câmara permite reproduzir informações do portal com crédito à Câmara dos Deputados e menção à autoria quando houver. [Termos gerais de uso da Câmara](https://www2.camara.leg.br/termo-de-uso-e-politica-de-privacidade/termos-gerais)
+- O Senado permite reutilizar o conteúdo do portal para fins lícitos com citação da fonte. [Política de uso do portal do Senado](https://www12.senado.leg.br/institucional/documentos/politica-de-uso-do-portal-do-senado-federal)
+
 ## Câmara dos Deputados
 
 ### `/votacoes` — as votações do plenário no período
@@ -720,6 +734,7 @@ O CDN publica `bem_candidato_AAAA.zip` na pasta `bem_candidato`. Os arquivos das
 | --- | --- | --- |
 | `candidatura_patrimonio` | `ano`, `codigo_eleicao`, `uf`, `id_externo` | Chave com `ANO_ELEICAO`, `CD_ELEICAO`, `SG_UF` e `SQ_CANDIDATO` nos dois CSVs. Em 2006, o número da candidatura se repete entre UFs. `BR` identifica uma candidatura nacional. |
 | | `cargo`, `parlamentar_id` | Código `CD_CARGO` e id interno do parlamentar confirmado. |
+| | `resultado`, `resultado_bruto` | Resultado a partir de `DS_SIT_TOT_TURNO` do último turno. O texto bruto fica reservado à auditoria dos valores desconhecidos. A revisão `0017` acrescenta as duas colunas nulas. |
 | | `fonte_candidatura_id`, `fonte_bens_id` | Uma observação por ZIP usado na gravação, com a URL oficial e a hora da coleta. |
 | `bem_declarado` | `candidatura_id`, `tipo` | Chave da agregação por candidatura e `CD_TIPO_BEM_CANDIDATO`. O código desconhecido entra na soma e no resumo. |
 | | `valor_centavos` | Soma de `VR_BEM_CANDIDATO` por tipo, no valor nominal em centavos inteiros. |
@@ -738,6 +753,37 @@ O comando `coleta bens-tse` só grava depois de ler os 12 arquivos completos, in
 
 `GET /parlamentares/{id}/patrimonio` devolve `eleicoes` em ordem de ano, com `ano`, `cargo` (código e nome), `uf`, `total_centavos` e `fonte` (URL do ZIP de bens e hora da coleta). Os rótulos vêm da lista fixa do TSE no código. A API acrescenta a [correção pelo IPCA](#ipca-mensal) a partir da série gravada.
 
+### Resultado por eleição
+
+A série normaliza `DS_SIT_TOT_TURNO` pelo texto. Em 2010, por exemplo, `CD_SIT_TOT_TURNO` usa o código 2 para suplente e o 5 para média. A coleta toma o maior `NR_TURNO` dentro da mesma chave de candidatura. Nos arquivos da série, o TSE pode mudar o código da eleição entre turnos da mesma disputa. Quando o CPF aponta para as duas chaves no mesmo ano, a coleta conta `cpf_repetido` e `em_conflito` e deixa a eleição fora das novas gravações da série, como antes da #291.
+
+A coleta lê os bens apenas pela chave da série. Se já houver uma ficha gravada para a eleição em conflito, a coleta preserva a ficha e a declaração publicadas.
+
+| Texto de `DS_SIT_TOT_TURNO` | Valor gravado |
+| --- | --- |
+| `ELEITO` | `eleito` |
+| `ELEITO POR QP` | `eleito_por_qp` |
+| `ELEITO POR MÉDIA` | `eleito_por_media` |
+| `MÉDIA` | `eleito_por_media` |
+| `NÃO ELEITO` | `nao_eleito` |
+| `SUPLENTE` | `suplente` |
+| `#NULO` | `sem_resultado` |
+| `#NULO#` | `sem_resultado` |
+| `2º TURNO` | `sem_resultado` |
+| `CASSADO COM RECURSO` | `sem_resultado` |
+| `INDEFERIDO COM RECURSO` | `sem_resultado` |
+| `REGISTRO NEGADO ANTES DA ELEIÇÃO` | `sem_resultado` |
+| `REGISTRO NEGADO APÓS A ELEIÇÃO` | `sem_resultado` |
+| `RENÚNCIA/FALECIMENTO COM SUBSTITUIÇÃO` | `sem_resultado` |
+| `RENÚNCIA/FALECIMENTO/CASSAÇÃO ANTES DA ELEIÇÃO` | `sem_resultado` |
+| `RENÚNCIA/FALECIMENTO/CASSAÇÃO APÓS A ELEIÇÃO` | `sem_resultado` |
+| `SUBSTITUÍDO` | `sem_resultado` |
+| Texto desconhecido | `outro` |
+
+`sem_resultado` inclui as marcações nulas, o aviso provisório de segundo turno e as situações de registro, cassação, renúncia, falecimento ou substituição da tabela. A API devolve `resultado` nulo até a coleta atualizar aquela candidatura. Se o texto vier como `ELEITO` para um suplente de senador, a API devolve `eleito` e o campo `cargo` identifica o suplente.
+
+A recoleta pode atualizar o resultado de uma candidatura vinculada mesmo quando preserva o total anterior por causa de um valor inválido na declaração de bens.
+
 ## IPCA mensal
 
 O SGS do Banco Central publica a variação percentual mensal do IPCA na série 433. A API é pública e dispensa chave. O JSON traz `data` em `DD/MM/AAAA`, sempre com dia `01`, e `valor` como texto com ponto decimal e duas casas. A consulta de 22/11/2026 cobriu janeiro de 2006 a outubro de 2026, com 250 meses consecutivos em um pedido. O `robots.txt` devolveu HTTP 404 nessa data. [Série 433 do SGS](https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados?formato=json&dataInicial=01/01/2006&dataFinal=22/11/2026) · [Robots do host](https://api.bcb.gov.br/robots.txt)
@@ -755,6 +801,10 @@ O catálogo do Banco Central descreve seus dados como públicos e divulgados sob
 O total corrigido é o total nominal em centavos multiplicado pelo produto dos fatores `1 + variação_percentual / 100` de outubro do ano eleitoral ao último mês gravado, incluindo os dois meses, em decimal exato, com um único arredondamento ao centavo mais próximo e empate para cima (`ROUND_HALF_UP`). Por exemplo, outubro com 10% e novembro com −5% levam R$ 1,00 a 104,5 centavos, que arredondam para R$ 1,05.
 
 Cada eleição traz `mes_inicio` em `AAAA-MM` e `total_corrigido_centavos`. O corrigido vem nulo se faltar o total ou algum mês do intervalo, se a série acabar antes de outubro daquela eleição ou se o resultado superar o maior inteiro exato do JavaScript. A resposta traz `correcao_ipca` com `indice` igual a `IPCA`, `mes_fim` em `AAAA-MM` e `fonte` com a URL e a hora da coleta do mês final. Com o banco sem a série, `correcao_ipca` é nulo.
+
+`fator_ipca` é o produto dos fatores mensais, publicado como texto com quatro casas decimais. `alta_ipca_percentual` é `(fator - 1) × 100`, publicada como texto com uma casa decimal e com sinal negativo quando os preços caem. Cada indicador usa o produto antes de arredondar. Os dois usam `Decimal` e `ROUND_HALF_UP` e ficam nulos sem a cobertura mensal completa. Com o IPCA completo, os indicadores também estão disponíveis para uma eleição sem total declarado.
+
+`variacao` compara o total corrigido em centavos com o da última eleição anterior que também tem total corrigido. Traz `ano_anterior` e `diferenca_centavos`, o total atual menos o anterior, inclusive quando a diferença é negativa ou zero. `percentual` é a diferença dividida pelo total anterior e multiplicada por 100, como texto com uma casa, em `Decimal` e com `ROUND_HALF_UP`. O percentual fica nulo até R$ 50.000,00 de total corrigido anterior, inclusive. A variação inteira fica nula se faltar o total corrigido atual ou se ainda não houver um total corrigido anterior.
 
 ## Campos pessoais
 

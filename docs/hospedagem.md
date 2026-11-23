@@ -96,13 +96,15 @@ Marcar **somente_videos** e **somente_temas** juntos faz a tarefa parar com erro
 
 ## Coletar o TSE
 
-1. Confirme que **Migrar banco** aplicou as revisões de candidaturas e de patrimônio, até a `0015`, e que **Coletar Congresso** carregou os parlamentares em exercício na mesma branch.
+1. Confirme que **Migrar banco** aplicou as revisões de candidaturas e de patrimônio, até a `0017`, e que **Coletar Congresso** carregou os parlamentares em exercício na mesma branch.
 2. Em **Actions → Coletar TSE → Run workflow**, escolha `develop` para desenvolvimento ou `main` para produção. O job usa o segredo `DATABASE_URL` com pool do ambiente, aguarda a fila desse banco e tem até 10 minutos.
 3. Confira o commit executado e a linha JSON. `completa: true` confirma os dois arquivos, e as contagens por Casa e ano indicam a cobertura da ligação. Em 2026, `outro_cargo` conta as candidaturas à outra Casa encontradas pelo CPF da âncora de 2022 quando a ligação está livre de conflito. Se uma leitura falhar, a execução tenta a outra e fica vermelha. Repita o disparo para recuperar a carga.
 
 As duas leituras de candidaturas precisam concluir para a coleta gravar novos vínculos, atualizar registros confirmados ou registrar fontes. A gravação dos dois anos ocorre na mesma transação.
 
 O passo **Coletar bens declarados e mostrar as contagens** roda depois das candidaturas, no mesmo job. O `completa: true` do segundo resumo confirma que os 12 arquivos das seis eleições gerais foram lidos e a gravação terminou. Se um arquivo de bens ou de candidaturas faltar ou estiver incompleto nesse passo, a série publicada é preservada. Repita o workflow depois de corrigir a falha.
+
+Depois que a revisão `0017` for aplicada em cada ambiente, rode **Coletar TSE** de novo em `develop` e em `main` para preencher o resultado das eleições nas séries existentes. Confira o segundo resumo e o campo `resultado` em `GET /parlamentares/{id}/patrimonio` para uma série atualizada.
 
 Os ZIPs são temporários no runner. O resumo contém apenas contagens e os registros confirmados ficam no banco com a URL oficial de cada arquivo. [Campos e ligação do TSE](dicionario-de-dados.md#candidaturas-do-tse)
 

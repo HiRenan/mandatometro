@@ -217,6 +217,10 @@ export type DetalheParlamentar = {
      */
     partido: string | null;
     /**
+     * Endereço da foto oficial e crédito da Casa.
+     */
+    foto: FotoParlamentar;
+    /**
      * Mandatos
      */
     mandatos: Array<MandatoPublico>;
@@ -360,6 +364,28 @@ export type EleicaoPatrimonio = {
      * Total em centavos corrigido pelo IPCA. Nulo sem total, sem cobertura completa do período ou acima do limite de centavos da API.
      */
     total_corrigido_centavos: number | null;
+    /**
+     * Resultado
+     *
+     * Resultado final do TSE, do último turno. Nulo até a coleta do resultado.
+     */
+    resultado: 'eleito' | 'eleito_por_qp' | 'eleito_por_media' | 'suplente' | 'nao_eleito' | 'sem_resultado' | 'outro' | null;
+    /**
+     * Fator Ipca
+     *
+     * Fator de correção com quatro casas. Nulo sem cobertura completa do período.
+     */
+    fator_ipca: string | null;
+    /**
+     * Alta Ipca Percentual
+     *
+     * Variação dos preços pelo IPCA com uma casa. Nula sem cobertura completa.
+     */
+    alta_ipca_percentual: string | null;
+    /**
+     * Comparação com a eleição anterior com total corrigido. Nula quando um dos dois totais corrigidos falta.
+     */
+    variacao: VariacaoPatrimonio | null;
 };
 
 /**
@@ -506,6 +532,20 @@ export type FontePublica = {
      * Trecho
      */
     trecho: string | null;
+};
+
+/**
+ * FotoParlamentar
+ */
+export type FotoParlamentar = {
+    /**
+     * Url
+     */
+    url: string;
+    /**
+     * Credito
+     */
+    credito: string;
 };
 
 /**
@@ -1012,6 +1052,28 @@ export type Termo = {
      * Url
      */
     url: string;
+};
+
+/**
+ * VariacaoPatrimonio
+ */
+export type VariacaoPatrimonio = {
+    /**
+     * Ano Anterior
+     */
+    ano_anterior: number;
+    /**
+     * Diferenca Centavos
+     *
+     * Total corrigido atual menos o anterior.
+     */
+    diferenca_centavos: number;
+    /**
+     * Percentual
+     *
+     * Diferença percentual com uma casa. Nula se o total corrigido anterior for de R$ 50.000,00 ou menos.
+     */
+    percentual: string | null;
 };
 
 /**

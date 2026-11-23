@@ -2616,6 +2616,10 @@
             "title": "Partido",
             "description": "Sigla registrada no voto mais recente pela data da votação, com desempate pelo maior id interno da votação. Nula se o voto não informa partido ou se não há voto."
           },
+          "foto": {
+            "$ref": "#/components/schemas/FotoParlamentar",
+            "description": "Endereço da foto oficial e crédito da Casa."
+          },
           "mandatos": {
             "items": {
               "$ref": "#/components/schemas/MandatoPublico"
@@ -2635,6 +2639,7 @@
           "casa",
           "uf",
           "partido",
+          "foto",
           "mandatos",
           "contagem_votos"
         ],
@@ -2887,6 +2892,64 @@
             ],
             "title": "Total Corrigido Centavos",
             "description": "Total em centavos corrigido pelo IPCA. Nulo sem total, sem cobertura completa do período ou acima do limite de centavos da API."
+          },
+          "resultado": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "eleito",
+                  "eleito_por_qp",
+                  "eleito_por_media",
+                  "suplente",
+                  "nao_eleito",
+                  "sem_resultado",
+                  "outro"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultado",
+            "description": "Resultado final do TSE, do último turno. Nulo até a coleta do resultado."
+          },
+          "fator_ipca": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]{4}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fator Ipca",
+            "description": "Fator de correção com quatro casas. Nulo sem cobertura completa do período."
+          },
+          "alta_ipca_percentual": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^-?[0-9]+\\.[0-9]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alta Ipca Percentual",
+            "description": "Variação dos preços pelo IPCA com uma casa. Nula sem cobertura completa."
+          },
+          "variacao": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VariacaoPatrimonio"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Comparação com a eleição anterior com total corrigido. Nula quando um dos dois totais corrigidos falta."
           }
         },
         "type": "object",
@@ -2897,7 +2960,11 @@
           "total_centavos",
           "fonte",
           "mes_inicio",
-          "total_corrigido_centavos"
+          "total_corrigido_centavos",
+          "resultado",
+          "fator_ipca",
+          "alta_ipca_percentual",
+          "variacao"
         ],
         "title": "EleicaoPatrimonio"
       },
@@ -3136,6 +3203,24 @@
           "trecho"
         ],
         "title": "FontePublica"
+      },
+      "FotoParlamentar": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "credito": {
+            "type": "string",
+            "title": "Credito"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "credito"
+        ],
+        "title": "FotoParlamentar"
       },
       "ItemPublico": {
         "properties": {
@@ -3959,6 +4044,39 @@
           "url"
         ],
         "title": "Termo"
+      },
+      "VariacaoPatrimonio": {
+        "properties": {
+          "ano_anterior": {
+            "type": "integer",
+            "title": "Ano Anterior"
+          },
+          "diferenca_centavos": {
+            "type": "integer",
+            "title": "Diferenca Centavos",
+            "description": "Total corrigido atual menos o anterior."
+          },
+          "percentual": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^-?[0-9]+\\.[0-9]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentual",
+            "description": "Diferença percentual com uma casa. Nula se o total corrigido anterior for de R$ 50.000,00 ou menos."
+          }
+        },
+        "type": "object",
+        "required": [
+          "ano_anterior",
+          "diferenca_centavos",
+          "percentual"
+        ],
+        "title": "VariacaoPatrimonio"
       },
       "VotacaoPublica": {
         "properties": {

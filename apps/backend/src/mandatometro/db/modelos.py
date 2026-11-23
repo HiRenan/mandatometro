@@ -31,6 +31,7 @@ from sqlalchemy import (
     SmallInteger,
     String,
     Table,
+    Text,
     UniqueConstraint,
     func,
     text,
@@ -316,6 +317,7 @@ class CandidaturaPatrimonio(Base):
         CheckConstraint("id_externo > 0", name="id_externo"),
         CheckConstraint("cargo > 0", name="cargo"),
         CheckConstraint("""uf COLLATE "C" ~ '^[A-Z]{2}$'""", name="uf"),
+        CheckConstraint(_um_de("resultado", (*RESULTADOS_TSE.values(), "outro")), name="resultado"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -324,6 +326,8 @@ class CandidaturaPatrimonio(Base):
     uf: Mapped[str] = mapped_column(String(2))
     id_externo: Mapped[int] = mapped_column(BigInteger)
     cargo: Mapped[int] = mapped_column(SmallInteger)
+    resultado: Mapped[str | None]
+    resultado_bruto: Mapped[str | None] = mapped_column(Text)
     parlamentar_id: Mapped[int] = mapped_column(ForeignKey("parlamentar.id", ondelete="CASCADE"))
     fonte_candidatura_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))
     fonte_bens_id: Mapped[int] = mapped_column(ForeignKey("fonte.id"))

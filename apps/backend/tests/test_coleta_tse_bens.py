@@ -29,6 +29,7 @@ from mandatometro.db.modelos import (
 )
 
 FIXTURES = Path(__file__).parent / "fixtures" / "tse_bens"
+OUTRO_CODIGO_2018 = "99029199"
 
 
 @pytest.fixture
@@ -155,6 +156,40 @@ def _serie(sessao, pessoa):
             .where(CandidaturaPatrimonio.parlamentar_id == pessoa)
         )
     )
+
+
+def _eleicoes_2018(pessoa):
+    with TestClient(app) as cliente:
+        resposta = cliente.get(f"/parlamentares/{pessoa}/patrimonio")
+    assert resposta.status_code == 200
+    return [eleicao for eleicao in resposta.json()["eleicoes"] if eleicao["ano"] == 2018]
+
+
+def _ficha_2018(sessao, pessoa):
+    tabela = CandidaturaPatrimonio.__table__
+    ficha = sessao.execute(
+        select(tabela).where(tabela.c.ano == 2018, tabela.c.parlamentar_id == pessoa)
+    ).one_or_none()
+    return ficha, _eleicoes_2018(pessoa)
+
+
+def _primeiro_turno_2018(linhas):
+    linhas[0].update(CD_CARGO="3", DS_CARGO="Governador", NR_TURNO="1", DS_SIT_TOT_TURNO="2º TURNO")
+
+
+def _preparar_ficha_2018(linhas):
+    _primeiro_turno_2018(linhas)
+    linhas[0]["DS_SIT_TOT_TURNO"] = "RESULTADO INICIAL FICTÍCIO"
+
+
+def _adicionar_turno_em_outro_codigo(linhas, **mudancas):
+    _primeiro_turno_2018(linhas)
+    segundo = linhas[0] | {
+        "CD_ELEICAO": OUTRO_CODIGO_2018,
+        "NR_TURNO": "2",
+        "DS_SIT_TOT_TURNO": "ELEITO",
+    }
+    linhas.append(segundo | mudancas)
 
 
 def test_carga_em_varios_anos_prova_identidade_e_agrega_por_tipo(
@@ -297,6 +332,300 @@ def test_repetir_atualiza_os_totais_sem_duplicar(arquivos, parlamentares, sessao
     assert _bens(sessao) == antes - {(2006, parlamentares[0], 99, 1016)} | {
         (2006, parlamentares[0], 99, 4216)
     }
+
+
+@pytest.mark.parametrize(
+    ("texto", "resultado"),
+    [
+        ("ELEITO", "eleito"),
+        ("ELEITO POR QP", "eleito_por_qp"),
+        ("ELEITO POR MÉDIA", "eleito_por_media"),
+        ("MÉDIA", "eleito_por_media"),
+        ("SUPLENTE", "suplente"),
+        ("NÃO ELEITO", "nao_eleito"),
+        ("#NULO", "sem_resultado"),
+        ("#NULO#", "sem_resultado"),
+        ("2º TURNO", "sem_resultado"),
+        ("CASSADO COM RECURSO", "sem_resultado"),
+        ("INDEFERIDO COM RECURSO", "sem_resultado"),
+        ("REGISTRO NEGADO ANTES DA ELEIÇÃO", "sem_resultado"),
+        ("REGISTRO NEGADO APÓS A ELEIÇÃO", "sem_resultado"),
+        ("RENÚNCIA/FALECIMENTO COM SUBSTITUIÇÃO", "sem_resultado"),
+        ("RENÚNCIA/FALECIMENTO/CASSAÇÃO ANTES DA ELEIÇÃO", "sem_resultado"),
+        ("RENÚNCIA/FALECIMENTO/CASSAÇÃO APÓS A ELEIÇÃO", "sem_resultado"),
+        ("SUBSTITUÍDO", "sem_resultado"),
+        ("SITUAÇÃO FICTÍCIA DE AUDITORIA ", "outro"),
+    ],
+)
+def test_resultado_da_serie_usa_texto_do_tse(
+    arquivos, parlamentares, sessao, capsys, texto, resultado
+):
+    def trocar(linhas):
+        linhas[0].update(NR_TURNO="1", DS_SIT_TOT_TURNO=texto, CD_SIT_TOT_TURNO="123")
+
+    _alterar_linhas(arquivos, "consulta_cand_2010", trocar)
+    _carregar(arquivos, capsys)
+    eleicao = CandidaturaPatrimonio
+    bruto = sessao.execute(
+        select(eleicao.resultado_bruto).where(
+            eleicao.ano == 2010, eleicao.parlamentar_id == parlamentares[0]
+        )
+    ).scalar_one()
+    assert bruto == (texto if resultado == "outro" else None)
+
+    with TestClient(app) as cliente:
+        resposta = cliente.get(f"/parlamentares/{parlamentares[0]}/patrimonio")
+        assert resposta.status_code == 200
+        item = next(e for e in resposta.json()["eleicoes"] if e["ano"] == 2010)
+    assert item["resultado"] == resultado
+    assert "resultado_bruto" not in item
+
+
+def test_recoleta_grava_resultado_do_ultimo_turno_na_mesma_candidatura(
+    arquivos, parlamentares, sessao, capsys
+):
+    _carregar(arquivos, capsys)
+    eleicao = CandidaturaPatrimonio
+    consulta = select(eleicao).where(
+        eleicao.ano == 2010, eleicao.parlamentar_id == parlamentares[0]
+    )
+    antes = sessao.scalars(consulta).one()
+    id_anterior, codigo_anterior = antes.id, antes.codigo_eleicao
+    bens = _bens(sessao)
+
+    def novo_turno(linhas):
+        primeiro = linhas[0]
+        primeiro.update(NR_TURNO="1", DS_SIT_TOT_TURNO="2º TURNO")
+        ultimo = primeiro | {"NR_TURNO": "2", "DS_SIT_TOT_TURNO": "ELEITO"}
+        linhas.insert(0, ultimo)
+
+    _alterar_linhas(arquivos, "consulta_cand_2010", novo_turno)
+    _carregar(arquivos, capsys)
+    atual = sessao.scalars(consulta.execution_options(populate_existing=True)).one()
+    assert (atual.id, atual.codigo_eleicao, atual.resultado) == (
+        id_anterior,
+        codigo_anterior,
+        "eleito",
+    )
+    assert _bens(sessao) == bens
+
+
+@pytest.mark.parametrize(
+    "caso", ["bens-no-segundo-codigo", "declaracoes-identicas", "turno-concorrente", "tres-chaves"]
+)
+def test_recoleta_com_chaves_em_conflito_preserva_ficha_publicada(
+    arquivos, parlamentares, sessao, capsys, caso
+):
+    pessoa = parlamentares[0]
+    _alterar_linhas(arquivos, "consulta_cand_2018", _preparar_ficha_2018)
+    _carregar(arquivos, capsys)
+    ficha, eleicoes = _ficha_2018(sessao, pessoa)
+    bens_anteriores = _bens(sessao)
+    assert (ficha.resultado, ficha.resultado_bruto) == ("outro", "RESULTADO INICIAL FICTÍCIO")
+    assert eleicoes[0]["total_centavos"] == 350
+
+    def candidaturas(linhas):
+        _adicionar_turno_em_outro_codigo(linhas)
+        if caso == "turno-concorrente":
+            linhas[-1]["NR_TURNO"] = "1"
+            linhas.append(linhas[0] | {"NR_TURNO": "2", "DS_SIT_TOT_TURNO": "NÃO ELEITO"})
+        elif caso == "tres-chaves":
+            linhas.insert(
+                0,
+                linhas[0]
+                | {
+                    "CD_ELEICAO": "99029201",
+                    "NR_TURNO": "3",
+                    "DS_SIT_TOT_TURNO": "NÃO ELEITO",
+                },
+            )
+
+    def bens(linhas):
+        outra_declaracao = linhas[0] | {"CD_ELEICAO": OUTRO_CODIGO_2018}
+        if caso == "declaracoes-identicas":
+            linhas.append(outra_declaracao)
+        else:
+            linhas[0] = outra_declaracao
+
+    _alterar_linhas(arquivos, "consulta_cand_2018", candidaturas)
+    if caso != "tres-chaves":
+        _alterar_linhas(arquivos, "bem_candidato_2018", bens)
+    resumo = _carregar(arquivos, capsys)["anos"]["2018"]
+    assert _ficha_2018(sessao, pessoa) == (ficha, eleicoes)
+    assert _bens(sessao) == bens_anteriores
+    assert resumo.get("cpf_repetido", 0) == resumo.get("em_conflito", 0) == 1
+
+
+def test_chave_publicada_ausente_preserva_ficha_mesmo_com_cpf_igual(
+    arquivos, parlamentares, sessao, capsys
+):
+    pessoa = parlamentares[0]
+    _alterar_linhas(arquivos, "consulta_cand_2018", _preparar_ficha_2018)
+    _carregar(arquivos, capsys)
+    antes = _ficha_2018(sessao, pessoa)
+    bens_anteriores = _bens(sessao)
+
+    def candidaturas(linhas):
+        _adicionar_turno_em_outro_codigo(linhas)
+        linhas.pop(0)
+
+    _alterar_linhas(arquivos, "consulta_cand_2018", candidaturas)
+    _alterar_linhas(
+        arquivos,
+        "bem_candidato_2018",
+        lambda linhas: linhas[0].update(CD_ELEICAO=OUTRO_CODIGO_2018, VR_BEM_CANDIDATO="68,90"),
+    )
+    resumo = _carregar(arquivos, capsys)
+    assert resumo["ancoras"]["vinculos_nao_confirmados"] == 1
+    assert _ficha_2018(sessao, pessoa) == antes
+    assert _bens(sessao) == bens_anteriores
+
+
+@pytest.mark.parametrize("com_segundo_turno", [False, True], ids=["so-primeiro", "com-segundo"])
+def test_chaves_concorrentes_no_mesmo_turno_ficam_em_conflito(
+    arquivos, parlamentares, sessao, capsys, com_segundo_turno
+):
+    def candidaturas(linhas):
+        _primeiro_turno_2018(linhas)
+        primeiro = linhas[0]
+        if com_segundo_turno:
+            linhas.append(primeiro | {"NR_TURNO": "2", "DS_SIT_TOT_TURNO": "ELEITO"})
+        linhas.append(
+            primeiro
+            | {
+                "CD_ELEICAO": OUTRO_CODIGO_2018,
+                "DS_SIT_TOT_TURNO": "#NULO",
+                "NM_CANDIDATO": "Ficha Sintética de Teste",
+                "NM_URNA_CANDIDATO": "Urna Sintética de Teste",
+            }
+        )
+
+    def bens(linhas):
+        linhas.append(linhas[0] | {"CD_ELEICAO": OUTRO_CODIGO_2018, "VR_BEM_CANDIDATO": "1234,56"})
+
+    _alterar_linhas(arquivos, "consulta_cand_2018", candidaturas)
+    _alterar_linhas(arquivos, "bem_candidato_2018", bens)
+    resumo = _carregar(arquivos, capsys)["anos"]["2018"]
+    assert _ficha_2018(sessao, parlamentares[0]) == (None, [])
+    assert {bem for bem in _bens(sessao) if bem[0] == 2018} == {(2018, parlamentares[1], 11, 717)}
+    assert resumo["cpf_repetido"] == resumo["em_conflito"] == 1
+
+
+@pytest.mark.parametrize("duas_chaves", [True, False], ids=["duas-chaves", "chave-confirmada"])
+def test_recoleta_so_publica_bens_na_ficha_do_titular(
+    arquivos, parlamentares, sessao, capsys, duas_chaves
+):
+    primeira, segunda, *_ = parlamentares
+    cpf_segunda = ""
+
+    def candidaturas(linhas):
+        nonlocal cpf_segunda
+        cpf_segunda = linhas[1]["NR_CPF_CANDIDATO"]
+        del linhas[1:]
+        _adicionar_turno_em_outro_codigo(linhas)
+        if not duas_chaves:
+            linhas.pop(0)
+
+    _alterar_linhas(arquivos, "consulta_cand_2018", candidaturas)
+    _alterar_linhas(
+        arquivos,
+        "bem_candidato_2018",
+        lambda linhas: linhas[0].update(CD_ELEICAO=OUTRO_CODIGO_2018),
+    )
+    resumo_inicial = _carregar(arquivos, capsys)
+    antes = _ficha_2018(sessao, primeira)
+    assert _ficha_2018(sessao, segunda) == (None, [])
+    if duas_chaves:
+        assert antes == (None, [])
+        assert not any(bem[0] == 2018 for bem in _bens(sessao))
+        resumo = resumo_inicial["anos"]["2018"]
+        assert resumo["cpf_repetido"] == resumo["em_conflito"] == 1
+    else:
+        assert antes[0].codigo_eleicao == int(OUTRO_CODIGO_2018)
+        assert antes[1][0]["total_centavos"] == 350
+
+    def trocar_titular(linhas):
+        linhas[:] = [
+            linhas[-1] | {"NR_CPF_CANDIDATO": cpf_segunda, "DS_SIT_TOT_TURNO": "NÃO ELEITO"}
+        ]
+
+    _alterar_linhas(arquivos, "consulta_cand_2018", trocar_titular)
+    resumo = _carregar(arquivos, capsys)
+    assert _ficha_2018(sessao, primeira) == antes
+    ficha, eleicoes = _ficha_2018(sessao, segunda)
+    if duas_chaves:
+        # A declaração estava sem vínculo. Agora só há uma ficha e um titular confirmado.
+        assert ficha.codigo_eleicao == int(OUTRO_CODIGO_2018)
+        assert eleicoes[0]["total_centavos"] == 350
+        titular = segunda
+    else:
+        assert (ficha, eleicoes) == (None, [])
+        assert (
+            resumo["ancoras"]["em_conflito_na_cadeia"]
+            == resumo_inicial["ancoras"]["em_conflito_na_cadeia"] + 2
+        )
+        titular = primeira
+    assert {bem for bem in _bens(sessao) if bem[0] == 2018} == {(2018, titular, 11, 350)}
+
+
+@pytest.mark.parametrize(
+    ("campo", "valor"),
+    [("SG_UF", "DF"), ("SQ_CANDIDATO", "90029199"), ("CD_CARGO", "8")],
+    ids=["uf", "sequencia", "cargo"],
+)
+def test_turnos_com_uf_sequencia_ou_cargo_distintos_ficam_em_conflito(
+    arquivos, parlamentares, capsys, campo, valor
+):
+    _alterar_linhas(
+        arquivos,
+        "consulta_cand_2018",
+        lambda linhas: _adicionar_turno_em_outro_codigo(linhas, **{campo: valor}),
+    )
+    resumo = _carregar(arquivos, capsys)
+    assert _eleicoes_2018(parlamentares[0]) == []
+    assert resumo["anos"]["2018"]["cpf_repetido"] == 1
+
+
+def test_turno_com_cpf_sem_ancora_fica_fora_da_serie(arquivos, parlamentares, capsys):
+    _alterar_linhas(
+        arquivos,
+        "consulta_cand_2018",
+        lambda linhas: _adicionar_turno_em_outro_codigo(linhas, NR_CPF_CANDIDATO="00000000019"),
+    )
+    _alterar_linhas(
+        arquivos,
+        "bem_candidato_2018",
+        lambda linhas: linhas.append(
+            linhas[0] | {"CD_ELEICAO": OUTRO_CODIGO_2018, "VR_BEM_CANDIDATO": "68,90"}
+        ),
+    )
+    _carregar(arquivos, capsys)
+    (eleicao,) = _eleicoes_2018(parlamentares[0])
+    assert eleicao["resultado"] == "sem_resultado"
+    assert eleicao["total_centavos"] == 350
+
+
+def test_recoleta_atualiza_resultado_quando_o_total_anterior_e_preservado(
+    arquivos, parlamentares, sessao, capsys
+):
+    _carregar(arquivos, capsys)
+    eleicao = CandidaturaPatrimonio
+    consulta = select(eleicao).where(
+        eleicao.ano == 2018, eleicao.parlamentar_id == parlamentares[0]
+    )
+    fonte_bens = sessao.scalars(consulta).one().fonte_bens_id
+    bens = _bens(sessao)
+
+    def trocar_resultado(linhas):
+        linhas[0].update(NR_TURNO="1", DS_SIT_TOT_TURNO="NÃO ELEITO")
+
+    _alterar_linhas(arquivos, "consulta_cand_2018", trocar_resultado)
+    _alterar_zip(arquivos, "bem_candidato_2018", lambda b: b.replace(b'"3,50"', b'"ERRO"'))
+    _carregar(arquivos, capsys)
+    atual = sessao.scalars(consulta.execution_options(populate_existing=True)).one()
+    assert atual.resultado == "nao_eleito"
+    assert atual.fonte_bens_id == fonte_bens
+    assert _bens(sessao) == bens
 
 
 @pytest.mark.parametrize(

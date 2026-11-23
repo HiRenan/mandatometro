@@ -21,9 +21,36 @@ from mandatometro.coleta.tse_arquivos import (
 from mandatometro.tse_catalogos import MAXIMO_CENTAVOS, TIPOS_DE_BEM_TSE
 
 _CAMPOS_CHAVE = {"ANO_ELEICAO", "CD_ELEICAO", "SG_UF", "SQ_CANDIDATO"}
-_CAMPOS_CANDIDATURAS = {*_CAMPOS_CHAVE, "CD_TIPO_ELEICAO", "CD_CARGO", "NR_CPF_CANDIDATO"}
+_CAMPOS_CANDIDATURAS = {
+    *_CAMPOS_CHAVE,
+    "CD_TIPO_ELEICAO",
+    "CD_CARGO",
+    "NR_CPF_CANDIDATO",
+    "NR_TURNO",
+    "DS_SIT_TOT_TURNO",
+}
 _CAMPOS_BENS = {*_CAMPOS_CHAVE, "CD_TIPO_BEM_CANDIDATO", "VR_BEM_CANDIDATO"}
 _DECIMAL = re.compile(r"-?[0-9]+,[0-9]{2}")
+
+RESULTADOS_POR_TEXTO = {
+    "ELEITO": "eleito",
+    "ELEITO POR QP": "eleito_por_qp",
+    "ELEITO POR MÉDIA": "eleito_por_media",
+    "MÉDIA": "eleito_por_media",
+    "SUPLENTE": "suplente",
+    "NÃO ELEITO": "nao_eleito",
+    "#NULO": "sem_resultado",
+    "#NULO#": "sem_resultado",
+    "2º TURNO": "sem_resultado",
+    "CASSADO COM RECURSO": "sem_resultado",
+    "INDEFERIDO COM RECURSO": "sem_resultado",
+    "REGISTRO NEGADO ANTES DA ELEIÇÃO": "sem_resultado",
+    "REGISTRO NEGADO APÓS A ELEIÇÃO": "sem_resultado",
+    "RENÚNCIA/FALECIMENTO COM SUBSTITUIÇÃO": "sem_resultado",
+    "RENÚNCIA/FALECIMENTO/CASSAÇÃO ANTES DA ELEIÇÃO": "sem_resultado",
+    "RENÚNCIA/FALECIMENTO/CASSAÇÃO APÓS A ELEIÇÃO": "sem_resultado",
+    "SUBSTITUÍDO": "sem_resultado",
+}
 
 type ChavePatrimonio = tuple[int, str, int]  # Código da eleição, UF e SQ_CANDIDATO.
 type TotaisPorTipo = Counter[int]
@@ -33,6 +60,7 @@ type TotaisPorTipo = Counter[int]
 class CandidaturaLida:
     cargo: int
     cpf: str | None
+    situacoes_por_turno: dict[int, str]
 
 
 def _chave_patrimonio(linha: dict[str, str], ano: int) -> ChavePatrimonio:
@@ -61,12 +89,21 @@ def ler_candidaturas_patrimonio(
             cargo = _numero(linha["CD_CARGO"], 1, 2**15 - 1)
         except ValueError:
             raise ArquivoInvalido("Código de cargo inválido.") from None
+        try:
+            turno = _numero(linha["NR_TURNO"], 1, 2**15 - 1)
+        except ValueError:
+            raise ArquivoInvalido("Turno eleitoral inválido.") from None
         cpf = cpf_ou_nulo(linha["NR_CPF_CANDIDATO"])
         contagens["linhas"] += 1
         if cpf is None:
             contagens["sem_cpf"] += 1
-        candidatura = CandidaturaLida(cargo, cpf)
-        if candidaturas.setdefault(chave, candidatura) != candidatura:
+        situacao = linha["DS_SIT_TOT_TURNO"]
+        anterior = candidaturas.get(chave)
+        if anterior is None:
+            candidaturas[chave] = CandidaturaLida(cargo, cpf, {turno: situacao})
+        elif (anterior.cargo, anterior.cpf) != (cargo, cpf) or (
+            anterior.situacoes_por_turno.setdefault(turno, situacao) != situacao
+        ):
             raise ArquivoInvalido("Candidaturas divergentes para a mesma chave.")
     if contagens["linha_invalida"] or not candidaturas:
         raise ArquivoInvalido("CSV de candidaturas incompleto.")

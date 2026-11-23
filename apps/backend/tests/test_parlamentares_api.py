@@ -1,5 +1,9 @@
+import json
+import re
 from collections import Counter
 from datetime import UTC, date, datetime
+from decimal import Decimal
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -7,8 +11,11 @@ from sqlalchemy.exc import OperationalError
 
 from mandatometro.api.app import app
 from mandatometro.db.modelos import (
+    BemDeclarado,
+    CandidaturaPatrimonio,
     Edicao,
     Fonte,
+    IpcaMensal,
     ItemEdicao,
     Mandato,
     Parlamentar,
@@ -17,6 +24,8 @@ from mandatometro.db.modelos import (
     Voto,
 )
 from mandatometro.ia.selecao import selecionar
+
+FIXTURES = Path(__file__).parent / "fixtures"
 
 
 @pytest.fixture
@@ -212,6 +221,10 @@ def test_detalhe_traz_mandatos_e_conta_apenas_os_votos_da_pessoa(cliente, parlam
         "id": agata.id,
         "nome": agata.nome,
         "casa": "camara",
+        "foto": {
+            "url": f"https://www.camara.leg.br/internet/deputado/bandep/{agata.id_externo}.jpg",
+            "credito": "Câmara dos Deputados",
+        },
         "uf": "SC",
         "partido": "PFT",
         "mandatos": [
@@ -231,6 +244,143 @@ def test_detalhe_traz_mandatos_e_conta_apenas_os_votos_da_pessoa(cliente, parlam
     outra = cliente.get(f"/parlamentares/{zafira.id}")
     assert outra.status_code == 200
     assert outra.json()["contagem_votos"]["nao"] == 2
+
+
+@pytest.mark.parametrize(
+    ("indice", "credito"), [(0, "Câmara dos Deputados"), (1, "Senado Federal")]
+)
+def test_detalhe_traz_foto_oficial(cliente, parlamentares, indice, credito):
+    pessoa = parlamentares[indice]
+    if pessoa.casa == "camara":
+        gravado = json.loads(
+            (FIXTURES / "camara/deputados-atuais-pagina-curta.json").read_text(encoding="utf-8")
+        )
+        foto = gravado["dados"][0]["urlFoto"]
+        esperado = re.sub(r"[0-9]+(?=\.jpg$)", str(pessoa.id_externo), foto)
+    else:
+        gravado = json.loads(
+            (FIXTURES / "senado/senador-lista-atual.json").read_text(encoding="utf-8")
+        )
+        pessoas = gravado["ListaParlamentarEmExercicio"]["Parlamentares"]["Parlamentar"]
+        foto = pessoas[0]["IdentificacaoParlamentar"]["UrlFotoParlamentar"]
+        legado = "http://www.senado.leg.br/senadores/img/fotos-oficiais/senador"
+        destino = "https://legis.senado.leg.br/senadores/fotos-oficiais/"
+        url_ficticia = re.sub(r"[0-9]+(?=\.jpg$)", str(pessoa.id_externo), foto)
+        assert url_ficticia.startswith(legado)
+        esperado = url_ficticia.replace(legado, destino).removesuffix(".jpg")
+
+    resposta = cliente.get(f"/parlamentares/{pessoa.id}")
+    assert resposta.status_code == 200
+    assert resposta.json()["foto"] == {"url": esperado, "credito": credito}
+
+
+def _cadastrar_eleicoes(sessao, parlamentar_id, totais, taxas):
+    fonte = Fonte(url="https://dados.example/patrimonio")
+    for ano, total in totais.items():
+        eleicao = CandidaturaPatrimonio(
+            ano=ano,
+            cargo=6,
+            codigo_eleicao=ano,
+            id_externo=1,
+            uf="SC",
+            parlamentar_id=parlamentar_id,
+            fonte_candidatura=fonte,
+            fonte_bens=fonte,
+        )
+        sessao.add(eleicao)
+        sessao.flush()
+        if total is not None:
+            sessao.add(BemDeclarado(candidatura_id=eleicao.id, tipo=11, valor_centavos=total))
+    sessao.add_all(
+        IpcaMensal(mes=mes, variacao_percentual=Decimal(taxa), fonte=fonte)
+        for mes, taxa in taxas.items()
+    )
+    sessao.flush()
+
+
+def _meses_com_taxa_zero(inicio, fim):
+    return {
+        mes: "0.00"
+        for ano in range(inicio, fim + 1)
+        for numero in range(1, 13)
+        if date(inicio, 10, 1) <= (mes := date(ano, numero, 1)) <= date(fim, 10, 1)
+    }
+
+
+@pytest.mark.parametrize(
+    ("taxas", "fator", "alta"),
+    [
+        (("0.50", "1.00"), "1.0151", "1.5"),
+        (("-2.05",), "0.9795", "-2.1"),
+        (("0.25", "-0.20"), "1.0005", "0.0"),
+    ],
+)
+def test_patrimonio_arredonda_fator_e_alta_do_ipca(
+    cliente, parlamentares, sessao, taxas, fator, alta
+):
+    pessoa = parlamentares[0]
+    meses = {date(2026, mes, 1): taxa for mes, taxa in enumerate(taxas, start=10)}
+    _cadastrar_eleicoes(sessao, pessoa.id, {2026: None}, meses)
+
+    resposta = cliente.get(f"/parlamentares/{pessoa.id}/patrimonio")
+    assert resposta.status_code == 200
+    (eleicao,) = resposta.json()["eleicoes"]
+    assert eleicao["fator_ipca"] == fator
+    assert eleicao["alta_ipca_percentual"] == alta
+    assert eleicao["total_corrigido_centavos"] is None
+    assert eleicao["resultado"] is None
+
+
+@pytest.mark.parametrize(
+    ("anterior", "atual", "diferenca", "percentual"),
+    [
+        (5_000_000, 5_625_000, 625_000, None),
+        (5_000_001, 5_625_001, 625_000, "12.5"),
+        (8_000_000, 5_932_000, -2_068_000, "-25.9"),
+        (8_000_000, 8_000_000, 0, "0.0"),
+    ],
+)
+def test_variacao_respeita_piso_e_arredondamento(
+    cliente, parlamentares, sessao, anterior, atual, diferenca, percentual
+):
+    pessoa = parlamentares[0]
+    _cadastrar_eleicoes(
+        sessao, pessoa.id, {2022: anterior, 2026: atual}, _meses_com_taxa_zero(2022, 2026)
+    )
+
+    resposta = cliente.get(f"/parlamentares/{pessoa.id}/patrimonio")
+    assert resposta.status_code == 200
+    primeira, segunda = resposta.json()["eleicoes"]
+    assert primeira["variacao"] is None
+    assert segunda["variacao"] == {
+        "ano_anterior": 2022,
+        "diferenca_centavos": diferenca,
+        "percentual": percentual,
+    }
+
+
+def test_variacao_pula_eleicao_sem_total_corrigido(cliente, parlamentares, sessao):
+    pessoa = parlamentares[0]
+    taxas = _meses_com_taxa_zero(2018, 2026)
+    taxas[date(2018, 10, 1)] = "2.50"
+    _cadastrar_eleicoes(
+        sessao,
+        pessoa.id,
+        {2014: 8_000_000, 2018: 8_000_000, 2022: None, 2026: 9_000_000},
+        taxas,
+    )
+
+    resposta = cliente.get(f"/parlamentares/{pessoa.id}/patrimonio")
+    assert resposta.status_code == 200
+    sem_cobertura, primeira, sem_total, ultima = resposta.json()["eleicoes"]
+    assert sem_cobertura["fator_ipca"] is None
+    assert sem_cobertura["alta_ipca_percentual"] is None
+    assert sem_cobertura["variacao"] is primeira["variacao"] is sem_total["variacao"] is None
+    assert ultima["variacao"] == {
+        "ano_anterior": 2018,
+        "diferenca_centavos": 800_000,
+        "percentual": "9.8",
+    }
 
 
 def test_parlamentar_fora_de_exercicio_pode_ser_consultado(cliente, parlamentares):

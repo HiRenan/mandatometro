@@ -87,8 +87,20 @@ export function listaDeExemplo(): ListaParlamentares {
 export function detalheDeExemplo(
 	mudancas: Partial<DetalheParlamentar> = {},
 ): DetalheParlamentar {
+	const parlamentar = parlamentarDeExemplo();
+	const casa = mudancas.casa ?? parlamentar.casa;
 	return {
-		...parlamentarDeExemplo(),
+		...parlamentar,
+		foto:
+			casa === "camara"
+				? {
+						url: "https://www.camara.leg.br/internet/deputado/bandep/90000123.jpg",
+						credito: "Câmara dos Deputados",
+					}
+				: {
+						url: "https://legis.senado.leg.br/senadores/fotos-oficiais/90000124",
+						credito: "Senado Federal",
+					},
 		mandatos: [
 			{ legislatura: 57, uf: "SC", condicao: "Titular", em_exercicio: true },
 			{ legislatura: 56, uf: "SC", condicao: null, em_exercicio: false },
@@ -263,17 +275,35 @@ export function eleicaoDeExemplo(
 	mudancas: Partial<EleicaoPatrimonio> = {},
 ): EleicaoPatrimonio {
 	const ano = mudancas.ano ?? 2018;
+	const total =
+		mudancas.total_centavos === undefined
+			? 81_240_000
+			: mudancas.total_centavos;
+	const corrigido =
+		mudancas.total_corrigido_centavos === undefined
+			? 110_000_000
+			: mudancas.total_corrigido_centavos;
+	let fator: number | null = null;
+	if (total !== null && corrigido !== null) {
+		fator = total > 0 ? corrigido / total : 1;
+	}
+
 	return {
 		ano,
 		cargo: { codigo: 6, nome: "Deputado federal" },
 		uf: "SC",
-		total_centavos: 81_240_000,
+		total_centavos: total,
 		fonte: {
 			url: `https://cdn.tse.jus.br/estatistica/sead/odsele/bem_candidato/bem_candidato_${ano}.zip`,
 			coletado_em: "2026-11-20T15:00:00+00:00",
 		},
 		mes_inicio: `${ano}-10`,
-		total_corrigido_centavos: 110_000_000,
+		total_corrigido_centavos: corrigido,
+		resultado: null,
+		fator_ipca: fator?.toFixed(4) ?? null,
+		alta_ipca_percentual:
+			fator === null ? null : ((fator - 1) * 100).toFixed(1),
+		variacao: null,
 		...mudancas,
 	};
 }
