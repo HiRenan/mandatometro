@@ -109,19 +109,25 @@ const reais = (numero: string) => `R$${SEM_QUEBRA}${numero}`;
  * Cada eleição do patrimônio, parte por parte: o ano, o cargo e o lugar, o
  * resultado, o valor em destaque, a diferença (como o leitor de tela ouve e
  * como a tela mostra), o período da correção e os detalhes, com o arquivo do TSE.
+ * Com a chave, cada eleição tem duas versões do valor, e o CSS mostra uma: aqui,
+ * a dos reais de hoje ou, pedida, a do valor declarado.
  */
-function eleicoes() {
+function eleicoes(vista: "de-hoje" | "declarado" = "de-hoje") {
 	return Array.from(
 		document.querySelectorAll(".eleicao-do-patrimonio"),
 		(linha) => {
-			const diferenca = linha.querySelector(".diferenca-da-eleicao");
+			const valor =
+				linha.querySelector(`.valor-da-eleicao.so-${vista}`) ??
+				linha.querySelector(".valor-da-eleicao");
+			if (!valor) throw new Error("a eleição está sem o valor");
+			const diferenca = valor.querySelector(".diferenca-da-eleicao");
 			return {
 				ano: linha.querySelector("h3")?.textContent,
 				cargo: textos(linha, ".faixa > span"),
 				resultado:
 					linha.querySelector(".resultado-da-eleicao")?.textContent ?? null,
 				valor: textos(
-					linha,
+					valor,
 					".destaque-do-valor, .legenda-do-valor, .sem-total-da-eleicao",
 				),
 				diferenca: diferenca && {
@@ -129,7 +135,7 @@ function eleicoes() {
 					tela: visto(diferenca),
 				},
 				periodo:
-					linha.querySelector(".periodo-da-eleicao")?.textContent ?? null,
+					valor.querySelector(".periodo-da-eleicao")?.textContent ?? null,
 				detalhes: textos(
 					linha,
 					".declarado-na-eleicao > .sr-only, .detalhes-da-eleicao > :not(.declarado-na-eleicao)",
@@ -915,6 +921,104 @@ describe("o patrimônio declarado ao TSE", () => {
 		]);
 	});
 
+	it("abre no valor declarado: a chave Mostrar os valores abre a coluna dos dados, com o valor declarado marcado", async () => {
+		await abrir(detalheDeExemplo());
+
+		const chave = within(blocoDoPatrimonio()).getByRole("group", {
+			name: "Mostrar os valores",
+		});
+		expect(chave.tagName).toBe("FIELDSET");
+		expect(chave.parentElement?.className).toBe("dados-do-patrimonio");
+		expect(chave.parentElement?.firstElementChild).toBe(chave);
+		const declarado = within(chave).getByRole<HTMLInputElement>("radio", {
+			name: "Valor declarado",
+		});
+		const deHoje = within(chave).getByRole<HTMLInputElement>("radio", {
+			name: "Em reais de hoje",
+		});
+		expect([declarado.checked, deHoje.checked]).toEqual([true, false]);
+		expect(deHoje.name).toBe(declarado.name);
+	});
+
+	it("cada eleição traz o valor declarado, arredondado, antes da versão dos reais de hoje, que tem a diferença e o período", async () => {
+		await abrir(detalheDeExemplo());
+
+		expect(
+			eleicoes("declarado").map(({ valor, diferenca, periodo }) => [
+				valor,
+				diferenca,
+				periodo,
+			]),
+		).toEqual([
+			[[reais("198 mil"), "valor declarado"], null, null],
+			[[reais("812 mil"), "valor declarado"], null, null],
+			[
+				["Os dados do TSE desta eleição não trazem um total de bens."],
+				null,
+				null,
+			],
+			[[reais("2,4 milhões"), "valor declarado"], null, null],
+		]);
+		const [primeira, , semTotal] = document.querySelectorAll(
+			".eleicao-do-patrimonio",
+		);
+		expect(
+			Array.from(
+				primeira.querySelectorAll(".valor-da-eleicao"),
+				(versao) => versao.className,
+			),
+		).toEqual(["valor-da-eleicao so-declarado", "valor-da-eleicao so-de-hoje"]);
+		// Sem o total, as duas versões diriam o mesmo: fica uma só.
+		expect(
+			Array.from(
+				semTotal.querySelectorAll(".valor-da-eleicao"),
+				(versao) => versao.className,
+			),
+		).toEqual(["valor-da-eleicao"]);
+	});
+
+	it("o gráfico, o aviso da diferença e o Como calculamos são só dos reais de hoje, e a frase da abertura sobre eles vem à parte", async () => {
+		await abrir(detalheDeExemplo());
+		const bloco = blocoDoPatrimonio();
+
+		expect(
+			Array.from(
+				bloco.querySelectorAll(".dados-do-patrimonio > .so-de-hoje"),
+				(parte) => parte.className,
+			),
+		).toEqual([
+			"grafico-do-patrimonio so-de-hoje",
+			"texto-do-patrimonio aviso-do-patrimonio so-de-hoje",
+			"correcao-do-patrimonio so-de-hoje",
+		]);
+		expect(bloco.querySelector(".so-com-chave")?.textContent).toBe(
+			" Para comparar anos diferentes, você pode ver cada total em reais de hoje, corrigido pela inflação até outubro de 2026.",
+		);
+	});
+
+	it("sem a série do IPCA, ou sem eleição corrigida, não há chave nem segunda versão do valor", async () => {
+		for (const patrimonio of [
+			patrimonioNaPagina({ correcao_ipca: null }),
+			patrimonioNaPagina({
+				eleicoes: [
+					eleicaoDeExemplo({ ano: 2026, total_corrigido_centavos: null }),
+				],
+				correcao_ipca: correcaoDeExemplo({ mes_fim: "2026-09" }),
+			}),
+		]) {
+			await abrirComPatrimonio(patrimonio);
+			const bloco = blocoDoPatrimonio();
+
+			expect(
+				within(bloco).queryByRole("group", { name: "Mostrar os valores" }),
+			).toBeNull();
+			expect(
+				bloco.querySelector(".so-declarado, .so-de-hoje, .so-com-chave"),
+			).toBeNull();
+			cleanup();
+		}
+	});
+
 	it("cada eleição, da mais antiga para a mais nova: o ano, o cargo, o estado e o resultado, o valor de hoje, a diferença, o período, o declarado e o arquivo do TSE", async () => {
 		await abrir(detalheDeExemplo());
 
@@ -1005,13 +1109,13 @@ describe("o patrimônio declarado ao TSE", () => {
 		).toBeNull();
 	});
 
-	it("o gráfico dos valores de hoje vem entre o aviso e a lista, numa régua só e fora do leitor de tela", async () => {
+	it("o gráfico dos valores de hoje vem entre a chave e a lista, numa régua só e fora do leitor de tela", async () => {
 		await abrir(detalheDeExemplo());
 		const desenho = blocoDoPatrimonio().querySelector(".grafico-do-patrimonio");
 
 		expect(desenho?.getAttribute("aria-hidden")).toBe("true");
 		expect(desenho?.previousElementSibling?.classList).toContain(
-			"aviso-do-patrimonio",
+			"chave-dos-valores",
 		);
 		expect(desenho?.nextElementSibling?.classList).toContain(
 			"eleicoes-do-patrimonio",
@@ -1147,18 +1251,28 @@ describe("o patrimônio declarado ao TSE", () => {
 		await abrir(detalheDeExemplo());
 		const bloco = blocoDoPatrimonio();
 
-		expect(
-			within(bloco).getByText(
-				"Quem se candidata entrega à Justiça Eleitoral uma lista dos próprios bens, como casas, carros e dinheiro no banco. Aqui está o total que Ágata Cedrolume declarou nas eleições gerais em que concorreu. Para comparar anos diferentes, cada total aparece também em reais de hoje, corrigido pela inflação até outubro de 2026.",
-			),
-		).toBeTruthy();
+		expect(bloco.querySelector(".texto-do-patrimonio")?.textContent).toBe(
+			"Quem se candidata entrega à Justiça Eleitoral uma lista dos próprios bens, como casas, carros e dinheiro no banco. Aqui está o total que Ágata Cedrolume declarou nas eleições gerais em que concorreu. Para comparar anos diferentes, você pode ver cada total em reais de hoje, corrigido pela inflação até outubro de 2026.",
+		);
 		const aviso = within(bloco).getByText(
 			"É o valor que a própria pessoa declarou ao registrar a candidatura, e não o patrimônio de hoje. A Justiça Eleitoral dá acesso à declaração como ela foi entregue, e cada bem costuma entrar pelo preço de compra, como na declaração do Imposto de Renda: uma casa comprada há 20 anos pode aparecer pelo valor daquela época.",
 		);
 		const lista = bloco.querySelector<HTMLElement>(".eleicoes-do-patrimonio");
 		if (!lista) throw new Error("sem a lista das eleições");
-		// Entre o aviso e a lista, só o gráfico, fora do leitor de tela.
-		expect(aviso.nextElementSibling?.nextElementSibling).toBe(lista);
+		// A abertura e o aviso numa coluna; na outra, a chave, o gráfico (fora do
+		// leitor de tela), a lista e o resto, na ordem da tela larga.
+		const [abertura, dados] = bloco.querySelectorAll(":scope > div");
+		expect(aviso.parentElement).toBe(abertura);
+		expect(abertura.lastElementChild).toBe(aviso);
+		expect(Array.from(dados.children, (parte) => parte.className)).toEqual([
+			"chave-dos-valores",
+			"grafico-do-patrimonio so-de-hoje",
+			"eleicoes-do-patrimonio",
+			"texto-do-patrimonio aviso-do-patrimonio so-de-hoje",
+			"texto-do-patrimonio nota-do-patrimonio",
+			"correcao-do-patrimonio so-de-hoje",
+			"fonte-das-regras",
+		]);
 		expect(within(lista).getAllByRole("listitem")).toHaveLength(4);
 		expect(
 			within(bloco).getByText(
@@ -1366,8 +1480,14 @@ describe("o patrimônio declarado ao TSE", () => {
 			["2022", "0.5", reais("550 mil")],
 			["2026", null, "sem o valor de hoje"],
 		]);
+		// No valor declarado, a eleição sem a correção é como as outras.
+		expect(eleicoes("declarado").map(({ valor }) => valor)).toEqual([
+			[reais("812 mil"), "valor declarado"],
+			[reais("812 mil"), "valor declarado"],
+			[reais("2,4 milhões"), "valor declarado"],
+		]);
 		expect(bloco.textContent).toContain(
-			"Para comparar anos diferentes, os totais aparecem também em reais de hoje, corrigidos pela inflação até setembro de 2026, quando a série do IPCA cobre a eleição.",
+			"Para comparar anos diferentes, você pode ver os totais em reais de hoje, corrigidos pela inflação até setembro de 2026, quando a série do IPCA cobre a eleição.",
 		);
 		expect(bloco.textContent).toContain(
 			"A correção usa o IPCA, a inflação oficial medida pelo IBGE, de outubro do ano da eleição até setembro de 2026.",

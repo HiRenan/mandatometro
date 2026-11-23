@@ -88,8 +88,9 @@ export function reaisArredondados(centavos: number): string {
 /**
  * O valor de uma eleição na linha dela:
  * - sem-total: os dados do TSE da eleição não trazem o total;
- * - corrigido: o total em reais de hoje no destaque, o declarado exato embaixo e
- *   a barra, a parte do maior valor de hoje da pessoa (de 0,0001 a 1), ou nada;
+ * - corrigido: o total em reais de hoje no destaque, o declarado arredondado,
+ *   que a página mostra primeiro, o declarado exato embaixo e a barra, a parte
+ *   do maior valor de hoje da pessoa (de 0,0001 a 1), ou nada;
  * - sem-correcao: sem a correção pela inflação, o declarado vai arredondado no
  *   destaque e exato embaixo, sem barra.
  */
@@ -98,6 +99,7 @@ export type ValorDaEleicao =
 	| {
 			tipo: "corrigido";
 			destaque: string;
+			arredondado: string;
 			declarado: string;
 			barra: number | null;
 	  }
@@ -438,6 +440,7 @@ function valorDaEleicao(
 	return {
 		tipo: "corrigido",
 		destaque: reaisArredondados(corrigido),
+		arredondado: reaisArredondados(total),
 		declarado: reaisExatos(total),
 		barra,
 	};

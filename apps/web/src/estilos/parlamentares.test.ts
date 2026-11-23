@@ -66,6 +66,13 @@ describe("os alvos de toque", () => {
 		expect(citacao).toContain("min-height: 2.75rem;");
 	});
 
+	it("os links das fontes da ficha e as opções da chave do patrimônio têm pelo menos 44 px de altura", () => {
+		const fonte = regra(css, ".fonte-da-ficha a");
+		expect(fonte).toContain("display: inline-grid;");
+		expect(fonte).toContain("min-height: 2.75rem;");
+		expect(regra(css, ".opcao-dos-valores")).toContain("min-height: 2.75rem;");
+	});
+
 	it("a licença ao lado do crédito do mapa tem pelo menos 44 px de altura", () => {
 		const licenca = regra(css, ".credito-do-mapa a");
 		expect(licenca).toContain("display: inline-grid;");
@@ -570,5 +577,49 @@ describe("o patrimônio declarado", () => {
 		);
 		expect(link).not.toBeNull();
 		expect(regra(patrimonio, ".arquivo-sem-link")).toContain(link?.[0]);
+	});
+
+	it("a chave mostra só a versão da opção marcada: sem os reais de hoje marcados, eles somem; marcados, some o declarado", () => {
+		expect(patrimonio).toMatch(
+			/\.patrimonio-declarado:not\(\s*:has\(\.chave-dos-valores input\[value="de-hoje"\]:checked\)\s*\)\s*\.so-de-hoje,\s*\.patrimonio-declarado:has\(\.chave-dos-valores input\[value="de-hoje"\]:checked\)\s*\.so-declarado \{\s*display: none;\s*\}/,
+		);
+	});
+
+	it("num navegador sem o :has(), a chave, a frase dela e os reais de hoje somem, e fica o valor declarado", () => {
+		expect(
+			bloco(patrimonio, "@supports not selector(:has(*))")
+				.replace(/\s+/g, " ")
+				.trim(),
+		).toBe(
+			".chave-dos-valores, .patrimonio-declarado .so-de-hoje, .patrimonio-declarado .so-com-chave { display: none; }",
+		);
+	});
+
+	it("a opção marcada fica em tinta, com a letra clara e o quadradinho cheio, que continua à vista nas cores forçadas, e o anel do foco contorna a opção", () => {
+		expect(regra(patrimonio, ".opcao-dos-valores input")).toContain(
+			"opacity: 0;",
+		);
+		expect(regra(patrimonio, ".opcao-dos-valores:has(input:checked)")).toBe(
+			"background: var(--tinta); color: var(--papel);",
+		);
+		expect(
+			regra(
+				patrimonio,
+				".opcao-dos-valores:has(input:checked) .marca-da-opcao",
+			),
+		).toBe("background: currentColor;");
+		expect(
+			regra(patrimonio, ".opcao-dos-valores:has(input:focus-visible)"),
+		).toBe("outline: 3px solid var(--ring); outline-offset: 3px;");
+		const forcadas = bloco(
+			patrimonio.slice(patrimonio.indexOf(".marca-da-opcao {")),
+			"@media (forced-colors: active)",
+		);
+		expect(regra(forcadas, ".marca-da-opcao")).toBe(
+			"forced-color-adjust: none; border-color: CanvasText;",
+		);
+		expect(
+			regra(forcadas, ".opcao-dos-valores:has(input:checked) .marca-da-opcao"),
+		).toBe("background: CanvasText;");
 	});
 });

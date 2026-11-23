@@ -311,6 +311,28 @@ describe("o HTML das páginas dos parlamentares", () => {
 		);
 	});
 
+	it("o patrimônio abre no valor declarado no HTML, com a opção marcada e as duas versões de cada eleição com total", async () => {
+		apiDeExemplo();
+
+		const { status, html } = await pedir(CANONICO);
+
+		expect(status).toBe(200);
+		const opcoes = html.match(
+			/<input type="radio" name="valores-do-patrimonio"[^>]*>/g,
+		);
+		expect(opcoes).toEqual([
+			'<input type="radio" name="valores-do-patrimonio" checked="" value="declarado"/>',
+			'<input type="radio" name="valores-do-patrimonio" value="de-hoje"/>',
+		]);
+		expect(html.match(/class="valor-da-eleicao so-declarado"/g)).toHaveLength(
+			3,
+		);
+		expect(html.match(/class="valor-da-eleicao so-de-hoje"/g)).toHaveLength(3);
+		expect(html).toContain(
+			'<div class="valor-da-eleicao so-declarado"><p class="destaque-do-valor">R$ 812 mil</p><p class="rotulo legenda-do-valor">valor declarado</p></div>',
+		);
+	});
+
 	it("só o patrimônio falha: a página abre com 200, o bloco diz que não carregou, e nada da falha chega ao HTML", async () => {
 		apiDeExemplo(25, () => json(500, { detalhe: MENSAGEM_DA_FALHA }));
 

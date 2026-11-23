@@ -1574,6 +1574,117 @@
 		}
 	}
 
+	/*
+	 * A chave "Mostrar os valores" (o Renan, em 23/11/2026: "Chave no alto da
+	 * lista"): as duas opções lado a lado, com o fio de tinta e 44 px de altura, e
+	 * uma embaixo da outra quando não cabem. A marcada fica em tinta, com a letra
+	 * clara e o quadradinho cheio, que continua à vista nas cores forçadas. O rádio
+	 * fica invisível por cima da opção, como no quiz, e o anel do foco contorna a
+	 * opção. Não há transição: a troca é na hora, também com menos movimento.
+	 */
+	.chave-dos-valores {
+		min-width: 0;
+		margin: 1.5rem 0 0;
+		padding: 0;
+		border: 0;
+	}
+
+	.chave-dos-valores > legend {
+		float: left;
+		width: 100%;
+		margin-bottom: 0.6rem;
+		padding: 0;
+		color: var(--tinta-suave);
+	}
+
+	.opcoes-dos-valores {
+		clear: both;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.opcao-dos-valores {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6rem;
+		min-height: 2.75rem;
+		padding: 0.45rem 1rem;
+		border: 2px solid var(--tinta);
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 700;
+		line-height: 1.2;
+		cursor: pointer;
+	}
+
+	.opcao-dos-valores input {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		margin: 0;
+		opacity: 0;
+		cursor: pointer;
+	}
+
+	.marca-da-opcao {
+		flex: none;
+		width: 0.75rem;
+		height: 0.75rem;
+		border: 2px solid currentColor;
+	}
+
+	.opcao-dos-valores:has(input:checked) {
+		background: var(--tinta);
+		color: var(--papel);
+	}
+
+	.opcao-dos-valores:has(input:checked) .marca-da-opcao {
+		background: currentColor;
+	}
+
+	.opcao-dos-valores:has(input:focus-visible) {
+		outline: 3px solid var(--ring);
+		outline-offset: 3px;
+	}
+
+	@media (forced-colors: active) {
+		.marca-da-opcao {
+			forced-color-adjust: none;
+			border-color: CanvasText;
+		}
+
+		.opcao-dos-valores:has(input:checked) .marca-da-opcao {
+			background: CanvasText;
+		}
+	}
+
+	/*
+	 * Cada eleição vem no HTML com as duas versões do valor, e o gráfico, o aviso da
+	 * diferença e o "Como calculamos" vêm sempre: aparece só o que é da opção
+	 * marcada, e o leitor de tela ouve só isso. Sem o JavaScript, a chave funciona
+	 * do mesmo jeito. Num navegador sem o :has(), a chave, a frase da abertura que
+	 * fala dela e os reais de hoje somem, e fica o valor declarado.
+	 */
+	.patrimonio-declarado:not(
+			:has(.chave-dos-valores input[value="de-hoje"]:checked)
+		)
+		.so-de-hoje,
+	.patrimonio-declarado:has(.chave-dos-valores input[value="de-hoje"]:checked)
+		.so-declarado {
+		display: none;
+	}
+
+	@supports not selector(:has(*)) {
+		.chave-dos-valores,
+		.patrimonio-declarado .so-de-hoje,
+		.patrimonio-declarado .so-com-chave {
+			display: none;
+		}
+	}
+
 	/* ───── A página da votação: o plenário ───── */
 
 	/*
