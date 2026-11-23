@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { MediaEtapa, SituacaoPiloto } from "@/lib/contrato-da-297";
+import type {
+	MediaEtapa,
+	SituacaoPiloto,
+	TotalDiario,
+	TotalTrilha,
+} from "@/lib/contrato-da-297";
 import { comMilhares } from "@/lib/formatar";
 import {
 	diaCurto,
@@ -50,13 +55,17 @@ describe("os números em pt-BR", () => {
 
 describe("as somas da tela", () => {
 	it("soma os dias das visitas e as leituras das trilhas", () => {
-		expect(
-			somaDosTotais([
-				{ dia: "2026-11-21", total: 120 },
-				{ dia: "2026-11-22", total: 0 },
-				{ dia: "2026-11-23", total: 84 },
-			]),
-		).toBe(204);
+		const dias: TotalDiario[] = [
+			{ dia: "2026-11-21", total: 120 },
+			{ dia: "2026-11-22", total: 0 },
+			{ dia: "2026-11-23", total: 84 },
+		];
+		const lidos: TotalTrilha[] = [
+			{ trilha: "tres-poderes", total: 31 },
+			{ trilha: "processo-legislativo", total: 9 },
+		];
+		expect(somaDosTotais(dias)).toBe(204);
+		expect(somaDosTotais(lidos)).toBe(40);
 		expect(somaDosTotais([])).toBe(0);
 	});
 });
