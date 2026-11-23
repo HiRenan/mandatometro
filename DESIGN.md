@@ -1093,6 +1093,8 @@ Tudo é reto: raio zero (`--radius: 0`).
   - **A forma:** colunas e barras de tinta, de CSS. O tamanho de cada uma é a parte do maior valor, com pelo menos 2 px acima de zero, e o zero fica sem coluna e sem barra. Cada coluna tem até 3.25rem: poucas semanas não viram colunas largas. Não há cor de ganho nem de perda, como no patrimônio declarado.
   - **Em volta:** em cima de cada gráfico, a frase que o resume, para quem vê e para quem ouve: "De 25 de outubro a 23 de novembro, 2.140 páginas vistas. O dia com mais visitas foi 12 de novembro, com 214.". No alto das colunas vem o maior valor ("máx. 214, em 12 nov"), em Label e tinta suave, e embaixo, o primeiro e o último dia. Depois, um `<details>` com a tabela de todos os valores ("Os 30 dias em números" ou "As semanas em números"), com o "+" da sanfona.
   - **Com o ponteiro** numa coluna, o valor dela fica no lugar do máximo ("12 nov: 214"), e as outras clareiam.
+  - Nas **contas ativas**, o máximo diz "máx. pelo menos 3, na semana de 23 nov", e o valor sob o ponteiro diz "semana de 23 nov: pelo menos 3".
+  - Na **tabela de inscrições por semana**, o recuo da segunda coluna passa a 0.125rem abaixo de 11rem de largura. A 320 px com a letra a 200%, a tabela conserva os cabeçalhos, as datas e os números na área de texto da folha.
   - **Leitor de tela e cores forçadas:** as colunas e as barras ficam fora do leitor de tela (`aria-hidden`), porque os números estão escritos na frase, nas linhas e na tabela. Nas cores forçadas, ficam em `CanvasText`.
   - Nenhum texto fica em cima de uma fita, e nenhuma informação depende só da cor.
 - **O que a API não manda:**

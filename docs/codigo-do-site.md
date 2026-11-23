@@ -81,6 +81,7 @@ O `/painel` (a #209) é a revisão da edição da semana, só para a administrad
 O `/painel/numeros` (a #298) mostra os números do site e do sistema, só para a administradora. O desenho está no `DESIGN.md`.
 
 - **A guarda e o pedido:** a página fica no layout `_autenticado`, com a guarda, o `ssr: false`, o `noindex` e o `no-store` da revisão. O `lib/painel/use-numeros.ts` pede os números pelo navegador com o mesmo `pedir` da revisão (`lib/painel/pedido.ts`). Um `401` ou `404` tira os números da tela e roda a guarda de novo.
+- O `sinalComPrazo`, em `lib/prazo.ts`, dá 15 s à guarda, 30 s aos pedidos do painel e 10 s ao aviso de visita. Alguns navegadores têm `AbortController` sem os métodos estáticos `AbortSignal.timeout` ou `AbortSignal.any`. Neles, o relógio e o sinal de navegação cancelam o pedido pelo controlador.
 - **A conta é da API:** a tela só escreve os números, as datas e as frases (`lib/painel/numeros.ts`, só funções puras) e soma os 30 dias das visitas e as leituras das trilhas. A média que a API suprime aparece pela frase da `situacao`, e nunca como zero.
 - **O catálogo das trilhas:** o loader da rota lê o catálogo do conteúdo para o nome e a ordem de cada trilha. Se ele falhar, a trilha aparece pelo slug, e a página continua.
 
