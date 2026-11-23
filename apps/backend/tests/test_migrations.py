@@ -17,6 +17,8 @@ TABELAS_DO_MVP = {
     "limite_conta",
     "fonte",
     "parlamentar",
+    "biografia_parlamentar",
+    "partido",
     "mandato",
     "candidatura",
     "candidatura_patrimonio",

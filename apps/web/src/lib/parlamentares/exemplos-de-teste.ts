@@ -32,12 +32,23 @@ export const CONTAGEM_ZERADA: ContagemVotosParlamentar = {
 export function parlamentarDeExemplo(
 	mudancas: Partial<ParlamentarPublico> = {},
 ): ParlamentarPublico {
+	const casa = mudancas.casa ?? "camara";
 	return {
 		id: 81,
 		nome: "Ágata Cedrolume",
-		casa: "camara",
+		casa,
 		uf: "SC",
 		partido: "PFT",
+		foto:
+			casa === "camara"
+				? {
+						url: "https://www.camara.leg.br/internet/deputado/bandep/90000123.jpg",
+						credito: "Câmara dos Deputados",
+					}
+				: {
+						url: "https://legis.senado.leg.br/senadores/fotos-oficiais/90000124",
+						credito: "Senado Federal",
+					},
 		...mudancas,
 	};
 }
@@ -87,20 +98,10 @@ export function listaDeExemplo(): ListaParlamentares {
 export function detalheDeExemplo(
 	mudancas: Partial<DetalheParlamentar> = {},
 ): DetalheParlamentar {
-	const parlamentar = parlamentarDeExemplo();
-	const casa = mudancas.casa ?? parlamentar.casa;
 	return {
-		...parlamentar,
-		foto:
-			casa === "camara"
-				? {
-						url: "https://www.camara.leg.br/internet/deputado/bandep/90000123.jpg",
-						credito: "Câmara dos Deputados",
-					}
-				: {
-						url: "https://legis.senado.leg.br/senadores/fotos-oficiais/90000124",
-						credito: "Senado Federal",
-					},
+		...parlamentarDeExemplo(mudancas),
+		partido_nome: null,
+		biografia: null,
 		mandatos: [
 			{ legislatura: 57, uf: "SC", condicao: "Titular", em_exercicio: true },
 			{ legislatura: 56, uf: "SC", condicao: null, em_exercicio: false },
