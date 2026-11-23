@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import text
+from sqlalchemy import event, text
 
 from mandatometro import db
 from mandatometro.api import contas
@@ -237,6 +237,29 @@ def test_atividade_e_retorno_contam_contas_distintas_e_so_login_ou_leitura(clien
         {"semana": "2026-11-23", "total": 3},
     ]
     assert uso["contas_que_voltaram"] == 2
+
+
+def test_login_inferido_independe_do_fuso_da_conexao(cliente, admin):
+    # Segunda, 00h30 em Brasília. Nova York muda de fuso entre o login e a expiração.
+    login = datetime(2026, 10, 26, 3, 30, tzinfo=UTC)
+    with db.sessao() as sessao, sessao.begin():
+        pessoa = _conta(login - timedelta(days=4))
+        sessao.add(pessoa)
+        sessao.flush()
+        _sessao(sessao, pessoa, login)
+
+    def ajustar_fuso(conexao):
+        conexao.exec_driver_sql("SET LOCAL TIME ZONE 'America/New_York'")
+
+    banco = db.engine()
+    event.listen(banco, "begin", ajustar_fuso)
+    try:
+        uso = _numeros(cliente, admin)["uso"]
+    finally:
+        event.remove(banco, "begin", ajustar_fuso)
+
+    assert uso["contas_ativas_por_semana"][0] == {"semana": "2026-10-26", "total": 1}
+    assert uso["contas_que_voltaram"] == 1
 
 
 def test_visitas_completam_30_dias_e_ranqueiam_so_o_periodo(cliente, admin):

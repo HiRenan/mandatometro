@@ -3,7 +3,7 @@
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import Connection, Date, Engine, case, cast, func, or_, select, union_all
+from sqlalchemy import Connection, Date, Engine, Interval, case, cast, func, or_, select, union_all
 
 from mandatometro.api.contas import VALIDADE_SESSAO
 from mandatometro.api.esquemas_numeros import (
@@ -126,11 +126,12 @@ def _leituras(conexao: Connection) -> dict[str, tuple[int, int]]:
 
 
 def _uso(conexao: Connection, agora: datetime, semana_atual: date) -> UsoPainel:
-    # expira vem do login; validade que passa para a semana seguinte não é atividade nova.
+    # Dias de um intervalo seguem o fuso da conexão no PostgreSQL. A validade é uma duração fixa.
+    duracao = cast(f"{VALIDADE_SESSAO.total_seconds()} seconds", Interval)
     eventos = union_all(
         select(
             CredencialConta.conta_id,
-            (CredencialConta.expira - VALIDADE_SESSAO).label("instante"),
+            (CredencialConta.expira - duracao).label("instante"),
         ).where(CredencialConta.finalidade == "sessao"),
         select(ArtigoLido.conta_id, ArtigoLido.marcado_em),
     ).subquery()
