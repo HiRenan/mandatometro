@@ -214,10 +214,39 @@ def test_openapi_da_visita_documenta_o_corpo_e_respostas_sem_conteudo():
     assert not operacao.get("parameters")
 
 
+def _rotas_estaticas(pasta: Path) -> set[str]:
+    rotas = set()
+    for arquivo in pasta.rglob("*"):
+        if arquivo.suffix not in {".ts", ".tsx", ".js", ".jsx"} or not arquivo.is_file():
+            continue
+        partes = arquivo.relative_to(pasta).with_suffix("").parts
+        if any(parte.startswith(("-", ".")) for parte in partes):
+            continue
+        # No TanStack, pontos aninham rotas e layouts com _ inicial não ganham caminho.
+        segmentos = "/".join(partes).removesuffix(".lazy").replace(".", "/").split("/")
+        if segmentos[-1] == "route":
+            segmentos.pop()
+        if not segmentos or segmentos[-1].startswith("_"):
+            continue
+        if segmentos[-1] == "index":
+            segmentos.pop()
+        caminho = "/".join(
+            segmento.removesuffix("_")
+            for segmento in segmentos
+            if not (
+                segmento.startswith("_") or (segmento.startswith("(") and segmento.endswith(")"))
+            )
+        )
+        if "$" not in caminho:
+            rotas.add(f"/{caminho}")
+    return rotas
+
+
 def test_catalogo_de_visitas_e_leituras_acompanha_o_conteudo_do_site():
     from mandatometro.paginas_publicas import ARTIGOS_POR_TRILHA, CAMINHOS_PUBLICOS
 
-    conteudo = Path(__file__).resolve().parents[2] / "web" / "conteudo"
+    site = Path(__file__).resolve().parents[2] / "web"
+    conteudo = site / "conteudo"
     trilhas = {
         arquivo.parent.name: arquivo.parent for arquivo in conteudo.glob("trilhas/*/trilha.md")
     }
@@ -227,15 +256,29 @@ def test_catalogo_de_visitas_e_leituras_acompanha_o_conteudo_do_site():
         for trilha, pasta in trilhas.items()
     }
     assert {trilha: set(slugs) for trilha, slugs in ARTIGOS_POR_TRILHA.items()} == artigos
-    rotas_de_conteudo = {
+    rotas_de_trilhas = {
         f"/trilhas/{trilha}/{arquivo.stem}"
         for trilha, pasta in trilhas.items()
         for arquivo in pasta.glob("*.md")
         if arquivo.stem not in {"trilha", "infografico"}
-    }
-    assert {p for p in CAMINHOS_PUBLICOS if p.startswith("/trilhas/")} == (
-        rotas_de_conteudo | {f"/trilhas/{trilha}" for trilha in trilhas}
-    )
-    assert {p for p in CAMINHOS_PUBLICOS if p.startswith("/jogos/")} == {
+    } | {f"/trilhas/{trilha}" for trilha in trilhas}
+    rotas_de_jogos = {
         f"/jogos/{arquivo.parent.name}" for arquivo in conteudo.glob("jogo/*/jogo.md")
     }
+    rotas_estaticas = _rotas_estaticas(site / "src" / "routes")
+    excluidas = {
+        "/cadastro",
+        "/cadastro/confirmar",
+        "/cadastro/excluir",
+        "/cadastro/recuperar",
+        "/cadastro/redefinir",
+        "/cadastro/reenvio",
+        "/login",
+        "/newsletter/sair",
+        "/painel",
+        "/perfil",
+    }
+    assert excluidas <= rotas_estaticas
+    assert excluidas.isdisjoint(CAMINHOS_PUBLICOS)
+    rotas_publicas = (rotas_estaticas - excluidas) | rotas_de_trilhas | rotas_de_jogos
+    assert rotas_publicas == CAMINHOS_PUBLICOS
