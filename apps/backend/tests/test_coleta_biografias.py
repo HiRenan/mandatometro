@@ -15,13 +15,14 @@ from mandatometro.api.app import app
 from mandatometro.cli import main
 from mandatometro.coleta import camara, senado
 from mandatometro.coleta.http import ClienteHttp
-from mandatometro.db.modelos import Fonte, Parlamentar, Votacao, Voto
+from mandatometro.db.modelos import Fonte, Parlamentar, Partido, Votacao, Voto
 
 FIXTURES = Path(__file__).parent / "fixtures"
 DEPUTADO = f"{camara.BASE}/deputados/900031"
 SENADOR = f"{senado.BASE}/senador/900041"
 SENADOR_SEM_DADOS = f"{senado.BASE}/senador/900042"
 PARTIDOS_CAMARA = f"{camara.BASE}/partidos?itens=100"
+CONSULTA_PARTIDOS_SENADO = f"{senado.BASE}/senador/partidos.json"
 PARTIDOS_SENADO = f"{senado.BASE}/dados/ListaPartidos.json"
 ENVELOPE_SENADO = "HistoricoAcademicoParlamentar"
 
@@ -36,6 +37,7 @@ def fontes_http(monkeypatch):
         DEPUTADO: ler("camara", "deputado"),
         f"{DEPUTADO}/profissoes": ler("camara", "profissoes"),
         PARTIDOS_CAMARA: ler("camara", "partidos"),
+        CONSULTA_PARTIDOS_SENADO: httpx2.Response(301, headers={"Location": PARTIDOS_SENADO}),
         PARTIDOS_SENADO: ler("senado", "partidos"),
         f"{SENADOR}/profissao.json": ler("senado", "profissao"),
         f"{SENADOR}/historicoAcademico.json": ler("senado", "historico"),
@@ -49,9 +51,9 @@ def fontes_http(monkeypatch):
         chamadas.append(url)
         if req.url.path == "/robots.txt":
             return httpx2.Response(404)
-        if url == f"{senado.BASE}/senador/partidos.json":
-            return httpx2.Response(301, headers={"Location": PARTIDOS_SENADO})
         dado = respostas[url]
+        if isinstance(dado, httpx2.Response):
+            return dado
         if isinstance(dado, int):
             return httpx2.Response(dado, json={"email": "erro@example.com"})
         return httpx2.Response(200, json=dado)
@@ -175,6 +177,47 @@ def test_biografia_da_camara_guarda_os_dois_enderecos(sessao, pessoas, rodar, fo
     assert datetime.fromisoformat(bio["fonte"]["coletado_em"]) == fontes[DEPUTADO]
 
 
+def test_fontes_usam_os_enderecos_das_consultas_inclusive_na_paginacao(
+    sessao, pessoas, rodar, fontes_http
+):
+    respostas, chamadas = fontes_http
+    pagina_dois = f"{PARTIDOS_CAMARA}&pagina=2"
+    link_next = f"{pagina_dois}&email=paginacao@example.com"
+    respostas[PARTIDOS_CAMARA]["links"].append({"rel": "next", "href": link_next})
+    destino = f"{pagina_dois}&email=redirecionado@example.com"
+    respostas[destino] = {
+        "dados": [{"sigla": "PÁG", "nome": "Partido Águas de Garoa"}],
+        "links": [],
+    }
+    for url in (pagina_dois, link_next):
+        respostas[url] = httpx2.Response(302, headers={"Location": destino})
+    for consulta, destino in (
+        (DEPUTADO, DEPUTADO),
+        (f"{DEPUTADO}/profissoes", f"{DEPUTADO}/profissoes"),
+        (f"{SENADOR}/profissao.json", f"{SENADOR}/profissao.json"),
+        (f"{SENADOR}/historicoAcademico.json", f"{SENADOR}/historicoAcademico.json"),
+        (CONSULTA_PARTIDOS_SENADO, PARTIDOS_SENADO),
+    ):
+        redirecionado = f"{destino}?email=redirecionado@example.com"
+        respostas[redirecionado] = respostas[destino]
+        respostas[consulta] = httpx2.Response(302, headers={"Location": redirecionado})
+
+    assert rodar()["partidos"] == 3
+    assert set(sessao.scalars(select(Fonte.url))) == {
+        "https://example.com/cadastro",
+        DEPUTADO,
+        f"{DEPUTADO}/profissoes",
+        f"{SENADOR}/profissao.json",
+        f"{SENADOR}/historicoAcademico.json",
+        PARTIDOS_CAMARA,
+        pagina_dois,
+        CONSULTA_PARTIDOS_SENADO,
+    }
+    assert link_next not in chamadas
+    assert detalhe(pessoas[0])["biografia"]["fonte"]["url"] == DEPUTADO
+    assert detalhe(pessoas[1])["biografia"]["fonte"]["url"] == f"{SENADOR}/historicoAcademico.json"
+
+
 def test_biografia_do_senado_preserva_graus_e_profissoes_na_ordem(pessoas, rodar, fontes_http):
     respostas, _ = fontes_http
     perfil = respostas[f"{SENADOR}/historicoAcademico.json"][ENVELOPE_SENADO]["Parlamentar"]
@@ -231,13 +274,20 @@ def test_biografia_nula_antes_da_coleta_ou_quando_a_fonte_esta_vazia(pessoas, ro
     assert detalhe(pessoas[1])["biografia"] is None
 
 
+def resposta_gzip_invalida():
+    return httpx2.Response(
+        200, headers={"Content-Encoding": "gzip"}, stream=httpx2.ByteStream(b"gzip invalido")
+    )
+
+
+@pytest.mark.parametrize("falha", ["http", "gzip"])
 def test_falha_em_uma_pessoa_preserva_seus_dados_e_as_outras_seguem(
-    pessoas, rodar, fontes_http, caplog
+    pessoas, rodar, fontes_http, caplog, falha
 ):
     respostas, _ = fontes_http
     rodar()
     anterior = detalhe(pessoas[0])["biografia"]
-    respostas[f"{DEPUTADO}/profissoes"] = 403
+    respostas[f"{DEPUTADO}/profissoes"] = 403 if falha == "http" else resposta_gzip_invalida()
     respostas[DEPUTADO]["dados"]["escolaridade"] = "Doutorado"
     perfil = respostas[f"{SENADOR}/historicoAcademico.json"][ENVELOPE_SENADO]["Parlamentar"]
     perfil["HistoricoAcademico"]["Curso"][0]["GrauInstrucao"] = "Especialização"
@@ -250,24 +300,53 @@ def test_falha_em_uma_pessoa_preserva_seus_dados_e_as_outras_seguem(
     assert detalhe(pessoas[0])["biografia"] == anterior
     assert detalhe(pessoas[1])["biografia"]["escolaridade"] == "Especialização, Mestrado"
     assert "erro@example.com" not in caplog.text
+    if falha == "gzip":
+        assert "Resposta da fonte com compressão inválida." in caplog.messages
 
 
+@pytest.mark.parametrize("falha", ["http", "gzip"])
 def test_catalogo_parcial_preserva_partidos_e_coleta_biografias(
-    pessoas, rodar, fontes_http, sessao
+    pessoas, rodar, fontes_http, sessao, caplog, falha
 ):
     respostas, _ = fontes_http
     rodar()
-    fontes_antes = sessao.scalar(select(Fonte.id).where(Fonte.url == PARTIDOS_CAMARA))
-    respostas[PARTIDOS_SENADO] = 403
+    catalogo = select(Partido.sigla, Partido.nome, Partido.fonte_id).order_by(Partido.sigla)
+    partidos_antes = sessao.execute(catalogo).all()
+    respostas[PARTIDOS_SENADO] = 403 if falha == "http" else resposta_gzip_invalida()
     respostas[DEPUTADO]["dados"]["escolaridade"] = "Mestrado"
 
     resumo = rodar(1)
     assert resumo["completa"] is False
     assert resumo["falha_partidos"] is True
+    assert resumo["partidos"] == 0
     assert resumo["falhas_parlamentares"] == 0
-    assert list(sessao.scalars(select(Fonte.id).where(Fonte.url == PARTIDOS_CAMARA))) == [
-        fontes_antes
-    ]
+    assert sessao.execute(catalogo).all() == partidos_antes
+    assert detalhe(pessoas[0])["biografia"]["escolaridade"] == "Mestrado"
+    if falha == "gzip":
+        assert "Resposta da fonte com compressão inválida." in caplog.messages
+
+
+@pytest.mark.parametrize("casa", ["camara", "senado"])
+def test_catalogo_sem_siglas_preserva_partidos_e_coleta_biografias(
+    pessoas, rodar, fontes_http, sessao, casa
+):
+    respostas, _ = fontes_http
+    rodar()
+    catalogo = select(Partido.sigla, Partido.nome, Partido.fonte_id).order_by(Partido.sigla)
+    partidos_antes = sessao.execute(catalogo).all()
+    if casa == "camara":
+        for item in respostas[PARTIDOS_CAMARA]["dados"]:
+            item.pop("sigla")
+    else:
+        for item in respostas[PARTIDOS_SENADO]["ListaPartidos"]["Partidos"]["Partido"]:
+            item.pop("Sigla")
+    respostas[DEPUTADO]["dados"]["escolaridade"] = "Mestrado"
+
+    resumo = rodar(1)
+    assert resumo["completa"] is False
+    assert resumo["falha_partidos"] is True
+    assert resumo["partidos"] == resumo["falhas_parlamentares"] == 0
+    assert sessao.execute(catalogo).all() == partidos_antes
     assert detalhe(pessoas[0])["biografia"]["escolaridade"] == "Mestrado"
 
 

@@ -4,9 +4,10 @@ import argparse
 import logging
 import time
 from collections import defaultdict
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, replace
 
+import httpx2
 from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
@@ -47,15 +48,28 @@ def _rotulos(itens: Iterable[dict], campo: str) -> list[str]:
     return list(dict.fromkeys(valor for valor in valores if valor))
 
 
+def _consultar_json(
+    http: ClienteHttp, caminho: str, *, params: dict[str, int] | None = None
+) -> Resposta:
+    url = str(httpx2.URL(http.base_url + caminho, params=params))
+    try:
+        resposta = http.obter_json(url)
+    except httpx2.DecodingError:
+        mensagem = "Resposta da fonte com compressão inválida."
+        logger.warning(mensagem)
+        raise ErroColeta(mensagem) from None
+    return replace(resposta, url=url)
+
+
 def _biografia_camara(http: ClienteHttp, codigo: int) -> DadosBiografia:
-    detalhe = http.obter_json(f"/deputados/{codigo}")
+    detalhe = _consultar_json(http, f"/deputados/{codigo}")
     pessoa = camara._objeto(camara._objeto(detalhe.dados)["dados"])
     if camara._inteiro(pessoa.get("id")) != codigo:
         raise ErroColeta("Detalhe da Câmara não corresponde ao parlamentar consultado.")
     escolaridade = _rotulo(pessoa.get("escolaridade"))
     fonte_escolaridade = replace(detalhe, dados=None)
 
-    trabalhos = http.obter_json(f"/deputados/{codigo}/profissoes")
+    trabalhos = _consultar_json(http, f"/deputados/{codigo}/profissoes")
     lista = camara._lista(camara._objeto(trabalhos.dados)["dados"])
     profissoes = _rotulos((camara._objeto(item) for item in lista), "titulo")
     return DadosBiografia(
@@ -76,11 +90,11 @@ def _itens_senado(resposta: Resposta, codigo: int, grupo: str, item: str) -> lis
 
 
 def _biografia_senado(http: ClienteHttp, codigo: int) -> DadosBiografia:
-    trabalho = http.obter_json(f"/senador/{codigo}/profissao.json")
+    trabalho = _consultar_json(http, f"/senador/{codigo}/profissao.json")
     profissoes = _rotulos(
         _itens_senado(trabalho, codigo, "Profissoes", "Profissao"), "NomeProfissao"
     )
-    historico = http.obter_json(f"/senador/{codigo}/historicoAcademico.json")
+    historico = _consultar_json(http, f"/senador/{codigo}/historicoAcademico.json")
     graus = _rotulos(
         _itens_senado(historico, codigo, "HistoricoAcademico", "Curso"), "GrauInstrucao"
     )
@@ -92,27 +106,60 @@ def _biografia_senado(http: ClienteHttp, codigo: int) -> DadosBiografia:
     )
 
 
+def _paginas_partidos_camara(http: ClienteHttp) -> Iterator[tuple[list, Resposta]]:
+    pagina, ultima_anunciada = 1, 1
+    params = {"itens": 100}
+    while True:
+        resposta = _consultar_json(http, "/partidos", params=params)
+        envelope = camara._objeto(resposta.dados)
+        links = [camara._objeto(link) for link in camara._lista(envelope["links"])]
+        proximas = [
+            camara._numero_pagina(camara._texto(link["href"]))
+            for link in links
+            if link.get("rel") == "next"
+        ]
+        ultimas = [
+            camara._numero_pagina(camara._texto(link["href"]))
+            for link in links
+            if link.get("rel") == "last"
+        ]
+        if proximas and proximas != [pagina + 1]:
+            raise ErroColeta("Paginação inconsistente na Câmara.")
+        ultima_anunciada = max([ultima_anunciada, *ultimas])
+        if not proximas and pagina < ultima_anunciada:
+            raise ErroColeta("A lista da Câmara está incompleta.")
+        yield camara._lista(envelope["dados"]), replace(resposta, dados=None)
+        if not proximas:
+            return
+        pagina = proximas[0]
+        params["pagina"] = pagina
+
+
 def _partidos_camara(http: ClienteHttp) -> Catalogo:
     catalogo: Catalogo = {}
-    for pagina in camara._paginas(http, "/partidos", {"itens": 100}):
-        fonte = replace(pagina, dados=None)
-        itens = pagina.dados["dados"]
+    tem_sigla = False
+    for itens, fonte in _paginas_partidos_camara(http):
         if not itens:
             raise ErroColeta("Página vazia no catálogo de partidos da Câmara.")
         for dado in itens:
             item = camara._objeto(dado)
             sigla = _rotulo(item.get("sigla"))
             nome = _rotulo(item.get("nome"))
-            if sigla and nome:
+            if not sigla:
+                continue
+            tem_sigla = True
+            if nome:
                 chave = sigla.upper()
                 if chave in catalogo and catalogo[chave][0] != nome:
                     raise ErroColeta("Nomes divergentes no catálogo de partidos da Câmara.")
                 catalogo[chave] = (nome, fonte)
+    if not tem_sigla:
+        raise ErroColeta("Catálogo de partidos da Câmara sem siglas.")
     return catalogo
 
 
 def _partidos_senado(http: ClienteHttp) -> Catalogo:
-    resposta = http.obter_json("/senador/partidos.json")
+    resposta = _consultar_json(http, "/senador/partidos.json")
     envelope = senado._objeto(senado._objeto(resposta.dados).get("ListaPartidos"))
     itens = senado._lista(senado._objeto(envelope.get("Partidos")).get("Partido"))
     if not itens:
@@ -124,13 +171,16 @@ def _partidos_senado(http: ClienteHttp) -> Catalogo:
         if not sigla:
             continue
         chave = sigla.upper()
+        historico = nomes[chave]
         nome = _rotulo(item.get("Nome"))
         if nome:
-            nomes[chave].add(nome)
+            historico.add(nome)
         if not _rotulo(item.get("DataExtincao")):
             candidatos = ativos[chave]
             if nome:
                 candidatos.add(nome)
+    if not nomes:
+        raise ErroColeta("Catálogo de partidos do Senado sem siglas.")
     fonte = replace(resposta, dados=None)
     catalogo: Catalogo = {}
     for chave, historico in nomes.items():
