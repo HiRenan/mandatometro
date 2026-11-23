@@ -1,11 +1,10 @@
 import type {
 	MediaEtapa,
 	MediaPiloto,
-	SituacaoPiloto,
 	TotalDiario,
 	TotalSemanal,
 	TotalTrilha,
-} from "@/lib/contrato-da-297";
+} from "@/client";
 import {
 	comMilhares,
 	dataEmBrasilia,
@@ -173,6 +172,9 @@ export function fraseDaUltimaEdicao(horario: string | null): string {
 export function fraseDaLeitura(instante: string): string {
 	return `Lidos em ${formatarDia(dataEmBrasilia(instante))}, às ${horaEmBrasilia(instante)}`;
 }
+
+/** Por que a API manda ou não uma média do piloto, nas etapas e nos pares. */
+export type SituacaoPiloto = MediaEtapa["situacao"];
 
 /** O que a tela diz no lugar de uma média que a API não manda. */
 const FRASE_DA_SITUACAO: Record<SituacaoPiloto, string> = {

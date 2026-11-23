@@ -31,7 +31,7 @@ export async function avisarVisita(pathname: string): Promise<void> {
 	try {
 		// O cliente da API fica fora do pacote que toda página baixa, como no
 		// progresso (lib/progresso.ts): ele chega depois, só para o aviso.
-		const { registrarVisita } = await import("./contrato-da-297");
+		const { registrarVisita } = await import("@/client");
 		await registrarVisita({
 			body: { caminho },
 			credentials: "omit",

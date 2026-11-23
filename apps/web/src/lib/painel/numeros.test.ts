@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type {
-	MediaEtapa,
-	SituacaoPiloto,
-	TotalDiario,
-	TotalTrilha,
-} from "@/lib/contrato-da-297";
+import type { MediaEtapa, TotalDiario, TotalTrilha } from "@/client";
 import { comMilhares } from "@/lib/formatar";
 import {
 	diaCurto,
@@ -29,6 +24,7 @@ import {
 	nomeDoCaminho,
 	partesDoMaior,
 	porcentagem,
+	type SituacaoPiloto,
 	somaDosTotais,
 	trilhasDoUso,
 } from "./numeros";

@@ -16,12 +16,12 @@ import {
 	within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { consultarPerfil } from "@/client";
-import { buscarTrilhas } from "@/lib/conteudo";
 import {
 	consultarNumerosPainel,
+	consultarPerfil,
 	type NumerosPainel,
-} from "@/lib/contrato-da-297";
+} from "@/client";
+import { buscarTrilhas } from "@/lib/conteudo";
 import { Route as Autenticado } from "@/routes/_autenticado";
 import { Route as Numeros } from "@/routes/_autenticado/painel_.numeros";
 import { NaoEncontrado } from "../nao-encontrado";
@@ -36,8 +36,10 @@ const ambiente = vi.hoisted(() => ({
 	API_URL: "https://api.example.com" as string | undefined,
 }));
 vi.mock("@/env", () => ({ ENV: ambiente }));
-vi.mock("@/client", () => ({ consultarPerfil: vi.fn() }));
-vi.mock("@/lib/contrato-da-297", () => ({ consultarNumerosPainel: vi.fn() }));
+vi.mock("@/client", () => ({
+	consultarNumerosPainel: vi.fn(),
+	consultarPerfil: vi.fn(),
+}));
 vi.mock("@/lib/conteudo", () => ({ buscarTrilhas: vi.fn() }));
 
 const perfil = vi.mocked(consultarPerfil);
@@ -88,7 +90,7 @@ function diasDeExemplo() {
 	});
 }
 
-/** Os números inventados, no formato do contrato da #297. */
+/** Os números inventados, no formato que a API manda. */
 function numerosDeExemplo(): NumerosPainel {
 	return {
 		pessoas: {

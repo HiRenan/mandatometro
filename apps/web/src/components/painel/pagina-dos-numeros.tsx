@@ -1,14 +1,14 @@
 // biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
 import { Link } from "@tanstack/react-router";
 import type { CSSProperties, ReactNode } from "react";
-import { classes } from "@/lib/classes";
-import { estiloDoTeto } from "@/lib/conteudo/regua";
 import type {
 	MediaEtapa,
 	NumerosPainel,
 	TotalDiario,
 	TotalSemanal,
-} from "@/lib/contrato-da-297";
+} from "@/client";
+import { classes } from "@/lib/classes";
+import { estiloDoTeto } from "@/lib/conteudo/regua";
 import { classeDaFita, comMilhares, formatarDia, plural } from "@/lib/formatar";
 import {
 	diaCurto,

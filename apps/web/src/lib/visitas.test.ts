@@ -124,14 +124,14 @@ describe("o aviso da visita", () => {
 		const erro = vi.spyOn(console, "error").mockImplementation(() => {});
 		const { fetch } = api();
 		vi.resetModules();
-		vi.doMock("./contrato-da-297", () => {
+		vi.doMock("@/client", () => {
 			throw new Error("Failed to fetch dynamically imported module");
 		});
 
 		try {
 			await expect(avisarVisita("/trilhas")).resolves.toBeUndefined();
 		} finally {
-			vi.doUnmock("./contrato-da-297");
+			vi.doUnmock("@/client");
 		}
 
 		expect(fetch).not.toHaveBeenCalled();

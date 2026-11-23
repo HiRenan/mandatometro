@@ -1,10 +1,7 @@
 import { useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { consultarNumerosPainel, type NumerosPainel } from "@/client";
 import { ENV } from "@/env";
-import {
-	consultarNumerosPainel,
-	type NumerosPainel,
-} from "@/lib/contrato-da-297";
 import { acessoRecusado, falhaDe, opcoes, pedir } from "./pedido";
 
 // O estado da tela dos números (/painel/numeros). Os números ficam só aqui, na
