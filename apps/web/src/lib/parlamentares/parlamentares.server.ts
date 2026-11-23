@@ -327,29 +327,21 @@ function fotoDaPagina(
 
 /**
  * O endereço exato da foto: https, o site da Casa, o caminho da foto e nada além
- * (sem porta, usuário, busca nem âncora). O endereço tem de sair igual da
- * leitura, para nenhuma variação de escrita passar.
+ * (sem porta, usuário, busca nem âncora, mesmo que vazias).
  */
 function enderecoDaFoto(
 	url: string,
 	esperada: (typeof FOTO_DA_CASA)[keyof typeof FOTO_DA_CASA],
 ): boolean {
-	let endereco: URL;
 	try {
-		endereco = new URL(url);
+		const caminho = new URL(url).pathname;
+		return (
+			url === `https://${esperada.site}${caminho}` &&
+			esperada.caminho.test(caminho)
+		);
 	} catch {
 		return false;
 	}
-	return (
-		endereco.href === url &&
-		endereco.protocol === "https:" &&
-		endereco.host === esperada.site &&
-		endereco.username === "" &&
-		endereco.password === "" &&
-		endereco.search === "" &&
-		endereco.hash === "" &&
-		esperada.caminho.test(endereco.pathname)
-	);
 }
 
 /**

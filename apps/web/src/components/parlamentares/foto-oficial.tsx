@@ -36,7 +36,7 @@ export function FotoOficial({
 		}
 	}, []);
 	return (
-		<div
+		<figure
 			className={falhou ? "foto-oficial foto-que-falhou" : "foto-oficial"}
 			aria-hidden={falhou || undefined}
 		>
@@ -54,7 +54,9 @@ export function FotoOficial({
 					/>
 				)}
 			</div>
-			<p className="rotulo credito-da-foto">Foto: {foto.credito}</p>
-		</div>
+			<figcaption className="rotulo credito-da-foto">
+				Foto: {foto.credito}
+			</figcaption>
+		</figure>
 	);
 }

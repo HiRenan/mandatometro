@@ -611,6 +611,7 @@
 	}
 
 	.foto-oficial {
+		margin: 0;
 		--azulejo-cru: radial-gradient(
 				circle at 0 0,
 				var(--papel-3) 70.2%,
@@ -642,7 +643,7 @@
 	}
 
 	/* A foto que não chegou esconde o crédito, mas o lugar dele fica: sem ele,
-	   o nome subiria no celular, e a moldura cresceria no computador. */
+	   o nome subiria no celular, e a área da foto poderia crescer no computador. */
 	.foto-que-falhou .credito-da-foto {
 		visibility: hidden;
 	}
@@ -655,6 +656,8 @@
 	 * 2 px de rejunte. O retrato fica por cima do painel e fora do fluxo, e o nome
 	 * e o pé do cartaz não mudam de lugar. O cartaz cresce só se o retrato e uma
 	 * fileira embaixo dele não couberem, numa tela muito larga.
+	 * A área da foto fica em 3:4, e o crédito fica no meio da margem de papel
+	 * que sobra embaixo. A foto pode encolher quando o crédito usa mais linhas.
 	 */
 	@media (width >= 62rem) {
 		.cartaz-do-parlamentar.com-foto {
@@ -672,21 +675,22 @@
 			right: var(--azulejo);
 			display: flex;
 			flex-direction: column;
-			gap: 6px;
 			width: calc(2 * var(--azulejo) + 6px);
 			height: calc(3 * var(--azulejo) + 8px);
-			padding: 8px;
+			padding: 8px 8px 0;
 			border: 2px solid var(--tinta);
 			background: var(--papel);
 		}
 
 		.moldura-da-foto {
-			flex: 1 1 0;
+			flex: 0 1 auto;
 			min-height: 0;
+			aspect-ratio: 3 / 4;
 		}
 
 		.credito-da-foto {
-			flex: none;
+			flex: 1 0 auto;
+			align-content: center;
 		}
 	}
 

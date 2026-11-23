@@ -391,7 +391,7 @@ describe("a diferença para a eleição anterior", () => {
 		expect(texto(100)).toBe(`${reais("1")} a mais que em 2014`);
 	});
 
-	it("o percentual que arredonda para zero diz menos de 0,1%, de um lado ou do outro", () => {
+	it("com 0.0 e aumento, o intervalo fica com o sinal de mais na tela", () => {
 		expect(
 			diferencaDaEleicao({
 				ano_anterior: 2014,
@@ -399,16 +399,22 @@ describe("a diferença para a eleição anterior", () => {
 				percentual: "0.0",
 			}),
 		).toEqual({
-			texto: `${reais("30")} a mais que em 2014 (menos de 0,1%)`,
+			texto: `${reais("30")} a mais que em 2014 (entre 0 e +0,1%)`,
 			leitor: `${reais("30")} a mais que em 2014, ou menos de 0,1% a mais`,
 		});
+	});
+
+	it("com -0.0 e queda, o intervalo fica com o sinal de menos na tela", () => {
 		expect(
 			diferencaDaEleicao({
 				ano_anterior: 2014,
 				diferenca_centavos: -3_000,
 				percentual: "-0.0",
-			})?.leitor,
-		).toBe(`${reais("30")} a menos que em 2014, ou menos de 0,1% a menos`);
+			}),
+		).toEqual({
+			texto: `${reais("30")} a menos que em 2014 (entre 0 e ${MENOS}0,1%)`,
+			leitor: `${reais("30")} a menos que em 2014, ou menos de 0,1% a menos`,
+		});
 	});
 
 	it("a diferença zero tem a frase dela, e sem a comparação não há frase", () => {

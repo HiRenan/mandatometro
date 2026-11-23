@@ -276,6 +276,10 @@ describe("a página do parlamentar", () => {
 		expect(foto).toContain("object-position: 50% 0;");
 	});
 
+	it("a figura tem margem zero", () => {
+		expect(regra(pagina, ".foto-oficial")).toContain("margin: 0;");
+	});
+
 	it("no computador, o retrato fica por cima de 2 × 3 azulejos do painel, fora do fluxo do cartaz", () => {
 		const largo = bloco(pagina, "@media (width >= 62rem)");
 		expect(regra(largo, ".cartaz-do-parlamentar.com-foto")).toContain(
@@ -285,6 +289,16 @@ describe("a página do parlamentar", () => {
 		expect(retrato).toContain("position: absolute;");
 		expect(retrato).toContain("width: calc(2 * var(--azulejo) + 6px);");
 		expect(retrato).toContain("height: calc(3 * var(--azulejo) + 8px);");
+	});
+
+	it("no computador, a área da foto é 3 por 4 e pode encolher para dar lugar ao crédito centralizado", () => {
+		const largo = bloco(pagina, "@media (width >= 62rem)");
+		const moldura = regra(largo, ".moldura-da-foto");
+		expect(moldura).toContain("aspect-ratio: 3 / 4;");
+		expect(moldura).toContain("flex: 0 1 auto;");
+		const credito = regra(largo, ".credito-da-foto");
+		expect(credito).toContain("flex: 1 0 auto;");
+		expect(credito).toContain("align-content: center;");
 	});
 
 	it("no celular, a caixa da foto é 3 por 4, em px e cqi: ela não cresce com a letra", () => {

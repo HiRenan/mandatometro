@@ -295,15 +295,16 @@ export function diferencaDaEleicao(
 	if (percentual === null) {
 		return { texto: frase, leitor: frase };
 	}
+	const sinal = centavos > 0 ? "+" : MENOS;
 	if (valeZero(percentual)) {
 		return {
-			texto: `${frase} (menos de 0,1%)`,
+			texto: `${frase} (entre 0 e ${sinal}0,1%)`,
 			leitor: `${frase}, ou menos de 0,1% ${lado}`,
 		};
 	}
 	const numero = semSinal(percentual);
 	return {
-		texto: `${frase} (${centavos > 0 ? "+" : MENOS}${numero}%)`,
+		texto: `${frase} (${sinal}${numero}%)`,
 		leitor: `${frase}, ou ${numero}% ${lado}`,
 	};
 }

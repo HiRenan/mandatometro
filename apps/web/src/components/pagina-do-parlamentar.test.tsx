@@ -399,7 +399,11 @@ describe("a foto oficial no cartaz", () => {
 		expect(foto.getAttribute("width")).toBe("300");
 		expect(foto.getAttribute("height")).toBe("400");
 		expect(foto.getAttribute("referrerpolicy")).toBe("no-referrer");
-		expect(screen.getByText("Foto: Câmara dos Deputados")).toBeTruthy();
+		const figura = screen.getByRole("figure");
+		expect(figura.contains(foto)).toBe(true);
+		expect(figura.querySelector(":scope > figcaption")?.textContent).toBe(
+			"Foto: Câmara dos Deputados",
+		);
 		const titulo = screen.getByRole("heading", { level: 1, name: NOME });
 		expect(
 			titulo.compareDocumentPosition(foto) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -424,7 +428,8 @@ describe("a foto oficial no cartaz", () => {
 		fireEvent.error(screen.getByRole("img", { name: NOME }));
 
 		expect(screen.queryByRole("img", { name: NOME })).toBeNull();
-		const foto = document.querySelector(".foto-oficial");
+		expect(screen.queryByRole("figure")).toBeNull();
+		const foto = document.querySelector("figure.foto-oficial");
 		expect(foto?.getAttribute("aria-hidden")).toBe("true");
 		expect(foto?.querySelector(".moldura-da-foto")).toBeTruthy();
 		// O CSS esconde o crédito da foto que falhou (estilos/parlamentares.test.ts):

@@ -314,7 +314,9 @@ describe("a foto oficial na página do parlamentar", () => {
 			{ url: FOTO_DA_CAMARA.replace("bandep/", "bandep/../../outra/") },
 		],
 		["com busca", { url: `${FOTO_DA_CAMARA}?tamanho=grande` }],
+		["com o delimitador de busca vazio", { url: `${FOTO_DA_CAMARA}?` }],
 		["com âncora", { url: `${FOTO_DA_CAMARA}#rosto` }],
+		["com o delimitador de âncora vazio", { url: `${FOTO_DA_CAMARA}#` }],
 		[
 			"fora da forma exata do endereço",
 			{ url: FOTO_DA_CAMARA.replace("https://www.", "HTTPS://WWW.") },
