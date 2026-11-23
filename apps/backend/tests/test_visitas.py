@@ -297,6 +297,7 @@ def test_catalogo_de_visitas_e_leituras_acompanha_o_conteudo_do_site():
         "/login",
         "/newsletter/sair",
         "/painel",
+        "/painel/numeros",
         "/perfil",
     }
     assert excluidas <= rotas_estaticas
