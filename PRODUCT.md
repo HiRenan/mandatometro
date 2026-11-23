@@ -40,7 +40,7 @@ A política explicada em linguagem simples e de forma interativa, a partir de ca
 
 ## Capabilities and Constraints
 
-- **MVP:** as trilhas (artigos, infográfico e quiz), a newsletter semanal com as edições no site, a conta opcional e as páginas dos parlamentares e das votações: os deputados e os senadores de cada estado, como cada um votou, o patrimônio que cada um declarou ao TSE e quem votou como em cada votação (Renan, 21/11/2026).
+- **MVP:** as trilhas (artigos, infográfico e quiz), a newsletter semanal com as edições no site, a conta opcional e as páginas dos parlamentares e das votações: os deputados e os senadores de cada estado, como cada um votou, o patrimônio que cada um declarou ao TSE e quem votou como em cada votação (Renan, 21/11/2026), e a foto oficial de cada um, com o crédito da Casa (Renan, 22/11/2026).
 - **Depois do MVP:**
   - nas páginas de cada parlamentar, as promessas e os atos;
   - o "fake ou fato";
@@ -49,7 +49,7 @@ A política explicada em linguagem simples e de forma interativa, a partir de ca
 - O produto fala de pessoas reais. Estas regras valem para a interface, as trilhas, o quiz, a newsletter, a API e os prompts do LLM.
 - **Fonte em tudo:** cada afirmação sobre um político ou uma votação leva o link oficial, a data da coleta e, quando vier de texto, o trecho literal. O que não tem fonte fica fora do banco, do site e da newsletter.
 - **Neutro e apartidário:** o texto descreve o que o dado mostra e deixa o julgamento para o leitor, com os mesmos critérios para todos os partidos e parlamentares. Cada explicação leva a fonte oficial (lei, regimento ou página da Câmara, do Senado ou do TSE). O quiz pergunta sobre fatos e regras e nunca dá nota a político ou partido.
-- **Promessas e patrimônio:** a ligação entre promessa e ato tem um destes status: `ato a favor`, `ato contra` ou `nenhum ato encontrado`. Deputado e senador não são obrigados a entregar proposta ao TSE (só prefeito, governador e presidente): sem promessa, escreva "Não encontramos promessas públicas nas fontes consultadas" e liste as fontes. O patrimônio se chama "patrimônio declarado ao TSE", vem corrigido pelo IPCA, com o aviso de que o valor declarado costuma ser o de compra, e aparece só nos anos em que a pessoa concorreu, em tom descritivo.
+- **Promessas e patrimônio:** a ligação entre promessa e ato tem um destes status: `ato a favor`, `ato contra` ou `nenhum ato encontrado`. Deputado e senador não são obrigados a entregar proposta ao TSE (só prefeito, governador e presidente): sem promessa, escreva "Não encontramos promessas públicas nas fontes consultadas" e liste as fontes. O patrimônio se chama "patrimônio declarado ao TSE", vem corrigido pelo IPCA, com o aviso de que o valor declarado costuma ser o de compra, e aparece só nos anos em que a pessoa concorreu, em tom descritivo. Cada eleição também diz o resultado e a diferença para a anterior em reais de hoje, com o percentual só quando a anterior passa de R$ 50 mil e o aviso de que a diferença, sozinha, não diz por quê (Renan, 22/11/2026).
 - **Dados pessoais.** A coleta, a conta, a newsletter e o quiz seguem as regras de [dados pessoais](docs/dados-pessoais.md).
 - **Termos:** trilha, artigo, quiz, edição, inscrito, proposição, votação e parlamentar. O texto para o usuário é em pt-BR.
 
