@@ -399,15 +399,16 @@ function GraficoDasSemanas({
 	if (!maior) {
 		return <p className="frase-do-grafico">{frase}</p>;
 	}
+	const qualificador = minimo ? "pelo menos " : "";
 	return (
 		<GraficoDeColunas
 			frase={frase}
-			maximo={`máx. ${comMilhares(maior.total)}, na semana de ${diaCurto(maior.semana)}`}
+			maximo={`máx. ${qualificador}${comMilhares(maior.total)}, na semana de ${diaCurto(maior.semana)}`}
 			colunas={semanas.map(({ semana, total: quantos }) => ({
 				chave: semana,
 				nome: formatarDia(semana),
 				curto: diaCurto(semana),
-				leitura: `semana de ${diaCurto(semana)}: ${comMilhares(quantos)}`,
+				leitura: `semana de ${diaCurto(semana)}: ${qualificador}${comMilhares(quantos)}`,
 				total: quantos,
 			}))}
 			tabela={{
@@ -496,7 +497,7 @@ function Pessoas({ pessoas }: { pessoas: NumerosPainel["pessoas"] }) {
 						total="Contas novas"
 					/>
 				</div>
-				<div className="grupo-dos-numeros">
+				<div className="grupo-dos-numeros inscritos-por-semana">
 					<h3 className="rotulo">Inscritos na newsletter</h3>
 					<Cifras
 						itens={[{ nome: "No total", valor: comMilhares(inscritos.total) }]}

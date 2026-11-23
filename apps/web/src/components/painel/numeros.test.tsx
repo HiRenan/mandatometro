@@ -499,6 +499,30 @@ describe("a folha dos números", () => {
 		).toBeTruthy();
 	});
 
+	it("qualifica o máximo e a leitura sob o ponteiro só nas contas ativas", async () => {
+		await abrirOsNumeros();
+		const uso = secao("Uso");
+		expect(uso.querySelector(".maximo-das-colunas")?.textContent).toBe(
+			"máx. pelo menos 31, na semana de 16 nov",
+		);
+		expect(
+			[...uso.querySelectorAll(".leitura-da-coluna")].map(
+				(leitura) => leitura.textContent,
+			),
+		).toEqual([
+			"semana de 9 nov: pelo menos 25",
+			"semana de 16 nov: pelo menos 31",
+			"semana de 23 nov: pelo menos 19",
+		]);
+		for (const nome of ["Visitas", "Pessoas"]) {
+			for (const rotulo of secao(nome).querySelectorAll(
+				".maximo-das-colunas, .leitura-da-coluna",
+			)) {
+				expect(rotulo.textContent).not.toContain("pelo menos");
+			}
+		}
+	});
+
 	it("as trilhas vêm na ordem do catálogo, com o nome, as leituras e as conclusões", async () => {
 		await abrirOsNumeros();
 		const trilhas = within(secao("Uso")).getByRole("list", {

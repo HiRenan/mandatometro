@@ -909,6 +909,13 @@
 		text-align: right;
 	}
 
+	/* Na folha estreita com letra grande, o cabeçalho das inscrições precisa do espaço. */
+	@media (width < 11rem) {
+		.inscritos-por-semana .tabela-dos-numeros :is(th, td) + :is(th, td) {
+			padding-left: 0.125rem;
+		}
+	}
+
 	.tabela-dos-numeros thead :is(th, td) {
 		border-bottom: 2px solid var(--tinta);
 		font-family: var(--font-sans);
