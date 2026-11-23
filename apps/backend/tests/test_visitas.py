@@ -282,3 +282,14 @@ def test_catalogo_de_visitas_e_leituras_acompanha_o_conteudo_do_site():
     assert excluidas.isdisjoint(CAMINHOS_PUBLICOS)
     rotas_publicas = (rotas_estaticas - excluidas) | rotas_de_trilhas | rotas_de_jogos
     assert rotas_publicas == CAMINHOS_PUBLICOS
+
+
+def test_dicionario_descreve_o_envio_de_visitas_pela_integracao_do_site():
+    dicionario = Path(__file__).resolve().parents[3] / "docs" / "dicionario-de-dados.md"
+    paragrafos = dicionario.read_text(encoding="utf-8").split("\n\n")
+    integracao = next(
+        paragrafo for paragrafo in paragrafos if paragrafo.startswith("`POST /visitas`")
+    )
+    assert "#298" in integracao
+    assert "`pathname`" in integracao
+    assert '`credentials: "omit"`' in integracao

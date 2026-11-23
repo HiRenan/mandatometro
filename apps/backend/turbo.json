@@ -6,6 +6,7 @@
 			"inputs": [
 				"$TURBO_DEFAULT$",
 				"$TURBO_ROOT$/README.md",
+				"$TURBO_ROOT$/docs/dicionario-de-dados.md",
 				"$TURBO_ROOT$/apps/web/conteudo/trilhas/**/*.md",
 				"$TURBO_ROOT$/apps/web/conteudo/jogo/**/jogo.md",
 				"$TURBO_ROOT$/apps/web/src/routes/**/*"
