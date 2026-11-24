@@ -1,89 +1,104 @@
 # Mandatômetro
 
-**O diário oficial político, simplificado.** Um site que ensina como funciona a política brasileira, em linguagem simples e a partir do que o Congresso está votando.
+O Mandatômetro ensina como funciona a política brasileira com trilhas de leitura e exemplos do que o Congresso vota.
 
 > Projeto da trilha **Acesso à educação** do [Hack Brasil 2026](https://hackbrasil.com).
 >
-> [Site público de produção](https://mandatometro.com.br) (`main`) · [Site de desenvolvimento](https://dev.mandatometro.com.br) (`develop`)
+> [Demo do Mandatômetro](https://mandatometro.com.br) · [Site de desenvolvimento](https://dev.mandatometro.com.br) (`develop`)
+
+<!-- A preencher pelo Renan: link do vídeo de apresentação de até três minutos. -->
 
 ## O problema
 
-As pesquisas mostram que muitas pessoas têm dificuldade para citar quem as representa no Congresso. Também indicam que as emendas parlamentares são pouco conhecidas. [Pesquisas e fontes](docs/problema.md#destaques)
+As pesquisas apontam dificuldade para identificar quem representa o eleitor no Congresso e pouco conhecimento sobre emendas parlamentares. [Pesquisas e fontes](docs/problema.md#destaques)
 
-- **68%** dos entrevistados não citam o nome de nenhum deputado federal em exercício e **75%** não citam o nome de nenhum senador (Datafolha, 17–18/06/2026).
-- Entre os eleitores de 20 anos ou mais, **85%** lembram em quem votaram para presidente em 2022 e **67%** não lembram em quem votaram para deputado federal naquele ano (Datafolha, 17–18/06/2026).
-- **87%** de quem já ouviu falar em emendas parlamentares dizem saber pouco ou nada sobre elas (DataSenado, 18/11 a 14/12/2021).
+- **68%** dos entrevistados não citam o nome de nenhum deputado federal em exercício e **75%** não citam o nome de nenhum senador. [Datafolha, 17 e 18/06/2026](docs/problema.md#68-não-sabem-citar-um-único-deputado-federal)
+- Entre os eleitores de 20 anos ou mais, **85%** lembram em quem votaram para presidente em 2022 e **67%** não lembram em quem votaram para deputado federal naquele ano. [Datafolha, 17 e 18/06/2026](docs/problema.md#o-eleitor-lembra-o-voto-para-presidente-mas-não-o-do-congresso)
+- **87%** de quem já ouviu falar em emendas parlamentares dizem saber pouco ou nada sobre elas. [DataSenado, 18/11 a 14/12/2021](docs/problema.md#87-sabem-pouco-ou-nada-sobre-emendas-parlamentares)
 
-O DataSenado encontrou mais apoio à democracia entre pessoas com mais escolaridade. Essa relação ajuda a explicar a escolha da trilha **Acesso à educação**, com a proposta de ensinar como o Congresso funciona. O Mandatômetro é para eleitores, principalmente de 20 a 40 anos.
+O DataSenado encontrou uma associação entre maior escolaridade e maior apoio à democracia. [DataSenado, junho de 2024](docs/problema.md#2-confiança-e-democracia)
+
+Na trilha **Acesso à educação**, o Mandatômetro se propõe a ensinar como o Congresso funciona a eleitores, principalmente de 20 a 40 anos. [Como isso virou produto](docs/problema.md#como-isso-virou-produto) · [Recorte do público](docs/problema.md#4-o-recorte-de-20-a-40-anos)
 
 ## O que ele faz
 
-- **Trilhas.** Artigos curtos explicam como a política funciona com exemplos reais. Na trilha do processo legislativo, um infográfico mostra como uma ideia vira lei. Há um quiz no meio e outro no fim.
-- **Newsletter semanal.** O jornal legislativo pode reunir o que o Congresso votou na semana e os destaques do Diário Oficial da União. Cada item traz uma explicação simples e a fonte oficial. As edições publicadas ficam no site e o envio semanal é programado para domingo. Se já houver uma edição publicada, o sistema tenta enviá-la logo depois da inscrição. [Diário Oficial na newsletter](docs/adr/0004-newsletter-do-dou.md)
-- **Jogo das Comissões.** Em `/jogos/comissoes`, pela lista de `/jogos`, cinco cenas contam a tramitação real do projeto que virou a Lei 15.100/2025, a do celular na escola. Em cada cena você decide o próximo passo e depois vê o que aconteceu de verdade, com o link da fonte oficial. O jogo fica fora da trilha, e o fim do quiz final leva até ele. [Roteiro e regras](docs/jogo-das-comissoes.md)
-- **Busca.** Use Ctrl+K ou a busca no alto da página para procurar nas trilhas, nos artigos e nas edições publicadas mais recentes. Você pode digitar só o começo da palavra, com ou sem acento. A busca ignora maiúsculas, funciona sem IA e mantém no navegador o que você digita.
+- **[Trilhas](https://mandatometro.com.br/trilhas).** Artigos curtos explicam a Constituição, os Três Poderes, os direitos e deveres e o processo legislativo, com fontes oficiais. Na trilha do processo legislativo, um infográfico mostra como uma ideia vira lei, com um quiz no meio e outro no fim. [Trilha do processo legislativo](https://mandatometro.com.br/trilhas/processo-legislativo)
+- **[Newsletter semanal](https://mandatometro.com.br/edicoes).** As edições podem reunir votações do Congresso e destaques do Diário Oficial da União, com explicações e fontes oficiais. A inscrição pede só o e-mail e tenta enviar a última edição publicada, quando disponível. [Inscrever-se](https://mandatometro.com.br/#newsletter)
+- **[Jogos](https://mandatometro.com.br/jogos).** No Jogo das Comissões, você decide o próximo passo do projeto que virou a Lei 15.100/2025, sobre o uso de celular nas escolas. A cada decisão, o jogo mostra o que aconteceu e indica a fonte oficial. [Jogo das Comissões](https://mandatometro.com.br/jogos/comissoes) · [Roteiro e fontes](docs/jogo-das-comissoes.md)
+- **[Parlamentares](https://mandatometro.com.br/parlamentares).** Escolha uma UF no mapa para ver deputados federais e senadores em exercício, com as fotos disponíveis creditadas às Casas. A ficha reúne partido, mandatos, votos registrados e, quando publicados pelas Casas, profissão e escolaridade. [Exemplo de ficha](https://mandatometro.com.br/parlamentares/362-ana-paula-lima)
+- **[Patrimônio declarado ao TSE](https://mandatometro.com.br/parlamentares/362-ana-paula-lima#patrimonio).** A ficha mostra o patrimônio declarado em cada eleição com dados e o resultado quando disponível. Você pode ver o total declarado ou o valor em reais de hoje, corrigido pelo IPCA até o último mês disponível na série.
+- **[Votações e temas](https://mandatometro.com.br/votacoes/47).** A página reúne o placar geral e por partido, a lista nominal com filtros de UF e partido e o vídeo oficial da sessão inteira, conforme os dados disponíveis. A API associa os temas das proposições às votações e permite filtrar por tema o histórico de votos de um parlamentar. [Conversão dos temas](docs/dicionario-de-dados.md#temas-das-proposições-e-das-votações)
+- **[Busca](https://mandatometro.com.br).** Use a lupa do cabeçalho, Ctrl+K ou ⌘K para procurar nas trilhas, nos artigos e nas edições recentes. A busca aceita o começo das palavras com ou sem acento e roda no navegador.
+- **[Conta opcional](https://mandatometro.com.br/cadastro).** As trilhas, os jogos e a inscrição na newsletter são abertos. O navegador guarda os artigos lidos e a conta permite continuar em outro aparelho. [Meu perfil](https://mandatometro.com.br/perfil)
+- **[Painel da administradora](https://mandatometro.com.br/painel).** A administradora revisa os textos e as fontes antes de publicar a edição semanal. A página de números reúne dados agregados de visitas, contas, leituras, newsletter, piloto e coletas. [Números do site](https://mandatometro.com.br/painel/numeros)
 
-As trilhas são abertas e a newsletter pede só o e-mail. O navegador guarda os artigos lidos. Se você criar uma conta, o progresso também fica no perfil para continuar em outro aparelho.
+O histórico das decisões de produto está nos ADRs. [MVP](docs/adr/0002-mvp.md) · [Conta opcional](docs/adr/0003-login-opcional.md)
 
-**Depois do MVP:** a página de cada deputado federal e senador, com o que prometeu na campanha, o que fez no mandato e o patrimônio que declarou ao TSE. O "fake ou fato" também fica para depois.
+## Piloto
 
-O porquê dessas escolhas está no [ADR 0002](docs/adr/0002-mvp.md) e no [ADR 0003](docs/adr/0003-login-opcional.md).
+O piloto compara os acertos no mesmo quiz antes e depois da trilha do processo legislativo. Um código aleatório liga as duas etapas, e o relatório calcula as médias de acertos das participações que completaram ambas. [Medição do piloto](docs/medicao-do-piloto.md#relatório-para-o-time)
+
+<!-- A preencher pelo Renan: resultados dos testes de 26 e 27/11/2026 (#40). Usar o relatório agregado aprovado para informar quantas participações completaram cada etapa, quantas completaram as duas e as médias antes e depois com o mesmo denominador. -->
+
+<!-- A preencher pelo Renan: incluir os números de produção que forem usados na entrega, com fonte e data de corte. -->
 
 ## Fontes
 
 - **Trilhas.** As explicações citam leis, regimentos e páginas oficiais da Câmara, do Senado e do TSE.
-- **Votações.** Os dados abertos da Câmara e do Senado fornecem votações, proposições e parlamentares. [Câmara](https://dadosabertos.camara.leg.br/) · [Senado](https://legis.senado.leg.br/dadosabertos/)
+- **Câmara e Senado.** Os dados abertos fornecem proposições, votações, votos, mandatos e biografias oficiais. As fotos e os vídeos vêm dos canais oficiais das Casas. [Câmara](https://dadosabertos.camara.leg.br/) · [Senado](https://legis.senado.leg.br/dadosabertos/) · [Vídeos das sessões](docs/dicionario-de-dados.md#vídeos-das-sessões)
+- **TSE.** Os arquivos de dados abertos fornecem candidaturas, resultados eleitorais e bens declarados nas eleições gerais. [Portal de Dados Abertos do TSE](https://dadosabertos.tse.jus.br/) · [Regras do patrimônio declarado](docs/dicionario-de-dados.md#bens-declarados-ao-tse)
+- **IPCA.** A correção do patrimônio usa a série 433 de variações mensais publicada pelo Banco Central. [Fonte e cálculo](docs/dicionario-de-dados.md#ipca-mensal)
 - **Diário Oficial.** A lista de legislação federal do Senado fornece decretos, leis e medidas provisórias. A página de destaques da Imprensa Nacional acrescenta portarias e outros atos de ministérios. [Legislação federal](https://legis.senado.leg.br/dadosabertos/legislacao/lista?tipo=LEI&ano=2026) · [Destaques do Diário Oficial](https://www.in.gov.br/servicos/diario-oficial-da-uniao/destaques-do-diario-oficial-da-uniao)
-- **Depois do MVP.** A coleta de candidaturas e bens declarados ao TSE e a leitura dos sites de campanha ficam para essa etapa. [Portal de Dados Abertos do TSE](https://dadosabertos.tse.jus.br/)
 
 ## Ferramentas parceiras
 
 | Ferramenta | Uso no Mandatômetro |
 |---|---|
-| [Resend](https://resend.com/) | Todos os e-mails, incluindo a newsletter de domingo, a última edição para quem se inscreve e os avisos de conta |
-| [Firecrawl](https://www.firecrawl.dev/) | Lê a página de destaques do Diário Oficial na coleta de sábado. A leitura do inteiro teor das proposições e das notícias da Câmara e do Senado segue em teste na #9. O teste com sites de campanha fica para depois do MVP |
-| [Devin](https://devin.ai/) | Conectores de dados e testes, com PRs neste repositório |
+| [Resend](https://resend.com/) | Envia a newsletter de domingo, a última edição após a inscrição e os avisos de confirmação, recuperação e exclusão de conta |
+| [Firecrawl](https://www.firecrawl.dev/) | Obtém o HTML da página de destaques do Diário Oficial e de sua paginação na coleta de sábado. [ADR 0006](docs/adr/0006-destaques-do-dou.md) |
+| [Devin](https://devin.ai/) | O guia de contribuição prevê delegar tarefas e identificar os PRs resultantes com o rótulo `devin`. [Convenções do repositório](AGENTS.md#conventions) |
+
+<!-- A preencher pelo Renan: confirmar se houve PRs do Devin e acrescentar os links. A consulta de PRs com o rótulo devin retornou vazia em 23/11/2026. -->
 
 ## Stack
 
-O site usa TypeScript, React e TanStack Start. O backend usa Python 3.13, FastAPI e SQLAlchemy. O banco é PostgreSQL com pgvector. O Turborepo roda as tarefas do repositório e o Docker Compose sobe os serviços localmente.
+O site usa TypeScript, React e TanStack Start. O backend usa Python 3.13, FastAPI e SQLAlchemy, com Alembic para migrations no PostgreSQL. O Turborepo roda as tarefas do monorepo, e o Docker Compose sobe o ambiente local com PostgreSQL 17 e pgvector.
 
-O porquê de cada escolha está no [ADR 0001](docs/adr/0001-stack.md).
+O cliente TypeScript é gerado com hey-api a partir do contrato OpenAPI da API. [Contrato OpenAPI](apps/backend/openapi.json) · [ADR da stack](docs/adr/0001-stack.md)
 
-- `packages/ui/` (componentes shadcn/ui) e `packages/config/` (tsconfig base): gerados pelo Better-T-Stack.
+Os componentes shadcn/ui em `packages/ui/` e o `tsconfig` base em `packages/config/` partiram do Better-T-Stack.
 
 ## Arquitetura
 
 ```mermaid
 flowchart TD
-    fontes["Fontes oficiais"] --> coleta["Coletas e rascunho"]
-    coleta <--> banco[(PostgreSQL)]
-    banco <--> api["API"]
-    api <--> site["Site e /painel"]
-    banco <--> envios["Envios agendados"]
-    envios --> email["E-mail via Resend"]
+    fontes["Câmara, Senado, TSE, IPCA e DOU"] --> tarefas["GitHub Actions · CLI do backend"]
+    tarefas <--> banco[(PostgreSQL no Neon)]
+    banco <--> api["FastAPI · Vercel"]
+    api <--> site["TanStack Start · Vercel"]
+    tarefas --> email["E-mail via Resend"]
     api --> email
 ```
 
-O GitHub Actions roda as coletas e o rascunho fora dos pedidos ao site. A coleta diária usa `coleta camara` e `coleta senado` e grava no PostgreSQL. A agenda de sábado roda `coleta legislacao` nos dados abertos do Senado, `coleta destaques` na página da Imprensa Nacional via Firecrawl e `edicao rascunho`, nessa ordem.
+O site e a API ficam em projetos separados na Vercel. O servidor do site consulta a API FastAPI e entrega o HTML das páginas de edições, parlamentares e votações. Artigos e quizzes vêm de arquivos Markdown do repositório. [Hospedagem](docs/hospedagem.md) · [Conteúdo das trilhas](docs/conteudo-das-trilhas.md)
 
-O comando de rascunho lê os dados já gravados e salva a edição no banco. Quando configurado, o modelo de linguagem sugere a ordem dos atos do Diário Oficial e escreve o texto das votações elegíveis. Em `/painel`, uma administradora confere os itens e as fontes, completa os textos pendentes e publica pela API.
+As coletas e a preparação da edição rodam pelo CLI do backend, fora dos pedidos ao site. No GitHub Actions, a coleta diária atualiza os dados da Câmara e do Senado quando ativada. As cargas de TSE, IPCA e biografias têm disparo manual. [CLI](apps/backend/src/mandatometro/cli.py) · [Tarefas na hospedagem](docs/hospedagem.md#como-as-tarefas-funcionam)
 
-A API entrega ao site as edições publicadas, os parlamentares e os votos gravados pela coleta. Também registra inscrições, contas, progresso das trilhas e tentativas do piloto. As trilhas vêm de arquivos do site. Na hospedagem, o site e a API ficam na Vercel e o PostgreSQL fica no Neon.
+A agenda de sábado coleta a legislação federal pelo Senado e os destaques do Diário Oficial via Firecrawl, depois roda `edicao rascunho` com os dados já gravados. O código seleciona as votações por regras fixas. Com um modelo de linguagem configurado, a IA redige os itens elegíveis de votações e sugere a ordem dos atos do DOU. Em `/painel`, uma administradora confere as fontes, completa a redação dos atos e publica pela API. [Código do rascunho](apps/backend/src/mandatometro/ia/servico.py) · [Revisão](docs/newsletter.md#revisão-pelo-painel)
 
-Quando a agenda de domingo está ativa, `edicao enviar` usa o Resend para mandar a edição publicada naquela semana. O Resend também envia a edição mais recente na inscrição, quando disponível, e os avisos de conta. O workflow de avisos retoma pendências com `python -m mandatometro.contas`. O de migrations atualiza o banco com `alembic upgrade head`.
+A API registra inscrições, contas, progresso de leitura, contagens de visita e tentativas do piloto no PostgreSQL. O envio de domingo, quando a agenda está ativa, usa `edicao enviar` para mandar pelo Resend a edição publicada naquela semana. Os avisos de conta que ficam pendentes podem ser retomados pelo workflow de avisos. [Envio e leitura pública](docs/newsletter.md#newsletter-envio-e-leitura-pública) · [Cadastro de contas](#cadastro-de-contas)
 
-[Horários e ativação das tarefas](docs/hospedagem.md#como-as-tarefas-funcionam) · [Revisão da edição](docs/newsletter.md#revisão-pelo-painel)
+O workflow de migrations aplica `alembic upgrade head` no banco do ambiente escolhido. [Migrations na hospedagem](docs/hospedagem.md#como-as-tarefas-funcionam)
 
 ## Modelo de dados
 
-O banco guarda os dados da Câmara, do Senado e do TSE, os atos do Diário Oficial, as edições da newsletter, a medição do piloto e as contas com o progresso das trilhas. Os modelos ficam em `apps/backend/src/mandatometro/db/modelos.py`, e cada mudança vira uma migration do Alembic.
+O banco guarda os dados da Câmara, do Senado e do TSE, a série mensal do IPCA e os atos do Diário Oficial. Também guarda as edições, as inscrições, as contas com o progresso das trilhas, as contagens de visita e as tentativas do piloto. Um teste compara as tabelas, colunas e ligações do diagrama com os modelos do SQLAlchemy. [Modelos](apps/backend/src/mandatometro/db/modelos.py) · [Teste do diagrama](apps/backend/tests/test_diagrama.py)
 
 - **Cada Casa tem os seus números:** parlamentar, proposição e votação se identificam pela Casa e pelo id que a Casa dá (`casa`, `id_externo`). Quando a mesma matéria aparece nas duas Casas, cada uma tem o seu registro. A numeração única de 2019 em diante permite relacioná-los por sigla, número e ano.
 - **Atos do Diário Oficial** se identificam por `origem` e `id_externo`. A seleção semanal usa a data de publicação.
 - **Candidaturas do TSE** se identificam por ano, código da eleição e `SQ_CANDIDATO`. A coleta grava os pares únicos ligados a parlamentares em exercício.
 - **Patrimônio declarado ao TSE** liga as eleições gerais ao parlamentar pela candidatura já confirmada. No histórico, a chave inclui a UF da eleição. Os bens ficam em centavos nominais, somados por candidatura e tipo.
-- **Fonte em tudo:** cada dado coletado e cada item da edição aponta para uma `fonte`, com o endereço e a data da coleta. Sem fonte, o banco não grava.
+- **Fontes.** Votações, votos, atos e registros do patrimônio têm referências em `fonte`, com o endereço e a data da coleta. Cada item da edição aponta para a fonte usada na revisão.
 - **O partido fica no voto,** porque muda dentro do mandato. Os totais das nominais se contam pelos votos. Nas secretas do Senado, a coleta guarda matéria, votação e resultado, sem votos individuais; o banco não guarda os totais nem a modalidade. Ausência de votos no banco não significa zero votos na sessão nem identifica, sozinha, uma votação secreta.
 - **Ausência sem motivo:** toda ausência reconhecida do Senado (`AP`, `LS`, `MIS`, `NCom`, `LAP` e `LP`, em `CODIGOS_DE_AUSENCIA`) entra como `nao_votou`, sem o código, para a licença saúde ficar igual às outras. O voto só guarda os códigos de voto e de presença da lista `CODIGOS_GRAVADOS`, e o banco recusa os demais. Um código ainda não classificado, como `NA`, entra como `outro`, sem o código, e o log não leva o código nem a pessoa: a coleta registra só a votação e quantos códigos desconhecidos vieram nela.
 - **Quem assina** deixa o e-mail, a data e o código do link de sair; a última edição aceita permite retomar um envio. Sair apaga a linha e esse marcador.
@@ -352,34 +367,38 @@ erDiagram
 
 Instale o [Docker](https://www.docker.com/) para subir os serviços. Para desenvolver e rodar as checagens no computador, instale também o [Node.js](https://nodejs.org/) 24, o [pnpm](https://pnpm.io/) e o [uv](https://docs.astral.sh/uv/). O pnpm usa a versão do `packageManager` no `package.json`, e o uv usa o Python 3.13.
 
-Na raiz do repositório, copie o arquivo de exemplo para configurar o ambiente local.
+Na raiz do repositório, copie o arquivo de exemplo para configurar o ambiente local. Preencha as chaves das integrações que for usar.
 
 ```bash
-cp .env.example .env   # preencha as chaves; o .env fica fora do Git
+cp .env.example .env
 ```
 
 ### Tudo no Docker
 
 `docker compose up --build` sobe o banco, a API e o site. O site fica em http://localhost:3001 e a API em http://localhost:8000, com a documentação em http://localhost:8000/docs. A API aplica as migrations ao subir.
 
+O navegador e o servidor do site precisam alcançar o mesmo `API_URL`. No Compose, configure um endereço acessível também de dentro do contêiner `web` para abrir as páginas que leem dados no servidor. No fluxo de desenvolvimento abaixo, site e API rodam no computador e usam o endereço padrão `http://localhost:8000` para a API.
+
 ### Desenvolvimento
 
 Rode na raiz para desenvolver com recarga automática.
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 docker compose up -d db         # só o banco, na porta 5433
 pnpm --filter backend migrate   # aplica as migrations
 pnpm dev                        # site na porta 3001 e API na 8000
 ```
 
-**O build do site no PC:** o `pnpm check-types` do site roda um `vite build` antes do `tsc` e regrava o `.output`. O `API_URL` vai na linha dele também, como no `pnpm build` e no `pnpm dev`, senão o build leva o `http://localhost:8000` que o `.env.schema` dá fora da Vercel. Uma cópia do `.output` sobe com a pasta `apps/web` como diretório de trabalho: na partida, o servidor chama o CLI do varlock, que ele procura no `node_modules/.bin` a partir dessa pasta, e lê o `.env.schema` dali. Em 18/11/2026, com a cópia fora do repositório, da raiz ele subiu sem ler o `.env.schema`, com o aviso "No .env files found" do varlock (o CLI também está no `node_modules/.bin` da raiz), e de uma pasta fora do repositório não subiu ("'varlock' não é reconhecido como um comando interno ou externo", no Windows).
+Com o banco vazio, as trilhas e o jogo já abrem. Para carregar parlamentares e votações na instalação local, rode as [coletas das duas Casas](#coletas) com o `DATABASE_URL` desse banco.
+
+**Build do site.** `pnpm check-types` roda `vite build` antes do `tsc` e regrava o `.output`. Para trocar o endereço padrão da API, passe `API_URL` no ambiente de `pnpm dev`, `pnpm check-types` e `pnpm build`. Para abrir um build local, rode `node .output/server/index.mjs` em `apps/web`, onde o servidor encontra o `.env.schema` e o CLI do varlock nas dependências instaladas.
 
 **Ícone, prévia do link e mapa.** [Como editar e gerar as imagens](docs/codigo-do-site.md#css-e-imagens).
 
 **Cliente da API.** `pnpm generate:client`. Veja o [contrato da API](AGENTS.md#conventions).
 
-**Migration nova.** Em `apps/backend`, use o próximo número de revisão. Um exemplo depois da `0013` é `uv run alembic revision --autogenerate --rev-id 0014 -m "cria a tabela orientacao"`. `uv run alembic check` diz se algum modelo mudou sem migration. Veja as [convenções de migrations](AGENTS.md#conventions).
+**Migration nova.** Em `apps/backend`, use `uv run alembic heads` para descobrir a última revisão e escolha o próximo número. Um exemplo depois da `0019` é `uv run alembic revision --autogenerate --rev-id 0020 -m "cria a tabela orientacao"`. `uv run alembic check` compara os modelos com o banco local com as migrations aplicadas. [Convenções de migrations](AGENTS.md#conventions)
 
 ### Checagens
 
@@ -392,7 +411,9 @@ pnpm test          # pytest e Vitest
 pnpm build         # build do site, que confere o conteúdo das trilhas
 ```
 
-`pnpm check` corrige a formatação do TypeScript. No Python, rode `uv run ruff format` e `uv run ruff check --fix` em `apps/backend`.
+`pnpm check` aplica as correções automáticas do Biome. No Python, rode `uv run ruff format` e `uv run ruff check --fix` em `apps/backend`.
+
+Em `apps/backend`, rode `uv run pytest tests/test_diagrama.py` para comparar o diagrama do README com os modelos. Esse teste usa apenas os arquivos do repositório.
 
 Para rodar os testes online, execute `uv run pytest -m online` em `apps/backend`. A suíte padrão e o CI executam apenas os testes offline.
 
@@ -431,8 +452,10 @@ Toda conta nasce com o papel `comum`. Quem opera o banco pode [conceder ou revog
 
 - `GET /parlamentares` lista todos os parlamentares em exercício por nome, com a URL e o crédito da foto oficial. Os filtros opcionais `uf` e `casa` aceitam a sigla da UF em maiúsculas e os valores `camara` ou `senado`, respectivamente.
 - `GET /parlamentares/{id}` usa o id interno e acrescenta os mandatos, a contagem de votos registrados por valor, o nome oficial da sigla do partido e a biografia coletada da Casa. O nome do partido e a biografia podem ser nulos.
-- `GET /parlamentares/{id}/votos` devolve `votos`, `total`, `limite` e `deslocamento`, da votação mais recente para a mais antiga. O limite padrão é 20, com máximo de 100. Cada voto traz as proposições afetadas. O campo `url_oficial` usa o endereço público da fonte, com o endereço da coleta como reserva, e é nulo se a fonte estiver sem endereço.
+- `GET /parlamentares/{id}/patrimonio` devolve a série por eleição, com o total declarado, o resultado eleitoral e o total corrigido quando houver cobertura do IPCA. A resposta informa as fontes do TSE e do índice.
+- `GET /parlamentares/{id}/votos` devolve `votos`, `total`, `limite` e `deslocamento`, da votação mais recente para a mais antiga. O limite padrão é 20, com máximo de 100. Cada voto traz as proposições afetadas. O campo `url_oficial` usa o endereço público da fonte, com o endereço da coleta como reserva, e é nulo se a fonte estiver sem endereço. O parâmetro `tema` filtra os votos antes da paginação.
 - `GET /votacoes/{id}` mostra os votos de uma votação por nome de parlamentar, com a sigla do partido e a UF no dia do voto. O placar geral e o de cada partido contam esses registros nas sete categorias. `url_video` traz o endereço oficial da sessão inteira no YouTube ou nulo. Use o `votacao_id` do histórico ou o `id` de cada votação nos fatos da edição publicada.
+- `GET /temas` lista o catálogo. As votações trazem os temas das proposições afetadas no detalhe, no histórico dos parlamentares e nos fatos das edições publicadas.
 
 O partido no cadastro do parlamentar vem do voto mais recente pela data da votação e pode ser nulo. O histórico e a contagem consideram só os registros de voto da pessoa. Uma votação sem votos individuais gravados devolve as listas de votos e partidos vazias e as sete contagens zeradas. [OpenAPI](apps/backend/openapi.json)
 
@@ -525,14 +548,14 @@ uv run mandatometro coleta tse --diretorio-zips /caminho/dos/zips
 
 O primeiro comando baixa os dois ZIPs oficiais de candidaturas de 2022 e 2026. O segundo lê as cópias da pasta indicada. A carga repete as mesmas chaves e acrescenta uma observação de fonte por arquivo a cada execução completa. O resumo JSON mostra, por Casa e ano, os pares ligados, sem par, em conflito e descartados por incompatibilidade com o mandato. Em 2026, `outro_cargo` conta as candidaturas à outra Casa alcançadas pelo CPF da âncora de 2022 quando a ligação está livre de conflito. Se uma leitura falhar, a execução tenta a outra e retorna 1 sem gravar candidaturas ou fontes. Consulte os [campos do TSE](docs/dicionario-de-dados.md#candidaturas-do-tse) e o [disparo manual na hospedagem](docs/hospedagem.md#coletar-o-tse).
 
-**Bens declarados ao TSE.** Aplique a migration `0015` e rode após a carga de candidaturas, usando `DATABASE_URL` para o mesmo banco.
+**Bens declarados ao TSE.** Depois de aplicar as migrations até `head` e carregar as candidaturas, rode em `apps/backend` com o `DATABASE_URL` do mesmo banco.
 
 ```bash
 uv run mandatometro coleta bens-tse
 uv run mandatometro coleta bens-tse --diretorio-zips /caminho/dos/zips
 ```
 
-A carga de bens usa os ZIPs `consulta_cand` e `bem_candidato` das seis eleições gerais de 2006 a 2026. O resumo JSON mostra as contagens por ano e a saída 1 indica falha na carga. A API entrega o patrimônio nominal de cada eleição em `GET /parlamentares/{id}/patrimonio`. A série usa `null` quando o total está indisponível. [Campos e regras dos bens](docs/dicionario-de-dados.md#bens-declarados-ao-tse)
+A carga de bens usa os ZIPs `consulta_cand` e `bem_candidato` das seis eleições gerais de 2006 a 2026. O resumo JSON mostra as contagens por ano e a saída 1 indica falha na carga. A série guarda os totais nominais e os resultados eleitorais disponíveis. [Campos e regras dos bens](docs/dicionario-de-dados.md#bens-declarados-ao-tse)
 
 **Coleta do IPCA.** Em `apps/backend`, aplique as migrations e passe `DATABASE_URL` para o banco de destino.
 
@@ -561,8 +584,11 @@ A agenda de sábado coleta a legislação e os destaques do Diário Oficial e pr
 ## Time
 
 - [Renan Mocelin](https://github.com/HiRenan)
+  <!-- A preencher pelo Renan: LinkedIn de Renan Mocelin e confirmação do GitHub. -->
 - [Pedro Vinicius Meerholz](https://github.com/PedroMeerholz)
+  <!-- A preencher pelo Renan: LinkedIn de Pedro Vinicius Meerholz e confirmação do GitHub. -->
 - [Nathan Arrais](https://github.com/nathan-arrais)
+  <!-- A preencher pelo Renan: LinkedIn de Nathan Arrais e confirmação do GitHub. -->
 
 ## Licença
 

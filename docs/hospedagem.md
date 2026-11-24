@@ -2,6 +2,8 @@
 
 O Renan faz os passos abaixo depois de este PR entrar na `develop`. A API terá um projeto próprio na Vercel; o site continua no projeto atual. Cada ambiente terá seu próprio projeto Neon Free. Nenhuma conta, banco remoto ou publicação é criada pelo código deste PR.
 
+Os passos abaixo registram a configuração inicial. Para cada nova publicação, confira se **Migrar banco** aplicou as migrations até `head` da versão no ambiente. A revisão `0013` citada nos passos de produção registra a referência da época.
+
 | Ambiente | Site | API | Banco e ambiente no GitHub |
 | --- | --- | --- | --- |
 | Desenvolvimento (`develop`) | `https://dev.mandatometro.com.br` | `https://api-dev.mandatometro.com.br` | `desenvolvimento`, só dados de teste e da coleta pública |
