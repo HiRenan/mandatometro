@@ -2719,6 +2719,12 @@ export type ListarVotosParlamentarData = {
          * Tema das proposições afetadas.
          */
         tema?: TemaId | null;
+        /**
+         * Com O Partido
+         *
+         * Filtra os votos que seguiram a maioria do partido (true) ou divergiram dela (false).
+         */
+        com_o_partido?: boolean | null;
     };
     url: '/parlamentares/{id}/votos';
 };
