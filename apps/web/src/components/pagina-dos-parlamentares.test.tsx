@@ -302,47 +302,66 @@ describe("a lista dos parlamentares", () => {
 		expect(ficha(container)).toBe("Escolha um estado.");
 	});
 
-	it("os oito estados estreitos ganham um azulejo com o endereço do estado, fora do leitor de tela e do Tab, que acende com o estado", async () => {
-		const { container } = await abrir("/parlamentares");
+	it("os 27 estados ganham um azulejo na ordem da legenda e das siglas, fora do leitor de tela e do Tab", async () => {
+		const { container, router } = await abrir("/parlamentares");
 		const azulejos = [...container.querySelectorAll(".atalho-do-estado")];
+		const porRegiao = [
+			["fita-verde", "AC0 AM0 AP0 PA0 RO0 RR0 TO0"],
+			["fita-amarela", "AL0 BA1 CE0 MA0 PB0 PE0 PI0 RN0 SE0"],
+			["fita-azul", "ES0 MG0 RJ0 SP0"],
+			["fita-rosa", "PR0 RS0 SC3"],
+			["fita-vermelha", "DF0 GO0 MS0 MT0"],
+		];
 
 		expect(
 			container.querySelector(".atalhos-do-mapa")?.getAttribute("aria-hidden"),
 		).toBe("true");
-		expect(azulejos.map((azulejo) => azulejo.textContent)).toEqual([
-			"AL0",
-			"PB0",
-			"PE0",
-			"RN0",
-			"SE0",
-			"ES0",
-			"RJ0",
-			"DF0",
-		]);
-		for (const azulejo of azulejos) {
-			const sigla = azulejo.querySelector(".sigla")?.textContent;
+		const esperados = porRegiao.flatMap(([fita, textos]) =>
+			textos.split(" ").map((texto) => ({ fita, texto })),
+		);
+		expect(azulejos.map((azulejo) => azulejo.textContent)).toEqual(
+			esperados.map(({ texto }) => texto),
+		);
+		for (const [posicao, azulejo] of azulejos.entries()) {
+			const { fita, texto } = esperados[posicao];
+			const sigla = texto.slice(0, 2);
+			expect(azulejo.querySelector(".sigla")?.textContent).toBe(sigla);
+			expect(azulejo.querySelector(".numero")?.textContent).toBe(
+				texto.slice(2),
+			);
+			expect(azulejo.classList.contains(fita), sigla).toBe(true);
 			expect(azulejo.getAttribute("tabindex"), sigla).toBe("-1");
 			expect(azulejo.getAttribute("href"), sigla).toBe(
 				`/parlamentares?uf=${sigla}`,
 			);
 		}
 
-		const df = azulejos[7];
-		fireEvent.pointerEnter(df);
-		expect(ficha(container)).toBe(
-			"Distrito Federal" + "Centro-Oeste" + "0 deputados",
-		);
+		const sc = azulejos[22];
+		const scNoMapa = noMapa(container, "SC");
+		fireEvent.pointerEnter(sc);
+		expect(ficha(container)).toBe("Santa Catarina" + "Sul" + "3 deputados");
 		expect(
-			container
-				.querySelector(".estado-em-destaque")
-				?.classList.contains("fita-vermelha"),
-		).toBe(true);
-		fireEvent.pointerLeave(df);
+			container.querySelector(".estado-em-destaque .estado")?.getAttribute("d"),
+		).toBe(scNoMapa.querySelector("path")?.getAttribute("d"));
+		fireEvent.pointerLeave(sc);
+		expect(ficha(container)).toBe("Escolha um estado.");
 
-		// No mapa, o DF é pequeno: com o foco do teclado nele, o azulejo mostra o anel.
-		focarPeloTeclado(noMapa(container, "DF"));
-		expect(df.classList.contains("aceso")).toBe(true);
-		expect(df.classList.contains("com-foco")).toBe(true);
+		fireEvent.pointerEnter(scNoMapa);
+		expect(sc.classList.contains("aceso")).toBe(true);
+		expect(sc.classList.contains("com-foco")).toBe(false);
+		fireEvent.pointerLeave(scNoMapa);
+		expect(sc.classList.contains("aceso")).toBe(false);
+
+		focarPeloTeclado(scNoMapa);
+		expect(sc.classList.contains("aceso")).toBe(true);
+		expect(sc.classList.contains("com-foco")).toBe(true);
+		fireEvent.blur(scNoMapa);
+		expect(sc.classList.contains("com-foco")).toBe(false);
+
+		fireEvent.click(sc);
+		await screen.findByRole("heading", { level: 1, name: "Santa Catarina" });
+		expect(router.state.location.search).toEqual({ uf: "SC" });
+		expect(sc.getAttribute("aria-current")).toBe("page");
 	});
 
 	it("a legenda diz as cinco regiões em palavras, na ordem do IBGE e com a fita de cada uma, fora do leitor de tela", async () => {

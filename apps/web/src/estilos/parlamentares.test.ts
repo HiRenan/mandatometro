@@ -47,8 +47,10 @@ function bloco(texto: string, cabeca: string): string {
 
 describe("os alvos de toque", () => {
 	it("cada azulejo de estado, link da lista, de nome e de grupo tem pelo menos 44 px de altura", () => {
+		expect(regra(css, ".atalho-do-estado")).toContain(
+			"min-height: max(44px, 2.75rem);",
+		);
 		for (const seletor of [
-			".atalho-do-estado",
 			".estado-na-lista",
 			".nome-na-lista",
 			".nomes-do-grupo a",
@@ -185,19 +187,13 @@ describe("o mapa dos estados", () => {
 		css.indexOf("/* ───── A lista: os nomes de cada Casa"),
 	);
 
-	it("oito azulejos de 44 px e sete vãos de 4 px pedem 23,75 rem: numa fileira só a partir daí, senão em duas de quatro", () => {
+	it("a grade usa as colunas que cabem e chega a nove com 428 px de largura e letra a 100%", () => {
 		const azulejos = regra(mapa, ".atalhos-do-mapa");
-		expect(azulejos).toContain(
-			"grid-template-columns: repeat(4, minmax(0, 1fr));",
+		expect(azulejos).toMatch(
+			/grid-template-columns: repeat\(\s*auto-fit, minmax\(max\(44px, 2\.75rem, \(100% - 32px\) \/ 9\), 1fr\)\s*\);/,
 		);
 		expect(azulejos).toContain("gap: 4px;");
-		expect(8 * 44 + 7 * 4).toBe(23.75 * 16);
-		expect(
-			regra(
-				bloco(mapa, "@container mapa (width >= 23.75rem)"),
-				".atalhos-do-mapa",
-			),
-		).toContain("grid-template-columns: repeat(8, minmax(0, 1fr));");
+		expect(9 * 44 + 8 * 4).toBe(26.75 * 16);
 	});
 
 	it("abaixo de 17,75 rem, a lista toma o lugar do mapa, mas só abaixo do lg: no painel da tela larga, o mapa fica sempre", () => {
@@ -259,6 +255,12 @@ describe("o mapa dos estados", () => {
 		);
 		expect(regra(forcadas, ".estado-em-destaque .fio-claro")).toBe(
 			"stroke: Canvas;",
+		);
+		expect(regra(forcadas, '.atalho-do-estado[aria-current="page"]')).toBe(
+			"background: CanvasText; color: Canvas;",
+		);
+		expect(regra(forcadas, ".atalho-do-estado.com-foco")).toBe(
+			"outline-color: Highlight;",
 		);
 	});
 
