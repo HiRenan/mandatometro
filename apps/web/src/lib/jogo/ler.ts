@@ -70,8 +70,6 @@ const EMOCOES = [
 	"aliviado",
 ] as const;
 
-export type Emocao = (typeof EMOCOES)[number];
-
 const PERSONAGENS = ["lia", "arnaldo", "caio"] as const;
 
 // A narração não tem retrato nem placa de nome.
@@ -425,15 +423,9 @@ const jogoSchema = z.strictObject({
 	pendencias,
 });
 
-export type Fala = z.output<typeof falaSchema>;
+type DecisaoDeRegra = z.output<typeof decisaoDeRegraSchema>;
 
-export type OpcaoDeRegra = z.output<typeof opcaoDeRegraSchema>;
-
-export type OpcaoDeOpiniao = z.output<typeof opcaoDeOpiniaoSchema>;
-
-export type DecisaoDeRegra = z.output<typeof decisaoDeRegraSchema>;
-
-export type DecisaoDeOpiniao = z.output<typeof decisaoDeOpiniaoSchema>;
+type DecisaoDeOpiniao = z.output<typeof decisaoDeOpiniaoSchema>;
 
 export type Decisao = DecisaoDeRegra | DecisaoDeOpiniao;
 
@@ -444,8 +436,6 @@ export type Relogio = z.output<typeof relogioSchema>;
 export type Carimbo = z.output<typeof carimboSchema>;
 
 export type Passo = z.output<typeof passoSchema>;
-
-export type Revelacao = z.output<typeof revelacaoSchema>;
 
 export type Cena = z.output<typeof cenaSchema> & { slug: string };
 

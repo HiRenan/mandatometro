@@ -30,7 +30,7 @@ export const CONTAGEM_ZERADA: ContagemVotosParlamentar = {
 	outro: 0,
 };
 
-export function parlamentarDeExemplo(
+function parlamentarDeExemplo(
 	mudancas: Partial<ParlamentarPublico> = {},
 ): ParlamentarPublico {
 	const casa = mudancas.casa ?? "camara";

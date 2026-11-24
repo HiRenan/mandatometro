@@ -262,7 +262,7 @@ Papel, tinta e as cinco fitas do Bonfim. O texto é sempre tinta no papel, ou pa
 - **Tinta** (`tinta`): todo o texto, os fios, o contorno dos números, o visto, o bloco do cabeçalho, o botão e as etiquetas de estado. É também a `--primary`, a `--border` e a `--input` do shadcn, e a `theme-color` do navegador no celular.
 
 ### Secondary
-- **As fitas do Bonfim**, na ordem fixa: **Verde** (`fita-verde`), **Amarela** (`fita-amarela`), **Azul** (`fita-azul`), **Rosa** (`fita-rosa`) e **Vermelha** (`fita-vermelha`). Aparecem nos azulejos, nos números (com contorno de tinta), na tira (`--tira`, as cinco em faixas iguais), no fio ao lado de cada desvio e no marcador das listas do texto. Também ocupam `--chart-1` a `--chart-5`, na mesma ordem.
+- **As fitas do Bonfim**, na ordem fixa: **Verde** (`fita-verde`), **Amarela** (`fita-amarela`), **Azul** (`fita-azul`), **Rosa** (`fita-rosa`) e **Vermelha** (`fita-vermelha`). Aparecem nos azulejos, nos números (com contorno de tinta), na tira (`--tira`, as cinco em faixas iguais), no fio ao lado de cada desvio e no marcador das listas do texto.
 - A **Azul** ficou mais clara que a da folhinha (`#0a78c8`, era `#0067b1`), para aparecer nos azulejos ao lado da tinta.
 - A **Amarela** é a seleção de texto (com tinta por cima) e o anel de foco dentro do cabeçalho. A **Vermelha** é a `--destructive`.
 

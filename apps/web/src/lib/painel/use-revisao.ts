@@ -38,7 +38,7 @@ import {
 // (credentials: "include"), e nenhum fica no cache do navegador (pedido.ts).
 
 /** Onde o foco vai depois de uma resposta: o id de um elemento da página. */
-export type Foco = { alvo: string; vez: number };
+type Foco = { alvo: string; vez: number };
 
 /**
  * Uma falta ou uma recusa, no lugar dela. Com o campo, a frase fica embaixo

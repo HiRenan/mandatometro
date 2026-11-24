@@ -36,7 +36,7 @@ type Sincronia = {
  * "falhou" quando só há uma tentativa que falhou neste documento e
  * "esperando" enquanto aguarda a primeira resposta.
  */
-export type CopiaDaConta = "lida" | "esperando" | "falhou";
+type CopiaDaConta = "lida" | "esperando" | "falhou";
 
 // Quando o navegador não deixa gravar no localStorage, o que a página gravou
 // vale até a pessoa sair dela.

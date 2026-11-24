@@ -24,27 +24,27 @@ function Carimbado({ texto, cor }: { texto: string; cor: string }) {
 	);
 }
 
-export function PedidoDeVista() {
+function PedidoDeVista() {
 	return <Carimbado texto="Pedido de vista!" cor="amarela" />;
 }
 
-export function RecursoAoPlenario() {
+function RecursoAoPlenario() {
 	return <Carimbado texto="Recurso ao Plenário?" cor="amarela" />;
 }
 
-export function SegueParaOSenado() {
+function SegueParaOSenado() {
 	return <Carimbado texto="Segue para o Senado" cor="neutra" />;
 }
 
-export function Urgencia() {
+function Urgencia() {
 	return <Carimbado texto="Urgência!" cor="vermelha" />;
 }
 
-export function Aprovado() {
+function Aprovado() {
 	return <Carimbado texto="Aprovado" cor="verde" />;
 }
 
-export function Sancionado() {
+function Sancionado() {
 	return <Carimbado texto="Sancionado" cor="verde" />;
 }
 

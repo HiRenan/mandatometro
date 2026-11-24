@@ -98,7 +98,7 @@ const ContextoDaBusca = createContext<ControleDaBusca>({
 });
 
 /** A entrada do cabeçalho abre a caixa por aqui. */
-export function useBusca(): ControleDaBusca {
+function useBusca(): ControleDaBusca {
 	return useContext(ContextoDaBusca);
 }
 

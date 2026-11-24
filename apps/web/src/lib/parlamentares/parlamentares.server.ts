@@ -37,7 +37,7 @@ import { VALORES } from "./votos";
 export const ERRO_DOS_PARLAMENTARES = "Os parlamentares não carregaram.";
 
 /** Quantos votos cabem numa página da pessoa. */
-export const VOTOS_POR_PAGINA = 20;
+const VOTOS_POR_PAGINA = 20;
 
 /** Quantos deputados e senadores um estado tem em exercício nos dados. */
 export type ContagemDoEstado = {

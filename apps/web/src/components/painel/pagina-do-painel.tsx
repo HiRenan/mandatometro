@@ -29,7 +29,7 @@ import { FolhaPorCima } from "./folha-por-cima";
 import { IndiceDaRevisao, type LinhaDoIndice } from "./indice-da-revisao";
 import { VerificandoSessao } from "./verificando-sessao";
 
-export const TEXTO_DE_PUBLICAR =
+const TEXTO_DE_PUBLICAR =
 	"A edição fica pública no site na hora e não volta a ser rascunho. Os inscritos a recebem por e-mail no envio de domingo, às 10h37. Publicada depois desse horário, ela só vai por e-mail num envio feito à mão.";
 
 /**

@@ -14,7 +14,7 @@ import { paragrafos } from "@/lib/edicoes/conteudo-da-edicao";
 // rede e sem estado: o hook da página (use-revisao.ts) guarda o rascunho na
 // memória, e nada dele vai para o console, a URL ou o armazenamento.
 
-export type Pendencia = "redacao" | "revisao" | "cobertura" | "artigo";
+type Pendencia = "redacao" | "revisao" | "cobertura" | "artigo";
 
 const PENDENCIAS: readonly Pendencia[] = [
 	"redacao",
@@ -38,17 +38,17 @@ export type CamposDoItem = {
 	privacidade: boolean;
 };
 
-export type CamposDaEdicao = { titulo: string; cobertura: boolean };
+type CamposDaEdicao = { titulo: string; cobertura: boolean };
 
 export type Campos = { edicao: CamposDaEdicao; itens: CamposDoItem[] };
 
-export type ProposicaoDoItem = { sigla: string; ementa: string };
+type ProposicaoDoItem = { sigla: string; ementa: string };
 
 /** Uma votação do item: o que o quadro mostra e a descrição oficial. */
-export type VotacaoDoItem = Pick<
-	VotacaoPublica,
-	"data" | "resultado" | "placar"
-> & { casa: string; descricao: string };
+type VotacaoDoItem = Pick<VotacaoPublica, "data" | "resultado" | "placar"> & {
+	casa: string;
+	descricao: string;
+};
 
 /** O que a tela mostra de um item para conferência, lido dos campos de consulta. */
 export type LeituraDoItem = {
@@ -75,7 +75,7 @@ export type LeituraDoItem = {
  * privacidade do ato. …"). A ficha do ato retido já pede a mesma conferência,
  * com as palavras da tela, e o aviso repetido sai dela.
  */
-export function avisoDeRetencao(aviso: string): boolean {
+function avisoDeRetencao(aviso: string): boolean {
 	return /\bConfira a privacidade do ato\b/.test(aviso);
 }
 
@@ -136,7 +136,7 @@ function ehAto(item: ItemRevisao): boolean {
  * a API grava a revisão e recria os itens com ids novos, e liga um item de uma
  * versão do rascunho ao mesmo item na versão seguinte.
  */
-export function chaveDoItem(item: ItemRevisao): string {
+function chaveDoItem(item: ItemRevisao): string {
 	if (ehAto(item)) {
 		const ato = contagem(item.fatos.ato_id);
 		return ato === undefined ? `item:${item.id}` : `ato:${ato}`;
@@ -267,7 +267,7 @@ function mesmosCampos(a: CamposDoItem, b: CamposDoItem): boolean {
 }
 
 /** O item que a pessoa mudou desde que o arquivo chegou. */
-export function itemAlterado(item: ItemRevisao, campos: CamposDoItem): boolean {
+function itemAlterado(item: ItemRevisao, campos: CamposDoItem): boolean {
 	return !mesmosCampos(camposDoItem(item), campos);
 }
 
@@ -536,7 +536,7 @@ export function juntarAoRascunhoAtual(
 }
 
 /** O que falta para publicar, pelo que está gravado no rascunho. */
-export type Pendente = {
+type Pendente = {
 	redacao: number;
 	revisao: number;
 	artigo: number;

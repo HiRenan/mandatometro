@@ -237,8 +237,6 @@ export type Passo = z.output<typeof passoSchema>;
 
 export type Infografico = z.output<typeof infograficoSchema>;
 
-export type Opcao = z.output<typeof opcaoSchema>;
-
 export type Pergunta = z.output<typeof perguntaSchema>;
 
 export type Quiz = z.output<typeof quizSchema>;
