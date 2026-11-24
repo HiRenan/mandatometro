@@ -45,10 +45,10 @@ export type Campos = { edicao: CamposDaEdicao; itens: CamposDoItem[] };
 type ProposicaoDoItem = { sigla: string; ementa: string };
 
 /** Uma votação do item: o que o quadro mostra e a descrição oficial. */
-type VotacaoDoItem = Pick<
-	VotacaoPublica,
-	"data" | "resultado" | "placar"
-> & { casa: string; descricao: string };
+type VotacaoDoItem = Pick<VotacaoPublica, "data" | "resultado" | "placar"> & {
+	casa: string;
+	descricao: string;
+};
 
 /** O que a tela mostra de um item para conferência, lido dos campos de consulta. */
 export type LeituraDoItem = {
