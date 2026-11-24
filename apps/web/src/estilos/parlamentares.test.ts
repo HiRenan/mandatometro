@@ -509,6 +509,94 @@ describe("a página do parlamentar", () => {
 		expect(forcadas).toContain("background: CanvasText;");
 	});
 
+	it("com o partido: a barra é de tinta sobre o trilho em Papel 2, com 4 px no mínimo; nas cores forçadas, a barra fica na cor do texto e o trilho ganha o fio", () => {
+		expect(regra(pagina, ".trilho-do-partido")).toContain(
+			"background: var(--papel-2);",
+		);
+		const barra = regra(pagina, ".barra-do-partido");
+		expect(barra).toContain("width: max(4px, calc(var(--parte) * 100%));");
+		expect(barra).toContain("background: var(--tinta);");
+		const forcadas = bloco(
+			pagina.slice(pagina.indexOf(".barra-do-partido {")),
+			"@media (forced-colors: active)",
+		);
+		expect(regra(forcadas, ".trilho-do-partido")).toBe(
+			"border: 1px solid CanvasText;",
+		);
+		const barraForcada = regra(forcadas, ".barra-do-partido");
+		expect(barraForcada).toContain("forced-color-adjust: none;");
+		expect(barraForcada).toContain("background: CanvasText;");
+	});
+
+	it("com o partido: o voto da pessoa num carimbo cheio e o da maioria num vazado, sem cor, e os dois continuam diferentes nas cores forçadas", () => {
+		// A primeira regra do carimbo vazado é a que ele divide com o cheio.
+		expect(regra(pagina, ".carimbo-da-maioria")).toContain(
+			"border: 2px solid var(--tinta);",
+		);
+		const cheio = regra(pagina, ".carimbo-da-pessoa");
+		expect(cheio).toContain("background: var(--tinta);");
+		expect(cheio).toContain("color: var(--papel);");
+		expect(pagina).not.toMatch(/\.carimbo-da-maioria \{[^}]*background/);
+		const forcado = regra(
+			bloco(
+				pagina.slice(pagina.indexOf(".carimbo-da-pessoa {")),
+				"@media (forced-colors: active)",
+			),
+			".carimbo-da-pessoa",
+		);
+		expect(forcado).toContain("forced-color-adjust: none;");
+		expect(forcado).toContain("background: CanvasText;");
+		expect(forcado).toContain("color: Canvas;");
+	});
+
+	it("a marca do voto contra a maioria leva o fio de tinta de 5 px dos avisos, numa linha só dela, e o voto sem a marca fica sem a linha vazia", () => {
+		const marca = regra(pagina, ".contra-o-partido");
+		expect(marca).toContain("grid-area: marca;");
+		expect(marca).toContain("border-left: 5px solid var(--tinta);");
+		const areas = (texto: string, seletor: string) =>
+			/grid-template-areas:([^;]*);/.exec(regra(texto, seletor))?.[1].trim();
+		expect(areas(pagina, ".voto-da-pessoa")).not.toContain("marca");
+		expect(areas(pagina, ".voto-com-marca")).toBe(
+			'"carimbo" "titulo" "fatos" "marca" "texto" "links" "coletado"',
+		);
+		const larga = pagina.slice(
+			pagina.indexOf("@media (width >= 40rem) {\n\t\t.voto-da-pessoa"),
+		);
+		expect(
+			areas(bloco(larga, "@media (width >= 40rem)"), ".voto-com-marca"),
+		).toBe(
+			'"carimbo titulo" "carimbo fatos" "carimbo marca" "carimbo texto" "carimbo links" "carimbo coletado"',
+		);
+		const duasColunas = bloco(
+			css.slice(css.indexOf("/* ───── A página do parlamentar: a tela larga")),
+			"@media (width >= 100rem)",
+		);
+		expect(areas(duasColunas, ".corpo-do-parlamentar .voto-com-marca")).toBe(
+			'"carimbo" "titulo" "fatos" "marca" "texto" "links" "coletado"',
+		);
+		// A regra da marca vem depois da de cada voto: com o mesmo peso, a última vale.
+		expect(
+			duasColunas.indexOf(".corpo-do-parlamentar .voto-com-marca"),
+		).toBeGreaterThan(
+			duasColunas.indexOf(".corpo-do-parlamentar .voto-da-pessoa"),
+		);
+	});
+
+	it("com o partido: a peça de Como votou e Com o partido, a lista curta e cada voto dela ficam numa coluna que encolhe sem passar da página", () => {
+		for (const seletor of [
+			".resumo-dos-votos",
+			".lista-dos-votos-contra",
+			".voto-contra-a-maioria",
+		]) {
+			expect(regra(pagina, seletor), seletor).toContain(
+				"grid-template-columns: minmax(0, 1fr);",
+			);
+		}
+		expect(regra(pagina, ".carimbos-do-voto-contra")).toContain(
+			"flex-wrap: wrap;",
+		);
+	});
+
 	it("a ementa na página do parlamentar tem teto de 39rem e a regra comum mantém 42rem", () => {
 		expect(regra(pagina, ".corpo-do-parlamentar .texto-do-voto")).toBe(
 			"max-width: 39rem;",
@@ -516,7 +604,7 @@ describe("a página do parlamentar", () => {
 		expect(regra(pagina, ".texto-do-voto")).toContain("max-width: 42rem;");
 	});
 
-	it("a barra de como votou se risca ao entrar na tela, como a do patrimônio, e para com o movimento reduzido", () => {
+	it("as barras de como votou e de com o partido se riscam ao entrar na tela, como a do patrimônio, e param com o movimento reduzido", () => {
 		const movimento = readFileSync(
 			new URL("./movimento.css", import.meta.url),
 			"utf8",
@@ -527,6 +615,7 @@ describe("a página do parlamentar", () => {
 		expect(risca?.split(",").map((seletor) => seletor.trim())).toEqual([
 			".barra-do-patrimonio",
 			".barra-do-tipo",
+			".barra-do-partido",
 		]);
 		expect(
 			bloco(movimento, "@media (prefers-reduced-motion: reduce)"),

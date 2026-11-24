@@ -22,7 +22,11 @@ import type {
 	PatrimonioParlamentar,
 	VotoParlamentar,
 } from "@/client";
-import type { PaginaDoParlamentar, Patrimonio } from "@/lib/parlamentares";
+import type {
+	PaginaDoParlamentar,
+	Patrimonio,
+	VotosContraOPartido,
+} from "@/lib/parlamentares";
 import {
 	biografiaDeExemplo,
 	CONTAGEM_ZERADA,
@@ -31,6 +35,7 @@ import {
 	eleicaoDeExemplo,
 	patrimonioDeExemplo,
 	votoDoParlamentarDeExemplo,
+	votosContraDeExemplo,
 	votosDeExemplo,
 } from "@/lib/parlamentares/exemplos-de-teste";
 import { Route } from "@/routes/parlamentares/$id";
@@ -52,7 +57,8 @@ afterEach(() => {
 /**
  * A página de uma pessoa num site de mentira, já no endereço certo. A rota entra
  * na árvore como no routeTree.gen.ts, e os dados vêm prontos, sem a função do
- * servidor nem o redirecionamento. A foto vai à parte, como o servidor manda.
+ * servidor nem o redirecionamento. A foto vai à parte, como o servidor manda, e
+ * a comparação com o partido que falta vale nula, como o servidor confere.
  */
 async function abrir(
 	{ foto: fotoDaApi, ...parlamentar }: DetalheParlamentar,
@@ -61,6 +67,10 @@ async function abrir(
 	total = votos.length,
 	patrimonio: Patrimonio = patrimonioNaPagina(),
 	foto: FotoParlamentar | null = fotoDaApi,
+	votosContra: VotosContraOPartido = {
+		tipo: "votos",
+		votos: votosContraDeExemplo().votos,
+	},
 ) {
 	const raiz = createRootRoute({ component: () => <Outlet /> });
 	const pagina = Route.update({
@@ -69,13 +79,17 @@ async function abrir(
 		getParentRoute: () => raiz,
 		loader: (): PaginaDoParlamentar => ({
 			tipo: "parlamentar",
-			parlamentar,
+			parlamentar: {
+				...parlamentar,
+				com_o_partido: parlamentar.com_o_partido ?? null,
+			},
 			foto,
 			votos,
 			total,
 			pagina: paginaAtual,
 			paginas: Math.max(1, Math.ceil(total / 20)),
 			patrimonio,
+			votosContra,
 		}),
 	} as never);
 	const router = createRouter({
@@ -909,6 +923,7 @@ describe("o patrimônio declarado ao TSE", () => {
 			"Ficha",
 			"Patrimônio declarado ao TSE",
 			"Como votou",
+			"Com o partido",
 			"Votos",
 		]);
 
@@ -1573,6 +1588,428 @@ describe("o patrimônio declarado ao TSE", () => {
 	});
 });
 
+describe("com o partido", () => {
+	const secao = () => screen.getByRole("region", { name: "Com o partido" });
+
+	/** A frase do alto da seção, logo depois do título. */
+	const frase = () => secao().querySelector(".frase-do-partido");
+
+	/** Os votos da lista curta, como a tela e o leitor de tela mostram. */
+	function votosContra() {
+		return within(secao())
+			.getAllByRole("listitem")
+			.map((item) => {
+				const link = within(item).getByRole("link");
+				return {
+					titulo: item.querySelector(".titulo-do-voto-contra")?.textContent,
+					dia: item.querySelector(".dia-do-voto-contra")?.textContent,
+					carimbos: within(item)
+						.getAllByRole("term")
+						.map(
+							(rotulo) =>
+								`${rotulo.textContent}: ${rotulo.nextElementSibling?.textContent}`,
+						),
+					link: [link.textContent, link.getAttribute("href")],
+				};
+			});
+	}
+
+	/** A marca de cada voto da lista de votos, ou nada, sem a marca. */
+	const marcas = () =>
+		Array.from(
+			document.querySelectorAll(".votos-do-parlamentar > .voto-da-pessoa"),
+			(voto) => voto.querySelector(".contra-o-partido")?.textContent ?? null,
+		);
+
+	const contra = (
+		votacao: number,
+		mudancas: Partial<VotoParlamentar> = {},
+	): VotoParlamentar =>
+		votoDoParlamentarDeExemplo(votacao, {
+			valor: "nao",
+			partido: "PFB",
+			maioria_do_partido: "sim",
+			com_o_partido: false,
+			...mudancas,
+		});
+
+	it("vem depois de Como votou e antes dos votos, com o título e os subtítulos em ordem", async () => {
+		await abrir(detalheDeExemplo());
+
+		expect(
+			screen
+				.getAllByRole("heading", { level: 2 })
+				.map((titulo) => titulo.textContent)
+				.slice(-3),
+		).toEqual(["Como votou", "Com o partido", "Votos"]);
+		expect(
+			within(secao())
+				.getAllByRole("heading")
+				.map((titulo) => `${titulo.tagName} ${titulo.textContent}`),
+		).toEqual([
+			"H2 Com o partido",
+			"H3 Como contamos",
+			"H3 Votos contra a maioria do partido",
+		]);
+		expect(
+			within(secao()).getByRole("heading", { level: 2 }).className,
+		).toContain("letra-com-teto [--palavra:3.61]");
+	});
+
+	it("a frase diz em quantas votações a pessoa votou com a maioria do partido e contra ela, sem a sigla; a barra e a legenda ficam fora do leitor de tela", async () => {
+		await abrir(detalheDeExemplo());
+
+		expect(frase()?.tagName).toBe("P");
+		expect(frase()?.textContent).toBe(
+			"Votou com a maioria do partido em 14 de 16 votações, e contra ela em 2.",
+		);
+		const regua = secao().querySelector(".regua-do-partido");
+		expect(regua?.getAttribute("aria-hidden")).toBe("true");
+		expect(regua?.previousElementSibling).toBe(frase());
+		expect(regua?.textContent).toBe(
+			"A barra mostra a parte com a maioria no total de 16 votações comparadas",
+		);
+		expect(
+			regua
+				?.querySelector<HTMLElement>(".trilho-do-partido > .barra-do-partido")
+				?.style.getPropertyValue("--parte"),
+		).toBe("0.875");
+	});
+
+	it("sem voto com a maioria, o trilho fica sem a barra de tinta", async () => {
+		await abrir(
+			detalheDeExemplo({
+				com_o_partido: { comparaveis: 3, com_o_partido: 0, contra: 3 },
+			}),
+		);
+
+		expect(frase()?.textContent).toBe(
+			"Votou com a maioria do partido em 0 de 3 votações, e contra ela em 3.",
+		);
+		expect(secao().querySelector(".trilho-do-partido")).not.toBeNull();
+		expect(secao().querySelector(".barra-do-partido")).toBeNull();
+	});
+
+	it("como contamos: a maioria é a dos outros membros do partido daquele dia, com os votos que entram na conta e o que fica de fora", async () => {
+		await abrir(detalheDeExemplo());
+
+		const explicacao = within(secao()).getByRole("heading", {
+			level: 3,
+			name: "Como contamos",
+		}).parentElement;
+		expect(
+			Array.from(
+				explicacao?.querySelectorAll("p") ?? [],
+				(paragrafo) => paragrafo.textContent,
+			),
+		).toEqual([
+			"Em cada votação, a maioria do partido é o voto mais comum entre os outros membros do partido em que a pessoa estava naquele dia. Só entram na conta Sim, Não, Abstenção e Obstrução.",
+			"Fica de fora a votação em que a pessoa não votou, presidia a sessão ou teve outro registro. Também fica de fora a votação sem o partido no voto dela, com menos de dois colegas do partido na conta ou com empate entre os votos mais comuns.",
+			"Na lista de votos, cada voto contra a maioria traz a sigla do partido naquele dia e o voto da maioria.",
+		]);
+	});
+
+	it("a lista curta: cada voto contra a maioria, com o dia, o voto da pessoa, o da maioria com a sigla daquele dia e o link para a votação filtrada pelo partido", async () => {
+		await abrir(detalheDeExemplo());
+
+		expect(votosContra()).toEqual([
+			{
+				titulo: "PL 730/2026",
+				dia: "18 de novembro de 2026",
+				carimbos: ["Votou: Não", "Maioria do PFT: Sim"],
+				link: [
+					"Ver como o PFT votou na votação de 18 de novembro de 2026: PL 730/2026",
+					"/votacoes/137?partido=PFT",
+				],
+			},
+			{
+				titulo: "PL 731/2026",
+				dia: "15 de novembro de 2026",
+				carimbos: ["Votou: Sim", "Maioria do PFB: Não"],
+				link: [
+					"Ver como o PFB votou na votação de 15 de novembro de 2026: PL 731/2026",
+					"/votacoes/128?partido=PFB",
+				],
+			},
+		]);
+		expect(within(secao()).getByRole("list").tagName).toBe("OL");
+		expect(secao().querySelector(".carimbo-da-pessoa dd")?.textContent).toBe(
+			"Não",
+		);
+		expect(secao().querySelector(".carimbo-da-maioria dd")?.textContent).toBe(
+			"Sim",
+		);
+	});
+
+	it("quem trocou de partido: cada voto traz a sigla daquele dia, e a frase não diz sigla nenhuma", async () => {
+		await abrir(detalheDeExemplo({ partido: "PFT" }), [
+			contra(139, { partido: "PFT" }),
+			contra(112, { partido: "PFB", valor: "sim", maioria_do_partido: "nao" }),
+		]);
+
+		expect(frase()?.textContent).not.toMatch(/PFT|PFB/);
+		expect(votosContra().map(({ carimbos }) => carimbos[1])).toEqual([
+			"Maioria do PFT: Sim",
+			"Maioria do PFB: Não",
+		]);
+		expect(marcas()).toEqual([
+			"Contra a maioria do PFT, que votou Sim",
+			"Contra a maioria do PFB, que votou Não",
+		]);
+	});
+
+	it("com mais votos contra do que a lista mostra, diz que são os mais recentes", async () => {
+		await abrir(
+			detalheDeExemplo({
+				com_o_partido: { comparaveis: 465, com_o_partido: 290, contra: 175 },
+			}),
+			undefined,
+			1,
+			undefined,
+			undefined,
+			undefined,
+			{ tipo: "votos", votos: votosContraDeExemplo(175).votos },
+		);
+
+		expect(votosContra()).toHaveLength(5);
+		const linha = within(secao()).getByText("Os 5 mais recentes de 175");
+		expect(linha.nextElementSibling?.tagName).toBe("OL");
+	});
+
+	it("com todos os votos contra na lista, não há a linha dos mais recentes", async () => {
+		await abrir(detalheDeExemplo());
+
+		expect(votosContra()).toHaveLength(2);
+		expect(within(secao()).queryByText(/mais recentes/)).toBeNull();
+	});
+
+	it.each([
+		["com a lista curta vazia", { tipo: "votos", votos: [] }],
+		["mesmo com a lista curta que falhou", { tipo: "indisponivel" }],
+	] satisfies [string, VotosContraOPartido][])(
+		"sem voto contra, a frase termina nas votações, e a lista não aparece, %s",
+		async (_, votosContra) => {
+			await abrir(
+				detalheDeExemplo({
+					com_o_partido: { comparaveis: 29, com_o_partido: 29, contra: 0 },
+				}),
+				undefined,
+				1,
+				undefined,
+				undefined,
+				undefined,
+				votosContra,
+			);
+
+			expect(frase()?.textContent).toBe(
+				"Votou com a maioria do partido em 29 de 29 votações.",
+			);
+			expect(
+				within(secao()).queryByRole("heading", {
+					name: "Votos contra a maioria do partido",
+				}),
+			).toBeNull();
+			expect(within(secao()).queryByRole("list")).toBeNull();
+			expect(secao().textContent).not.toContain("não carregaram");
+		},
+	);
+
+	it("com votos contra na conta, mas a lista curta vazia, a seção fica sem a lista", async () => {
+		await abrir(
+			detalheDeExemplo(),
+			undefined,
+			1,
+			undefined,
+			undefined,
+			undefined,
+			{ tipo: "votos", votos: [] },
+		);
+
+		expect(frase()?.textContent).toBe(
+			"Votou com a maioria do partido em 14 de 16 votações, e contra ela em 2.",
+		);
+		expect(
+			within(secao()).queryByRole("heading", {
+				name: "Votos contra a maioria do partido",
+			}),
+		).toBeNull();
+		expect(within(secao()).queryByRole("list")).toBeNull();
+	});
+
+	it("a lista curta que não carregou: a seção diz em palavras, e o resto continua", async () => {
+		await abrir(
+			detalheDeExemplo(),
+			undefined,
+			1,
+			undefined,
+			undefined,
+			undefined,
+			{ tipo: "indisponivel" },
+		);
+
+		const titulo = within(secao()).getByRole("heading", {
+			level: 3,
+			name: "Votos contra a maioria do partido",
+		});
+		expect(titulo.nextElementSibling?.textContent).toBe(
+			"Os votos contra a maioria não carregaram agora. Recarregue a página para tentar de novo.",
+		);
+		expect(within(secao()).queryByRole("list")).toBeNull();
+		expect(frase()?.textContent).toMatch(/^Votou com a maioria/);
+		expect(
+			screen.getByRole("heading", { level: 2, name: "Votos" }),
+		).toBeTruthy();
+	});
+
+	it.each([
+		[
+			"só com registros que não entram na conta",
+			{ ...CONTAGEM_ZERADA, presidente: 10, nao_votou: 20 },
+			"Nenhum dos 30 votos registrados de Ágata Cedrolume é Sim, Não, Abstenção ou Obstrução, e só esses entram na conta.",
+		],
+		[
+			"com votos que nenhuma maioria pôde comparar",
+			{ ...CONTAGEM_ZERADA, sim: 3, nao_votou: 2 },
+			"Nenhum voto de Ágata Cedrolume pôde ser comparado com o do partido.",
+		],
+	])(
+		"sem voto comparado, %s: a frase diz por quê, sem números nem barra, e a explicação fica",
+		async (_, contagem, motivo) => {
+			await abrir(
+				detalheDeExemplo({
+					contagem_votos: contagem,
+					com_o_partido: { comparaveis: 0, com_o_partido: 0, contra: 0 },
+				}),
+				undefined,
+				1,
+				undefined,
+				undefined,
+				undefined,
+				{ tipo: "votos", votos: [] },
+			);
+
+			expect(frase()?.textContent).toBe(motivo);
+			expect(secao().querySelector(".regua-do-partido")).toBeNull();
+			expect(
+				within(secao()).getByRole("heading", { name: "Como contamos" }),
+			).toBeTruthy();
+			expect(within(secao()).queryByRole("list")).toBeNull();
+		},
+	);
+
+	it("sem voto registrado, a seção não aparece, e a folha dos votos fica sozinha", async () => {
+		await abrir(detalheDeExemplo(), []);
+
+		expect(screen.queryByRole("region", { name: "Com o partido" })).toBeNull();
+		expect(
+			screen.getByRole("heading", {
+				level: 2,
+				name: "Nenhum voto registrado ainda",
+			}),
+		).toBeTruthy();
+	});
+
+	it("sem a comparação, como na API de antes da #328, a seção e as marcas não aparecem", async () => {
+		const { com_o_partido: _comparacao, ...antigo } = detalheDeExemplo();
+		const {
+			partido: _partido,
+			maioria_do_partido: _maioria,
+			com_o_partido: _seguiu,
+			...votoAntigo
+		} = votoDoParlamentarDeExemplo(139);
+		await abrir(antigo, [votoAntigo], 1, undefined, undefined, undefined, {
+			tipo: "votos",
+			votos: [],
+		});
+
+		expect(screen.queryByRole("region", { name: "Com o partido" })).toBeNull();
+		expect(marcas()).toEqual([null]);
+		expect(
+			screen.getByRole("heading", { level: 2, name: "Votos" }),
+		).toBeTruthy();
+	});
+
+	it("a marca na lista de votos: só no voto contra a maioria, depois do voto da pessoa, com o mesmo texto na tela e no leitor de tela", async () => {
+		await abrir(detalheDeExemplo(), [
+			contra(139),
+			votoDoParlamentarDeExemplo(138),
+			votoDoParlamentarDeExemplo(137, {
+				valor: "nao_votou",
+				com_o_partido: null,
+			}),
+			contra(136, { maioria_do_partido: null }),
+		]);
+
+		expect(marcas()).toEqual([
+			"Contra a maioria do PFB, que votou Sim",
+			null,
+			null,
+			null,
+		]);
+		const marca = document.querySelector(".contra-o-partido");
+		expect(marca?.tagName).toBe("P");
+		expect(marca?.closest("[aria-hidden]")).toBeNull();
+		expect(marca?.previousElementSibling?.className).toBe("carimbo-do-voto");
+		// Só o voto com a marca ganha a linha dela na grade (estilos/parlamentares.css).
+		expect(
+			Array.from(
+				document.querySelectorAll(".votos-do-parlamentar > li"),
+				(voto) => voto.className,
+			),
+		).toEqual([
+			"voto-da-pessoa voto-com-marca",
+			"voto-da-pessoa",
+			"voto-da-pessoa",
+			"voto-da-pessoa",
+		]);
+	});
+
+	it("a sigla que não cabe no endereço fica no carimbo, e o link leva à votação sem o filtro", async () => {
+		const sigla = "P".repeat(41);
+		await abrir(
+			detalheDeExemplo(),
+			undefined,
+			1,
+			undefined,
+			undefined,
+			undefined,
+			{ tipo: "votos", votos: [contra(137, { partido: sigla })] },
+		);
+
+		expect(votosContra()).toEqual([
+			expect.objectContaining({
+				carimbos: ["Votou: Não", `Maioria do ${sigla}: Sim`],
+				link: [
+					"Ver quem votou na votação de 20 de novembro de 2026: PL 812/2026",
+					"/votacoes/137",
+				],
+			}),
+		]);
+	});
+
+	it("nenhuma palavra julga: a seção e a marca só dizem os fatos", async () => {
+		const JULGAMENTO =
+			/fiel|fidelidade|rebel|trai[çcdur]|dissiden|leal|disciplin|obedi|independente|coerente|surpreend|ousad|corajos/i;
+		const estados = [
+			detalheDeExemplo(),
+			detalheDeExemplo({
+				com_o_partido: { comparaveis: 29, com_o_partido: 29, contra: 0 },
+			}),
+			detalheDeExemplo({
+				contagem_votos: { ...CONTAGEM_ZERADA, nao_votou: 3 },
+				com_o_partido: { comparaveis: 0, com_o_partido: 0, contra: 0 },
+			}),
+		];
+		for (const detalhe of estados) {
+			await abrir(detalhe, [contra(139)]);
+
+			expect(secao().textContent).not.toMatch(JULGAMENTO);
+			expect(marcas().join(" ")).not.toMatch(JULGAMENTO);
+			cleanup();
+		}
+	});
+});
+
 describe("a tela larga", () => {
 	/** As partes de um bloco, pelo que o CSS das duas colunas usa: o id ou a classe. */
 	const partes = (bloco: Element) =>
@@ -1596,6 +2033,33 @@ describe("a tela larga", () => {
 		expect(
 			corpo?.querySelector(".votos-do-parlamentar > .voto-da-pessoa"),
 		).not.toBeNull();
+	});
+
+	it("Como votou e Com o partido ficam numa peça sem papel, a coluna da esquerda, e os votos vêm depois, a da direita", async () => {
+		await abrir(detalheDeExemplo());
+		const corpo = blocoDoPatrimonio().parentElement as Element;
+		const [, resumo, votos] = Array.from(corpo.children);
+
+		expect(corpo.children).toHaveLength(3);
+		expect(resumo.tagName).toBe("DIV");
+		expect(resumo.className).toBe("resumo-dos-votos");
+		expect(resumo.getAttribute("role")).toBeNull();
+		expect(
+			Array.from(resumo.children, (secao) =>
+				secao.getAttribute("aria-labelledby"),
+			),
+		).toEqual(["como-votou", "com-o-partido"]);
+		expect(votos.getAttribute("aria-labelledby")).toBe("votos");
+
+		cleanup();
+		const { com_o_partido: _comparacao, ...antigo } = detalheDeExemplo();
+		await abrir(antigo);
+		expect(
+			Array.from(
+				document.querySelector(".resumo-dos-votos")?.children ?? [],
+				(secao) => secao.getAttribute("aria-labelledby"),
+			),
+		).toEqual(["como-votou"]);
 	});
 
 	it("sem eleição, a frase do patrimônio fica no lugar dos dados; sem voto, a folha dos votos vem logo depois, no corpo", async () => {
