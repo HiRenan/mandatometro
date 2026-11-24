@@ -25,7 +25,7 @@ import {
  */
 
 /** O envio pendente, nesta visita: saindo, ou à espera de sair de novo. */
-export type Transiente =
+type Transiente =
 	| { tipo: "enviando" }
 	| { tipo: "limite"; segundos?: number }
 	| { tipo: "fora-do-ar" }

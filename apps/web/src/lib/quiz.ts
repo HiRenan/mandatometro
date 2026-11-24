@@ -6,7 +6,7 @@ import { plural } from "./formatar";
  */
 
 /** Uma pergunta como a página recebe: as opções na ordem do arquivo e a certa. */
-export type PerguntaDoQuiz = {
+type PerguntaDoQuiz = {
 	enunciado: string;
 	opcoes: readonly string[];
 	/** A posição da opção certa em `opcoes`. */

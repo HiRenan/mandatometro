@@ -39,7 +39,7 @@ import { FaixaDeInformacoes } from "../faixa-de-informacoes";
 import { CabecaDoPainel } from "./cabeca-do-painel";
 import { VerificandoSessao } from "./verificando-sessao";
 
-export type TrilhaDoCatalogo = { slug: string; titulo: string };
+type TrilhaDoCatalogo = { slug: string; titulo: string };
 
 /** O tamanho de uma barra ou coluna: a parte do maior valor, de 0 a 1. */
 const comParte = (parte: number) =>
