@@ -1,4 +1,3 @@
-import { Toaster } from "@mandatometro/ui/components/sonner";
 import { fontes } from "@mandatometro/ui/lib/fontes";
 import type { QueryClient } from "@tanstack/react-query";
 import {
@@ -147,7 +146,6 @@ function Documento({ children }: { children: ReactNode }) {
 				{/* O clique feito durante a troca de página chega à página nova
 				    (components/clique-na-troca.tsx). */}
 				<CliqueNaTroca />
-				<Toaster richColors />
 				<TanStackRouterDevtools position="bottom-left" />
 				<Scripts />
 			</body>

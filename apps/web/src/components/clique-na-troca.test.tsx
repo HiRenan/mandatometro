@@ -19,7 +19,6 @@ afterEach(() => {
 	Reflect.deleteProperty(document, "activeViewTransition");
 	Reflect.deleteProperty(document, "elementFromPoint");
 	vi.restoreAllMocks();
-	vi.unstubAllGlobals();
 });
 
 /**
@@ -83,18 +82,9 @@ async function montarODocumentoDaRaiz() {
 	});
 	const outro = document.implementation.createHTMLDocument();
 	const caixa = outro.body.appendChild(outro.createElement("div"));
-	// O React avisa que o <html> não fica dentro de um <div>. O jsdom não tem o
-	// matchMedia, que o aviso do sonner (o Toaster) pede, nem rola a janela.
+	// O React avisa que o <html> não fica dentro de um <div>. O jsdom não rola a janela.
 	vi.spyOn(console, "error").mockImplementation(() => {});
 	vi.spyOn(window, "scrollTo").mockImplementation(() => {});
-	vi.stubGlobal("matchMedia", (consulta: string) => ({
-		matches: false,
-		media: consulta,
-		addEventListener: () => {},
-		removeEventListener: () => {},
-		addListener: () => {},
-		removeListener: () => {},
-	}));
 	render(<RouterProvider router={router} />, { container: caixa });
 	await waitFor(() =>
 		expect(outro.querySelector("main#conteudo h1")?.textContent).toBe("Início"),
