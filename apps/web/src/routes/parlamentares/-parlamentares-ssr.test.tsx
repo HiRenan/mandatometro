@@ -73,10 +73,12 @@ function api(responder: (pedido: Request) => Response) {
 /**
  * A API de exemplo: a lista, a pessoa, a página de votos pedida, de `votos`
  * votos, e o patrimônio declarado, que `patrimonio` pode trocar por uma falha.
+ * O `detalhe` troca a resposta da pessoa.
  */
 function apiDeExemplo(
 	votos = 25,
 	patrimonio: () => Response = () => json(200, patrimonioDeExemplo()),
+	detalhe: unknown = detalheDeExemplo(),
 ) {
 	return api((pedido) => {
 		const endereco = new URL(pedido.url);
@@ -90,7 +92,7 @@ function apiDeExemplo(
 		if (endereco.pathname.endsWith("/patrimonio")) {
 			return patrimonio();
 		}
-		return json(200, detalheDeExemplo());
+		return json(200, detalhe);
 	});
 }
 
@@ -239,7 +241,54 @@ describe("o HTML das páginas dos parlamentares", () => {
 		expect(html).toContain('href="/votacoes/139"');
 	});
 
-	it("o patrimônio declarado vem no HTML, entre os mandatos e como votou, com cada eleição e o arquivo do TSE", async () => {
+	it("a ficha vem no HTML, no pé do cartaz, com o partido por extenso, a biografia oficial e a fonte de cada dado", async () => {
+		apiDeExemplo();
+
+		const { status, html } = await pedir(CANONICO);
+
+		expect(status).toBe(200);
+		const ficha = html.indexOf('<h2 id="ficha" class="sr-only">Ficha</h2>');
+		const corpo = html.indexOf('class="artigos corpo-dos-parlamentares');
+		expect(ficha).toBeGreaterThan(html.indexOf("</h1>"));
+		expect(corpo).toBeGreaterThan(ficha);
+		const htmlDaFicha = html.slice(ficha, corpo);
+		expect(htmlDaFicha).toContain(
+			'<span class="sigla-do-partido">PFT</span> <span class="nome-do-partido">Partido Fictício do Trabalho</span>',
+		);
+		expect(htmlDaFicha).toContain("Professora e Advogada");
+		expect(htmlDaFicha).toContain(
+			'<a href="https://www.camara.leg.br/deputados/90000123">Câmara dos Deputados</a> <span class="coleta-da-ficha">Coletada em 20 de novembro de 2026.</span>',
+		);
+		expect(htmlDaFicha).toContain("57ª legislatura");
+		expect(htmlDaFicha).toContain('<a href="#votos">Ver os votos</a>');
+		expect(htmlDaFicha).toContain(
+			'href="https://cdn.tse.jus.br/estatistica/sead/odsele/bem_candidato/bem_candidato_2026.zip"',
+		);
+		expect(htmlDaFicha.match(/<li class="eleicao-da-ficha">/g)).toHaveLength(4);
+		expect(htmlDaFicha).toContain(
+			'<a href="#patrimonio">Ver o patrimônio de cada eleição</a>',
+		);
+	});
+
+	it("com a API de antes, sem o nome do partido e a biografia, a ficha abre com a sigla e sem a profissão e a escolaridade", async () => {
+		const {
+			partido_nome: _nome,
+			biografia: _biografia,
+			...semFicha
+		} = detalheDeExemplo();
+		apiDeExemplo(25, undefined, semFicha);
+
+		const { status, html } = await pedir(CANONICO);
+
+		expect(status).toBe(200);
+		expect(html).toContain('<span class="sigla-do-partido">PFT</span>');
+		expect(html).not.toContain("nome-do-partido");
+		expect(html).not.toMatch(/>Profiss(ão|ões)<|>Escolaridade</);
+		expect(html).toContain(">Votos registrados</dt>");
+		expect(console.error).not.toHaveBeenCalled();
+	});
+
+	it("o patrimônio declarado vem no HTML, entre a ficha e como votou, com cada eleição e o arquivo do TSE", async () => {
 		apiDeExemplo();
 
 		const { status, html } = await pedir(CANONICO);
@@ -248,17 +297,39 @@ describe("o HTML das páginas dos parlamentares", () => {
 		expect(html).toMatch(
 			/<h2 id="patrimonio" class="subtitulo-condensado letra-com-teto \[--palavra:5\.26\]"[^>]*>Patrimônio declarado ao TSE<\/h2>/,
 		);
-		const mandatos = html.indexOf(">Mandatos</h2>");
+		const ficha = html.indexOf(">Ficha</h2>");
 		const patrimonio = html.indexOf(">Patrimônio declarado ao TSE</h2>");
 		const comoVotou = html.indexOf(">Como votou</h2>");
-		expect(mandatos).toBeGreaterThan(0);
-		expect(patrimonio).toBeGreaterThan(mandatos);
+		expect(ficha).toBeGreaterThan(0);
+		expect(patrimonio).toBeGreaterThan(ficha);
 		expect(comoVotou).toBeGreaterThan(patrimonio);
 		expect(html.match(/<li class="eleicao-do-patrimonio">/g)).toHaveLength(4);
 		expect(html).toContain("corrigido pela inflação até outubro de 2026.");
 		expect(html).toContain('style="--parte:0.4558"');
 		expect(html).toContain(
 			'href="https://cdn.tse.jus.br/estatistica/sead/odsele/bem_candidato/bem_candidato_2018.zip"',
+		);
+	});
+
+	it("o patrimônio abre no valor declarado no HTML, com a opção marcada e as duas versões de cada eleição com total", async () => {
+		apiDeExemplo();
+
+		const { status, html } = await pedir(CANONICO);
+
+		expect(status).toBe(200);
+		const opcoes = html.match(
+			/<input type="radio" name="valores-do-patrimonio"[^>]*>/g,
+		);
+		expect(opcoes).toEqual([
+			'<input type="radio" name="valores-do-patrimonio" checked="" value="declarado"/>',
+			'<input type="radio" name="valores-do-patrimonio" value="de-hoje"/>',
+		]);
+		expect(html.match(/class="valor-da-eleicao so-declarado"/g)).toHaveLength(
+			3,
+		);
+		expect(html.match(/class="valor-da-eleicao so-de-hoje"/g)).toHaveLength(3);
+		expect(html).toContain(
+			'<div class="valor-da-eleicao so-declarado"><p class="destaque-do-valor">R$ 812 mil</p><p class="rotulo legenda-do-valor">valor declarado</p></div>',
 		);
 	});
 
@@ -457,4 +528,148 @@ describe("o HTML das páginas dos parlamentares", () => {
 		}
 		expect(fetch).not.toHaveBeenCalled();
 	});
+});
+
+describe("o HTML da lista com as fotos e o link do cabeçalho", () => {
+	/** O endereço da foto oficial de mentira de um nome, no site da Casa dele. */
+	function enderecoDaFoto({ id, casa }: { id: number; casa: string }) {
+		const numero = `9${String(id).padStart(7, "0")}`;
+		return casa === "camara"
+			? `https://www.camara.leg.br/internet/deputado/bandep/${numero}.jpg`
+			: `https://legis.senado.leg.br/senadores/fotos-oficiais/${numero}`;
+	}
+
+	/** A API com a lista da #303, com a foto de cada nome, e a pessoa de exemplo. */
+	function apiComFotos() {
+		return api((pedido) => {
+			const endereco = new URL(pedido.url);
+			if (endereco.pathname === "/parlamentares") {
+				return json(200, {
+					parlamentares: listaDeExemplo().parlamentares.map((item) => ({
+						...item,
+						foto: {
+							url: enderecoDaFoto(item),
+							credito:
+								item.casa === "camara"
+									? "Câmara dos Deputados"
+									: "Senado Federal",
+						},
+					})),
+				});
+			}
+			if (endereco.pathname.endsWith("/votos")) {
+				return json(200, votosDeExemplo(3));
+			}
+			if (endereco.pathname.endsWith("/patrimonio")) {
+				return json(200, patrimonioDeExemplo());
+			}
+			return json(200, detalheDeExemplo());
+		});
+	}
+
+	it("cada nome vem com o retrato antes do nome, fora do leitor de tela, com a foto lazy, sem o endereço da página e com o tamanho, e cada Casa com o crédito", async () => {
+		apiComFotos();
+
+		const { status, html } = await pedir("/parlamentares?uf=SC");
+
+		expect(status).toBe(200);
+		const nomes = [
+			...html.matchAll(
+				/<span class="retrato-na-lista" aria-hidden="true">(<img [^>]*>)<\/span><span class="nome">([^<]*)<\/span>/g,
+			),
+		];
+		expect(nomes.map(([, , nome]) => nome)).toEqual([
+			"Ágata Cedrolume",
+			"Íris Dell&#x27;Ombre",
+			"João-Pedro Varustel",
+			"Lia Quinemar",
+			"Otávio Belombre",
+		]);
+		const ids = [
+			[81, "camara"],
+			[82, "camara"],
+			[83, "camara"],
+			[501, "senado"],
+			[502, "senado"],
+		] as const;
+		for (const [posicao, [id, casa]] of ids.entries()) {
+			const foto = nomes[posicao]?.[1] ?? "";
+			const endereco = enderecoDaFoto({ id, casa });
+			expect(foto, String(id)).toContain(`src="${endereco}"`);
+			for (const atributo of [
+				'alt=""',
+				'loading="lazy"',
+				'decoding="async"',
+				'referrerPolicy="no-referrer"',
+				'width="300"',
+				'height="400"',
+			]) {
+				expect(foto, `${id}: ${atributo}`).toContain(atributo);
+			}
+		}
+		// Nenhuma foto é pedida antes da hora: sem o lazy, o React põe o preload
+		// da imagem no <head>.
+		const cabeca = /<head>(.*?)<\/head>/s.exec(html)?.[1] ?? "";
+		expect(cabeca).not.toMatch(/as="image"|camara\.leg\.br|senado\.leg\.br/);
+		expect(html).not.toMatch(/<link [^>]*(?:camara|senado)\.leg\.br/);
+		for (const [casa, credito] of [
+			["Câmara dos Deputados", "Fotos: Câmara dos Deputados"],
+			["Senado Federal", "Fotos: Senado Federal"],
+		]) {
+			expect(html).toMatch(
+				new RegExp(
+					`>${casa}</h2><p class="rotulo credito-das-fotos">${credito}</p><ul role="list" class="nomes-da-casa" data-com-retratos="">`,
+				),
+			);
+		}
+	});
+
+	it("sem as fotos nos dados, como na API de antes da #303, a lista vem como era", async () => {
+		api(() =>
+			json(200, {
+				parlamentares: listaDeExemplo().parlamentares.map(
+					({ foto: _, ...semFoto }) => semFoto,
+				),
+			}),
+		);
+
+		const { html } = await pedir("/parlamentares?uf=SC");
+
+		expect(html).not.toMatch(/retrato-na-lista|credito-das-fotos|com-retratos/);
+		expect(html).toContain(
+			'<span class="nome">Ágata Cedrolume</span> <span class="partido">PFT</span>',
+		);
+	});
+
+	/** As duas cópias do link "Parlamentares" no cabeçalho: a do meio e a de baixo. */
+	function linksDoCabecalho(html: string) {
+		const cabecalho = /<header class="moldura">(.*?)<\/header>/s.exec(html);
+		return [
+			...(cabecalho?.[1] ?? "").matchAll(
+				/<a [^>]*href="\/parlamentares"[^>]*>Parlamentares<\/a>/g,
+			),
+		].map(([link]) => ({
+			traco: link.includes('data-na-secao=""'),
+			atual: link.includes('aria-current="page"'),
+		}));
+	}
+
+	it.each([
+		["na lista sem estado, com a página atual", "/parlamentares", true],
+		["na lista de um estado", "/parlamentares?uf=SC", false],
+		["na página da pessoa", CANONICO, false],
+	])(
+		"o link Parlamentares do cabeçalho fica com o traço %s",
+		async (_, caminho, atual) => {
+			apiComFotos();
+
+			const { status, html } = await pedir(caminho);
+
+			expect(status).toBe(200);
+			expect(linksDoCabecalho(html)).toEqual([
+				{ traco: true, atual },
+				{ traco: true, atual },
+			]);
+		},
+	);
 });

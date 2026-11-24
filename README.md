@@ -134,6 +134,7 @@ erDiagram
         int tentativas
     }
     parlamentar ||--o{ mandato : "tem"
+    parlamentar ||--o| biografia_parlamentar : "tem"
     parlamentar ||--o{ candidatura : "disputou"
     parlamentar ||--o{ candidatura_patrimonio : "disputou"
     candidatura_patrimonio ||--o{ bem_declarado : "soma por tipo"
@@ -146,6 +147,8 @@ erDiagram
     edicao ||--o{ item_edicao : "tem"
     edicao |o--o{ inscrito : "última aceita"
     fonte ||--o{ parlamentar : "comprova"
+    fonte |o--o{ biografia_parlamentar : "comprova profissões e escolaridade"
+    fonte ||--o{ partido : "comprova o nome"
     fonte ||--o{ mandato : "comprova"
     fonte ||--o{ candidatura : "comprova"
     fonte ||--o{ candidatura_patrimonio : "comprova candidatura e bens"
@@ -169,6 +172,18 @@ erDiagram
         int id PK
         string casa UK "camara ou senado"
         int id_externo UK "o id na Casa"
+        string nome
+        int fonte_id FK
+    }
+    biografia_parlamentar {
+        int parlamentar_id PK,FK
+        text[] profissoes
+        string escolaridade
+        int fonte_profissoes_id FK
+        int fonte_escolaridade_id FK
+    }
+    partido {
+        string sigla PK
         string nome
         int fonte_id FK
     }
@@ -414,8 +429,8 @@ Toda conta nasce com o papel `comum`. Quem opera o banco pode [conceder ou revog
 
 ### Consulta de parlamentares
 
-- `GET /parlamentares` lista todos os parlamentares em exercício por nome. Os filtros opcionais `uf` e `casa` aceitam a sigla da UF em maiúsculas e os valores `camara` ou `senado`, respectivamente.
-- `GET /parlamentares/{id}` usa o id interno e acrescenta os mandatos e a contagem de votos registrados por valor.
+- `GET /parlamentares` lista todos os parlamentares em exercício por nome, com a URL e o crédito da foto oficial. Os filtros opcionais `uf` e `casa` aceitam a sigla da UF em maiúsculas e os valores `camara` ou `senado`, respectivamente.
+- `GET /parlamentares/{id}` usa o id interno e acrescenta os mandatos, a contagem de votos registrados por valor, o nome oficial da sigla do partido e a biografia coletada da Casa. O nome do partido e a biografia podem ser nulos.
 - `GET /parlamentares/{id}/votos` devolve `votos`, `total`, `limite` e `deslocamento`, da votação mais recente para a mais antiga. O limite padrão é 20, com máximo de 100. Cada voto traz as proposições afetadas. O campo `url_oficial` usa o endereço público da fonte, com o endereço da coleta como reserva, e é nulo se a fonte estiver sem endereço.
 - `GET /votacoes/{id}` mostra os votos de uma votação por nome de parlamentar, com a sigla do partido e a UF no dia do voto. O placar geral e o de cada partido contam esses registros nas sete categorias. `url_video` traz o endereço oficial da sessão inteira no YouTube ou nulo. Use o `votacao_id` do histórico ou o `id` de cada votação nos fatos da edição publicada.
 
@@ -434,6 +449,8 @@ O resumo final é uma linha JSON com contagens confirmadas, chamadas HTTP (inclu
 - **2:** argumentos inválidos, antes de acessar a rede ou o banco.
 
 As [regras da coleta e da saída dos jobs](docs/dicionario-de-dados.md#regras-que-valem-para-as-duas-apis) valem para os dois conectores.
+
+**Biografias e partidos.** Depois de aplicar a migration `0019` e cadastrar os parlamentares pelas coletas do Congresso, rode `uv run mandatometro coleta biografias` em `apps/backend` com o `DATABASE_URL` do banco de destino. O comando lê a profissão e a escolaridade publicadas pelas Casas e os nomes dos partidos nos catálogos oficiais. A saída 1 indica carga parcial ou interrompida. Uma falha isolada preserva a biografia anterior e a coleta segue com as outras pessoas. [Fontes da biografia](docs/dicionario-de-dados.md#biografia-oficial-e-nome-do-partido) · [Workflow](docs/hospedagem.md#coletar-biografias-parlamentares)
 
 **Coleta da Câmara.**
 

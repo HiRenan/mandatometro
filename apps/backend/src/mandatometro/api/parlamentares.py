@@ -21,12 +21,14 @@ from mandatometro.api.congresso import (
 )
 from mandatometro.api.esquemas import (
     UF,
+    BiografiaParlamentar,
     CargoPatrimonio,
     Casa,
     CorrecaoIpca,
     DetalheParlamentar,
     EleicaoPatrimonio,
     ErroParlamentar,
+    FonteBiografia,
     FontePatrimonio,
     FotoParlamentar,
     ListaParlamentares,
@@ -46,9 +48,11 @@ from mandatometro.db.modelos import (
     IpcaMensal,
     Mandato,
     Parlamentar,
+    Partido,
     Votacao,
     Voto,
 )
+from mandatometro.db.modelos import BiografiaParlamentar as BiografiaGravada
 from mandatometro.temas import TemaId
 from mandatometro.tse_catalogos import CARGOS_TSE, MAXIMO_CENTAVOS
 
@@ -92,9 +96,9 @@ def listar_parlamentares(
         .order_by(Mandato.parlamentar_id, Mandato.legislatura.desc())
         .subquery()
     )
-    consulta = select(Parlamentar.id, Parlamentar.nome, Parlamentar.casa, mandatos.c.uf).join(
-        mandatos, mandatos.c.parlamentar_id == Parlamentar.id
-    )
+    consulta = select(
+        Parlamentar.id, Parlamentar.nome, Parlamentar.casa, Parlamentar.id_externo, mandatos.c.uf
+    ).join(mandatos, mandatos.c.parlamentar_id == Parlamentar.id)
     if uf is not None:
         consulta = consulta.where(mandatos.c.uf == uf)
     if casa is not None:
@@ -106,18 +110,27 @@ def listar_parlamentares(
             select(atuais, partidos.c.partido).outerjoin(
                 partidos, atuais.c.id == partidos.c.parlamentar_id
             )
-        ).mappings()
+        )
         return ListaParlamentares(
             parlamentares=sorted(
-                (ParlamentarPublico.model_validate(linha) for linha in linhas),
+                (
+                    ParlamentarPublico(
+                        id=linha.id,
+                        nome=linha.nome,
+                        casa=linha.casa,
+                        uf=linha.uf,
+                        partido=linha.partido,
+                        foto=_foto_parlamentar(linha.casa, linha.id_externo),
+                    )
+                    for linha in linhas
+                ),
                 key=lambda p: ordem_alfabetica(p.nome, p.id),
             )
         )
 
 
-def _foto_parlamentar(parlamentar: Parlamentar) -> FotoParlamentar:
-    codigo = parlamentar.id_externo
-    if parlamentar.casa == "camara":
+def _foto_parlamentar(casa: str, codigo: int) -> FotoParlamentar:
+    if casa == "camara":
         return FotoParlamentar(
             url=f"https://www.camara.leg.br/internet/deputado/bandep/{codigo}.jpg",
             credito="Câmara dos Deputados",
@@ -125,6 +138,22 @@ def _foto_parlamentar(parlamentar: Parlamentar) -> FotoParlamentar:
     return FotoParlamentar(
         url=f"https://legis.senado.leg.br/senadores/fotos-oficiais/{codigo}",
         credito="Senado Federal",
+    )
+
+
+def _biografia_publica(sessao: Session, parlamentar_id: int) -> BiografiaParlamentar | None:
+    bio = BiografiaGravada
+    registro = sessao.execute(
+        select(bio.profissoes, bio.escolaridade, Fonte.url, Fonte.coletado_em)
+        .join(Fonte, Fonte.id == func.coalesce(bio.fonte_escolaridade_id, bio.fonte_profissoes_id))
+        .where(bio.parlamentar_id == parlamentar_id)
+    ).one_or_none()
+    if registro is None:
+        return None
+    return BiografiaParlamentar(
+        profissoes=registro.profissoes,
+        escolaridade=registro.escolaridade,
+        fonte=FonteBiografia(url=registro.url, coletado_em=registro.coletado_em),
     )
 
 
@@ -151,6 +180,8 @@ def obter_parlamentar(id: IdCongresso):
         recente = sessao.execute(
             _partidos_recentes().where(Voto.parlamentar_id == id)
         ).one_or_none()
+        sigla = recente.partido if recente else None
+        partido = sessao.get(Partido, sigla.strip().upper()) if sigla else None
         contagem = dict(
             sessao.execute(
                 select(Voto.valor, func.count())
@@ -163,8 +194,10 @@ def obter_parlamentar(id: IdCongresso):
             nome=parlamentar.nome,
             casa=parlamentar.casa,
             uf=mandatos[0].uf if mandatos else None,
-            partido=recente.partido if recente else None,
-            foto=_foto_parlamentar(parlamentar),
+            partido=sigla,
+            partido_nome=partido.nome if partido else None,
+            foto=_foto_parlamentar(parlamentar.casa, parlamentar.id_externo),
+            biografia=_biografia_publica(sessao, id),
             mandatos=mandatos,
             contagem_votos=contagem_por_valor(contagem),
         )

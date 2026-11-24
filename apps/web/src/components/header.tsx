@@ -8,16 +8,24 @@ import {
 import { EntradaDaBusca } from "./busca";
 import { NOME_DO_SITE } from "./nome-do-site";
 
+/**
+ * Os links das seções. Cada um fica marcado com o traço nas seções dele: o
+ * Parlamentares, também nas votações, que se abrem pela página de cada pessoa.
+ * Os parlamentares e as edições só aparecem onde o site tem a API.
+ */
 const LINKS = [
-	{ to: "/", label: "Início" },
-	{ to: "/trilhas", label: "Trilhas" },
-	{ to: "/jogos", label: "Jogos" },
+	{ to: "/trilhas", label: "Trilhas", secoes: ["/trilhas"], soComApi: false },
+	{
+		to: "/parlamentares",
+		label: "Parlamentares",
+		secoes: ["/parlamentares", "/votacoes"],
+		soComApi: true,
+	},
+	{ to: "/jogos", label: "Jogos", secoes: ["/jogos"], soComApi: false },
+	{ to: "/edicoes", label: "Edições", secoes: ["/edicoes"], soComApi: true },
 ] as const;
 
-/** As edições da newsletter, que só aparecem onde o site tem a API. */
-const EDICOES = { to: "/edicoes", label: "Edições" } as const;
-
-type Links = ReadonlyArray<(typeof LINKS)[number] | typeof EDICOES>;
+type Links = ReadonlyArray<(typeof LINKS)[number]>;
 
 /** A marca do <html> que troca "Entrar" por "Conta" (index.css). */
 const CONTA_ABERTA = "data-conta-aberta";
@@ -38,9 +46,7 @@ export function MarcaDaConta() {
 }
 
 function estaNaSecao(caminho: string, secao: string): boolean {
-	return secao === "/"
-		? caminho === "/"
-		: caminho === secao || caminho.startsWith(`${secao}/`);
+	return caminho === secao || caminho.startsWith(`${secao}/`);
 }
 
 /**
@@ -54,28 +60,32 @@ function LinksDoTopo({
 	lugar,
 	links,
 	caminho,
-	comEdicoes,
+	comApi,
 }: {
 	lugar: "meio" | "baixo";
 	links: Links;
 	caminho: string;
-	comEdicoes: boolean;
+	comApi: boolean;
 }) {
 	return (
 		<nav
 			aria-label="Principal"
 			className={lugar === "meio" ? "topo-nav-meio" : "topo-nav-baixo"}
 		>
-			<ul className="topo-links" data-com-edicoes={comEdicoes ? "" : undefined}>
-				{links.map(({ to, label }) => (
+			<ul className="topo-links" data-com-api={comApi ? "" : undefined}>
+				{links.map(({ to, label, secoes }) => (
 					<li key={to}>
 						{/* O traço marca a seção inteira (data-na-secao), mas o link só
-						    diz que é a página atual (aria-current) na página dele: por
-						    isso o exact. */}
+						    diz que é a página atual (aria-current) na página dele, sem
+						    filtro no endereço: por isso o exact. */}
 						<Link
 							to={to}
 							activeOptions={{ exact: true }}
-							data-na-secao={estaNaSecao(caminho, to) ? "" : undefined}
+							data-na-secao={
+								secoes.some((secao) => estaNaSecao(caminho, secao))
+									? ""
+									: undefined
+							}
 						>
 							{label}
 						</Link>
@@ -127,13 +137,14 @@ function EntradaDaConta({ caminho }: { caminho: string }) {
  * centro"). A partir de 62rem (992 px com a letra a 100%), há uma linha com o
  * nome à esquerda, os links no centro da grade e a busca e a conta à direita.
  * O centro da grade é o da área da página sem a barra de rolagem vertical.
- * A partir de 82rem (1312 px com a letra a 100%), o lema fica embaixo do nome.
- * Abaixo de 62rem, os links ficam centrados numa linha própria embaixo.
+ * A partir de 84rem (1344 px com a letra a 100%), o lema fica embaixo do nome.
+ * Abaixo de 62rem, os links ficam centrados numa parte própria embaixo.
  * A busca mostra o que cabe no lugar dela (components/busca.tsx).
  *
- * Onde o site tem a API (o API_URL), as edições entram nos links. No celular, o
- * Início sai (o CSS), e o nome leva ao início (o Renan, na #39). Com a letra
- * grande no celular, os links ficam um embaixo do outro.
+ * Onde o site tem a API (o API_URL), os parlamentares e as edições entram nos
+ * links. O Início saiu na #305, em 23/11/2026: o nome leva ao início (o Renan,
+ * na #39). No celular, os quatro links ficam em duas linhas de dois (o Renan, na
+ * #305) e, com a letra grande, um embaixo do outro (o CSS).
  *
  * A palavra da conta vem da marca do <html>. O roteiro do <head> (MarcaDaConta)
  * a põe antes da primeira pintura. Nas páginas que continuam abertas, o
@@ -142,15 +153,18 @@ function EntradaDaConta({ caminho }: { caminho: string }) {
  * com "Entrar" (a #258). Sem JavaScript ou sem a API, fica "Entrar".
  */
 export default function Header({
-	comEdicoes = false,
+	comApi = false,
 }: {
-	/** Se o site tem o endereço da API e, com ele, as páginas das edições. */
-	comEdicoes?: boolean;
+	/**
+	 * Se o site tem o endereço da API e, com ele, as páginas dos parlamentares e
+	 * das edições.
+	 */
+	comApi?: boolean;
 }) {
 	const caminho = useRouterState({
 		select: (estado) => estado.location.pathname,
 	});
-	const links: Links = comEdicoes ? [...LINKS, EDICOES] : LINKS;
+	const links: Links = comApi ? LINKS : LINKS.filter((link) => !link.soComApi);
 	const { sessao } = useContextoDoProgresso();
 	useEffect(() => {
 		// Na hidratação, o hook ainda dá o retrato de visitante: aí a leitura vai
@@ -181,7 +195,7 @@ export default function Header({
 					lugar="meio"
 					links={links}
 					caminho={caminho}
-					comEdicoes={comEdicoes}
+					comApi={comApi}
 				/>
 				<div className="topo-ferramentas">
 					<EntradaDaBusca />
@@ -191,7 +205,7 @@ export default function Header({
 					lugar="baixo"
 					links={links}
 					caminho={caminho}
-					comEdicoes={comEdicoes}
+					comApi={comApi}
 				/>
 			</div>
 			<div aria-hidden="true" className="tira-de-fitas h-[6px]" />

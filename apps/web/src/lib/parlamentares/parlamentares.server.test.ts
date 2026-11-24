@@ -2,6 +2,7 @@ import { isNotFound } from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TEMPO_DE_ESPERA } from "@/lib/edicoes/edicoes.server";
 import {
+	biografiaDeExemplo,
 	correcaoDeExemplo,
 	detalheDeExemplo,
 	eleicaoDeExemplo,
@@ -187,6 +188,118 @@ describe("a lista dos parlamentares", () => {
 		const lista = await lerParlamentares("XX");
 
 		expect(lista.tipo === "lista" && lista.escolhido).toBeNull();
+	});
+});
+
+describe("a foto de cada nome da lista", () => {
+	/** A foto oficial de mentira de um nome, no endereço e com o crédito da Casa dele. */
+	function fotoDe({ id, casa }: { id: number; casa: string }) {
+		const numero = `9${String(id).padStart(7, "0")}`;
+		return casa === "camara"
+			? {
+					url: `https://www.camara.leg.br/internet/deputado/bandep/${numero}.jpg`,
+					credito: "Câmara dos Deputados",
+				}
+			: {
+					url: `https://legis.senado.leg.br/senadores/fotos-oficiais/${numero}`,
+					credito: "Senado Federal",
+				};
+	}
+
+	/**
+	 * A lista de exemplo com a foto de cada nome, uma diferente por id; a de
+	 * `fotos` troca a foto de um id, e `undefined` tira o campo, como na API de
+	 * antes da #303.
+	 */
+	function listaComFotos(fotos: Record<number, unknown> = {}) {
+		return {
+			parlamentares: listaDeExemplo().parlamentares.map(
+				({ foto: _, ...semFoto }) => {
+					const foto =
+						semFoto.id in fotos ? fotos[semFoto.id] : fotoDe(semFoto);
+					return foto === undefined ? semFoto : { ...semFoto, foto };
+				},
+			),
+		};
+	}
+
+	it("cada nome do estado chega com a foto do endereço e com o crédito da Casa dele", async () => {
+		api(() => json(200, listaComFotos()));
+
+		const lista = await lerParlamentares("SC");
+
+		if (lista.tipo !== "lista" || !lista.escolhido)
+			throw new Error("sem o estado");
+		const { camara, senado } = lista.escolhido;
+		expect([...camara, ...senado].map(({ id, foto }) => [id, foto])).toEqual(
+			[81, 82, 83]
+				.map((id) => [id, fotoDe({ id, casa: "camara" })])
+				.concat([501, 502].map((id) => [id, fotoDe({ id, casa: "senado" })])),
+		);
+		expect(camara[0]).toEqual({
+			id: 81,
+			nome: "Ágata Cedrolume",
+			casa: "camara",
+			uf: "SC",
+			partido: "PFT",
+			foto: fotoDe({ id: 81, casa: "camara" }),
+		});
+		expect(erros).not.toHaveBeenCalled();
+	});
+
+	it("a foto fora do formato fica nula, e a lista escreve uma linha fixa só no log, sem o endereço", async () => {
+		const deputada = fotoDe({ id: 81, casa: "camara" });
+		api(() =>
+			json(
+				200,
+				listaComFotos({
+					81: { ...deputada, url: deputada.url.replace("https:", "http:") },
+					82: { ...deputada, credito: "Senado Federal" },
+					83: deputada.url,
+					501: fotoDe({ id: 501, casa: "camara" }),
+				}),
+			),
+		);
+
+		const lista = await lerParlamentares("SC");
+
+		if (lista.tipo !== "lista" || !lista.escolhido)
+			throw new Error("sem o estado");
+		const { camara, senado } = lista.escolhido;
+		expect([...camara, ...senado].map(({ id, foto }) => [id, foto])).toEqual([
+			[81, null],
+			[82, null],
+			[83, null],
+			[501, null],
+			[502, fotoDe({ id: 502, casa: "senado" })],
+		]);
+		expect(erros.mock.calls).toEqual([
+			["[parlamentares] A foto não veio no formato esperado."],
+		]);
+	});
+
+	it("sem a foto nos dados, como na API antes da #303, o nome fica com a foto nula, sem linha no log", async () => {
+		api(() => json(200, listaComFotos({ 81: undefined, 82: null })));
+
+		const lista = await lerParlamentares("SC");
+
+		if (lista.tipo !== "lista" || !lista.escolhido)
+			throw new Error("sem o estado");
+		expect(lista.escolhido.camara.map(({ id, foto }) => [id, foto])).toEqual([
+			[81, null],
+			[82, null],
+			[83, fotoDe({ id: 83, casa: "camara" })],
+		]);
+		expect(erros).not.toHaveBeenCalled();
+	});
+
+	it("a foto de quem fica fora do estado aberto não é conferida nem vai ao log", async () => {
+		api(() => json(200, listaComFotos({ 90: "não é uma foto" })));
+
+		const lista = await lerParlamentares("SC");
+
+		expect(lista.tipo === "lista" && lista.escolhido?.camara).toHaveLength(3);
+		expect(erros).not.toHaveBeenCalled();
 	});
 });
 
@@ -383,6 +496,130 @@ describe("a foto oficial na página do parlamentar", () => {
 			});
 		}
 		expect(erros).not.toHaveBeenCalled();
+	});
+});
+
+describe("o partido por extenso e a biografia na página do parlamentar", () => {
+	it("chegam à página com a pessoa, sem linha no log", async () => {
+		apiDoParlamentar(3);
+
+		const pagina = await lerParlamentar("81", 1);
+
+		expect(pagina).toMatchObject({
+			tipo: "parlamentar",
+			parlamentar: {
+				partido: "PFT",
+				partido_nome: "Partido Fictício do Trabalho",
+				biografia: biografiaDeExemplo(),
+			},
+		});
+		expect(erros).not.toHaveBeenCalled();
+	});
+
+	it("sem os campos da #303, como na API de antes, cada um vale nulo, e a página abre sem linha no log", async () => {
+		const {
+			partido_nome: _nome,
+			biografia: _biografia,
+			...semFicha
+		} = detalheDeExemplo();
+		for (const detalhe of [
+			semFicha,
+			{ ...semFicha, partido_nome: null, biografia: null },
+		]) {
+			apiDoParlamentar(3, undefined, detalhe);
+
+			expect(await lerParlamentar("81", 1)).toMatchObject({
+				tipo: "parlamentar",
+				parlamentar: { partido_nome: null, biografia: null },
+			});
+		}
+		expect(erros).not.toHaveBeenCalled();
+	});
+
+	it("a profissão vazia sai da lista, e o texto vazio vale nulo, sem linha no log", async () => {
+		apiDoParlamentar(3, undefined, {
+			...detalheDeExemplo(),
+			partido_nome: "  ",
+			biografia: biografiaDeExemplo("camara", {
+				profissoes: ["", " Professora ", "   "],
+				escolaridade: " ",
+			}),
+		});
+
+		expect(await lerParlamentar("81", 1)).toMatchObject({
+			parlamentar: {
+				partido_nome: null,
+				biografia: { profissoes: ["Professora"], escolaridade: null },
+			},
+		});
+		expect(erros).not.toHaveBeenCalled();
+	});
+
+	const biografias = [
+		["que não é objeto", "Professora"],
+		[
+			"sem a lista das profissões",
+			{ ...biografiaDeExemplo(), profissoes: null },
+		],
+		[
+			"com uma profissão que não é texto",
+			{ ...biografiaDeExemplo(), profissoes: ["Professora", 7] },
+		],
+		[
+			"com a escolaridade que não é texto",
+			{ ...biografiaDeExemplo(), escolaridade: 3 },
+		],
+		["sem a fonte", { ...biografiaDeExemplo(), fonte: null }],
+		[
+			"com a fonte sem endereço",
+			{
+				...biografiaDeExemplo(),
+				fonte: { coletado_em: "2026-11-20T15:00:00+00:00" },
+			},
+		],
+		[
+			"com a data da coleta inválida",
+			{
+				...biografiaDeExemplo(),
+				fonte: {
+					url: "https://www.camara.leg.br/deputados/90000123",
+					coletado_em: "2026-02-30T15:00:00+00:00",
+				},
+			},
+		],
+	] as const;
+
+	it.each(biografias)(
+		"a biografia %s fica nula, com a linha fixa no log, e a página abre inteira",
+		async (_, biografia) => {
+			apiDoParlamentar(3, undefined, { ...detalheDeExemplo(), biografia });
+
+			expect(await lerParlamentar("81", 1)).toMatchObject({
+				tipo: "parlamentar",
+				parlamentar: {
+					id: 81,
+					partido_nome: "Partido Fictício do Trabalho",
+					biografia: null,
+				},
+				total: 3,
+				patrimonio: { tipo: "patrimonio" },
+			});
+			expect(erros.mock.calls).toEqual([
+				["[parlamentares] A biografia não veio no formato esperado."],
+			]);
+		},
+	);
+
+	it("o nome do partido que não é texto fica nulo, com a linha fixa no log, e a página abre", async () => {
+		apiDoParlamentar(3, undefined, { ...detalheDeExemplo(), partido_nome: 7 });
+
+		expect(await lerParlamentar("81", 1)).toMatchObject({
+			tipo: "parlamentar",
+			parlamentar: { partido: "PFT", partido_nome: null },
+		});
+		expect(erros.mock.calls).toEqual([
+			["[parlamentares] O nome do partido não veio no formato esperado."],
+		]);
 	});
 });
 

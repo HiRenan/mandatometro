@@ -38,7 +38,11 @@ def avaliar(expressao, evento, branch, **variaveis):
         {"__builtins__": {}},
         {
             "github": SimpleNamespace(
-                event_name=evento, ref=f"refs/heads/{branch}", sha="commit-do-disparo"
+                event_name=evento,
+                ref=f"refs/heads/{branch}",
+                sha="commit-do-disparo",
+                repository_owner="HiRenan",
+                triggering_actor=variaveis.get("triggering_actor", "HiRenan"),
             ),
             "vars": SimpleNamespace(
                 COLETAS_ATIVAS=variaveis.get("COLETAS_ATIVAS", ""),
@@ -121,6 +125,7 @@ def test_push_de_migration_e_manual_usam_mesmo_banco_e_fila(branch, ambiente):
         "coleta.yml",
         "coleta-tse.yml",
         "coleta-ipca.yml",
+        "coleta-biografias.yml",
         "migrar.yml",
         "enviar-edicao.yml",
         "agenda-sabado.yml",
@@ -133,7 +138,7 @@ def test_fila_nao_cancela_migration_pendente_ao_chegar_coleta(nome):
     assert workflow["concurrency"]["queue"] == "max"
 
 
-@pytest.mark.parametrize("nome", ["coleta-tse.yml", "coleta-ipca.yml"])
+@pytest.mark.parametrize("nome", ["coleta-tse.yml", "coleta-ipca.yml", "coleta-biografias.yml"])
 def test_coleta_so_dispara_manualmente_no_banco_da_branch(nome):
     workflow = ler(nome)
     job = workflow["jobs"]["coletar"]
@@ -148,6 +153,22 @@ def test_coleta_so_dispara_manualmente_no_banco_da_branch(nome):
     assert not avaliar(job["if"], "workflow_dispatch", "feat/teste")
     assert not avaliar(job["if"], "schedule", "develop")
     assert job["env"]["DATABASE_URL"] == "${{ secrets.DATABASE_URL }}"
+
+
+def test_coleta_de_biografias_na_main_exige_disparo_do_dono():
+    workflow = ler("coleta-biografias.yml")
+    job = workflow["jobs"]["coletar"]
+    assert not avaliar(job["if"], "workflow_dispatch", "main", triggering_actor="outra-pessoa")
+    assert avaliar(job["if"], "workflow_dispatch", "develop", triggering_actor="outra-pessoa")
+    assert (
+        avaliar(job["steps"][0]["with"]["ref"], "workflow_dispatch", "main") == "commit-do-disparo"
+    )
+    assert "uv run --no-sync mandatometro coleta biografias" in job["steps"][-1]["run"]
+
+
+def test_coleta_de_biografias_tem_teto_de_45_minutos():
+    job = ler("coleta-biografias.yml")["jobs"]["coletar"]
+    assert job["timeout-minutes"] == "45"
 
 
 @pytest.mark.parametrize(

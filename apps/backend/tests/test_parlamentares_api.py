@@ -206,6 +206,10 @@ def test_partido_e_o_do_ultimo_voto_e_a_uf_e_a_do_mandato(cliente, parlamentares
         "uf": "SC",
         "casa": "camara",
         "partido": "PFT",
+        "foto": {
+            "url": f"https://www.camara.leg.br/internet/deputado/bandep/{parlamentares[0].id_externo}.jpg",
+            "credito": "Câmara dos Deputados",
+        },
     }
     assert bentina["partido"] is None
     assert zafira["partido"] is None
@@ -227,6 +231,8 @@ def test_detalhe_traz_mandatos_e_conta_apenas_os_votos_da_pessoa(cliente, parlam
         },
         "uf": "SC",
         "partido": "PFT",
+        "partido_nome": None,
+        "biografia": None,
         "mandatos": [
             {"legislatura": 57, "uf": "SC", "condicao": "Titular", "em_exercicio": True},
             {"legislatura": 56, "uf": "PR", "condicao": None, "em_exercicio": False},
@@ -249,7 +255,7 @@ def test_detalhe_traz_mandatos_e_conta_apenas_os_votos_da_pessoa(cliente, parlam
 @pytest.mark.parametrize(
     ("indice", "credito"), [(0, "Câmara dos Deputados"), (1, "Senado Federal")]
 )
-def test_detalhe_traz_foto_oficial(cliente, parlamentares, indice, credito):
+def test_lista_e_detalhe_trazem_a_mesma_foto_oficial(cliente, parlamentares, indice, credito):
     pessoa = parlamentares[indice]
     if pessoa.casa == "camara":
         gravado = json.loads(
@@ -272,6 +278,10 @@ def test_detalhe_traz_foto_oficial(cliente, parlamentares, indice, credito):
     resposta = cliente.get(f"/parlamentares/{pessoa.id}")
     assert resposta.status_code == 200
     assert resposta.json()["foto"] == {"url": esperado, "credito": credito}
+    lista = cliente.get("/parlamentares", params={"uf": "SC"})
+    assert lista.status_code == 200
+    item = next(p for p in lista.json()["parlamentares"] if p["id"] == pessoa.id)
+    assert item["foto"] == resposta.json()["foto"]
 
 
 def _cadastrar_eleicoes(sessao, parlamentar_id, totais, taxas):

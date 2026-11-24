@@ -63,6 +63,26 @@ export type ArtigoDaEdicao = {
 };
 
 /**
+ * BiografiaParlamentar
+ */
+export type BiografiaParlamentar = {
+    /**
+     * Profissoes
+     *
+     * Profissões distintas na ordem publicada pela Casa.
+     */
+    profissoes: Array<string>;
+    /**
+     * Escolaridade
+     */
+    escolaridade: string | null;
+    /**
+     * Fonte da escolaridade quando disponível, ou das profissões.
+     */
+    fonte: FonteBiografia;
+};
+
+/**
  * Cadastro
  */
 export type Cadastro = {
@@ -238,6 +258,16 @@ export type DetalheParlamentar = {
      * Endereço da foto oficial e crédito da Casa.
      */
     foto: FotoParlamentar;
+    /**
+     * Partido Nome
+     *
+     * Nome oficial da sigla em partido. Nulo quando não há nome para a sigla.
+     */
+    partido_nome: string | null;
+    /**
+     * Informações publicadas pela Casa. Nula antes da coleta ou sem dados na fonte.
+     */
+    biografia: BiografiaParlamentar | null;
     /**
      * Mandatos
      */
@@ -518,6 +548,20 @@ export type FatosPublicos = {
      * Votacoes
      */
     votacoes: Array<VotacaoPublica>;
+};
+
+/**
+ * FonteBiografia
+ */
+export type FonteBiografia = {
+    /**
+     * Url
+     */
+    url: string;
+    /**
+     * Coletado Em
+     */
+    coletado_em: string;
 };
 
 /**
@@ -889,6 +933,10 @@ export type ParlamentarPublico = {
      * Sigla registrada no voto mais recente pela data da votação, com desempate pelo maior id interno da votação. Nula se o voto não informa partido ou se não há voto.
      */
     partido: string | null;
+    /**
+     * Endereço da foto oficial e crédito da Casa.
+     */
+    foto: FotoParlamentar;
 };
 
 /**

@@ -1,0 +1,36 @@
+{
+  "dados": {
+    "id": 900031,
+    "uri": "https://dadosabertos.camara.leg.br/api/v2/deputados/900031",
+    "nomeCivil": "Lina Verde de Exemplo",
+    "ultimoStatus": {
+      "id": 900031,
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/deputados/900031",
+      "nome": "Lina Verde de Exemplo",
+      "siglaPartido": "PNX",
+      "siglaUf": "SC",
+      "urlFoto": "https://www.camara.leg.br/internet/deputado/bandep/900031.jpg",
+      "email": "lina@example.com",
+      "gabinete": {
+        "nome": "Gabinete de Exemplo",
+        "predio": "Edifício fictício",
+        "sala": "0",
+        "andar": "0",
+        "telefone": "000000000",
+        "email": "gabinete@example.com"
+      }
+    },
+    "cpf": "00000000000",
+    "sexo": "F",
+    "dataNascimento": "1901-01-01",
+    "ufNascimento": "SC",
+    "municipioNascimento": "Vila de Exemplo",
+    "escolaridade": "Superior"
+  },
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://dadosabertos.camara.leg.br/api/v2/deputados/900031"
+    }
+  ]
+}

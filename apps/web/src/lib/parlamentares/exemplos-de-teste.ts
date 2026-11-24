@@ -1,4 +1,5 @@
 import type {
+	BiografiaParlamentar,
 	ContagemVotosParlamentar,
 	CorrecaoIpca,
 	DetalheParlamentar,
@@ -32,12 +33,23 @@ export const CONTAGEM_ZERADA: ContagemVotosParlamentar = {
 export function parlamentarDeExemplo(
 	mudancas: Partial<ParlamentarPublico> = {},
 ): ParlamentarPublico {
+	const casa = mudancas.casa ?? "camara";
 	return {
 		id: 81,
 		nome: "Ágata Cedrolume",
-		casa: "camara",
+		casa,
 		uf: "SC",
 		partido: "PFT",
+		foto:
+			casa === "camara"
+				? {
+						url: "https://www.camara.leg.br/internet/deputado/bandep/90000123.jpg",
+						credito: "Câmara dos Deputados",
+					}
+				: {
+						url: "https://legis.senado.leg.br/senadores/fotos-oficiais/90000124",
+						credito: "Senado Federal",
+					},
 		...mudancas,
 	};
 }
@@ -84,23 +96,37 @@ export function listaDeExemplo(): ListaParlamentares {
 	};
 }
 
+/**
+ * A biografia oficial de mentira, com a página da Casa da pessoa: duas
+ * profissões, a escolaridade e a coleta de 20 de novembro de 2026.
+ */
+export function biografiaDeExemplo(
+	casa: DetalheParlamentar["casa"] = "camara",
+	mudancas: Partial<BiografiaParlamentar> = {},
+): BiografiaParlamentar {
+	return {
+		profissoes: ["Professora", "Advogada"],
+		escolaridade: "Superior",
+		fonte: {
+			url:
+				casa === "camara"
+					? "https://www.camara.leg.br/deputados/90000123"
+					: "https://www25.senado.leg.br/web/senadores/senador/-/perfil/90000124",
+			coletado_em: "2026-11-20T15:00:00+00:00",
+		},
+		...mudancas,
+	};
+}
+
 export function detalheDeExemplo(
 	mudancas: Partial<DetalheParlamentar> = {},
 ): DetalheParlamentar {
-	const parlamentar = parlamentarDeExemplo();
-	const casa = mudancas.casa ?? parlamentar.casa;
+	const parlamentar = parlamentarDeExemplo(mudancas);
 	return {
 		...parlamentar,
-		foto:
-			casa === "camara"
-				? {
-						url: "https://www.camara.leg.br/internet/deputado/bandep/90000123.jpg",
-						credito: "Câmara dos Deputados",
-					}
-				: {
-						url: "https://legis.senado.leg.br/senadores/fotos-oficiais/90000124",
-						credito: "Senado Federal",
-					},
+		// O nome por extenso é o da sigla: sem a sigla, sem o nome.
+		partido_nome: parlamentar.partido ? "Partido Fictício do Trabalho" : null,
+		biografia: biografiaDeExemplo(parlamentar.casa),
 		mandatos: [
 			{ legislatura: 57, uf: "SC", condicao: "Titular", em_exercicio: true },
 			{ legislatura: 56, uf: "SC", condicao: null, em_exercicio: false },

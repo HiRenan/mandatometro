@@ -1,0 +1,27 @@
+{
+  "HistoricoAcademicoParlamentar": {
+    "noNamespaceSchemaLocation": "https://legis.senado.leg.br/dadosabertos/dados/HistoricoAcademicoParlamentarv1.xsd",
+    "Metadados": {
+      "Versao": "23/11/2026 14:45:04",
+      "VersaoServico": "1",
+      "DataVersaoServico": "2021-09-09",
+      "DescricaoDataSet": "Retorna a relação das Profissões do Senador informado no parâmetro."
+    },
+    "Parlamentar": {
+      "Codigo": "900041",
+      "Nome": "Ari Luz de Exemplo",
+      "Profissoes": {
+        "Profissao": [
+          {
+            "NomeProfissao": "Cartógrafo",
+            "IndicadorAtividadePrincipal": "Não"
+          },
+          {
+            "NomeProfissao": "Ilustrador",
+            "IndicadorAtividadePrincipal": "Não"
+          }
+        ]
+      }
+    }
+  }
+}
