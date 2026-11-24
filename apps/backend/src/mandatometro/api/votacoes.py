@@ -4,7 +4,7 @@ from collections import Counter, defaultdict
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import joinedload, selectinload
 
 from mandatometro.api.congresso import (
@@ -13,6 +13,7 @@ from mandatometro.api.congresso import (
     contagem_por_valor,
     dados_da_votacao,
     ordem_alfabetica,
+    sigla_do_voto,
     temas_das_votacoes,
 )
 from mandatometro.api.esquemas import DetalheVotacao, ErroVotacao, PlacarPorPartido, VotoNominal
@@ -56,7 +57,7 @@ def obter_votacao(id: IdCongresso):
             select(
                 Voto.parlamentar_id,
                 Parlamentar.nome,
-                func.nullif(func.trim(Voto.partido), "").label("partido"),
+                sigla_do_voto(Voto.partido).label("partido"),
                 Voto.uf,
                 Voto.valor,
             )

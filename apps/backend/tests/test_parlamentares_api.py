@@ -683,6 +683,82 @@ def test_combina_com_o_partido_com_tema(cliente, historico_com_o_partido, com_o_
     assert pagina["votos"][0]["temas"] == [{"id": "saude", "nome": "Saúde"}]
 
 
+def test_detalhe_da_votacao_usa_a_mesma_sigla_do_historico(
+    cliente, sessao, parlamentares, votacoes
+):
+    _, _, votacao = votacoes
+    agata, _, zafira, _ = parlamentares
+    for i, (nome, partido, valor) in enumerate(
+        [
+            ("Bela Lumivento", "\tPFA\t", "nao"),
+            ("Célia Pedralume", "\u00a0PFA\u00a0", "nao"),
+            ("Dália Cedrágua", "\t \u00a0", "nao_votou"),
+            ("Íria Brumazul", None, "sim"),
+            ("Mira Sombravila", "\tPF B\u00a0", "abstencao"),
+            ("Nélvi Ventoluz", "S/Partido", "outro"),
+        ]
+    ):
+        pessoa = Parlamentar(
+            casa=votacao.casa, id_externo=901010 + i, nome=nome, fonte=votacao.fonte
+        )
+        sessao.add(
+            Voto(
+                parlamentar=pessoa,
+                votacao=votacao,
+                partido=partido,
+                valor=valor,
+                fonte=votacao.fonte,
+            )
+        )
+    sessao.flush()
+
+    historico = cliente.get(f"/parlamentares/{agata.id}/votos", params={"com_o_partido": False})
+    assert historico.status_code == 200
+    [voto_no_historico] = historico.json()["votos"]
+    assert voto_no_historico["votacao_id"] == votacao.id
+    assert voto_no_historico["maioria_do_partido"] == "nao"
+    assert voto_no_historico["com_o_partido"] is False
+    sigla_do_filtro = voto_no_historico["partido"]
+    assert sigla_do_filtro == "PFA"
+
+    resposta = cliente.get(f"/votacoes/{voto_no_historico['votacao_id']}")
+    assert resposta.status_code == 200
+    dados = resposta.json()
+    votos_nominais = dados["votos"]
+    assert [v["nome"] for v in votos_nominais if v["partido"] == sigla_do_filtro] == [
+        agata.nome,
+        "Bela Lumivento",
+        "Célia Pedralume",
+        zafira.nome,
+    ]
+    assert [
+        (v["nome"], v["partido"]) for v in votos_nominais if v["partido"] != sigla_do_filtro
+    ] == [
+        ("Dália Cedrágua", None),
+        ("Íria Brumazul", None),
+        ("Mira Sombravila", "PF B"),
+        ("Nélvi Ventoluz", "S/Partido"),
+    ]
+    assert [
+        (grupo["partido"], {valor: total for valor, total in grupo["placar"].items() if total})
+        for grupo in dados["placar_por_partido"]
+    ] == [
+        ("PF B", {"abstencao": 1}),
+        (sigla_do_filtro, {"sim": 1, "nao": 3}),
+        ("S/Partido", {"outro": 1}),
+        (None, {"sim": 1, "nao_votou": 1}),
+    ]
+    assert dados["placar"] == {
+        "sim": 2,
+        "nao": 3,
+        "abstencao": 1,
+        "obstrucao": 0,
+        "presidente": 0,
+        "nao_votou": 1,
+        "outro": 1,
+    }
+
+
 def test_votacao_lista_votos_por_nome_e_conta_cada_valor_e_partido(
     cliente, sessao, parlamentares, votacoes
 ):

@@ -120,7 +120,11 @@ A sigla em `partido` continua vindo do voto mais recente. A API lê seu nome por
 
 `GET /parlamentares/{id}` traz `com_o_partido` com três contagens de todo o histórico de votos gravados da pessoa. `comparaveis` é o total de votos com comparação válida. `com_o_partido` conta quantos seguiram a maioria do partido e `contra` conta quantos foram diferentes dela. Os três valores são zero quando não há votos comparáveis.
 
-Em cada item de `GET /parlamentares/{id}/votos`, `partido` é a sigla gravada no voto, sem os espaços em branco nas pontas, inclusive tabulações e quebras de linha. Se a sigla estiver ausente ou em branco, o campo vem como `null`. `maioria_do_partido` é o valor que mais apareceu entre os votos dos outros membros com a mesma sigla naquela votação. Contam `sim`, `nao`, `abstencao` e `obstrucao`. A maioria vem como `null` se a pessoa não tiver sigla no voto, se os valores mais frequentes empatarem ou se houver menos de dois votos contados entre os colegas.
+Em cada voto de `GET /parlamentares/{id}/votos` e de `GET /votacoes/{id}`, `partido` é a sigla gravada no voto, sem os espaços em branco nas pontas, inclusive tabulações, quebras de linha e espaços sem quebra. Se a sigla estiver ausente ou toda em branco, o campo vem como `null`. A leitura preserva os caracteres internos da sigla e o literal `S/Partido`.
+
+O placar por partido de `GET /votacoes/{id}` usa a sigla devolvida nos votos nominais e reúne os votos sem sigla no grupo `null`. O placar geral conta todos os votos gravados.
+
+No histórico do parlamentar, `maioria_do_partido` é o valor que mais apareceu entre os votos dos outros membros com a mesma sigla naquela votação. Contam `sim`, `nao`, `abstencao` e `obstrucao`. A maioria vem como `null` se a pessoa não tiver sigla no voto, se os valores mais frequentes empatarem ou se houver menos de dois votos contados entre os colegas.
 
 No item da lista, `com_o_partido` é `true` se o voto da pessoa coincide com a maioria e `false` se difere dela. É `null` quando falta maioria ou quando o registro da pessoa é `nao_votou`, `presidente` ou `outro`. Se houver maioria entre os colegas, ela aparece em `maioria_do_partido` mesmo nesses três casos. As regras valem para a Câmara e o Senado.
 
