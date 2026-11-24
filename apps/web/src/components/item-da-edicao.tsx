@@ -1,6 +1,6 @@
 // biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
-import { Link } from "@tanstack/react-router";
 import type { FontePublica, ItemPublico, VotacaoPublica } from "@/client";
+import { LinkDeAcao } from "@/components/acao-de-texto";
 import { classes } from "@/lib/classes";
 import { estiloDoTeto } from "@/lib/conteudo/regua";
 import {
@@ -78,13 +78,11 @@ export function ItemDaEdicao({
 			<FontesDoItem posicao={posicao} fontes={item.fontes} Titulo={Subtitulo} />
 			{artigo && item.artigo && (
 				<p className="na-trilha">
-					<Link
+					<LinkDeAcao
 						to="/trilhas/$trilha/$artigo"
 						params={artigo}
-						className="acao-de-texto"
-					>
-						<span>Entenda na trilha: {item.artigo.titulo}</span>
-					</Link>
+						texto={["Entenda na trilha: ", item.artigo.titulo]}
+					/>
 				</p>
 			)}
 		</section>
@@ -165,26 +163,22 @@ export function QuadroDaVotacao({
 			{daVotacao !== null && (
 				<ul role="list" className="ver-quem-votou">
 					<li>
-						<Link
+						<LinkDeAcao
 							to="/votacoes/$id"
 							params={{ id: String(daVotacao) }}
-							className="acao-de-texto"
-						>
-							<span>Ver quem votou</span>{" "}
-							<span className="sr-only">na votação de {dia}</span>
-						</Link>
+							texto="Ver quem votou"
+							complemento={`na votação de ${dia}`}
+						/>
 					</li>
 					{comVideo && (
 						<li>
-							<Link
+							<LinkDeAcao
 								to="/votacoes/$id"
 								params={{ id: String(daVotacao) }}
 								hash={BLOCO_DO_VIDEO}
-								className="acao-de-texto"
-							>
-								<span>Vídeo da sessão</span>{" "}
-								<span className="sr-only">da votação de {dia}</span>
-							</Link>
+								texto="Vídeo da sessão"
+								complemento={`da votação de ${dia}`}
+							/>
 						</li>
 					)}
 				</ul>

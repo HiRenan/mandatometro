@@ -386,7 +386,9 @@ describe("o HTML das páginas dos parlamentares", () => {
 		);
 		expect(html.match(/<li class="voto-da-pessoa">/g)).toHaveLength(5);
 		expect(html).toMatch(
-			new RegExp(`href="${CANONICO}#votos"[^>]*><span>Votos mais novos`),
+			new RegExp(
+				`href="${CANONICO}#votos"[^>]*aria-label="Votos mais novos"[^>]*><span aria-hidden="true">Votos mais novos`,
+			),
 		);
 	});
 

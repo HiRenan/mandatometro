@@ -6,6 +6,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { AcaoDeTexto, LinkDeAcao } from "@/components/acao-de-texto";
 import { sementeDe } from "@/lib/azulejos";
 import { classes } from "@/lib/classes";
 import {
@@ -22,6 +23,7 @@ import { Reservas } from "./reservas";
 type Estado = "pronta" | "esperando" | ResultadoDaSaida["tipo"];
 
 const CONFIRMAR = "Confirmar a saída";
+const IR_PARA_O_INICIO = "Ir para o início";
 const CONFIRMANDO = "Confirmando a saída…";
 const INCOMPLETO =
 	"Este link está incompleto. Abra de novo o link de saída que vem no fim de cada e-mail da newsletter.";
@@ -195,15 +197,13 @@ export function PaginaDeSair({
 			: EXPLICA;
 	const erro = ERROS[estado];
 	const irParaOInicio = (
-		<Link
+		<LinkDeAcao
 			ref={inicio}
 			to="/"
 			onClick={recusado ? semPressa : semSegundoClique}
 			onKeyDown={recusado ? semEnterApressado : undefined}
-			className="acao-de-texto"
-		>
-			<span>Ir para o início</span>
-		</Link>
+			texto={IR_PARA_O_INICIO}
+		/>
 	);
 
 	return (
@@ -281,7 +281,12 @@ export function PaginaDeSair({
 				<div className="cartaz-acao">
 					<ul className="acoes-da-pagina">
 						{telaPodeMudar && (
-							<li className="grid items-center justify-items-start">
+							<li
+								className={classes(
+									"grid items-center justify-items-start",
+									recusado && "saida-link-no-lugar-do-botao",
+								)}
+							>
 								{/* A cópia do botão, com o mesmo desenho, invisível e fora
 								    do leitor de tela: quando ele some, o lugar continua
 								    com o tamanho dele. */}
@@ -311,16 +316,14 @@ export function PaginaDeSair({
 								    para o início" quando os dois ficam lado a lado. */}
 								{saiu && (
 									<div className="col-start-1 row-start-1">
-										<Link
+										<LinkDeAcao
 											ref={deNovo}
 											to="/"
 											hash="newsletter"
 											onClick={semPressa}
 											onKeyDown={semEnterApressado}
-											className="acao-de-texto"
-										>
-											<span>Inscrever-se de novo</span>
-										</Link>
+											texto="Inscrever-se de novo"
+										/>
 									</div>
 								)}
 								{recusado && (
@@ -337,10 +340,7 @@ export function PaginaDeSair({
 							// numa, com o pé mais baixo. Sem o href, ela não é link,
 							// não recebe o foco, e o invisible a tira do ponteiro.
 							<li aria-hidden="true" className="invisible">
-								{/* biome-ignore lint/a11y/useValidAnchor: a cópia invisível do link só guarda a altura dele, fora do leitor de tela, do teclado e do ponteiro. */}
-								<a className="acao-de-texto">
-									<span>Ir para o início</span>
-								</a>
+								<AcaoDeTexto texto={IR_PARA_O_INICIO} />
 							</li>
 						) : (
 							<li>{irParaOInicio}</li>

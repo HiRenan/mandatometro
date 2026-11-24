@@ -34,22 +34,33 @@ function assinar(avisar: () => void): () => void {
 	return () => consulta.removeEventListener("change", avisar);
 }
 
+type DesistirDaVirada = (mostrarDesenhoNovo?: boolean) => void;
+
 /**
  * Vira uma peça: ela gira até ficar de lado, o `mudar` troca o desenho, e ela
- * volta. Devolve a função que desiste da virada, se ela ainda não começou.
- * O `aoMudarOMovimento` avisa no começo e no fim da animação.
+ * volta. Quem desiste pode pedir o desenho novo se a peça já estiver virando.
+ * O `aoMudarOMovimento` avisa no começo e no fim da virada.
  */
 export function virar(
 	peca: Element,
 	mudar: () => void,
 	atraso = 0,
-	aoMudarOMovimento?: () => void,
-): () => void {
+	aoMudarOMovimento?: (virando: boolean) => void,
+): DesistirDaVirada {
 	if (movimentoReduzido() || typeof peca.animate !== "function") {
 		mudar();
+		aoMudarOMovimento?.(false);
 		return () => {};
 	}
-	let desistiu = false;
+	let ativa: Animation | undefined;
+	let faltaTrocar = true;
+	function concluir() {
+		if (ativa) {
+			ativa = undefined;
+			aoMudarOMovimento?.(false);
+		}
+	}
+
 	const relogio = setTimeout(() => {
 		const ida = peca.animate(
 			[
@@ -58,55 +69,58 @@ export function virar(
 			],
 			{ duration: 200, easing: "ease-in", fill: "forwards" },
 		);
-		aoMudarOMovimento?.();
-		ida.finished
+		ativa = ida;
+		aoMudarOMovimento?.(true);
+		void ida.finished
 			.then(() => {
-				if (!desistiu) {
+				if (ativa !== ida) return;
+				if (faltaTrocar) {
+					faltaTrocar = false;
 					mudar();
 				}
 				ida.cancel();
-				const volta = peca.animate(
+				ativa = peca.animate(
 					[
 						{ transform: "rotateY(-90deg)", filter: "brightness(0.75)" },
 						{ transform: "rotateY(0deg)" },
 					],
 					{ duration: 380, easing: "cubic-bezier(0.2, 0.8, 0.3, 1.25)" },
 				);
-				if (aoMudarOMovimento) return volta.finished.then(aoMudarOMovimento);
+				return ativa.finished;
 			})
-			// A animação cancelada (a página trocou no meio) rejeita a promessa.
-			.catch(() => aoMudarOMovimento?.());
+			// O cancelamento em qualquer metade rejeita a promessa.
+			.then(concluir, concluir);
 	}, atraso);
-	return () => {
-		desistiu = true;
+	return (mostrarDesenhoNovo = false) => {
 		clearTimeout(relogio);
+		if (mostrarDesenhoNovo && ativa) {
+			ativa.cancel();
+			if (faltaTrocar) mudar();
+			concluir();
+		}
+		faltaTrocar = false;
 	};
 }
 
 /**
- * Vira a peça como o `virar`, e a desistência fica no `pendentes` até a peça
- * trocar: quem guarda o conjunto desiste das viradas que sobraram, como o
- * painel quando sai da página. Sem animação, o `virar` troca a peça na hora,
- * antes de devolver a desistência: por isso a virada entra no conjunto antes, e
- * o `mudar` já a tira dali.
+ * A desistência fica no conjunto até o fim da volta. Sem animação, a troca e
+ * o aviso de fim são síncronos, por isso a virada entra no conjunto primeiro.
  */
 export function virarPendente(
-	pendentes: Set<() => void>,
+	pendentes: Set<DesistirDaVirada>,
 	peca: Element,
 	mudar: () => void,
 	atraso = 0,
 ): void {
-	let desiste = () => {};
-	const pendente = () => desiste();
+	let desiste: DesistirDaVirada;
+	const pendente: DesistirDaVirada = (mostrarDesenhoNovo) => {
+		pendentes.delete(pendente);
+		desiste(mostrarDesenhoNovo);
+	};
 	pendentes.add(pendente);
-	desiste = virar(
-		peca,
-		() => {
-			pendentes.delete(pendente);
-			mudar();
-		},
-		atraso,
-	);
+	desiste = virar(peca, mudar, atraso, (virando) => {
+		if (!virando) pendentes.delete(pendente);
+	});
 }
 
 /** As posições das peças do painel que aparecem na tela (a sobra fica cortada). */
@@ -161,7 +175,7 @@ export function usePainelVivo(
 		if (!elemento || reduzido) {
 			return;
 		}
-		const desistir = new Set<() => void>();
+		const desistir = new Set<DesistirDaVirada>();
 
 		const redesenhar = (indice: number, atraso = 0) => {
 			const peca = elemento.children[indice];
@@ -262,8 +276,9 @@ export function usePainelVivo(
 			elemento.removeEventListener("click", aoClicar);
 			olho?.disconnect();
 			clearInterval(relogio);
+			const mostrarDesenhoNovo = movimentoReduzido();
 			for (const desiste of desistir) {
-				desiste();
+				desiste(mostrarDesenhoNovo);
 			}
 		};
 	}, [painel, sozinho, ondaAoChegar, reduzido, sorte]);

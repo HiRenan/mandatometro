@@ -136,9 +136,11 @@ function eleicoes(vista: "de-hoje" | "declarado" = "de-hoje") {
 				},
 				periodo:
 					valor.querySelector(".periodo-da-eleicao")?.textContent ?? null,
-				detalhes: textos(
-					linha,
-					".declarado-na-eleicao > .sr-only, .detalhes-da-eleicao > :not(.declarado-na-eleicao)",
+				detalhes: Array.from(
+					linha.querySelectorAll(
+						".declarado-na-eleicao > .sr-only, .detalhes-da-eleicao > :not(.declarado-na-eleicao)",
+					),
+					lido,
 				),
 			};
 		},
@@ -164,8 +166,10 @@ function textos(dentro: Element, seletor: string) {
 	);
 }
 
-/** O texto que o leitor de tela ouve: sem o que fica fora dele (aria-hidden). */
+/** O nome explícito ou o texto com as partes que ficam na árvore de acessibilidade. */
 function lido(elemento: Element) {
+	const nome = elemento.getAttribute("aria-label");
+	if (nome !== null) return nome;
 	const copia = elemento.cloneNode(true) as Element;
 	for (const fora of copia.querySelectorAll('[aria-hidden="true"]')) {
 		fora.remove();

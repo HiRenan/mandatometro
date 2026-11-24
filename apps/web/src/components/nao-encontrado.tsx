@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { LinkDeAcao } from "@/components/acao-de-texto";
 import { sementeDe } from "@/lib/azulejos";
 import { Painel } from "./azulejo";
 import { BOTAO_CONTINUAR } from "./botao-continuar";
@@ -73,13 +74,11 @@ function PaginaNaoEncontrada({
 						</Link>
 					</li>
 					<li>
-						<Link
+						<LinkDeAcao
 							to="/"
 							activeOptions={{ exact: true }}
-							className="acao-de-texto"
-						>
-							<span>Ir para o início</span>
-						</Link>
+							texto="Ir para o início"
+						/>
 					</li>
 				</ul>
 			</div>

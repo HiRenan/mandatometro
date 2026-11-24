@@ -1,6 +1,7 @@
 // biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
 import { type CSSProperties, Fragment } from "react";
 import type { CorrecaoIpca } from "@/client";
+import { AcaoDeTexto } from "@/components/acao-de-texto";
 import { enderecoSeguro } from "@/lib/edicoes/conteudo-da-edicao";
 import {
 	dataEmBrasilia,
@@ -298,10 +299,11 @@ function EleicaoDoPatrimonio({
 					<ValorDeclarado ano={ano} valor={valor.declarado} />
 				)}
 				{fonte.endereco ? (
-					<a href={fonte.endereco} className="acao-de-texto">
-						<span>Arquivo do TSE{fonte.zip && " (ZIP)"}</span>{" "}
-						<span className="sr-only">com os bens declarados em {ano}</span>
-					</a>
+					<AcaoDeTexto
+						href={fonte.endereco}
+						texto={["Arquivo do TSE", fonte.zip ? " (ZIP)" : ""]}
+						complemento={`com os bens declarados em ${ano}`}
+					/>
 				) : (
 					<p className="rotulo arquivo-sem-link">Arquivo do TSE</p>
 				)}
@@ -407,18 +409,17 @@ function ComoCalculamos({
 					{calculos.map(({ chave, ano, frase, calculadora }) => (
 						<li key={chave} className="calculo-da-eleicao">
 							<p className="texto-do-patrimonio">{frase}</p>
-							<a href={calculadora} className="acao-de-texto">
-								<span>Conferir na Calculadora do Cidadão</span>{" "}
-								<span className="sr-only">a correção de {ano}</span>
-							</a>
+							<AcaoDeTexto
+								href={calculadora}
+								texto="Conferir na Calculadora do Cidadão"
+								complemento={`a correção de ${ano}`}
+							/>
 						</li>
 					))}
 				</ul>
 			)}
 			{serie && (
-				<a href={serie} className="acao-de-texto">
-					<span>Série do IPCA no Banco Central</span>
-				</a>
+				<AcaoDeTexto href={serie} texto="Série do IPCA no Banco Central" />
 			)}
 			<p className="rotulo coletado-em">
 				Coletada em {formatarData(dataEmBrasilia(correcao.fonte.coletado_em))}

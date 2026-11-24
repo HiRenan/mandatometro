@@ -60,10 +60,13 @@ function animaNa(peca: Element) {
 	const feitas: Animacao[] = [];
 	const animate = vi.fn(() => {
 		let terminar = () => {};
-		const finished = new Promise<void>((pronta) => {
+		let interromper = () => {};
+		const finished = new Promise<void>((pronta, cancelada) => {
 			terminar = pronta;
+			interromper = () =>
+				cancelada(new DOMException("Cancelada", "AbortError"));
 		});
-		const animacao = { finished, terminar, cancel: vi.fn() };
+		const animacao = { finished, terminar, cancel: vi.fn(interromper) };
 		feitas.push(animacao);
 		return animacao as unknown as Animation;
 	});
@@ -203,7 +206,7 @@ describe("virarPendente", () => {
 		expect(pendentes.size).toBe(0);
 	});
 
-	it("a virada animada fica no conjunto até trocar a peça", async () => {
+	it("a virada animada fica no conjunto até terminar a volta", async () => {
 		preferencia(false);
 		const peca = document.createElement("span");
 		const { feitas } = animaNa(peca);
@@ -217,6 +220,9 @@ describe("virarPendente", () => {
 		await vi.advanceTimersByTimeAsync(0);
 
 		expect(mudar).toHaveBeenCalledTimes(1);
+		expect(pendentes.size).toBe(1);
+		feitas[1]?.terminar();
+		await vi.advanceTimersByTimeAsync(0);
 		expect(pendentes.size).toBe(0);
 	});
 
@@ -377,6 +383,32 @@ describe("usePainelVivo", () => {
 			expect(animacao?.animate).not.toHaveBeenCalled();
 		}
 	});
+
+	it.each(["ida", "volta"] as const)(
+		"a preferência liga durante a %s: cancela a animação e deixa a peça com o desenho novo",
+		async (metade) => {
+			const movimento = preferencia(false);
+			const { elemento, animacoes, trocar } = montarPainel({ animado: true });
+			const feitas = animacoes[1]?.feitas ?? [];
+			passarPor(elemento.children[1]);
+			await vi.advanceTimersByTimeAsync(0);
+			if (metade === "volta") {
+				feitas[0].terminar();
+				await vi.advanceTimersByTimeAsync(0);
+			}
+			const ativa = feitas.at(-1);
+			expect(ativa).toBeDefined();
+
+			act(() => movimento.mudar(true));
+			expect(ativa?.cancel).toHaveBeenCalledTimes(1);
+			expect(trocar).toHaveBeenCalledExactlyOnceWith(1, expect.any(Object));
+
+			ativa?.terminar();
+			await vi.advanceTimersByTimeAsync(0);
+			expect(feitas).toHaveLength(metade === "ida" ? 1 : 2);
+			expect(trocar).toHaveBeenCalledTimes(1);
+		},
+	);
 
 	it("a preferência desliga de novo: o painel volta a virar, sem erro", async () => {
 		const movimento = preferencia(false);
