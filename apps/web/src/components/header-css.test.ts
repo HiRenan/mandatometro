@@ -1,11 +1,11 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-// O cabeçalho tem três links — Início, Trilhas e Jogos — e quatro onde o site
-// tem a API, com as Edições, mais a busca e a conta. No computador, uma linha: o
-// nome, os links no meio e a busca e a conta à direita; no celular, os links
-// descem para a linha de baixo (header.tsx). Este teste lê o CSS do site,
-// porque o jsdom não desenha. As medidas citadas vêm do Edge, com o build.
+// O cabeçalho tem dois links — Trilhas e Jogos — e quatro onde o site tem a
+// API, com Parlamentares e Edições, mais a busca e a conta. No computador, uma
+// linha: o nome, os links no meio e a busca e a conta à direita; no celular, os
+// links descem para baixo (header.tsx). Este teste lê o CSS do site, porque o
+// jsdom não desenha. As medidas citadas vêm do Edge, com o build.
 
 const css = readFileSync(new URL("../index.css", import.meta.url), "utf8");
 const cssDaBusca = readFileSync(
@@ -75,18 +75,14 @@ describe("o CSS do cabeçalho", () => {
 		);
 	});
 
-	it("no celular, tira o Início da lista", () => {
-		const midia = ate.find(({ corpo }) => TIRA_O_INICIO.test(corpo));
-
-		expect(midia, "a regra que tira o Início").toBeDefined();
-		// Só no celular: dali para cima, os links cabem numa linha com folga.
-		expect(midia?.largura).toBeGreaterThanOrEqual(30);
-		expect(midia?.largura).toBeLessThanOrEqual(40);
+	it("no celular, nenhuma regra esconde o primeiro link: o Início saiu, e o Trilhas fica", () => {
+		expect(css).not.toMatch(TIRA_O_INICIO);
+		expect(css).not.toMatch(/\.topo-links > li:first-child/);
 	});
 
 	it("no celular estreito, os links e a conta se apertam", () => {
 		const aperta =
-			/\.topo-links a,\s*\.entrada-da-conta a \{\s*padding: 0 (\d+)px;\s*\}/;
+			/\.topo-links a,\s*\.entrada-da-conta a \{\s*padding-inline: (\d+)px;\s*\}/;
 		// O respiro cai duas vezes: no celular (o 48rem) e, mais, no celular
 		// estreito. Aqui vale a faixa mais estreita das duas.
 		const [midia] = ate
@@ -108,31 +104,61 @@ describe("o CSS do cabeçalho", () => {
 		expect(midia?.largura).toBe(22.5);
 	});
 
-	it("com a letra grande, os links ficam em coluna onde não cabem numa linha", () => {
-		const colunas = blocosDe(css, "@container links-de-baixo", "<");
-		const comEdicoes = colunas.find(({ corpo }) =>
-			/\.topo-links\[data-com-edicoes\] \{\s*flex-direction: column;/.test(
-				corpo,
-			),
-		);
-		const semEdicoes = colunas.find(({ corpo }) =>
-			/\.topo-links:not\(\[data-com-edicoes\]\) \{\s*flex-direction: column;/.test(
+	it("no celular, os quatro links ficam em duas linhas de dois, com os vãos no meio da lista", () => {
+		const consultas = blocosDe(css, "@container links-de-baixo", "<");
+		const duasLinhas = consultas.find(({ corpo }) =>
+			/\.topo-links\[data-com-api\] \{\s*display: grid;\s*grid-template-columns: repeat\(2, minmax\(max-content, 1fr\)\);\s*row-gap: 0;\s*\}/.test(
 				corpo,
 			),
 		);
 
-		// Trilhas, Jogos e Edições pedem 13,45rem com a letra a 150%: a 360 px,
-		// a lista tem 13,33rem, e o Edições ficava sozinho na linha de baixo. Com
-		// a letra a 100%, a lista do celular tem pelo menos 17,5rem.
-		expect(comEdicoes?.largura).toBeGreaterThanOrEqual(13.45);
-		expect(comEdicoes?.largura).toBeLessThanOrEqual(17.5);
+		// Os quatro numa linha pedem até 27,05rem com a letra a 100%, de 480 a
+		// 767 px: abaixo disso, em todo celular, as duas linhas. A partir de 768 px,
+		// eles pedem 29,25rem, e a lista tem mais de 42rem.
+		expect(duasLinhas?.largura).toBeGreaterThanOrEqual(27.05);
+		expect(duasLinhas?.largura).toBeLessThanOrEqual(30);
+		// O Trilhas e o Jogos se encostam no meio pela direita; o Parlamentares e
+		// o Edições, pela esquerda.
+		expect(duasLinhas?.corpo).toMatch(
+			/\.topo-links\[data-com-api\] > li:nth-child\(odd\) \{\s*justify-self: end;\s*\}/,
+		);
+		expect(duasLinhas?.corpo).toMatch(
+			/\.topo-links\[data-com-api\] > li:nth-child\(even\) \{\s*justify-self: start;\s*\}/,
+		);
+		// Cada link tem pelo menos 44 px nas duas linhas.
+		expect(duasLinhas?.corpo).toMatch(
+			/\.topo-links\[data-com-api\] a \{\s*min-height: 44px;\s*\}/,
+		);
+	});
+
+	it("com a letra grande, os links ficam em coluna onde nem dois cabem lado a lado", () => {
+		const consultas = blocosDe(css, "@container links-de-baixo", "<");
+		const comApi = consultas.find(({ corpo }) =>
+			/\.topo-links\[data-com-api\] \{\s*display: flex;\s*flex-direction: column;\s*align-items: center;\s*\}/.test(
+				corpo,
+			),
+		);
+		const semApi = consultas.find(({ corpo }) =>
+			/\.topo-links:not\(\[data-com-api\]\) \{\s*flex-direction: column;/.test(
+				corpo,
+			),
+		);
+		const duasLinhas = consultas.find(({ corpo }) =>
+			corpo.includes("repeat(2, minmax(max-content, 1fr))"),
+		);
+
+		// Trilhas e Parlamentares pedem 13,89rem com a letra a 125%, 13,69rem a
+		// 150% e 13,44rem a 200%: a 360 px, com a letra a 150%, a lista tem
+		// 13,33rem, e o Parlamentares passaria da linha. Com a letra a 100%, a
+		// lista do celular tem pelo menos 17,5rem.
+		expect(comApi?.largura).toBeGreaterThanOrEqual(13.89);
+		expect(comApi?.largura).toBeLessThanOrEqual(17.5);
+		// A coluna vale dentro da faixa das duas linhas, e os 44 px vêm de lá.
+		expect(comApi?.largura).toBeLessThan(duasLinhas?.largura ?? 0);
 		// Trilhas e Jogos pedem 8,35rem a 200%, e a lista de 320 px tem 8,75rem.
-		expect(semEdicoes?.largura).toBeGreaterThanOrEqual(8.35);
-		expect(semEdicoes?.largura).toBeLessThanOrEqual(8.75);
-		// Na coluna, cada link tem 44 px, em px: o cabeçalho não cresce com a letra.
-		for (const coluna of [comEdicoes, semEdicoes]) {
-			expect(coluna?.corpo).toMatch(/ a \{\s*min-height: 44px;\s*\}/);
-		}
+		expect(semApi?.largura).toBeGreaterThanOrEqual(8.35);
+		expect(semApi?.largura).toBeLessThanOrEqual(8.75);
+		expect(semApi?.corpo).toMatch(/ a \{\s*min-height: 44px;\s*\}/);
 	});
 
 	it("com a letra grande, os links quebram a linha em vez de passar da página", () => {
@@ -147,6 +173,24 @@ describe("o CSS do cabeçalho", () => {
 		expect(css).toMatch(
 			/html:not\(\[data-conta-aberta\]\) \.entrada-da-conta > \[data-para="quem-entrou"\],\s*html\[data-conta-aberta\] \.entrada-da-conta > \[data-para="quem-nao-entrou"\] \{\s*visibility: hidden;\s*\}/,
 		);
+	});
+
+	it("o traço de 4 px guarda 2 px de respiro abaixo da linha de texto", () => {
+		const link = regra(css, ".topo-links a,\n\t.entrada-da-conta a");
+		const traco = regra(
+			css,
+			".topo-links a::after,\n\t.entrada-da-conta a::after",
+		);
+
+		expect(traco).toContain(
+			"bottom: min(0.3rem, 50% - 0.5em - var(--espaco-do-traco));",
+		);
+		expect(traco).toContain("height: 4px;");
+		expect(link).toContain("--espaco-do-traco: 6px;");
+		expect(link).toContain("padding: var(--espaco-do-traco) 0.9rem;");
+		expect(link).toContain("align-items: center;");
+		expect(link).toContain("line-height: 1;");
+		expect(link).toContain("min-height: max(44px, 2.75rem);");
 	});
 
 	it("nas cores forçadas, o traço da seção usa a cor de texto do sistema", () => {
@@ -165,16 +209,17 @@ describe("o CSS do cabeçalho com o lema e a busca", () => {
 		return ate.find(({ corpo }) => TIRA_O_LEMA.test(corpo))?.largura;
 	}
 
-	it("o lema fica embaixo do nome a partir de 82rem, e o par cabe nos 72 px", () => {
+	it("o lema fica embaixo do nome a partir de 84rem, e o par cabe nos 72 px", () => {
 		// O lema (351 px) cabe embaixo do nome na coluna da esquerda a partir de
-		// 1312 px; ao lado dele, com os links no meio, só a partir de uns 1710 px.
-		expect(larguraDoLema()).toBe(82);
+		// 1344 px; a 1312 px, com o Parlamentares nos links, ele quebrava em duas
+		// linhas. Ao lado do nome, com os links no meio, só a partir de uns 1810 px.
+		expect(larguraDoLema()).toBe(84);
 		expect(regra(css, ".marca")).toMatch(/flex-direction: column;/);
 		expect(
 			desde.find(({ corpo }) =>
 				/\.moldura \.marca a \{\s*min-height: 0;\s*\}/.test(corpo),
 			)?.largura,
-		).toBe(82);
+		).toBe(84);
 	});
 
 	it("o pré-carregamento da letra de máquina acompanha o lema", () => {

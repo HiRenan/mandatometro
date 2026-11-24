@@ -46,6 +46,18 @@ export type ContagemDoEstado = {
 	senadores: number;
 };
 
+/**
+ * Um nome da lista, como a página o recebe: a foto da API só chega depois de
+ * conferida, como a da página da pessoa.
+ */
+export type ParlamentarDaLista = Omit<ParlamentarPublico, "foto"> & {
+	/**
+	 * A foto oficial, só no endereço da Casa da pessoa e com o crédito dela;
+	 * fora disso, ou sem a foto nos dados, nula.
+	 */
+	foto: FotoParlamentar | null;
+};
+
 export type ListaDosParlamentares =
 	| { tipo: "sem-api" }
 	| {
@@ -55,8 +67,8 @@ export type ListaDosParlamentares =
 			/** O estado do endereço, com os nomes em ordem alfabética; sem ?uf, nulo. */
 			escolhido: {
 				sigla: string;
-				camara: ParlamentarPublico[];
-				senado: ParlamentarPublico[];
+				camara: ParlamentarDaLista[];
+				senado: ParlamentarDaLista[];
 			} | null;
 	  };
 
@@ -138,7 +150,9 @@ export async function lerParlamentares(
 		}
 	}
 	const sigla = estadoDaSigla(uf)?.sigla;
-	const doEstado = data.parlamentares.filter((item) => item.uf === sigla);
+	const doEstado = nomesDaLista(
+		data.parlamentares.filter((item) => item.uf === sigla),
+	);
 	return {
 		tipo: "lista",
 		estados,
@@ -150,6 +164,48 @@ export async function lerParlamentares(
 				}
 			: null,
 	};
+}
+
+/**
+ * Os nomes do estado, com a foto conferida pelas regras da página da pessoa (o
+ * fotoDaPagina): só em https, no endereço e com o crédito da Casa dela. A foto
+ * que falta nos dados fica nula. A que vem fora do formato também, e a lista
+ * escreve uma linha fixa só no log, sem o endereço, por mais fotos que falhem.
+ * A foto nunca derruba a lista.
+ */
+function nomesDaLista(nomes: ParlamentarPublico[]): ParlamentarDaLista[] {
+	let foraDoFormato = false;
+	const conferidos = nomes.map(({ foto, ...parlamentar }) => {
+		const conferida = fotoDaLista(parlamentar.casa, foto);
+		if (conferida === undefined) {
+			foraDoFormato = true;
+		}
+		return { ...parlamentar, foto: conferida ?? null };
+	});
+	if (foraDoFormato) {
+		console.error("[parlamentares] A foto não veio no formato esperado.");
+	}
+	return conferidos;
+}
+
+/**
+ * A foto de um nome da lista: a conferida; nula quando falta nos dados, como na
+ * API de antes da #303; e undefined quando vem fora do formato.
+ */
+function fotoDaLista(
+	casa: ParlamentarPublico["casa"],
+	foto: unknown,
+): FotoParlamentar | null | undefined {
+	if (foto === undefined || foto === null) {
+		return null;
+	}
+	const esperada = FOTO_DA_CASA[casa];
+	return ehObjeto(foto) &&
+		typeof foto.url === "string" &&
+		foto.credito === esperada.credito &&
+		enderecoDaFoto(foto.url, esperada)
+		? { url: foto.url, credito: esperada.credito }
+		: undefined;
 }
 
 /**

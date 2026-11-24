@@ -98,6 +98,77 @@ describe("os nomes longos", () => {
 	});
 });
 
+describe("os retratos da lista", () => {
+	it("a foto tem 48 × 64 px, em 3:4 e em px, numa margem de papel de 3 px com o fio de tinta de 2 px", () => {
+		const retrato = regra(css, ".retrato-na-lista");
+		const medida = (nome: string) =>
+			Number(new RegExp(`(?:^|; )${nome}: (\\d+)px;`).exec(retrato)?.[1]);
+
+		expect(retrato).toContain("padding: 3px;");
+		expect(retrato).toContain("border: 2px solid var(--tinta);");
+		expect(retrato).toContain("box-shadow: inset 0 0 0 3px var(--papel);");
+		const [largura, altura] = [medida("width"), medida("height")].map(
+			(lado) => lado - 2 * 3 - 2 * 2,
+		);
+		expect([largura, altura]).toEqual([48, 64]);
+		expect(largura / altura).toBe(3 / 4);
+	});
+
+	it("a moldura guarda o lugar com o azulejo cru, a foto cobre o meio com o rosto no alto, e sem o JavaScript o ::after cobre a foto quebrada", () => {
+		const retrato = regra(css, ".retrato-na-lista");
+		expect(retrato).toContain("background: var(--azulejo-cru);");
+		expect(retrato).toContain("background-clip: content-box;");
+		const foto = regra(css, ".retrato-na-lista img");
+		for (const declaracao of [
+			"width: 100%;",
+			"height: 100%;",
+			"object-fit: cover;",
+			"object-position: 50% 0;",
+		]) {
+			expect(foto).toContain(declaracao);
+		}
+		expect(regra(css, ".retrato-na-lista img::after")).toContain(
+			"background: var(--azulejo-cru);",
+		);
+	});
+
+	it("com os retratos, o partido desce para baixo do nome, e as regras ficam presas à lista com retratos", () => {
+		const prefixo = ".nomes-da-casa[data-com-retratos]";
+		expect(regra(css, `${prefixo} .nome-na-lista`)).toContain(
+			"grid-template-columns: auto minmax(0, 1fr);",
+		);
+		expect(regra(css, `${prefixo} .retrato-na-lista`)).toContain(
+			"grid-row: span 2;",
+		);
+		for (const parte of [".nome", ".partido"]) {
+			expect(regra(css, `${prefixo} ${parte}`), parte).toContain(
+				"grid-column: 2;",
+			);
+		}
+		// O partido das outras páginas fica onde estava.
+		expect(regra(css, ".partido")).not.toContain("grid-column");
+	});
+
+	it("o link estica até a altura da fileira, e os fios de baixo ficam alinhados ao lado de um nome longo", () => {
+		// No Edge, a 1366 px, sem a grade no item, o fio do nome de três linhas
+		// ficava 14 px abaixo dos fios dos vizinhos da mesma fileira. O :where
+		// tira o peso da marca: o Biome acusa o li mais leve das outras listas,
+		// que vêm depois no arquivo.
+		expect(
+			regra(css, ".nomes-da-casa:where([data-com-retratos]) > li"),
+		).toMatch(/^\s*display: grid;\s*$/);
+	});
+
+	it("o crédito das fotos fica em tinta suave, e nas cores forçadas o fio do retrato fica na cor do texto do sistema", () => {
+		expect(regra(css, ".lista-da-casa > .credito-das-fotos")).toContain(
+			"color: var(--tinta-suave);",
+		);
+		expect(css).toMatch(
+			/@media \(forced-colors: active\) \{\s*\.retrato-na-lista \{\s*border-color: CanvasText;\s*\}\s*\}/,
+		);
+	});
+});
+
 it("a caixa do vídeo mostra o anel enquanto o player tem foco", () => {
 	const anel = regra(
 		css,
