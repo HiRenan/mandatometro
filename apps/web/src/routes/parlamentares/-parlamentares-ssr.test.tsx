@@ -422,9 +422,8 @@ describe("o HTML das páginas dos parlamentares", () => {
 
 		expect(status).toBe(200);
 		expect(html).toContain("<title>Parlamentares · Mandatômetro</title>");
-		// O mapa, os azulejos dos oito estados estreitos e a lista que fica no
-		// lugar do mapa na tela estreita: 27, 8 e 27 links.
-		expect(html.match(/href="\/parlamentares\?uf=[A-Z]{2}"/g)).toHaveLength(62);
+		// O desenho, os azulejos e a lista para a tela estreita têm 27 links cada.
+		expect(html.match(/href="\/parlamentares\?uf=[A-Z]{2}"/g)).toHaveLength(81);
 		// No desenho, cada região é uma lista com o nome dela, já no HTML.
 		expect(
 			[...html.matchAll(/<g role="list" aria-label="([^"]+)"/g)].map(
@@ -498,7 +497,7 @@ describe("o HTML das páginas dos parlamentares", () => {
 			html.match(
 				/aria-current="page"[^>]*href="\/parlamentares\?uf=SC"|href="\/parlamentares\?uf=SC"[^>]*aria-current="page"/g,
 			),
-		).toHaveLength(2);
+		).toHaveLength(3);
 		expect(html).toContain('href="/parlamentares/82-iris-dellombre"');
 		expect(html).toContain('href="/parlamentares/501-lia-quinemar"');
 		// Quem não tem partido nos dados aparece com o traço, e o leitor de tela
