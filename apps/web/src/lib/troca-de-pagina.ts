@@ -10,10 +10,10 @@
  * navegador pula. O movimento fica em estilos/movimento.css.
  */
 
-export type Sentido = "avancar" | "voltar";
+type Sentido = "avancar" | "voltar";
 
 /** A trilha da página aberta, com os artigos na ordem dela e o lugar do quiz. */
-export type TrilhaAberta = {
+type TrilhaAberta = {
 	slug: string;
 	artigos: ReadonlyArray<{ slug: string }>;
 	/** O artigo depois do qual o quiz aparece, quando a trilha tem quiz. */
@@ -39,7 +39,7 @@ const PARLAMENTARES = "parlamentares";
 const VOTACOES = "votacoes";
 
 /** O que o router diz de cada troca (o `locationChangeInfo` do TanStack Router). */
-export type Troca = {
+type Troca = {
 	fromLocation?: { pathname: string };
 	toLocation: { pathname: string };
 	pathChanged: boolean;

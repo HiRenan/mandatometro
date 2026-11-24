@@ -9,17 +9,25 @@ from sqlalchemy import select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from mandatometro.coleta.http import ClienteHttp, ErroColeta, Resposta
+from mandatometro.coleta import LIMITE_COLETA_COM_OPCIONAIS_S
+from mandatometro.coleta.http import (
+    ClienteHttp,
+    ErroColeta,
+    ErroColetaTemporario,
+    PrazoConsultaEsgotado,
+    Resposta,
+)
 from mandatometro.coleta.persistencia import salvar_video_sessao
 from mandatometro.coleta.tipos import ResumoColeta
 from mandatometro.db.modelos import PADRAO_URL_VIDEO, Fonte, VideoSessao, Votacao
 
 # O detalhe pode responder com sucesso e declarar outra origem para a sessão.
 URL_RECUSADA = object()
+LIMITE_VIDEOS_S = 4 * 60
 
 type VotacaoSemVideo = tuple[int, str, str | None]
 type VotacoesPorSessao = dict[int | None, list[int]]
-type ConsultarSessao = Callable[[ClienteHttp, int], tuple[Resposta, object]]
+type ConsultarSessao = Callable[[ClienteHttp, int, float | None], tuple[Resposta, object]]
 
 
 def coletar_videos(
@@ -30,28 +38,54 @@ def coletar_videos(
     abrir_sessao: Callable[[], Session],
     consultar: ConsultarSessao,
     somente_videos: bool = False,
+    comeco_coleta: float | None = None,
 ) -> None:
+    prazo = None
+    if comeco_coleta is not None:
+        prazo = min(
+            time.monotonic() + LIMITE_VIDEOS_S, comeco_coleta + LIMITE_COLETA_COM_OPCIONAIS_S
+        )
     videos = resumo.videos
-    for id_sessao, ids_votacoes in sessoes.items():
-        vincular = update(Votacao).where(Votacao.id.in_(ids_votacoes), Votacao.casa == resumo.casa)
-        if id_sessao is None:
-            videos.votacoes_sem_sessao += len(ids_votacoes)
-            if not somente_videos:
-                try:
-                    with abrir_sessao() as sessao, sessao.begin():
-                        sessao.execute(
-                            vincular.where(Votacao.video_sessao_id.is_not(None)).values(
-                                video_sessao_id=None
-                            )
-                        )
-                except SQLAlchemyError:
-                    videos.falhas_gravacao += 1
-            continue
+    vincular = update(Votacao).where(Votacao.casa == resumo.casa)
+    sem_sessao = sessoes.get(None)
+    if sem_sessao:
+        videos.votacoes_sem_sessao += len(sem_sessao)
+        if not somente_videos:
+            try:
+                with abrir_sessao() as sessao, sessao.begin():
+                    sessao.execute(
+                        vincular.where(
+                            Votacao.id.in_(sem_sessao),
+                            Votacao.video_sessao_id.is_not(None),
+                        ).values(video_sessao_id=None)
+                    )
+            except SQLAlchemyError:
+                videos.falhas_gravacao += 1
+
+    consultaveis = [(codigo, ids) for codigo, ids in sessoes.items() if codigo is not None]
+    falhas_seguidas = 0
+    for indice, (id_sessao, ids_votacoes) in enumerate(consultaveis):
+        if prazo is not None and (falhas_seguidas >= 2 or time.monotonic() >= prazo):
+            videos.sessoes_nao_consultadas += len(consultaveis) - indice
+            break
+        chamadas = http.chamadas
         try:
-            resposta, endereco = consultar(http, id_sessao)
-        except ErroColeta:
-            videos.falhas_sessoes += 1
+            resposta, endereco = consultar(http, id_sessao, prazo)
+        except PrazoConsultaEsgotado:
+            consultada = http.chamadas > chamadas
+            videos.falhas_sessoes += consultada
+            videos.sessoes_nao_consultadas += len(consultaveis) - indice - consultada
+            break
+        except ErroColeta as erro:
+            temporaria = isinstance(erro, ErroColetaTemporario)
+            if temporaria and http.chamadas == chamadas:
+                videos.sessoes_nao_consultadas += 1
+            else:
+                videos.falhas_sessoes += 1
+            falhas_seguidas = falhas_seguidas + 1 if temporaria else 0
             continue
+
+        falhas_seguidas = 0
 
         url_video = None
         if endereco is None or endereco == "":
@@ -73,7 +107,9 @@ def coletar_videos(
                     url_video=url_video,
                     resposta=resposta,
                 )
-                vinculadas = sessao.execute(vincular.values(video_sessao_id=video_id)).rowcount
+                vinculadas = sessao.execute(
+                    vincular.where(Votacao.id.in_(ids_votacoes)).values(video_sessao_id=video_id)
+                ).rowcount
         except SQLAlchemyError:
             videos.falhas_gravacao += 1
             continue
@@ -118,7 +154,10 @@ def preencher_videos(
                 consultar=consultar,
                 somente_videos=True,
             )
-        resumo.completa = not (resumo.videos.falhas_sessoes or resumo.videos.falhas_gravacao)
+        videos = resumo.videos
+        resumo.completa = not (
+            videos.falhas_sessoes or videos.falhas_gravacao or videos.sessoes_nao_consultadas
+        )
     except ErroColeta as erro:
         resumo.completa = False
         resumo.erro = str(erro)

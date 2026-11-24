@@ -568,24 +568,31 @@ describe("a folha dos números", () => {
 		const piloto = secao("Piloto");
 		expect(
 			valoresDe(
-				within(piloto).getByRole("heading", { name: "Tentativas e pessoas" }),
+				within(piloto).getByRole("heading", {
+					name: "Tentativas e participações",
+				}),
 			),
 		).toEqual([
-			["Antes da trilha", "30 tentativas de 27 pessoas"],
-			["Depois da trilha", "26 tentativas de 24 pessoas"],
-			["No total", "56 tentativas de 31 pessoas"],
+			["Antes da trilha", "30 tentativas de 27 participações"],
+			["Depois da trilha", "26 tentativas de 24 participações"],
+			["No total", "56 tentativas de 31 participações"],
 		]);
 		expect(within(piloto).getByText("46,7%")).toBeTruthy();
 		expect(within(piloto).getByText("72%")).toBeTruthy();
 		expect(
 			within(piloto).getByText(
-				"Em média, 8,6 de 12 perguntas, com 24 pessoas.",
+				"Em média, 8,6 de 12 perguntas, com 24 participações.",
 			),
 		).toBeTruthy();
 		expect(
 			within(piloto).getByText(
-				"20 pessoas fizeram as duas etapas, 7 só o antes e 4 só o depois.",
+				"20 participações com as duas etapas, 7 só com o antes e 4 só com o depois.",
 			),
+		).toBeTruthy();
+		expect(
+			within(piloto).getByRole("heading", {
+				name: "Participações com as duas etapas",
+			}),
 		).toBeTruthy();
 		expect(
 			within(piloto).getByText(
@@ -620,6 +627,46 @@ describe("a folha dos números", () => {
 		]);
 	});
 
+	it("três participações pareadas aparecem como participações do piloto", async () => {
+		const numeros = numerosDeExemplo();
+		const media = {
+			quantidade: 3,
+			acertos: null,
+			percentual: null,
+			situacao: "amostra_pequena",
+		} as const;
+		numeros.piloto.tentativas = { antes: 3, depois: 3, total: 6 };
+		numeros.piloto.participacoes = {
+			antes: 3,
+			depois: 3,
+			total: 3,
+			pareadas: 3,
+			somente_antes: 0,
+			somente_depois: 0,
+		};
+		numeros.piloto.medias = { antes: media, depois: media };
+		numeros.piloto.pares = {
+			quantidade: 3,
+			antes: { acertos: null, percentual: null },
+			depois: { acertos: null, percentual: null },
+			diferenca_acertos: null,
+			diferenca_pontos_percentuais: null,
+			situacao: "amostra_pequena",
+		};
+		emSequencia(pedirNumeros, resposta(200, numeros));
+		await abrirOsNumeros();
+		const piloto = secao("Piloto");
+		expect(piloto.textContent).not.toMatch(/pessoa/i);
+		expect(
+			within(piloto).getByText("6 tentativas de 3 participações"),
+		).toBeTruthy();
+		expect(
+			within(piloto).getByText(
+				"3 participações com as duas etapas, 0 só com o antes e 0 só com o depois.",
+			),
+		).toBeTruthy();
+	});
+
 	it("a média que a API não manda vira a frase da situação, e nunca o zero", async () => {
 		const numeros = numerosDeExemplo();
 		numeros.piloto.medias.depois = {
@@ -641,8 +688,11 @@ describe("a folha dos números", () => {
 		const piloto = secao("Piloto");
 		expect(
 			within(piloto).getByText(
-				"Poucas respostas: a média só aparece a partir de 5 pessoas.",
+				"Poucas respostas: a média só aparece a partir de 5 participações.",
 			),
+		).toBeTruthy();
+		expect(
+			within(piloto).getByText("3 participações nesta etapa."),
 		).toBeTruthy();
 		expect(
 			within(piloto).getByText(

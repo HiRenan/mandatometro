@@ -22,8 +22,8 @@
 	 * tracado.ts). No celular e no tablet, ele vem depois do pé do cartaz, até
 	 * 26 rem de largura; a partir do lg, fica nos 30% da direita, no lugar do
 	 * painel de enfeite, que só fica no celular, como a faixa de cima das outras
-	 * páginas. Embaixo do desenho vêm a linha do estado, os azulejos dos estados
-	 * estreitos e a legenda.
+	 * páginas. Embaixo do desenho vêm a linha do estado, os azulejos dos 27
+	 * estados e a legenda.
 	 */
 	.mapa-dos-estados {
 		container: mapa / inline-size;
@@ -223,23 +223,20 @@
 	}
 
 	/*
-	 * Os azulejos dos estados estreitos: oito numa fileira onde cabem (oito de
-	 * 44 px e sete vãos de 4 px pedem 23,75 rem), senão duas de quatro. Cada um é
-	 * a folha clara com fio de tinta e a fita da região numa tira em cima, com a
-	 * sigla grande e o número de deputados pequeno, no papel. O estado aberto fica
-	 * em tinta. O azulejo sobe com o ponteiro, nele ou no estado do mapa, e mostra
-	 * o anel quando o estado do mapa tem o foco do teclado.
+	 * Os 27 azulejos tomam as colunas que cabem, até nove por fileira (428 px
+	 * com a letra a 100%), com vãos de 4 px. Cada um é a folha clara com fio de
+	 * tinta e a fita da região numa tira em cima, com a sigla grande e o número de
+	 * deputados pequeno, no papel. O estado aberto fica em tinta. O azulejo sobe
+	 * com o ponteiro, nele ou no estado do mapa, e mostra o anel quando o estado
+	 * do mapa tem o foco do teclado.
 	 */
 	.atalhos-do-mapa {
 		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
+		grid-template-columns: repeat(
+				auto-fit,
+				minmax(max(44px, 2.75rem, (100% - 32px) / 9), 1fr)
+			);
 		gap: 4px;
-	}
-
-	@container mapa (width >= 23.75rem) {
-		.atalhos-do-mapa {
-			grid-template-columns: repeat(8, minmax(0, 1fr));
-		}
 	}
 
 	.atalho-do-estado {
@@ -247,7 +244,7 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		min-height: 2.75rem;
+		min-height: max(44px, 2.75rem);
 		padding-top: 5px;
 		border: 2px solid var(--tinta);
 		background: var(--folha);
@@ -293,6 +290,14 @@
 		font-variant-numeric: lining-nums tabular-nums;
 	}
 
+	@media (prefers-reduced-motion: reduce) {
+		.estado-em-destaque .subida,
+		.atalho-do-estado:hover,
+		.atalho-do-estado.aceso {
+			translate: none;
+		}
+	}
+
 	/* A legenda: as cinco regiões em palavras, cada uma com o quadradinho da fita. */
 	.legenda-do-mapa {
 		display: flex;
@@ -331,6 +336,29 @@
 	}
 
 	@media (forced-colors: active) {
+		.atalho-do-estado {
+			forced-color-adjust: none;
+			border-color: CanvasText;
+			background: Canvas;
+			box-shadow: none;
+			color: LinkText;
+		}
+
+		.atalho-do-estado:hover,
+		.atalho-do-estado.aceso {
+			border-color: Highlight;
+			box-shadow: none;
+		}
+
+		.atalho-do-estado.com-foco {
+			outline-color: Highlight;
+		}
+
+		.atalho-do-estado[aria-current="page"] {
+			background: CanvasText;
+			color: Canvas;
+		}
+
 		.desenho-do-brasil {
 			forced-color-adjust: none;
 		}
@@ -482,6 +510,11 @@
 			display: none;
 		}
 
+		/* Em janelas baixas, as fileiras dos azulejos ainda deixam lugar para o desenho. */
+		.cartaz-dos-parlamentares:has(> .mapa-dos-estados) {
+			min-height: clamp(40rem, calc(100svh - var(--topo)), 44rem);
+		}
+
 		.mapa-dos-estados {
 			position: absolute;
 			inset: 0 0 0 auto;
@@ -510,6 +543,17 @@
 		.mapa > .desenho-do-brasil {
 			flex: 0 1 auto;
 			min-height: 0;
+		}
+	}
+
+	/* O painel estreito precisa de altura para até seis fileiras de azulejos. */
+	@media (62rem <= width < 66rem) {
+		.cartaz-dos-parlamentares:has(> .mapa-dos-estados) {
+			min-height: 44rem;
+		}
+
+		.mapa-dos-estados {
+			padding-block: 1rem;
 		}
 	}
 
@@ -1015,47 +1059,8 @@
 		animation: none;
 	}
 
-	/*
-	 * Na célula estreita, as partes do mandato quebram de linha. O quadradinho vai
-	 * no recuo antes de cada parte, e não depois dela, e o da parte que abre uma
-	 * linha fica sob a borda da célula (a faixa recua o mesmo 1.9em, e o corte o
-	 * esconde): nenhuma linha começa nem termina com ele, e a parte longa que
-	 * quebra continua alinhada. Ele tem o tamanho, as margens e a altura do
-	 * quadradinho da faixa (index.css), e, nas cores forçadas, fica em CanvasText,
-	 * como o dela: sem isso, o fundo vira o do papel, e ele some.
-	 */
-	.mandatos-da-ficha .rotulo {
-		overflow-x: clip;
-	}
-
 	.mandatos-da-ficha .faixa {
 		row-gap: 0;
-		margin-left: -1.9em;
-	}
-
-	.mandatos-da-ficha .parte-do-mandato {
-		padding-left: 1.9em;
-	}
-
-	.mandatos-da-ficha .parte-do-mandato::before {
-		content: "" / "";
-		display: inline-block;
-		width: 0.3em;
-		height: 0.3em;
-		margin: 0 0.8em 0 -1.1em;
-		vertical-align: 0.2em;
-		background: currentColor;
-	}
-
-	@media (forced-colors: active) {
-		.mandatos-da-ficha .parte-do-mandato::before {
-			forced-color-adjust: none;
-			background: CanvasText;
-		}
-	}
-
-	.mandatos-da-ficha .parte-do-mandato:not(:last-child)::after {
-		display: none;
 	}
 
 	.lista-das-eleicoes {
@@ -1219,6 +1224,204 @@
 	}
 
 	/*
+	 * "Como votou" e "Com o partido" numa peça só, sem papel: na tela larga, ela
+	 * é a coluna da esquerda, e os votos ficam na da direita. O vão entre as duas
+	 * seções é o do corpo.
+	 */
+	.resumo-dos-votos {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: clamp(2.5rem, 6vw, 4rem);
+	}
+
+	/*
+	 * Com o partido (a #329; o Renan, em 24/11/2026: "A · Na régua"): a frase em
+	 * Literata 500, com a régua de "Como votou" embaixo; a explicação, em
+	 * Literata, um pouco menor que o texto; e os votos contra a maioria, entre
+	 * fios, com o voto da pessoa num carimbo cheio e o da maioria num vazado. Nada
+	 * tem cor: o voto contra a maioria não é vermelho, e o voto com ela não é
+	 * verde.
+	 */
+	.frase-do-partido {
+		max-width: 39rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		font-weight: 500;
+		line-height: 1.5;
+	}
+
+	/*
+	 * A régua: o trilho em Papel 2 são as votações comparadas, e a parte em
+	 * tinta, as votações com a maioria (o --parte), com 4 px no mínimo, como a
+	 * barra de "Como votou". Ela se risca quando entra na tela
+	 * (estilos/movimento.css).
+	 */
+	.regua-do-partido {
+		max-width: 46rem;
+		margin-top: 1rem;
+	}
+
+	.regua-do-partido > .legenda-das-barras {
+		margin-bottom: 0.5rem;
+	}
+
+	.trilho-do-partido {
+		height: 0.5rem;
+		background: var(--papel-2);
+	}
+
+	.barra-do-partido {
+		display: block;
+		width: max(4px, calc(var(--parte) * 100%));
+		height: 100%;
+		background: var(--tinta);
+		transform-origin: 0 50%;
+	}
+
+	/*
+	 * Nas cores forçadas, o fundo do trilho some no Canvas: o fio mostra o total,
+	 * e a barra fica na cor do texto do sistema.
+	 */
+	@media (forced-colors: active) {
+		.trilho-do-partido {
+			border: 1px solid CanvasText;
+		}
+
+		.barra-do-partido {
+			forced-color-adjust: none;
+			background: CanvasText;
+		}
+	}
+
+	.como-contamos,
+	.votos-contra-a-maioria {
+		margin-top: 2rem;
+	}
+
+	.como-contamos {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.6rem;
+		max-width: 39rem;
+		font-family: var(--font-serif);
+		font-size: 0.9375rem;
+		line-height: 1.5;
+	}
+
+	/* "Como contamos" e "Votos contra a maioria do partido", como o "Como calculamos". */
+	.titulo-do-partido {
+		font-family: var(--font-sans);
+		font-size: 1.25rem;
+		font-stretch: 68%;
+		font-weight: 900;
+		line-height: 1.15;
+		text-transform: uppercase;
+	}
+
+	.votos-contra-a-maioria > .titulo-do-partido {
+		margin-bottom: 0.6rem;
+	}
+
+	.falha-dos-votos-contra {
+		max-width: 39rem;
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.5;
+	}
+
+	.recentes-dos-votos-contra {
+		margin-bottom: 0.75rem;
+		color: var(--tinta-suave);
+	}
+
+	.lista-dos-votos-contra {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		max-width: 46rem;
+		border-top: 2px solid var(--tinta);
+	}
+
+	.voto-contra-a-maioria {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		justify-items: start;
+		row-gap: 0.4rem;
+		padding: 1rem 0;
+		border-bottom: 1px solid var(--tinta);
+	}
+
+	.titulo-do-voto-contra {
+		font-family: var(--font-sans);
+		font-size: 1.125rem;
+		font-stretch: 68%;
+		font-weight: 900;
+		line-height: 1.15;
+		text-transform: uppercase;
+	}
+
+	.dia-do-voto-contra {
+		color: var(--tinta-suave);
+	}
+
+	/*
+	 * Os dois carimbos lado a lado, e um embaixo do outro quando não cabem: o
+	 * rótulo pequeno em cima ("Votou", "Maioria do PFB") e o voto embaixo, na
+	 * letra do carimbo do voto.
+	 */
+	.carimbos-do-voto-contra {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-top: 0.2rem;
+	}
+
+	.carimbo-da-pessoa,
+	.carimbo-da-maioria {
+		display: grid;
+		row-gap: 0.1rem;
+		padding: 0.3rem 0.6rem 0.35rem;
+		border: 2px solid var(--tinta);
+	}
+
+	.carimbo-da-pessoa {
+		background: var(--tinta);
+		color: var(--papel);
+	}
+
+	.carimbos-do-voto-contra dt {
+		font-family: var(--font-sans);
+		font-size: 0.75rem;
+		font-weight: 650;
+		line-height: 1.2;
+		letter-spacing: calc(0.08em * var(--espacado));
+		text-transform: var(--caixa-alta);
+	}
+
+	.carimbos-do-voto-contra dd {
+		font-family: var(--font-sans);
+		font-size: 1.125rem;
+		font-stretch: 62%;
+		font-weight: 900;
+		line-height: 1.1;
+		letter-spacing: calc(0.04em * var(--espacado));
+		text-transform: uppercase;
+	}
+
+	/*
+	 * Nas cores forçadas, os dois carimbos ficam com o fio do sistema, e o da
+	 * pessoa continua cheio, na cor do texto do sistema: o cheio e o vazado não
+	 * se confundem.
+	 */
+	@media (forced-colors: active) {
+		.carimbo-da-pessoa {
+			forced-color-adjust: none;
+			border-color: CanvasText;
+			background: CanvasText;
+			color: Canvas;
+		}
+	}
+
+	/*
 	 * Os votos da pessoa: cada um entre fios de tinta, com o voto num carimbo de
 	 * tinta à esquerda, a partir de 40 rem; antes, o carimbo vem em cima do
 	 * título. O título vem antes no HTML, para quem navega pelos títulos.
@@ -1307,6 +1510,34 @@
 		color: var(--tinta-suave);
 	}
 
+	/*
+	 * O voto contra a maioria do partido (a #329): a marca vem embaixo do dia e
+	 * do resultado, com o fio de tinta de 5 px dos avisos, e ganha uma linha só
+	 * dela na grade. O voto sem a marca fica sem a linha: vazia, ela somaria um
+	 * vão a mais entre os fatos e o texto.
+	 */
+	.voto-com-marca {
+		grid-template-areas:
+			"carimbo"
+			"titulo"
+			"fatos"
+			"marca"
+			"texto"
+			"links"
+			"coletado";
+	}
+
+	.contra-o-partido {
+		grid-area: marca;
+		max-width: 39rem;
+		padding-left: 0.75rem;
+		border-left: 5px solid var(--tinta);
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		font-weight: 600;
+		line-height: 1.4;
+	}
+
 	@media (width >= 40rem) {
 		.voto-da-pessoa {
 			grid-template-columns: 7.5rem minmax(0, 1fr);
@@ -1317,6 +1548,16 @@
 				"carimbo links"
 				"carimbo coletado";
 			column-gap: var(--respiro);
+		}
+
+		.voto-com-marca {
+			grid-template-areas:
+				"carimbo titulo"
+				"carimbo fatos"
+				"carimbo marca"
+				"carimbo texto"
+				"carimbo links"
+				"carimbo coletado";
 		}
 	}
 
@@ -1487,18 +1728,12 @@
 
 	/*
 	 * O cargo e o estado mais longos ("Deputado estadual" e "Rio Grande do Norte")
-	 * pedem cerca de 22.6rem numa linha. Numa coluna mais estreita, a faixa quebraria
-	 * com o quadradinho sozinho no fim da primeira linha: as duas partes ficam uma
-	 * embaixo da outra, sem ele. A regra do quadradinho, no index.css, vem depois
-	 * desta: a daqui precisa ser mais específica.
+	 * pedem cerca de 22.6rem numa linha. Numa coluna mais estreita, as duas partes
+	 * ficam uma embaixo da outra.
 	 */
 	@container cargo-da-eleicao (width < 23.5rem) {
 		.cargo-da-eleicao .faixa {
 			flex-direction: column;
-		}
-
-		.cargo-da-eleicao .faixa > span:not(:last-child)::after {
-			display: none;
 		}
 	}
 
@@ -1860,6 +2095,17 @@
 				"coletado";
 			align-content: start;
 		}
+
+		.corpo-do-parlamentar .voto-com-marca {
+			grid-template-areas:
+				"carimbo"
+				"titulo"
+				"fatos"
+				"marca"
+				"texto"
+				"links"
+				"coletado";
+		}
 	}
 
 	/* ───── A página da votação: o plenário ───── */
@@ -2063,11 +2309,10 @@
 		}
 
 		/*
-		 * O quadro do placar enche a coluna dele, sem o limite de 39rem do quadro
-		 * da edição (edicoes.css). Numa coluna com menos de 34rem, como a da
-		 * esquerda a 1366 px, os quatro números ficam em 2 × 2: em quatro, as
-		 * colunas ficariam justas no "Abstenções", a palavra mais larga, que pede
-		 * pouco mais de 30rem para as quatro.
+		 * O quadro enche a coluna nos casos lado a lado. Sem vídeo, o placar
+		 * nominal usa a largura do quadro da edição, de até 39rem. Numa coluna
+		 * com menos de 34rem os números ficam em 2 × 2, com espaço para
+		 * "Abstenções".
 		 */
 		.corpo-da-votacao .votacao {
 			container: quadro-da-votacao / inline-size;
@@ -2078,6 +2323,44 @@
 			.corpo-da-votacao .votacao > dl {
 				grid-template-columns: repeat(2, minmax(0, 1fr));
 			}
+		}
+
+		.corpo-da-votacao:not(.corpo-com-video):not(.corpo-sem-votos) .votacao {
+			max-width: 39rem;
+		}
+
+		/*
+		 * Com votos e vídeo, a capa e a nota cabem em 27rem. O quadro em 2 × 2
+		 * distribui o respiro entre as linhas e termina junto da nota.
+		 */
+		.corpo-da-votacao.corpo-com-video:not(.corpo-sem-votos) > .video-da-sessao {
+			max-width: 27rem;
+		}
+
+		.corpo-da-votacao.corpo-com-video:not(.corpo-sem-votos)
+			> .placar-da-votacao {
+			align-self: stretch;
+			display: flex;
+			flex-direction: column;
+		}
+
+		/* Em flex, a margem do título se somaria ao recuo do quadro. */
+		.corpo-da-votacao.corpo-com-video:not(.corpo-sem-votos)
+			> .placar-da-votacao
+			> h2 {
+			margin-bottom: 0;
+		}
+
+		.corpo-da-votacao.corpo-com-video:not(.corpo-sem-votos) .votacao {
+			display: flex;
+			flex: 1;
+			flex-direction: column;
+		}
+
+		.corpo-da-votacao.corpo-com-video:not(.corpo-sem-votos) .votacao > dl {
+			flex: 1;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			align-content: space-between;
 		}
 	}
 
@@ -2090,7 +2373,8 @@
 	 * Depois do toque, a capa fica na caixa, escondida, e o player ocupa a caixa
 	 * inteira, por cima: a altura não muda. A caixa é o contêiner da capa: abaixo
 	 * de 26rem, o azulejo fica em cima do texto. Na tela larga, a caixa enche a
-	 * coluna da direita (a #306); a nota continua com até 39rem, como o texto.
+	 * largura do bloco à direita. A nota tem até 39rem e acompanha o bloco
+	 * quando ele é mais estreito.
 	 */
 	.video-da-sessao > h2 {
 		scroll-margin-top: 1rem;

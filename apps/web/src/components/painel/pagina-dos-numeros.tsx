@@ -39,7 +39,7 @@ import { FaixaDeInformacoes } from "../faixa-de-informacoes";
 import { CabecaDoPainel } from "./cabeca-do-painel";
 import { VerificandoSessao } from "./verificando-sessao";
 
-export type TrilhaDoCatalogo = { slug: string; titulo: string };
+type TrilhaDoCatalogo = { slug: string; titulo: string };
 
 /** O tamanho de uma barra ou coluna: a parte do maior valor, de 0 a 1. */
 const comParte = (parte: number) =>
@@ -631,7 +631,7 @@ function Piloto({ piloto }: { piloto: NumerosPainel["piloto"] }) {
 				<span>Quiz {piloto.versao_quiz}</span>
 				<span>{plural(total_perguntas, "pergunta", "perguntas")}</span>
 			</FaixaDeInformacoes>
-			<h3 className="rotulo">Tentativas e pessoas</h3>
+			<h3 className="rotulo">Tentativas e participações</h3>
 			<Valores
 				itens={[
 					{
@@ -662,7 +662,7 @@ function Piloto({ piloto }: { piloto: NumerosPainel["piloto"] }) {
 					perguntas={total_perguntas}
 				/>
 			</div>
-			<h3 className="rotulo">Quem fez as duas etapas</h3>
+			<h3 className="rotulo">Participações com as duas etapas</h3>
 			<p className="frase-do-grafico">{fraseDosPares(piloto.pares)}</p>
 		</Secao>
 	);
@@ -683,7 +683,11 @@ function MediaDaEtapa({
 	perguntas: number;
 }) {
 	const naTela = mediaNaTela(media, perguntas);
-	const pessoas = plural(media.quantidade, "pessoa", "pessoas");
+	const participacoes = plural(
+		media.quantidade,
+		"participação",
+		"participações",
+	);
 	const parte = (media.percentual ?? 0) / 100;
 	return (
 		<div className="media-do-piloto" style={comParte(parte)}>
@@ -695,14 +699,14 @@ function MediaDaEtapa({
 						<span aria-hidden="true" className="barra-dos-numeros" />
 					)}
 					<p className="frase-do-grafico">
-						{`Em média, ${naTela.acertos}, com ${pessoas}.`}
+						{`Em média, ${naTela.acertos}, com ${participacoes}.`}
 					</p>
 				</>
 			) : (
 				<>
 					<p className="frase-da-situacao">{naTela.frase}</p>
 					{media.quantidade > 0 && (
-						<p className="frase-do-grafico">{`${pessoas} nesta etapa.`}</p>
+						<p className="frase-do-grafico">{`${participacoes} nesta etapa.`}</p>
 					)}
 				</>
 			)}

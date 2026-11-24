@@ -21,6 +21,7 @@ import {
 	type Termo,
 	termoConta,
 } from "@/client";
+import { AcaoDeTexto } from "@/components/acao-de-texto";
 import { ENV } from "@/env";
 import { classes } from "@/lib/classes";
 import { semSegundoClique } from "@/lib/clique";
@@ -272,22 +273,20 @@ function OQueAContaGuarda() {
 				inscrição à parte.
 			</p>
 			<p>
-				<a
+				<AcaoDeTexto
 					href="/termo#o-que-guarda"
 					target="_blank"
 					rel="noopener"
-					className="acao-de-texto"
-				>
-					<span>
-						Ler o termo da conta
+					texto="Ler o termo da conta"
+					complemento="(abre em outra aba)"
+					icone={
 						<ArrowUpRight
 							aria-hidden="true"
 							className="conta-outra-aba"
 							strokeWidth={2.5}
 						/>
-						<span className="sr-only"> (abre em outra aba)</span>
-					</span>
-				</a>
+					}
+				/>
 			</p>
 		</div>
 	);
@@ -772,9 +771,7 @@ export function FormularioConta({
 							className="conta-indisponivel col-start-1 row-start-1"
 						>
 							<p className="ainda-nao">Não foi possível consultar sua conta.</p>
-							<a href="/login" className="acao-de-texto">
-								<span>Tentar novamente</span>
-							</a>
+							<AcaoDeTexto href="/login" texto="Tentar novamente" />
 						</div>
 					)}
 					{formulario}
@@ -821,13 +818,11 @@ export function FormularioConta({
 							aria-hidden={guardado || undefined}
 							inert={guardado}
 						>
-							<a
+							<AcaoDeTexto
 								href={para}
 								onClick={semSegundoClique}
-								className="acao-de-texto"
-							>
-								<span>{texto}</span>
-							</a>
+								texto={texto}
+							/>
 						</li>
 					),
 				)}

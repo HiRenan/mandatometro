@@ -79,7 +79,7 @@ export const NOME_DO_VOTO: Record<Valor, string> = {
  */
 export type Artigo = { casa: "camara" | "senado"; artigo: string };
 
-export type Explicacao = { texto: string; artigos: Artigo[] };
+type Explicacao = { texto: string; artigos: Artigo[] };
 
 /**
  * O que cada voto quer dizer (o Renan, em 21/11/2026), com a regra conferida

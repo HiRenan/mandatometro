@@ -1,7 +1,7 @@
 // O que as páginas usam dos parlamentares e das votações: os tipos e as funções
 // que pedem a página pronta ao servidor. A leitura na API fica em
 // parlamentares.server.ts.
-export { enderecoDoParlamentar, idDaVotacao } from "./endereco";
+export { enderecoDoParlamentar } from "./endereco";
 export {
 	classeDaRegiao,
 	ESTADOS,
@@ -9,7 +9,6 @@ export {
 	type Estado,
 	estadoDaSigla,
 	REGIOES,
-	type Regiao,
 	ufDaBusca,
 } from "./estados";
 export {
@@ -25,4 +24,5 @@ export type {
 	ParlamentarDaLista,
 	ParlamentarDaPagina,
 	Patrimonio,
+	VotosContraOPartido,
 } from "./parlamentares.server";

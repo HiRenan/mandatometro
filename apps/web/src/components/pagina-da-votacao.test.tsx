@@ -390,9 +390,11 @@ describe("o quadro da votação, na edição e no painel", () => {
 		for (const video of [null, "https://youtu.be/Mnd268Cam01"]) {
 			await mostrar(139, video);
 
-			expect(
-				screen.getAllByRole("link").map((link) => link.textContent),
-			).toEqual(["Ver quem votou na votação de 20 de novembro de 2026"]);
+			expect(screen.getAllByRole("link")).toEqual([
+				screen.getByRole("link", {
+					name: "Ver quem votou na votação de 20 de novembro de 2026",
+				}),
+			]);
 			cleanup();
 		}
 	});

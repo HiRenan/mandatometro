@@ -1,8 +1,8 @@
 # API, banco e coleta no ar
 
-O Renan faz os passos abaixo depois de este PR entrar na `develop`. A API terá um projeto próprio na Vercel; o site continua no projeto atual. Cada ambiente terá seu próprio projeto Neon Free. Nenhuma conta, banco remoto ou publicação é criada pelo código deste PR.
+A API e o site usam projetos separados na Vercel. Cada ambiente usa um projeto Neon Free próprio. Os passos abaixo cobrem a configuração inicial e a primeira publicação.
 
-Os passos abaixo registram a configuração inicial. Para cada nova publicação, confira se **Migrar banco** aplicou as migrations até `head` da versão no ambiente. A revisão `0013` citada nos passos de produção registra a referência da época.
+Em cada publicação, confira no ambiente se o passo **Aplicar as migrations**, do workflow **Migrar banco**, terminou com “Migration concluída até head”.
 
 | Ambiente | Site | API | Banco e ambiente no GitHub |
 | --- | --- | --- | --- |
@@ -21,9 +21,9 @@ O tempo é uma estimativa; confirmação de conta, DNS e filas de publicação p
 
 Para publicar uma branch pelo painel, use **Deployments → Deployments actions → Create Deployment**, informe `develop` ou `main` e confirme a branch se a Vercel pedir. [Publicação a partir de uma branch](https://vercel.com/docs/git#creating-a-deployment-from-a-git-reference).
 
-1. **Vercel → Add New → Project → Import**, no repositório `HiRenan/mandatometro`. A Vercel detecta as duas aplicações e oferece o preset **Services**. Clique **Import backend as a project** e **Import single project**. Dê ao projeto o nome `mandatometro-api` e confirme **Root Directory** `apps/backend` e **Framework Preset** **FastAPI**. Clique **Deploy** e informe o código de verificação de identidade recebido por e-mail. A primeira tentativa é marcada como Production; ainda não coloque dados de produção nela. Ela pode falhar: o banco ainda não foi configurado e a `main` ainda precisa receber os arquivos deste PR. [Importação de monorepo](https://vercel.com/docs/monorepos), [regra da primeira publicação](https://vercel.com/docs/deployments/environments#first-deployment).
+1. **Vercel → Add New → Project → Import**, no repositório `HiRenan/mandatometro`. A Vercel detecta as duas aplicações e oferece o preset **Services**. Clique **Import backend as a project** e **Import single project**. Dê ao projeto o nome `mandatometro-api` e confirme **Root Directory** `apps/backend` e **Framework Preset** **FastAPI**. Clique **Deploy** e informe o código de verificação de identidade recebido por e-mail. A primeira tentativa é marcada como Production. Reserve os dados de produção para a etapa 2. A tentativa pode falhar enquanto o banco estiver por configurar ou a `main` ainda estiver sem os arquivos da API. [Importação de monorepo](https://vercel.com/docs/monorepos), [regra da primeira publicação](https://vercel.com/docs/deployments/environments#first-deployment).
 
-2. Em **Projeto da API → Settings → Environments → Production → Branch Tracking**, confira a seleção inicial `main`. A `develop` fica em Preview. A `main` precisa receber este trabalho antes da etapa de produção.
+2. Em **Projeto da API → Settings → Environments → Production → Branch Tracking**, confira a seleção inicial `main`. A `develop` fica em Preview. Para publicar a API em produção, use uma versão da `main` que inclua os arquivos de `apps/backend`.
 
 3. Em **Vercel → Marketplace → Neon → Install**, crie o recurso `mandatometro-desenvolvimento` no plano **Free**. Troque a região padrão, **Washington**, por **São Paulo**. Desligue **Auth**, que vem ligado, e deixe desligado o serviço opcional de tempo real. **Confira:** Free e a região escolhida; em **Open in Neon**, anote a versão do PostgreSQL exibida. O ambiente local e o CI usam 17; a versão entregue pela integração será conferida também ao aplicar as migrations. [Telas da integração](https://neon.com/docs/guides/vercel-managed-integration).
 
@@ -53,7 +53,7 @@ Comece depois de conferir a inscrição de teste no ambiente anterior. A publica
 
    `PILOTO_ATIVO` fica desligado por padrão; o Renan define `true` como **Config** nas variáveis da **API** e faz nova publicação quando aprovar as decisões da [medição do piloto](medicao-do-piloto.md), com a migration aplicada e a tela integrada.
 
-4. **GitHub → PR da develop para main:** Renan e Atena publicam a versão aprovada. **Não pule este passo:** em 16/11/2026, a `main` em `2b1bcea` ainda não tinha os conectores. A mudança de migrations no push aciona **Migrar banco** para produção. Se não houve mudança nesses arquivos, ou se a execução anterior pulou por falta do segredo, use **Actions → Migrar banco → Run workflow → main** uma vez. **Confira:** **Migrar banco** aplicou até a revisão `0013` e a publicação da API está pronta. Mantenha a folha de produção oculta até concluir; publicação e migration são processos separados.
+4. **GitHub → PR da develop para main:** Renan e Atena publicam a versão aprovada. A mudança de migrations no push aciona **Migrar banco** para produção. Se não houve mudança nesses arquivos, ou se a execução anterior pulou por falta do segredo, use **Actions → Migrar banco → Run workflow → main** uma vez. Confira se o passo **Aplicar as migrations** terminou com “Migration concluída até head” na `main` e se a publicação da API está pronta. A publicação e a migration são processos separados. Mantenha a folha de produção oculta até concluir os dois.
 
 5. **GitHub → Actions → Coletar Congresso → Run workflow → main:** deixe as datas vazias para carregar os sete dias completos anteriores. **Confira:** resumo das duas Casas, commit publicado na `main` e ausência de falhas. Não copie a edição de prova do banco local. A edição real precisa do preparo e da revisão da #22; só a coleta não a publica.
 
@@ -66,7 +66,7 @@ Comece depois de conferir a inscrição de teste no ambiente anterior. A publica
 | Tarefa | Quando | Código e banco |
 | --- | --- | --- |
 | Coleta diária | 03h17 de Brasília (`17 6 * * *` UTC), se `COLETAS_ATIVAS=true` | YAML da `develop`, checkout da `main`, banco `producao` |
-| Coleta manual | Botão Run workflow, com datas e modo Somente vídeos opcionais | `develop` → `desenvolvimento`; `main` → `producao` |
+| Coleta manual | Botão Run workflow, com datas opcionais e escolha entre coleta completa, somente vídeos ou somente temas | `develop` → `desenvolvimento`; `main` → `producao` |
 | Coletar TSE | Somente Run workflow | Commit do disparo. `develop` usa `desenvolvimento` e `main` usa `producao` |
 | Coletar IPCA | Somente Run workflow | Commit do disparo. `develop` usa `desenvolvimento` e `main` usa `producao` |
 | Coletar biografias parlamentares | Somente Run workflow. Na `main`, com disparo do Renan | Commit do disparo. `develop` usa `desenvolvimento` e `main` usa `producao` |
@@ -87,7 +87,9 @@ Para recuperar uma lacuna maior, preencha **inicio e fim juntos**, em `AAAA-MM-D
 
 Depois de aplicar a migration `0012` e publicar a API, abra **Actions → Coletar Congresso → Run workflow**. Escolha **main** para produção ou **develop** para desenvolvimento. Informe `inicio` e `fim` do período que quer preencher e marque **Somente vídeos**, desmarcado por padrão. A agenda diária segue com a coleta completa.
 
-Confira os campos `videos` nos dois resumos e `url_video` na edição publicada e em uma votação com registro oficial. Se uma consulta falhar, repita com as mesmas datas. O modo volta às votações sem vídeo e usa a mesma fila e credenciais do banco da coleta.
+Na coleta normal, as consultas de vídeo têm até quatro minutos, dentro dos primeiros 25 minutos da coleta de cada Casa, e param após duas falhas temporárias seguidas. Esse tempo inclui a abertura da conexão e a leitura integral das respostas. Se o prazo vence durante o handshake TLS, o cliente fecha a conexão e a coleta segue para o resumo.
+
+Confira os campos `videos` nos dois resumos e `url_video` na edição publicada e em uma votação com registro oficial. Se uma consulta falhar ou `videos.sessoes_nao_consultadas` for maior que zero, repita com as mesmas datas. O modo volta às votações sem vídeo e usa a mesma fila e credenciais do banco da coleta.
 
 ### Preencher temas de votações já coletadas
 

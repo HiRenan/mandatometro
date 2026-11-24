@@ -52,11 +52,11 @@ Cada passo tem um `tipo`:
 | `relogio` | `sessoes`, `fundamento`, `legenda` | O prazo em sessões, como o do recurso ao Plenário |
 | `carimbo` | `selo`, `legenda` | Um carimbo fora de decisão, como o "Segue para o Senado" |
 
-O `id` de cada fala (`c1-03`) é o nome do futuro arquivo de narração: **ele não muda**. O número dele é o da cena, e o leitor recusa um id fora da cena, repetido ou fora do formato.
+O `id` de cada fala (`c1-03`) é o nome do arquivo de narração: **ele não muda**. O número dele é o da cena, e o leitor recusa um id fora da cena, repetido ou fora do formato.
 
 ### Os carimbos
 
-`pedido-de-vista`, `recurso-ao-plenario`, `segue-para-o-senado`, `urgencia`, `aprovado` e `sancionado`. Cada um é um componente em `apps/web/src/components/jogo/carimbos/`, com o texto escrito no código, não numa imagem: dá para traduzir, ajustar e ler com leitor de tela. O texto fica em tinta, e a cor da fita só contorna o selo.
+`pedido-de-vista`, `recurso-ao-plenario`, `segue-para-o-senado`, `urgencia`, `aprovado` e `sancionado`. Cada um é um componente em `apps/web/src/components/jogo/carimbos.tsx`, com o texto escrito no código, não numa imagem: dá para traduzir, ajustar e ler com leitor de tela. O texto fica em tinta, e a cor da fita só contorna o selo.
 
 ## Os assets
 
@@ -107,7 +107,6 @@ O script lê o roteiro, manda cada fala com a voz do personagem e a direção da
 ## Pendências
 
 - Ler a redação atual completa do art. 105 do Regimento Interno da Câmara antes de publicar a explicação da decisão 1.1 palavra por palavra. O Regimento não tem texto no normas.leg.br, e a versão em vigor é o arquivo "atualizado até a Resolução nº 34, de 2026", em `www2.camara.leg.br` ([conteúdo das trilhas](conteudo-das-trilhas.md)).
-- Gravar a narração: o roteiro já está marcado com a emoção de cada fala e o script pronto, e falta uma conta paga da ElevenLabs para rodar o `pnpm --filter web vozes`.
 
 ## Fontes conferidas em 20/11/2026
 

@@ -219,24 +219,39 @@
 		text-transform: var(--caixa-alta);
 	}
 
-	/* A faixa de informações: as partes separadas por um quadradinho. */
+	/*
+	 * O quadradinho fica no recuo antes de cada parte. A faixa avança o mesmo
+	 * recuo para fora do parágrafo, que corta o quadradinho de toda parte que
+	 * começa uma linha.
+	 */
+	.faixa-de-informacoes {
+		overflow-x: clip;
+	}
+
 	.faixa {
 		display: flex;
 		flex-wrap: wrap;
 		row-gap: 0.3rem;
+		margin-inline-start: -1.9em;
 		color: var(--tinta-suave);
 	}
 
-	.faixa > span:not(:last-child)::after {
+	.faixa > span {
+		min-inline-size: 0;
+		padding-inline-start: 1.9em;
+	}
+
+	.faixa > span::before {
 		content: "" / "";
 		display: inline-block;
 		width: 0.3em;
 		height: 0.3em;
-		margin: 0 0.8em;
+		margin-inline: -1.1em 0.8em;
 		vertical-align: 0.2em;
 		background: currentColor;
 
 		@media (forced-colors: active) {
+			forced-color-adjust: none;
 			background: CanvasText;
 		}
 	}

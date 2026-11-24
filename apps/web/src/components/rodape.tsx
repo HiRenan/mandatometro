@@ -1,3 +1,4 @@
+import { AcaoDeTexto } from "@/components/acao-de-texto";
 import { ENDERECO_DO_TERMO } from "@/lib/termo";
 import { Painel } from "./azulejo";
 import { NOME_DO_SITE } from "./nome-do-site";
@@ -30,18 +31,17 @@ export function Rodape() {
 						da Câmara e do Senado.
 					</p>
 					<p>
-						<a
+						<AcaoDeTexto
 							href="https://github.com/HiRenan/mandatometro"
-							className="acao-de-texto"
-						>
-							<span>O código é aberto, no GitHub</span>
-						</a>
+							texto="O código é aberto, no GitHub"
+						/>
 						.
 					</p>
 					<p>
-						<a href={ENDERECO_DO_TERMO} className="acao-de-texto">
-							<span>O termo de consentimento da conta</span>
-						</a>
+						<AcaoDeTexto
+							href={ENDERECO_DO_TERMO}
+							texto="O termo de consentimento da conta"
+						/>
 						.
 					</p>
 				</div>

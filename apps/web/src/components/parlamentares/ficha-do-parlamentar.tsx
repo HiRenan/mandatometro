@@ -82,9 +82,7 @@ export function FichaDoParlamentar({
 								<li key={`${mandato.legislatura}-${mandato.uf}`}>
 									<FaixaDeInformacoes>
 										{partesDoMandato(mandato, uf).map((parte) => (
-											<span key={parte} className="parte-do-mandato">
-												{parte}
-											</span>
+											<span key={parte}>{parte}</span>
 										))}
 									</FaixaDeInformacoes>
 								</li>

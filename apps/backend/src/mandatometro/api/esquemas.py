@@ -202,6 +202,12 @@ class ContagemVotosParlamentar(BaseModel):
     outro: int
 
 
+class ContagemComOPartido(BaseModel):
+    comparaveis: int = Field(description="Votos com comparação válida.")
+    com_o_partido: int = Field(description="Votos iguais à maioria dos outros membros do partido.")
+    contra: int = Field(description="Votos diferentes da maioria dos outros membros do partido.")
+
+
 class FonteBiografia(BaseModel):
     url: str
     coletado_em: datetime
@@ -226,6 +232,10 @@ class DetalheParlamentar(ParlamentarPublico):
     contagem_votos: ContagemVotosParlamentar = Field(
         description="Contagem dos registros de voto deste parlamentar, por valor normalizado. "
         "Uma votação sem registro da pessoa fica fora da contagem."
+    )
+    com_o_partido: ContagemComOPartido = Field(
+        default_factory=lambda: ContagemComOPartido(comparaveis=0, com_o_partido=0, contra=0),
+        description="Contagem das comparações com o partido em todo o histórico gravado.",
     )
 
 
@@ -312,6 +322,7 @@ class ProposicaoAfetada(BaseModel):
 
 
 ValorVoto = Literal["sim", "nao", "abstencao", "obstrucao", "presidente", "nao_votou", "outro"]
+ValorVotoComparavel = Literal["sim", "nao", "abstencao", "obstrucao"]
 
 
 class DadosVotacao(BaseModel):
@@ -330,6 +341,17 @@ class DadosVotacao(BaseModel):
 class VotoParlamentar(DadosVotacao):
     votacao_id: int = Field(description="Id interno da votação.")
     valor: ValorVoto
+    partido: str | None = Field(default=None, description="Sigla registrada no dia do voto.")
+    maioria_do_partido: ValorVotoComparavel | None = Field(
+        default=None,
+        description="Valor mais frequente entre os votos contados dos outros membros do partido. "
+        "Nulo sem partido, com empate ou com menos de dois votos contados.",
+    )
+    com_o_partido: bool | None = Field(
+        default=None,
+        description="Se o voto seguiu a maioria do partido. Nulo quando o voto fica fora da "
+        "comparação ou quando falta maioria.",
+    )
 
 
 class ListaVotosParlamentar(BaseModel):

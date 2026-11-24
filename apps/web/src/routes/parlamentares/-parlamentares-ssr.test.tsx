@@ -15,6 +15,8 @@ import {
 	eleicaoDeExemplo,
 	listaDeExemplo,
 	patrimonioDeExemplo,
+	votoDoParlamentarDeExemplo,
+	votosContraDeExemplo,
 	votosDeExemplo,
 } from "@/lib/parlamentares/exemplos-de-teste";
 import { Route as RotaRaiz } from "@/routes/__root";
@@ -349,6 +351,118 @@ describe("o HTML das páginas dos parlamentares", () => {
 		}
 	});
 
+	/**
+	 * A API da pessoa com a comparação com o partido: a primeira página de votos
+	 * começa com um voto contra a maioria do PFB, e o pedido com o filtro recebe
+	 * a resposta de `contra`. O `detalhe` e o `voto` trocam a pessoa e os votos.
+	 */
+	function apiComOPartido(
+		contra: () => Response = () => json(200, votosContraDeExemplo()),
+		detalhe: unknown = detalheDeExemplo(),
+		voto: (votacao: number) => unknown = (votacao) =>
+			votacao === 139
+				? votoDoParlamentarDeExemplo(139, {
+						valor: "nao",
+						partido: "PFB",
+						maioria_do_partido: "sim",
+						com_o_partido: false,
+					})
+				: votoDoParlamentarDeExemplo(votacao),
+	) {
+		return api((pedido) => {
+			const endereco = new URL(pedido.url);
+			if (endereco.searchParams.has("com_o_partido")) {
+				return contra();
+			}
+			if (endereco.pathname.endsWith("/votos")) {
+				const pagina = votosDeExemplo(25);
+				return json(200, {
+					...pagina,
+					votos: pagina.votos.map(({ votacao_id }) => voto(votacao_id)),
+				});
+			}
+			if (endereco.pathname.endsWith("/patrimonio")) {
+				return json(200, patrimonioDeExemplo());
+			}
+			return json(200, detalhe);
+		});
+	}
+
+	it("com o partido vem no HTML, entre como votou e os votos: a frase, a régua fora do leitor de tela, a explicação, a lista curta e a marca no voto contra a maioria", async () => {
+		apiComOPartido();
+
+		const { status, html } = await pedir(CANONICO);
+
+		expect(status).toBe(200);
+		expect(html).toMatch(
+			/<h2 id="com-o-partido" class="subtitulo-condensado letra-com-teto \[--palavra:3\.61\]"[^>]*>Com o partido<\/h2>/,
+		);
+		const comoVotou = html.indexOf(">Como votou</h2>");
+		const comOPartido = html.indexOf(">Com o partido</h2>");
+		expect(comoVotou).toBeGreaterThan(0);
+		expect(comOPartido).toBeGreaterThan(comoVotou);
+		expect(html.indexOf(">Votos</h2>")).toBeGreaterThan(comOPartido);
+		expect(html).toContain(
+			'<p class="frase-do-partido">Votou com a maioria do partido em 14 de 16 votações, e contra ela em 2.</p><div class="regua-do-partido" aria-hidden="true">',
+		);
+		expect(html).toContain(">Como contamos</h3>");
+		expect(html.match(/<li class="voto-contra-a-maioria">/g)).toHaveLength(2);
+		expect(html).toContain('href="/votacoes/137?partido=PFT"');
+		expect(html).toContain('href="/votacoes/128?partido=PFB"');
+		expect(html.match(/<p class="contra-o-partido">[^<]*<\/p>/g)).toEqual([
+			'<p class="contra-o-partido">Contra a maioria do PFB, que votou Sim</p>',
+		]);
+		expect(
+			html.match(/<li class="voto-da-pessoa voto-com-marca">/g),
+		).toHaveLength(1);
+		expect(console.error).not.toHaveBeenCalled();
+	});
+
+	it("com a API de antes da #328, sem a comparação, a página abre com 200, sem a seção nem as marcas", async () => {
+		const { com_o_partido: _comparacao, ...antigo } = detalheDeExemplo();
+		apiComOPartido(
+			// A API de antes ignora o filtro e manda a página de votos de sempre.
+			() => json(200, votosDeExemplo(25)),
+			antigo,
+			(votacao) => {
+				const {
+					partido: _partido,
+					maioria_do_partido: _maioria,
+					com_o_partido: _seguiu,
+					...voto
+				} = votoDoParlamentarDeExemplo(votacao);
+				return voto;
+			},
+		);
+
+		const { status, html } = await pedir(CANONICO);
+
+		expect(status).toBe(200);
+		expect(html).not.toContain("Com o partido</h2>");
+		expect(html).not.toContain("contra-o-partido");
+		expect(html).not.toContain("voto-contra-a-maioria");
+		expect(html).toContain(">Como votou</h2>");
+		expect(html.match(/<li class="voto-da-pessoa">/g)).toHaveLength(20);
+		expect(console.error).not.toHaveBeenCalled();
+	});
+
+	it("só a lista curta falha: a página abre com 200, a seção diz que não carregou, e nada da falha chega ao HTML", async () => {
+		apiComOPartido(() => json(500, { detalhe: MENSAGEM_DA_FALHA }));
+
+		const { status, html } = await pedir(CANONICO);
+
+		expect(status).toBe(200);
+		expect(html).toContain(
+			"Os votos contra a maioria não carregaram agora. Recarregue a página para tentar de novo.",
+		);
+		expect(html).toContain(">Com o partido</h2>");
+		expect(html).not.toContain('<li class="voto-contra-a-maioria">');
+		expect(html.match(/<li class="voto-da-pessoa[ "]/g)).toHaveLength(20);
+		for (const segredo of SEGREDOS) {
+			expect(html, segredo).not.toContain(segredo);
+		}
+	});
+
 	it("uma data de coleta inválida fica fora do HTML e o restante da página abre", async () => {
 		const eleicao = eleicaoDeExemplo();
 		apiDeExemplo(25, () =>
@@ -386,7 +500,9 @@ describe("o HTML das páginas dos parlamentares", () => {
 		);
 		expect(html.match(/<li class="voto-da-pessoa">/g)).toHaveLength(5);
 		expect(html).toMatch(
-			new RegExp(`href="${CANONICO}#votos"[^>]*><span>Votos mais novos`),
+			new RegExp(
+				`href="${CANONICO}#votos"[^>]*aria-label="Votos mais novos"[^>]*><span aria-hidden="true">Votos mais novos`,
+			),
 		);
 	});
 
@@ -422,9 +538,8 @@ describe("o HTML das páginas dos parlamentares", () => {
 
 		expect(status).toBe(200);
 		expect(html).toContain("<title>Parlamentares · Mandatômetro</title>");
-		// O mapa, os azulejos dos oito estados estreitos e a lista que fica no
-		// lugar do mapa na tela estreita: 27, 8 e 27 links.
-		expect(html.match(/href="\/parlamentares\?uf=[A-Z]{2}"/g)).toHaveLength(62);
+		// O desenho, os azulejos e a lista para a tela estreita têm 27 links cada.
+		expect(html.match(/href="\/parlamentares\?uf=[A-Z]{2}"/g)).toHaveLength(81);
 		// No desenho, cada região é uma lista com o nome dela, já no HTML.
 		expect(
 			[...html.matchAll(/<g role="list" aria-label="([^"]+)"/g)].map(
@@ -498,7 +613,7 @@ describe("o HTML das páginas dos parlamentares", () => {
 			html.match(
 				/aria-current="page"[^>]*href="\/parlamentares\?uf=SC"|href="\/parlamentares\?uf=SC"[^>]*aria-current="page"/g,
 			),
-		).toHaveLength(2);
+		).toHaveLength(3);
 		expect(html).toContain('href="/parlamentares/82-iris-dellombre"');
 		expect(html).toContain('href="/parlamentares/501-lia-quinemar"');
 		// Quem não tem partido nos dados aparece com o traço, e o leitor de tela

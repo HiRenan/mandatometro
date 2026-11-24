@@ -1,6 +1,6 @@
 // O que as páginas usam do conteúdo: os tipos e as funções que pedem a página
 // pronta ao servidor. A leitura dos arquivos fica em paginas.server.ts.
-export type { Fonte, Infografico, Passo } from "./ler";
+export type { Fonte, Infografico } from "./ler";
 export {
 	buscarArtigo,
 	buscarInicio,
@@ -14,11 +14,8 @@ export type {
 	ArtigoNaTrilha,
 	CaminhoNaInicial,
 	ChamadaDoQuiz,
-	ChamadaNaTrilha,
 	PaginaInicial,
 	PerguntaNaPagina,
-	PerguntaSemACerta,
 	QuizNaPagina,
 	TrilhaNaLista,
-	TrilhaNaPagina,
 } from "./paginas.server";

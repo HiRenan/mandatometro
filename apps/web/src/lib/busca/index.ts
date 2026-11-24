@@ -4,12 +4,7 @@ export {
 	buscarIndiceDasEdicoes,
 	buscarIndiceDoConteudo,
 } from "./busca.functions";
-export type {
-	ArtigoNaBusca,
-	EdicaoNaBusca,
-	PaginaNaBusca,
-	TrilhaNaBusca,
-} from "./paginas-na-busca";
+export type { PaginaNaBusca } from "./paginas-na-busca";
 export {
 	type DocumentoPreparado,
 	type Pedaco,

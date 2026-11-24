@@ -225,7 +225,7 @@ export const obterPatrimonioParlamentar = <ThrowOnError extends boolean = false>
 /**
  * Listar os votos gravados do parlamentar da votação mais recente para a mais antiga
  *
- * O filtro por tema é aplicado antes da paginação por deslocamento. O desempate usa o id interno decrescente da votação.
+ * Os filtros por tema e por comparação com o partido são aplicados antes da contagem e da paginação por deslocamento. O desempate usa o id interno decrescente da votação.
  */
 export const listarVotosParlamentar = <ThrowOnError extends boolean = false>(options: Options<ListarVotosParlamentarData, ThrowOnError>): RequestResult<ListarVotosParlamentarResponses, ListarVotosParlamentarErrors, ThrowOnError> => (options.client ?? client).get<ListarVotosParlamentarResponses, ListarVotosParlamentarErrors, ThrowOnError>({ url: '/parlamentares/{id}/votos', ...options });
 

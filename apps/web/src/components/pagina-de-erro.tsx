@@ -1,11 +1,11 @@
 import {
 	type AnyRouter,
-	Link,
 	type ParsedLocation,
 	useRouter,
 	useRouterState,
 } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
+import { LinkDeAcao } from "@/components/acao-de-texto";
 import { Aviso, useAviso } from "@/components/aviso";
 import { sementeDe } from "@/lib/azulejos";
 import { focarNoTitulo } from "@/lib/foco";
@@ -137,13 +137,11 @@ export function PaginaDeErro() {
 						</button>
 					</li>
 					<li>
-						<Link
+						<LinkDeAcao
 							to="/trilhas"
 							activeOptions={{ exact: true }}
-							className="acao-de-texto"
-						>
-							<span>Ver as trilhas</span>
-						</Link>
+							texto="Ver as trilhas"
+						/>
 					</li>
 				</ul>
 				{tentouAqui && <p className="ainda-nao">{AINDA_NAO}</p>}

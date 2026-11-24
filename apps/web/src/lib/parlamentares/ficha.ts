@@ -48,7 +48,7 @@ export function naoPublica(
 }
 
 /** Uma eleição na faixa da ficha: o ano, o cargo, o lugar e o resultado curto. */
-export type EleicaoDaFicha = {
+type EleicaoDaFicha = {
 	chave: string;
 	ano: number;
 	cargo: string;

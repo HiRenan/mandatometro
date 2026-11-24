@@ -27,12 +27,12 @@ import {
 } from "@/lib/parlamentares/tracado";
 import { FaixaDeInformacoes } from "../faixa-de-informacoes";
 
-/**
- * Os estados estreitos demais para o ponteiro no mapa: no painel de 1366 px,
- * nenhum deles comporta um quadrado de 12 px (o próximo, Santa Catarina,
- * comporta 17). Cada um ganha um azulejo de 44 px embaixo do mapa.
- */
-const ESTREITOS = new Set(["AL", "PB", "PE", "RN", "SE", "ES", "RJ", "DF"]);
+/** Os azulejos seguem a ordem da legenda e, em cada região, a das siglas. */
+const ESTADOS_PARA_OS_AZULEJOS = [...ESTADOS].sort(
+	(a, b) =>
+		REGIOES.indexOf(a.regiao) - REGIOES.indexOf(b.regiao) ||
+		a.sigla.localeCompare(b.sigla, "pt-BR"),
+);
 
 // Cada link acende o contorno da mesma UF na camada de cima do SVG.
 const REGRAS_DO_FOCO_NATIVO = `${ESTADOS.map(
@@ -48,8 +48,8 @@ const REGRAS_DO_FOCO_NATIVO = `${ESTADOS.map(
  * tinta, as outras regiões ficam em papel, e a linha embaixo do mapa diz o nome,
  * a região e os deputados. O estado aberto fica em tinta, com o aria-current.
  *
- * Os oito estados estreitos ganham também um azulejo, que é atalho do ponteiro:
- * fica fora do leitor de tela e do Tab, porque o mapa já tem o link de cada um.
+ * Os 27 estados ganham também um azulejo, que é atalho do ponteiro e fica fora
+ * do leitor de tela e do Tab, porque o mapa já tem o link de cada um.
  *
  * Quando o mapa fica com menos de 17,75rem (a 320 px, ou com a letra a 200% no
  * celular), o container query troca o mapa pela lista dos estados em ordem
@@ -211,27 +211,25 @@ export function MapaDosEstados({
 					)}
 				</div>
 				<div aria-hidden="true" className="atalhos-do-mapa">
-					{ESTADOS.filter((estado) => ESTREITOS.has(estado.sigla)).map(
-						(estado) => (
-							<Link
-								key={estado.sigla}
-								to="/parlamentares"
-								search={{ uf: estado.sigla }}
-								activeOptions={{ exact: true }}
-								tabIndex={-1}
-								className={classes(
-									"atalho-do-estado",
-									classeDaRegiao(estado.regiao),
-									destaque?.sigla === estado.sigla && "aceso",
-									comFoco && destaque?.sigla === estado.sigla && "com-foco",
-								)}
-								{...apontar(estado.sigla)}
-							>
-								<span className="sigla">{estado.sigla}</span>
-								<span className="numero">{quantos(estado)}</span>
-							</Link>
-						),
-					)}
+					{ESTADOS_PARA_OS_AZULEJOS.map((estado) => (
+						<Link
+							key={estado.sigla}
+							to="/parlamentares"
+							search={{ uf: estado.sigla }}
+							activeOptions={{ exact: true }}
+							tabIndex={-1}
+							className={classes(
+								"atalho-do-estado",
+								classeDaRegiao(estado.regiao),
+								destaque?.sigla === estado.sigla && "aceso",
+								comFoco && destaque?.sigla === estado.sigla && "com-foco",
+							)}
+							{...apontar(estado.sigla)}
+						>
+							<span className="sigla">{estado.sigla}</span>
+							<span className="numero">{quantos(estado)}</span>
+						</Link>
+					))}
 				</div>
 				<ul aria-hidden="true" className="legenda-do-mapa">
 					{REGIOES.map((regiao) => (

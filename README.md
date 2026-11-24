@@ -66,7 +66,7 @@ O site usa TypeScript, React e TanStack Start. O backend usa Python 3.13, FastAP
 
 O cliente TypeScript é gerado com hey-api a partir do contrato OpenAPI da API. [Contrato OpenAPI](apps/backend/openapi.json) · [ADR da stack](docs/adr/0001-stack.md)
 
-Os componentes shadcn/ui em `packages/ui/` e o `tsconfig` base em `packages/config/` partiram do Better-T-Stack.
+Os estilos, as fontes e a configuração do shadcn/ui em `packages/ui/` e o `tsconfig` base em `packages/config/` partiram do Better-T-Stack.
 
 ## Arquitetura
 

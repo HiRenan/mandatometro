@@ -1,3 +1,4 @@
+import { AcaoDeTexto } from "@/components/acao-de-texto";
 import { sementeDe } from "@/lib/azulejos";
 import { classes } from "@/lib/classes";
 import { estiloDoTeto } from "@/lib/conteudo/regua";
@@ -112,10 +113,11 @@ export function PaginaDaVotacao({
 					</dl>
 					<div className="cartaz-acao">
 						{oficial && (
-							<a href={oficial} className="acao-de-texto">
-								<span>Página oficial</span>{" "}
-								<span className="sr-only">da votação</span>
-							</a>
+							<AcaoDeTexto
+								href={oficial}
+								texto="Página oficial"
+								complemento="da votação"
+							/>
 						)}
 						<p className="rotulo coletado-em">
 							Coletado em {formatarData(dataEmBrasilia(votacao.coletado_em))}
