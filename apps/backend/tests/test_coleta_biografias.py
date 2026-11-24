@@ -410,6 +410,7 @@ def test_api_e_fontes_guardam_apenas_a_projecao_publica(
             "biografia",
             "mandatos",
             "contagem_votos",
+            "com_o_partido",
         }
         assert set(dados["biografia"]) == {"profissoes", "escolaridade", "fonte"}
         assert set(dados["biografia"]["fonte"]) == {"url", "coletado_em"}

@@ -1,14 +1,17 @@
 """Leitura pública de parlamentares, votos e patrimônio declarado."""
 
+from collections import Counter
+from collections.abc import Collection
 from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal, localcontext
-from typing import Annotated
+from itertools import groupby
+from typing import Annotated, get_args
 
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.dialects.postgresql import distinct_on
-from sqlalchemy.orm import Session, contains_eager
+from sqlalchemy.orm import Session, aliased, contains_eager
 
 from mandatometro.api.congresso import (
     IdCongresso,
@@ -24,6 +27,7 @@ from mandatometro.api.esquemas import (
     BiografiaParlamentar,
     CargoPatrimonio,
     Casa,
+    ContagemComOPartido,
     CorrecaoIpca,
     DetalheParlamentar,
     EleicaoPatrimonio,
@@ -37,6 +41,7 @@ from mandatometro.api.esquemas import (
     ParlamentarPublico,
     PatrimonioParlamentar,
     TemaPublico,
+    ValorVotoComparavel,
     VariacaoPatrimonio,
     VotoParlamentar,
 )
@@ -58,6 +63,7 @@ from mandatometro.tse_catalogos import CARGOS_TSE, MAXIMO_CENTAVOS
 
 ORDEM_DOS_VOTOS = (Votacao.data.desc(), Votacao.id.desc())
 PISO_PERCENTUAL_CENTAVOS = 5_000_000
+VOTOS_COMPARAVEIS = get_args(ValorVotoComparavel)
 
 
 router = APIRouter(
@@ -157,6 +163,43 @@ def _biografia_publica(sessao: Session, parlamentar_id: int) -> BiografiaParlame
     )
 
 
+def _comparacoes_com_o_partido(
+    sessao: Session, parlamentar_id: int, votacoes: Collection[int] | None = None
+) -> dict[int, tuple[ValorVotoComparavel, bool | None]]:
+    colega = aliased(Voto)
+    total = func.count().label("total")
+    consulta = (
+        select(Voto.votacao_id, Voto.valor, colega.valor.label("valor_colega"), total)
+        .join(
+            colega,
+            and_(
+                colega.votacao_id == Voto.votacao_id,
+                func.trim(colega.partido) == func.nullif(func.trim(Voto.partido), ""),
+                colega.parlamentar_id != Voto.parlamentar_id,
+            ),
+        )
+        .where(Voto.parlamentar_id == parlamentar_id, colega.valor.in_(VOTOS_COMPARAVEIS))
+        .group_by(Voto.votacao_id, Voto.valor, colega.valor)
+        .order_by(Voto.votacao_id, total.desc())
+    )
+    if votacoes is not None:
+        # Restringe as duas leituras de voto às votações da página.
+        consulta = consulta.where(Voto.votacao_id.in_(votacoes), colega.votacao_id.in_(votacoes))
+
+    comparacoes = {}
+    for votacao_id, grupo in groupby(sessao.execute(consulta), key=lambda linha: linha.votacao_id):
+        placar = list(grupo)
+        primeiro = placar[0]
+        if sum(opcao.total for opcao in placar) < 2:
+            continue
+        if len(placar) > 1 and primeiro.total == placar[1].total:
+            continue
+        maioria = primeiro.valor_colega
+        com_o_partido = primeiro.valor == maioria if primeiro.valor in VOTOS_COMPARAVEIS else None
+        comparacoes[votacao_id] = maioria, com_o_partido
+    return comparacoes
+
+
 @router.get(
     "/{id}",
     summary="Ler um parlamentar, seus mandatos e a contagem de votos gravados",
@@ -189,6 +232,9 @@ def obter_parlamentar(id: IdCongresso):
                 .group_by(Voto.valor)
             ).all()
         )
+        comparacoes = Counter(
+            com_o_partido for _, com_o_partido in _comparacoes_com_o_partido(sessao, id).values()
+        )
         return DetalheParlamentar(
             id=parlamentar.id,
             nome=parlamentar.nome,
@@ -200,6 +246,11 @@ def obter_parlamentar(id: IdCongresso):
             biografia=_biografia_publica(sessao, id),
             mandatos=mandatos,
             contagem_votos=contagem_por_valor(contagem),
+            com_o_partido=ContagemComOPartido(
+                comparaveis=comparacoes[True] + comparacoes[False],
+                com_o_partido=comparacoes[True],
+                contra=comparacoes[False],
+            ),
         )
 
 
@@ -328,10 +379,16 @@ def obter_patrimonio_parlamentar(id: IdCongresso):
         return PatrimonioParlamentar(eleicoes=eleicoes, correcao_ipca=correcao)
 
 
-def _voto_publico(voto: Voto, temas: list[TemaPublico]) -> VotoParlamentar:
+def _voto_publico(
+    voto: Voto, temas: list[TemaPublico], comparacao: tuple[ValorVotoComparavel | None, bool | None]
+) -> VotoParlamentar:
+    maioria, com_o_partido = comparacao
     return VotoParlamentar(
         votacao_id=voto.votacao_id,
         valor=voto.valor,
+        partido=(voto.partido or "").strip(" ") or None,
+        maioria_do_partido=maioria,
+        com_o_partido=com_o_partido,
         **dados_da_votacao(voto.votacao, temas),
     )
 
@@ -372,8 +429,17 @@ def listar_votos_parlamentar(
                 .limit(limite)
                 .offset(deslocamento)
             ).all()
-            temas = temas_das_votacoes(sessao, [voto.votacao_id for voto in registros])
-            votos = [_voto_publico(voto, temas.get(voto.votacao_id, [])) for voto in registros]
+            ids = [voto.votacao_id for voto in registros]
+            temas = temas_das_votacoes(sessao, ids)
+            comparacoes = _comparacoes_com_o_partido(sessao, id, ids)
+            votos = [
+                _voto_publico(
+                    voto,
+                    temas.get(voto.votacao_id, []),
+                    comparacoes.get(voto.votacao_id, (None, None)),
+                )
+                for voto in registros
+            ]
         return ListaVotosParlamentar(
             votos=votos,
             total=total,
