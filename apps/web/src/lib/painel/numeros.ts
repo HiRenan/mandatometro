@@ -178,9 +178,9 @@ export type SituacaoPiloto = MediaEtapa["situacao"];
 
 /** O que a tela diz no lugar de uma média que a API não manda. */
 const FRASE_DA_SITUACAO: Record<SituacaoPiloto, string> = {
-	sem_respostas: "Ninguém respondeu esta etapa ainda.",
+	sem_respostas: "Nenhuma participação nesta etapa.",
 	amostra_pequena:
-		"Poucas respostas: a média só aparece a partir de 5 pessoas.",
+		"Poucas respostas: a média só aparece a partir de 5 participações.",
 	protecao_de_subgrupo:
 		"A média não aparece para não revelar um grupo pequeno.",
 	disponivel: "A média não veio nesta resposta.",
@@ -231,7 +231,11 @@ export function diferencaNaTela(pares: {
 	return `${quantos} ${unidade} a ${pontos > 0 ? "mais" : "menos"} depois da trilha`;
 }
 
-/** Quem fez as duas etapas do piloto e quem fez uma só. */
+function contagemDeParticipacoes(quantidade: number): string {
+	return `${comMilhares(quantidade)} ${quantidade === 1 ? "participação" : "participações"}`;
+}
+
+/** As participações do piloto com as duas etapas ou com uma só. */
 export function fraseDasParticipacoes({
 	pareadas,
 	somente_antes,
@@ -241,28 +245,23 @@ export function fraseDasParticipacoes({
 	somente_antes: number;
 	somente_depois: number;
 }): string {
-	const fizeram =
-		pareadas === 1
-			? "1 pessoa fez"
-			: `${comMilhares(pareadas)} pessoas fizeram`;
-	return `${fizeram} as duas etapas, ${comMilhares(somente_antes)} só o antes e ${comMilhares(somente_depois)} só o depois.`;
+	return `${contagemDeParticipacoes(pareadas)} com as duas etapas, ${comMilhares(somente_antes)} só com o antes e ${comMilhares(somente_depois)} só com o depois.`;
 }
 
-/** As tentativas de uma etapa do piloto e as pessoas que as fizeram. */
+/** As tentativas do piloto e a contagem de participações. */
 export function fraseDasTentativas(
 	tentativas: number,
-	pessoas: number,
+	participacoes: number,
 ): string {
 	if (tentativas === 0) {
 		return "Nenhuma tentativa";
 	}
-	const deQuem = `${comMilhares(pessoas)} ${pessoas === 1 ? "pessoa" : "pessoas"}`;
-	return `${comMilhares(tentativas)} ${tentativas === 1 ? "tentativa" : "tentativas"} de ${deQuem}`;
+	return `${comMilhares(tentativas)} ${tentativas === 1 ? "tentativa" : "tentativas"} de ${contagemDeParticipacoes(participacoes)}`;
 }
 
 /**
- * Quem fez as duas etapas: a média antes e depois e a diferença, ou a frase da
- * situação quando a API não manda os números.
+ * A média antes e depois e a diferença para as participações com as duas etapas,
+ * ou a frase da situação quando a API não manda os números.
  */
 export function fraseDosPares(pares: {
 	antes: MediaPiloto;
@@ -280,7 +279,7 @@ export function fraseDosPares(pares: {
 	) {
 		// Sem respostas, a frase das médias fala de uma etapa; a dos pares, das duas.
 		return pares.situacao === "sem_respostas"
-			? "Ninguém fez as duas etapas ainda."
+			? "Nenhuma participação com as duas etapas."
 			: FRASE_DA_SITUACAO[pares.situacao];
 	}
 	return `A média foi de ${porcentagem(antes)} antes e de ${porcentagem(depois)} depois: ${diferencaNaTela(pares)}.`;
