@@ -139,7 +139,11 @@ describe("a marca do voto contra a maioria do partido", () => {
 
 	it("não aparece no voto com a maioria, fora da conta ou da API de antes", () => {
 		const casos = {
-			"com a maioria": { ...contra, valor: "sim", com_o_partido: true },
+			"com a maioria": {
+				...contra,
+				valor: "sim" as const,
+				com_o_partido: true,
+			},
 			"fora da comparação": { ...contra, com_o_partido: null },
 			"da API de antes": votoDoParlamentarDeExemplo(139, { valor: "nao" }),
 		};
