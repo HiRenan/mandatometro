@@ -2,6 +2,7 @@
 import { Link } from "@tanstack/react-router";
 import type { CSSProperties } from "react";
 import type { VotoParlamentar } from "@/client";
+import { AcaoDeTexto, LinkDeAcao } from "@/components/acao-de-texto";
 import { sementeDe } from "@/lib/azulejos";
 import { classes } from "@/lib/classes";
 import { estiloDoTeto } from "@/lib/conteudo/regua";
@@ -238,23 +239,20 @@ function VotoDaPessoa({ voto }: { voto: VotoParlamentar }) {
 			{texto && <p className="texto-do-voto">{texto}</p>}
 			<ul role="list" className="links-do-voto">
 				<li>
-					<Link
+					<LinkDeAcao
 						to="/votacoes/$id"
 						params={{ id: String(voto.votacao_id) }}
-						className="acao-de-texto"
-					>
-						<span>Ver quem votou</span>{" "}
-						<span className="sr-only">
-							na votação de {dia}: {titulo}
-						</span>
-					</Link>
+						texto="Ver quem votou"
+						complemento={`na votação de ${dia}: ${titulo}`}
+					/>
 				</li>
 				{oficial && (
 					<li>
-						<a href={oficial} className="acao-de-texto">
-							<span>Página oficial</span>{" "}
-							<span className="sr-only">{daVotacao}</span>
-						</a>
+						<AcaoDeTexto
+							href={oficial}
+							texto="Página oficial"
+							complemento={daVotacao}
+						/>
 					</li>
 				)}
 			</ul>
@@ -286,13 +284,11 @@ function SemVotos({ nome }: { nome: string }) {
 				resultado sai sem a lista de nomes.
 			</p>
 			<p>
-				<Link
+				<LinkDeAcao
 					to="/trilhas/$trilha/$artigo"
 					params={ARTIGO_DA_VOTACAO}
-					className="acao-de-texto"
-				>
-					<span>Entenda na trilha: O Plenário vota o projeto</span>
-				</Link>
+					texto="Entenda na trilha: O Plenário vota o projeto"
+				/>
 			</p>
 		</section>
 	);
@@ -319,26 +315,24 @@ function PaginasDosVotos({
 				Página {pagina} de {paginas}
 			</p>
 			{pagina > 1 && (
-				<Link
+				<LinkDeAcao
 					to="/parlamentares/$id"
 					params={{ id: endereco }}
 					search={anterior > 1 ? { pagina: anterior } : {}}
 					hash={TRECHO_DOS_VOTOS}
-					className="mais-novas acao-de-texto"
-				>
-					<span>Votos mais novos</span>
-				</Link>
+					className="mais-novas"
+					texto="Votos mais novos"
+				/>
 			)}
 			{pagina < paginas && (
-				<Link
+				<LinkDeAcao
 					to="/parlamentares/$id"
 					params={{ id: endereco }}
 					search={{ pagina: pagina + 1 }}
 					hash={TRECHO_DOS_VOTOS}
-					className="mais-antigas acao-de-texto"
-				>
-					<span>Votos mais antigos</span>
-				</Link>
+					className="mais-antigas"
+					texto="Votos mais antigos"
+				/>
 			)}
 		</nav>
 	);

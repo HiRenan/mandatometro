@@ -1,6 +1,7 @@
 // biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
 import { Link } from "@tanstack/react-router";
 import type { EdicaoPublica, ItemPublico } from "@/client";
+import { LinkDeAcao } from "@/components/acao-de-texto";
 import { azulejoDaPosicao } from "@/lib/azulejos";
 import { classes } from "@/lib/classes";
 import { estiloDoTeto } from "@/lib/conteudo/regua";
@@ -132,9 +133,11 @@ function FolhaDaEdicao({ edicao }: { edicao: EdicaoPublica }) {
 									</Link>
 								</li>
 								<li>
-									<Link to="/" hash="newsletter" className="acao-de-texto">
-										<span>Receber as próximas por e-mail</span>
-									</Link>
+									<LinkDeAcao
+										to="/"
+										hash="newsletter"
+										texto="Receber as próximas por e-mail"
+									/>
 								</li>
 							</ul>
 						</nav>

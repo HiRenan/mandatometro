@@ -29,6 +29,11 @@ describe("rodapé", () => {
 			"https://github.com/HiRenan/mandatometro",
 		);
 		expect(codigo.classList.contains("acao-de-texto")).toBe(true);
+		// O Chromium aplica a caixa alta do CSS ao nome vindo do conteúdo.
+		expect(codigo.getAttribute("aria-label")).toBe(
+			"O código é aberto, no GitHub",
+		);
+		expect(codigo.firstElementChild?.getAttribute("aria-hidden")).toBe("true");
 		// O padding do link faz a área de toque, e o anel de foco contorna só o
 		// texto, que fica num span (index.css).
 		expect(codigo.firstElementChild?.tagName).toBe("SPAN");

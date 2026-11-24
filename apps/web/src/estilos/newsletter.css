@@ -81,6 +81,22 @@
 		color: var(--tinta-suave);
 	}
 
+	/* Depois da recusa, o link cobre o botão que a grade guarda invisível.
+	   O texto e o contorno de foco continuam na mesma posição. */
+	.saida-link-no-lugar-do-botao {
+		position: relative;
+	}
+
+	.saida-link-no-lugar-do-botao > div > a {
+		position: static;
+	}
+
+	.saida-link-no-lugar-do-botao > div > a::after {
+		content: "" / "";
+		position: absolute;
+		inset: 0;
+	}
+
 	.newsletter-enviando {
 		margin-top: 0.4rem;
 	}

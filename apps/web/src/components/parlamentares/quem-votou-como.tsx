@@ -2,6 +2,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { type RefObject, useId, useRef } from "react";
 import type { DetalheVotacao } from "@/client";
+import { LinkDeAcao } from "@/components/acao-de-texto";
 import { estadoDaSigla } from "@/lib/parlamentares";
 import { enderecoDoParlamentar } from "@/lib/parlamentares/endereco";
 import {
@@ -59,13 +60,11 @@ export function QuemVotouComo({
 						votação simbólica.
 					</p>
 					<p className="na-trilha">
-						<Link
+						<LinkDeAcao
 							to="/trilhas/$trilha/$artigo"
 							params={ARTIGO_DA_VOTACAO}
-							className="acao-de-texto"
-						>
-							<span>Entenda na trilha: O Plenário vota o projeto</span>
-						</Link>
+							texto="Entenda na trilha: O Plenário vota o projeto"
+						/>
 					</p>
 				</>
 			) : (
@@ -112,16 +111,14 @@ function NomesPorVoto({
 				{comFiltro && (
 					// O link sai da tela com o filtro: o foco vai para o Filtrar, logo
 					// acima, e a página fica onde está.
-					<Link
+					<LinkDeAcao
 						to="/votacoes/$id"
 						params={{ id }}
 						search={{}}
 						resetScroll={false}
 						onClick={() => filtrar.current?.focus()}
-						className="acao-de-texto"
-					>
-						<span>Limpar os filtros</span>
-					</Link>
+						texto="Limpar os filtros"
+					/>
 				)}
 			</div>
 			{vazio ? (
