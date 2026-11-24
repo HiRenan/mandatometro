@@ -125,7 +125,7 @@ describe("o pé do palco", () => {
 // cada tela do quiz.
 describe("o separador entre o nome do quiz e a frase do andamento", () => {
 	const letraGrande = blocos("@media (width < 22rem)");
-	const quadradoDaFaixa = ".faixa > span:not(:last-child)::after";
+	const quadradoDaFaixa = ".faixa > span::before";
 
 	/** As regras que desenham na linha do pé, com um ::before ou um ::after. */
 	function desenhosDoPe(trecho: string): string[] {

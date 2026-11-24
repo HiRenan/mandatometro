@@ -291,6 +291,7 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
+		.estado-em-destaque .subida,
 		.atalho-do-estado:hover,
 		.atalho-do-estado.aceso {
 			translate: none;
@@ -542,6 +543,17 @@
 		.mapa > .desenho-do-brasil {
 			flex: 0 1 auto;
 			min-height: 0;
+		}
+	}
+
+	/* O painel estreito precisa de altura para até seis fileiras de azulejos. */
+	@media (62rem <= width < 66rem) {
+		.cartaz-dos-parlamentares:has(> .mapa-dos-estados) {
+			min-height: 44rem;
+		}
+
+		.mapa-dos-estados {
+			padding-block: 1rem;
 		}
 	}
 
@@ -1047,47 +1059,8 @@
 		animation: none;
 	}
 
-	/*
-	 * Na célula estreita, as partes do mandato quebram de linha. O quadradinho vai
-	 * no recuo antes de cada parte, e não depois dela, e o da parte que abre uma
-	 * linha fica sob a borda da célula (a faixa recua o mesmo 1.9em, e o corte o
-	 * esconde): nenhuma linha começa nem termina com ele, e a parte longa que
-	 * quebra continua alinhada. Ele tem o tamanho, as margens e a altura do
-	 * quadradinho da faixa (index.css), e, nas cores forçadas, fica em CanvasText,
-	 * como o dela: sem isso, o fundo vira o do papel, e ele some.
-	 */
-	.mandatos-da-ficha .rotulo {
-		overflow-x: clip;
-	}
-
 	.mandatos-da-ficha .faixa {
 		row-gap: 0;
-		margin-left: -1.9em;
-	}
-
-	.mandatos-da-ficha .parte-do-mandato {
-		padding-left: 1.9em;
-	}
-
-	.mandatos-da-ficha .parte-do-mandato::before {
-		content: "" / "";
-		display: inline-block;
-		width: 0.3em;
-		height: 0.3em;
-		margin: 0 0.8em 0 -1.1em;
-		vertical-align: 0.2em;
-		background: currentColor;
-	}
-
-	@media (forced-colors: active) {
-		.mandatos-da-ficha .parte-do-mandato::before {
-			forced-color-adjust: none;
-			background: CanvasText;
-		}
-	}
-
-	.mandatos-da-ficha .parte-do-mandato:not(:last-child)::after {
-		display: none;
 	}
 
 	.lista-das-eleicoes {
@@ -1519,18 +1492,12 @@
 
 	/*
 	 * O cargo e o estado mais longos ("Deputado estadual" e "Rio Grande do Norte")
-	 * pedem cerca de 22.6rem numa linha. Numa coluna mais estreita, a faixa quebraria
-	 * com o quadradinho sozinho no fim da primeira linha: as duas partes ficam uma
-	 * embaixo da outra, sem ele. A regra do quadradinho, no index.css, vem depois
-	 * desta: a daqui precisa ser mais específica.
+	 * pedem cerca de 22.6rem numa linha. Numa coluna mais estreita, as duas partes
+	 * ficam uma embaixo da outra.
 	 */
 	@container cargo-da-eleicao (width < 23.5rem) {
 		.cargo-da-eleicao .faixa {
 			flex-direction: column;
-		}
-
-		.cargo-da-eleicao .faixa > span:not(:last-child)::after {
-			display: none;
 		}
 	}
 
@@ -2095,11 +2062,10 @@
 		}
 
 		/*
-		 * O quadro do placar enche a coluna dele, sem o limite de 39rem do quadro
-		 * da edição (edicoes.css). Numa coluna com menos de 34rem, como a da
-		 * esquerda a 1366 px, os quatro números ficam em 2 × 2: em quatro, as
-		 * colunas ficariam justas no "Abstenções", a palavra mais larga, que pede
-		 * pouco mais de 30rem para as quatro.
+		 * O quadro enche a coluna nos casos lado a lado. Sem vídeo, o placar
+		 * nominal usa a largura do quadro da edição, de até 39rem. Numa coluna
+		 * com menos de 34rem os números ficam em 2 × 2, com espaço para
+		 * "Abstenções".
 		 */
 		.corpo-da-votacao .votacao {
 			container: quadro-da-votacao / inline-size;
@@ -2110,6 +2076,44 @@
 			.corpo-da-votacao .votacao > dl {
 				grid-template-columns: repeat(2, minmax(0, 1fr));
 			}
+		}
+
+		.corpo-da-votacao:not(.corpo-com-video):not(.corpo-sem-votos) .votacao {
+			max-width: 39rem;
+		}
+
+		/*
+		 * Com votos e vídeo, a capa e a nota cabem em 27rem. O quadro em 2 × 2
+		 * distribui o respiro entre as linhas e termina junto da nota.
+		 */
+		.corpo-da-votacao.corpo-com-video:not(.corpo-sem-votos) > .video-da-sessao {
+			max-width: 27rem;
+		}
+
+		.corpo-da-votacao.corpo-com-video:not(.corpo-sem-votos)
+			> .placar-da-votacao {
+			align-self: stretch;
+			display: flex;
+			flex-direction: column;
+		}
+
+		/* Em flex, a margem do título se somaria ao recuo do quadro. */
+		.corpo-da-votacao.corpo-com-video:not(.corpo-sem-votos)
+			> .placar-da-votacao
+			> h2 {
+			margin-bottom: 0;
+		}
+
+		.corpo-da-votacao.corpo-com-video:not(.corpo-sem-votos) .votacao {
+			display: flex;
+			flex: 1;
+			flex-direction: column;
+		}
+
+		.corpo-da-votacao.corpo-com-video:not(.corpo-sem-votos) .votacao > dl {
+			flex: 1;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			align-content: space-between;
 		}
 	}
 
@@ -2122,7 +2126,8 @@
 	 * Depois do toque, a capa fica na caixa, escondida, e o player ocupa a caixa
 	 * inteira, por cima: a altura não muda. A caixa é o contêiner da capa: abaixo
 	 * de 26rem, o azulejo fica em cima do texto. Na tela larga, a caixa enche a
-	 * coluna da direita (a #306); a nota continua com até 39rem, como o texto.
+	 * largura do bloco à direita. A nota tem até 39rem e acompanha o bloco
+	 * quando ele é mais estreito.
 	 */
 	.video-da-sessao > h2 {
 		scroll-margin-top: 1rem;
