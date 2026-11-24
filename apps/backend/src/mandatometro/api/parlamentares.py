@@ -46,6 +46,7 @@ from mandatometro.api.esquemas import (
     VotoParlamentar,
 )
 from mandatometro.db import sessao as sessao_do_banco
+from mandatometro.db import sessao_de_leitura_repetivel
 from mandatometro.db.modelos import (
     BemDeclarado,
     CandidaturaPatrimonio,
@@ -219,7 +220,7 @@ def _comparacoes_com_o_partido(
     responses={404: {"model": ErroParlamentar}},
 )
 def obter_parlamentar(id: IdCongresso):
-    with sessao_do_banco() as sessao:
+    with sessao_de_leitura_repetivel() as sessao:
         parlamentar = sessao.get(Parlamentar, id)
         if parlamentar is None:
             return JSONResponse({"erro": "parlamentar_nao_encontrado"}, status_code=404)
@@ -427,7 +428,7 @@ def listar_votos_parlamentar(
         ),
     ] = None,
 ):
-    with sessao_do_banco() as sessao:
+    with sessao_de_leitura_repetivel() as sessao:
         if sessao.get(Parlamentar, id) is None:
             return JSONResponse({"erro": "parlamentar_nao_encontrado"}, status_code=404)
 

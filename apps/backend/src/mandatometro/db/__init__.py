@@ -48,3 +48,8 @@ def engine() -> Engine:
 
 def sessao() -> Session:
     return Session(engine())
+
+
+def sessao_de_leitura_repetivel() -> Session:
+    """Lê o mesmo estado do banco em todas as consultas da transação."""
+    return Session(engine(), execution_options={"isolation_level": "REPEATABLE READ"})

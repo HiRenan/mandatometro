@@ -126,6 +126,8 @@ No item da lista, `com_o_partido` é `true` se o voto da pessoa coincide com a m
 
 Na lista, `?com_o_partido=false` seleciona só os votos que divergiram da maioria do partido, e `?com_o_partido=true`, só os que a seguiram. Sem o parâmetro, a lista inclui também os votos cujo resultado da comparação é `null`. O filtro combina com `tema` e os dois valem antes da contagem e da paginação. O `total` conta os votos que correspondem aos filtros. Sem `tema`, esse total corresponde a `contra` no detalhe para `false` e a `com_o_partido` no detalhe para `true`.
 
+Cada pedido ao detalhe ou à lista usa os votos confirmados no banco até a primeira leitura daquele pedido. Uma atualização da coleta entre dois pedidos pode aparecer no segundo, inclusive ao passar de uma página de votos para outra.
+
 ## Câmara dos Deputados
 
 ### `/votacoes` — as votações do plenário no período
