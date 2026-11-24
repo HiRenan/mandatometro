@@ -9,6 +9,7 @@ import {
 	useState,
 } from "react";
 import { sairConta } from "@/client";
+import { AcaoDeTexto, LinkDeAcao } from "@/components/acao-de-texto";
 import { AzulejoGrande, Painel } from "@/components/azulejo";
 import { BOTAO_CONTINUAR, SETA_DO_BOTAO } from "@/components/botao-continuar";
 import { LugarDoBotao } from "@/components/lugar-do-botao";
@@ -289,9 +290,7 @@ function Perfil() {
 									<ComSeta>{VER_AS_TRILHAS}</ComSeta>
 								</Link>
 							) : indisponivel ? (
-								<a href="/perfil" className="acao-de-texto">
-									<span>Tentar de novo</span>
-								</a>
+								<AcaoDeTexto href="/perfil" texto="Tentar de novo" />
 							) : null}
 						</LugarDoBotao>
 					</div>
@@ -353,9 +352,11 @@ function Perfil() {
 							navegador, e a newsletter é uma inscrição à parte.
 						</p>
 						<p>
-							<Link to="/termo" hash="o-que-guarda" className="acao-de-texto">
-								<span>Ler o termo da conta</span>
-							</Link>
+							<LinkDeAcao
+								to="/termo"
+								hash="o-que-guarda"
+								texto="Ler o termo da conta"
+							/>
 						</p>
 						<p className="perfil-texto">
 							Para ver ou corrigir um dado, escreva para{" "}
@@ -367,9 +368,7 @@ function Perfil() {
 					</div>
 					<div className="perfil-conta-acoes">
 						<p>
-							<a href="/cadastro/recuperar" className="acao-de-texto">
-								<span>Trocar a senha</span>
-							</a>
+							<AcaoDeTexto href="/cadastro/recuperar" texto="Trocar a senha" />
 						</p>
 						<p className="perfil-nota">
 							Você recebe no e-mail um link para criar a senha nova. Depois,
@@ -387,9 +386,7 @@ function Perfil() {
 									Sair
 								</button>
 							)}
-							<a href="/cadastro/excluir" className="acao-de-texto">
-								<span>Excluir conta</span>
-							</a>
+							<AcaoDeTexto href="/cadastro/excluir" texto="Excluir conta" />
 						</div>
 						{saida === "falhou" && (
 							<p role="alert" className="ainda-nao">
@@ -403,14 +400,13 @@ function Perfil() {
 						{aberta && sessao.papel === "administradora" && (
 							<>
 								<p>
-									<Link to="/painel" className="acao-de-texto">
-										<span>Revisar a edição da semana</span>
-									</Link>
+									<LinkDeAcao to="/painel" texto="Revisar a edição da semana" />
 								</p>
 								<p>
-									<Link to="/painel/numeros" className="acao-de-texto">
-										<span>Ver os números do site</span>
-									</Link>
+									<LinkDeAcao
+										to="/painel/numeros"
+										texto="Ver os números do site"
+									/>
 								</p>
 							</>
 						)}

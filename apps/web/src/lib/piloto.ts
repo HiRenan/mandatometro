@@ -44,7 +44,7 @@ export type NomeDaEtapa = PedidoTentativaPiloto["etapa"];
  * acertos; recebida; ou perdida, quando a API recusou o pedido (413 ou 422) e o
  * site não tenta de novo.
  */
-export type Etapa =
+type Etapa =
 	| { situacao: "respondendo" }
 	| { situacao: "pendente"; acertos: number }
 	| { situacao: "recebida" }

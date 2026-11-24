@@ -25,8 +25,9 @@ CIENCIA = {"id": "ciencia_tecnologia", "nome": "CiÃªncia, tecnologia e comunicaÃ
 
 @pytest.fixture
 def cliente(abrir, monkeypatch):
-    for modulo in (edicoes, parlamentares, votacoes):
+    for modulo in (edicoes, votacoes):
         monkeypatch.setattr(modulo, "sessao_do_banco", abrir)
+    monkeypatch.setattr(parlamentares, "sessao_de_leitura_repetivel", abrir)
     return TestClient(app)
 
 

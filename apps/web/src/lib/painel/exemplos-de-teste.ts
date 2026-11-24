@@ -6,7 +6,7 @@ import type { ArquivoRevisao, ItemRevisao } from "@/client";
 
 const BASE = "/trilhas/processo-legislativo/";
 
-export const CATALOGO_DE_EXEMPLO: Record<string, string> = {
+const CATALOGO_DE_EXEMPLO: Record<string, string> = {
 	[`${BASE}quem-pode-propor-uma-lei`]: "Quem pode propor uma lei",
 	[`${BASE}onde-o-projeto-comeca`]: "Onde o projeto começa",
 	[`${BASE}o-projeto-passa-pelas-comissoes`]: "O projeto passa pelas comissões",
@@ -15,7 +15,7 @@ export const CATALOGO_DE_EXEMPLO: Record<string, string> = {
 	[`${BASE}o-presidente-sanciona-ou-veta`]: "O presidente sanciona ou veta",
 };
 
-export const ARTIGO_DO_PLENARIO = `${BASE}o-plenario-vota-o-projeto`;
+const ARTIGO_DO_PLENARIO = `${BASE}o-plenario-vota-o-projeto`;
 
 /** A votação revisada, com placar, a descrição oficial e o artigo confirmado. */
 function votacaoRevisada(): ItemRevisao {

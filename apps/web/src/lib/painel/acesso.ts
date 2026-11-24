@@ -26,7 +26,7 @@ export type Acesso =
  * conta sem o papel (comum ou com o papel revogado) ou a API que não respondeu.
  * Um papel que a tela não conhece não abre o painel.
  */
-export async function consultarAcesso(signal?: AbortSignal): Promise<Acesso> {
+async function consultarAcesso(signal?: AbortSignal): Promise<Acesso> {
 	const { data, response } = await consultarPerfil({
 		credentials: "include",
 		cache: "no-store",

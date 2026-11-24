@@ -143,7 +143,7 @@ export function painel(semente: number, quantas: number, juntas = 12): Peca[] {
  * uma): o ponto de partida, o grupo, a tigela, a cúpula e os dois lados. As
  * duas últimas lembram as cúpulas do Congresso e as duas Casas.
  */
-export const DESENHOS: ReadonlyArray<
+const DESENHOS: ReadonlyArray<
 	ReadonlyArray<readonly [motivo: number, volta: number]>
 > = [
 	[

@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from mandatometro import db
 from mandatometro.api.app import app
 from mandatometro.cli import main
 from mandatometro.coleta import camara, senado
@@ -81,7 +82,8 @@ def pessoas(sessao, monkeypatch):
     ids = [pessoa.id for pessoa in pessoas]
     sessao.commit()
     conexao = sessao.connection()
-    monkeypatch.setattr("mandatometro.db.engine", lambda: conexao)
+    monkeypatch.setattr(db, "engine", lambda: conexao)
+    monkeypatch.setattr("mandatometro.api.parlamentares.sessao_de_leitura_repetivel", db.sessao)
     monkeypatch.setattr(
         "mandatometro.db.Session",
         lambda bind: Session(bind=bind, join_transaction_mode="create_savepoint"),

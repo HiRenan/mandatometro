@@ -3,6 +3,8 @@
 - **Data:** 05/11/2026
 - **Status:** aceita
 
+> **Atualização de 24/11/2026.** A API passou a gravar as contas e o progresso das trilhas previstos no ADR 0003 e as conclusões do piloto definido no ADR 0002. Também soma as visitas às páginas públicas conforme o dicionário de dados. [ADR 0003](0003-login-opcional.md) · [ADR 0002](0002-mvp.md) · [Contador de visitas](../dicionario-de-dados.md#contador-de-visitas-e-números-do-painel)
+
 ## Contexto
 
 O Mandatômetro tem três partes: coletar dados públicos (APIs da Câmara e do Senado, arquivos do TSE e sites lidos pelo Firecrawl), usar um LLM para extrair promessas e ligá-las aos atos, e mostrar tudo num site público, com o conteúdo educativo e o jogo. O miolo é dado e IA. As páginas são públicas e precisam aparecer no Google e ter prévia de link no WhatsApp. Na reunião de 31/10, o time escolheu FastAPI, PostgreSQL e React. O prazo é 30/11, e o regulamento só aceita boilerplate aberto e público (item 6.2).

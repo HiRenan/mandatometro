@@ -126,6 +126,8 @@ No item da lista, `com_o_partido` é `true` se o voto da pessoa coincide com a m
 
 Na lista, `?com_o_partido=false` seleciona só os votos que divergiram da maioria do partido, e `?com_o_partido=true`, só os que a seguiram. Sem o parâmetro, a lista inclui também os votos cujo resultado da comparação é `null`. O filtro combina com `tema` e os dois valem antes da contagem e da paginação. O `total` conta os votos que correspondem aos filtros. Sem `tema`, esse total corresponde a `contra` no detalhe para `false` e a `com_o_partido` no detalhe para `true`.
 
+Cada pedido ao detalhe ou à lista usa os votos confirmados no banco até a primeira leitura daquele pedido. Uma atualização da coleta entre dois pedidos pode aparecer no segundo, inclusive ao passar de uma página de votos para outra.
+
 ## Câmara dos Deputados
 
 ### `/votacoes` — as votações do plenário no período
@@ -561,6 +563,8 @@ Nos dois modos, o detalhe de evento da Câmara precisa indicar apenas o Plenári
 Só é aceito `https://www.youtube.com/watch?v=<id>`, com 11 caracteres ASCII entre letras, algarismos, `_` e `-`. A consulta lê o detalhe de cada sessão uma vez por rodada, com as mesmas regras de robots e tentativas das Casas. O vídeo corresponde à sessão inteira. `dataHoraRegistro` é a hora do registro da Câmara. Na amostra, dois registros são posteriores ao fim do evento, por isso a hora não dá o minuto da votação no vídeo.
 
 Cada par `(casa, id_externo)` de `video_sessao` tem uma fonte própria, com a URL da sessão consultada e a hora da coleta. As votações da sessão compartilham o registro. Falha na consulta mantém a votação e, se já houver, a observação anterior. Link ausente ou fora do formato fica nulo na coleta normal. O resumo `videos` conta votações sem sessão, sessões com vídeo, sessões sem endereço, URLs recusadas, falhas na consulta ou gravação e votações vinculadas com vídeo.
+
+Na coleta normal das duas Casas, as consultas ao detalhe das sessões param após duas falhas temporárias seguidas ou ao esgotar o prazo. Elas têm até quatro minutos, dentro dos primeiros 25 minutos da coleta de cada Casa. O prazo cobre a requisição inteira, da abertura da conexão à leitura do corpo. Se vence durante o handshake TLS, o cliente fecha a conexão TCP antes de devolver o controle à etapa. O resumo conta as sessões que ficaram sem consulta em `videos.sessoes_nao_consultadas`, inclusive quando o `Retry-After` impede o envio do GET. Uma tentativa de consulta interrompida pelo prazo entra em `videos.falhas_sessoes`. A próxima rodada ou o modo `--somente-videos` pode preencher os vídeos pendentes.
 
 O modo `--somente-videos` usa o período dos comandos de coleta e procura só votações sem vídeo. Na Câmara, extrai o id da página oficial gravada na fonte da votação. No Senado, consulta `/votacao` para cruzar `codigoSessaoVotacao` e `codigoSessao`. O preenchimento registra somente observações com link válido. Retorna código 1 em falha de consulta ou gravação, preservando os vínculos já confirmados para a próxima rodada.
 

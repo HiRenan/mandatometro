@@ -27,7 +27,7 @@ export const jogos: Jogo[] = lerJogos(
 );
 
 /** O artigo da trilha que explica a cena, com o título para o link. */
-export type ArtigoDaCena = { slug: string; titulo: string };
+type ArtigoDaCena = { slug: string; titulo: string };
 
 /** A cena na página: o artigo vira slug e título, para a revelação linkar. */
 export type CenaNaPagina = Omit<Cena, "artigo"> & { artigo: ArtigoDaCena };

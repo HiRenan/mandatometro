@@ -50,7 +50,7 @@ O site usa TypeScript, React e TanStack Start. O backend usa Python 3.13, FastAP
 
 O porquê de cada escolha está no [ADR 0001](docs/adr/0001-stack.md).
 
-- `packages/ui/` (componentes shadcn/ui) e `packages/config/` (tsconfig base): gerados pelo Better-T-Stack.
+- `packages/ui/` (estilos, fontes e configuração do shadcn/ui) e `packages/config/` (tsconfig base) partiram do Better-T-Stack.
 
 ## Arquitetura
 
@@ -379,7 +379,7 @@ pnpm dev                        # site na porta 3001 e API na 8000
 
 **Cliente da API.** `pnpm generate:client`. Veja o [contrato da API](AGENTS.md#conventions).
 
-**Migration nova.** Em `apps/backend`, use o próximo número de revisão. Um exemplo depois da `0013` é `uv run alembic revision --autogenerate --rev-id 0014 -m "cria a tabela orientacao"`. `uv run alembic check` diz se algum modelo mudou sem migration. Veja as [convenções de migrations](AGENTS.md#conventions).
+**Migration nova.** Em `apps/backend`, use `uv run alembic heads` para descobrir a última revisão e escolha o próximo número. Um exemplo depois da `0019` é `uv run alembic revision --autogenerate --rev-id 0020 -m "cria a tabela orientacao"`. `uv run alembic check` compara os modelos com o banco local com as migrations aplicadas. [Convenções de migrations](AGENTS.md#conventions)
 
 ### Checagens
 
@@ -525,7 +525,7 @@ uv run mandatometro coleta tse --diretorio-zips /caminho/dos/zips
 
 O primeiro comando baixa os dois ZIPs oficiais de candidaturas de 2022 e 2026. O segundo lê as cópias da pasta indicada. A carga repete as mesmas chaves e acrescenta uma observação de fonte por arquivo a cada execução completa. O resumo JSON mostra, por Casa e ano, os pares ligados, sem par, em conflito e descartados por incompatibilidade com o mandato. Em 2026, `outro_cargo` conta as candidaturas à outra Casa alcançadas pelo CPF da âncora de 2022 quando a ligação está livre de conflito. Se uma leitura falhar, a execução tenta a outra e retorna 1 sem gravar candidaturas ou fontes. Consulte os [campos do TSE](docs/dicionario-de-dados.md#candidaturas-do-tse) e o [disparo manual na hospedagem](docs/hospedagem.md#coletar-o-tse).
 
-**Bens declarados ao TSE.** Aplique a migration `0015` e rode após a carga de candidaturas, usando `DATABASE_URL` para o mesmo banco.
+**Bens declarados ao TSE.** Depois de aplicar as migrations até `head` e carregar as candidaturas, rode em `apps/backend` com o `DATABASE_URL` do mesmo banco.
 
 ```bash
 uv run mandatometro coleta bens-tse

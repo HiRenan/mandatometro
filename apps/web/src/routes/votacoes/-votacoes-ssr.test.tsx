@@ -251,7 +251,7 @@ describe("o HTML da página da votação", () => {
 		expect(nomes(html)).toEqual(["Rui Tavaquil", "Sara Varombre"]);
 		expect(html).toContain('<option value="BA" selected="">Bahia</option>');
 		expect(html).toMatch(
-			/<a [^>]*href="\/votacoes\/139"[^>]*><span>Limpar os filtros/,
+			/<a [^>]*href="\/votacoes\/139"[^>]*aria-label="Limpar os filtros"[^>]*><span aria-hidden="true">Limpar os filtros/,
 		);
 	});
 

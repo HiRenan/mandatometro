@@ -616,6 +616,11 @@
 		margin-bottom: 0.4rem;
 	}
 
+	/* O mínimo do texto também precisa encolher na coluna com a letra grande. */
+	.resumo-dos-numeros .rotulo {
+		overflow-wrap: anywhere;
+	}
+
 	.resumo-dos-numeros dd.rotulo {
 		color: var(--tinta-suave);
 	}

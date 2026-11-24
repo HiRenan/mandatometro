@@ -39,7 +39,7 @@ import { VALORES } from "./votos";
 export const ERRO_DOS_PARLAMENTARES = "Os parlamentares não carregaram.";
 
 /** Quantos votos cabem numa página da pessoa. */
-export const VOTOS_POR_PAGINA = 20;
+const VOTOS_POR_PAGINA = 20;
 
 /** Quantos votos contra a maioria do partido a lista curta mostra, dos mais novos. */
 const VOTOS_CONTRA = 5;

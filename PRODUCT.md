@@ -40,11 +40,10 @@ A política explicada em linguagem simples e de forma interativa, a partir de ca
 
 ## Capabilities and Constraints
 
-- **MVP:** as trilhas (artigos, infográfico e quiz), a newsletter semanal com as edições no site, a conta opcional e as páginas dos parlamentares e das votações: os deputados e os senadores de cada estado, como cada um votou, o patrimônio que cada um declarou ao TSE e quem votou como em cada votação (Renan, 21/11/2026), e a foto oficial de cada um, com o crédito da Casa (Renan, 22/11/2026).
+- **MVP:** as trilhas (artigos, infográfico e quiz), o Jogo das Comissões, a newsletter semanal com as edições no site, a conta opcional e as páginas dos parlamentares e das votações: os deputados e os senadores de cada estado, como cada um votou, o patrimônio que cada um declarou ao TSE e quem votou como em cada votação (Renan, 21/11/2026), e a foto oficial de cada um, com o crédito da Casa (Renan, 22/11/2026).
 - **Depois do MVP:**
   - nas páginas de cada parlamentar, as promessas e os atos;
-  - o "fake ou fato";
-  - o jogo das comissões.
+  - o "fake ou fato".
 - **Sem pontos, ranking nem certificado.** O quiz mostra a resposta certa e a fonte, sem nota.
 - O produto fala de pessoas reais. Estas regras valem para a interface, as trilhas, o quiz, a newsletter, a API e os prompts do LLM.
 - **Fonte em tudo:** cada afirmação sobre um político ou uma votação leva o link oficial, a data da coleta e, quando vier de texto, o trecho literal. O que não tem fonte fica fora do banco, do site e da newsletter.

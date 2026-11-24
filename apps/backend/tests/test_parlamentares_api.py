@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import OperationalError
 
+from mandatometro import db
 from mandatometro.api.app import app
 from mandatometro.db.modelos import (
     BemDeclarado,
@@ -32,7 +33,8 @@ FIXTURES = Path(__file__).parent / "fixtures"
 @pytest.fixture
 def cliente(sessao, monkeypatch):
     conexao = sessao.connection()
-    monkeypatch.setattr("mandatometro.db.engine", lambda: conexao)
+    monkeypatch.setattr(db, "engine", lambda: conexao)
+    monkeypatch.setattr("mandatometro.api.parlamentares.sessao_de_leitura_repetivel", db.sessao)
     return TestClient(app)
 
 

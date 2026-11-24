@@ -2,6 +2,7 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import type { ResumoEdicao } from "@/client";
+import { LinkDeAcao } from "@/components/acao-de-texto";
 import { azulejoDaPosicao, sementeDe } from "@/lib/azulejos";
 import { classes } from "@/lib/classes";
 import { estiloDoTeto } from "@/lib/conteudo/regua";
@@ -54,9 +55,7 @@ export function PaginaDasEdicoes({ lista }: { lista: PaginaDaLista }) {
 				    aqui. */}
 				{total > 0 && (
 					<div className="cartaz-acao">
-						<Link to="/" hash="newsletter" className="acao-de-texto">
-							<span>Receber por e-mail</span>
-						</Link>
+						<LinkDeAcao to="/" hash="newsletter" texto="Receber por e-mail" />
 					</div>
 				)}
 			</CartazDasEdicoes>
@@ -118,9 +117,7 @@ export function EnquantoIsso() {
 						</Link>
 					</li>
 					<li>
-						<Link to="/" className="acao-de-texto">
-							<span>Ir para o início</span>
-						</Link>
+						<LinkDeAcao to="/" texto="Ir para o início" />
 					</li>
 				</ul>
 			</div>
@@ -247,22 +244,20 @@ function PaginasDasEdicoes({
 				Página {pagina} de {paginas}
 			</p>
 			{pagina > 1 && (
-				<Link
+				<LinkDeAcao
 					to="/edicoes"
 					search={anterior > 1 ? { pagina: anterior } : {}}
-					className="mais-novas acao-de-texto"
-				>
-					<span>Edições mais novas</span>
-				</Link>
+					className="mais-novas"
+					texto="Edições mais novas"
+				/>
 			)}
 			{pagina < paginas && (
-				<Link
+				<LinkDeAcao
 					to="/edicoes"
 					search={{ pagina: pagina + 1 }}
-					className="mais-antigas acao-de-texto"
-				>
-					<span>Edições mais antigas</span>
-				</Link>
+					className="mais-antigas"
+					texto="Edições mais antigas"
+				/>
 			)}
 		</nav>
 	);

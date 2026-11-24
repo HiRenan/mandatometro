@@ -3,11 +3,7 @@
 
 **/dist
 **/build
-**/.next
-**/.nuxt
 **/.output
-**/.svelte-kit
-**/.astro
 **/.turbo
 .turbo
 
@@ -16,9 +12,6 @@
 **/.pytest_cache
 **/.ruff_cache
 
-**/.wrangler
-**/.alchemy
-**/.expo
 **/.vercel
 *.log
 
