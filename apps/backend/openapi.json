@@ -2025,7 +2025,7 @@
           "parlamentares"
         ],
         "summary": "Listar os votos gravados do parlamentar da votação mais recente para a mais antiga",
-        "description": "O filtro por tema é aplicado antes da paginação por deslocamento. O desempate usa o id interno decrescente da votação.",
+        "description": "Os filtros por tema e por comparação com o partido são aplicados antes da contagem e da paginação por deslocamento. O desempate usa o id interno decrescente da votação.",
         "operationId": "listar_votos_parlamentar",
         "parameters": [
           {
@@ -2081,6 +2081,24 @@
               "title": "Tema"
             },
             "description": "Tema das proposições afetadas."
+          },
+          {
+            "name": "com_o_partido",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtra os votos que seguiram a maioria do partido (true) ou divergiram dela (false).",
+              "title": "Com O Partido"
+            },
+            "description": "Filtra os votos que seguiram a maioria do partido (true) ou divergiram dela (false)."
           }
         ],
         "responses": {
@@ -2631,6 +2649,32 @@
         ],
         "title": "Codigo"
       },
+      "ContagemComOPartido": {
+        "properties": {
+          "comparaveis": {
+            "type": "integer",
+            "title": "Comparaveis",
+            "description": "Votos com comparação válida."
+          },
+          "com_o_partido": {
+            "type": "integer",
+            "title": "Com O Partido",
+            "description": "Votos iguais à maioria dos outros membros do partido."
+          },
+          "contra": {
+            "type": "integer",
+            "title": "Contra",
+            "description": "Votos diferentes da maioria dos outros membros do partido."
+          }
+        },
+        "type": "object",
+        "required": [
+          "comparaveis",
+          "com_o_partido",
+          "contra"
+        ],
+        "title": "ContagemComOPartido"
+      },
       "ContagemVotosParlamentar": {
         "properties": {
           "sim": {
@@ -2806,6 +2850,10 @@
           "contagem_votos": {
             "$ref": "#/components/schemas/ContagemVotosParlamentar",
             "description": "Contagem dos registros de voto deste parlamentar, por valor normalizado. Uma votação sem registro da pessoa fica fora da contagem."
+          },
+          "com_o_partido": {
+            "$ref": "#/components/schemas/ContagemComOPartido",
+            "description": "Contagem das comparações com o partido em todo o histórico gravado."
           }
         },
         "type": "object",
@@ -5103,6 +5151,48 @@
               "outro"
             ],
             "title": "Valor"
+          },
+          "partido": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partido",
+            "description": "Sigla registrada no dia do voto."
+          },
+          "maioria_do_partido": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "sim",
+                  "nao",
+                  "abstencao",
+                  "obstrucao"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maioria Do Partido",
+            "description": "Valor mais frequente entre os votos contados dos outros membros do partido. Nulo sem partido, com empate ou com menos de dois votos contados."
+          },
+          "com_o_partido": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Com O Partido",
+            "description": "Se o voto seguiu a maioria do partido. Nulo quando o voto fica fora da comparação ou quando falta maioria."
           }
         },
         "type": "object",
