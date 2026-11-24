@@ -1613,7 +1613,7 @@ describe("com o partido", () => {
 							(rotulo) =>
 								`${rotulo.textContent}: ${rotulo.nextElementSibling?.textContent}`,
 						),
-					link: [link.textContent, link.getAttribute("href")],
+					link: [lido(link), link.getAttribute("href")],
 				};
 			});
 	}

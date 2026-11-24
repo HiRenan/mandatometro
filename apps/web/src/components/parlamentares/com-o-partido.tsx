@@ -1,7 +1,7 @@
 // biome-ignore-all lint/a11y/noRedundantRoles: o Safari tira o papel de lista das listas sem marcador, e o VoiceOver deixa de dizer quantos itens elas têm.
-import { Link } from "@tanstack/react-router";
 import type { CSSProperties } from "react";
 import type { ContagemComOPartido, VotoParlamentar } from "@/client";
+import { LinkDeAcao } from "@/components/acao-de-texto";
 import { formatarData } from "@/lib/formatar";
 import type {
 	ParlamentarDaPagina,
@@ -187,19 +187,13 @@ function VotoContra({ voto }: { voto: VotoParlamentar }) {
 				</div>
 			</dl>
 			<p className="link-do-voto-contra">
-				<Link
+				<LinkDeAcao
 					to="/votacoes/$id"
 					params={{ id: String(voto.votacao_id) }}
 					search={partido ? { partido } : {}}
-					className="acao-de-texto"
-				>
-					<span>
-						{partido ? `Ver como o ${partido} votou` : "Ver quem votou"}
-					</span>{" "}
-					<span className="sr-only">
-						na votação de {dia}: {titulo}
-					</span>
-				</Link>
+					texto={partido ? `Ver como o ${partido} votou` : "Ver quem votou"}
+					complemento={`na votação de ${dia}: ${titulo}`}
+				/>
 			</p>
 		</li>
 	);
