@@ -25,4 +25,5 @@ export type {
 	ParlamentarDaLista,
 	ParlamentarDaPagina,
 	Patrimonio,
+	VotosContraOPartido,
 } from "./parlamentares.server";
