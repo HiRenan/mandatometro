@@ -85,7 +85,9 @@ Para recuperar uma lacuna maior, preencha **inicio e fim juntos**, em `AAAA-MM-D
 
 Depois de aplicar a migration `0012` e publicar a API, abra **Actions → Coletar Congresso → Run workflow**. Escolha **main** para produção ou **develop** para desenvolvimento. Informe `inicio` e `fim` do período que quer preencher e marque **Somente vídeos**, desmarcado por padrão. A agenda diária segue com a coleta completa.
 
-Confira os campos `videos` nos dois resumos e `url_video` na edição publicada e em uma votação com registro oficial. Se uma consulta falhar, repita com as mesmas datas. O modo volta às votações sem vídeo e usa a mesma fila e credenciais do banco da coleta.
+Na coleta normal, as consultas de vídeo têm até quatro minutos, dentro dos primeiros 25 minutos da coleta de cada Casa, e param após duas falhas temporárias seguidas. Esse tempo inclui a abertura da conexão e a leitura integral das respostas. Se o prazo vence durante o handshake TLS, o cliente fecha a conexão e a coleta segue para o resumo.
+
+Confira os campos `videos` nos dois resumos e `url_video` na edição publicada e em uma votação com registro oficial. Se uma consulta falhar ou `videos.sessoes_nao_consultadas` for maior que zero, repita com as mesmas datas. O modo volta às votações sem vídeo e usa a mesma fila e credenciais do banco da coleta.
 
 ### Preencher temas de votações já coletadas
 

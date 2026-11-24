@@ -552,6 +552,8 @@ Só é aceito `https://www.youtube.com/watch?v=<id>`, com 11 caracteres ASCII en
 
 Cada par `(casa, id_externo)` de `video_sessao` tem uma fonte própria, com a URL da sessão consultada e a hora da coleta. As votações da sessão compartilham o registro. Falha na consulta mantém a votação e, se já houver, a observação anterior. Link ausente ou fora do formato fica nulo na coleta normal. O resumo `videos` conta votações sem sessão, sessões com vídeo, sessões sem endereço, URLs recusadas, falhas na consulta ou gravação e votações vinculadas com vídeo.
 
+Na coleta normal das duas Casas, as consultas ao detalhe das sessões param após duas falhas temporárias seguidas ou ao esgotar o prazo. Elas têm até quatro minutos, dentro dos primeiros 25 minutos da coleta de cada Casa. O prazo cobre a requisição inteira, da abertura da conexão à leitura do corpo. Se vence durante o handshake TLS, o cliente fecha a conexão TCP antes de devolver o controle à etapa. O resumo conta as sessões que ficaram sem consulta em `videos.sessoes_nao_consultadas`, inclusive quando o `Retry-After` impede o envio do GET. Uma tentativa de consulta interrompida pelo prazo entra em `videos.falhas_sessoes`. A próxima rodada ou o modo `--somente-videos` pode preencher os vídeos pendentes.
+
 O modo `--somente-videos` usa o período dos comandos de coleta e procura só votações sem vídeo. Na Câmara, extrai o id da página oficial gravada na fonte da votação. No Senado, consulta `/votacao` para cruzar `codigoSessaoVotacao` e `codigoSessao`. O preenchimento registra somente observações com link válido. Retorna código 1 em falha de consulta ou gravação, preservando os vínculos já confirmados para a próxima rodada.
 
 ## Da API para os nomes do domínio
