@@ -22,6 +22,7 @@ import type {
 	PatrimonioParlamentar,
 	VotoParlamentar,
 } from "@/client";
+import { tetoDoTitulo } from "@/lib/conteudo/regua";
 import type {
 	PaginaDoParlamentar,
 	Patrimonio,
@@ -1655,9 +1656,12 @@ describe("com o partido", () => {
 			"H3 Como contamos",
 			"H3 Votos contra a maioria do partido",
 		]);
+		// O teto sai da régua do subtítulo: o título novo pede o número novo.
 		expect(
 			within(secao()).getByRole("heading", { level: 2 }).className,
-		).toContain("letra-com-teto [--palavra:3.61]");
+		).toContain(
+			`letra-com-teto [--palavra:${tetoDoTitulo("Com o partido", "subtitulo-condensado")}]`,
+		);
 	});
 
 	it("a frase diz em quantas votações a pessoa votou com a maioria do partido e contra ela, sem a sigla; a barra e a legenda ficam fora do leitor de tela", async () => {
