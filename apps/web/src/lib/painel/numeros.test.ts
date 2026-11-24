@@ -218,7 +218,8 @@ describe("o piloto", () => {
 	it("a média suprimida vem com a frase da situação, nunca com o zero", () => {
 		expect(mediaNaTela(media("amostra_pequena", null, null), 12)).toEqual({
 			tipo: "frase",
-			frase: "Poucas respostas: a média só aparece a partir de 5 pessoas.",
+			frase:
+				"Poucas respostas: a média só aparece a partir de 5 participações.",
 		});
 		expect(mediaNaTela(media("protecao_de_subgrupo", null, null), 12)).toEqual({
 			tipo: "frase",
@@ -226,7 +227,7 @@ describe("o piloto", () => {
 		});
 		expect(mediaNaTela(media("sem_respostas", null, null), 12)).toEqual({
 			tipo: "frase",
-			frase: "Ninguém respondeu esta etapa ainda.",
+			frase: "Nenhuma participação nesta etapa.",
 		});
 	});
 
@@ -245,32 +246,36 @@ describe("o piloto", () => {
 			"a mesma média antes e depois da trilha",
 		);
 		expect(diferencaNaTela(pares(null, "amostra_pequena"))).toBe(
-			"Poucas respostas: a média só aparece a partir de 5 pessoas.",
+			"Poucas respostas: a média só aparece a partir de 5 participações.",
 		);
 	});
 
-	it("as participações dizem quem fez as duas etapas e quem fez uma só", () => {
+	it("diz quantas participações têm as duas etapas ou só uma", () => {
 		expect(
 			fraseDasParticipacoes({
 				pareadas: 20,
 				somente_antes: 7,
 				somente_depois: 4,
 			}),
-		).toBe("20 pessoas fizeram as duas etapas, 7 só o antes e 4 só o depois.");
+		).toBe(
+			"20 participações com as duas etapas, 7 só com o antes e 4 só com o depois.",
+		);
 		expect(
 			fraseDasParticipacoes({
 				pareadas: 1,
 				somente_antes: 0,
 				somente_depois: 2,
 			}),
-		).toBe("1 pessoa fez as duas etapas, 0 só o antes e 2 só o depois.");
+		).toBe(
+			"1 participação com as duas etapas, 0 só com o antes e 2 só com o depois.",
+		);
 	});
 
-	it("as tentativas de uma etapa vêm com as pessoas que as fizeram", () => {
+	it("as tentativas vêm com a contagem de participações", () => {
 		expect(fraseDasTentativas(1203, 980)).toBe(
-			"1.203 tentativas de 980 pessoas",
+			"1.203 tentativas de 980 participações",
 		);
-		expect(fraseDasTentativas(1, 1)).toBe("1 tentativa de 1 pessoa");
+		expect(fraseDasTentativas(1, 1)).toBe("1 tentativa de 1 participação");
 		expect(fraseDasTentativas(0, 0)).toBe("Nenhuma tentativa");
 	});
 
@@ -301,7 +306,7 @@ describe("o piloto", () => {
 				diferenca_pontos_percentuais: null,
 				situacao: "sem_respostas",
 			}),
-		).toBe("Ninguém fez as duas etapas ainda.");
+		).toBe("Nenhuma participação com as duas etapas.");
 	});
 });
 
