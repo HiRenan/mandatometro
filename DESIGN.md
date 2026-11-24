@@ -1112,9 +1112,9 @@ Tudo é reto: raio zero (`--radius: 0`).
   4. **Newsletter:** "Edições publicadas", "Receberam a última edição" (só quando a API manda o número) e "A última saiu em 16 de novembro de 2026, às 10h37." ou "Nenhuma edição publicada ainda.".
   5. **Piloto:**
      - a faixa com a versão do quiz e o número de perguntas;
-     - "Tentativas e pessoas", com antes, depois e no total ("30 tentativas de 27 pessoas"), e a frase de quem fez as duas etapas e de quem fez uma só;
-     - "Média de acertos", antes e depois, lado a lado a partir de 40rem: a porcentagem, a barra de 0 a 100% e "Em média, 7,4 de 12 perguntas, com 27 pessoas.";
-     - "Quem fez as duas etapas", com as duas médias e a diferença em pontos percentuais.
+     - "Tentativas e participações", com antes, depois e no total ("30 tentativas de 27 participações"), e a frase das participações com as duas etapas ou com uma só;
+     - "Média de acertos", antes e depois, lado a lado a partir de 40rem: a porcentagem, a barra de 0 a 100% e "Em média, 7,4 de 12 perguntas, com 27 participações.";
+     - "Participações com as duas etapas", com as duas médias e a diferença em pontos percentuais.
   6. **Sistema:** "No banco", com as contagens, de parlamentares a meses do IPCA, e "Últimas coletas", da Câmara, do Senado, do Diário Oficial da União, do TSE e do Banco Central, com o dia e a hora em Brasília ou "Nunca coletada".
 - **Os números escritos** de cada grupo vão em tinta, na letra do Numeral (de 2.25rem a 3rem), com o nome embaixo em Label.
 - **Os pares de nome e valor** (as tentativas, o banco e as coletas) vão em linhas, no desenho das tabelas: o fio de 2 px em cima, o de 1 px entre as linhas, o nome à esquerda e o valor à direita, em algarismos da mesma largura. Quando a linha não cabe, como com a letra a 200% numa tela de 320 px, o valor desce para a linha de baixo, ainda à direita, e a página não rola de lado.
@@ -1127,7 +1127,7 @@ Tudo é reto: raio zero (`--radius: 0`).
   - **Leitor de tela e cores forçadas:** as colunas e as barras ficam fora do leitor de tela (`aria-hidden`), porque os números estão escritos na frase, nas linhas e na tabela. Nas cores forçadas, ficam em `CanvasText`.
   - Nenhum texto fica em cima de uma fita, e nenhuma informação depende só da cor.
 - **O que a API não manda:**
-  - **A média suprimida** do piloto aparece pela frase da situação, e nunca como zero: "Poucas respostas: a média só aparece a partir de 5 pessoas.", "A média não aparece para não revelar um grupo pequeno." e "Ninguém respondeu esta etapa ainda.". Nos pares, a última vira "Ninguém fez as duas etapas ainda.".
+  - **A média suprimida** do piloto aparece pela frase da situação, e nunca como zero: "Poucas respostas: a média só aparece a partir de 5 participações.", "A média não aparece para não revelar um grupo pequeno." e "Nenhuma participação nesta etapa.". Nos pares, a última vira "Nenhuma participação com as duas etapas.".
   - **Os mínimos:** os dois números que o contrato chama de mínimos, as contas ativas e as que voltaram, levam o "pelo menos".
   - **A lista vazia** ganha uma frase: "Nenhuma página vista nos últimos 30 dias.", "Nenhuma leitura marcada ainda." e "Nenhum registro ainda.".
 - **Os estados** ficam embaixo do título, como na revisão:
