@@ -9,7 +9,7 @@ from typing import Annotated, get_args
 
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, any_, func, select
 from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.orm import Session, aliased, contains_eager
 
@@ -64,6 +64,11 @@ from mandatometro.tse_catalogos import CARGOS_TSE, MAXIMO_CENTAVOS
 ORDEM_DOS_VOTOS = (Votacao.data.desc(), Votacao.id.desc())
 PISO_PERCENTUAL_CENTAVOS = 5_000_000
 VOTOS_COMPARAVEIS = get_args(ValorVotoComparavel)
+# Os caracteres de str.strip() também são passados ao btrim do PostgreSQL.
+ESPACOS_EM_BRANCO = (
+    " \t\n\r\v\f\x1c\x1d\x1e\x1f\x85\xa0\u1680\u2028\u2029\u202f\u205f\u3000"
+    "\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a"
+)
 
 
 router = APIRouter(
@@ -164,7 +169,11 @@ def _biografia_publica(sessao: Session, parlamentar_id: int) -> BiografiaParlame
 
 
 def _comparacoes_com_o_partido(
-    sessao: Session, parlamentar_id: int, votacoes: Collection[int] | None = None
+    sessao: Session,
+    parlamentar_id: int,
+    votacoes: Collection[int] | None = None,
+    *,
+    tema: TemaId | None = None,
 ) -> dict[int, tuple[ValorVotoComparavel, bool | None]]:
     colega = aliased(Voto)
     total = func.count().label("total")
@@ -174,7 +183,8 @@ def _comparacoes_com_o_partido(
             colega,
             and_(
                 colega.votacao_id == Voto.votacao_id,
-                func.trim(colega.partido) == func.nullif(func.trim(Voto.partido), ""),
+                func.btrim(colega.partido, ESPACOS_EM_BRANCO)
+                == func.nullif(func.btrim(Voto.partido, ESPACOS_EM_BRANCO), ""),
                 colega.parlamentar_id != Voto.parlamentar_id,
             ),
         )
@@ -185,6 +195,8 @@ def _comparacoes_com_o_partido(
     if votacoes is not None:
         # Restringe as duas leituras de voto às votações da página.
         consulta = consulta.where(Voto.votacao_id.in_(votacoes), colega.votacao_id.in_(votacoes))
+    if tema is not None:
+        consulta = consulta.where(voto_tem_tema(tema))
 
     comparacoes = {}
     for votacao_id, grupo in groupby(sessao.execute(consulta), key=lambda linha: linha.votacao_id):
@@ -386,7 +398,7 @@ def _voto_publico(
     return VotoParlamentar(
         votacao_id=voto.votacao_id,
         valor=voto.valor,
-        partido=(voto.partido or "").strip(" ") or None,
+        partido=(voto.partido or "").strip(ESPACOS_EM_BRANCO) or None,
         maioria_do_partido=maioria,
         com_o_partido=com_o_partido,
         **dados_da_votacao(voto.votacao, temas),
@@ -396,7 +408,8 @@ def _voto_publico(
 @router.get(
     "/{id}/votos",
     summary="Listar os votos gravados do parlamentar da votação mais recente para a mais antiga",
-    description="O filtro por tema é aplicado antes da paginação por deslocamento. "
+    description="Os filtros por tema e por comparação com o partido são aplicados antes da "
+    "contagem e da paginação por deslocamento. "
     "O desempate usa o id interno decrescente da votação.",
     response_model=ListaVotosParlamentar,
     responses={404: {"model": ErroParlamentar}},
@@ -406,15 +419,33 @@ def listar_votos_parlamentar(
     limite: Annotated[int, Query(ge=1, le=100)] = 20,
     deslocamento: Annotated[int, Query(ge=0)] = 0,
     tema: Annotated[TemaId | None, Query(description="Tema das proposições afetadas.")] = None,
+    com_o_partido: Annotated[
+        bool | None,
+        Query(
+            description="Filtra os votos que seguiram a maioria do partido (true) "
+            "ou divergiram dela (false)."
+        ),
+    ] = None,
 ):
     with sessao_do_banco() as sessao:
         if sessao.get(Parlamentar, id) is None:
             return JSONResponse({"erro": "parlamentar_nao_encontrado"}, status_code=404)
 
         filtros = [Voto.parlamentar_id == id]
-        if tema is not None:
-            filtros.append(voto_tem_tema(tema))
-        total = sessao.scalar(select(func.count()).select_from(Voto).where(*filtros))
+        if com_o_partido is None:
+            comparacoes = {}
+            if tema is not None:
+                filtros.append(voto_tem_tema(tema))
+            total = sessao.scalar(select(func.count()).select_from(Voto).where(*filtros))
+        else:
+            comparacoes = _comparacoes_com_o_partido(sessao, id, tema=tema)
+            ids_filtrados = [
+                votacao_id
+                for votacao_id, (_, seguiu) in comparacoes.items()
+                if seguiu is com_o_partido
+            ]
+            filtros.append(Voto.votacao_id == any_(ids_filtrados))
+            total = len(ids_filtrados)
         votos = []
         if deslocamento < total:
             registros = sessao.scalars(
@@ -431,7 +462,8 @@ def listar_votos_parlamentar(
             ).all()
             ids = [voto.votacao_id for voto in registros]
             temas = temas_das_votacoes(sessao, ids)
-            comparacoes = _comparacoes_com_o_partido(sessao, id, ids)
+            if com_o_partido is None:
+                comparacoes = _comparacoes_com_o_partido(sessao, id, ids)
             votos = [
                 _voto_publico(
                     voto,

@@ -20,6 +20,7 @@ from mandatometro.db.modelos import (
     Mandato,
     Parlamentar,
     Proposicao,
+    ProposicaoTema,
     Votacao,
     Voto,
 )
@@ -554,6 +555,130 @@ def test_com_o_partido_no_detalhe_e_nas_paginas_de_votos(cliente, sessao, casa):
         "com_o_partido": comparacoes[True],
         "contra": comparacoes[False],
     }
+
+
+@pytest.fixture(params=["camara", "senado"])
+def historico_com_o_partido(sessao, request):
+    casa = request.param
+    fonte = Fonte(url="https://example.com/votacoes-ficticias")
+    pessoa, *colegas = [
+        Parlamentar(casa=casa, id_externo=920000 + i, nome=f"Pessoa fictícia {i}", fonte=fonte)
+        for i in range(3)
+    ]
+    proposicao = Proposicao(
+        casa=casa, id_externo=920100, sigla="PL", numero=1, ano=2026, fonte=fonte
+    )
+    sessao.add(proposicao)
+    sessao.flush()
+    sessao.add(
+        ProposicaoTema(proposicao_id=proposicao.id, tema="saude", fonte_id=proposicao.fonte_id)
+    )
+
+    # Sigla da pessoa, sigla dos colegas, voto da pessoa e vínculo com o tema saúde.
+    casos = {
+        "tabulacao": ("\t", "\t", "sim", True),
+        "sigla_com_tabulacao": ("\tPFA", "PFA", "nao", True),
+        "quebra_de_linha": ("\n\u00a0", "\n\u00a0", "sim", True),
+        "sigla_dos_colegas": ("PFA", "\tPFA\n\u00a0", "nao", False),
+        "sigla_com_espacos": ("\n\u00a0PFA\t", "PFA", "sim", True),
+        "sigla_limpa": ("PFA", "PFA", "sim", False),
+        "ausencia": ("PFA", "PFA", "nao_votou", True),
+    }
+    votacoes = {}
+    for dia, (caso, (sigla, sigla_dos_colegas, valor, tem_saude)) in enumerate(casos.items(), 1):
+        votacao = Votacao(
+            casa=casa,
+            id_externo=f"9200{dia}",
+            data=date(2026, 11, dia),
+            descricao="Votação fictícia.",
+            resultado="aprovada",
+            fonte=fonte,
+            proposicoes=[proposicao] if tem_saude else [],
+        )
+        sessao.add(
+            Voto(parlamentar=pessoa, votacao=votacao, valor=valor, partido=sigla, fonte=fonte)
+        )
+        sessao.add_all(
+            Voto(
+                parlamentar=colega,
+                votacao=votacao,
+                valor="sim",
+                partido=sigla_dos_colegas,
+                fonte=fonte,
+            )
+            for colega in colegas
+        )
+        votacoes[caso] = votacao
+    sessao.flush()
+    return f"/parlamentares/{pessoa.id}", {caso: votacao.id for caso, votacao in votacoes.items()}
+
+
+def test_com_o_partido_normaliza_espacos_em_branco_da_sigla(cliente, historico_com_o_partido):
+    url, ids = historico_com_o_partido
+    resposta = cliente.get(f"{url}/votos")
+    assert resposta.status_code == 200
+    assert {
+        voto["votacao_id"]: (voto["partido"], voto["maioria_do_partido"], voto["com_o_partido"])
+        for voto in resposta.json()["votos"]
+    } == {
+        ids["tabulacao"]: (None, None, None),
+        ids["sigla_com_tabulacao"]: ("PFA", "sim", False),
+        ids["quebra_de_linha"]: (None, None, None),
+        ids["sigla_dos_colegas"]: ("PFA", "sim", False),
+        ids["sigla_com_espacos"]: ("PFA", "sim", True),
+        ids["sigla_limpa"]: ("PFA", "sim", True),
+        ids["ausencia"]: ("PFA", "sim", None),
+    }
+    assert cliente.get(url).json()["com_o_partido"] == {
+        "comparaveis": 4,
+        "com_o_partido": 2,
+        "contra": 2,
+    }
+
+
+@pytest.mark.parametrize(
+    ("com_o_partido", "campo", "casos"),
+    [
+        (False, "contra", ["sigla_dos_colegas", "sigla_com_tabulacao"]),
+        (True, "com_o_partido", ["sigla_limpa", "sigla_com_espacos"]),
+    ],
+)
+def test_filtra_com_o_partido_antes_da_paginacao(
+    cliente, historico_com_o_partido, com_o_partido, campo, casos
+):
+    url, ids = historico_com_o_partido
+    esperados = [ids[caso] for caso in casos]
+    totais = cliente.get(url).json()["com_o_partido"]
+    for deslocamento in range(len(esperados) + 1):
+        resposta = cliente.get(
+            f"{url}/votos",
+            params={"com_o_partido": com_o_partido, "limite": 1, "deslocamento": deslocamento},
+        )
+        assert resposta.status_code == 200
+        pagina = resposta.json()
+        assert pagina["total"] == totais[campo] == len(esperados)
+        assert pagina["limite"] == 1
+        assert pagina["deslocamento"] == deslocamento
+        assert [voto["votacao_id"] for voto in pagina["votos"]] == esperados[
+            deslocamento : deslocamento + 1
+        ]
+        assert all(voto["com_o_partido"] is com_o_partido for voto in pagina["votos"])
+
+
+@pytest.mark.parametrize(
+    ("com_o_partido", "caso"), [(False, "sigla_com_tabulacao"), (True, "sigla_com_espacos")]
+)
+def test_combina_com_o_partido_com_tema(cliente, historico_com_o_partido, com_o_partido, caso):
+    url, ids = historico_com_o_partido
+    resposta = cliente.get(
+        f"{url}/votos",
+        params={"com_o_partido": com_o_partido, "tema": "saude", "limite": 1},
+    )
+    assert resposta.status_code == 200
+    pagina = resposta.json()
+    assert pagina["total"] == 1
+    assert [voto["votacao_id"] for voto in pagina["votos"]] == [ids[caso]]
+    assert pagina["votos"][0]["temas"] == [{"id": "saude", "nome": "Saúde"}]
 
 
 def test_votacao_lista_votos_por_nome_e_conta_cada_valor_e_partido(
