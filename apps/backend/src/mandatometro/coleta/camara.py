@@ -95,8 +95,10 @@ def _opcional(valor) -> str | None:
     return valor or None
 
 
-def _video_evento(http: ClienteHttp, id_evento: int) -> tuple[Resposta, object]:
-    resposta = http.obter_json(f"/eventos/{id_evento}")
+def _video_evento(
+    http: ClienteHttp, id_evento: int, prazo: float | None
+) -> tuple[Resposta, object]:
+    resposta = http.obter_json(f"/eventos/{id_evento}", prazo=prazo)
     try:
         dados = _objeto(_objeto(resposta.dados).get("dados"))
         if _inteiro(dados.get("id")) == id_evento:
@@ -574,7 +576,14 @@ def coletar(
             else "Falha na estrutura da fonte ou na gravação."
         )
         logger.error("Coleta interrompida: %s", resumo.erro)
-    coletar_videos(resumo, sessoes, http=http, abrir_sessao=criar_sessao, consultar=_video_evento)
+    coletar_videos(
+        resumo,
+        sessoes,
+        http=http,
+        abrir_sessao=criar_sessao,
+        consultar=_video_evento,
+        comeco_coleta=comeco,
+    )
     coletar_temas(
         resumo,
         sorted(coleta.proposicoes_gravadas),
