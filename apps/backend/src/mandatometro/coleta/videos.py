@@ -9,6 +9,7 @@ from sqlalchemy import select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from mandatometro.coleta import LIMITE_COLETA_COM_OPCIONAIS_S
 from mandatometro.coleta.http import (
     ClienteHttp,
     ErroColeta,
@@ -23,8 +24,6 @@ from mandatometro.db.modelos import PADRAO_URL_VIDEO, Fonte, VideoSessao, Votaca
 # O detalhe pode responder com sucesso e declarar outra origem para a sessão.
 URL_RECUSADA = object()
 LIMITE_VIDEOS_S = 4 * 60
-# O job tem teto de 30 min, incluindo o preparo do ambiente e a saída do CLI.
-LIMITE_COLETA_COM_VIDEOS_S = 25 * 60
 
 type VotacaoSemVideo = tuple[int, str, str | None]
 type VotacoesPorSessao = dict[int | None, list[int]]
@@ -43,7 +42,9 @@ def coletar_videos(
 ) -> None:
     prazo = None
     if comeco_coleta is not None:
-        prazo = min(time.monotonic() + LIMITE_VIDEOS_S, comeco_coleta + LIMITE_COLETA_COM_VIDEOS_S)
+        prazo = min(
+            time.monotonic() + LIMITE_VIDEOS_S, comeco_coleta + LIMITE_COLETA_COM_OPCIONAIS_S
+        )
     videos = resumo.videos
     vincular = update(Votacao).where(Votacao.casa == resumo.casa)
     sem_sessao = sessoes.get(None)
@@ -76,8 +77,12 @@ def coletar_videos(
             videos.sessoes_nao_consultadas += len(consultaveis) - indice - consultada
             break
         except ErroColeta as erro:
-            videos.falhas_sessoes += 1
-            falhas_seguidas = falhas_seguidas + 1 if isinstance(erro, ErroColetaTemporario) else 0
+            temporaria = isinstance(erro, ErroColetaTemporario)
+            if temporaria and http.chamadas == chamadas:
+                videos.sessoes_nao_consultadas += 1
+            else:
+                videos.falhas_sessoes += 1
+            falhas_seguidas = falhas_seguidas + 1 if temporaria else 0
             continue
 
         falhas_seguidas = 0
@@ -149,7 +154,10 @@ def preencher_videos(
                 consultar=consultar,
                 somente_videos=True,
             )
-        resumo.completa = not (resumo.videos.falhas_sessoes or resumo.videos.falhas_gravacao)
+        videos = resumo.videos
+        resumo.completa = not (
+            videos.falhas_sessoes or videos.falhas_gravacao or videos.sessoes_nao_consultadas
+        )
     except ErroColeta as erro:
         resumo.completa = False
         resumo.erro = str(erro)

@@ -240,7 +240,7 @@ def test_so_falhas_temporarias_seguidas_pulam_temas(entre_falhas, abrir):
 
 
 def test_coleta_normal_sem_tempo_restante_pula_consultas_de_temas(abrir, monkeypatch):
-    monkeypatch.setattr(camara, "LIMITE_COLETA_COM_TEMAS_S", 0)
+    monkeypatch.setattr(camara, "LIMITE_COLETA_COM_OPCIONAIS_S", 0)
     with _cliente(camara.BASE, _roteiro_camara()) as (http, chamadas):
         resumo = camara.coletar(INICIO, FIM, http=http, criar_sessao=abrir)
 

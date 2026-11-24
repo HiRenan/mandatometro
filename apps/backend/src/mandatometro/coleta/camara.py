@@ -14,6 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from mandatometro.coleta import LIMITE_COLETA_COM_OPCIONAIS_S
 from mandatometro.coleta.cli import (
     adicionar_argumentos_de_preenchimento,
     adicionar_argumentos_periodo,
@@ -52,8 +53,6 @@ BASE = "https://dadosabertos.camara.leg.br/api/v2"
 PUBLICA = "https://www.camara.leg.br"
 ID_PLENARIO = 180
 LIMITE_TEMAS_S = 4 * 60
-# O job tem teto de 30 min, incluindo o preparo do ambiente e a saída do CLI.
-LIMITE_COLETA_COM_TEMAS_S = 25 * 60
 logger = logging.getLogger(__name__)
 FALHAS = (ErroColeta, ValueError, KeyError, TypeError, SQLAlchemyError)
 
@@ -98,7 +97,7 @@ def _opcional(valor) -> str | None:
 def _video_evento(
     http: ClienteHttp, id_evento: int, prazo: float | None
 ) -> tuple[Resposta, object]:
-    resposta = http.obter_json(f"/eventos/{id_evento}", prazo=prazo)
+    resposta = http.obter_json(f"/eventos/{id_evento}", prazo=prazo, prazo_integral=True)
     try:
         dados = _objeto(_objeto(resposta.dados).get("dados"))
         if _inteiro(dados.get("id")) == id_evento:
@@ -589,7 +588,7 @@ def coletar(
         sorted(coleta.proposicoes_gravadas),
         http=http,
         abrir_sessao=criar_sessao,
-        prazo=min(time.monotonic() + LIMITE_TEMAS_S, comeco + LIMITE_COLETA_COM_TEMAS_S),
+        prazo=min(time.monotonic() + LIMITE_TEMAS_S, comeco + LIMITE_COLETA_COM_OPCIONAIS_S),
     )
     resumo.chamadas = http.chamadas
     resumo.tentativas_extras = http.tentativas_extras

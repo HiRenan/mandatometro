@@ -1,11 +1,12 @@
 """A etapa opcional pelo CLI das duas Casas, com relógio simulado e sem rede."""
 
+import asyncio
 import json
 import time
-from contextlib import nullcontext
 from datetime import date
 from functools import partial
 
+import httpcore2
 import httpx2
 import pytest
 from sqlalchemy import select
@@ -21,6 +22,43 @@ from mandatometro.coleta.videos import coletar_videos
 from mandatometro.db.modelos import VideoSessao, Votacao, Voto
 
 SESSOES = range(1, 21)
+
+
+class _Stream503(httpcore2.AsyncMockStream):
+    async def read(self, max_bytes, timeout=None):
+        bloco = await super().read(max_bytes, timeout)
+        if bloco == b"x":
+            await asyncio.sleep(9)
+        return bloco
+
+
+class _Backend503(httpcore2.AsyncMockBackend):
+    async def connect_tcp(self, *args, **kwargs):
+        return _Stream503(
+            [b"HTTP/1.1 503 Service Unavailable\r\nContent-Length: 36\r\nConnection: close\r\n\r\n"]
+            + [b"x"] * 36
+        )
+
+
+class _Transporte503(httpx2.AsyncHTTPTransport):
+    def __init__(self):
+        self._pool = httpcore2.AsyncConnectionPool(network_backend=_Backend503([]))
+
+
+def _simular_esperas_assincronas(monkeypatch, avancar):
+    def criar_loop():
+        loop = asyncio.SelectorEventLoop()
+        selecionar = loop._selector.select
+
+        def selecionar_sem_esperar(timeout=None):
+            assert timeout is not None
+            avancar(timeout)
+            return selecionar(0)
+
+        monkeypatch.setattr(loop._selector, "select", selecionar_sem_esperar)
+        return loop
+
+    monkeypatch.setattr(asyncio, "new_event_loop", criar_loop)
 
 
 def _eventos(roteiro):
@@ -62,12 +100,18 @@ def _encontros(respostas):
 
 @pytest.mark.parametrize("casa", ["camara", "senado"])
 @pytest.mark.parametrize(
-    "tempo_coleta, tempo_videos, tentativas, falhas",
-    [(0, 186, 6, 2), (1490, 10, 1, 1), (1500, 0, 0, 0)],
-    ids=["duas-falhas", "prazo-na-consulta", "prazo-sem-consulta"],
+    "cenario, tempo_coleta, tempo_videos, tentativas, falhas",
+    [
+        pytest.param("timeout", 0, 186, 6, 2, id="duas-falhas"),
+        pytest.param("timeout", 1490, 10, 1, 1, id="prazo-na-consulta"),
+        pytest.param("timeout", 1500, 0, 0, 0, id="prazo-sem-consulta"),
+        pytest.param("corpo-lento", 1490, 10, 1, 1, id="corpo-lento"),
+        pytest.param("retry-after", 0, 0, 1, 1, id="retry-after"),
+    ],
 )
 def test_cli_limita_videos_e_recupera_sessoes_pendentes(
     casa,
+    cenario,
     tempo_coleta,
     tempo_videos,
     tentativas,
@@ -86,10 +130,12 @@ def test_cli_limita_videos_e_recupera_sessoes_pendentes(
 
     if casa == "camara":
         modulo, rota_lista, rota_video = camara, "/votacoes", "/eventos/"
+        nome_consulta = "_video_evento"
         rotas = _eventos(roteiro)
         monkeypatch.setattr(camara, "sessao_do_banco", abrir)
     else:
         modulo, rota_lista, rota_video = senado, "/votacao", "/plenario/encontro/"
+        nome_consulta = "_video_encontro"
         rotas = _encontros(respostas)
         monkeypatch.setattr(senado, "sessao", abrir)
         monkeypatch.setattr(senado, "coletar", partial(senado.coletar, abrir_sessao=abrir))
@@ -98,6 +144,14 @@ def test_cli_limita_videos_e_recupera_sessoes_pendentes(
     agora = 0.0
     fonte_fora = True
     consultadas = []
+    sessoes_avaliadas = []
+    consultar = getattr(modulo, nome_consulta)
+
+    def avaliar(http, codigo, prazo):
+        sessoes_avaliadas.append(codigo)
+        return consultar(http, codigo, prazo)
+
+    monkeypatch.setattr(modulo, nome_consulta, avaliar)
 
     def avancar(segundos):
         nonlocal agora
@@ -105,6 +159,10 @@ def test_cli_limita_videos_e_recupera_sessoes_pendentes(
 
     monkeypatch.setattr(time, "monotonic", lambda: agora)
     monkeypatch.setattr(time, "sleep", avancar)
+
+    if cenario == "corpo-lento":
+        _simular_esperas_assincronas(monkeypatch, avancar)
+    lento = _Transporte503()
 
     def atender(req):
         if req.url.path == "/robots.txt":
@@ -115,6 +173,10 @@ def test_cli_limita_videos_e_recupera_sessoes_pendentes(
         if caminho.startswith(rota_video):
             consultadas.append(int(caminho.removeprefix(rota_video)))
             if fonte_fora:
+                if cenario == "corpo-lento":
+                    return lento.handle_async_request(req)
+                if cenario == "retry-after":
+                    return httpx2.Response(503, headers={"Retry-After": "120"})
                 avancar(req.extensions["timeout"]["read"])
                 raise httpx2.ReadTimeout("Conteúdo privado de teste.", request=req)
         return httpx2.Response(200, json=rotas[caminho])
@@ -122,33 +184,43 @@ def test_cli_limita_videos_e_recupera_sessoes_pendentes(
     args = ["coleta", casa, "--inicio", "2026-10-01", "--fim", "2026-11-07"]
     consulta_votacoes = select(Votacao.id, Votacao.fonte_id)
     consulta_votos = select(Voto.votacao_id, Voto.parlamentar_id, Voto.valor, Voto.fonte_id)
-    with httpx2.Client(transport=httpx2.MockTransport(atender)) as transporte:
-        monkeypatch.setattr(
-            modulo,
-            "ClienteHttp",
-            lambda base: nullcontext(ClienteHttp(base, cliente=transporte, intervalo=0)),
-        )
-        assert main(args) == 0
-        saida = capsys.readouterr().out
-        resumo = json.loads(saida)
+    monkeypatch.setattr(
+        modulo,
+        "ClienteHttp",
+        lambda base: ClienteHttp(base, transporte=httpx2.MockTransport(atender), intervalo=0),
+    )
+    assert main(args) == 0
+    saida = capsys.readouterr().out
+    resumo = json.loads(saida)
 
-        assert (resumo["duracao_s"] - tempo_coleta, len(consultadas)) == (tempo_videos, tentativas)
-        assert resumo["completa"] and resumo["votacoes"] == 21
-        assert list(dict.fromkeys(consultadas)) == list(SESSOES)[:falhas]
-        assert resumo["videos"]["falhas_sessoes"] == falhas
-        assert resumo["videos"]["sessoes_nao_consultadas"] == len(SESSOES) - falhas
-        assert resumo["videos"]["votacoes_sem_sessao"] == 1
-        assert "Conteúdo privado de teste." not in saida + caplog.text
-        assert sessao.scalars(select(VideoSessao.id)).all() == []
-        votacoes = set(sessao.execute(consulta_votacoes))
-        votos = set(sessao.execute(consulta_votos))
-        assert len(votacoes) == 21
-        assert len(votos) == resumo["votos"] == 21
+    assert (resumo["duracao_s"], len(consultadas)) == (tempo_coleta + tempo_videos, tentativas)
+    assert resumo["completa"] and resumo["votacoes"] == 21
+    assert list(dict.fromkeys(consultadas)) == list(SESSOES)[:falhas]
+    assert sessoes_avaliadas == list(SESSOES)[: falhas + (cenario == "retry-after")]
+    assert (resumo["videos"]["falhas_sessoes"], resumo["videos"]["sessoes_nao_consultadas"]) == (
+        falhas,
+        len(SESSOES) - falhas,
+    )
+    assert resumo["videos"]["votacoes_sem_sessao"] == 1
+    assert "Conteúdo privado de teste." not in saida + caplog.text
+    assert sessao.scalars(select(VideoSessao.id)).all() == []
+    votacoes = set(sessao.execute(consulta_votacoes))
+    votos = set(sessao.execute(consulta_votos))
+    assert len(votacoes) == 21
+    assert len(votos) == resumo["votos"] == 21
 
+    if cenario == "retry-after":
         consultadas.clear()
-        fonte_fora = False
-        assert main([*args, "--somente-videos"]) == 0
-        recuperacao = json.loads(capsys.readouterr().out)
+        assert main([*args, "--somente-videos"]) == 1
+        incompleto = json.loads(capsys.readouterr().out)
+        assert not incompleto["completa"]
+        assert len(consultadas) == incompleto["videos"]["falhas_sessoes"] == 1
+        assert incompleto["videos"]["sessoes_nao_consultadas"] == len(SESSOES) - 1
+
+    consultadas.clear()
+    fonte_fora = False
+    assert main([*args, "--somente-videos"]) == 0
+    recuperacao = json.loads(capsys.readouterr().out)
 
     assert sorted(consultadas) == list(SESSOES)
     assert recuperacao["videos"]["sessoes_nao_consultadas"] == 0
@@ -174,8 +246,7 @@ def test_prazo_de_quatro_minutos_limita_consultas_com_falhas_definitivas(monkeyp
 
     dia = date(2026, 11, 5)
     resumo = ResumoColeta("camara", dia, dia)
-    with httpx2.Client(transport=httpx2.MockTransport(atender)) as transporte:
-        http = ClienteHttp(camara.BASE, cliente=transporte, intervalo=0)
+    with ClienteHttp(camara.BASE, transporte=httpx2.MockTransport(atender), intervalo=0) as http:
         coletar_videos(
             resumo,
             {codigo: [codigo] for codigo in SESSOES},

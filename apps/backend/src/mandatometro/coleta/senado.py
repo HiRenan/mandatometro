@@ -84,7 +84,7 @@ def _codigo_sessao_plenaria(item: dict) -> int | None:
 
 
 def _video_encontro(http: ClienteHttp, codigo: int, prazo: float | None) -> tuple[Resposta, object]:
-    resposta = http.obter_json(f"/plenario/encontro/{codigo}", prazo=prazo)
+    resposta = http.obter_json(f"/plenario/encontro/{codigo}", prazo=prazo, prazo_integral=True)
     plenario = _objeto(_objeto(resposta.dados).get("ServicoPlenario"))
     encontros = _lista(_objeto(plenario.get("encontros")).get("encontro"), objeto_unico=True)
     if len(encontros) == 1:

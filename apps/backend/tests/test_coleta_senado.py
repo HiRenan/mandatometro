@@ -60,10 +60,9 @@ def executar(sessao, respostas):
             return httpx2.Response(200, json=dado)
 
         conexao = sessao.connection()
-        with (
-            httpx2.Client(transport=httpx2.MockTransport(atender)) as transporte,
-            ClienteHttp(BASE, cliente=transporte, intervalo=0, tentativas=1) as http,
-        ):
+        with ClienteHttp(
+            BASE, transporte=httpx2.MockTransport(atender), intervalo=0, tentativas=1
+        ) as http:
 
             def abrir():
                 return Session(bind=conexao, join_transaction_mode="create_savepoint")
