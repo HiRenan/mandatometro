@@ -304,13 +304,14 @@
 		}
 
 		/*
-		 * As barras do patrimônio declarado e de "Como votou" se riscam a partir da
-		 * esquerda quando entram na tela, como a tira do cartaz, no trecho das
-		 * seções: ficam inteiras quando o alto delas sobe 7rem. Sem a animação de
-		 * rolagem, elas já estão inteiras.
+		 * As barras do patrimônio declarado, de "Como votou" e de "Com o partido" se
+		 * riscam a partir da esquerda quando entram na tela, como a tira do cartaz,
+		 * no trecho das seções: ficam inteiras quando o alto delas sobe 7rem. Sem a
+		 * animação de rolagem, elas já estão inteiras.
 		 */
 		.barra-do-patrimonio,
-		.barra-do-tipo {
+		.barra-do-tipo,
+		.barra-do-partido {
 			animation: risca linear both;
 			animation-timeline: view();
 			animation-range: entry 0 entry 7rem;

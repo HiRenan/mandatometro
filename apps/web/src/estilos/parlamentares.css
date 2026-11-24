@@ -1224,6 +1224,204 @@
 	}
 
 	/*
+	 * "Como votou" e "Com o partido" numa peça só, sem papel: na tela larga, ela
+	 * é a coluna da esquerda, e os votos ficam na da direita. O vão entre as duas
+	 * seções é o do corpo.
+	 */
+	.resumo-dos-votos {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: clamp(2.5rem, 6vw, 4rem);
+	}
+
+	/*
+	 * Com o partido (a #329; o Renan, em 24/11/2026: "A · Na régua"): a frase em
+	 * Literata 500, com a régua de "Como votou" embaixo; a explicação, em
+	 * Literata, um pouco menor que o texto; e os votos contra a maioria, entre
+	 * fios, com o voto da pessoa num carimbo cheio e o da maioria num vazado. Nada
+	 * tem cor: o voto contra a maioria não é vermelho, e o voto com ela não é
+	 * verde.
+	 */
+	.frase-do-partido {
+		max-width: 39rem;
+		font-family: var(--font-serif);
+		font-size: 1.0625rem;
+		font-weight: 500;
+		line-height: 1.5;
+	}
+
+	/*
+	 * A régua: o trilho em Papel 2 são as votações comparadas, e a parte em
+	 * tinta, as votações com a maioria (o --parte), com 4 px no mínimo, como a
+	 * barra de "Como votou". Ela se risca quando entra na tela
+	 * (estilos/movimento.css).
+	 */
+	.regua-do-partido {
+		max-width: 46rem;
+		margin-top: 1rem;
+	}
+
+	.regua-do-partido > .legenda-das-barras {
+		margin-bottom: 0.5rem;
+	}
+
+	.trilho-do-partido {
+		height: 0.5rem;
+		background: var(--papel-2);
+	}
+
+	.barra-do-partido {
+		display: block;
+		width: max(4px, calc(var(--parte) * 100%));
+		height: 100%;
+		background: var(--tinta);
+		transform-origin: 0 50%;
+	}
+
+	/*
+	 * Nas cores forçadas, o fundo do trilho some no Canvas: o fio mostra o total,
+	 * e a barra fica na cor do texto do sistema.
+	 */
+	@media (forced-colors: active) {
+		.trilho-do-partido {
+			border: 1px solid CanvasText;
+		}
+
+		.barra-do-partido {
+			forced-color-adjust: none;
+			background: CanvasText;
+		}
+	}
+
+	.como-contamos,
+	.votos-contra-a-maioria {
+		margin-top: 2rem;
+	}
+
+	.como-contamos {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.6rem;
+		max-width: 39rem;
+		font-family: var(--font-serif);
+		font-size: 0.9375rem;
+		line-height: 1.5;
+	}
+
+	/* "Como contamos" e "Votos contra a maioria do partido", como o "Como calculamos". */
+	.titulo-do-partido {
+		font-family: var(--font-sans);
+		font-size: 1.25rem;
+		font-stretch: 68%;
+		font-weight: 900;
+		line-height: 1.15;
+		text-transform: uppercase;
+	}
+
+	.votos-contra-a-maioria > .titulo-do-partido {
+		margin-bottom: 0.6rem;
+	}
+
+	.falha-dos-votos-contra {
+		max-width: 39rem;
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		line-height: 1.5;
+	}
+
+	.recentes-dos-votos-contra {
+		margin-bottom: 0.75rem;
+		color: var(--tinta-suave);
+	}
+
+	.lista-dos-votos-contra {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		max-width: 46rem;
+		border-top: 2px solid var(--tinta);
+	}
+
+	.voto-contra-a-maioria {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		justify-items: start;
+		row-gap: 0.4rem;
+		padding: 1rem 0;
+		border-bottom: 1px solid var(--tinta);
+	}
+
+	.titulo-do-voto-contra {
+		font-family: var(--font-sans);
+		font-size: 1.125rem;
+		font-stretch: 68%;
+		font-weight: 900;
+		line-height: 1.15;
+		text-transform: uppercase;
+	}
+
+	.dia-do-voto-contra {
+		color: var(--tinta-suave);
+	}
+
+	/*
+	 * Os dois carimbos lado a lado, e um embaixo do outro quando não cabem: o
+	 * rótulo pequeno em cima ("Votou", "Maioria do PFB") e o voto embaixo, na
+	 * letra do carimbo do voto.
+	 */
+	.carimbos-do-voto-contra {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-top: 0.2rem;
+	}
+
+	.carimbo-da-pessoa,
+	.carimbo-da-maioria {
+		display: grid;
+		row-gap: 0.1rem;
+		padding: 0.3rem 0.6rem 0.35rem;
+		border: 2px solid var(--tinta);
+	}
+
+	.carimbo-da-pessoa {
+		background: var(--tinta);
+		color: var(--papel);
+	}
+
+	.carimbos-do-voto-contra dt {
+		font-family: var(--font-sans);
+		font-size: 0.75rem;
+		font-weight: 650;
+		line-height: 1.2;
+		letter-spacing: calc(0.08em * var(--espacado));
+		text-transform: var(--caixa-alta);
+	}
+
+	.carimbos-do-voto-contra dd {
+		font-family: var(--font-sans);
+		font-size: 1.125rem;
+		font-stretch: 62%;
+		font-weight: 900;
+		line-height: 1.1;
+		letter-spacing: calc(0.04em * var(--espacado));
+		text-transform: uppercase;
+	}
+
+	/*
+	 * Nas cores forçadas, os dois carimbos ficam com o fio do sistema, e o da
+	 * pessoa continua cheio, na cor do texto do sistema: o cheio e o vazado não
+	 * se confundem.
+	 */
+	@media (forced-colors: active) {
+		.carimbo-da-pessoa {
+			forced-color-adjust: none;
+			border-color: CanvasText;
+			background: CanvasText;
+			color: Canvas;
+		}
+	}
+
+	/*
 	 * Os votos da pessoa: cada um entre fios de tinta, com o voto num carimbo de
 	 * tinta à esquerda, a partir de 40 rem; antes, o carimbo vem em cima do
 	 * título. O título vem antes no HTML, para quem navega pelos títulos.
@@ -1312,6 +1510,34 @@
 		color: var(--tinta-suave);
 	}
 
+	/*
+	 * O voto contra a maioria do partido (a #329): a marca vem embaixo do dia e
+	 * do resultado, com o fio de tinta de 5 px dos avisos, e ganha uma linha só
+	 * dela na grade. O voto sem a marca fica sem a linha: vazia, ela somaria um
+	 * vão a mais entre os fatos e o texto.
+	 */
+	.voto-com-marca {
+		grid-template-areas:
+			"carimbo"
+			"titulo"
+			"fatos"
+			"marca"
+			"texto"
+			"links"
+			"coletado";
+	}
+
+	.contra-o-partido {
+		grid-area: marca;
+		max-width: 39rem;
+		padding-left: 0.75rem;
+		border-left: 5px solid var(--tinta);
+		font-family: var(--font-serif);
+		font-size: 1rem;
+		font-weight: 600;
+		line-height: 1.4;
+	}
+
 	@media (width >= 40rem) {
 		.voto-da-pessoa {
 			grid-template-columns: 7.5rem minmax(0, 1fr);
@@ -1322,6 +1548,16 @@
 				"carimbo links"
 				"carimbo coletado";
 			column-gap: var(--respiro);
+		}
+
+		.voto-com-marca {
+			grid-template-areas:
+				"carimbo titulo"
+				"carimbo fatos"
+				"carimbo marca"
+				"carimbo texto"
+				"carimbo links"
+				"carimbo coletado";
 		}
 	}
 
@@ -1858,6 +2094,17 @@
 				"links"
 				"coletado";
 			align-content: start;
+		}
+
+		.corpo-do-parlamentar .voto-com-marca {
+			grid-template-areas:
+				"carimbo"
+				"titulo"
+				"fatos"
+				"marca"
+				"texto"
+				"links"
+				"coletado";
 		}
 	}
 

@@ -1,6 +1,7 @@
 import { notFound } from "@tanstack/react-router";
 import {
 	type BiografiaParlamentar,
+	type ContagemComOPartido,
 	type CorrecaoIpca,
 	type DetalheParlamentar,
 	type DetalheVotacao,
@@ -19,6 +20,7 @@ import {
 } from "@/client";
 import { ENV } from "@/env";
 import { TEMPO_DE_ESPERA } from "@/lib/edicoes/edicoes.server";
+import { comparavel, contraOPartido } from "./com-o-partido";
 import { idDaVotacao, idDoParlamentar } from "./endereco";
 import { ESTADOS, estadoDaSigla } from "./estados";
 import { VALORES } from "./votos";
@@ -38,6 +40,9 @@ export const ERRO_DOS_PARLAMENTARES = "Os parlamentares não carregaram.";
 
 /** Quantos votos cabem numa página da pessoa. */
 const VOTOS_POR_PAGINA = 20;
+
+/** Quantos votos contra a maioria do partido a lista curta mostra, dos mais novos. */
+const VOTOS_CONTRA = 5;
 
 /** Quantos deputados e senadores um estado tem em exercício nos dados. */
 export type ContagemDoEstado = {
@@ -88,10 +93,29 @@ export type Patrimonio =
 
 /**
  * A pessoa como a página a recebe: a foto da API não vai junto, porque só chega
- * à página depois de conferida, no `foto` da página. O nome do partido e a
- * biografia chegam conferidos, e o que falta vale nulo.
+ * à página depois de conferida, no `foto` da página. O nome do partido, a
+ * biografia e a comparação com o partido chegam conferidos, e o que falta vale
+ * nulo.
  */
-export type ParlamentarDaPagina = Omit<DetalheParlamentar, "foto">;
+export type ParlamentarDaPagina = Omit<
+	DetalheParlamentar,
+	"foto" | "com_o_partido"
+> & {
+	/**
+	 * Os votos comparados com a maioria do partido (a #328); sem a comparação
+	 * nos dados, como na API de antes, ou fora do formato, nula.
+	 */
+	com_o_partido: ContagemComOPartido | null;
+};
+
+/**
+ * Os votos contra a maioria do partido, para a lista curta de "Com o partido":
+ * os mais novos, só os que têm a sigla e a maioria. Quando a leitura falha, a
+ * página abre do mesmo jeito, e a lista diz que não carregou.
+ */
+export type VotosContraOPartido =
+	| { tipo: "votos"; votos: VotoParlamentar[] }
+	| { tipo: "indisponivel" };
 
 export type PaginaDoParlamentar =
 	| { tipo: "sem-api" }
@@ -111,6 +135,7 @@ export type PaginaDoParlamentar =
 			/** Quantas páginas os votos têm; sem voto, uma. */
 			paginas: number;
 			patrimonio: Patrimonio;
+			votosContra: VotosContraOPartido;
 	  };
 
 export type PaginaDaVotacao =
@@ -210,10 +235,10 @@ function fotoDaLista(
 
 /**
  * Um parlamentar, pelo fim do endereço ("81" ou "81-nome"), uma página dos votos
- * dele e o patrimônio declarado, ao mesmo tempo. O id que não pode ser de um
- * parlamentar nem chega à API; a pessoa que não existe e a página depois da
- * última dão a página não encontrada. A rota confere o nome do endereço e leva ao
- * endereço certo.
+ * dele, os votos mais novos contra a maioria do partido e o patrimônio
+ * declarado, ao mesmo tempo. O id que não pode ser de um parlamentar nem chega à
+ * API; a pessoa que não existe e a página depois da última dão a página não
+ * encontrada. A rota confere o nome do endereço e leva ao endereço certo.
  */
 export async function lerParlamentar(
 	valor: unknown,
@@ -227,7 +252,7 @@ export async function lerParlamentar(
 		throw notFound();
 	}
 	const deslocamento = (pagina - 1) * VOTOS_POR_PAGINA;
-	const [detalhe, lista, patrimonio] = await Promise.all([
+	const [detalhe, lista, patrimonio, contra] = await Promise.all([
 		pedir((signal) => obterParlamentar({ path: { id }, signal })),
 		pedir((signal) =>
 			listarVotosParlamentar({
@@ -237,6 +262,7 @@ export async function lerParlamentar(
 			}),
 		),
 		lerPatrimonio(id),
+		lerVotosContra(id),
 	]);
 	for (const { response } of [detalhe, lista]) {
 		if (response.status === 404 || response.status === 422) {
@@ -256,25 +282,155 @@ export async function lerParlamentar(
 		throw notFound();
 	}
 	const { foto, ...dados } = detalhe.data;
-	// Os campos da #303 chegam conferidos aqui: a API de antes não os manda.
-	const { partido_nome, biografia, ...parlamentar } = dados as typeof dados & {
-		partido_nome?: unknown;
-		biografia?: unknown;
-	};
+	// Os campos da #303 e da #328 chegam conferidos aqui: a API de antes não os
+	// manda.
+	const { partido_nome, biografia, com_o_partido, ...parlamentar } =
+		dados as typeof dados & {
+			partido_nome?: unknown;
+			biografia?: unknown;
+			com_o_partido?: unknown;
+		};
 	return {
 		tipo: "parlamentar",
 		parlamentar: {
 			...parlamentar,
 			partido_nome: nomeDoPartidoDaPagina(partido_nome),
 			biografia: biografiaDaPagina(biografia),
+			com_o_partido: comparacaoDaPagina(com_o_partido),
 		},
 		foto: fotoDaPagina(parlamentar.casa, foto),
-		votos: lista.data.votos,
+		votos: votosDaPagina(lista.data.votos),
 		total: lista.data.total,
 		pagina,
 		paginas: Math.max(1, Math.ceil(lista.data.total / VOTOS_POR_PAGINA)),
 		patrimonio: patrimonioDaPagina(patrimonio),
+		votosContra: votosContraDaPagina(contra),
 	};
+}
+
+/**
+ * Os votos contra a maioria do partido (a #328), já filtrados pela API, antes
+ * da paginação: os mais novos, sem pedir a lista inteira. A página fica só com
+ * os que têm a marca, e uma API que ignore o filtro não põe na lista um voto com
+ * a maioria. Como o patrimônio, a leitura nunca derruba a página.
+ */
+async function lerVotosContra(
+	id: number,
+): Promise<VotosContraOPartido | { tipo: "falhou"; motivo: string }> {
+	try {
+		const { data, response } = await pedir(
+			(signal) =>
+				listarVotosParlamentar({
+					path: { id },
+					query: {
+						com_o_partido: false,
+						limite: VOTOS_CONTRA,
+						deslocamento: 0,
+					},
+					signal,
+				}),
+			desistirDosVotosContra,
+		);
+		if (!response.ok) {
+			desistirDosVotosContra(`http-${response.status}`);
+		}
+		if (!pareceListaDeVotos(data)) {
+			desistirDosVotosContra("resposta-invalida");
+		}
+		return {
+			tipo: "votos",
+			votos: data.votos.filter((voto) => contraOPartido(voto) !== null),
+		};
+	} catch (erro) {
+		return {
+			tipo: "falhou",
+			motivo:
+				erro instanceof FalhaDosVotosContra ? erro.message : "erro-inesperado",
+		};
+	}
+}
+
+/** A leitura dos votos contra o partido desistiu, com o motivo curto. */
+class FalhaDosVotosContra extends Error {}
+
+function desistirDosVotosContra(motivo: string): never {
+	throw new FalhaDosVotosContra(motivo);
+}
+
+/**
+ * Os votos contra o partido que vão à página. Como no patrimônio, a falha só vai
+ * ao log depois de a página dar certo, numa linha fixa com o motivo curto.
+ */
+function votosContraDaPagina(
+	leitura: VotosContraOPartido | { tipo: "falhou"; motivo: string },
+): VotosContraOPartido {
+	if (leitura.tipo !== "falhou") {
+		return leitura;
+	}
+	console.error(
+		`[parlamentares] Os votos contra o partido não carregaram: ${leitura.motivo}.`,
+	);
+	return { tipo: "indisponivel" };
+}
+
+/**
+ * A comparação com o partido: três inteiros a partir de zero, e os votos com a
+ * maioria e contra ela somam os comparados. A que falta vale nula, sem linha no
+ * log; a que vem fora do formato também, com uma linha fixa. Ela nunca derruba
+ * a página.
+ */
+function comparacaoDaPagina(comparacao: unknown): ContagemComOPartido | null {
+	if (comparacao === undefined || comparacao === null) {
+		return null;
+	}
+	if (ehObjeto(comparacao)) {
+		const { comparaveis, com_o_partido, contra } = comparacao;
+		const numeros = [comparaveis, com_o_partido, contra];
+		if (
+			numeros.every(
+				(numero) => Number.isSafeInteger(numero) && (numero as number) >= 0,
+			) &&
+			(com_o_partido as number) + (contra as number) === comparaveis
+		) {
+			return { comparaveis, com_o_partido, contra } as ContagemComOPartido;
+		}
+	}
+	console.error(
+		"[parlamentares] A comparação com o partido não veio no formato esperado.",
+	);
+	return null;
+}
+
+/** Os campos da #328 em cada voto e o formato de cada um. */
+const COMPARACAO_DO_VOTO = {
+	partido: (valor: unknown) => typeof valor === "string",
+	maioria_do_partido: comparavel,
+	com_o_partido: (valor: unknown) => typeof valor === "boolean",
+};
+
+/**
+ * Os votos da página. Em cada um, o campo da comparação com o partido que vem
+ * fora do formato vale nulo, com uma linha fixa no log por página, e o voto
+ * continua na lista; o que falta, como na API de antes, fica como veio.
+ */
+function votosDaPagina(votos: VotoParlamentar[]): VotoParlamentar[] {
+	let foraDoFormato = false;
+	const conferidos = votos.map((voto) => {
+		const conferido: Record<string, unknown> = { ...voto };
+		for (const [campo, parece] of Object.entries(COMPARACAO_DO_VOTO)) {
+			if (!ausenteOu(conferido[campo], parece)) {
+				conferido[campo] = null;
+				foraDoFormato = true;
+			}
+		}
+		return conferido as VotoParlamentar;
+	});
+	if (foraDoFormato) {
+		console.error(
+			"[parlamentares] A comparação de um voto com o partido não veio no formato esperado.",
+		);
+	}
+	return conferidos;
 }
 
 /** A leitura do patrimônio desistiu, com o motivo curto (como `http-503`). */

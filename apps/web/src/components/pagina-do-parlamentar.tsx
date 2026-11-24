@@ -16,6 +16,10 @@ import {
 	type ParlamentarDaPagina,
 } from "@/lib/parlamentares";
 import {
+	contraOPartido,
+	textoDaMarca,
+} from "@/lib/parlamentares/com-o-partido";
+import {
 	artigoDaRegra,
 	EXPLICACAO_DO_VOTO,
 	NOME_DA_CASA,
@@ -30,6 +34,7 @@ import {
 import { Painel } from "./azulejo";
 import { FaixaDeInformacoes } from "./faixa-de-informacoes";
 import { ParlamentaresIndisponiveis } from "./pagina-dos-parlamentares";
+import { ComOPartido } from "./parlamentares/com-o-partido";
 import { FichaDoParlamentar } from "./parlamentares/ficha-do-parlamentar";
 import { FotoOficial } from "./parlamentares/foto-oficial";
 import { PatrimonioDeclarado } from "./parlamentares/patrimonio-declarado";
@@ -40,15 +45,17 @@ import { ARTIGO_DA_VOTACAO } from "./parlamentares/quem-votou-como";
  * dentro, com o nome gigante, a Casa e o estado, a ficha com a fonte de cada
  * dado, o painel de enfeite, com a semente do id, e a foto oficial colada nele,
  * com o crédito; embaixo, o patrimônio declarado ao TSE em cada eleição, como a
- * pessoa votou, com a barra, a regra de cada voto e o artigo do regimento, e os
- * votos, do mais novo para o mais antigo, 20 por página. Sem voto registrado, a
- * página explica por quê, com a votação simbólica e o link da trilha.
+ * pessoa votou, com a barra, a regra de cada voto e o artigo do regimento, com
+ * o partido, e os votos, do mais novo para o mais antigo, 20 por página. Sem voto
+ * registrado, a página explica por quê, com a votação simbólica e o link da
+ * trilha.
  */
 export function PaginaDoParlamentar({ pagina }: { pagina: Pagina }) {
 	if (pagina.tipo === "sem-api") {
 		return <ParlamentaresIndisponiveis />;
 	}
-	const { parlamentar, foto, votos, total, paginas, patrimonio } = pagina;
+	const { parlamentar, foto, votos, total, paginas, patrimonio, votosContra } =
+		pagina;
 	const estado = estadoDaSigla(parlamentar.uf);
 	return (
 		<>
@@ -116,7 +123,14 @@ export function PaginaDoParlamentar({ pagina }: { pagina: Pagina }) {
 					<SemVotos nome={parlamentar.nome} />
 				) : (
 					<>
-						<ComoVotou parlamentar={parlamentar} />
+						{/* Na tela larga, a coluna da esquerda (estilos/parlamentares.css). */}
+						<div className="resumo-dos-votos">
+							<ComoVotou parlamentar={parlamentar} />
+							<ComOPartido
+								parlamentar={parlamentar}
+								votosContra={votosContra}
+							/>
+						</div>
 						<section
 							aria-labelledby={TRECHO_DOS_VOTOS}
 							className="secao-dos-parlamentares"
@@ -215,7 +229,9 @@ function ComoVotou({ parlamentar }: { parlamentar: ParlamentarDaPagina }) {
  * Um voto da pessoa: a votação, o dia e o resultado, o voto num carimbo de
  * tinta (o Sim não é verde, e o Não não é vermelho), a ementa da proposição ou,
  * sem ela, a descrição oficial, e os links para quem votou como e para a página
- * oficial. Cada link tem um nome só dele para o leitor de tela.
+ * oficial. Cada link tem um nome só dele para o leitor de tela. O voto contra a
+ * maioria do partido leva a marca, com a sigla daquele dia e o voto da maioria,
+ * em texto, logo depois do voto da pessoa.
  */
 function VotoDaPessoa({ voto }: { voto: VotoParlamentar }) {
 	const titulo = tituloDaVotacao(voto);
@@ -223,8 +239,9 @@ function VotoDaPessoa({ voto }: { voto: VotoParlamentar }) {
 	const texto = voto.proposicoes[0]?.ementa ?? voto.descricao;
 	const oficial = voto.url_oficial && enderecoSeguro(voto.url_oficial);
 	const daVotacao = `da votação de ${dia}: ${titulo}`;
+	const marca = contraOPartido(voto);
 	return (
-		<li className="voto-da-pessoa">
+		<li className={classes("voto-da-pessoa", marca && "voto-com-marca")}>
 			<h3 className="titulo-do-voto">{titulo}</h3>
 			<div className="fatos-do-voto">
 				<FaixaDeInformacoes>
@@ -236,6 +253,7 @@ function VotoDaPessoa({ voto }: { voto: VotoParlamentar }) {
 				<span className="sr-only">Voto: </span>
 				{NOME_DO_VOTO[voto.valor]}
 			</p>
+			{marca && <p className="contra-o-partido">{textoDaMarca(marca)}</p>}
 			{texto && <p className="texto-do-voto">{texto}</p>}
 			<ul role="list" className="links-do-voto">
 				<li>

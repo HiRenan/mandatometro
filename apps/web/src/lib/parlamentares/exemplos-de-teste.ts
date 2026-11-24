@@ -138,6 +138,8 @@ export function detalheDeExemplo(
 			abstencao: 1,
 			nao_votou: 2,
 		},
+		// A comparação com o partido (a #328): dois votos ficaram sem maioria.
+		com_o_partido: { comparaveis: 16, com_o_partido: 14, contra: 2 },
 		...mudancas,
 	};
 }
@@ -163,6 +165,9 @@ export function votoDoParlamentarDeExemplo(
 		coletado_em: "2026-11-21T01:30:00+00:00",
 		votacao_id: votacao,
 		valor: "sim",
+		partido: "PFT",
+		maioria_do_partido: "sim",
+		com_o_partido: true,
 		...mudancas,
 	};
 }
@@ -181,6 +186,36 @@ export function votosDeExemplo(
 		total,
 		limite,
 		deslocamento,
+	};
+}
+
+/**
+ * GET /parlamentares/{id}/votos?com_o_partido=false&limite=5: os votos contra a
+ * maioria do partido, do mais novo para o mais antigo, `total` ao todo. A pessoa
+ * trocou de partido: o voto mais novo é do PFT, e os de antes, do PFB.
+ */
+export function votosContraDeExemplo(total = 2): ListaVotosParlamentar {
+	return {
+		votos: Array.from({ length: Math.min(5, total) }, (_, posicao) =>
+			votoDoParlamentarDeExemplo(137 - posicao * 9, {
+				data: `2026-11-${String(18 - posicao * 3).padStart(2, "0")}`,
+				proposicoes: [
+					{
+						sigla: "PL",
+						numero: 730 + posicao,
+						ano: 2026,
+						ementa: "Cria o Dia das Hortas Escolares.",
+					},
+				],
+				valor: posicao % 2 === 0 ? "nao" : "sim",
+				partido: posicao === 0 ? "PFT" : "PFB",
+				maioria_do_partido: posicao % 2 === 0 ? "sim" : "nao",
+				com_o_partido: false,
+			}),
+		),
+		total,
+		limite: 5,
+		deslocamento: 0,
 	};
 }
 
