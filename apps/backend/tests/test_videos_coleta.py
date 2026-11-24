@@ -2,10 +2,12 @@
 
 import asyncio
 import json
+import ssl
 import time
 from datetime import date
 from functools import partial
 
+import anyio
 import httpcore2
 import httpx2
 import pytest
@@ -45,6 +47,22 @@ class _Transporte503(httpx2.AsyncHTTPTransport):
         self._pool = httpcore2.AsyncConnectionPool(network_backend=_Backend503([]))
 
 
+class _StreamTLS:
+    def __init__(self):
+        self.client_hello = []
+        self.fechamentos = []
+
+    async def send(self, item):
+        self.client_hello.append(time.monotonic())
+
+    async def receive(self, max_bytes=65536):
+        await asyncio.sleep(60)
+        pytest.fail("O handshake ainda deveria estar esperando a resposta.")
+
+    async def aclose(self):
+        self.fechamentos.append(time.monotonic())
+
+
 def _simular_esperas_assincronas(monkeypatch, avancar):
     def criar_loop():
         loop = asyncio.SelectorEventLoop()
@@ -59,6 +77,50 @@ def _simular_esperas_assincronas(monkeypatch, avancar):
         return loop
 
     monkeypatch.setattr(asyncio, "new_event_loop", criar_loop)
+
+
+def test_prazo_durante_tls_fecha_tcp_antes_de_voltar_ao_laco(monkeypatch):
+    agora = 1498.0
+
+    def avancar(segundos):
+        nonlocal agora
+        agora += segundos
+
+    monkeypatch.setattr(time, "monotonic", lambda: agora)
+    _simular_esperas_assincronas(monkeypatch, avancar)
+    stream = _StreamTLS()
+
+    async def conectar(**_):
+        await asyncio.sleep(1)
+        return stream
+
+    monkeypatch.setattr(anyio, "connect_tcp", conectar)
+    # O contexto da biblioteca padrão mantém o handshake no loop simulado.
+    transporte_tls = httpx2.AsyncHTTPTransport(verify=ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT))
+
+    def atender(req):
+        if req.url.path == "/robots.txt":
+            return httpx2.Response(200, text="User-agent: *\nAllow: /\n")
+        return transporte_tls.handle_async_request(req)
+
+    dia = date(2026, 11, 5)
+    resumo = ResumoColeta("camara", dia, dia)
+    with ClienteHttp(
+        camara.BASE, transporte=httpx2.MockTransport(atender), intervalo=0, timeout=2, tentativas=1
+    ) as http:
+        coletar_videos(
+            resumo,
+            {codigo: [codigo] for codigo in SESSOES},
+            http=http,
+            abrir_sessao=lambda: pytest.fail("Sem vídeo para gravar."),
+            consultar=camara._video_evento,
+            comeco_coleta=0,
+        )
+        assert (agora, stream.client_hello, stream.fechamentos) == (1500, [1499], [1500])
+
+    assert stream.fechamentos == [1500]
+    assert resumo.videos.falhas_sessoes == 1
+    assert resumo.videos.sessoes_nao_consultadas == 19
 
 
 def _eventos(roteiro):

@@ -75,7 +75,10 @@ def executar(
         return httpx2.Response(200, json=dado)
 
     conexao = sessao.connection()
-    with ClienteHttp(BASE, transporte=httpx2.MockTransport(atender), intervalo=0) as http:
+    with (
+        httpx2.Client(transport=httpx2.MockTransport(atender)) as transporte,
+        ClienteHttp(BASE, cliente=transporte, intervalo=0) as http,
+    ):
 
         def criar_sessao():
             return Session(bind=conexao, join_transaction_mode="create_savepoint")
@@ -172,10 +175,12 @@ def test_video_da_camara_invalido_ou_indisponivel_preserva_votacao(
 ):
     roteiro["/eventos/83188"] = status or ler("evento-url-recusada")
 
-    resumo, _ = executar(sessao, roteiro)
+    resumo, chamadas = executar(sessao, roteiro)
 
     assert resumo.completa and resumo.votacoes == 2
     assert (resumo.videos.urls_recusadas, resumo.videos.falhas_sessoes) == (recusadas, falhas)
+    depois_do_video = chamadas[chamadas.index(f"{BASE}/eventos/83188") + 1 :]
+    assert f"{BASE}/proposicoes/2637478/temas" in depois_do_video
     votacao = sessao.scalar(select(Votacao).where(Votacao.id_externo == "2637478-26"))
     assert votacao.video_sessao is None or votacao.video_sessao.url_video is None
 

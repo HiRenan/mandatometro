@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from functools import partial
-from typing import Self
+from typing import Any, Self
 from urllib.parse import urljoin, urlsplit
 from urllib.robotparser import RobotFileParser
 
@@ -63,6 +63,7 @@ class ClienteHttp:
 
     Caminhos relativos são resolvidos dentro de base_url. URLs absolutas, como as de paginação,
     precisam ficar nessa base. O cliente injetado pertence ao chamador; o próprio é fechado aqui.
+    Com apenas o cliente injetado, o GET síncrono usa o prazo para limitar cada operação.
     O transporte de teste atende aos GETs síncronos e aos que têm prazo integral.
     """
 
@@ -184,10 +185,29 @@ class ClienteHttp:
         loop, cliente = self._cliente_no_prazo
 
         async def requisitar() -> httpx2.Response:
+            tcp = None
+
+            async def fechar_tls_cancelado(evento: str, info: dict[str, Any]) -> None:
+                nonlocal tcp
+                if evento.endswith(".connect_tcp.complete"):
+                    tcp = info["return_value"]
+                elif (
+                    evento.endswith(".start_tls.failed")
+                    and isinstance(info["exception"], asyncio.CancelledError)
+                    and tcp is not None
+                ):
+                    # O pool só assume o stream depois do handshake. O httpcore2 não fecha
+                    # o TCP quando o TLS recebe CancelledError de um prazo externo.
+                    await tcp.aclose()
+
             # O timeout do HTTPX limita cada operação de rede. Este prazo cobre o GET inteiro.
             async with asyncio.timeout_at(prazo):
                 return await cliente.get(
-                    url, headers=headers, timeout=timeout, follow_redirects=follow_redirects
+                    url,
+                    headers=headers,
+                    timeout=timeout,
+                    follow_redirects=follow_redirects,
+                    extensions={"trace": fechar_tls_cancelado},
                 )
 
         try:
@@ -275,9 +295,7 @@ class ClienteHttp:
         if params:
             url = str(httpx2.URL(url, params=params))
         get: _Get = self._cliente.get
-        if prazo_integral and prazo is not None:
-            if not self._proprio and self._transporte is None:
-                raise ValueError("Informe transporte assíncrono para consultas com prazo integral.")
+        if prazo_integral and prazo is not None and (self._proprio or self._transporte is not None):
             get = partial(self._get_no_prazo, prazo=prazo)
         self._ler_robots(prazo, get)
         resposta = self._obter(url, prazo=prazo, get=get)
