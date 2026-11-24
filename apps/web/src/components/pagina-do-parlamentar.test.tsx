@@ -224,7 +224,7 @@ function barrasDeComoVotou() {
 /**
  * Cada item da ficha do cartaz, como o leitor de tela lê: o rótulo, o valor e a
  * fonte. Os mandatos e as eleições vêm em lista, cada um com as partes dele (a
- * parte do mandato tem a classe do recuo com o quadradinho). A fonte com o dia
+ * parte do mandato vem num span da faixa). A fonte com o dia
  * da coleta vem em duas linhas: a fonte e a coleta.
  */
 function itensDaFicha() {
@@ -237,7 +237,7 @@ function itensDaFicha() {
 			valor:
 				itens.length > 0
 					? Array.from(itens, (linha) =>
-							textos(linha, ".faixa > .parte-do-mandato, :scope > span"),
+							textos(linha, ".faixa > span, :scope > span"),
 						)
 					: valor?.textContent,
 			fonte: fonte && linhasDaFonte(fonte),
