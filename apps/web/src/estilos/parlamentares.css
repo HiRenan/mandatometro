@@ -22,8 +22,8 @@
 	 * tracado.ts). No celular e no tablet, ele vem depois do pé do cartaz, até
 	 * 26 rem de largura; a partir do lg, fica nos 30% da direita, no lugar do
 	 * painel de enfeite, que só fica no celular, como a faixa de cima das outras
-	 * páginas. Embaixo do desenho vêm a linha do estado, os azulejos dos estados
-	 * estreitos e a legenda.
+	 * páginas. Embaixo do desenho vêm a linha do estado, os azulejos dos 27
+	 * estados e a legenda.
 	 */
 	.mapa-dos-estados {
 		container: mapa / inline-size;
@@ -223,23 +223,20 @@
 	}
 
 	/*
-	 * Os azulejos dos estados estreitos: oito numa fileira onde cabem (oito de
-	 * 44 px e sete vãos de 4 px pedem 23,75 rem), senão duas de quatro. Cada um é
-	 * a folha clara com fio de tinta e a fita da região numa tira em cima, com a
-	 * sigla grande e o número de deputados pequeno, no papel. O estado aberto fica
-	 * em tinta. O azulejo sobe com o ponteiro, nele ou no estado do mapa, e mostra
-	 * o anel quando o estado do mapa tem o foco do teclado.
+	 * Os 27 azulejos tomam as colunas que cabem, até nove por fileira (428 px
+	 * com a letra a 100%), com vãos de 4 px. Cada um é a folha clara com fio de
+	 * tinta e a fita da região numa tira em cima, com a sigla grande e o número de
+	 * deputados pequeno, no papel. O estado aberto fica em tinta. O azulejo sobe
+	 * com o ponteiro, nele ou no estado do mapa, e mostra o anel quando o estado
+	 * do mapa tem o foco do teclado.
 	 */
 	.atalhos-do-mapa {
 		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
+		grid-template-columns: repeat(
+				auto-fit,
+				minmax(max(44px, 2.75rem, (100% - 32px) / 9), 1fr)
+			);
 		gap: 4px;
-	}
-
-	@container mapa (width >= 23.75rem) {
-		.atalhos-do-mapa {
-			grid-template-columns: repeat(8, minmax(0, 1fr));
-		}
 	}
 
 	.atalho-do-estado {
@@ -247,7 +244,7 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		min-height: 2.75rem;
+		min-height: max(44px, 2.75rem);
 		padding-top: 5px;
 		border: 2px solid var(--tinta);
 		background: var(--folha);
@@ -293,6 +290,13 @@
 		font-variant-numeric: lining-nums tabular-nums;
 	}
 
+	@media (prefers-reduced-motion: reduce) {
+		.atalho-do-estado:hover,
+		.atalho-do-estado.aceso {
+			translate: none;
+		}
+	}
+
 	/* A legenda: as cinco regiões em palavras, cada uma com o quadradinho da fita. */
 	.legenda-do-mapa {
 		display: flex;
@@ -331,6 +335,29 @@
 	}
 
 	@media (forced-colors: active) {
+		.atalho-do-estado {
+			forced-color-adjust: none;
+			border-color: CanvasText;
+			background: Canvas;
+			box-shadow: none;
+			color: LinkText;
+		}
+
+		.atalho-do-estado:hover,
+		.atalho-do-estado.aceso {
+			border-color: Highlight;
+			box-shadow: none;
+		}
+
+		.atalho-do-estado.com-foco {
+			outline-color: Highlight;
+		}
+
+		.atalho-do-estado[aria-current="page"] {
+			background: CanvasText;
+			color: Canvas;
+		}
+
 		.desenho-do-brasil {
 			forced-color-adjust: none;
 		}
@@ -480,6 +507,11 @@
 	@media (width >= 62rem) {
 		.cartaz-dos-parlamentares .mural-do-celular {
 			display: none;
+		}
+
+		/* Em janelas baixas, as fileiras dos azulejos ainda deixam lugar para o desenho. */
+		.cartaz-dos-parlamentares:has(> .mapa-dos-estados) {
+			min-height: clamp(40rem, calc(100svh - var(--topo)), 44rem);
 		}
 
 		.mapa-dos-estados {
