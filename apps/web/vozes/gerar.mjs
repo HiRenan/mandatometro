@@ -4,10 +4,11 @@
 // o roteiro marcou em cada fala.
 //
 // Uso: ELEVENLABS_API_KEY=... pnpm --filter web vozes
-//   --refazer            regrava também as falas que já têm arquivo
+//   --refazer            regrava também as falas que estão em dia
 //   --so comissoes/c1-01 grava só essas falas; o id sozinho (c1-01) pega a
 //                        fala de mesmo id em todos os jogos
 //   --modelo <id>        troca o modelo (o eleven_v3 usa as marcas de emoção)
+//   --verificar          confere as gravações existentes sem acessar a API
 //
 // Grava em public/jogo/vo/<jogo>/ e refaz a lista de src/lib/jogo/vozes.ts, que é o
 // que a tela lê: fala sem arquivo nessa lista simplesmente não tem voz.
@@ -15,6 +16,7 @@
 // A chave vem do ambiente e nunca aparece no log nem no código. O roteiro e as
 // regras estão em docs/jogo-das-comissoes.md.
 
+import { createHash } from "node:crypto";
 import {
 	existsSync,
 	mkdirSync,
@@ -30,6 +32,7 @@ const RAIZ = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CONTEUDO = join(RAIZ, "conteudo", "jogo");
 const SAIDA = join(RAIZ, "public", "jogo", "vo");
 const LISTA = join(RAIZ, "src", "lib", "jogo", "vozes.ts");
+const REGISTRO = join(RAIZ, "vozes", "gravacoes.json");
 
 /** As vozes brasileiras do catálogo da ElevenLabs que o time escolheu. */
 const VOZ = {
@@ -37,6 +40,11 @@ const VOZ = {
 	lia: "GDzHdQOi6jjf8zaXhCYD",
 	arnaldo: "4XmhZ74tBbUVCXIYNMMo",
 	caio: "CstacWqMhJQlnfLPxRG4",
+	// Os dois do Jogo da 6x1: Yasmin Alves para a Joana e Newton Máximo para o
+	// Seu Raimundo. O id da voz é do catálogo e não é segredo; a chave da API
+	// é que fica só no .env.
+	joana: "lWq4KDY8znfkV0DrK8Vb",
+	raimundo: "j3IQ4Mry1qDVTh6BCyC0",
 };
 
 /**
@@ -70,7 +78,8 @@ function valorDe(nome) {
 }
 
 const refazer = argumentos.includes("--refazer");
-const modelo = valorDe("--modelo") ?? MODELO_PADRAO;
+const modeloPedido = valorDe("--modelo");
+const modelo = modeloPedido ?? MODELO_PADRAO;
 const so = valorDe("--so")
 	?.split(",")
 	.map((id) => id.trim());
@@ -94,8 +103,11 @@ function falasDoRoteiro() {
 				if (passo.tipo !== "fala") {
 					continue;
 				}
-				if (!passo.emocao || !DIRECAO[passo.emocao]) {
+				if (!Object.hasOwn(DIRECAO, passo.emocao)) {
 					throw new Error(`${passo.id}: emoção desconhecida (${passo.emocao})`);
+				}
+				if (!Object.hasOwn(VOZ, passo.quem)) {
+					throw new Error(`${jogo}/${passo.id}: falta a voz de ${passo.quem}`);
 				}
 				falas.push({ ...passo, jogo });
 			}
@@ -104,37 +116,40 @@ function falasDoRoteiro() {
 	return falas;
 }
 
-/** O texto que vai ao modelo. O v3 entende a marca de emoção entre colchetes. */
-function textoDaFala(fala) {
-	const { marca } = DIRECAO[fala.emocao];
-	return modelo.startsWith("eleven_v3")
-		? `[${marca}] ${fala.texto}`
-		: fala.texto;
+function pedidoDaFala(fala, modeloDaFala) {
+	const { marca, stability, style } = DIRECAO[fala.emocao];
+	const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOZ[fala.quem]}?output_format=mp3_44100_128`;
+	const corpo = {
+		text: modeloDaFala.startsWith("eleven_v3")
+			? `[${marca}] ${fala.texto}`
+			: fala.texto,
+		model_id: modeloDaFala,
+		voice_settings: {
+			stability,
+			style,
+			similarity_boost: 0.75,
+			use_speaker_boost: true,
+		},
+	};
+	return { url, corpo };
 }
 
-async function gravar(fala, chave) {
-	const { stability, style } = DIRECAO[fala.emocao];
-	const resposta = await fetch(
-		`https://api.elevenlabs.io/v1/text-to-speech/${VOZ[fala.quem]}?output_format=mp3_44100_128`,
-		{
-			method: "POST",
-			headers: {
-				"xi-api-key": chave,
-				"content-type": "application/json",
-				accept: "audio/mpeg",
-			},
-			body: JSON.stringify({
-				text: textoDaFala(fala),
-				model_id: modelo,
-				voice_settings: {
-					stability,
-					style,
-					similarity_boost: 0.75,
-					use_speaker_boost: true,
-				},
-			}),
+function assinatura(fala, pedido) {
+	return createHash("sha256")
+		.update(JSON.stringify([fala.quem, fala.emocao, pedido]))
+		.digest("hex");
+}
+
+async function gravar(fala, chave, pedido) {
+	const resposta = await fetch(pedido.url, {
+		method: "POST",
+		headers: {
+			"xi-api-key": chave,
+			"content-type": "application/json",
+			accept: "audio/mpeg",
 		},
-	);
+		body: JSON.stringify(pedido.corpo),
+	});
 	if (!resposta.ok) {
 		// A mensagem da ElevenLabs não traz a chave; o corpo entra no erro para
 		// dizer o que falta (plano, permissão, voz).
@@ -176,6 +191,38 @@ export function enderecoDaVoz(jogo: string, id: string): string {
 	);
 }
 
+const todas = falasDoRoteiro().map((fala) => ({
+	...fala,
+	identificador: `${fala.jogo}/${fala.id}`,
+	destino: join(SAIDA, fala.jogo, `${fala.id}.mp3`),
+}));
+const registro = JSON.parse(readFileSync(REGISTRO, "utf8"));
+const falas = todas.filter(
+	(fala) => !so || so.includes(fala.identificador) || so.includes(fala.id),
+);
+
+function estaEmDia(fala) {
+	const gravacao = registro[fala.identificador];
+	return (
+		gravacao &&
+		(!modeloPedido || modeloPedido === gravacao.modelo) &&
+		gravacao.assinatura ===
+			assinatura(fala, pedidoDaFala(fala, gravacao.modelo))
+	);
+}
+
+if (argumentos.includes("--verificar")) {
+	for (const fala of falas) {
+		if (existsSync(fala.destino) && !estaEmDia(fala)) {
+			console.error(
+				`${fala.identificador}: gravação desatualizada. Rode vozes com --so ${fala.identificador}.`,
+			);
+			process.exitCode = 1;
+		}
+	}
+	process.exit(process.exitCode ?? 0);
+}
+
 const chave = process.env.ELEVENLABS_API_KEY?.trim();
 if (!chave) {
 	console.error(
@@ -184,44 +231,48 @@ if (!chave) {
 	process.exit(2);
 }
 
-mkdirSync(SAIDA, { recursive: true });
-
-const falas = falasDoRoteiro().filter(
-	(fala) =>
-		!so || so.includes(`${fala.jogo}/${fala.id}`) || so.includes(fala.id),
+const aGravar = falas.filter(
+	(fala) => refazer || !existsSync(fala.destino) || !estaEmDia(fala),
 );
-const caracteres = falas.reduce(
-	(soma, fala) => soma + textoDaFala(fala).length,
+const caracteres = aGravar.reduce(
+	(soma, fala) => soma + pedidoDaFala(fala, modelo).corpo.text.length,
 	0,
 );
 console.log(
-	`${falas.length} falas, ${caracteres} caracteres, modelo ${modelo}.`,
+	`${aGravar.length} falas, ${caracteres} caracteres, modelo ${modelo}.`,
 );
 
 let gravadas = 0;
-let puladas = 0;
-for (const fala of falas) {
-	const destino = join(SAIDA, fala.jogo, `${fala.id}.mp3`);
-	if (!refazer && existsSync(destino)) {
-		puladas += 1;
-		continue;
-	}
+for (const fala of aGravar) {
 	try {
-		const bytes = await gravar(fala, chave);
+		const pedido = pedidoDaFala(fala, modelo);
+		const bytes = await gravar(fala, chave, pedido);
+		registro[fala.identificador] = {
+			modelo,
+			assinatura: assinatura(fala, pedido),
+		};
 		gravadas += 1;
-		console.log(`${fala.id} (${fala.quem}, ${fala.emocao}): ${bytes} bytes`);
+		console.log(
+			`${fala.identificador} (${fala.quem}, ${fala.emocao}): ${bytes} bytes`,
+		);
 	} catch (erro) {
-		console.error(`${fala.id}: ${erro.message}`);
+		console.error(`${fala.identificador}: ${erro.message}`);
 		process.exitCode = 1;
 		break;
 	}
 }
 
-const comArquivo = falasDoRoteiro()
-	.filter((fala) => existsSync(join(SAIDA, fala.jogo, `${fala.id}.mp3`)))
-	.map((fala) => `${fala.jogo}/${fala.id}`);
+const comArquivo = todas
+	.filter((fala) => existsSync(fala.destino))
+	.map((fala) => fala.identificador);
+const gravacoes = Object.fromEntries(
+	comArquivo
+		.filter((id) => Object.hasOwn(registro, id))
+		.map((id) => [id, registro[id]]),
+);
+writeFileSync(REGISTRO, `${JSON.stringify(gravacoes, null, "\t")}\n`, "utf8");
 escreverLista(comArquivo);
 
 console.log(
-	`gravadas: ${gravadas}, já existiam: ${puladas}, com voz no site: ${comArquivo.length}.`,
+	`gravadas: ${gravadas}, em dia: ${falas.length - aGravar.length}, com voz no site: ${comArquivo.length}.`,
 );

@@ -4,6 +4,7 @@ import { acharJogo, type JogoNaPagina, jogos } from "./paginas.server";
 import {
 	avancar,
 	caminho,
+	cenarioDaVez,
 	comecar,
 	decisoesDoJogo,
 	escolhaDa,
@@ -212,5 +213,62 @@ describe("partida", () => {
 		expect(caminho(jogo, fim).every((casa) => casa.estado === "atras")).toBe(
 			true,
 		);
+	});
+
+	it("mantém o cenário da cena quando nenhuma fala pede outro", () => {
+		// O Jogo das Comissões não troca de lugar no meio de nenhuma cena: o
+		// cenário é o da cena, do primeiro ao último passo dela.
+		let partida = avancar(jogo, comecar());
+		const daCena = jogo.cenas[0].cenario;
+		for (let volta = 0; volta < 40 && partida.fase === "cena"; volta += 1) {
+			expect(cenarioDaVez(jogo, partida)).toBe(daCena);
+			partida = avancar(jogo, partida);
+		}
+	});
+});
+
+describe("o cenário que troca no meio da cena", () => {
+	const daEmenda = acharJogo(jogos, "6x1");
+
+	it("vale da fala que pediu em diante, e a cena começa no dela", () => {
+		if (!daEmenda) {
+			throw new Error("o roteiro do Jogo da 6x1 não foi lido");
+		}
+		// A cena 5 sai do Senado, passa pela mesa da promulgação e termina na
+		// padaria, sem trocar de cena.
+		const ultima = daEmenda.cenas[daEmenda.cenas.length - 1];
+		const trocas = ultima.passos.flatMap((passo) =>
+			passo.tipo === "fala" && passo.cenario !== undefined
+				? [passo.cenario]
+				: [],
+		);
+		expect(trocas).toEqual(["bg-promulgacao", "bg-padaria"]);
+
+		const vistos = new Set<string>();
+		let partida = avancar(daEmenda, comecar());
+		for (let volta = 0; volta < 500; volta += 1) {
+			if (partida.fase === "fim") {
+				break;
+			}
+			if (partida.cena === daEmenda.cenas.length - 1) {
+				const cenario = cenarioDaVez(daEmenda, partida);
+				if (cenario) {
+					vistos.add(cenario);
+				}
+			}
+			const passo = passoAtual(daEmenda, partida);
+			// Como no jogarTudo: a decisão já escolhida segue com o avançar, e
+			// sem a guarda a partida ficaria presa nela.
+			partida =
+				passo?.tipo === "decisao" && escolhaDa(partida, passo.id) === undefined
+					? escolher(daEmenda, partida, passo.opcoes[0].texto)
+					: avancar(daEmenda, partida);
+		}
+
+		expect([...vistos]).toEqual([
+			ultima.cenario,
+			"bg-promulgacao",
+			"bg-padaria",
+		]);
 	});
 });

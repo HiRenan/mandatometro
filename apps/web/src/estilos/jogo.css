@@ -670,11 +670,15 @@
 	}
 
 	@media (width >= 48rem) {
+		/*
+		 * Uma coluna por casa, pelo --casas que o componente escreve: o caminho
+		 * de um projeto de lei tem cinco, e o de uma emenda, seis.
+		 */
 		.jogo-caminho ol {
-			grid-template-columns: repeat(5, minmax(0, 1fr));
+			grid-template-columns: repeat(var(--casas, 5), minmax(0, 1fr));
 		}
 
-		/* Na linha das cinco casas, o azulejo vai em cima do nome. */
+		/* Na linha das casas, o azulejo vai em cima do nome. */
 		.jogo-caminho li {
 			grid-template-columns: minmax(0, 1fr);
 			align-items: start;

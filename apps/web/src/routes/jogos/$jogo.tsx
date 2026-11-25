@@ -29,7 +29,7 @@ function PaginaDoJogo() {
 			<h1 className="titulo-condensado letra-com-teto [--palavra:4.49]">
 				{jogo.titulo}
 			</h1>
-			<Jogo jogo={jogo} comApi={Boolean(ENV.API_URL)} />
+			<Jogo key={jogo.slug} jogo={jogo} comApi={Boolean(ENV.API_URL)} />
 		</article>
 	);
 }

@@ -182,6 +182,14 @@ const SIMBOLO_DO_PASSO = new Map<string, NomeDoSimbolo>([
 	["passo-plenario", "hemiciclo"],
 	["passo-a-outra-casa", "duas-casas"],
 	["passo-sancao-ou-veto", "caneta"],
+	// As casas do caminho de uma emenda, no Jogo da 6x1. A promulgação leva o
+	// livro da Constituição, e não a caneta: emenda não vai à sanção.
+	["passo-iniciativa", "folha"],
+	["passo-ccj", "balanca"],
+	["passo-comissao-especial", "mesa"],
+	["passo-plenario-da-camara", "hemiciclo"],
+	["passo-senado", "duas-casas"],
+	["passo-promulgacao", "livro"],
 ]);
 
 /**

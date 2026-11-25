@@ -46,7 +46,24 @@ describe("os símbolos dos azulejos", () => {
 		}
 		expect(
 			Object.fromEntries(jogos.map(({ slug }) => [slug, simboloDoJogo(slug)])),
-		).toEqual({ comissoes: "mesa" });
+		).toEqual({ comissoes: "mesa", "6x1": "livro" });
+	});
+
+	it("cada casa do caminho de um jogo tem o seu símbolo, e nenhuma repete", () => {
+		expect(jogos.length).toBeGreaterThan(0);
+		for (const { slug, casas } of jogos) {
+			for (const casa of casas) {
+				expect(
+					simboloDoPasso(casa),
+					`a casa ${casa} do jogo ${slug}`,
+				).toBeDefined();
+			}
+			// Duas casas com o mesmo desenho na mesma linha não se distinguem.
+			expect(
+				new Set(casas.map((casa) => simboloDoPasso(casa))).size,
+				`as casas do jogo ${slug}`,
+			).toBe(casas.length);
+		}
 	});
 
 	it("dá a cada trilha e a cada passo o símbolo que o Renan escolheu", () => {
