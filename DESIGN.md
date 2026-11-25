@@ -1,6 +1,6 @@
 ---
 name: Mandatômetro
-description: o diário oficial político, simplificado
+description: A política brasileira de perto.
 colors:
   papel: "#f6f1e4"
   papel-2: "#ebe4d2"
@@ -243,7 +243,7 @@ A direção é da #89. O Renan pediu um visual novo e animado para o site inteir
 
 Ela substitui a folhinha de parede (da #35 à #87). Da folhinha ficam o visto da folha lida, as fitas pela ordem, o estado em palavras e todas as regras da letra grande.
 
-O que ficaria errado, nas palavras do Renan: "Site do governo, Coisa de criança, Jornal partidário". Ou seja: burocracia e letra pequena, cor demais e tom infantil, manchete gritando e cor de partido. O logo ainda não existe; até ele chegar, o nome em texto faz o papel da marca, e o M do nome, o do ícone da aba.
+O que ficaria errado, nas palavras do Renan: "Site do governo, Coisa de criança, Jornal partidário". Ou seja: burocracia e letra pequena, cor demais e tom infantil, manchete gritando e cor de partido. Na #295, em 25/11/2026, Renan escolheu a marca Páginas. O livro aberto forma um M. A dobra ao centro e os três cortes na página direita deixam o fundo à vista. A faixa na base traz as cinco fitas em partes iguais, pela ordem do site.
 
 **Key Characteristics:**
 - Papel claro e tinta. A cor fica nas fitas: nos azulejos, nos números e na tira.
@@ -324,7 +324,7 @@ A Courier Prime entrou na #89 só para a frase do cartaz e o lema: `@fontsource/
 - **Enunciado** (Archivo 800, largura 72%, altura 1.02, em minúsculas): a pergunta do quiz, de 1.75rem a 2.75rem, e 1.375rem abaixo de 22rem. É o único título em minúsculas: lê-se como frase.
 - **Title** (`titulo-de-folha`: 900, largura 62%, altura 1.15, maiúsculas): o título de cada folha de uma lista. O do artigo na trilha e o da edição na lista das edições, de 1.875rem a 3.5rem; o da trilha em Trilhas, de 2.25rem a 4.5rem; o do anterior e do próximo, de 1.5rem a 2.5rem. Também o nome na página do parlamentar e o título da página da votação, que vêm da API, no tamanho do título da página.
 - **Subtitle** (`subtitulo-condensado`: 900, largura 68%, altura 1.15, maiúsculas): os intertítulos do texto (1.75rem a 2.5rem), "Fontes oficiais" (1.5rem, altura 1), o título do caminho na trilha (1.875rem a 2.75rem, altura 0.9), o título de cada item da edição e o de cada parte do termo (1.875rem a 3rem, com no máximo 14 em de largura) e, no painel de revisão, o título de cada ficha (1.625rem a 2.5rem, com no máximo 14 em) e o das folhas por cima (1.625rem a 2.5rem) e, nos números do painel, o título de cada seção (1.75rem a 2.75rem).
-- **Wordmark** (900, largura 68%, maiúsculas, 0.01em entre as letras): o nome Mandatômetro. No cabeçalho, 1.625rem (1.3125rem abaixo de 480 px e 1.1875rem abaixo de 360 px); no rodapé, de 2.25rem a 4.5rem. É texto, não logo.
+- **Wordmark** (900, largura 68%, maiúsculas, 0.01em entre as letras): o nome Mandatômetro. No cabeçalho, acompanha o livro e chega a 1.625rem (1.3125rem abaixo de 480 px e 1.1875rem abaixo de 360 px). No rodapé, o nome aparece sozinho, de 2.25rem a 4.5rem.
 - **Máquina** (Courier Prime 400, em minúsculas): a segunda linha do título da página inicial ("um passo de cada vez.", a 0.4 em do título, com a tira riscada embaixo) e o lema, a 0.9375rem, embaixo do nome no cabeçalho (a partir de 1344 px) e no rodapé. Só isso.
 - **Lead** (Literata 500, altura 1.45): o resumo do artigo, de 1.25rem a 1.4375rem. A abertura dos cartazes é Literata 400, de 1.0625rem a 1.25rem, com altura 1.5 e até 34rem de largura.
 - **Body** (Literata 400, altura 1.68): o texto do artigo, de 1.0625rem a 1.1875rem, com até 39rem de largura. Os resumos das folhas e os textos dos passos ficam em 1.0625rem, com altura 1.5 a 1.6.
@@ -479,12 +479,12 @@ Tudo é reto: raio zero (`--radius: 0`).
 ### Moldura (cabeçalho)
 - **Caráter:** um bloco de tinta na largura toda, com a tira das cinco fitas embaixo. É o que separa o cabeçalho da página clara.
 - **A organização:** o Renan reorganizou o cabeçalho na #261, em 20/11/2026 ("tá muito mal organizado [...] o ctrl K não tá centralizado, talvez passar ele pra esquerda, e as opções para o centro"), e escolheu a "A · Busca à direita":
-  - à esquerda, o nome e, a partir de 84rem (1344 px com a letra a 100%), o lema embaixo dele, em letra de máquina (em Papel 3).
+  - à esquerda, o livro em papel com as cinco fitas e o nome Mandatômetro no mesmo link para o início. O leitor de tela anuncia o nome uma vez. A partir de 84rem (1344 px com a letra a 100%), o lema “A política brasileira de perto.” aparece embaixo, em letra de máquina e em Papel 3.
   - no centro da grade, os links Trilhas e Jogos e, onde o build do site tem o `API_URL`, também Parlamentares e Edições, nesta ordem: Trilhas, Parlamentares, Jogos e Edições (o Renan, na #305, em 23/11/2026: a página dos parlamentares "fica meio escondida no início"). O Início saiu, porque o nome leva ao início (o Renan, na #39). Esse centro é o da área da página sem a barra de rolagem vertical.
   - à direita, a entrada da busca (veja "Busca") e a entrada da conta.
 - **As larguras,** com a API e a letra a 100%:
-  - **a partir de 62rem (992 px),** uma linha de 72 px, com a tira de 6 px, numa grade de três colunas. As dos lados são iguais (`minmax(0, 1fr)`). No Edge, com a API e a letra a 100%, a 992 px o nome mediu 183,05 px numa coluna de 193,89 px, a lista de links mediu 467,97 px e o lugar da busca mediu 105,11 px, com "Buscar" (a #305). A 1366 px, com a barra de rolagem vertical, o centro dos links ficou a 0,01 px do centro da área da página e a 7,5 px do centro da janela inteira.
-  - **a partir de 84rem (1344 px),** o lema aparece embaixo do nome, e o par cabe nos 72 px: ali, o link do nome perde a altura mínima de 44 px. O lema pede 350,78 px numa linha. Com o Parlamentares nos links, a coluna do nome tinha 339,48 px a 1312 px, e o lema quebrava em duas linhas; a 1344 px, ela tem 354,05 px. Ao lado do nome, com os links no meio, o lema só caberia a partir de uns 1810 px;
+  - **a partir de 62rem (992 px),** uma linha de 72 px, com a tira de 6 px, numa grade de três colunas. As dos lados são iguais (`minmax(0, 1fr)`). Entre 62 e 66rem, o nome usa 1.375rem para o livro e os quatro links caberem na mesma linha. A partir de 66rem, volta a 1.625rem. Se a letra reserva alargar o nome, o livro pode ficar na linha acima enquanto a Archivo carrega.
+  - **a partir de 84rem (1344 px),** o lema aparece embaixo da marca. Ali o link perde a altura mínima de 44 px para as duas linhas caberem nos 72 px do cabeçalho.
   - **abaixo de 62rem,** o nome, a busca e a conta ficam em cima e, embaixo, os links, centrados: numa linha só deles onde os quatro cabem (114 px com a tira, a partir de 488 px) e em duas linhas de dois no celular (158 px; veja "No celular");
   - **com a letra a 200%,** os links ficam na segunda linha abaixo de 1984 px, porque os 62rem crescem com a letra. Num celular, a busca e a conta descem para baixo do nome.
   - O respiro fica em px, sem crescer com a letra.
@@ -492,7 +492,7 @@ Tudo é reto: raio zero (`--radius: 0`).
 - **No celular:**
   - **Duas linhas de dois:** com a API, os quatro links ficam em duas linhas de dois onde não cabem numa linha, em todo celular (o Renan, na #305, em 23/11/2026). Quem decide é uma consulta de contêiner pela largura da lista: abaixo de 28rem. Os quatro pedem até 27,05rem numa linha com a letra a 100%, de 480 a 767 px; a partir de 768 px, com mais respiro, 29,25rem, e a lista tem mais de 42rem. Nas duas linhas, os vãos se encontram no meio da lista: o Trilhas e o Jogos se encostam nele pela direita, e o Parlamentares e o Edições, pela esquerda. A coluna mais larga cresce até caber, e o meio corre um pouco para o lado. Cada linha tem pelo menos 44 px, e o cabeçalho do celular ganha uma linha: 158 px com a tira, com a letra a 100%. Sem a API, Trilhas e Jogos ficam numa linha.
   - Abaixo de 48rem, os links e a conta ficam com 10 px de respiro de cada lado; abaixo de 26rem, com 6 px, sem vão entre os links e com 12 px entre o nome e a busca.
-  - Abaixo de 22.5rem (360 px), o nome fica com 1.1875rem: com 1.3125rem, o nome, a lupa e o "Entrar" passavam 2 px da linha de 280 px.
+  - Abaixo de 23rem (368 px), o livro fica centrado acima do nome e o vão até a busca passa para 8 px. Abaixo de 22.5rem (360 px), o nome chega a 1.1875rem. Quando a letra cresce e as ferramentas deixam de caber ao lado da marca, elas passam para a linha seguinte.
   - **Com a letra grande,** os links ficam um embaixo do outro onde não cabem numa linha nem, com a API, nas duas linhas de dois (o Renan escolheu "Um embaixo do outro" na #261), cada um com pelo menos 44 px de altura. Quem decide é uma consulta de contêiner pela largura da lista: com a API, abaixo de 13.9rem (nas duas linhas, o Trilhas e o Parlamentares pedem 13,89rem com a letra a 125%, 13,69rem a 150% e 13,44rem a 200%); sem ela, abaixo de 8.5rem. Onde a lista ainda não cabe e a coluna não entrou, ela quebra a linha em vez de passar da página: no computador, a barra de rolagem toma 15 px (a Atena pediu a quebra em 17/11/2026).
   - De 320 a 1920 px, com a letra a 100% e a 200%, com a API e sem ela, nenhuma largura rola de lado ou deixa um link sozinho numa linha.
 - **A entrada da conta:** quem não entrou vê "Entrar", que leva ao `/login`; quem entrou vê "Conta", que leva ao `/perfil` (o Renan, na #261, em 20/11/2026). Ela toma o lugar do "Conta" igual para todos e do quadradinho verde que o Renan tinha escolhido na #258.
@@ -1155,10 +1155,11 @@ Tudo é reto: raio zero (`--radius: 0`).
 - **As escolhas do Renan,** em 13/11/2026: o texto "Carregando a página…", o lugar "Etiqueta no alto", a espera "1 s, e fica 0,5 s" e o foco "Na frase".
 
 ### Ícone da aba e prévia do link
-- **O ícone:** o M do nome em Archivo 900, largura 68%, em papel no quadrado de tinta, com a tira das cinco fitas embaixo. O `favicon.ico` tem 16, 32 e 48 px, e o `apple-touch-icon.png`, 180 px. É a letra do nome, não um logo, e troca quando o logo existir.
-- **A prévia do link** (`previa.png`, 1200 × 630 px, a mesma em todas as páginas): o bloco de tinta com o nome (46 px) e o lema em letra de máquina (26 px), a tira de 10 px, o título da página inicial no papel liso (112 px, com a frase em letra de máquina e a tira riscada) e uma fileira de dez azulejos, com as cinco fitas pela ordem, duas vezes. Os tamanhos ficam fora da escala do site de propósito: a imagem tem 1200 px e é vista pequena.
-- **Os textos:** a aba da página inicial diz "Mandatômetro · o diário oficial político, simplificado"; as outras páginas, "Título · Mandatômetro". O título da prévia é "Mandatômetro: entenda a política brasileira, um passo de cada vez".
-- **Como gerar:** `pnpm --filter web imagens` abre o Edge ou o Chrome sem janela e fotografa `imagens/icone.html` e `imagens/previa.html`, com as fontes do site embutidas. Cada PNG leva a origem num bloco tEXt `impeccable:prompt`. Para mudar uma imagem, mude o HTML e gere de novo.
+- **O ícone:** o livro em papel, com margem no quadrado de tinta. A dobra e os cortes têm abertura maior nas versões menores da aba. O `favicon.ico` tem 16, 32 e 48 px. O `apple-touch-icon.png` tem 180 px.
+- **A prévia do link** (`previa.png`, 1200 × 630 px, a mesma em todas as páginas): o bloco de tinta com o livro, o nome (46 px) e o lema em letra de máquina (26 px), a tira de 10 px, o título da página inicial no papel liso (112 px, com a frase em letra de máquina e a tira riscada) e uma fileira de dez azulejos, com as cinco fitas pela ordem, duas vezes. Os tamanhos ficam fora da escala do site de propósito: a imagem tem 1200 px e é vista pequena.
+- **Os textos:** na aba da página inicial, o nome e o lema formam “Mandatômetro · A política brasileira de perto.” Nas outras páginas, a aba diz “Título · Mandatômetro”. O título da prévia é “Mandatômetro: entenda a política brasileira, um passo de cada vez”.
+- **Nos slides,** a marca leva o livro em tinta acima de MANDATÔMETRO, em Archivo convertida em curvas. A arte é transparente e funciona sobre fundo claro. O lema entra como texto do slide quando necessário.
+- **Como gerar:** o desenho está em `public/marca-paginas.svg`. O cabeçalho e os modelos `imagens/icone.html` e `imagens/previa.html` usam o grupo `paginas` desse SVG. O `pnpm --filter web imagens` exporta os ícones, a prévia e a marca empilhada em PNG de 2508 × 2508 px. Cada PNG leva a origem no bloco tEXt `impeccable:prompt`.
 
 ## Motion
 
@@ -1215,7 +1216,7 @@ Com `prefers-reduced-motion: reduce`, nada vira, tomba, sobe nem se risca: as pe
 - **Don't** usar sombra esfumada, canto arredondado ou degradê suave.
 - **Don't** pintar o fundo com mancha de cor, degradê ou sombra borrada, nem fazer ele se mexer sozinho: o fundo é o papel, com o grão e as curvas do mapa, e só anda com a rolagem.
 - **Don't** trazer de volta a itálica fina ao lado do título pesado: o Renan achou com "muito cara de IA" (13/11/2026).
-- **Don't** inventar um logo; até o time fazer o dele, o nome em texto é a marca, e o M do nome é o ícone.
+- **Don't** preencher a dobra ou os cortes do livro, nem mudar a ordem das cinco fitas.
 - **Don't** usar a vermelha como cor de domingo, nem escolher a cor de uma edição pelo assunto: a cor é a da semana no calendário (A Regra da Cor da Semana).
 - **Don't** pintar o placar de uma votação: o Sim não é verde, e o Não não é vermelho. O placar fica em tinta. O mesmo vale para o plenário, o placar por partido, o carimbo do voto de cada pessoa, as barras de "Como votou" e as do patrimônio declarado, a diferença entre as eleições e as barras e as colunas dos números do painel, sem cor de ganho nem de perda. O mesmo vale para "Com o partido": a régua, os carimbos dos votos contra a maioria e a marca na lista de votos ficam em tinta (a #329).
 - **Don't** julgar o voto da pessoa diante do partido com adjetivo, como "fiel", "rebelde" ou "traiu": "Com o partido" diz só os números e os fatos de cada votação (a #329).

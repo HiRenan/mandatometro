@@ -636,9 +636,18 @@
 
 	.marca a {
 		display: inline-flex;
+		flex-wrap: wrap;
 		align-items: center;
+		gap: 0 0.24em;
+		max-width: 100%;
 		min-height: 2.75rem;
 		text-decoration: none;
+	}
+
+	.marca a svg {
+		width: 1.2em;
+		height: auto;
+		flex: none;
 	}
 
 	/*
@@ -648,12 +657,26 @@
 	 */
 	.nome-do-site {
 		--letra: 1.625rem;
+		--palavra: 7.08;
 		font-family: var(--font-sans);
 		font-stretch: 68%;
 		font-weight: 900;
 		line-height: 1;
 		letter-spacing: 0.01em;
 		text-transform: uppercase;
+	}
+
+	/* O teto inclui o livro (1.2em) e o vão (0.24em). */
+	.marca .nome-do-site {
+		--palavra: 8.52;
+	}
+
+	/* Na entrada da grade, a coluna esquerda mede 194px com os quatro links.
+	   A marca de 22px cabe nela até haver espaço para o tamanho de 26px. */
+	@media (62rem <= width < 66rem) {
+		.moldura .nome-do-site {
+			--letra: 1.375rem;
+		}
 	}
 
 	/* O lema, batido à máquina, como um diário oficial. */
@@ -665,13 +688,8 @@
 	}
 
 	/*
-	 * O lema fica embaixo do nome a partir de 84rem (o Renan, na #261: "Embaixo
-	 * do nome"). Ao lado dele, com os links no meio, só caberia a partir de uns
-	 * 1810 px. Abaixo de 84rem, ele sai do cabeçalho (está no rodapé). Com o
-	 * lema, o link do nome fica com a altura da letra, e os dois cabem juntos nos
-	 * 72 px do cabeçalho. Com o Parlamentares nos links, na #305, a coluna do
-	 * nome encolheu: o lema pede 350,78 px numa linha e, a 1312 px, quebrava em
-	 * duas; a 1344 px, a coluna tem 354,05 px (medido no Edge, com a letra a 100%).
+	 * A partir de 84rem, o lema fica embaixo da marca. O link perde a altura
+	 * mínima para o livro, o nome e o lema caberem nos 72 px do cabeçalho.
 	 */
 	@media (width < 84rem) {
 		.moldura .marca-lema {
@@ -812,10 +830,6 @@
 		}
 	}
 
-	/*
-	 * A 320 px, o nome, a lupa e o "Entrar" cabem na linha de cima com o nome um
-	 * pouco menor (19 px): com 21 px, sobravam 2 px.
-	 */
 	@media (width < 22.5rem) {
 		.moldura .nome-do-site {
 			--letra: 1.1875rem;
@@ -849,6 +863,26 @@
 		.entrada-da-conta a::after {
 			right: 6px;
 			left: 6px;
+		}
+	}
+
+	/* O livro cabe acima do nome na altura do link. A busca e a conta continuam
+	   ao lado mesmo nos 320px com a barra de rolagem do computador. */
+	@media (width < 23rem) {
+		.moldura .topo-dentro {
+			column-gap: 8px;
+		}
+
+		.marca .nome-do-site {
+			--palavra: 7.08;
+			flex-direction: column;
+			justify-content: center;
+			gap: 0.24em;
+		}
+
+		/* O circunflexo sobe além da linha: a fita precisa de respiro sobre ele. */
+		.marca a svg {
+			width: 1em;
 		}
 	}
 

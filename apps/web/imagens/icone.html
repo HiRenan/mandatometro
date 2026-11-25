@@ -3,65 +3,43 @@
 	<head>
 		<meta charset="utf-8" />
 		<title>Ícone do Mandatômetro</title>
-		<!--
-			O ícone da aba e da tela de início do celular: o M do nome, na Archivo
-			bem preta e condensada do cabeçalho (peso 900, largura 68%), em papel
-			no bloco de tinta, com a tira das cinco fitas do Bonfim embaixo. As
-			cores são as do site (globals.css). É a letra do nome, não um logo, e
-			troca quando o logo vier.
-
-			O gerar.mjs abre esta página do tamanho de cada ícone (16, 32, 48 e
-			180 px), com as fontes do site no lugar do marcador FONTES, e tira a
-			foto. As medidas são em vw, para o desenho ser o mesmo em todos os
-			tamanhos: a 16 px, a tira tem 3 px, e o M, 10 px de altura.
-		-->
 		<style>
-			/* FONTES */
-
-			html,
-			body {
-				margin: 0;
-				height: 100%;
-			}
-
 			body {
 				display: grid;
-				grid-template-rows: minmax(0, 1fr) 18.75vw;
-				overflow: hidden;
+				place-items: center;
+				height: 100vh;
+				margin: 0;
 				background: #14161c;
 			}
 
-			/* O M fica no meio do bloco pela altura da maiúscula, e não pela
-			   altura da linha: o text-box corta a linha na maiúscula e na base. */
-			.letra {
-				display: grid;
-				place-items: center;
-				color: #f6f1e4;
-				font-family: "Archivo Variable", sans-serif;
-				font-size: 88vw;
-				font-stretch: 68%;
-				font-weight: 900;
-				line-height: 1;
-				text-box: trim-both cap alphabetic;
+			body > svg {
+				display: block;
+				width: 80vw;
+				fill: #f6f1e4;
 			}
 
-			.fitas {
-				display: flex;
+			/* Na aba, arredondar a margem e abrir a dobra e os cortes até um pixel. */
+			@media (width <= 32px) {
+				body > svg {
+					width: calc(100vw - 4px);
+					stroke: #14161c;
+					stroke-width: 18;
+				}
 			}
 
-			.fitas span {
-				flex: 1;
+			@media (width: 16px) {
+				body > svg {
+					width: 13px;
+					margin-left: 1px;
+					stroke-width: 32;
+				}
 			}
 		</style>
 	</head>
 	<body>
-		<div class="letra">M</div>
-		<div class="fitas">
-			<span style="background: #00a650"></span>
-			<span style="background: #ffd200"></span>
-			<span style="background: #0a78c8"></span>
-			<span style="background: #e6007e"></span>
-			<span style="background: #e30613"></span>
-		</div>
+		<svg viewBox="0 0 700 610" aria-hidden="true">
+			<defs><!-- MARCA --></defs>
+			<use href="#paginas"></use>
+		</svg>
 	</body>
 </html>

@@ -21,13 +21,15 @@ export function metaDaPagina({ titulo, descricao, tipo = "website" }: Pagina) {
 const DESCRICAO_DA_INICIAL =
 	"Entenda a política brasileira, um passo de cada vez, em artigos curtos e em linguagem simples, com a fonte oficial em cada explicação.";
 
+export const LEMA_DO_SITE = "A política brasileira de perto.";
+
 /**
  * A página inicial: a aba mostra o nome e o lema do site; a prévia do link, a
  * frase da página.
  */
 export function metaDaInicial() {
 	return [
-		{ title: "Mandatômetro · o diário oficial político, simplificado" },
+		{ title: `Mandatômetro · ${LEMA_DO_SITE}` },
 		{ name: "description", content: DESCRICAO_DA_INICIAL },
 		{
 			property: "og:title",
@@ -55,8 +57,7 @@ export function metaDaImagem(enderecoDoSite: string) {
 		{ property: "og:image:type", content: "image/png" },
 		{
 			property: "og:image:alt",
-			content:
-				"Mandatômetro, o diário oficial político, simplificado. Entenda a política brasileira, um passo de cada vez.",
+			content: `Livro em forma de M com cinco fitas. Mandatômetro. ${LEMA_DO_SITE} Entenda a política brasileira, um passo de cada vez.`,
 		},
 		{ name: "twitter:card", content: "summary_large_image" },
 	];
