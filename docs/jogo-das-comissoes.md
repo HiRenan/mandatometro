@@ -110,13 +110,14 @@ Nenhuma delas imita pessoa real, como o roteiro pede.
 **Para gravar**, com a `ELEVENLABS_API_KEY` no `.env` da raiz:
 
 ```bash
-pnpm --filter web vozes                 # grava o que ainda não tem arquivo
-pnpm --filter web vozes -- --so c1-01   # só uma fala, para ouvir antes
+pnpm --filter web vozes                 # grava falas novas e regrava as alteradas
+pnpm --filter web vozes -- --so 6x1/c1-01   # uma fala de um jogo
 pnpm --filter web vozes -- --refazer    # regrava tudo
 pnpm --filter web vozes -- --modelo eleven_v3
+pnpm --filter web vozes -- --verificar  # confere os áudios existentes sem usar a API
 ```
 
-O script lê o roteiro, manda cada fala com a voz do personagem e a direção da emoção — estabilidade e estilo nos modelos de hoje, e a marca entre colchetes (`[curious]`) no `eleven_v3` —, grava `public/jogo/vo/<id>.mp3` e refaz a lista de `src/lib/jogo/vozes.ts`. **A tela só toca o que está nessa lista**, então o jogo roda igual com narração parcial ou nenhuma: a fala sem arquivo simplesmente não tem voz, e o bipe da máquina de escrever volta no lugar dela. A chave vem do ambiente e não aparece no log.
+O script grava `public/jogo/vo/<jogo>/<id>.mp3` com a voz do personagem e a direção da emoção. O modelo `eleven_v3` recebe também a marca de emoção entre colchetes (`[curious]`). O registro em `vozes/gravacoes.json` associa cada gravação ao modelo e à assinatura do texto, da voz e da direção usados. Se esses dados mudarem, o gerador regrava a fala e o teste do roteiro sinaliza a gravação antiga no CI. Inclua o MP3, o registro e a lista `src/lib/jogo/vozes.ts` no commit quando mudarem. A tela usa essa lista e aceita narração parcial. Na fala sem áudio, volta o bipe da máquina de escrever. A chave vem do ambiente e fica fora do log.
 
 **O plano gratuito da ElevenLabs não sintetiza pela API** (`402 paid_plan_required`, inclusive com as vozes nativas): a gravação precisa de uma conta paga.
 

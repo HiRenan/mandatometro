@@ -1,4 +1,6 @@
+import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
 	lerArquivosDasTrilhas,
@@ -69,6 +71,13 @@ function desenho(pasta: string, arquivo: string): string {
 }
 
 describe("os roteiros dos jogos", () => {
+	it("confere se as gravações acompanham as falas e a direção de voz", () => {
+		const gerador = fileURLToPath(
+			new URL("../../../vozes/gerar.mjs", import.meta.url),
+		);
+		execFileSync(process.execPath, [gerador, "--verificar"]);
+	});
+
 	it("tem um roteiro por pasta de conteudo/jogo/, e nenhum a mais", () => {
 		expect(jogos.map((jogo) => jogo.slug).sort()).toEqual(
 			Object.keys(COMBINADO).sort(),

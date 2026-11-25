@@ -1,0 +1,398 @@
+{
+	"6x1/c1-01": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "c58d98f13748139e973e8103b23953cb7b8d9b263b2fb897c8dbcf9c950dc91c"
+	},
+	"6x1/c1-02": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "0911c38a77637d66bb1f73d12669af0fb2d98720196c562b6714ec32e10563fa"
+	},
+	"6x1/c1-03": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "b66d3551ada730681dfd8637cdf4612faf032b62fe6a32e08efc282023aa9629"
+	},
+	"6x1/c1-04": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "4f2a5b3a16477c3faccee42bf2642c8c64c2f0d8874bd42c3bc78ada34f246d6"
+	},
+	"6x1/c1-05": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "7ffa8cfcf5e3bc5350334de1b2cb43e04ee9f26fae2c83e5d69a2d1c8d29c64f"
+	},
+	"6x1/c1-06": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "ca9554d005f5b8901c37657ad4b234feea58138b8a195e251afdf949608e0dc4"
+	},
+	"6x1/c1-07": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "14e3207c50756a0ce4e7d5ae5ced4c1e75f8b506c47a17c0a6990b3e85f51551"
+	},
+	"6x1/c1-08": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "2021a0c3576a5b18a1c1a2eca45b72febb002694dec78d469da8bcb4acceb2d4"
+	},
+	"6x1/c1-09": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "f0d28b627049ef09089957ffdc0d223012d32a8a31cad6e1bf3520795e20e4ca"
+	},
+	"6x1/c1-10": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "a9d45ebf6af65fce8d62ec036819bb9440939fcec54aff295e4368ef445ac186"
+	},
+	"6x1/c2-01": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "4fa7d6799e760dcbca5a859d07545fb32ed8f45a8b261045b079cdb4adea0f75"
+	},
+	"6x1/c2-02": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "444913f0ea01ca0c2466df6dd84ab3bdd6f7a13206958a91d72f9a0fb1863da2"
+	},
+	"6x1/c2-03": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "479570cab55c768459c10f7f2fee93bd2efe12c7a10275bed15456e052eb1da0"
+	},
+	"6x1/c2-04": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "09e3b37b73a41426b73488dab2e219e51a2839fd0981266b7facfca543201515"
+	},
+	"6x1/c2-05": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "6de9f6a1bb9c388c8972d583ecf3f6cfbe0acb9ef3dae9508ae444bef06d4394"
+	},
+	"6x1/c2-06": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "69217470be88af63ad3798965ae1d31a491572a695f9c79d12e7e917c10cbb7b"
+	},
+	"6x1/c2-07": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "04792e92c2bbb044d406bcfed46276ef01bd159a24b625381460dfa3745ed435"
+	},
+	"6x1/c3-01": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "4906962fc90909d1347f6242efb66a3c5a8f0f959e2c6c60682fc0c53ecba3dd"
+	},
+	"6x1/c3-02": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "94eeb92b92dcd878cdd739503bf725da7205443e475c481131413dc3d69ac8fe"
+	},
+	"6x1/c3-03": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "3f7296b94120528678c5e136a88b712a5ef80f756a48c75192136ec2d73936bc"
+	},
+	"6x1/c3-04": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "54b9d4c650646005442cb269448335d4ca4204ab76575bd035b0dfb2b5af8fa5"
+	},
+	"6x1/c3-05": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "cd91ca16e95dad6fdb883eaa576d622ddc1ef4fe8928f5615678504c75e5c1e0"
+	},
+	"6x1/c3-06": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "fcc2251a8efad335ee4fb1e31f0b856970850fd42e0faaff6c58b72b06addbfc"
+	},
+	"6x1/c3-07": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "a1818db55e1d409dcb53ba790730bf983cbb299bd523a7a26aa2591d4edbcc5c"
+	},
+	"6x1/c3-08": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "55d4c4e52e2e569db594d4c70bda0f200e8985a7af305f673518c96f75714eb4"
+	},
+	"6x1/c3-09": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "240fe8b98c5dc38b26c26af192c29c45156dccfc616c9c99772d3a5538c677cb"
+	},
+	"6x1/c4-01": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "9a8f67eb71948abc8373b9935d8490549ad47aa00dfc827021065f9198704cda"
+	},
+	"6x1/c4-02": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "d0a81257b0b9bab93cb9c0d7030fb7ce5f43d76a385e8a8b755f2ae591756d3c"
+	},
+	"6x1/c4-03": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "8b2ac514b198a2c0712ccaf3cc4446f2825187eb89d5b19c850752e79fc01069"
+	},
+	"6x1/c4-04": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "92aa62ef1c16bac01a842efffc63441b22ba45ada4701bab74f6877b9c6db10d"
+	},
+	"6x1/c4-05": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "c3ebcb59bca96e0c7696913571d784013da5bfd3f73342c07d8298142cfdafd5"
+	},
+	"6x1/c4-06": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "de9e3d4d99430727f4dd548f635be164c2c44636a48d27f2aac2371ecc278078"
+	},
+	"6x1/c4-07": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "e234fd60b1222e7baca986b323e4732a3e08d5087169a28fc894c315f2062c25"
+	},
+	"6x1/c4-08": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "88a3fc7b963b6142be8ece25b9403279feee0a2f99b165125c6547a5fb961db8"
+	},
+	"6x1/c5-01": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "1232017c73a14bf3838931787477f1778e3ecbaf7a3c521ba640e8dd61c6f069"
+	},
+	"6x1/c5-02": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "4047780e9d7a9a69d8d5c1cb3711101afdefce7f39625b9b3fc7a2c14762f98f"
+	},
+	"6x1/c5-03": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "0ea96aa946e509212b77970d03ef2cb4df0e1bd6bbe5666d86d89105ce221e6e"
+	},
+	"6x1/c5-04": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "caf0670345d7e0f23573bde6da24f6676233580905a351e6c13f0fc2cb40bde3"
+	},
+	"6x1/c5-05": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "a4ad04b8e39ff8db6c82dd8db419d16c59947125dfec104b52d0243aeaa0cced"
+	},
+	"6x1/c5-06": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "ed81f3f5e8eed20e3f6ec463a39bf5f7309e92ff7a1d72c3fe6a896d6f7703f0"
+	},
+	"6x1/c5-07": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "782797577b4c8fe38317203f1404a4eb3386d5de8c54e7e4bff4fe996330d450"
+	},
+	"6x1/c5-08": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "1fc6f25aa141003c57a0d912806791c4b4fe2f168f72b72f702e6be43e23ed7d"
+	},
+	"6x1/c5-09": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "59322fa1b947e1390e37b2d35e4d522aeb7a7a80b33140131ef5152bae7f6941"
+	},
+	"6x1/c5-10": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "9ebae5cfb49206689e340a8044efaca00b47f211644c7d170b8c01f7313f8b82"
+	},
+	"6x1/c5-11": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "a765e26096c67c0e4d1eb6a2fd7370e4f9baa45a5ac5020fedf9abde2eec52a7"
+	},
+	"6x1/c5-12": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "f66dc66dd53164bd28723ebc71245b58c202d85bddf0d098ae868bdcc25a06ee"
+	},
+	"6x1/c5-13": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "da69cd74282c384e024d12315cee7aa597d5966aaa1b274acdad8a79275ba25e"
+	},
+	"6x1/c5-14": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "6099e6cab935aeba5e39d5aacc91ed4e9b2b85ff2afdde5025b74b15dc551d4d"
+	},
+	"6x1/c5-15": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "1dca66344b7fb66981441924840467122cdc79ff08136493e02d6ef4a15eef1b"
+	},
+	"6x1/c5-16": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "6b49d5087d2c755d46bdf093d8bff8167070b31bf8b53b4a23fa078c5ab2b927"
+	},
+	"6x1/c5-17": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "c3c71b541074f1c0839de5359c2a0c5392a83861f5e78e2226225ce5183fb175"
+	},
+	"6x1/c5-18": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "1da059ca828fd41e05e8fe051527ace000d246cfcd20d61ded5eaff7dc115230"
+	},
+	"6x1/c5-19": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "68e0cf4f2b4108b4583751559ca1500ed59225401f1437ace41326bfdfa303cf"
+	},
+	"comissoes/c1-01": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "e0e695003c12e9b4fa021dff537adeba2fc4e78c1149a6228da511b64d503549"
+	},
+	"comissoes/c1-02": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "41c9aa16a49ca7971019441a511b20c053a1bafa6cbb0ccb75099f6d00c5488b"
+	},
+	"comissoes/c1-03": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "fdfd9dc91b1dee1e550bcef21ffc73638f3b246296673d78e0cd3c5d6ba21dea"
+	},
+	"comissoes/c1-04": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "20fcb9ea2ffe751ec99a66cab13f26d859d7f37e91b93b77dee9f545c4cf590d"
+	},
+	"comissoes/c1-05": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "6d8f06e806b35d3ece275c3a353578149da574b568eefce42fe5bdd5af784a9b"
+	},
+	"comissoes/c1-06": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "b04e9c755aabf9465c12efcb42a9371ff93656ff27a07124adffd1afcadcc8a0"
+	},
+	"comissoes/c1-07": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "d5253f857807d9101670f9a3734d8e339faa00241e36f0c924ae0737e88324e4"
+	},
+	"comissoes/c2-01": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "3e3dfa3e5163fc124906a902840a94841baa3b7e2be8125b12735b7a79685849"
+	},
+	"comissoes/c2-02": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "679a9fe26f59613e62d35155d917bf05e421997c3bc318b9622c63395db966ca"
+	},
+	"comissoes/c2-03": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "525b4a806e7b211c9293320f104c8fa251e6b80bbaa54e0a53e82c6be034c1c5"
+	},
+	"comissoes/c2-04": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "800ec6dd8d9285c0adf152b8d65ecfae04e2a6fd82c8bfcd0c734fc2c126f922"
+	},
+	"comissoes/c2-05": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "1649e0c6914a7e002cf938069626dec89bae35e80187e91d757c13521dfc3bd3"
+	},
+	"comissoes/c2-06": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "31268d9fee3a31a2efeee73c5969e98335a4fe2374d932c2f4ea2623b4778fe8"
+	},
+	"comissoes/c2-07": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "18e5e8d1532cfedb1d4301e00516938c3fe21fcec19ac9e56e9681e3cd4dd78d"
+	},
+	"comissoes/c2-08": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "6d3298012e135229f77bab6587faadd2c869159007fbd00de5799a017c137ea5"
+	},
+	"comissoes/c2-09": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "2cfa40a153632b1f2e0d3ae7e30c28ebf24e5983c44459063832d1418150f1e0"
+	},
+	"comissoes/c2-10": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "9f9a67a79a6c3648ee92adb8ed5e84968419363223a894ac59b8d186b125b98a"
+	},
+	"comissoes/c2-11": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "5b57fc9e0bf53a29f8722e00558153032188e545c603fb1e5b92ea9a51ed183e"
+	},
+	"comissoes/c3-01": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "1cb173a9cd56c22baaa73f55ca52997bc27a7bdfa0c855ee1bf3c10a6d832997"
+	},
+	"comissoes/c3-02": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "29e5ed23de89c80897221496a95830c3ff983eb4934751ab070a98298a9505ed"
+	},
+	"comissoes/c3-03": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "740ed8f9c6d1eb80eaac45709c04bf7ddb5a1c8dad77060b6b04fdd6c9f3d5d0"
+	},
+	"comissoes/c3-04": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "8f82220401a976975aaf64921421f4cdf5b2deb9c27861a7654cc476e85bcea2"
+	},
+	"comissoes/c3-05": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "79aec726fa8ffe9b6420ff926d668097f4ae48b6218d26312beb1ff3fe0129e1"
+	},
+	"comissoes/c3-06": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "9b4152ac48a35315c8922c8b33f2e711ea2168b0871c0e6ff447796797b0b2cd"
+	},
+	"comissoes/c3-07": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "f0c7ea1aad3bef0d30d0b500a12aa0610eabdba8ffb4c7ab2cc08625c787e80d"
+	},
+	"comissoes/c3-08": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "464e02bde841abc3f28f814059d29a2ba2b143834560d105d6124d04dcc217bc"
+	},
+	"comissoes/c3-09": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "53fc5f7c7be3bbe51288c658ffcaee13e014ec282550c10575b99e397bfb9dda"
+	},
+	"comissoes/c4-01": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "e2ab9990f0a078897d82d1a3a29a1f35493fbf39b8ff58040ed0b523f72737e5"
+	},
+	"comissoes/c4-02": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "6ed3b756bf899ed44cc46dc9cd38ea9c095510e0e13b1bd6bb4891ebc7f65353"
+	},
+	"comissoes/c4-03": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "eaff590dc106fc96d784eff8d3f9fd6c08d18b44962bb26e65e20e7ef616a7a7"
+	},
+	"comissoes/c4-04": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "0b8b3d3dc4d6d13d5941e6cbfc73a21a08828a46b421d89521585aee0da1a266"
+	},
+	"comissoes/c4-05": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "e765ca8627f5041a05c1e17acee1fd5f8643ab088b46f71bdb29e057d5f156af"
+	},
+	"comissoes/c4-06": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "a9dcdbe09a85883258330e9789cc1a9a1470c4a09fa66516812037322db80147"
+	},
+	"comissoes/c4-07": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "b8d8e7f9f8e3fa6774bb2f3b3c9bf169c6a9f34e149cb15765adf0141cd0d51d"
+	},
+	"comissoes/c4-08": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "72b7926d12dceb97e05b73a2e261745f21bce9071b463d36a9a3e6dd8796c346"
+	},
+	"comissoes/c4-09": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "c5c20aeff31b525b21e0f80d20634aca02afc21e129dcba7ec26aeb0c46a0b18"
+	},
+	"comissoes/c4-10": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "3efe17955821cc9ea230008c0ec688f4bbea4bc41f861d9df2e239794a255cd8"
+	},
+	"comissoes/c4-11": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "888618abe9b145a471ecc05e937da93bd1420250520a21fc7f564817bb374019"
+	},
+	"comissoes/c4-12": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "f980ab5d3c9f2e5ea547250cc193e61613647bdafd9b42724a21cf39c2d2c964"
+	},
+	"comissoes/c5-01": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "735b39d95229bb530792e67f842501b3ac06eef4a83deb9dfccad02ce29fb0e5"
+	},
+	"comissoes/c5-02": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "310fca2ad6a022a3d0ecfab5c9a5bf640f318b30c9c7d9433c1146e1c8750d4e"
+	},
+	"comissoes/c5-03": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "e635dca8cfcdee1fda1c89df7e66d0ec9dcbb6b70614a20b3470b0bcf7717672"
+	},
+	"comissoes/c5-04": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "8b8a515357d2961661bb281adbef29b16baf688d9caa2b25d6c780a14003f5fc"
+	},
+	"comissoes/c5-05": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "7a6e30f6b81bf27fd997fba171ae9533a8aaeb960a0d9b754105483f75acbe92"
+	},
+	"comissoes/c5-06": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "139a3c51878762ac803c80e0b8116d69774e57604249218338473d5445351b20"
+	},
+	"comissoes/c5-07": {
+		"modelo": "eleven_multilingual_v2",
+		"assinatura": "0347c003289196a744045a8233edd3c6e010dcd23deb0823ab60b05053e720c3"
+	}
+}
