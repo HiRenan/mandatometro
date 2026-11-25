@@ -132,6 +132,8 @@ describe("cabeçalho", () => {
 		expect(livro?.querySelector("use")?.getAttribute("href")).toBe(
 			"/marca-paginas.svg#paginas",
 		);
+		expect(livro?.nextSibling?.textContent).toBe("andatômetro");
+		expect(inicio.textContent).toBe("Mandatômetro");
 		expect(cabecalho.querySelector(".marca-lema")?.textContent).toBe(
 			"A política brasileira de perto.",
 		);

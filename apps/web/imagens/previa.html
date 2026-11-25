@@ -5,8 +5,8 @@
 		<title>Prévia do link do Mandatômetro</title>
 		<!--
 			A prévia do link no WhatsApp e nas redes (og:image), com 1200 x 630 px:
-			o bloco de tinta do cabeçalho, com o livro, o nome e o lema, a tira das cinco
-			fitas do Bonfim, o título da página inicial no papel e uma fileira de
+			o bloco de tinta do cabeçalho, com o livro como inicial do nome e o lema,
+			a tira das cinco fitas do Bonfim, o título da página inicial no papel e uma fileira de
 			azulejos embaixo. As cores, as letras e os azulejos são os do site
 			(globals.css, index.css e estilos/azulejos.css). As redes cortam as
 			bordas em alguns formatos, por isso o texto fica longe delas.
@@ -65,10 +65,17 @@
 				color: var(--papel);
 			}
 
-			.topo svg {
-				width: 60px;
-				flex: none;
+			.nome > svg {
+				width: auto;
+				height: 1cap;
+				margin-right: 0.04em;
+				vertical-align: baseline;
 				fill: currentColor;
+			}
+
+			.inicial {
+				font-size: 0;
+				letter-spacing: 0;
 			}
 
 			.nome {
@@ -187,11 +194,12 @@
 	</head>
 	<body>
 		<div class="topo">
-			<svg viewBox="0 0 700 610" aria-hidden="true">
-				<defs><!-- MARCA --></defs>
-				<use href="#paginas"></use>
-			</svg>
-			<p class="nome">Mandatômetro</p>
+			<p class="nome">
+				<span class="inicial">M</span><svg width="0" height="0.69em" viewBox="0 0 700 610" aria-hidden="true">
+					<defs><!-- MARCA --></defs>
+					<use href="#paginas"></use>
+				</svg>andatômetro
+			</p>
 			<p class="lema">A política brasileira de perto.</p>
 		</div>
 		<div class="tira"></div>

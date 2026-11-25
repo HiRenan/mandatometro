@@ -95,16 +95,16 @@ describe("o CSS do cabeçalho", () => {
 		expect(Number(aperta.exec(midia?.corpo ?? "")?.[1])).toBeLessThan(10);
 	});
 
-	it("a 320 px, o livro fica sobre o nome de 19 px para caber ao lado da busca e da conta", () => {
+	it("o livro é uma inicial da altura das maiúsculas e a palavra segue inteira a 320 px", () => {
 		const midia = ate.find(({ corpo }) =>
 			/\.moldura \.nome-do-site \{\s*--letra: 1\.1875rem;\s*\}/.test(corpo),
 		);
 
 		expect(midia?.largura).toBe(22.5);
-		const empilhada = ate.find(({ corpo }) =>
-			/\.marca \.nome-do-site \{[^}]*flex-direction: column;/.test(corpo),
-		);
-		expect(empilhada?.largura).toBe(23);
+		expect(regra(css, ".marca-palavra")).toContain("white-space: nowrap;");
+		const livro = regra(css, ".marca-palavra svg");
+		expect(livro).toContain("height: 1cap;");
+		expect(livro).toContain("vertical-align: baseline;");
 	});
 
 	it("no celular, os quatro links ficam em duas linhas de dois, com os vãos no meio da lista", () => {

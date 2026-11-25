@@ -636,18 +636,28 @@
 
 	.marca a {
 		display: inline-flex;
-		flex-wrap: wrap;
 		align-items: center;
-		gap: 0 0.24em;
 		max-width: 100%;
 		min-height: 2.75rem;
 		text-decoration: none;
 	}
 
-	.marca a svg {
-		width: 1.2em;
-		height: auto;
-		flex: none;
+	.marca-palavra {
+		white-space: nowrap;
+	}
+
+	/* O M de texto continua na seleção e aparece quando o CSS não carrega. */
+	.marca-inicial {
+		font-size: 0;
+		letter-spacing: 0;
+	}
+
+	.marca-palavra svg {
+		display: inline-block;
+		width: auto;
+		height: 1cap;
+		margin-right: 0.04em;
+		vertical-align: baseline;
 	}
 
 	/*
@@ -666,9 +676,9 @@
 		text-transform: uppercase;
 	}
 
-	/* O teto inclui o livro (1.2em) e o vão (0.24em). */
+	/* O teto da assinatura inclui as letras mais largas da fonte reserva. */
 	.marca .nome-do-site {
-		--palavra: 8.52;
+		--palavra: 9.1;
 	}
 
 	/* Na entrada da grade, a coluna esquerda mede 194px com os quatro links.
@@ -866,23 +876,10 @@
 		}
 	}
 
-	/* O livro cabe acima do nome na altura do link. A busca e a conta continuam
-	   ao lado mesmo nos 320px com a barra de rolagem do computador. */
+	/* A busca e a conta cabem ao lado do nome mesmo com a barra de rolagem. */
 	@media (width < 23rem) {
 		.moldura .topo-dentro {
 			column-gap: 8px;
-		}
-
-		.marca .nome-do-site {
-			--palavra: 7.08;
-			flex-direction: column;
-			justify-content: center;
-			gap: 0.24em;
-		}
-
-		/* O circunflexo sobe além da linha: a fita precisa de respiro sobre ele. */
-		.marca a svg {
-			width: 1em;
 		}
 	}
 
