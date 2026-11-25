@@ -3,7 +3,7 @@ import { BOTAO_CONTINUAR } from "@/components/botao-continuar";
 import { Reservas } from "@/components/reservas";
 import { classes } from "@/lib/classes";
 import { semCliqueDuplo } from "@/lib/clique";
-import { pararVoz, tocar, tocarVoz } from "@/lib/jogo/som";
+import { pararVoz, tocar, tocarVoz, useSom } from "@/lib/jogo/som";
 import { temVoz } from "@/lib/jogo/vozes";
 import { movimentoReduzido } from "@/lib/painel-vivo";
 
@@ -47,15 +47,19 @@ export function CaixaDeDialogo({
 	// entra no efeito, depois da hidratação, e o HTML do servidor não difere.
 	const [letras, setLetras] = useState(0);
 	const relogio = useRef<ReturnType<typeof setInterval>>(undefined);
+	const somLigado = useSom();
 
 	const completa = letras >= texto.length;
 
-	// A narração da fala, quando ela foi gravada. Ela para quando a fala sai da
-	// tela: duas vozes nunca falam juntas.
+	// A narração acompanha a fala e a preferência de som. Ao religar o som,
+	// a fala atual é narrada desde o começo, mesmo com todo o texto à vista.
 	useEffect(() => {
+		if (!somLigado) {
+			return;
+		}
 		tocarVoz(jogo, id);
 		return pararVoz;
-	}, [jogo, id]);
+	}, [jogo, id, somLigado]);
 
 	useEffect(() => {
 		const semMovimento =
