@@ -13,9 +13,11 @@ from sqlalchemy.exc import IntegrityError, OperationalError
 
 from mandatometro.api import piloto as api_piloto
 from mandatometro.api.app import app
+from mandatometro.cli import main
 from mandatometro.config import config
 from mandatometro.db.modelos import LimiteInscricao, LimitePiloto, TentativaPiloto
 from mandatometro.piloto import VERSAO_QUIZ
+from mandatometro.piloto import cli as cli_piloto
 from mandatometro.piloto.limite import consumir_cota
 from mandatometro.piloto.medicao import apagar_medicao, registrar_tentativa
 from mandatometro.piloto.relatorio import resultado
@@ -194,6 +196,7 @@ def test_apagar_ativo_ou_versao_desconhecida_nao_abre_banco():
 
 def test_http_real_reenvio_e_invalido_gastam_cota_sem_duplicar(banco, monkeypatch):
     monkeypatch.setenv("PILOTO_ATIVO", "true")
+    monkeypatch.setenv("PILOTO_ATE", "9999-12-31")
     monkeypatch.setenv("PILOTO_LIMITE_POR_MINUTO", "3")
     monkeypatch.setattr(api_piloto, "engine", lambda: banco)
     monkeypatch.setattr(
@@ -219,5 +222,48 @@ def test_http_real_reenvio_e_invalido_gastam_cota_sem_duplicar(banco, monkeypatc
         with banco.connect() as conexao:
             assert conexao.execute(select(TentativaPiloto.acertos)).all() == [(7,)]
             assert conexao.scalar(select(LimitePiloto.quantidade)) == 3
+    finally:
+        config.cache_clear()
+
+
+def test_encerramento_na_meia_noite_de_brasilia_preserva_relatorio(
+    banco, relogio_db, monkeypatch, capsys
+):
+    monkeypatch.setenv("PILOTO_ATIVO", "true")
+    monkeypatch.setenv("PILOTO_ATE", "2026-12-01")
+    monkeypatch.setenv("PILOTO_LIMITE_POR_MINUTO", "2")
+    monkeypatch.setattr(api_piloto, "engine", lambda: banco)
+    monkeypatch.setattr(cli_piloto, "engine", lambda: banco)
+
+    class Relogio:
+        @staticmethod
+        def now(fuso):
+            return relogio_db[0].astimezone(fuso)
+
+    monkeypatch.setattr(api_piloto, "datetime", Relogio)
+    config.cache_clear()
+    try:
+        with TestClient(app) as cliente:
+            for instante, status in (
+                (datetime(2026, 12, 1, 15, tzinfo=UTC), 200),
+                (datetime(2026, 12, 2, 2, 59, 59, 999999, tzinfo=UTC), 200),
+                (datetime(2026, 12, 2, 3, tzinfo=UTC), 410),
+                (datetime(2026, 12, 3, tzinfo=UTC), 410),
+            ):
+                relogio_db[0] = instante
+                corpo = {
+                    "participacao": str(uuid4()),
+                    "versao_quiz": VERSAO_QUIZ,
+                    "etapa": "antes",
+                    "acertos": 7,
+                }
+                assert cliente.post("/piloto/tentativas", json=corpo).status_code == status
+        assert main(["piloto", "resultado", "--versao", VERSAO_QUIZ]) == 0
+        relatorio = json.loads(capsys.readouterr().out)
+        assert relatorio["tentativas"] == {"antes": 2, "depois": 0, "total": 2}
+        with banco.connect() as conexao:
+            assert conexao.execute(select(LimitePiloto.janela, LimitePiloto.quantidade)).all() == [
+                (datetime(2026, 12, 2, 2, 59, tzinfo=UTC), 1)
+            ]
     finally:
         config.cache_clear()
