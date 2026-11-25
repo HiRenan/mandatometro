@@ -104,6 +104,8 @@ def test_trinta_inscritos_recebem_uma_vez_com_mesmo_email_da_inscricao(rodada):
         corpo = json.loads(request.content)
         assert corpo["to"] == [f"pessoa{i}@example.com"]
         assert corpo["subject"] == "Edição fictícia"
+        assert 'href="https://site.example.com/edicoes/10"' in corpo["html"]
+        assert f"newsletter/sair?codigo={UUID(int=i)}" in corpo["text"]
         assert corpo["headers"]["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
     resumo, codigo = rodada["executar"]()
     assert codigo == 0 and resumo["aceitos_nesta_execucao"] == 0
