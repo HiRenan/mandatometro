@@ -1,4 +1,5 @@
 import { AcaoDeTexto } from "@/components/acao-de-texto";
+import { LEMA_DO_SITE } from "@/lib/meta";
 import { ENDERECO_DO_TERMO } from "@/lib/termo";
 import { Painel } from "./azulejo";
 import { NOME_DO_SITE } from "./nome-do-site";
@@ -19,7 +20,7 @@ export function Rodape() {
 			<div className="rodape-dentro px-margem-celular md:px-margem-larga grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
 				<div>
 					<p className={NOME_DO_SITE}>Mandatômetro</p>
-					<p className="marca-lema">o diário oficial político, simplificado</p>
+					<p className="marca-lema">{LEMA_DO_SITE}</p>
 				</div>
 				<div className="rodape-texto">
 					<p>

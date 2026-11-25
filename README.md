@@ -1,5 +1,7 @@
 # Mandatômetro
 
+**A política brasileira de perto.**
+
 O Mandatômetro ensina como funciona a política brasileira com trilhas de leitura e exemplos do que o Congresso vota.
 
 > Projeto da trilha **Acesso à educação** do [Hack Brasil 2026](https://hackbrasil.com).

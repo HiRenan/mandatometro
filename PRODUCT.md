@@ -26,7 +26,7 @@ O sucesso se mede no piloto, com cerca de 50 pessoas (uma turma do Senai e o Ins
 
 ## Positioning
 
-A política explicada em linguagem simples e de forma interativa, a partir de casos reais e recentes do Congresso. As trilhas ensinam as regras, e a newsletter mostra a semana no Congresso e os destaques do Diário Oficial. O lema: "o diário oficial político, simplificado".
+A política explicada em linguagem simples e de forma interativa, a partir de casos reais e recentes do Congresso. As trilhas ensinam as regras, e a newsletter mostra a semana no Congresso e os destaques do Diário Oficial. O lema é “A política brasileira de perto.”
 
 ## Operating Context
 
@@ -55,9 +55,9 @@ A política explicada em linguagem simples e de forma interativa, a partir de ca
 ## Brand Commitments
 
 - **Nome:** Mandatômetro, com acento.
-- **Lema:** "o diário oficial político, simplificado".
+- **Lema:** “A política brasileira de perto.”
 - **Voz de professor paciente:** explica passo a passo, trata a pessoa por "você" e dá o exemplo antes da regra, sem perder o tom neutro (Renan, 09/11/2026).
-- **Logo:** ainda não existe; o time vai fazer depois (Renan, 09/11/2026). Nenhuma tela inventa um logo.
+- **Logo:** Páginas, o livro aberto em forma de M escolhido por Renan em 25/11/2026. Na base, as cinco fitas têm a mesma largura e seguem a ordem verde, amarela, azul, rosa e vermelha.
 
 ## Evidence on Hand
 

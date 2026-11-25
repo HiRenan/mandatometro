@@ -10,7 +10,7 @@ from fastapi import Path, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -28,6 +28,12 @@ IdCongresso = Annotated[
     int,
     Path(gt=0, le=2_147_483_647, description="Id interno, inteiro positivo de 32 bits com sinal."),
 ]
+
+# Os caracteres de str.strip() também são passados ao btrim do PostgreSQL.
+ESPACOS_EM_BRANCO = (
+    " \t\n\r\v\f\x1c\x1d\x1e\x1f\x85\xa0\u1680\u2028\u2029\u202f\u205f\u3000"
+    "\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a"
+)
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +60,10 @@ class RotaCongresso(APIRoute):
 def ordem_alfabetica(nome: str, parlamentar_id: int) -> tuple[str, int]:
     letras = normalize("NFD", nome.casefold())
     return "".join(letra for letra in letras if not combining(letra)), parlamentar_id
+
+
+def sigla_do_voto(partido):
+    return func.nullif(func.btrim(partido, ESPACOS_EM_BRANCO), "")
 
 
 def contagem_por_valor(totais: Mapping[str, int]) -> ContagemVotosParlamentar:
