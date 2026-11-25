@@ -6,10 +6,13 @@ import type { CasaNoCaminho } from "@/lib/jogo/partida";
 import { simboloDoPasso } from "@/lib/simbolos";
 
 /**
- * O caminho do projeto nas cinco casas, com os mesmos azulejos do infográfico
+ * O caminho do projeto nas casas do jogo, com os mesmos azulejos do infográfico
  * "O caminho de um projeto de lei": o símbolo de cada passo (a folha, a mesa, o
  * hemiciclo, as duas Casas e a caneta), cru enquanto a partida não chegou ali e
  * com cor quando chega — as quatro peças viram em fila, como na trilha.
+ *
+ * O caminho de um projeto de lei tem cinco casas, e o de uma emenda, seis: a
+ * linha ganha uma coluna por casa, pelo `--casas`, em vez de cinco fixas.
  *
  * O azulejo é desenho e fica fora do leitor de tela: quem ouve tem o nome da
  * casa e o "Você está aqui", em palavras (DESIGN.md).
@@ -17,7 +20,10 @@ import { simboloDoPasso } from "@/lib/simbolos";
 export function CaminhoDoProjeto({ casas }: { casas: CasaNoCaminho[] }) {
 	return (
 		<nav aria-label="O caminho do projeto" className="jogo-caminho">
-			<ol role="list">
+			<ol
+				role="list"
+				style={{ "--casas": casas.length } as React.CSSProperties}
+			>
 				{casas.map((casa, indice) => (
 					<li key={casa.nome} data-estado={casa.estado}>
 						<AzulejoGrande

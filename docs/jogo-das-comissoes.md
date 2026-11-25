@@ -34,7 +34,9 @@ O roteiro fica em `apps/web/conteudo/jogo/<jogo>/`, uma pasta por jogo, e é só
 
 ### `jogo.md`
 
-O título, o resumo, o cenário da abertura, o aviso, os `personagens` deste jogo, as `casas` do caminho do projeto, o `epilogo` ("O que a lei mudou", com um `dispositivo` por item) e as `pendencias`.
+O título, o resumo, a `ordem`, o cenário da abertura, o aviso, os `personagens` deste jogo, as `casas` do caminho do projeto, o `epilogo` ("O que a lei mudou", com um `dispositivo` por item) e as `pendencias`.
+
+A `ordem` é a posição do jogo em `/jogos`, como a das trilhas, e dois jogos não podem dividir a mesma. Ela não vem do nome da pasta: o jogo que a pessoa deve jogar primeiro vem primeiro, e a posição também dá a cor e o azulejo da folha dele.
 
 Os `personagens` são um mapa pelo nome de cada um (com `nome` e `quem`), e cada jogo apresenta só os seus: quem não está no `jogo.md` não pode falar nas cenas dele. Os nomes que o leitor conhece são `lia`, `arnaldo`, `caio`, `joana` e `raimundo`.
 
@@ -47,13 +49,15 @@ Dois campos são opcionais:
 
 `cena` (o número), `titulo`, `cenario`, `casa` (uma das do `jogo.md`), `artigo` (o arquivo de um artigo da trilha do processo legislativo, sem o `.md`), `passos` e `revelacao`.
 
-As `casas` do `jogo.md` são as mesmas do infográfico "O caminho de um projeto de lei" — Apresentação, Comissões, Plenário, A outra Casa e Sanção ou veto —, e é de lá que vem o azulejo de cada uma, com o símbolo do passo (`simboloDoPasso`, em `lib/simbolos.ts`). Mudou um nome no infográfico, mude aqui também: sem o par, a casa fica com o azulejo da posição, sem símbolo.
+As `casas` do `jogo.md` do Jogo das Comissões são as mesmas do infográfico "O caminho de um projeto de lei" — Apresentação, Comissões, Plenário, A outra Casa e Sanção ou veto. O caminho de uma emenda é outro, e o Jogo da 6x1 tem as suas seis: Iniciativa, CCJ, Comissão especial, Plenário da Câmara, Senado e Promulgação.
+
+O azulejo de cada casa vem do símbolo do passo (`simboloDoPasso`, em `lib/simbolos.ts`), pelo nome dela. Casa nova pede símbolo novo no mapa, e o `simbolos.test.ts` não deixa uma casa chegar ao site sem ele, nem duas casas do mesmo caminho dividirem o mesmo desenho. Mudou um nome, mude no mapa também.
 
 Cada passo tem um `tipo`:
 
 | `tipo` | Campos | O que faz |
 | --- | --- | --- |
-| `fala` | `id`, `quem`, `expressao`, `texto`, `item`, `etiqueta` | Uma fala na caixa de diálogo. `quem` é `narracao` ou um dos personagens que o `jogo.md` apresenta; a narração não leva expressão, e os outros levam uma das que têm desenho. O `item` mostra um item de cena, e a `etiqueta` é o texto dele, escrito aqui e não na imagem |
+| `fala` | `id`, `quem`, `expressao`, `texto`, `item`, `etiqueta`, `cenario` | Uma fala na caixa de diálogo. `quem` é `narracao` ou um dos personagens que o `jogo.md` apresenta; a narração não leva expressão, e os outros levam uma das que têm desenho. O `item` mostra um item de cena, e a `etiqueta` é o texto dele, escrito aqui e não na imagem. O `cenario` troca o fundo a partir desta fala, para a cena que muda de lugar no meio |
 | `decisao` | `natureza`, `id`, `pergunta`, `opcoes` e o resto conforme a natureza | A decisão. Na de regra, cada opção tem `resultado` (`certa`, `funciona-mas-perde` ou `errada`) e `explicacao`, e a decisão tem `resumo` e `fundamento`, que a tela final mostra; na de opinião, as opções são só `texto`, e a decisão tem `eco` (`votou` ou `escolheu`) e `desfecho` |
 | `painel` | `modo` e, no `nominal`, `sim`, `nao`, `data` e o `quorum` opcional; no `simbolico`, `selo` | O painel do plenário. O `nominal` conta até os votos reais; o `simbolico` não mostra número nenhum, como foi no Senado. Com `quorum`, uma linha tracejada marca quantos votos a matéria precisava, e o número vai escrito ao lado dela |
 | `relogio` | `sessoes`, `fundamento`, `legenda` e a `dispensa` opcional | O prazo em sessões, como o do recurso ao Plenário. Com `dispensa`, as sessões se apagam no fim e a frase diz por que o prazo caiu, como no interstício que o Plenário dispensou por requerimento |
@@ -70,7 +74,7 @@ O `admissivel` fica em tinta, e não na fita verde do `aprovado`: a admissibilid
 
 ## Os assets
 
-Em `apps/web/public/jogo/`: `bg/` (6 cenários de 1920×1080), `personagens/` (12 retratos de 1024×1536, com fundo transparente), `itens/` (3 itens até 800 px) e `audio/` (a trilha em loop e cinco efeitos, em OGG). As imagens e o áudio foram produzidos pelo time para o jogo.
+Em `apps/web/public/jogo/`: `bg/` (9 cenários de 1920×1080, até 300 KB), `personagens/` (16 retratos de 1024×1536, com fundo transparente), `itens/` (4 itens até 800 px), `audio/` (a trilha em loop e cinco efeitos, em OGG) e `vo/<jogo>/` (a narração de cada jogo, em MP3). As imagens e o áudio foram produzidos pelo time para os jogos.
 
 As expressões com desenho são as que o roteiro usa:
 
@@ -86,7 +90,7 @@ O `roteiro.test.ts` confere que existe o arquivo de cada expressão, cenário e 
 
 O som **vem ligado**, e quem não quiser desliga no botão do pé do palco; a escolha fica guardada naquele navegador. O navegador só deixa tocar depois de um toque ou de uma tecla, então a trilha de fundo começa no primeiro clique da pessoa, e não ao abrir a página. O texto na tela continua funcionando sozinho, sem o som.
 
-As folhas de referência de arte (`ref-lia`, `ref-arnaldo` e `ref-caio`) e o PDF do roteiro são material de produção e ficam fora do repositório.
+As folhas de referência de arte (`ref-lia`, `ref-arnaldo`, `ref-caio`, `ref-joana` e `ref-raimundo`) e os PDFs dos roteiros são material de produção e ficam fora do repositório.
 
 ## A narração
 
