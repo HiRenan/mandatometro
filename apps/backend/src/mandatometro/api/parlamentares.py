@@ -14,11 +14,13 @@ from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.orm import Session, aliased, contains_eager
 
 from mandatometro.api.congresso import (
+    ESPACOS_EM_BRANCO,
     IdCongresso,
     RotaCongresso,
     contagem_por_valor,
     dados_da_votacao,
     ordem_alfabetica,
+    sigla_do_voto,
     temas_das_votacoes,
     voto_tem_tema,
 )
@@ -65,11 +67,6 @@ from mandatometro.tse_catalogos import CARGOS_TSE, MAXIMO_CENTAVOS
 ORDEM_DOS_VOTOS = (Votacao.data.desc(), Votacao.id.desc())
 PISO_PERCENTUAL_CENTAVOS = 5_000_000
 VOTOS_COMPARAVEIS = get_args(ValorVotoComparavel)
-# Os caracteres de str.strip() também são passados ao btrim do PostgreSQL.
-ESPACOS_EM_BRANCO = (
-    " \t\n\r\v\f\x1c\x1d\x1e\x1f\x85\xa0\u1680\u2028\u2029\u202f\u205f\u3000"
-    "\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a"
-)
 
 
 router = APIRouter(
@@ -184,8 +181,7 @@ def _comparacoes_com_o_partido(
             colega,
             and_(
                 colega.votacao_id == Voto.votacao_id,
-                func.btrim(colega.partido, ESPACOS_EM_BRANCO)
-                == func.nullif(func.btrim(Voto.partido, ESPACOS_EM_BRANCO), ""),
+                sigla_do_voto(colega.partido) == sigla_do_voto(Voto.partido),
                 colega.parlamentar_id != Voto.parlamentar_id,
             ),
         )
