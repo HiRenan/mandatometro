@@ -262,7 +262,14 @@ describe("a tela do jogo", () => {
 		);
 
 		vi.mocked(HTMLMediaElement.prototype.pause).mockClear();
+		vi.mocked(HTMLMediaElement.prototype.play).mockClear();
 		fireEvent.click(screen.getByRole("button", { name: "Ligar o som" }));
+		expect(tocados()).toEqual(
+			expect.arrayContaining([
+				"/jogo/audio/musica-tema.ogg",
+				"/jogo/vo/comissoes/c1-01.mp3",
+			]),
+		);
 		fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
 		expect(tocados()).toContain("/jogo/vo/comissoes/c1-02.mp3");
 		unmount();

@@ -14,6 +14,7 @@ O `DESIGN.md` e o `PRODUCT.md`, na raiz, seguem o formato do Impeccable.
 
 - A rolagem interna mede o trecho novo da folha junto do botão, depois que o React atualiza o palco. O foco usa `preventScroll` para preservar esse enquadramento. A caixa reserva a altura das duas versões do rótulo do botão e das falas do grupo. Com letra grande, o Tab até “Continuar” pode levar o começo da caixa para cima da janela. Nesse caso, a fala seguinte traz o começo de volta. Nas demais falas seguidas, a rolagem fica onde a pessoa a deixou.
 - No Edge, o `pointerdown` do toque chegou cedo demais para iniciar a trilha. O jogo começa a tocar no `click` nativo do palco, que também chega ao acionar um botão pelo teclado. Ao sair da rota, a desmontagem silencia o áudio local. O `pagehide` faz o mesmo quando o navegador guarda o documento para a volta pelo histórico.
+- A preferência de som vale para os dois jogos. A caixa de diálogo também observa essa preferência para iniciar a narração da fala atual quando a pessoa religa o som durante uma cena.
 
 ## Regras do visual
 
