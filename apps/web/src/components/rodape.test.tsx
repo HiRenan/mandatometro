@@ -59,8 +59,8 @@ describe("rodapé", () => {
 		const fileira = rodape.querySelector(".faixa-de-azulejos");
 
 		expect(rodape.textContent).toContain("Mandatômetro");
-		expect(rodape.textContent).toContain(
-			"o diário oficial político, simplificado",
+		expect(rodape.querySelector(".marca-lema")?.textContent).toBe(
+			"A política brasileira de perto.",
 		);
 		// O rodapé é de papel: o foco amarelo é só do cabeçalho, que é de tinta.
 		expect(rodape.classList.contains("moldura")).toBe(false);

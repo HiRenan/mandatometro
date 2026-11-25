@@ -122,13 +122,18 @@ describe("cabeçalho", () => {
 				.getByRole("link", { name: "Pular para o conteúdo" })
 				.getAttribute("href"),
 		).toBe("#conteudo");
-		expect(
-			within(cabecalho)
-				.getByRole("link", { name: "Mandatômetro" })
-				.getAttribute("href"),
-		).toBe("/");
-		expect(cabecalho.textContent).toContain(
-			"o diário oficial político, simplificado",
+		const inicio = within(cabecalho).getByRole("link", {
+			name: /^Mandatômetro$/,
+		});
+		expect(inicio.getAttribute("href")).toBe("/");
+		const livro = inicio.querySelector("svg");
+		expect(livro?.getAttribute("aria-hidden")).toBe("true");
+		expect(livro?.getAttribute("focusable")).toBe("false");
+		expect(livro?.querySelector("use")?.getAttribute("href")).toBe(
+			"/marca-paginas.svg#paginas",
+		);
+		expect(cabecalho.querySelector(".marca-lema")?.textContent).toBe(
+			"A política brasileira de perto.",
 		);
 		// A conta fica fora das listas, ao lado da busca.
 		expect(listas.map(linksDe)).toEqual([
