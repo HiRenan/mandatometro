@@ -457,6 +457,7 @@
 
 	.jogo-carimbo-solto,
 	.jogo-painel,
+	.jogo-debate,
 	.jogo-relogio {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
@@ -515,6 +516,95 @@
 
 	.jogo-sessao[data-corrida="true"] {
 		background: var(--tinta);
+	}
+
+	/*
+	 * O prazo que o Plenário dispensou: as sessões se apagam, e a frase diz por
+	 * quê. O sentido está na frase, e o apagar só acompanha.
+	 */
+	.jogo-relogio[data-dispensado="true"] .jogo-sessao {
+		border-style: dashed;
+		background: var(--papel);
+		opacity: 0.45;
+	}
+
+	.jogo-dispensa {
+		font-size: 0.9375rem;
+		font-weight: 600;
+		line-height: 1.55;
+	}
+
+	/*
+	 * A linha do quórum, embaixo do placar: um tracejado em tinta com o número
+	 * escrito ao lado. Quem não vê a linha lê a frase inteira.
+	 */
+	.jogo-quorum {
+		display: flex;
+		align-items: center;
+		gap: 0.625rem;
+	}
+
+	.jogo-quorum-linha {
+		flex: 1 1 auto;
+		border-top: 2px dashed var(--tinta);
+		min-width: 1.5rem;
+	}
+
+	.jogo-quorum-nome {
+		flex: 0 1 auto;
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		font-variant-numeric: lining-nums tabular-nums;
+		font-weight: 650;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+
+	/*
+	 * Os caminhos em debate: cartões de mesmo tamanho e mesma cor, lado a lado
+	 * quando cabem. Nada no desenho diz qual é o melhor
+	 * (docs/jogo-das-comissoes.md).
+	 */
+	.jogo-debate-lista {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
+		gap: 0.75rem;
+		align-items: stretch;
+	}
+
+	.jogo-via {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		border: 2px solid var(--tinta);
+		padding: 0.875rem;
+		background: var(--papel-2);
+	}
+
+	.jogo-via-nome {
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 800;
+		line-height: 1.25;
+	}
+
+	.jogo-via-etiqueta {
+		border-left: 3px solid var(--tinta);
+		padding-left: 0.5rem;
+		font-size: 0.8125rem;
+		line-height: 1.45;
+	}
+
+	.jogo-via-propoe,
+	.jogo-via-lados dd {
+		font-size: 0.875rem;
+		line-height: 1.5;
+	}
+
+	.jogo-via-lados {
+		display: grid;
+		gap: 0.5rem;
+		margin-top: auto;
 	}
 
 	/*
@@ -722,6 +812,23 @@
 		font-weight: 700;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
+	}
+
+	/*
+	 * O que ainda corre na Justiça, com a data em que o time conferiu: uma
+	 * caixa à parte do epílogo, porque não é o que a lei mudou.
+	 */
+	.jogo-situacao {
+		display: grid;
+		gap: 0.5rem;
+		margin-top: 1rem;
+		border: 2px dashed var(--tinta);
+		padding: 0.875rem;
+	}
+
+	.jogo-situacao p {
+		font-size: 0.9375rem;
+		line-height: 1.55;
 	}
 
 	@media (width >= 48rem) {

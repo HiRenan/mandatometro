@@ -34,7 +34,14 @@ O roteiro fica em `apps/web/conteudo/jogo/<jogo>/`, uma pasta por jogo, e é só
 
 ### `jogo.md`
 
-O título, o resumo, o cenário da abertura, o aviso, os três personagens (com `nome` e `quem`), as `casas` do caminho do projeto, o `epilogo` ("O que a lei mudou", com um `dispositivo` por item) e as `pendencias`.
+O título, o resumo, o cenário da abertura, o aviso, os `personagens` deste jogo, as `casas` do caminho do projeto, o `epilogo` ("O que a lei mudou", com um `dispositivo` por item) e as `pendencias`.
+
+Os `personagens` são um mapa pelo nome de cada um (com `nome` e `quem`), e cada jogo apresenta só os seus: quem não está no `jogo.md` não pode falar nas cenas dele. Os nomes que o leitor conhece são `lia`, `arnaldo`, `caio`, `joana` e `raimundo`.
+
+Dois campos são opcionais:
+
+- `licoes: true` — a tela final oferece rever a trilha do processo legislativo. Só declare no jogo cujas cenas a trilha realmente ensina: o jogo que não declara fica sem a ação, porque mandar para uma trilha que não cobre o assunto do jogo é mandar para o lugar errado.
+- `epilogo.situacao` — a caixa datada do que ainda corre na Justiça, com `data` e `paragrafos`. Ela conta o que já aconteceu e não prevê o que falta, e o time atualiza a data antes de publicar.
 
 ### Um arquivo por cena
 
@@ -46,17 +53,20 @@ Cada passo tem um `tipo`:
 
 | `tipo` | Campos | O que faz |
 | --- | --- | --- |
-| `fala` | `id`, `quem`, `expressao`, `texto`, `item`, `etiqueta` | Uma fala na caixa de diálogo. `quem` é `narracao`, `lia`, `arnaldo` ou `caio`; a narração não leva expressão, e os outros levam uma das que têm desenho. O `item` mostra um item de cena, e a `etiqueta` é o texto dele, escrito aqui e não na imagem |
+| `fala` | `id`, `quem`, `expressao`, `texto`, `item`, `etiqueta` | Uma fala na caixa de diálogo. `quem` é `narracao` ou um dos personagens que o `jogo.md` apresenta; a narração não leva expressão, e os outros levam uma das que têm desenho. O `item` mostra um item de cena, e a `etiqueta` é o texto dele, escrito aqui e não na imagem |
 | `decisao` | `natureza`, `id`, `pergunta`, `opcoes` e o resto conforme a natureza | A decisão. Na de regra, cada opção tem `resultado` (`certa`, `funciona-mas-perde` ou `errada`) e `explicacao`, e a decisão tem `resumo` e `fundamento`, que a tela final mostra; na de opinião, as opções são só `texto`, e a decisão tem `eco` (`votou` ou `escolheu`) e `desfecho` |
-| `painel` | `modo` e, no `nominal`, `sim`, `nao` e `data`; no `simbolico`, `selo` | O painel do plenário. O `nominal` conta até os votos reais; o `simbolico` não mostra número nenhum, como foi no Senado |
-| `relogio` | `sessoes`, `fundamento`, `legenda` | O prazo em sessões, como o do recurso ao Plenário |
+| `painel` | `modo` e, no `nominal`, `sim`, `nao`, `data` e o `quorum` opcional; no `simbolico`, `selo` | O painel do plenário. O `nominal` conta até os votos reais; o `simbolico` não mostra número nenhum, como foi no Senado. Com `quorum`, uma linha tracejada marca quantos votos a matéria precisava, e o número vai escrito ao lado dela |
+| `relogio` | `sessoes`, `fundamento`, `legenda` e a `dispensa` opcional | O prazo em sessões, como o do recurso ao Plenário. Com `dispensa`, as sessões se apagam no fim e a frase diz por que o prazo caiu, como no interstício que o Plenário dispensou por requerimento |
 | `carimbo` | `selo`, `legenda` | Um carimbo fora de decisão, como o "Segue para o Senado" |
+| `versoes` | `titulo`, `caminhos` | Os caminhos que estavam em debate, lado a lado. Cada um tem `nome`, `propoe`, `aFavor`, `contra` e uma `etiqueta` opcional. Os cartões têm o mesmo tamanho e a mesma cor, e nada no desenho diz qual é o melhor |
 
 O `id` de cada fala (`c1-03`) é o nome do arquivo de narração: **ele não muda**. O número dele é o da cena, e o leitor recusa um id fora da cena, repetido ou fora do formato.
 
 ### Os carimbos
 
-`pedido-de-vista`, `recurso-ao-plenario`, `segue-para-o-senado`, `urgencia`, `aprovado` e `sancionado`. Cada um é um componente em `apps/web/src/components/jogo/carimbos.tsx`, com o texto escrito no código, não numa imagem: dá para traduzir, ajustar e ler com leitor de tela. O texto fica em tinta, e a cor da fita só contorna o selo.
+`pedido-de-vista`, `recurso-ao-plenario`, `segue-para-o-senado`, `urgencia`, `aprovado`, `sancionado`, `so-com-emenda`, `admissivel`, `tres-quintos`, `intersticio-dispensado` e `promulgada`. Cada um é um componente em `apps/web/src/components/jogo/carimbos.tsx`, com o texto escrito no código, não numa imagem: dá para traduzir, ajustar e ler com leitor de tela. O texto fica em tinta, e a cor da fita só contorna o selo.
+
+O `admissivel` fica em tinta, e não na fita verde do `aprovado`: a admissibilidade não é aprovação da ideia, e a cor não pode dizer que é.
 
 ## Os assets
 
@@ -69,6 +79,8 @@ As expressões com desenho são as que o roteiro usa:
 | Lia | `confiante`, `surpresa`, `preocupada`, `pensativa`, `sorrindo` |
 | Arnaldo | `neutro`, `explicando`, `sorrindo`, `serio` |
 | Caio | `argumentando`, `desafiando`, `cumprimentando` |
+| Joana | `cansada`, `esperancosa` |
+| Seu Raimundo | `preocupado`, `aliviado` |
 
 O `roteiro.test.ts` confere que existe o arquivo de cada expressão, cenário e item que uma fala pede, e o leitor recusa uma expressão que não está na lista.
 

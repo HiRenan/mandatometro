@@ -73,6 +73,20 @@ export function PainelDeVotos({
 							<dd>{Math.round(painel.nao * progresso)}</dd>
 						</div>
 					</dl>
+					{/*
+					 * A linha tracejada do quórum é decoração, e o número vai escrito
+					 * ao lado dela: quem não vê a linha lê a frase.
+					 */}
+					{painel.quorum === undefined ? null : (
+						// Uma caixa, e não um parágrafo: o `display: flex` tira do
+						// `p` o papel de parágrafo no leitor de tela.
+						<div className="jogo-quorum">
+							<span className="jogo-quorum-linha" aria-hidden="true" />
+							<span className="jogo-quorum-nome">
+								Eram necessários {painel.quorum} votos
+							</span>
+						</div>
+					)}
 					<span className="sr-only" id={placar}>
 						Sim, {painel.sim} votos. Não, {painel.nao} votos.
 					</span>

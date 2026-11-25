@@ -1,13 +1,15 @@
 // Grava a narração do Jogo das Comissões com a ElevenLabs: um arquivo por
-// fala, com o id dela no nome (vo/c1-03.mp3), as vozes do time e a emoção que
+// fala, com o id dela no nome, dentro da pasta do jogo (vo/comissoes/c1-03.mp3),
+// as vozes do time e a emoção que
 // o roteiro marcou em cada fala.
 //
 // Uso: ELEVENLABS_API_KEY=... pnpm --filter web vozes
 //   --refazer            regrava também as falas que já têm arquivo
-//   --so c1-01,c2-03     grava só essas falas
+//   --so comissoes/c1-01 grava só essas falas; o id sozinho (c1-01) pega a
+//                        fala de mesmo id em todos os jogos
 //   --modelo <id>        troca o modelo (o eleven_v3 usa as marcas de emoção)
 //
-// Grava em public/jogo/vo/ e refaz a lista de src/lib/jogo/vozes.ts, que é o
+// Grava em public/jogo/vo/<jogo>/ e refaz a lista de src/lib/jogo/vozes.ts, que é o
 // que a tela lê: fala sem arquivo nessa lista simplesmente não tem voz.
 //
 // A chave vem do ambiente e nunca aparece no log nem no código. O roteiro e as
@@ -95,7 +97,7 @@ function falasDoRoteiro() {
 				if (!passo.emocao || !DIRECAO[passo.emocao]) {
 					throw new Error(`${passo.id}: emoção desconhecida (${passo.emocao})`);
 				}
-				falas.push(passo);
+				falas.push({ ...passo, jogo });
 			}
 		}
 	}
@@ -140,7 +142,9 @@ async function gravar(fala, chave) {
 		throw new Error(`HTTP ${resposta.status}: ${motivo.slice(0, 300)}`);
 	}
 	const audio = Buffer.from(await resposta.arrayBuffer());
-	writeFileSync(join(SAIDA, `${fala.id}.mp3`), audio);
+	const destino = join(SAIDA, fala.jogo);
+	mkdirSync(destino, { recursive: true });
+	writeFileSync(join(destino, `${fala.id}.mp3`), audio);
 	return audio.length;
 }
 
@@ -153,17 +157,19 @@ function escreverLista(ids) {
 		LISTA,
 		`// Gerado por vozes/gerar.mjs: não edite à mão.
 //
-// As falas que têm narração gravada em public/jogo/vo/. A tela só toca o que
-// está aqui, e uma fala de fora segue sem voz (docs/jogo-das-comissoes.md).
+// As falas que têm narração gravada em public/jogo/vo/<jogo>/. A tela só toca
+// o que está aqui, e uma fala de fora segue sem voz
+// (docs/jogo-das-comissoes.md). Cada item é "<jogo>/<id da fala>": o id se
+// repete entre os jogos, e quem separa é a pasta.
 
 export const VOZES: readonly string[] = ${lista};
 
-export function temVoz(id: string): boolean {
-	return VOZES.includes(id);
+export function temVoz(jogo: string, id: string): boolean {
+	return VOZES.includes(\`\${jogo}/\${id}\`);
 }
 
-export function enderecoDaVoz(id: string): string {
-	return \`/jogo/vo/\${id}.mp3\`;
+export function enderecoDaVoz(jogo: string, id: string): string {
+	return \`/jogo/vo/\${jogo}/\${id}.mp3\`;
 }
 `,
 		"utf8",
@@ -180,7 +186,10 @@ if (!chave) {
 
 mkdirSync(SAIDA, { recursive: true });
 
-const falas = falasDoRoteiro().filter((fala) => !so || so.includes(fala.id));
+const falas = falasDoRoteiro().filter(
+	(fala) =>
+		!so || so.includes(`${fala.jogo}/${fala.id}`) || so.includes(fala.id),
+);
 const caracteres = falas.reduce(
 	(soma, fala) => soma + textoDaFala(fala).length,
 	0,
@@ -192,7 +201,7 @@ console.log(
 let gravadas = 0;
 let puladas = 0;
 for (const fala of falas) {
-	const destino = join(SAIDA, `${fala.id}.mp3`);
+	const destino = join(SAIDA, fala.jogo, `${fala.id}.mp3`);
 	if (!refazer && existsSync(destino)) {
 		puladas += 1;
 		continue;
@@ -209,8 +218,8 @@ for (const fala of falas) {
 }
 
 const comArquivo = falasDoRoteiro()
-	.map((fala) => fala.id)
-	.filter((id) => existsSync(join(SAIDA, `${id}.mp3`)));
+	.filter((fala) => existsSync(join(SAIDA, fala.jogo, `${fala.id}.mp3`)))
+	.map((fala) => `${fala.jogo}/${fala.id}`);
 escreverLista(comArquivo);
 
 console.log(
