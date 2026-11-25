@@ -1,5 +1,6 @@
 import re
 from datetime import UTC, date, datetime
+from html import escape, unescape
 from uuid import UUID
 
 import pytest
@@ -37,9 +38,32 @@ def montar(edicao, **opcoes):
     return montar_email(
         edicao,
         CODIGO,
-        app_base_url="https://mandatometro.example.com",
+        app_base_url=opcoes.get("app_base_url", "https://mandatometro.example.com"),
         api_url=opcoes.get("api_url", "https://api.example.com"),
     )
+
+
+def titulos_html(html, niveis):
+    return re.findall(rf"<h([{niveis}])\b[^>]*>([^<]*)</h\1>", html)
+
+
+def test_boletim_tem_marca_folha_fluida_e_links_no_inicio_e_no_rodape(edicao):
+    mensagem = montar(edicao, app_base_url="https://site.example.com/jornal/")
+    pagina = "https://site.example.com/jornal/edicoes/1"
+    sair = f"https://site.example.com/jornal/newsletter/sair?codigo={CODIGO}"
+    html = mensagem.html
+    assert 'lang="pt-BR"' in html and 'charset="utf-8"' in html
+    assert "Mandatômetro" in html
+    assert titulos_html(html, "1") == [("1", escape(edicao.titulo))]
+    assert html.index(f'href="{pagina}"') < html.index("Primeiro")
+    assert html.index("Segundo") < html.index(f'href="{sair}"')
+    assert mensagem.texto.index(pagina) < mensagem.texto.index("Primeiro")
+    assert mensagem.texto.endswith(f"Sair da newsletter: {sair}")
+    tabelas = re.findall(r"<table\b[^>]*>", html)
+    assert tabelas and all('role="presentation"' in tabela for tabela in tabelas)
+    assert any('width="100%"' in tabela and "max-width:" in tabela for tabela in tabelas)
+    assert all(cor in html for cor in ("#00a650", "#ffd200", "#0a78c8", "#e6007e", "#e30613"))
+    assert not re.search(r"<(?:img|script|link)\b|@import|url\(", html, re.IGNORECASE)
 
 
 def test_texto_html_fontes_data_trecho_e_ordem(edicao):
@@ -56,7 +80,7 @@ def test_texto_html_fontes_data_trecho_e_ordem(edicao):
     assert "&lt;script&gt;" in mensagem.html
     assert "&lt;&amp;&gt;" in mensagem.html
     assert "&lt;para teste&gt;" in mensagem.html
-    assert re.findall(r"<h2>(.*?)</h2>", mensagem.html) == ["Primeiro", "Segundo"]
+    assert titulos_html(mensagem.html, "2") == [("2", "Primeiro"), ("2", "Segundo")]
     assert "O que o Congresso votou" not in mensagem.texto
     assert "O que saiu no Diário Oficial" not in mensagem.texto
 
@@ -71,6 +95,23 @@ def test_saida_tem_url_https_e_os_dois_cabecalhos(edicao):
 def test_sem_url_publica_usa_a_fonte_coletada(edicao):
     edicao.itens[0].fonte.url_publica = None
     assert edicao.itens[0].fonte.url in montar(edicao).texto
+
+
+def test_preserva_paragrafos_quebras_e_escape_nos_links_e_no_texto(edicao):
+    item = edicao.itens[0]
+    item.titulo = 'Ler "A & B" <na íntegra>'
+    item.texto = "Uma linha & outra.\nContinua aqui.\n\nOutro <parágrafo>."
+    url = 'https://www.camara.leg.br/ficha?a=1&tema="teste"'
+    item.fonte.url_publica = url
+    mensagem = montar(edicao)
+    assert escape(item.titulo) in mensagem.html
+    assert re.search(
+        r"<p\b[^>]*>Uma linha &amp; outra\.<br>Continua aqui\.</p>\s*"
+        r"<p\b[^>]*>Outro &lt;parágrafo&gt;\.</p>",
+        mensagem.html,
+    )
+    assert f'href="{escape(url)}"' in mensagem.html
+    assert item.texto in mensagem.texto and url in mensagem.texto
 
 
 @pytest.mark.parametrize(
@@ -117,9 +158,12 @@ def test_fatos_artigo_e_fontes_adicionais_sem_repetir_principal(edicao):
                 id=30,
                 data=date(2026, 11, 10),
                 resultado="aprovada",
-                placar=Placar(sim=10, nao=2, presidente=1),
+                placar=Placar(sim=10, nao=2, abstencao=3, obstrucao=4, presidente=1),
                 fontes=[10],
-            )
+            ),
+            FatoVotacao(
+                id=31, data=date(2026, 11, 11), resultado="rejeitada", placar=None, fontes=[10]
+            ),
         ],
         fontes=[10, 20],
         pendencias=[],
@@ -141,8 +185,18 @@ def test_fatos_artigo_e_fontes_adicionais_sem_repetir_principal(edicao):
         "https://mandatometro.example.com/trilhas/processo-legislativo/onde-o-projeto-comeca"
         in mensagem.texto
     )
-    assert "Sim: 10" in mensagem.texto and "Não: 2" in mensagem.texto
-    assert "Presidência: 1" in mensagem.texto
+    html_lido = unescape(re.sub(r"<[^>]+>", "", mensagem.html))
+    for corpo in (html_lido, mensagem.texto):
+        noticia, votos = corpo.split("Votação em 10/11/2026")
+        primeiro, resto = votos.split("Votação em 11/11/2026")
+        segundo, referencias = resto.split("Fonte oficial", 1)
+        assert item.texto in noticia
+        assert "aprovada" in primeiro and "rejeitada" in segundo
+        for contagem in ("Sim: 10", "Não: 2", "Abstenções: 3", "Obstruções: 4"):
+            assert contagem in primeiro and contagem not in segundo
+        assert "Presidência: 1 (contada à parte)." in primeiro
+        assert "O placar não está disponível nos dados usados." in segundo
+        assert "Trecho fictício" in referencias
     # Fontes distintas podem apontar para a mesma página pública (atos da mesma sessão).
     outra.url_publica = item.fonte.url_publica
     mensagem = montar_email(
@@ -175,10 +229,13 @@ def test_sem_placar_nao_inventa_modalidade_e_resultado_outro_nao_vira_aprovacao(
         ],
         fontes=[10],
     ).model_dump(mode="json")
-    texto = montar(edicao).texto
-    assert "O resultado desta votação não está classificado nos dados usados." in texto
-    assert "O placar não está disponível nos dados usados." in texto
-    assert all(palavra not in texto for palavra in ("secreta", "simbólica", "Sim: 0", "aprovada"))
+    mensagem = montar(edicao)
+    for corpo in (mensagem.texto, mensagem.html):
+        assert "O resultado desta votação não está classificado nos dados usados." in corpo
+        assert "O placar não está disponível nos dados usados." in corpo
+        assert all(
+            palavra not in corpo for palavra in ("secreta", "simbólica", "Sim: 0", "aprovada")
+        )
     item.fatos["fontes"].append(999)
     with pytest.raises(MensagemInvalida):
         montar(edicao)
@@ -213,11 +270,36 @@ def edicao_com_ato(edicao, ato_da_edicao):
     return edicao
 
 
+def test_previa_do_rascunho_oculta_todas_as_fontes_retidas_e_o_link_da_edicao(edicao_com_ato):
+    edicao_com_ato.estado, edicao_com_ato.publicada_em = "rascunho", None
+    item = edicao_com_ato.itens[0]
+    item.id = 7
+    outra = Fonte(
+        id=111,
+        url_publica="https://www.in.gov.br/ato-adicional",
+        coletado_em=item.fonte.coletado_em,
+        trecho="Outro trecho reservado.",
+    )
+    item.fatos["fontes"].append(outra.id)
+    previa = formatar_edicao(
+        edicao_com_ato,
+        app_base_url="http://localhost:3001",
+        previa=True,
+        fontes={outra.id: outra},
+        itens_sem_link={item.id},
+    )
+    for corpo in (previa.html, previa.texto):
+        assert corpo.count("Fonte oficial disponível no arquivo de revisão.") == 2
+        assert "/edicoes/" not in corpo
+        for fonte in (item.fonte, outra):
+            assert fonte.url_publica not in corpo and fonte.trecho not in corpo
+
+
 def test_formatar_ato_mostra_data_e_pagina_oficial_sem_campos_internos(edicao_com_ato):
     previa = formatar_edicao(edicao_com_ato, app_base_url="http://localhost:3001", previa=True)
     mensagem = montar(edicao_com_ato)
 
-    assert re.findall(r"<h([23])>(.*?)</h[23]>", mensagem.html) == [
+    assert titulos_html(mensagem.html, "23") == [
         ("2", "O que saiu no Diário Oficial"),
         ("3", "Primeiro ato"),
     ]
@@ -265,7 +347,7 @@ def test_edicao_mista_agrupa_as_votacoes_e_os_atos_na_ordem_de_cada_secao(edicao
     mensagem = montar(edicao)
 
     for html in (previa.html, mensagem.html):
-        assert re.findall(r"<h([23])>(.*?)</h[23]>", html) == titulos
+        assert titulos_html(html, "23") == titulos
     textos_dos_titulos = [titulo for _, titulo in titulos]
     for texto in (previa.texto, mensagem.texto):
         assert [linha for linha in texto.splitlines() if linha in textos_dos_titulos] == (
