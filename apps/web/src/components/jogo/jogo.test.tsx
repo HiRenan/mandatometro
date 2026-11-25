@@ -252,7 +252,7 @@ describe("a tela do jogo", () => {
 		expect(tocados()).toEqual([
 			"/jogo/audio/musica-tema.ogg",
 			"/jogo/audio/sfx-campainha.ogg",
-			"/jogo/vo/c1-01.mp3",
+			"/jogo/vo/comissoes/c1-01.mp3",
 		]);
 
 		fireEvent.click(screen.getByRole("button", { name: "Desligar o som" }));
@@ -264,12 +264,12 @@ describe("a tela do jogo", () => {
 		vi.mocked(HTMLMediaElement.prototype.pause).mockClear();
 		fireEvent.click(screen.getByRole("button", { name: "Ligar o som" }));
 		fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
-		expect(tocados()).toContain("/jogo/vo/c1-02.mp3");
+		expect(tocados()).toContain("/jogo/vo/comissoes/c1-02.mp3");
 		unmount();
 		expect(pausados()).toEqual(
 			expect.arrayContaining([
 				"/jogo/audio/musica-tema.ogg",
-				"/jogo/vo/c1-02.mp3",
+				"/jogo/vo/comissoes/c1-02.mp3",
 			]),
 		);
 	});

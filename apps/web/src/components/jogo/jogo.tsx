@@ -217,6 +217,7 @@ export function Jogo({
 				{naCena && fala ? (
 					<CaixaDeDialogo
 						key={fala.id}
+						jogo={jogo.slug}
 						id={fala.id}
 						quem={fala.quem}
 						// O leitor do roteiro não deixa uma cena dar a fala a quem o

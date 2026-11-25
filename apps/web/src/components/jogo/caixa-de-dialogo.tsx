@@ -21,6 +21,7 @@ const MS_POR_LETRA = 22;
 const MOSTRAR_FALA = "Mostrar a fala inteira";
 
 export function CaixaDeDialogo({
+	jogo,
 	id,
 	nome,
 	quem,
@@ -29,7 +30,9 @@ export function CaixaDeDialogo({
 	aoAvancar,
 	rotulo = "Continuar",
 }: {
-	/** O id da fala, que é o nome do arquivo da narração (vo/c1-03.mp3). */
+	/** O endereço do jogo, que é a pasta da narração dele (vo/<jogo>/). */
+	jogo: string;
+	/** O id da fala, que é o nome do arquivo da narração (vo/<jogo>/c1-03.mp3). */
 	id: string;
 	/** O nome na placa. A narração não tem placa. */
 	nome?: string;
@@ -50,9 +53,9 @@ export function CaixaDeDialogo({
 	// A narração da fala, quando ela foi gravada. Ela para quando a fala sai da
 	// tela: duas vozes nunca falam juntas.
 	useEffect(() => {
-		tocarVoz(id);
+		tocarVoz(jogo, id);
 		return pararVoz;
-	}, [id]);
+	}, [jogo, id]);
 
 	useEffect(() => {
 		const semMovimento =
@@ -62,7 +65,7 @@ export function CaixaDeDialogo({
 			return;
 		}
 		// Com a fala narrada, o bipe da máquina de escrever só atrapalharia.
-		if (!temVoz(id)) {
+		if (!temVoz(jogo, id)) {
 			tocar("texto");
 		}
 		relogio.current = setInterval(() => {
@@ -75,7 +78,7 @@ export function CaixaDeDialogo({
 			});
 		}, MS_POR_LETRA);
 		return () => clearInterval(relogio.current);
-	}, [texto, id]);
+	}, [texto, jogo, id]);
 
 	function agir() {
 		if (!completa) {

@@ -149,14 +149,26 @@ describe("o roteiro do Jogo das Comissões", () => {
 		expect(narracao.every((fala) => Boolean(fala.emocao))).toBe(true);
 	});
 
-	it("só anuncia voz para as falas que têm o arquivo gravado", () => {
-		const ids = new Set(falas.map((fala) => fala.id));
+	it("só anuncia voz para as falas que têm o arquivo gravado, na pasta do jogo", () => {
+		// O id da fala não é único entre os jogos, e quem separa a narração é a
+		// pasta: cada item da lista é "<jogo>/<id da fala>".
+		const chaves = new Set(
+			jogos.flatMap((um) =>
+				um.cenas
+					.flatMap((cena) => cena.passos)
+					.filter((passo) => passo.tipo === "fala")
+					.map((fala) => `${um.slug}/${fala.id}`),
+			),
+		);
 
-		for (const id of VOZES) {
-			expect(ids.has(id), `${id} não é uma fala do roteiro`).toBe(true);
+		for (const chave of VOZES) {
 			expect(
-				existsSync(`${RAIZ_DO_SITE}public/jogo/vo/${id}.mp3`),
-				`falta public/jogo/vo/${id}.mp3`,
+				chaves.has(chave),
+				`${chave} não é uma fala de nenhum roteiro`,
+			).toBe(true);
+			expect(
+				existsSync(`${RAIZ_DO_SITE}public/jogo/vo/${chave}.mp3`),
+				`falta public/jogo/vo/${chave}.mp3`,
 			).toBe(true);
 		}
 	});
