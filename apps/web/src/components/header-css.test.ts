@@ -167,6 +167,22 @@ describe("o CSS do cabeçalho", () => {
 		expect(regra(css, ".topo-links")).toMatch(/\bflex-wrap: wrap;/);
 	});
 
+	it("a 360 px com a letra a 200%, as regras da lista e dos links permitem quebra", () => {
+		// Na #226, o cabeçalho alargava os quizzes e o artigo. Uma regra mais
+		// específica pode impedir a quebra mesmo com a coluna e o wrap no CSS.
+		const semComentarios = css.replace(/\/\*[\s\S]*?\*\//g, "");
+		const regras = semComentarios.matchAll(
+			/([^{};]*\.(?:topo-links|topo-nav-baixo)(?![\w-])[^{};]*)\{([^{}]*)\}/g,
+		);
+		const semQuebra =
+			/(?:^|;)\s*(?:flex-wrap|flex-flow|white-space)\s*:[^;]*\bnowrap\b/i;
+		const bloqueios = [...regras]
+			.filter(([, , corpo]) => semQuebra.test(corpo))
+			.map(([, seletor]) => seletor.trim());
+
+		expect(bloqueios).toEqual([]);
+	});
+
 	it("os dois links da conta ficam na mesma célula, e a marca do <html> esconde um", () => {
 		expect(regra(css, ".entrada-da-conta > a")).toMatch(/grid-area: 1 \/ 1;/);
 		expect(regra(css, ".entrada-da-conta")).toMatch(/display: grid;/);

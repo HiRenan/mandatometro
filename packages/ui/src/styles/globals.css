@@ -66,20 +66,7 @@
 	--border: var(--tinta);
 	--input: var(--tinta);
 	--ring: var(--foco);
-	--chart-1: var(--fita-verde);
-	--chart-2: var(--fita-amarela);
-	--chart-3: var(--fita-azul);
-	--chart-4: var(--fita-rosa);
-	--chart-5: var(--fita-vermelha);
 	--radius: 0rem;
-	--sidebar: var(--papel);
-	--sidebar-foreground: var(--tinta);
-	--sidebar-primary: var(--tinta);
-	--sidebar-primary-foreground: var(--papel);
-	--sidebar-accent: var(--papel-2);
-	--sidebar-accent-foreground: var(--tinta);
-	--sidebar-border: var(--tinta);
-	--sidebar-ring: var(--foco);
 }
 
 @theme inline {
@@ -98,19 +85,6 @@
 	--color-fita-azul: var(--fita-azul);
 	--color-fita-rosa: var(--fita-rosa);
 	--color-fita-vermelha: var(--fita-vermelha);
-	--color-sidebar-ring: var(--sidebar-ring);
-	--color-sidebar-border: var(--sidebar-border);
-	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-	--color-sidebar-accent: var(--sidebar-accent);
-	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-	--color-sidebar-primary: var(--sidebar-primary);
-	--color-sidebar-foreground: var(--sidebar-foreground);
-	--color-sidebar: var(--sidebar);
-	--color-chart-5: var(--chart-5);
-	--color-chart-4: var(--chart-4);
-	--color-chart-3: var(--chart-3);
-	--color-chart-2: var(--chart-2);
-	--color-chart-1: var(--chart-1);
 	--color-ring: var(--ring);
 	--color-input: var(--input);
 	--color-border: var(--border);

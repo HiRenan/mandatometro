@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
+import { LinkDeAcao } from "@/components/acao-de-texto";
 import type { PaginaInicial as Dados } from "@/lib/conteudo";
 import { fraseDoProgresso, tamanhoDaTrilha } from "@/lib/formatar";
 import { contarLidos, primeiroNaoLido, useArtigosLidos } from "@/lib/progresso";
@@ -128,9 +129,7 @@ export function PaginaInicial({
 				<InscricaoNaNewsletter className="revelar">
 					{/* As edições aparecem onde a folha aparece: onde o site tem a API. */}
 					<p>
-						<Link to="/edicoes" className="acao-de-texto">
-							<span>Ler as edições</span>
-						</Link>
+						<LinkDeAcao to="/edicoes" texto="Ler as edições" />
 					</p>
 				</InscricaoNaNewsletter>
 			)}

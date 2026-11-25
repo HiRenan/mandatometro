@@ -107,7 +107,7 @@ export async function lerEdicao(valor: unknown): Promise<EdicaoDaPagina> {
 /** Quantas edições a busca lê: a primeira página da lista, das mais novas. */
 export const EDICOES_NA_BUSCA = 20;
 
-export type EdicoesDaBusca =
+type EdicoesDaBusca =
 	| { tipo: "sem-api" }
 	| {
 			tipo: "edicoes";

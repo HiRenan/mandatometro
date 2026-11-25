@@ -1,13 +1,16 @@
 """HTTP compartilhado pelas Casas: UTF-8, tentativas limitadas e robots em memória."""
 
+import asyncio
 import json
 import logging
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
+from contextlib import closing
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
-from typing import Self
+from functools import partial
+from typing import Any, Self
 from urllib.parse import urljoin, urlsplit
 from urllib.robotparser import RobotFileParser
 
@@ -15,6 +18,8 @@ import httpx2
 
 logger = logging.getLogger(__name__)
 USER_AGENT = "mandatometro (Hack Brasil 2026)"
+
+type _Get = Callable[..., httpx2.Response]
 
 
 class ErroColeta(Exception):
@@ -58,6 +63,8 @@ class ClienteHttp:
 
     Caminhos relativos são resolvidos dentro de base_url. URLs absolutas, como as de paginação,
     precisam ficar nessa base. O cliente injetado pertence ao chamador; o próprio é fechado aqui.
+    Com apenas o cliente injetado, o GET síncrono usa o prazo para limitar cada operação.
+    O transporte de teste atende aos GETs síncronos e aos que têm prazo integral.
     """
 
     def __init__(
@@ -65,6 +72,7 @@ class ClienteHttp:
         base_url: str,
         *,
         cliente: httpx2.Client | None = None,
+        transporte: httpx2.MockTransport | None = None,
         timeout: float = 30.0,
         tentativas: int = 3,
         intervalo: float = 0.2,
@@ -76,7 +84,9 @@ class ClienteHttp:
         if self._base.scheme != "https" or not self._base.netloc:
             raise ValueError("A base precisa ser uma URL HTTPS.")
         self._proprio = cliente is None
-        self._cliente = cliente if cliente is not None else httpx2.Client()
+        self._cliente = cliente if cliente is not None else httpx2.Client(transport=transporte)
+        self._transporte = transporte
+        self._cliente_no_prazo: tuple[asyncio.AbstractEventLoop, httpx2.AsyncClient] | None = None
         self._timeout = timeout
         self._tentativas = tentativas
         self._intervalo = intervalo
@@ -94,8 +104,16 @@ class ClienteHttp:
         self.fechar()
 
     def fechar(self) -> None:
-        if self._proprio:
-            self._cliente.close()
+        try:
+            if self._cliente_no_prazo is not None:
+                loop, cliente = self._cliente_no_prazo
+                self._cliente_no_prazo = None
+                # Fechar o loop dispensa esperar uma resolução de DNS já cancelada.
+                with closing(loop):
+                    loop.run_until_complete(cliente.aclose())
+        finally:
+            if self._proprio:
+                self._cliente.close()
 
     def _url(self, caminho: str) -> str:
         url = urljoin(self.base_url + "/", caminho.lstrip("/"))
@@ -150,7 +168,54 @@ class ClienteHttp:
             )
         return espera
 
-    def _enviar(self, url: str, *, robots: bool, prazo: float | None) -> httpx2.Response:
+    def _get_no_prazo(
+        self,
+        url: str,
+        *,
+        prazo: float,
+        headers: dict[str, str],
+        timeout: float,
+        follow_redirects: bool,
+    ) -> httpx2.Response:
+        if self._cliente_no_prazo is None:
+            cliente = httpx2.AsyncClient(
+                cookies=self._cliente.cookies.jar, transport=self._transporte
+            )
+            self._cliente_no_prazo = asyncio.new_event_loop(), cliente
+        loop, cliente = self._cliente_no_prazo
+
+        async def requisitar() -> httpx2.Response:
+            tcp = None
+
+            async def fechar_tls_cancelado(evento: str, info: dict[str, Any]) -> None:
+                nonlocal tcp
+                if evento.endswith(".connect_tcp.complete"):
+                    tcp = info["return_value"]
+                elif (
+                    evento.endswith(".start_tls.failed")
+                    and isinstance(info["exception"], asyncio.CancelledError)
+                    and tcp is not None
+                ):
+                    # O pool só assume o stream depois do handshake. O httpcore2 não fecha
+                    # o TCP quando o TLS recebe CancelledError de um prazo externo.
+                    await tcp.aclose()
+
+            # O timeout do HTTPX limita cada operação de rede. Este prazo cobre o GET inteiro.
+            async with asyncio.timeout_at(prazo):
+                return await cliente.get(
+                    url,
+                    headers=headers,
+                    timeout=timeout,
+                    follow_redirects=follow_redirects,
+                    extensions={"trace": fechar_tls_cancelado},
+                )
+
+        try:
+            return loop.run_until_complete(requisitar())
+        except TimeoutError:
+            raise PrazoConsultaEsgotado() from None
+
+    def _enviar(self, url: str, *, robots: bool, prazo: float | None, get: _Get) -> httpx2.Response:
         for tentativa in range(self._tentativas):
             if tentativa:
                 self.tentativas_extras += 1
@@ -163,7 +228,7 @@ class ClienteHttp:
             self.chamadas += 1
             resposta = None
             try:
-                resposta = self._cliente.get(
+                resposta = get(
                     url,
                     headers={
                         "User-Agent": USER_AGENT,
@@ -182,13 +247,15 @@ class ClienteHttp:
                 _dormir(espera, prazo)
         raise ErroColetaTemporario("Falha transitória na fonte após esgotar as tentativas.")
 
-    def _obter(self, url: str, *, robots: bool = False, prazo: float | None) -> httpx2.Response:
+    def _obter(
+        self, url: str, *, robots: bool = False, prazo: float | None, get: _Get
+    ) -> httpx2.Response:
         for _ in range(6):
             if not robots:
                 url = self._url(url)
                 if not self._robots.can_fetch("mandatometro", url):
                     raise ErroColeta("Consulta proibida pelo robots.txt.")
-            resposta = self._enviar(url, robots=robots, prazo=prazo)
+            resposta = self._enviar(url, robots=robots, prazo=prazo, get=get)
             if resposta.status_code not in (301, 302, 303, 307, 308):
                 return resposta
             destino = resposta.headers.get("location")
@@ -199,11 +266,11 @@ class ClienteHttp:
                 raise ErroColeta("Redirecionamento fora de HTTPS.")
         raise ErroColeta("Limite de redirecionamentos excedido na fonte.")
 
-    def _ler_robots(self, prazo: float | None) -> None:
+    def _ler_robots(self, prazo: float | None, get: _Get) -> None:
         if self._robots is not None and time.monotonic() - self._robots_em < 86400:
             return
         url = f"{self._base.scheme}://{self._base.netloc}/robots.txt"
-        resposta = self._obter(url, robots=True, prazo=prazo)
+        resposta = self._obter(url, robots=True, prazo=prazo, get=get)
         parser = RobotFileParser(url)
         if 400 <= resposta.status_code < 500:
             # RFC 9309 §2.3.1.3: indisponibilidade do arquivo, inclusive 403, não é uma regra REP.
@@ -222,12 +289,16 @@ class ClienteHttp:
         *,
         params: Mapping[str, str | int] | None = None,
         prazo: float | None = None,
+        prazo_integral: bool = False,
     ) -> Resposta:
         url = self._url(caminho)
         if params:
             url = str(httpx2.URL(url, params=params))
-        self._ler_robots(prazo)
-        resposta = self._obter(url, prazo=prazo)
+        get: _Get = self._cliente.get
+        if prazo_integral and prazo is not None and (self._proprio or self._transporte is not None):
+            get = partial(self._get_no_prazo, prazo=prazo)
+        self._ler_robots(prazo, get)
+        resposta = self._obter(url, prazo=prazo, get=get)
         if not resposta.is_success:
             raise ErroColeta(
                 f"A fonte respondeu HTTP {resposta.status_code}.",

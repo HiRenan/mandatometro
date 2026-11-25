@@ -17,7 +17,7 @@ export type Escolha = {
 	comoNoRegimento?: boolean;
 };
 
-export type Fase = "abertura" | "cena" | "revelacao" | "fim";
+type Fase = "abertura" | "cena" | "revelacao" | "fim";
 
 export type Partida = {
 	fase: Fase;
@@ -155,7 +155,7 @@ export function decisoesDoJogo(jogo: JogoNaPagina): Decisao[] {
 }
 
 /** Uma decisão de regra na tela final, com o que a pessoa escolheu. */
-export type DecisaoNoCaminho = {
+type DecisaoNoCaminho = {
 	id: string;
 	resumo: string;
 	fundamento: string;
@@ -191,7 +191,7 @@ export function regrasDoCaminho(
 		});
 }
 
-export type EstadoDaCasa = "atras" | "agora" | "adiante";
+type EstadoDaCasa = "atras" | "agora" | "adiante";
 
 export type CasaNoCaminho = { nome: string; estado: EstadoDaCasa };
 

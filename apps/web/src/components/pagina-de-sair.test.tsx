@@ -707,6 +707,16 @@ describe("a página de sair", () => {
 		expect(seguinte.textContent).toBe("Ir para o início");
 	});
 
+	it("só o link promovido pela recusa ganha a área do lugar do botão", async () => {
+		sair.mockResolvedValue({ tipo: "link-invalido" });
+		await mostrar();
+		expect(document.querySelector(".saida-link-no-lugar-do-botao")).toBeNull();
+
+		await confirmar();
+		const link = screen.getByRole("link", { name: "Ir para o início" });
+		expect(link.closest(".saida-link-no-lugar-do-botao")).toBe(lugarDoBotao());
+	});
+
 	it("com o código que a API recusa, a cópia do “Ir para o início” é o mesmo link, sem o endereço: quebra como ele, sem foco nem clique", async () => {
 		sair.mockResolvedValue({ tipo: "link-invalido" });
 		const router = await mostrar();

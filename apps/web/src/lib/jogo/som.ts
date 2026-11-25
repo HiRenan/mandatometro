@@ -26,7 +26,7 @@ const EFEITOS = {
 	revelacao: "sfx-revelacao",
 } as const;
 
-export type Efeito = keyof typeof EFEITOS;
+type Efeito = keyof typeof EFEITOS;
 
 /** A trilha de fundo, que a tela toca em loop enquanto o som está ligado. */
 export const MUSICA = "/jogo/audio/musica-tema.ogg";

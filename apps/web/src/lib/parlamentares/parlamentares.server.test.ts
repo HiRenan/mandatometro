@@ -9,6 +9,8 @@ import {
 	listaDeExemplo,
 	patrimonioDeExemplo,
 	votacaoDeExemplo,
+	votoDoParlamentarDeExemplo,
+	votosContraDeExemplo,
 	votosDeExemplo,
 } from "./exemplos-de-teste";
 import {
@@ -62,17 +64,23 @@ function json(status: number, corpo: unknown) {
 
 /**
  * A API de um parlamentar: o detalhe, que `detalhe` pode trocar, a página de
- * votos pedida, de `total` votos, e o patrimônio declarado, que `patrimonio`
- * pode trocar, como por uma falha.
+ * votos pedida, de `total` votos, o patrimônio declarado, que `patrimonio`
+ * pode trocar, como por uma falha, e os votos contra a maioria do partido (o
+ * pedido com o filtro), que `contra` pode trocar.
  */
 function apiDoParlamentar(
 	total: number,
 	patrimonio: (pedido: Request) => Response | Promise<Response> = () =>
 		json(200, patrimonioDeExemplo()),
 	detalhe: unknown = detalheDeExemplo(),
+	contra: (pedido: Request) => Response | Promise<Response> = () =>
+		json(200, votosContraDeExemplo()),
 ) {
 	return api((pedido) => {
 		const endereco = new URL(pedido.url);
+		if (endereco.searchParams.has("com_o_partido")) {
+			return contra(pedido);
+		}
 		if (endereco.pathname.endsWith("/votos")) {
 			const deslocamento = Number(endereco.searchParams.get("deslocamento"));
 			return json(200, votosDeExemplo(total, deslocamento));
@@ -304,7 +312,7 @@ describe("a foto de cada nome da lista", () => {
 });
 
 describe("a página do parlamentar", () => {
-	it("pede o parlamentar, a primeira página de votos e o patrimônio ao mesmo tempo", async () => {
+	it("pede o parlamentar, a primeira página de votos, os votos contra o partido e o patrimônio ao mesmo tempo", async () => {
 		const { pedidos } = apiDoParlamentar(25);
 
 		const pagina = await lerParlamentar("81-agata-cedrolume", 1);
@@ -312,6 +320,7 @@ describe("a página do parlamentar", () => {
 		expect(pedidos.map((pedido) => pedido.url).sort()).toEqual([
 			"https://api.exemplo.test/parlamentares/81",
 			"https://api.exemplo.test/parlamentares/81/patrimonio",
+			"https://api.exemplo.test/parlamentares/81/votos?com_o_partido=false&limite=5&deslocamento=0",
 			"https://api.exemplo.test/parlamentares/81/votos?limite=20&deslocamento=0",
 		]);
 		expect(pagina).toMatchObject({
@@ -928,6 +937,247 @@ describe("o patrimônio declarado na página do parlamentar", () => {
 		confereErroGenerico(await erroDe(lerParlamentar("81", 1)), "http-500");
 		expect(erros.mock.calls).toEqual([
 			["[parlamentares] A leitura na API falhou: http-500."],
+		]);
+	});
+});
+
+describe("com o partido na página do parlamentar", () => {
+	const LINHA_DA_COMPARACAO =
+		"[parlamentares] A comparação com o partido não veio no formato esperado.";
+	const LINHA_DOS_VOTOS =
+		"[parlamentares] A comparação de um voto com o partido não veio no formato esperado.";
+
+	it("a comparação e os votos contra a maioria do partido chegam à página, sem linha no log", async () => {
+		apiDoParlamentar(3);
+
+		const pagina = await lerParlamentar("81", 1);
+
+		expect(pagina).toMatchObject({
+			tipo: "parlamentar",
+			parlamentar: {
+				com_o_partido: { comparaveis: 16, com_o_partido: 14, contra: 2 },
+			},
+			votosContra: { tipo: "votos", votos: votosContraDeExemplo().votos },
+		});
+		expect(erros).not.toHaveBeenCalled();
+	});
+
+	it("a lista curta é pedida igual em toda página de votos", async () => {
+		const { pedidos } = apiDoParlamentar(25);
+
+		await lerParlamentar("81", 2);
+
+		expect(pedidos.map((pedido) => pedido.url)).toContain(
+			"https://api.exemplo.test/parlamentares/81/votos?com_o_partido=false&limite=5&deslocamento=0",
+		);
+	});
+
+	it("sem a comparação, como na API de antes da #328, ela vale nula, sem linha no log", async () => {
+		const { com_o_partido: _comparacao, ...semComparacao } = detalheDeExemplo();
+		for (const detalhe of [
+			semComparacao,
+			{ ...semComparacao, com_o_partido: null },
+		]) {
+			apiDoParlamentar(3, undefined, detalhe);
+
+			expect(await lerParlamentar("81", 1)).toMatchObject({
+				tipo: "parlamentar",
+				parlamentar: { com_o_partido: null },
+			});
+		}
+		expect(erros).not.toHaveBeenCalled();
+	});
+
+	const comparacoes = [
+		["que não é objeto", "16 de 14"],
+		["que é lista", [16, 14, 2]],
+		[
+			"com um número negativo",
+			{ comparaveis: 1, com_o_partido: 2, contra: -1 },
+		],
+		[
+			"com um número quebrado",
+			{ comparaveis: 2.5, com_o_partido: 2, contra: 0.5 },
+		],
+		[
+			"com um número em texto",
+			{ comparaveis: "16", com_o_partido: 14, contra: 2 },
+		],
+		["sem o contra", { comparaveis: 16, com_o_partido: 16 }],
+		["com a soma errada", { comparaveis: 16, com_o_partido: 14, contra: 3 }],
+	] as const;
+
+	it.each(comparacoes)(
+		"a comparação %s vale nula, com a linha fixa no log, e a página abre",
+		async (_, comparacao) => {
+			apiDoParlamentar(
+				3,
+				undefined,
+				detalheDeExemplo({ com_o_partido: comparacao as never }),
+			);
+
+			const pagina = await lerParlamentar("81", 1);
+
+			expect(pagina).toMatchObject({
+				tipo: "parlamentar",
+				parlamentar: { id: 81, com_o_partido: null },
+				total: 3,
+			});
+			expect(erros.mock.calls).toEqual([[LINHA_DA_COMPARACAO]]);
+		},
+	);
+
+	it("os campos de um voto fora do formato valem nulos, com uma linha só no log, e o voto continua na lista", async () => {
+		const certo = votoDoParlamentarDeExemplo(139, {
+			valor: "nao",
+			partido: "PFB",
+			maioria_do_partido: "sim",
+			com_o_partido: false,
+		});
+		const votos = [
+			{ ...certo, partido: 81 },
+			{ ...certo, votacao_id: 138, maioria_do_partido: "presidente" },
+			{ ...certo, votacao_id: 137, com_o_partido: "false" },
+			{ ...certo, votacao_id: 136, partido: { sigla: "PFB" } },
+		];
+		api((pedido) => {
+			const endereco = new URL(pedido.url);
+			if (endereco.searchParams.has("com_o_partido")) {
+				return json(200, votosContraDeExemplo());
+			}
+			if (endereco.pathname.endsWith("/votos")) {
+				return json(200, { ...votosDeExemplo(4), votos });
+			}
+			if (endereco.pathname.endsWith("/patrimonio")) {
+				return json(200, patrimonioDeExemplo());
+			}
+			return json(200, detalheDeExemplo());
+		});
+
+		const pagina = await lerParlamentar("81", 1);
+
+		expect(pagina.tipo === "parlamentar" && pagina.votos).toEqual([
+			{ ...certo, partido: null },
+			{ ...certo, votacao_id: 138, maioria_do_partido: null },
+			{ ...certo, votacao_id: 137, com_o_partido: null },
+			{ ...certo, votacao_id: 136, partido: null },
+		]);
+		expect(erros.mock.calls).toEqual([[LINHA_DOS_VOTOS]]);
+	});
+
+	it("os votos sem os campos da #328, como na API de antes, chegam como vieram, sem linha no log", async () => {
+		const {
+			partido: _partido,
+			maioria_do_partido: _maioria,
+			com_o_partido: _comparacao,
+			...antigo
+		} = votoDoParlamentarDeExemplo(139);
+		api((pedido) =>
+			new URL(pedido.url).pathname.endsWith("/votos")
+				? json(200, { ...votosDeExemplo(1), votos: [antigo] })
+				: pedido.url.endsWith("/patrimonio")
+					? json(200, patrimonioDeExemplo())
+					: json(200, detalheDeExemplo()),
+		);
+
+		const pagina = await lerParlamentar("81", 1);
+
+		expect(pagina).toMatchObject({
+			tipo: "parlamentar",
+			votos: [antigo],
+			votosContra: { tipo: "votos", votos: [] },
+		});
+		expect(erros).not.toHaveBeenCalled();
+	});
+
+	it("a lista curta fica só com os votos contra a maioria, mesmo quando a API ignora o filtro", async () => {
+		const [maisNovo, maisVelho] = votosContraDeExemplo().votos;
+		const misturados = [
+			votoDoParlamentarDeExemplo(140),
+			maisNovo,
+			{ ...maisNovo, votacao_id: 135, com_o_partido: null },
+			{ ...maisNovo, votacao_id: 134, maioria_do_partido: null },
+			{ ...maisNovo, votacao_id: 133, partido: null },
+			maisVelho,
+		];
+		apiDoParlamentar(3, undefined, undefined, () =>
+			json(200, { ...votosDeExemplo(30), votos: misturados }),
+		);
+
+		const pagina = await lerParlamentar("81", 1);
+
+		expect(pagina.tipo === "parlamentar" && pagina.votosContra).toEqual({
+			tipo: "votos",
+			votos: [maisNovo, maisVelho],
+		});
+	});
+
+	const falhas = [
+		["o 503", () => json(503, { detalhe: MENSAGEM_DA_FALHA }), "http-503"],
+		[
+			"a conexão recusada",
+			() => {
+				throw new TypeError(MENSAGEM_DA_FALHA);
+			},
+			"sem-resposta",
+		],
+		[
+			"o corpo em outro formato",
+			() => json(200, { votos: MENSAGEM_DA_FALHA, total: 2 }),
+			"resposta-invalida",
+		],
+	] as const;
+
+	it.each(falhas)(
+		"só a lista curta falha, com %s: a página abre, a lista fica indisponível e o log tem só a linha fixa",
+		async (_, responder, motivo) => {
+			apiDoParlamentar(3, undefined, undefined, responder);
+
+			const pagina = await lerParlamentar("81", 1);
+
+			expect(pagina).toMatchObject({
+				tipo: "parlamentar",
+				total: 3,
+				parlamentar: { com_o_partido: { contra: 2 } },
+				votosContra: { tipo: "indisponivel" },
+			});
+			expect(erros.mock.calls).toEqual([
+				[
+					`[parlamentares] Os votos contra o partido não carregaram: ${motivo}.`,
+				],
+			]);
+			const registrado = JSON.stringify([erros.mock.calls, pagina]);
+			for (const segredo of SEGREDOS) {
+				expect(registrado, segredo).not.toContain(segredo);
+			}
+		},
+	);
+
+	it("a lista curta que não chega no tempo fica indisponível, e a página abre", async () => {
+		vi.useFakeTimers();
+		apiDoParlamentar(
+			3,
+			undefined,
+			undefined,
+			(pedido) =>
+				new Promise((_, recusar) => {
+					pedido.signal.addEventListener("abort", () =>
+						recusar(new DOMException(MENSAGEM_DA_FALHA, "AbortError")),
+					);
+				}),
+		);
+
+		const leitura = lerParlamentar("81", 1);
+		await vi.advanceTimersByTimeAsync(TEMPO_DE_ESPERA);
+
+		expect(await leitura).toMatchObject({
+			tipo: "parlamentar",
+			votosContra: { tipo: "indisponivel" },
+		});
+		expect(erros.mock.calls).toEqual([
+			[
+				"[parlamentares] Os votos contra o partido não carregaram: tempo-esgotado.",
+			],
 		]);
 	});
 });

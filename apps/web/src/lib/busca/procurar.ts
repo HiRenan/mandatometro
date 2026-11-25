@@ -4,9 +4,9 @@
 // sai daqui.
 
 /** Os tipos de página, na ordem do empate: trilha, artigo e edição. */
-export const TIPOS = ["trilha", "artigo", "edicao"] as const;
+const TIPOS = ["trilha", "artigo", "edicao"] as const;
 
-export type Tipo = (typeof TIPOS)[number];
+type Tipo = (typeof TIPOS)[number];
 
 /** Um pedaço da página: o intertítulo e o texto abaixo dele, até o próximo. */
 export type Secao = {

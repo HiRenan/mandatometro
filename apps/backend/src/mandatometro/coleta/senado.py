@@ -83,8 +83,8 @@ def _codigo_sessao_plenaria(item: dict) -> int | None:
         return None
 
 
-def _video_encontro(http: ClienteHttp, codigo: int) -> tuple[Resposta, object]:
-    resposta = http.obter_json(f"/plenario/encontro/{codigo}")
+def _video_encontro(http: ClienteHttp, codigo: int, prazo: float | None) -> tuple[Resposta, object]:
+    resposta = http.obter_json(f"/plenario/encontro/{codigo}", prazo=prazo, prazo_integral=True)
     plenario = _objeto(_objeto(resposta.dados).get("ServicoPlenario"))
     encontros = _lista(_objeto(plenario.get("encontros")).get("encontro"), objeto_unico=True)
     if len(encontros) == 1:
@@ -533,7 +533,14 @@ def coletar(
     except (ErroColeta, SQLAlchemyError) as erro:
         resumo.completa = False
         resumo.erro = _erro_seguro(erro)
-    coletar_videos(resumo, sessoes, http=http, abrir_sessao=abrir_sessao, consultar=_video_encontro)
+    coletar_videos(
+        resumo,
+        sessoes,
+        http=http,
+        abrir_sessao=abrir_sessao,
+        consultar=_video_encontro,
+        comeco_coleta=comeco,
+    )
     coletar_temas(
         resumo,
         sorted(coleta.proposicoes),

@@ -2,6 +2,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, RotateCcw } from "lucide-react";
 import { type CSSProperties, useEffect, useState } from "react";
+import { LinkDeAcao } from "@/components/acao-de-texto";
 import { azulejoGrande } from "@/lib/azulejos";
 import { classes } from "@/lib/classes";
 import type { ArtigoNaLista, CaminhoNaInicial } from "@/lib/conteudo";
@@ -155,14 +156,12 @@ export function InfograficoEmLinha({
 					</ol>
 					<div className="passos-controles">
 						<p>
-							<Link
+							<LinkDeAcao
 								to="/trilhas/$trilha"
 								params={{ trilha: trilha.slug }}
 								hash="caminho"
-								className="acao-de-texto"
-							>
-								<span>Ver o caminho na trilha</span>
-							</Link>
+								texto="Ver o caminho na trilha"
+							/>
 						</p>
 						<div className="passos-botoes">
 							<button

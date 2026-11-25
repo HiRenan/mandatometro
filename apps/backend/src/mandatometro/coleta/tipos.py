@@ -33,6 +33,7 @@ class ResumoVideos:
     falhas_sessoes: int = 0
     falhas_gravacao: int = 0
     votacoes_com_video: int = 0
+    sessoes_nao_consultadas: int = 0
 
 
 @dataclass

@@ -340,7 +340,7 @@ export function linkDoCaminho(caminho: string): string | null {
 	return caminho.startsWith("/") && !caminho.startsWith("//") ? caminho : null;
 }
 
-export type TrilhaNoUso = {
+type TrilhaNoUso = {
 	slug: string;
 	titulo: string;
 	/** A posição da trilha no catálogo do site, a partir de 1: a fita dela. */

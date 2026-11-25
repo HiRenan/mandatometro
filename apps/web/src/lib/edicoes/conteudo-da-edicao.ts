@@ -13,7 +13,7 @@ export function paragrafos(texto: string): string[] {
 }
 
 /** Um endereço das fontes de um item, com cada coleta dele. */
-export type GrupoDeFontes = { url: string; coletas: FontePublica[] };
+type GrupoDeFontes = { url: string; coletas: FontePublica[] };
 
 /**
  * As fontes de um item agrupadas pelo endereço, na ordem em que a API manda, como

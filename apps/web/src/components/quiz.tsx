@@ -93,7 +93,7 @@ const TITULOS = {
  * depois, vale a primeira resposta de cada pergunta, e o "Recomeçar o quiz" não
  * aparece. Concluída a etapa, o quiz volta a ser o de sempre.
  */
-export type EtapaDoQuiz = "antes" | "depois";
+type EtapaDoQuiz = "antes" | "depois";
 
 /** O que a abertura e o fim de fora, os do piloto, recebem do quiz. */
 export type PartesDoQuiz = {

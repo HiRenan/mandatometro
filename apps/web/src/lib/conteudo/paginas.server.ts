@@ -58,10 +58,10 @@ export type ChamadaDoQuiz = {
  * sem a certa. Com elas, a página sabe se a pessoa já respondeu o quiz todo, e
  * conta as respondidas como a página do quiz.
  */
-export type PerguntaSemACerta = { enunciado: string; opcoes: string[] };
+type PerguntaSemACerta = { enunciado: string; opcoes: string[] };
 
 /** A chamada de um quiz na página da trilha, com as perguntas sem a certa. */
-export type ChamadaNaTrilha = ChamadaDoQuiz & {
+type ChamadaNaTrilha = ChamadaDoQuiz & {
 	perguntasSemACerta: PerguntaSemACerta[];
 };
 
@@ -69,7 +69,7 @@ export type ChamadaNaTrilha = ChamadaDoQuiz & {
  * A trilha na página dela, com o infográfico e as chamadas do quiz e do quiz
  * final, quando ela tem.
  */
-export type TrilhaNaPagina = TrilhaNaLista & {
+type TrilhaNaPagina = TrilhaNaLista & {
 	infografico?: Infografico;
 	quiz?: ChamadaNaTrilha;
 	/** O quiz final, depois do último artigo. */

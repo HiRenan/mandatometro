@@ -153,6 +153,30 @@ export type Codigo = {
 };
 
 /**
+ * ContagemComOPartido
+ */
+export type ContagemComOPartido = {
+    /**
+     * Comparaveis
+     *
+     * Votos com comparação válida.
+     */
+    comparaveis: number;
+    /**
+     * Com O Partido
+     *
+     * Votos iguais à maioria dos outros membros do partido.
+     */
+    com_o_partido: number;
+    /**
+     * Contra
+     *
+     * Votos diferentes da maioria dos outros membros do partido.
+     */
+    contra: number;
+};
+
+/**
  * ContagemVotosParlamentar
  */
 export type ContagemVotosParlamentar = {
@@ -276,6 +300,10 @@ export type DetalheParlamentar = {
      * Contagem dos registros de voto deste parlamentar, por valor normalizado. Uma votação sem registro da pessoa fica fora da contagem.
      */
     contagem_votos: ContagemVotosParlamentar;
+    /**
+     * Contagem das comparações com o partido em todo o histórico gravado.
+     */
+    com_o_partido?: ContagemComOPartido;
 };
 
 /**
@@ -1606,6 +1634,24 @@ export type VotoParlamentar = {
      * Valor
      */
     valor: 'sim' | 'nao' | 'abstencao' | 'obstrucao' | 'presidente' | 'nao_votou' | 'outro';
+    /**
+     * Partido
+     *
+     * Sigla registrada no dia do voto.
+     */
+    partido?: string | null;
+    /**
+     * Maioria Do Partido
+     *
+     * Valor mais frequente entre os votos contados dos outros membros do partido. Nulo sem partido, com empate ou com menos de dois votos contados.
+     */
+    maioria_do_partido?: 'sim' | 'nao' | 'abstencao' | 'obstrucao' | null;
+    /**
+     * Com O Partido
+     *
+     * Se o voto seguiu a maioria do partido. Nulo quando o voto fica fora da comparação ou quando falta maioria.
+     */
+    com_o_partido?: boolean | null;
 };
 
 export type InscreverNewsletterData = {
@@ -2673,6 +2719,12 @@ export type ListarVotosParlamentarData = {
          * Tema das proposições afetadas.
          */
         tema?: TemaId | null;
+        /**
+         * Com O Partido
+         *
+         * Filtra os votos que seguiram a maioria do partido (true) ou divergiram dela (false).
+         */
+        com_o_partido?: boolean | null;
     };
     url: '/parlamentares/{id}/votos';
 };

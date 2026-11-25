@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import OperationalError
 
+from mandatometro import db
 from mandatometro.api.app import app
 from mandatometro.db.modelos import (
     BemDeclarado,
@@ -20,6 +21,7 @@ from mandatometro.db.modelos import (
     Mandato,
     Parlamentar,
     Proposicao,
+    ProposicaoTema,
     Votacao,
     Voto,
 )
@@ -31,7 +33,8 @@ FIXTURES = Path(__file__).parent / "fixtures"
 @pytest.fixture
 def cliente(sessao, monkeypatch):
     conexao = sessao.connection()
-    monkeypatch.setattr("mandatometro.db.engine", lambda: conexao)
+    monkeypatch.setattr(db, "engine", lambda: conexao)
+    monkeypatch.setattr("mandatometro.api.parlamentares.sessao_de_leitura_repetivel", db.sessao)
     return TestClient(app)
 
 
@@ -246,6 +249,7 @@ def test_detalhe_traz_mandatos_e_conta_apenas_os_votos_da_pessoa(cliente, parlam
             "nao_votou": 1,
             "outro": 0,
         },
+        "com_o_partido": {"comparaveis": 0, "com_o_partido": 0, "contra": 0},
     }
     outra = cliente.get(f"/parlamentares/{zafira.id}")
     assert outra.status_code == 200
@@ -406,6 +410,7 @@ def test_parlamentar_fora_de_exercicio_pode_ser_consultado(cliente, parlamentare
     assert [m["em_exercicio"] for m in dados["mandatos"]] == [False]
     assert len(dados["contagem_votos"]) == 7
     assert set(dados["contagem_votos"].values()) == {0}
+    assert dados["com_o_partido"] == {"comparaveis": 0, "com_o_partido": 0, "contra": 0}
 
     votos = cliente.get(f"{url}/votos")
     assert votos.status_code == 200
@@ -435,6 +440,9 @@ def test_votos_paginados_por_data_e_id_com_proposicoes_e_fontes(cliente, parlame
         "descricao": "Discussão do texto fictício.",
         "resultado": "aprovada",
         "valor": "presidente",
+        "partido": "PFN",
+        "maioria_do_partido": None,
+        "com_o_partido": None,
         "proposicoes": [
             {"sigla": "PL", "numero": 812, "ano": 2026, "ementa": None},
             {
@@ -461,6 +469,294 @@ def test_votos_paginados_por_data_e_id_com_proposicoes_e_fontes(cliente, parlame
     alem_do_fim = cliente.get(url, params={"deslocamento": 3})
     assert alem_do_fim.status_code == 200
     assert alem_do_fim.json() == {"votos": [], "total": 3, "limite": 20, "deslocamento": 3}
+
+
+@pytest.mark.parametrize("casa", ["camara", "senado"])
+def test_com_o_partido_no_detalhe_e_nas_paginas_de_votos(cliente, sessao, casa):
+    fonte = Fonte(url="https://example.com/votacoes-ficticias")
+    pessoas = [
+        Parlamentar(casa=casa, id_externo=910000 + i, nome=f"Pessoa fictícia {i}", fonte=fonte)
+        for i in range(11)
+    ]
+    sessao.add_all(pessoas)
+    sessao.flush()
+
+    # Sigla na época, voto da pessoa, votos dos colegas, maioria e comparação.
+    casos = [
+        ("PFA", "nao", ["sim"] * 4, "sim", False),
+        ("PFA", "sim", ["sim", "nao"], None, None),
+        ("PFA", "nao", ["nao", "nao_votou", "presidente", "outro"], None, None),
+        ("PFA", "nao_votou", ["sim"] * 2, "sim", None),
+        ("PFA", "presidente", ["nao"] * 2, "nao", None),
+        ("PFA", "outro", ["nao"] * 2, "nao", None),
+        (None, "sim", ["sim"] * 2, None, None),
+        ("", "sim", ["sim"] * 2, None, None),
+        ("   ", "sim", ["sim"] * 2, None, None),
+        (
+            " PFB ",
+            "obstrucao",
+            ["obstrucao", "obstrucao", "sim", "abstencao", "nao"],
+            "obstrucao",
+            True,
+        ),
+        ("PFB", "abstencao", ["abstencao"] * 2, "abstencao", True),
+    ]
+    esperado = {}
+    for dia, (sigla, valor, colegas, maioria, com_o_partido) in enumerate(casos, start=1):
+        votacao = Votacao(
+            casa=casa,
+            id_externo=f"9100{dia}",
+            data=date(2026, 11, dia),
+            descricao="Votação fictícia.",
+            resultado="aprovada",
+            fonte=fonte,
+        )
+        sessao.add(votacao)
+        sessao.add(
+            Voto(parlamentar=pessoas[0], votacao=votacao, valor=valor, partido=sigla, fonte=fonte)
+        )
+        for pessoa, voto in zip(pessoas[1:6], colegas, strict=False):
+            sessao.add(
+                Voto(
+                    parlamentar=pessoa,
+                    votacao=votacao,
+                    valor=voto,
+                    partido=sigla.strip() if sigla else sigla,
+                    fonte=fonte,
+                )
+            )
+        sessao.add_all(
+            Voto(parlamentar=p, votacao=votacao, valor="nao", partido="PFC", fonte=fonte)
+            for p in pessoas[6:]
+        )
+        sessao.flush()
+        esperado[votacao.id] = ((sigla or "").strip() or None, maioria, com_o_partido)
+
+    url = f"/parlamentares/{pessoas[0].id}"
+    votos = []
+    for deslocamento in range(0, len(casos), 3):
+        resposta = cliente.get(f"{url}/votos", params={"limite": 3, "deslocamento": deslocamento})
+        assert resposta.status_code == 200
+        assert resposta.json()["total"] == len(casos)
+        votos.extend(resposta.json()["votos"])
+
+    assert len(votos) == len(casos)
+    assert {
+        voto["votacao_id"]: (voto["partido"], voto["maioria_do_partido"], voto["com_o_partido"])
+        for voto in votos
+    } == esperado
+
+    detalhe = cliente.get(url)
+    assert detalhe.status_code == 200
+    assert detalhe.json()["partido"] == "PFB"
+    totais = detalhe.json()["com_o_partido"]
+    assert totais == {"comparaveis": 3, "com_o_partido": 2, "contra": 1}
+    comparacoes = Counter(voto["com_o_partido"] for voto in votos)
+    assert totais == {
+        "comparaveis": comparacoes[True] + comparacoes[False],
+        "com_o_partido": comparacoes[True],
+        "contra": comparacoes[False],
+    }
+
+
+@pytest.fixture(params=["camara", "senado"])
+def historico_com_o_partido(sessao, request):
+    casa = request.param
+    fonte = Fonte(url="https://example.com/votacoes-ficticias")
+    pessoa, *colegas = [
+        Parlamentar(casa=casa, id_externo=920000 + i, nome=f"Pessoa fictícia {i}", fonte=fonte)
+        for i in range(3)
+    ]
+    proposicao = Proposicao(
+        casa=casa, id_externo=920100, sigla="PL", numero=1, ano=2026, fonte=fonte
+    )
+    sessao.add(proposicao)
+    sessao.flush()
+    sessao.add(
+        ProposicaoTema(proposicao_id=proposicao.id, tema="saude", fonte_id=proposicao.fonte_id)
+    )
+
+    # Sigla da pessoa, sigla dos colegas, voto da pessoa e vínculo com o tema saúde.
+    casos = {
+        "tabulacao": ("\t", "\t", "sim", True),
+        "sigla_com_tabulacao": ("\tPFA", "PFA", "nao", True),
+        "quebra_de_linha": ("\n\u00a0", "\n\u00a0", "sim", True),
+        "sigla_dos_colegas": ("PFA", "\tPFA\n\u00a0", "nao", False),
+        "sigla_com_espacos": ("\n\u00a0PFA\t", "PFA", "sim", True),
+        "sigla_limpa": ("PFA", "PFA", "sim", False),
+        "ausencia": ("PFA", "PFA", "nao_votou", True),
+    }
+    votacoes = {}
+    for dia, (caso, (sigla, sigla_dos_colegas, valor, tem_saude)) in enumerate(casos.items(), 1):
+        votacao = Votacao(
+            casa=casa,
+            id_externo=f"9200{dia}",
+            data=date(2026, 11, dia),
+            descricao="Votação fictícia.",
+            resultado="aprovada",
+            fonte=fonte,
+            proposicoes=[proposicao] if tem_saude else [],
+        )
+        sessao.add(
+            Voto(parlamentar=pessoa, votacao=votacao, valor=valor, partido=sigla, fonte=fonte)
+        )
+        sessao.add_all(
+            Voto(
+                parlamentar=colega,
+                votacao=votacao,
+                valor="sim",
+                partido=sigla_dos_colegas,
+                fonte=fonte,
+            )
+            for colega in colegas
+        )
+        votacoes[caso] = votacao
+    sessao.flush()
+    return f"/parlamentares/{pessoa.id}", {caso: votacao.id for caso, votacao in votacoes.items()}
+
+
+def test_com_o_partido_normaliza_espacos_em_branco_da_sigla(cliente, historico_com_o_partido):
+    url, ids = historico_com_o_partido
+    resposta = cliente.get(f"{url}/votos")
+    assert resposta.status_code == 200
+    assert {
+        voto["votacao_id"]: (voto["partido"], voto["maioria_do_partido"], voto["com_o_partido"])
+        for voto in resposta.json()["votos"]
+    } == {
+        ids["tabulacao"]: (None, None, None),
+        ids["sigla_com_tabulacao"]: ("PFA", "sim", False),
+        ids["quebra_de_linha"]: (None, None, None),
+        ids["sigla_dos_colegas"]: ("PFA", "sim", False),
+        ids["sigla_com_espacos"]: ("PFA", "sim", True),
+        ids["sigla_limpa"]: ("PFA", "sim", True),
+        ids["ausencia"]: ("PFA", "sim", None),
+    }
+    assert cliente.get(url).json()["com_o_partido"] == {
+        "comparaveis": 4,
+        "com_o_partido": 2,
+        "contra": 2,
+    }
+
+
+@pytest.mark.parametrize(
+    ("com_o_partido", "campo", "casos"),
+    [
+        (False, "contra", ["sigla_dos_colegas", "sigla_com_tabulacao"]),
+        (True, "com_o_partido", ["sigla_limpa", "sigla_com_espacos"]),
+    ],
+)
+def test_filtra_com_o_partido_antes_da_paginacao(
+    cliente, historico_com_o_partido, com_o_partido, campo, casos
+):
+    url, ids = historico_com_o_partido
+    esperados = [ids[caso] for caso in casos]
+    totais = cliente.get(url).json()["com_o_partido"]
+    for deslocamento in range(len(esperados) + 1):
+        resposta = cliente.get(
+            f"{url}/votos",
+            params={"com_o_partido": com_o_partido, "limite": 1, "deslocamento": deslocamento},
+        )
+        assert resposta.status_code == 200
+        pagina = resposta.json()
+        assert pagina["total"] == totais[campo] == len(esperados)
+        assert pagina["limite"] == 1
+        assert pagina["deslocamento"] == deslocamento
+        assert [voto["votacao_id"] for voto in pagina["votos"]] == esperados[
+            deslocamento : deslocamento + 1
+        ]
+        assert all(voto["com_o_partido"] is com_o_partido for voto in pagina["votos"])
+
+
+@pytest.mark.parametrize(
+    ("com_o_partido", "caso"), [(False, "sigla_com_tabulacao"), (True, "sigla_com_espacos")]
+)
+def test_combina_com_o_partido_com_tema(cliente, historico_com_o_partido, com_o_partido, caso):
+    url, ids = historico_com_o_partido
+    resposta = cliente.get(
+        f"{url}/votos",
+        params={"com_o_partido": com_o_partido, "tema": "saude", "limite": 1},
+    )
+    assert resposta.status_code == 200
+    pagina = resposta.json()
+    assert pagina["total"] == 1
+    assert [voto["votacao_id"] for voto in pagina["votos"]] == [ids[caso]]
+    assert pagina["votos"][0]["temas"] == [{"id": "saude", "nome": "Saúde"}]
+
+
+def test_detalhe_da_votacao_usa_a_mesma_sigla_do_historico(
+    cliente, sessao, parlamentares, votacoes
+):
+    _, _, votacao = votacoes
+    agata, _, zafira, _ = parlamentares
+    for i, (nome, partido, valor) in enumerate(
+        [
+            ("Bela Lumivento", "\tPFA\t", "nao"),
+            ("Célia Pedralume", "\u00a0PFA\u00a0", "nao"),
+            ("Dália Cedrágua", "\t \u00a0", "nao_votou"),
+            ("Íria Brumazul", None, "sim"),
+            ("Mira Sombravila", "\tPF B\u00a0", "abstencao"),
+            ("Nélvi Ventoluz", "S/Partido", "outro"),
+        ]
+    ):
+        pessoa = Parlamentar(
+            casa=votacao.casa, id_externo=901010 + i, nome=nome, fonte=votacao.fonte
+        )
+        sessao.add(
+            Voto(
+                parlamentar=pessoa,
+                votacao=votacao,
+                partido=partido,
+                valor=valor,
+                fonte=votacao.fonte,
+            )
+        )
+    sessao.flush()
+
+    historico = cliente.get(f"/parlamentares/{agata.id}/votos", params={"com_o_partido": False})
+    assert historico.status_code == 200
+    [voto_no_historico] = historico.json()["votos"]
+    assert voto_no_historico["votacao_id"] == votacao.id
+    assert voto_no_historico["maioria_do_partido"] == "nao"
+    assert voto_no_historico["com_o_partido"] is False
+    sigla_do_filtro = voto_no_historico["partido"]
+    assert sigla_do_filtro == "PFA"
+
+    resposta = cliente.get(f"/votacoes/{voto_no_historico['votacao_id']}")
+    assert resposta.status_code == 200
+    dados = resposta.json()
+    votos_nominais = dados["votos"]
+    assert [v["nome"] for v in votos_nominais if v["partido"] == sigla_do_filtro] == [
+        agata.nome,
+        "Bela Lumivento",
+        "Célia Pedralume",
+        zafira.nome,
+    ]
+    assert [
+        (v["nome"], v["partido"]) for v in votos_nominais if v["partido"] != sigla_do_filtro
+    ] == [
+        ("Dália Cedrágua", None),
+        ("Íria Brumazul", None),
+        ("Mira Sombravila", "PF B"),
+        ("Nélvi Ventoluz", "S/Partido"),
+    ]
+    assert [
+        (grupo["partido"], {valor: total for valor, total in grupo["placar"].items() if total})
+        for grupo in dados["placar_por_partido"]
+    ] == [
+        ("PF B", {"abstencao": 1}),
+        (sigla_do_filtro, {"sim": 1, "nao": 3}),
+        ("S/Partido", {"outro": 1}),
+        (None, {"sim": 1, "nao_votou": 1}),
+    ]
+    assert dados["placar"] == {
+        "sim": 2,
+        "nao": 3,
+        "abstencao": 1,
+        "obstrucao": 0,
+        "presidente": 0,
+        "nao_votou": 1,
+        "outro": 1,
+    }
 
 
 def test_votacao_lista_votos_por_nome_e_conta_cada_valor_e_partido(

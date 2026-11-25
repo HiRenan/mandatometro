@@ -116,6 +116,22 @@ A compressão inválida de uma resposta conta como falha de consulta. A coleta r
 
 A sigla em `partido` continua vindo do voto mais recente. A API lê seu nome por extenso do catálogo gravado em `partido`, pela sigla sem distinção entre maiúsculas e minúsculas. O catálogo da Câmara tem prioridade. Para as demais siglas, vale um único nome ativo no Senado ou, quando há só registros históricos, um nome comum a todos eles. `partido_nome` é nulo sem correspondência. Se um dos catálogos falhar, a versão anterior é preservada. Cada catálogo precisa ter pelo menos uma sigla válida, com ou sem nome. Um catálogo sem siglas gera `falha_partidos: true` no resumo, saída 1 e a coleta de biografias segue. [Regras de dados pessoais](dados-pessoais.md#parlamentares-e-candidatos)
 
+## Votos com o partido na API do parlamentar
+
+`GET /parlamentares/{id}` traz `com_o_partido` com três contagens de todo o histórico de votos gravados da pessoa. `comparaveis` é o total de votos com comparação válida. `com_o_partido` conta quantos seguiram a maioria do partido e `contra` conta quantos foram diferentes dela. Os três valores são zero quando não há votos comparáveis.
+
+Em cada voto de `GET /parlamentares/{id}/votos` e de `GET /votacoes/{id}`, `partido` é a sigla gravada no voto, sem os espaços em branco nas pontas, inclusive tabulações, quebras de linha e espaços sem quebra. Se a sigla estiver ausente ou toda em branco, o campo vem como `null`. A leitura preserva os caracteres internos da sigla e o literal `S/Partido`.
+
+O placar por partido de `GET /votacoes/{id}` usa a sigla devolvida nos votos nominais e reúne os votos sem sigla no grupo `null`. O placar geral conta todos os votos gravados.
+
+No histórico do parlamentar, `maioria_do_partido` é o valor que mais apareceu entre os votos dos outros membros com a mesma sigla naquela votação. Contam `sim`, `nao`, `abstencao` e `obstrucao`. A maioria vem como `null` se a pessoa não tiver sigla no voto, se os valores mais frequentes empatarem ou se houver menos de dois votos contados entre os colegas.
+
+No item da lista, `com_o_partido` é `true` se o voto da pessoa coincide com a maioria e `false` se difere dela. É `null` quando falta maioria ou quando o registro da pessoa é `nao_votou`, `presidente` ou `outro`. Se houver maioria entre os colegas, ela aparece em `maioria_do_partido` mesmo nesses três casos. As regras valem para a Câmara e o Senado.
+
+Na lista, `?com_o_partido=false` seleciona só os votos que divergiram da maioria do partido, e `?com_o_partido=true`, só os que a seguiram. Sem o parâmetro, a lista inclui também os votos cujo resultado da comparação é `null`. O filtro combina com `tema` e os dois valem antes da contagem e da paginação. O `total` conta os votos que correspondem aos filtros. Sem `tema`, esse total corresponde a `contra` no detalhe para `false` e a `com_o_partido` no detalhe para `true`.
+
+Cada pedido ao detalhe ou à lista usa os votos confirmados no banco até a primeira leitura daquele pedido. Uma atualização da coleta entre dois pedidos pode aparecer no segundo, inclusive ao passar de uma página de votos para outra.
+
 ## Câmara dos Deputados
 
 ### `/votacoes` — as votações do plenário no período
@@ -551,6 +567,8 @@ Nos dois modos, o detalhe de evento da Câmara precisa indicar apenas o Plenári
 Só é aceito `https://www.youtube.com/watch?v=<id>`, com 11 caracteres ASCII entre letras, algarismos, `_` e `-`. A consulta lê o detalhe de cada sessão uma vez por rodada, com as mesmas regras de robots e tentativas das Casas. O vídeo corresponde à sessão inteira. `dataHoraRegistro` é a hora do registro da Câmara. Na amostra, dois registros são posteriores ao fim do evento, por isso a hora não dá o minuto da votação no vídeo.
 
 Cada par `(casa, id_externo)` de `video_sessao` tem uma fonte própria, com a URL da sessão consultada e a hora da coleta. As votações da sessão compartilham o registro. Falha na consulta mantém a votação e, se já houver, a observação anterior. Link ausente ou fora do formato fica nulo na coleta normal. O resumo `videos` conta votações sem sessão, sessões com vídeo, sessões sem endereço, URLs recusadas, falhas na consulta ou gravação e votações vinculadas com vídeo.
+
+Na coleta normal das duas Casas, as consultas ao detalhe das sessões param após duas falhas temporárias seguidas ou ao esgotar o prazo. Elas têm até quatro minutos, dentro dos primeiros 25 minutos da coleta de cada Casa. O prazo cobre a requisição inteira, da abertura da conexão à leitura do corpo. Se vence durante o handshake TLS, o cliente fecha a conexão TCP antes de devolver o controle à etapa. O resumo conta as sessões que ficaram sem consulta em `videos.sessoes_nao_consultadas`, inclusive quando o `Retry-After` impede o envio do GET. Uma tentativa de consulta interrompida pelo prazo entra em `videos.falhas_sessoes`. A próxima rodada ou o modo `--somente-videos` pode preencher os vídeos pendentes.
 
 O modo `--somente-videos` usa o período dos comandos de coleta e procura só votações sem vídeo. Na Câmara, extrai o id da página oficial gravada na fonte da votação. No Senado, consulta `/votacao` para cruzar `codigoSessaoVotacao` e `codigoSessao`. O preenchimento registra somente observações com link válido. Retorna código 1 em falha de consulta ou gravação, preservando os vínculos já confirmados para a próxima rodada.
 
