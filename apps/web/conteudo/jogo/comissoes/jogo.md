@@ -1,6 +1,7 @@
 ---
 titulo: Jogo das Comissões
 resumo: Acompanhe, em cinco cenas, o caminho real de um projeto de lei sobre o celular na escola, e decida o próximo passo antes de ver o que aconteceu de verdade.
+ordem: 1
 cenario: bg-titulo
 aviso: Lia, Arnaldo e Caio são personagens fictícios. Datas, votos e documentos são reais e têm link para a fonte oficial.
 personagens:

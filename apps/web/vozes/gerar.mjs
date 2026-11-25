@@ -37,6 +37,11 @@ const VOZ = {
 	lia: "GDzHdQOi6jjf8zaXhCYD",
 	arnaldo: "4XmhZ74tBbUVCXIYNMMo",
 	caio: "CstacWqMhJQlnfLPxRG4",
+	// Os dois do Jogo da 6x1: Yasmin Alves para a Joana e Newton Máximo para o
+	// Seu Raimundo. O id da voz é do catálogo e não é segredo; a chave da API
+	// é que fica só no .env.
+	joana: "lWq4KDY8znfkV0DrK8Vb",
+	raimundo: "j3IQ4Mry1qDVTh6BCyC0",
 };
 
 /**

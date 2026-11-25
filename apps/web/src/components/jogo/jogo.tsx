@@ -7,6 +7,7 @@ import type { JogoNaPagina, Passo } from "@/lib/jogo";
 import {
 	avancar,
 	caminho,
+	cenarioDaVez,
 	comecar,
 	escolhaDa,
 	escolher,
@@ -126,7 +127,9 @@ export function Jogo({
 	}, [tipo, partida.cena, partida.passo]);
 
 	const cenario =
-		naCena || partida.fase === "revelacao" ? cena.cenario : jogo.cenario;
+		naCena || partida.fase === "revelacao"
+			? (cenarioDaVez(jogo, partida) ?? cena.cenario)
+			: jogo.cenario;
 	const fala = passo?.tipo === "fala" ? passo : undefined;
 	// Quem falou por último fica na cena durante a decisão, o painel e o carimbo.
 	const retrato = retratoDaVez(jogo, partida);

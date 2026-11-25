@@ -6,6 +6,7 @@ const pasta = "/conteudo/jogo/comissoes";
 const jogoMd = `---
 titulo: Jogo das Comissões
 resumo: Cinco cenas no caminho de um projeto de lei.
+ordem: 1
 cenario: bg-titulo
 aviso: Os personagens são fictícios, e as datas são reais.
 personagens:
