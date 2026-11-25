@@ -38,8 +38,6 @@ O histórico das decisões de produto está nos ADRs. [MVP](docs/adr/0002-mvp.md
 
 O piloto compara os acertos no mesmo quiz antes e depois da trilha do processo legislativo. Um código aleatório liga as duas etapas, e o relatório calcula as médias de acertos das participações que completaram ambas. [Medição do piloto](docs/medicao-do-piloto.md#relatório-para-o-time)
 
-<!-- A preencher pelo Renan: resultados dos testes de 26 e 27/11/2026 (#40). Usar o relatório agregado aprovado para informar quantas participações completaram cada etapa, quantas completaram as duas e as médias antes e depois com o mesmo denominador. -->
-
 <!-- A preencher pelo Renan: incluir os números de produção que forem usados na entrega, com fonte e data de corte. -->
 
 ## Fontes
