@@ -130,6 +130,12 @@ const falaSchema = z
 				.enum(ITENS, exigido(`precisa ser ${ITENS.join(", ")}`))
 				.optional(),
 			etiqueta: texto.optional(),
+			// O cenário muda a partir desta fala, quando a cena troca de lugar
+			// no meio: o Plenário, a mesa da promulgação e a volta à padaria são
+			// a mesma cena. Sem o campo, vale o cenário da cena.
+			cenario: z
+				.enum(CENARIOS, exigido(`precisa ser ${CENARIOS.join(", ")}`))
+				.optional(),
 		},
 		exigido(
 			"precisa ser uma fala com os campos tipo, id, quem, emocao e texto",
@@ -460,6 +466,12 @@ const itemDoEpilogoSchema = z.strictObject(
 const jogoSchema = z.strictObject({
 	titulo: texto,
 	resumo: texto,
+	// A posição do jogo em /jogos, como a das trilhas. Ela não vem do nome da
+	// pasta: o jogo que a pessoa deve jogar primeiro vem primeiro, e a posição
+	// também dá a cor e o azulejo da folha dele.
+	ordem: z
+		.int(exigido("precisa ser um número inteiro a partir de 1"))
+		.min(1, "precisa ser um número inteiro a partir de 1"),
 	cenario: z.enum(CENARIOS, exigido(`precisa ser ${CENARIOS.join(", ")}`)),
 	// O aviso da abertura, que diz quem é fictício e o que é real.
 	aviso: texto,
@@ -748,13 +760,29 @@ export function lerJogos(
 		});
 	}
 
+	// Dois jogos na mesma posição deixariam a lista no sorteio do sistema de
+	// arquivos, e a cor da folha de cada um junto.
+	const porOrdem = new Map<number, string[]>();
+	for (const [slug, jogo] of jogos) {
+		porOrdem.set(jogo.ordem, [...(porOrdem.get(jogo.ordem) ?? []), slug]);
+	}
+	for (const [numero, mesmos] of porOrdem) {
+		if (mesmos.length > 1) {
+			problemas.push(
+				`conteudo/jogo: ${mesmos.sort().join(" e ")} têm a mesma ordem ${numero}`,
+			);
+		}
+	}
+
 	if (problemas.length > 0) {
 		throw new ErroDeRoteiro(problemas);
 	}
 
-	return [...jogos].map(([slug, jogo]) => ({
-		slug,
-		...jogo,
-		cenas: (cenas.get(slug) ?? []).sort((a, b) => a.cena - b.cena),
-	}));
+	return [...jogos]
+		.map(([slug, jogo]) => ({
+			slug,
+			...jogo,
+			cenas: (cenas.get(slug) ?? []).sort((a, b) => a.cena - b.cena),
+		}))
+		.sort((a, b) => a.ordem - b.ordem);
 }
