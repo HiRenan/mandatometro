@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useRef } from "react";
 import { Jogo } from "@/components/jogo/jogo";
 import { ENV } from "@/env";
 import { buscarJogo } from "@/lib/jogo";
@@ -24,12 +25,21 @@ export const Route = createFileRoute("/jogos/$jogo")({
 
 function PaginaDoJogo() {
 	const jogo = Route.useLoaderData();
+	const tituloRef = useRef<HTMLHeadingElement>(null);
 	return (
 		<article className="jogo">
-			<h1 className="titulo-condensado letra-com-teto [--palavra:4.49]">
+			<h1
+				className="titulo-condensado letra-com-teto [--palavra:4.49]"
+				ref={tituloRef}
+			>
 				{jogo.titulo}
 			</h1>
-			<Jogo key={jogo.slug} jogo={jogo} comApi={Boolean(ENV.API_URL)} />
+			<Jogo
+				key={jogo.slug}
+				jogo={jogo}
+				comApi={Boolean(ENV.API_URL)}
+				tituloRef={tituloRef}
+			/>
 		</article>
 	);
 }
