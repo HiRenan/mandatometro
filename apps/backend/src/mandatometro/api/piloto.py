@@ -1,6 +1,8 @@
 """Rota pública de medição: não devolve resultados nem repete entrada nos erros."""
 
 import logging
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Request
 from fastapi.exceptions import RequestValidationError
@@ -18,6 +20,7 @@ from mandatometro.piloto.medicao import registrar_tentativa
 
 logger = logging.getLogger(__name__)
 LIMITE_DO_CORPO = 2048
+_FUSO = ZoneInfo("America/Sao_Paulo")
 
 
 class RotaPiloto(APIRoute):
@@ -27,7 +30,9 @@ class RotaPiloto(APIRoute):
         async def com_cota_e_privacidade(request: Request) -> Response:
             try:
                 conf = config()
-                if not conf.piloto_ativo:
+                if not conf.piloto_ativo or (
+                    conf.piloto_ate is not None and datetime.now(_FUSO).date() > conf.piloto_ate
+                ):
                     resposta = JSONResponse({"erro": "piloto_encerrado"}, status_code=410)
                 else:
                     # A cota se confirma antes do parsing, inclusive se o corpo for inválido.
