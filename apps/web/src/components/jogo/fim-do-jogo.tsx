@@ -5,6 +5,7 @@ import { BOTAO_CONTINUAR } from "@/components/botao-continuar";
 import { ListaDeFontes } from "@/components/fontes";
 import { classes } from "@/lib/classes";
 import { semCliqueDuplo } from "@/lib/clique";
+import { formatarData } from "@/lib/formatar";
 import type { JogoNaPagina } from "@/lib/jogo";
 import { caminho, type Partida, regrasDoCaminho } from "@/lib/jogo/partida";
 import { CaminhoDoProjeto } from "./caminho-do-projeto";
@@ -74,16 +75,33 @@ export function FimDoJogo({
 						</li>
 					))}
 				</ul>
+				{jogo.epilogo.situacao === undefined ? null : (
+					<div className="jogo-situacao">
+						<h4 className="rotulo">
+							Situação em {formatarData(jogo.epilogo.situacao.data)}
+						</h4>
+						{jogo.epilogo.situacao.paragrafos.map((paragrafo) => (
+							<p key={paragrafo}>{paragrafo}</p>
+						))}
+					</div>
+				)}
 				<ListaDeFontes fontes={jogo.epilogo.fontes} />
 			</section>
 			<div className="jogo-acoes jogo-acoes-do-fim">
-				<Link
-					to="/trilhas/$trilha"
-					params={{ trilha: jogo.trilha.slug }}
-					className={BOTAO_CONTINUAR}
-				>
-					Rever as lições da trilha
-				</Link>
+				{/*
+				 * Só o jogo que declara as lições oferece rever a trilha: mandar
+				 * para uma trilha que não ensina o que o jogo mostrou seria mandar
+				 * para o assunto errado.
+				 */}
+				{jogo.trilha === undefined ? null : (
+					<Link
+						to="/trilhas/$trilha"
+						params={{ trilha: jogo.trilha.slug }}
+						className={BOTAO_CONTINUAR}
+					>
+						Rever as lições da trilha
+					</Link>
+				)}
 				{comApi ? (
 					<Link to="/" hash="newsletter" className={BOTAO_CONTINUAR}>
 						Receber o jornal legislativo todo domingo

@@ -13,6 +13,7 @@ personagens:
   caio:
     nome: Caio
     quem: assessor de um deputado do outro lado do debate
+licoes: true
 casas:
   - Apresentação
   - Comissões

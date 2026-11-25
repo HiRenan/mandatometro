@@ -32,10 +32,14 @@ type ArtigoDaCena = { slug: string; titulo: string };
 /** A cena na página: o artigo vira slug e título, para a revelação linkar. */
 export type CenaNaPagina = Omit<Cena, "artigo"> & { artigo: ArtigoDaCena };
 
-/** O jogo na página, com a trilha de onde ele é a continuação. */
+/**
+ * O jogo na página. A `trilha` vem só para o jogo que declara as `licoes`: a
+ * tela final dele oferece rever a trilha, e o jogo que não declara fica sem a
+ * ação, porque a trilha não ensina o que ele mostrou.
+ */
 export type JogoNaPagina = Omit<Jogo, "cenas"> & {
 	cenas: CenaNaPagina[];
-	trilha: { slug: string; titulo: string };
+	trilha?: { slug: string; titulo: string };
 };
 
 /** Um jogo na lista de /jogos: o que a folha mostra, sem o roteiro inteiro. */
@@ -83,7 +87,9 @@ export function acharJogo(
 	}
 	return {
 		...jogo,
-		trilha: { slug: daTrilhaDoJogo.slug, titulo: daTrilhaDoJogo.titulo },
+		trilha: jogo.licoes
+			? { slug: daTrilhaDoJogo.slug, titulo: daTrilhaDoJogo.titulo }
+			: undefined,
 		cenas: jogo.cenas.map((cena) => ({
 			...cena,
 			artigo: {

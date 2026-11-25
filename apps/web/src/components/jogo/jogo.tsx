@@ -19,6 +19,7 @@ import { movimentoReduzido } from "@/lib/painel-vivo";
 import { BotaoDeSom } from "./botao-de-som";
 import { CaixaDeDialogo } from "./caixa-de-dialogo";
 import { CaminhoDoProjeto } from "./caminho-do-projeto";
+import { CaminhosEmDebate } from "./caminhos-em-debate";
 import { Carimbo } from "./carimbos";
 import { CartaoDoQueAconteceu } from "./cartao-do-que-aconteceu";
 import { Decisao } from "./decisao";
@@ -218,10 +219,12 @@ export function Jogo({
 						key={fala.id}
 						id={fala.id}
 						quem={fala.quem}
+						// O leitor do roteiro não deixa uma cena dar a fala a quem o
+						// jogo não apresenta, então o nome está sempre aqui.
 						nome={
 							fala.quem === "narracao"
 								? undefined
-								: jogo.personagens[fala.quem].nome
+								: jogo.personagens[fala.quem]?.nome
 						}
 						texto={fala.texto}
 						falasSeguidas={falasSeguidas(cena.passos, partida.passo)}
@@ -251,6 +254,14 @@ export function Jogo({
 					<RelogioDoPrazo
 						key={`${partida.cena}-${partida.passo}`}
 						relogio={passo}
+						aoAvancar={seguir}
+					/>
+				) : null}
+
+				{naCena && passo?.tipo === "versoes" ? (
+					<CaminhosEmDebate
+						key={`${partida.cena}-${partida.passo}`}
+						versoes={passo}
 						aoAvancar={seguir}
 					/>
 				) : null}

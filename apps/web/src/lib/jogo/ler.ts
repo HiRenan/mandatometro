@@ -21,6 +21,8 @@ const EXPRESSOES = {
 	lia: ["confiante", "surpresa", "preocupada", "pensativa", "sorrindo"],
 	arnaldo: ["neutro", "explicando", "sorrindo", "serio"],
 	caio: ["argumentando", "desafiando", "cumprimentando"],
+	joana: ["cansada", "esperancosa"],
+	raimundo: ["preocupado", "aliviado"],
 } as const;
 
 // Os cenários de public/jogo/bg/ e os itens de cena de public/jogo/itens/.
@@ -31,9 +33,17 @@ const CENARIOS = [
 	"bg-ccj",
 	"bg-senado",
 	"bg-planalto",
+	"bg-padaria",
+	"bg-plenario-camara",
+	"bg-promulgacao",
 ] as const;
 
-const ITENS = ["item-pasta", "item-caneta", "item-documento"] as const;
+const ITENS = [
+	"item-pasta",
+	"item-caneta",
+	"item-documento",
+	"item-emenda",
+] as const;
 
 // Os carimbos são componentes com o texto escrito no código, em
 // components/jogo/carimbos/.
@@ -44,6 +54,11 @@ const SELOS = [
 	"urgencia",
 	"aprovado",
 	"sancionado",
+	"so-com-emenda",
+	"admissivel",
+	"tres-quintos",
+	"intersticio-dispensado",
+	"promulgada",
 ] as const;
 
 /** O carimbo que entra na tela, por nome. */
@@ -70,20 +85,23 @@ const EMOCOES = [
 	"aliviado",
 ] as const;
 
-const PERSONAGENS = ["lia", "arnaldo", "caio"] as const;
+// Todo personagem que algum jogo usa. Cada jogo apresenta no `jogo.md` só os
+// seus, e uma cena só pode dar a fala a quem o jogo apresentou.
+const PERSONAGENS = ["lia", "arnaldo", "caio", "joana", "raimundo"] as const;
 
 // A narração não tem retrato nem placa de nome.
 const QUEM = ["narracao", ...PERSONAGENS] as const;
 
-/** Quem fala: a narração ou um dos três personagens. */
+/** Quem fala: a narração ou um dos personagens do jogo. */
 export type Quem = (typeof QUEM)[number];
+
+/** Um personagem com retrato, dos que algum jogo apresenta. */
+export type Personagem = (typeof PERSONAGENS)[number];
 
 // O id da fala vira o nome do arquivo de narração, e o número é o da cena.
 const ID_DE_FALA = /^c([1-9])-(\d{2})$/;
 
 const CENA_MAXIMA = 9;
-
-type Personagem = (typeof PERSONAGENS)[number];
 
 function eDePersonagem(quem: string): quem is Personagem {
 	return (PERSONAGENS as readonly string[]).includes(quem);
@@ -272,6 +290,13 @@ const painelNominalSchema = z.strictObject(
 			.int(exigido("precisa ser um número inteiro"))
 			.min(0, "não pode ser negativo"),
 		data: z.iso.date(exigido("precisa ser uma data AAAA-MM-DD")),
+		// Quantos votos a matéria precisava, quando o quórum é de um número
+		// fechado de votos, como os três quintos de uma emenda. O painel marca
+		// a linha, e o leitor de tela recebe o número escrito.
+		quorum: z
+			.int(exigido("precisa ser um número inteiro a partir de 1"))
+			.min(1, "precisa ser um número inteiro a partir de 1")
+			.optional(),
 		legenda: texto,
 	},
 	exigido(
@@ -298,6 +323,9 @@ const relogioSchema = z.strictObject(
 			.min(1, "precisa ser um número inteiro a partir de 1"),
 		fundamento: texto,
 		legenda: texto,
+		// O prazo que o Plenário dispensou: as sessões se apagam, e a frase diz
+		// por quê. Sem o campo, o prazo corre até o fim, como o do recurso.
+		dispensa: texto.optional(),
 	},
 	exigido(
 		"precisa ser um relógio com os campos tipo, sessoes, fundamento e legenda",
@@ -307,6 +335,48 @@ const relogioSchema = z.strictObject(
 const carimboSchema = z.strictObject(
 	{ tipo: z.literal("carimbo"), selo, legenda: texto },
 	exigido("precisa ser um carimbo com os campos tipo, selo e legenda"),
+);
+
+// Os caminhos que estavam em debate, lado a lado. Os cartões têm o mesmo
+// tamanho e a mesma cor, e cada um traz o que dizem a favor e o que dizem
+// contra: o desenho não pode favorecer nenhum deles (docs/jogo-das-comissoes.md).
+const caminhoEmDebateSchema = z.strictObject(
+	{
+		nome: texto,
+		propoe: texto,
+		aFavor: texto,
+		contra: texto,
+		// O que situa o caminho na tramitação, quando ele precisa: "Depois da
+		// votação na comissão, foi apresentada no Senado…".
+		etiqueta: texto.optional(),
+	},
+	exigido("precisa ser um caminho com os campos nome, propoe, aFavor e contra"),
+);
+
+const MINIMO_DE_CAMINHOS = 2;
+
+const versoesSchema = z.strictObject(
+	{
+		tipo: z.literal("versoes"),
+		titulo: texto,
+		caminhos: z
+			.array(
+				caminhoEmDebateSchema,
+				exigido("precisa ser uma lista de caminhos"),
+			)
+			.min(
+				MINIMO_DE_CAMINHOS,
+				`precisa de pelo menos ${MINIMO_DE_CAMINHOS} caminhos`,
+			)
+			.superRefine(
+				semRepetir<{ nome: string }>(
+					(caminho) => caminho.nome,
+					(nome) => `o caminho "${nome}" já está neste painel`,
+					["nome"],
+				),
+			),
+	},
+	exigido("precisa ser um painel com os campos tipo, titulo e caminhos"),
 );
 
 // A união é discriminada para o erro apontar o passo certo: pelo `tipo` e,
@@ -325,9 +395,16 @@ const painelSchema = z.discriminatedUnion(
 
 const passoSchema = z.discriminatedUnion(
 	"tipo",
-	[falaSchema, decisaoSchema, painelSchema, relogioSchema, carimboSchema],
+	[
+		falaSchema,
+		decisaoSchema,
+		painelSchema,
+		relogioSchema,
+		carimboSchema,
+		versoesSchema,
+	],
 	exigido(
-		"precisa ser um passo com o tipo fala, decisao, painel, relogio ou carimbo",
+		"precisa ser um passo com o tipo fala, decisao, painel, relogio, carimbo ou versoes",
 	),
 );
 
@@ -386,14 +463,21 @@ const jogoSchema = z.strictObject({
 	cenario: z.enum(CENARIOS, exigido(`precisa ser ${CENARIOS.join(", ")}`)),
 	// O aviso da abertura, que diz quem é fictício e o que é real.
 	aviso: texto,
-	personagens: z.strictObject(
-		{
-			lia: personagemSchema,
-			arnaldo: personagemSchema,
-			caio: personagemSchema,
-		},
-		exigido("precisa ter os personagens lia, arnaldo e caio"),
-	),
+	// Os personagens deste jogo, pelo nome de cada um. Um jogo apresenta só
+	// quem fala nele, e `conferirPassos` não deixa uma cena dar a fala a quem
+	// o jogo não apresentou.
+	// O `partialRecord` deixa o jogo trazer só os seus: o `record` com chave de
+	// enum exigiria todos os personagens em todos os jogos.
+	personagens: z
+		.partialRecord(
+			z.enum(PERSONAGENS, exigido(`precisa ser ${PERSONAGENS.join(", ")}`)),
+			personagemSchema,
+			exigido("precisa ser um mapa de personagens, pelo nome de cada um"),
+		)
+		.refine(
+			(apresentados) => Object.keys(apresentados).length > 0,
+			"precisa de pelo menos um personagem",
+		),
 	// As casas do caminho do projeto, na ordem, como no infográfico da trilha.
 	casas: z
 		.array(texto, exigido("precisa ser uma lista de casas"))
@@ -404,12 +488,27 @@ const jogoSchema = z.strictObject({
 				(casa) => `a casa "${casa}" já está no caminho`,
 			),
 		),
+	// A trilha que a tela final oferece rever, quando ela ensina o que o jogo
+	// mostrou. O jogo que não declara fica sem a ação: é melhor não oferecer
+	// lição nenhuma do que mandar para o assunto errado.
+	licoes: z.literal(true).optional(),
 	epilogo: z.strictObject(
 		{
 			titulo: texto,
 			itens: z
 				.array(itemDoEpilogoSchema, exigido("precisa ser uma lista de itens"))
 				.min(1, "precisa de pelo menos um item"),
+			// O que ainda corre na Justiça, com a data em que o time conferiu: o
+			// jogo conta o que já aconteceu e não prevê o que falta.
+			situacao: z
+				.strictObject(
+					{
+						data: z.iso.date(exigido("precisa ser uma data AAAA-MM-DD")),
+						paragrafos,
+					},
+					exigido("precisa ser uma situação com os campos data e paragrafos"),
+				)
+				.optional(),
 			fontes: fontes.superRefine(
 				semRepetir(
 					(fonte) => fonte.url,
@@ -432,6 +531,8 @@ export type Decisao = DecisaoDeRegra | DecisaoDeOpiniao;
 export type Painel = z.output<typeof painelSchema>;
 
 export type Relogio = z.output<typeof relogioSchema>;
+
+export type Versoes = z.output<typeof versoesSchema>;
 
 export type Carimbo = z.output<typeof carimboSchema>;
 
@@ -464,6 +565,7 @@ function conferirPassos(
 	local: string,
 	idsDasFalas: Map<string, string>,
 	idsDasDecisoes: Map<string, string>,
+	apresentados?: ReadonlySet<string>,
 ): string[] {
 	const problemas: string[] = [];
 	cena.passos.forEach((passo, indice) => {
@@ -480,6 +582,15 @@ function conferirPassos(
 			if (cenaDoId(passo.id) !== cena.cena) {
 				problemas.push(
 					`${local}: campo "${campo}.id": a fala "${passo.id}" não é da cena ${cena.cena}`,
+				);
+			}
+			if (
+				apresentados &&
+				passo.quem !== "narracao" &&
+				!apresentados.has(passo.quem)
+			) {
+				problemas.push(
+					`${local}: campo "${campo}.quem": ${passo.quem} não está nos personagens do jogo.md`,
 				);
 			}
 			return;
@@ -589,11 +700,23 @@ export function lerJogos(
 		const idsDasFalas = new Map<string, string>();
 		const idsDasDecisoes = new Map<string, string>();
 		const numeros = new Map<number, string[]>();
+		// Sem o jogo.md não dá para saber quem ele apresenta, e a falta dele já
+		// virou problema acima: a conferência de quem fala fica para a próxima
+		// leitura, sem repetir o erro em cada fala.
+		const apresentados = jogo
+			? new Set(Object.keys(jogo.personagens))
+			: undefined;
 		for (const cena of doJogo) {
 			const onde = `${local}/${cena.slug}.md`;
 			numeros.set(cena.cena, [...(numeros.get(cena.cena) ?? []), cena.slug]);
 			problemas.push(
-				...conferirPassos(cena, onde, idsDasFalas, idsDasDecisoes),
+				...conferirPassos(
+					cena,
+					onde,
+					idsDasFalas,
+					idsDasDecisoes,
+					apresentados,
+				),
 			);
 			if (jogo && !jogo.casas.includes(cena.casa)) {
 				problemas.push(
