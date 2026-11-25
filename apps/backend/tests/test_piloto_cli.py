@@ -69,6 +69,7 @@ def test_apagar_sem_confirmar_recusa_antes_de_abrir_banco(monkeypatch, capsys):
 
 def test_apagar_piloto_ativo_recusa_antes_de_abrir_banco(monkeypatch, capsys):
     monkeypatch.setenv("PILOTO_ATIVO", "true")
+    monkeypatch.setenv("PILOTO_ATE", "2000-01-01")
     config.cache_clear()
 
     def proibido():

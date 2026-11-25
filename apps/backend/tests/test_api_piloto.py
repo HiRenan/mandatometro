@@ -6,6 +6,7 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 from sqlalchemy.exc import OperationalError
 
 from mandatometro.api import piloto
@@ -31,6 +32,8 @@ def test_openapi_exige_situacao_e_documenta_todos_os_erros_sem_entrada():
 
 @pytest.fixture
 def ambiente(monkeypatch):
+    monkeypatch.setitem(Config.model_config, "env_file", None)
+    monkeypatch.delenv("PILOTO_ATE", raising=False)
     monkeypatch.setenv("PILOTO_ATIVO", "true")
     monkeypatch.setenv("PILOTO_LIMITE_POR_MINUTO", "120")
     config.cache_clear()
@@ -79,6 +82,37 @@ def test_desligado_por_padrao_sem_abrir_banco(monkeypatch):
     assert resposta.json() == {"erro": "piloto_encerrado"}
     assert resposta.headers["cache-control"] == "no-store"
     config.cache_clear()
+
+
+@pytest.mark.parametrize("ativo, ate", [("true", "2000-01-01"), ("false", "9999-12-31")])
+def test_encerrado_nao_le_corpo_nem_consume_cota(ambiente, monkeypatch, ativo, ate):
+    cliente, chamadas = ambiente
+    monkeypatch.setenv("PILOTO_ATIVO", ativo)
+    monkeypatch.setenv("PILOTO_ATE", ate)
+
+    def corpo():
+        chamadas.append("leitura do corpo")
+        yield b"{"
+
+    resposta = cliente.post(ROTA, content=corpo(), headers={"Content-Type": "application/json"})
+    assert resposta.status_code == 410
+    assert resposta.json() == {"erro": "piloto_encerrado"}
+    assert chamadas == []
+
+
+@pytest.mark.parametrize("ate", [None, ""], ids=["ausente", "vazia"])
+def test_piloto_ativo_sem_data_final(ambiente, monkeypatch, ate):
+    cliente, _ = ambiente
+    if ate is not None:
+        monkeypatch.setenv("PILOTO_ATE", ate)
+    assert cliente.post(ROTA, json=pedido()).status_code == 200
+
+
+@pytest.mark.parametrize("valor", ["20261201", "2026-12-01T00:00:00Z", "2026-02-30"])
+def test_data_final_exige_data_valida_no_formato_ano_mes_dia(monkeypatch, valor):
+    monkeypatch.setenv("PILOTO_ATE", valor)
+    with pytest.raises(ValidationError, match="piloto_ate"):
+        Config(_env_file=None)
 
 
 @pytest.mark.parametrize("etapa", ["antes", "depois"])
