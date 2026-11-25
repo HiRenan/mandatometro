@@ -13,7 +13,7 @@ const DESCRICAO_DA_INICIAL =
 describe("metaDaInicial", () => {
 	it("põe o lema no título da aba e a frase da página na prévia do link", () => {
 		expect(metaDaInicial()).toEqual([
-			{ title: "Mandatômetro · o diário oficial político, simplificado" },
+			{ title: "Mandatômetro · A política brasileira de perto." },
 			{ name: "description", content: DESCRICAO_DA_INICIAL },
 			{
 				property: "og:title",
@@ -56,7 +56,7 @@ describe("metaDaImagem", () => {
 			{
 				property: "og:image:alt",
 				content:
-					"Mandatômetro, o diário oficial político, simplificado. Entenda a política brasileira, um passo de cada vez.",
+					"Livro em forma de M com cinco fitas. Mandatômetro. A política brasileira de perto. Entenda a política brasileira, um passo de cada vez.",
 			},
 			{ name: "twitter:card", content: "summary_large_image" },
 		]);

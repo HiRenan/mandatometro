@@ -1,6 +1,6 @@
 # Mandatômetro
 
-**O diário oficial político, simplificado.** Um site que ensina como funciona a política brasileira, em linguagem simples e a partir do que o Congresso está votando.
+**A política brasileira de perto.** Um site que ensina como funciona a política brasileira, em linguagem simples e a partir do que o Congresso está votando.
 
 > Projeto da trilha **Acesso à educação** do [Hack Brasil 2026](https://hackbrasil.com).
 >

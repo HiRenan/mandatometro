@@ -1,5 +1,6 @@
 import { Link, ScriptOnce, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { LEMA_DO_SITE } from "@/lib/meta";
 import {
 	CHAVE_SESSAO,
 	contextoDoProgresso,
@@ -186,10 +187,18 @@ export default function Header({
 			    "Ficam em 20 px" e "Espaço de hoje"). */}
 			<div className="topo-dentro px-margem-celular md:px-margem-larga gap-y-[4px] py-[8px]">
 				<div className="marca">
-					<Link to="/" className={NOME_DO_SITE}>
+					<Link to="/" aria-label="Mandatômetro" className={NOME_DO_SITE}>
+						<svg
+							aria-hidden="true"
+							focusable="false"
+							viewBox="0 0 700 610"
+							fill="currentColor"
+						>
+							<use href="/marca-paginas.svg#paginas" />
+						</svg>
 						Mandatômetro
 					</Link>
-					<p className="marca-lema">o diário oficial político, simplificado</p>
+					<p className="marca-lema">{LEMA_DO_SITE}</p>
 				</div>
 				<LinksDoTopo
 					lugar="meio"

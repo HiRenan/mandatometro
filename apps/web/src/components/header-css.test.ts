@@ -95,13 +95,16 @@ describe("o CSS do cabeçalho", () => {
 		expect(Number(aperta.exec(midia?.corpo ?? "")?.[1])).toBeLessThan(10);
 	});
 
-	it("a 320 px, o nome fica com 19 px, e a lupa e o Entrar cabem ao lado dele", () => {
-		// Com 21 px, o nome, a lupa e o "Entrar" sobravam 2 px na linha de 280 px.
+	it("a 320 px, o livro fica sobre o nome de 19 px para caber ao lado da busca e da conta", () => {
 		const midia = ate.find(({ corpo }) =>
 			/\.moldura \.nome-do-site \{\s*--letra: 1\.1875rem;\s*\}/.test(corpo),
 		);
 
 		expect(midia?.largura).toBe(22.5);
+		const empilhada = ate.find(({ corpo }) =>
+			/\.marca \.nome-do-site \{[^}]*flex-direction: column;/.test(corpo),
+		);
+		expect(empilhada?.largura).toBe(23);
 	});
 
 	it("no celular, os quatro links ficam em duas linhas de dois, com os vãos no meio da lista", () => {
@@ -226,9 +229,6 @@ describe("o CSS do cabeçalho com o lema e a busca", () => {
 	}
 
 	it("o lema fica embaixo do nome a partir de 84rem, e o par cabe nos 72 px", () => {
-		// O lema (351 px) cabe embaixo do nome na coluna da esquerda a partir de
-		// 1344 px; a 1312 px, com o Parlamentares nos links, ele quebrava em duas
-		// linhas. Ao lado do nome, com os links no meio, só a partir de uns 1810 px.
 		expect(larguraDoLema()).toBe(84);
 		expect(regra(css, ".marca")).toMatch(/flex-direction: column;/);
 		expect(

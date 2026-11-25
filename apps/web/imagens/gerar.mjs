@@ -1,8 +1,5 @@
-// Gera o ícone da aba e a prévia do link a partir de icone.html e previa.html,
-// no Edge ou no Chrome sem janela, pelo protocolo de depuração do navegador,
-// sem dependência nova. As fontes são as do site (a Archivo e a Courier
-// Prime do @mandatometro/ui), embutidas no HTML. Cada PNG leva dentro
-// dele de onde veio.
+// O SVG do pitch também fornece o livro do cabeçalho, dos ícones e da prévia.
+// O Edge ou o Chrome sem janela exporta as imagens com os recursos locais.
 //
 // Uso: pnpm --filter web imagens
 // Com NAVEGADOR=<caminho do Edge ou do Chrome>, usa esse navegador.
@@ -10,7 +7,8 @@
 // Grava em public/:
 // - favicon.ico, com 16, 32 e 48 px;
 // - apple-touch-icon.png, com 180 px;
-// - previa.png, com 1200 x 630 px.
+// - previa.png, com 1200 x 630 px;
+// - marca-paginas.png, com 2508 x 2508 px e fundo transparente.
 
 import { spawn } from "node:child_process";
 import {
@@ -41,9 +39,9 @@ const CANDIDATOS = [
 ];
 
 const ORIGEM_DO_ICONE =
-	"Gerado por apps/web/imagens/gerar.mjs a partir de apps/web/imagens/icone.html: o M do nome em Archivo (peso 900, largura 68%), em papel no bloco de tinta, com a tira das cinco fitas do Bonfim embaixo. Desenhado em HTML e CSS, sem gerador de imagem.";
+	"Livro em M da marca Páginas (public/marca-paginas.svg), em papel sobre tinta, com as cinco fitas do Bonfim. Gerado por apps/web/imagens/gerar.mjs com icone.html.";
 const ORIGEM_DA_PREVIA =
-	"Gerado por apps/web/imagens/gerar.mjs a partir de apps/web/imagens/previa.html: o bloco de tinta com o nome e o lema, a tira das cinco fitas do Bonfim, o título da página inicial no papel e uma fileira de azulejos. Desenhado em HTML e CSS, sem gerador de imagem.";
+	"Marca Páginas no bloco de tinta com o nome e o lema, a tira das cinco fitas do Bonfim, o título da página inicial no papel e uma fileira de azulejos. Gerada por apps/web/imagens/gerar.mjs com previa.html e public/marca-paginas.svg.";
 
 const espera = (ms) => new Promise((pronto) => setTimeout(pronto, ms));
 
@@ -179,6 +177,9 @@ async function fotografar(navegador, html, largura, altura) {
 	const enviar = (method, params) =>
 		navegador.enviar(method, params, sessionId);
 	await enviar("Page.enable");
+	await enviar("Emulation.setDefaultBackgroundColorOverride", {
+		color: { r: 0, g: 0, b: 0, a: 0 },
+	});
 	await enviar("Emulation.setDeviceMetricsOverride", {
 		width: largura,
 		height: altura,
@@ -260,12 +261,14 @@ function ico(imagens) {
 	]);
 }
 
-const comFontes = (arquivo) =>
-	readFileSync(join(pasta, arquivo), "utf8").replace("/* FONTES */", fontes());
+const marca = readFileSync(join(publico, "marca-paginas.svg"), "utf8");
+const modelo = (arquivo) =>
+	readFileSync(join(pasta, arquivo), "utf8").replace("<!-- MARCA -->", marca);
 
 const navegador = await abrirNavegador();
 try {
-	const icone = comFontes("icone.html");
+	const icone = modelo("icone.html");
+	const previa = modelo("previa.html").replace("/* FONTES */", fontes());
 	const tamanhos = [16, 32, 48];
 	const pequenos = [];
 	for (const tamanho of tamanhos) {
@@ -284,8 +287,17 @@ try {
 			ORIGEM_DO_ICONE,
 		),
 		"previa.png": comOrigem(
-			await fotografar(navegador, comFontes("previa.html"), 1200, 630),
+			await fotografar(navegador, previa, 1200, 630),
 			ORIGEM_DA_PREVIA,
+		),
+		"marca-paginas.png": comOrigem(
+			await fotografar(
+				navegador,
+				`<!doctype html><style>body { margin: 0 } svg { display: block; width: 100vw; height: 100vh }</style>${marca}`,
+				2508,
+				2508,
+			),
+			"Marca Páginas do Mandatômetro, exportada de public/marca-paginas.svg por apps/web/imagens/gerar.mjs.",
 		),
 	};
 	for (const [nome, dados] of Object.entries(arquivos)) {
