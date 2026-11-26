@@ -17,10 +17,15 @@ from starlette.exceptions import HTTPException
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from mandatometro import db
-from mandatometro.api.contas import exigir_administradora, validar_origem
+from mandatometro.api.contas import (
+    AcessoAdministrativoRecusado,
+    exigir_administradora,
+    validar_origem,
+)
 from mandatometro.api.esquemas import ErroPainel, ResultadoPublicacao, ResultadoRevisao
 from mandatometro.api.esquemas_numeros import NumerosPainel
 from mandatometro.api.numeros import numeros_do_painel
+from mandatometro.api.opinioes import OpinioesPainel, opinioes_do_painel
 from mandatometro.db.modelos import Edicao
 from mandatometro.ia import servico
 from mandatometro.ia.servico import ArquivoRevisao
@@ -46,10 +51,14 @@ class AcessoPainel:
         try:
             await run_in_threadpool(exigir_administradora, request.cookies.get("sessao_conta"))
         except Exception as erro:
-            # Se não foi possível autenticar a sessão, devolva o mesmo 404 do roteador.
-            if not isinstance(erro, HTTPException) or erro.status_code != 404:
-                logger.warning("Falha ao verificar o acesso ao painel de revisão.")
-            resposta = await http_exception_handler(request, HTTPException(404))
+            if caminho == f"{PREFIXO}/opinioes" and isinstance(erro, AcessoAdministrativoRecusado):
+                resposta = await http_exception_handler(request, HTTPException(erro.codigo))
+                resposta.headers["Cache-Control"] = "no-store"
+            else:
+                # Nas outras rotas, a recusa é indistinguível do 404 do roteador.
+                if not isinstance(erro, HTTPException) or erro.status_code != 404:
+                    logger.warning("Falha ao verificar o acesso ao painel de revisão.")
+                resposta = await http_exception_handler(request, HTTPException(404))
             await resposta(scope, receive, send)
             return
 
@@ -145,10 +154,10 @@ router = APIRouter(
         500: {"model": ErroPainel, "description": "Falha inesperada na operação."},
     },
 )
-router_numeros = APIRouter(prefix=PREFIXO, tags=["painel"], route_class=RotaPainel)
+router_leitura = APIRouter(prefix=PREFIXO, tags=["painel"], route_class=RotaPainel)
 
 
-@router_numeros.get(
+@router_leitura.get(
     "/numeros",
     summary="Consultar os números do painel",
     description="Agregados do site e das coletas. O acesso é exclusivo da administradora.",
@@ -159,6 +168,22 @@ router_numeros = APIRouter(prefix=PREFIXO, tags=["painel"], route_class=RotaPain
 )
 def consultar_numeros_painel() -> NumerosPainel:
     return numeros_do_painel(db.engine())
+
+
+@router_leitura.get(
+    "/opinioes",
+    summary="Ler as opiniões sobre o site",
+    description=(
+        "Agregados de todas as opiniões e lista das 500 mais recentes, só para a administradora."
+    ),
+    responses={
+        401: {"model": ErroPainel, "description": "Sessão ausente ou inválida."},
+        403: {"model": ErroPainel, "description": "A conta não é administradora."},
+        500: {"model": ErroPainel, "description": "Falha inesperada na consulta."},
+    },
+)
+def consultar_opinioes_painel() -> OpinioesPainel:
+    return opinioes_do_painel()
 
 
 @router.get(

@@ -1403,6 +1403,124 @@
         }
       }
     },
+    "/opinioes": {
+      "post": {
+        "tags": [
+          "opinioes"
+        ],
+        "summary": "Receber uma opinião sobre o site",
+        "description": "Recebe JSON de até 24 KiB. Robôs conhecidos e envios com o campo isca preenchido recebem a mesma resposta de um envio gravado.",
+        "operationId": "registrar_opiniao",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "nota": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "maximum": 5.0,
+                        "minimum": 1.0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Nota"
+                  },
+                  "partes": {
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "trilhas",
+                        "parlamentares",
+                        "jogos",
+                        "edicoes"
+                      ]
+                    },
+                    "type": "array",
+                    "maxItems": 4,
+                    "title": "Partes"
+                  },
+                  "texto": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "minLength": 1,
+                    "title": "Texto"
+                  },
+                  "site": {
+                    "type": "string",
+                    "title": "Site",
+                    "default": ""
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "texto"
+                ],
+                "title": "PedidoOpiniao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "413": {
+            "description": "Corpo maior que 24 KiB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroOpiniao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos, sem repetir a entrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroOpiniao"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Cota global por minuto atingida.",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até o próximo minuto.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroOpiniao"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Operação no banco não confirmada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroOpiniao"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/painel/edicoes/rascunho": {
       "get": {
         "tags": [
@@ -1754,6 +1872,58 @@
           },
           "404": {
             "description": "Rota não encontrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha inesperada na consulta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/painel/opinioes": {
+      "get": {
+        "tags": [
+          "painel"
+        ],
+        "summary": "Ler as opiniões sobre o site",
+        "description": "Agregados de todas as opiniões e lista das 500 mais recentes, só para a administradora.",
+        "operationId": "consultar_opinioes_painel",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpinioesPainel"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente ou inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroPainel"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A conta não é administradora.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3257,6 +3427,25 @@
         ],
         "title": "ErroNewsletter"
       },
+      "ErroOpiniao": {
+        "properties": {
+          "erro": {
+            "type": "string",
+            "enum": [
+              "dados_invalidos",
+              "corpo_grande",
+              "limite_de_opinioes",
+              "servico_indisponivel"
+            ],
+            "title": "Erro"
+          }
+        },
+        "type": "object",
+        "required": [
+          "erro"
+        ],
+        "title": "ErroOpiniao"
+      },
       "ErroPainel": {
         "properties": {
           "detail": {
@@ -3944,6 +4133,100 @@
           "sistema"
         ],
         "title": "NumerosPainel"
+      },
+      "OpiniaoNoPainel": {
+        "properties": {
+          "criada_em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Criada Em"
+          },
+          "nota": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nota"
+          },
+          "partes": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "trilhas",
+                "parlamentares",
+                "jogos",
+                "edicoes"
+              ]
+            },
+            "type": "array",
+            "title": "Partes"
+          },
+          "texto": {
+            "type": "string",
+            "title": "Texto"
+          }
+        },
+        "type": "object",
+        "required": [
+          "criada_em",
+          "nota",
+          "partes",
+          "texto"
+        ],
+        "title": "OpiniaoNoPainel"
+      },
+      "OpinioesPainel": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "nota_media": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nota Media"
+          },
+          "por_parte": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "enum": [
+                "trilhas",
+                "parlamentares",
+                "jogos",
+                "edicoes"
+              ]
+            },
+            "type": "object",
+            "title": "Por Parte"
+          },
+          "opinioes": {
+            "items": {
+              "$ref": "#/components/schemas/OpiniaoNoPainel"
+            },
+            "type": "array",
+            "title": "Opinioes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "nota_media",
+          "por_parte",
+          "opinioes"
+        ],
+        "title": "OpinioesPainel"
       },
       "ParesPiloto": {
         "properties": {

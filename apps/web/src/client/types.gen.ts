@@ -505,6 +505,16 @@ export type ErroNewsletter = {
 };
 
 /**
+ * ErroOpiniao
+ */
+export type ErroOpiniao = {
+    /**
+     * Erro
+     */
+    erro: 'dados_invalidos' | 'corpo_grande' | 'limite_de_opinioes' | 'servico_indisponivel';
+};
+
+/**
  * ErroPainel
  */
 export type ErroPainel = {
@@ -905,6 +915,52 @@ export type NumerosPainel = {
     newsletter: NewsletterPainel;
     piloto: PilotoPainel;
     sistema: SistemaPainel;
+};
+
+/**
+ * OpiniaoNoPainel
+ */
+export type OpiniaoNoPainel = {
+    /**
+     * Criada Em
+     */
+    criada_em: string;
+    /**
+     * Nota
+     */
+    nota: number | null;
+    /**
+     * Partes
+     */
+    partes: Array<'trilhas' | 'parlamentares' | 'jogos' | 'edicoes'>;
+    /**
+     * Texto
+     */
+    texto: string;
+};
+
+/**
+ * OpinioesPainel
+ */
+export type OpinioesPainel = {
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Nota Media
+     */
+    nota_media: number | null;
+    /**
+     * Por Parte
+     */
+    por_parte: {
+        [key: string]: number;
+    };
+    /**
+     * Opinioes
+     */
+    opinioes: Array<OpiniaoNoPainel>;
 };
 
 /**
@@ -2364,6 +2420,63 @@ export type ObterEdicaoResponses = {
 
 export type ObterEdicaoResponse = ObterEdicaoResponses[keyof ObterEdicaoResponses];
 
+export type RegistrarOpiniaoData = {
+    /**
+     * PedidoOpiniao
+     */
+    body: {
+        /**
+         * Nota
+         */
+        nota?: number | null;
+        /**
+         * Partes
+         */
+        partes?: Array<'trilhas' | 'parlamentares' | 'jogos' | 'edicoes'>;
+        /**
+         * Texto
+         */
+        texto: string;
+        /**
+         * Site
+         */
+        site?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/opinioes';
+};
+
+export type RegistrarOpiniaoErrors = {
+    /**
+     * Corpo maior que 24 KiB.
+     */
+    413: ErroOpiniao;
+    /**
+     * Dados inválidos, sem repetir a entrada.
+     */
+    422: ErroOpiniao;
+    /**
+     * Cota global por minuto atingida.
+     */
+    429: ErroOpiniao;
+    /**
+     * Operação no banco não confirmada.
+     */
+    503: ErroOpiniao;
+};
+
+export type RegistrarOpiniaoError = RegistrarOpiniaoErrors[keyof RegistrarOpiniaoErrors];
+
+export type RegistrarOpiniaoResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type RegistrarOpiniaoResponse = RegistrarOpiniaoResponses[keyof RegistrarOpiniaoResponses];
+
 export type LerRascunhoData = {
     body?: never;
     path?: never;
@@ -2573,6 +2686,39 @@ export type ConsultarNumerosPainelResponses = {
 };
 
 export type ConsultarNumerosPainelResponse = ConsultarNumerosPainelResponses[keyof ConsultarNumerosPainelResponses];
+
+export type ConsultarOpinioesPainelData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/painel/opinioes';
+};
+
+export type ConsultarOpinioesPainelErrors = {
+    /**
+     * Sessão ausente ou inválida.
+     */
+    401: ErroPainel;
+    /**
+     * A conta não é administradora.
+     */
+    403: ErroPainel;
+    /**
+     * Falha inesperada na consulta.
+     */
+    500: ErroPainel;
+};
+
+export type ConsultarOpinioesPainelError = ConsultarOpinioesPainelErrors[keyof ConsultarOpinioesPainelErrors];
+
+export type ConsultarOpinioesPainelResponses = {
+    /**
+     * Successful Response
+     */
+    200: OpinioesPainel;
+};
+
+export type ConsultarOpinioesPainelResponse = ConsultarOpinioesPainelResponses[keyof ConsultarOpinioesPainelResponses];
 
 export type ListarParlamentaresData = {
     body?: never;

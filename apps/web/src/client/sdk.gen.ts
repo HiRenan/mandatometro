@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AbrirSaidaData, AbrirSaidaErrors, AlterarProgressoContaData, AlterarProgressoContaErrors, AlterarProgressoContaResponses, CadastrarContaData, CadastrarContaErrors, CadastrarContaResponses, ConfirmarContaData, ConfirmarContaErrors, ConfirmarContaResponses, ConsultarNumerosPainelData, ConsultarNumerosPainelErrors, ConsultarNumerosPainelResponses, ConsultarPerfilData, ConsultarPerfilErrors, ConsultarPerfilResponses, ConsultarProgressoContaData, ConsultarProgressoContaErrors, ConsultarProgressoContaResponses, EntrarContaData, EntrarContaErrors, EntrarContaResponses, ExcluirContaData, ExcluirContaErrors, ExcluirContaResponses, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, LerRascunhoData, LerRascunhoErrors, LerRascunhoResponses, ListarEdicoesData, ListarEdicoesErrors, ListarEdicoesResponses, ListarParlamentaresData, ListarParlamentaresErrors, ListarParlamentaresResponses, ListarTemasData, ListarTemasResponses, ListarVotosParlamentarData, ListarVotosParlamentarErrors, ListarVotosParlamentarResponses, ObterEdicaoData, ObterEdicaoErrors, ObterEdicaoResponses, ObterParlamentarData, ObterParlamentarErrors, ObterParlamentarResponses, ObterPatrimonioParlamentarData, ObterPatrimonioParlamentarErrors, ObterPatrimonioParlamentarResponses, ObterVotacaoData, ObterVotacaoErrors, ObterVotacaoResponses, PublicarEdicaoData, PublicarEdicaoErrors, PublicarEdicaoResponses, RecuperarContaData, RecuperarContaErrors, RecuperarContaResponses, RedefinirSenhaData, RedefinirSenhaErrors, RedefinirSenhaResponses, ReenviarConfirmacaoData, ReenviarConfirmacaoErrors, ReenviarConfirmacaoResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, RegistrarVisitaData, RegistrarVisitaErrors, RegistrarVisitaResponses, SairContaData, SairContaErrors, SairContaResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses, SalvarRevisaoData, SalvarRevisaoErrors, SalvarRevisaoResponses, TermoContaData, TermoContaErrors, TermoContaResponses } from './types.gen';
+import type { AbrirSaidaData, AbrirSaidaErrors, AlterarProgressoContaData, AlterarProgressoContaErrors, AlterarProgressoContaResponses, CadastrarContaData, CadastrarContaErrors, CadastrarContaResponses, ConfirmarContaData, ConfirmarContaErrors, ConfirmarContaResponses, ConsultarNumerosPainelData, ConsultarNumerosPainelErrors, ConsultarNumerosPainelResponses, ConsultarOpinioesPainelData, ConsultarOpinioesPainelErrors, ConsultarOpinioesPainelResponses, ConsultarPerfilData, ConsultarPerfilErrors, ConsultarPerfilResponses, ConsultarProgressoContaData, ConsultarProgressoContaErrors, ConsultarProgressoContaResponses, EntrarContaData, EntrarContaErrors, EntrarContaResponses, ExcluirContaData, ExcluirContaErrors, ExcluirContaResponses, HealthData, HealthResponses, InscreverNewsletterData, InscreverNewsletterErrors, InscreverNewsletterResponses, LerRascunhoData, LerRascunhoErrors, LerRascunhoResponses, ListarEdicoesData, ListarEdicoesErrors, ListarEdicoesResponses, ListarParlamentaresData, ListarParlamentaresErrors, ListarParlamentaresResponses, ListarTemasData, ListarTemasResponses, ListarVotosParlamentarData, ListarVotosParlamentarErrors, ListarVotosParlamentarResponses, ObterEdicaoData, ObterEdicaoErrors, ObterEdicaoResponses, ObterParlamentarData, ObterParlamentarErrors, ObterParlamentarResponses, ObterPatrimonioParlamentarData, ObterPatrimonioParlamentarErrors, ObterPatrimonioParlamentarResponses, ObterVotacaoData, ObterVotacaoErrors, ObterVotacaoResponses, PublicarEdicaoData, PublicarEdicaoErrors, PublicarEdicaoResponses, RecuperarContaData, RecuperarContaErrors, RecuperarContaResponses, RedefinirSenhaData, RedefinirSenhaErrors, RedefinirSenhaResponses, ReenviarConfirmacaoData, ReenviarConfirmacaoErrors, ReenviarConfirmacaoResponses, RegistrarOpiniaoData, RegistrarOpiniaoErrors, RegistrarOpiniaoResponses, RegistrarTentativaPilotoData, RegistrarTentativaPilotoErrors, RegistrarTentativaPilotoResponses, RegistrarVisitaData, RegistrarVisitaErrors, RegistrarVisitaResponses, SairContaData, SairContaErrors, SairContaResponses, SairDaNewsletterData, SairDaNewsletterErrors, SairDaNewsletterResponses, SalvarRevisaoData, SalvarRevisaoErrors, SalvarRevisaoResponses, TermoContaData, TermoContaErrors, TermoContaResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -171,6 +171,20 @@ export const listarEdicoes = <ThrowOnError extends boolean = false>(options?: Op
 export const obterEdicao = <ThrowOnError extends boolean = false>(options: Options<ObterEdicaoData, ThrowOnError>): RequestResult<ObterEdicaoResponses, ObterEdicaoErrors, ThrowOnError> => (options.client ?? client).get<ObterEdicaoResponses, ObterEdicaoErrors, ThrowOnError>({ url: '/edicoes/{id}', ...options });
 
 /**
+ * Receber uma opinião sobre o site
+ *
+ * Recebe JSON de até 24 KiB. Robôs conhecidos e envios com o campo isca preenchido recebem a mesma resposta de um envio gravado.
+ */
+export const registrarOpiniao = <ThrowOnError extends boolean = false>(options: Options<RegistrarOpiniaoData, ThrowOnError>): RequestResult<RegistrarOpiniaoResponses, RegistrarOpiniaoErrors, ThrowOnError> => (options.client ?? client).post<RegistrarOpiniaoResponses, RegistrarOpiniaoErrors, ThrowOnError>({
+    url: '/opinioes',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Ler o rascunho da edição mais recente
  *
  * Devolve o mesmo arquivo do CLI edicao exportar, ou null se não há rascunho.
@@ -202,6 +216,13 @@ export const publicarEdicao = <ThrowOnError extends boolean = false>(options: Op
  * Agregados do site e das coletas. O acesso é exclusivo da administradora.
  */
 export const consultarNumerosPainel = <ThrowOnError extends boolean = false>(options?: Options<ConsultarNumerosPainelData, ThrowOnError>): RequestResult<ConsultarNumerosPainelResponses, ConsultarNumerosPainelErrors, ThrowOnError> => (options?.client ?? client).get<ConsultarNumerosPainelResponses, ConsultarNumerosPainelErrors, ThrowOnError>({ url: '/painel/numeros', ...options });
+
+/**
+ * Ler as opiniões sobre o site
+ *
+ * Agregados de todas as opiniões e lista das 500 mais recentes, só para a administradora.
+ */
+export const consultarOpinioesPainel = <ThrowOnError extends boolean = false>(options?: Options<ConsultarOpinioesPainelData, ThrowOnError>): RequestResult<ConsultarOpinioesPainelResponses, ConsultarOpinioesPainelErrors, ThrowOnError> => (options?.client ?? client).get<ConsultarOpinioesPainelResponses, ConsultarOpinioesPainelErrors, ThrowOnError>({ url: '/painel/opinioes', ...options });
 
 /**
  * Listar os parlamentares em exercício
