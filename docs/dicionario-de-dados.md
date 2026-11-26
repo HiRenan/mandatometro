@@ -860,6 +860,17 @@ Uma conta está ativa na semana em que abriu uma sessão ou marcou uma leitura. 
 
 As visitas diárias e as dez páginas mais vistas usam os últimos 30 dias, incluindo o dia atual. O sistema conta sessões com vídeo, proposições distintas com tema, bens agregados por candidatura e tipo e os meses presentes na série do IPCA. `ultimas_coletas` usa a maior data de `fonte.coletado_em` por domínio de coleta da Câmara, do Senado, da Imprensa Nacional, do TSE e do Banco Central. Um domínio sem coleta registrada fica nulo. [Privacidade do contador e dos agregados](dados-pessoais.md#números-do-painel-e-visitas)
 
+## Opiniões sobre o site
+
+| Tabela | Campos | Regra |
+| --- | --- | --- |
+| `opiniao` | `id` (int), `criada_em` (timestamptz), `nota` (smallint), `partes` (text[]), `texto` (text) | A data tem o padrão do banco. A nota vai de 1 a 5 ou fica nula. Cada parte de `trilhas`, `parlamentares`, `jogos` e `edicoes` pode aparecer uma vez. O texto tem de 1 a 2.000 caracteres. |
+| `limite_opiniao` | `janela` (timestamptz), `quantidade` (int) | Chave primária no minuto, com cota global de 30 envios. A API conta e grava na mesma transação. Um novo envio válido limpa as janelas anteriores ao minuto precedente. |
+
+`POST /opinioes` recebe JSON de até 24 KiB com texto obrigatório, nota e partes opcionais e o campo isca `site`. O texto é aparado nas pontas. A resposta 204 vale também para robôs conhecidos e para a isca preenchida. A API devolve 413 para corpo grande, 422 para dados inválidos, 429 com `Retry-After` quando a cota acaba e 503 quando o banco falha.
+
+`GET /painel/opinioes` devolve à administradora o total, a média das notas dadas e a contagem de cada parte, considerando todas as opiniões. A lista traz data, nota, partes e texto das últimas 500, por data e, no empate, por id, ambos decrescentes. [Privacidade das opiniões](dados-pessoais.md#opiniões-sobre-o-site)
+
 ## Campos pessoais
 
 As regras de uso, exposição e descarte estão em [dados pessoais](dados-pessoais.md).

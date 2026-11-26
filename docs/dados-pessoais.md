@@ -60,6 +60,14 @@ A tela `/painel` guarda o rascunho só na memória da página, e nada dele vai p
 
 `POST /visitas` guarda só o dia de Brasília, o caminho da página pública e a contagem. O contador não usa cookie nem guarda IP, agente de usuário ou identificação de quem visitou. Endereços de parlamentares entram só pelo id público, sem o nome no sufixo. Pedidos com query no caminho, telas da conta e do painel e robôs conhecidos ficam fora da contagem. A cota guarda apenas o minuto e a quantidade global. Os registros de acesso da hospedagem seguem as regras da seção de inscrição e conta. [Contador e agregados no dicionário](dicionario-de-dados.md#contador-de-visitas-e-números-do-painel)
 
+## Opiniões sobre o site
+
+O formulário de `/opiniao` guarda o texto, a nota e as partes do site que a pessoa escolheu, com um id interno e a data e hora do envio. A nota e as escolhas são opcionais. O site pede que você deixe dados pessoais fora do texto e indica `contato@mandatometro.com.br` para quem quer resposta.
+
+O envio dispensa conta, nome, e-mail e cookie. A API não guarda o IP, o agente de usuário nem o campo isca. O agente de usuário é usado na hora para reconhecer robôs. A cota guarda apenas o minuto e a contagem global.
+
+Só a administradora lê as opiniões pelo painel, com a sessão da API e `Cache-Control: no-store`. O texto fica na memória da página do painel enquanto ela está aberta. Os logs omitem o texto, a nota e as partes. A falha no banco é registrada com uma mensagem fixa. [Opiniões no dicionário de dados](dicionario-de-dados.md#opiniões-sobre-o-site)
+
 ## Trilhas e piloto
 
 Nenhum dado pessoal entra no texto publicado das trilhas. As trilhas não pedem dados pessoais. As respostas do quiz não identificam quem respondeu. O piloto segue o [contrato de medição](medicao-do-piloto.md#conteúdo-e-dados).
