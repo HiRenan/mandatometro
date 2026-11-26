@@ -659,7 +659,7 @@
 	}
 
 	/* A dobra: do fundo do vão de cima até a base, na cor do bloco de tinta. */
-	.marca-inicial::before {
+	.marca-inicial[data-archivo-carregada]::before {
 		content: "" / "";
 		position: absolute;
 		top: 0.525em;
@@ -670,7 +670,7 @@
 	}
 
 	/* As cinco fitas, num fio embaixo do M, abaixo da linha de base. */
-	.marca-inicial::after {
+	.marca-inicial[data-archivo-carregada]::after {
 		content: "" / "";
 		position: absolute;
 		top: 0.894em;

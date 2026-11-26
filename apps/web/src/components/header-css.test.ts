@@ -110,8 +110,11 @@ describe("o CSS do cabeçalho", () => {
 		expect(css).not.toContain(".marca-palavra svg");
 		// A dobra desce do vão de cima até a base do M, a 0,834 em do alto da
 		// caixa de linha 1, e o fio das fitas fica logo abaixo da base.
-		const dobra = regra(css, ".marca-inicial::before") ?? "";
-		const fio = regra(css, ".marca-inicial::after") ?? "";
+		expect(regra(css, ".marca-inicial::before")).toBeUndefined();
+		expect(regra(css, ".marca-inicial::after")).toBeUndefined();
+		const inicialComArchivo = ".marca-inicial[data-archivo-carregada]";
+		const dobra = regra(css, `${inicialComArchivo}::before`) ?? "";
+		const fio = regra(css, `${inicialComArchivo}::after`) ?? "";
 		const medida = (corpo: string, nome: string) =>
 			Number(new RegExp(`\\b${nome}: ([\\d.]+)em;`).exec(corpo)?.[1]);
 		expect(medida(dobra, "top") + medida(dobra, "height")).toBeCloseTo(
