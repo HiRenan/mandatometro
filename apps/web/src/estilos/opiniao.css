@@ -65,7 +65,7 @@
 	}
 
 	.partes-da-opiniao {
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.25rem), 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
 		column-gap: 0.5rem;
 	}
 
