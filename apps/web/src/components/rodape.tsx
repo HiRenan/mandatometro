@@ -12,7 +12,7 @@ import { NOME_DO_SITE } from "./nome-do-site";
  * no documento (__root.tsx), e por isso aparece em todas as páginas, inclusive na
  * de não encontrado e na de erro.
  */
-export function Rodape() {
+export function Rodape({ comApi }: { comApi?: boolean }) {
 	return (
 		<footer className="rodape">
 			{/* Abaixo do lg, uma coluna da largura da tela: com a letra grande, uma
@@ -45,6 +45,11 @@ export function Rodape() {
 						/>
 						.
 					</p>
+					{comApi && (
+						<p>
+							<AcaoDeTexto href="/opiniao" texto="Dê sua opinião" />.
+						</p>
+					)}
 				</div>
 			</div>
 			{/* Dezesseis azulejos numa fileira; no celular, os oito primeiros, que já

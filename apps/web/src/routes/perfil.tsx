@@ -408,6 +408,9 @@ function Perfil() {
 										texto="Ver os números do site"
 									/>
 								</p>
+								<p>
+									<LinkDeAcao to="/painel/opinioes" texto="Ler as opiniões" />
+								</p>
 							</>
 						)}
 					</div>

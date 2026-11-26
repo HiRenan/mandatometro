@@ -14,6 +14,7 @@ import { Route as RotaRaiz } from "./__root";
 import { Route as RotaAutenticada } from "./_autenticado";
 import { Route as RotaDoPainel } from "./_autenticado/painel";
 import { Route as RotaDosNumeros } from "./_autenticado/painel_.numeros";
+import { Route as RotaDasOpinioes } from "./_autenticado/painel_.opinioes";
 
 // O HTML que o servidor manda em /painel e em /painel/numeros: o layout da
 // administradora não roda no servidor (ssr: false), e o servidor do site não
@@ -67,6 +68,11 @@ function criarRouter() {
 					path: "/painel/numeros",
 					getParentRoute: () => autenticado,
 				} as never),
+				RotaDasOpinioes.update({
+					id: "/painel_/opinioes",
+					path: "/painel/opinioes",
+					getParentRoute: () => autenticado,
+				} as never),
 			]),
 		]),
 		defaultNotFoundComponent: NaoEncontrado,
@@ -118,5 +124,17 @@ describe("o /painel no servidor", () => {
 		expect(html).not.toContain("Carregando os números");
 		expect(fetch).not.toHaveBeenCalled();
 		expect(catalogo).not.toHaveBeenCalled();
+	});
+
+	it("nas opiniões, manda só a conferência e não consulta os textos", async () => {
+		const { resposta, html, fetch } = await pedir("/painel/opinioes", {
+			Cookie: "sessao_conta=um-cookie-de-mentira",
+		});
+		expect(resposta.status).toBe(200);
+		expect(resposta.headers.get("X-Robots-Tag")).toBe("noindex");
+		expect(resposta.headers.get("Cache-Control")).toBe("no-store");
+		expect(html).toContain("Verificando sua sessão…");
+		expect(html).not.toContain("Opiniões sobre o site");
+		expect(fetch).not.toHaveBeenCalled();
 	});
 });

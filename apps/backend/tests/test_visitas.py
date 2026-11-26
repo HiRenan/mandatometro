@@ -59,10 +59,12 @@ def test_conta_por_caminho_e_vira_o_dia_em_brasilia(ambiente):
         for resposta in processos.map(lambda _: _post(cliente, "/"), range(2)):
             _sem_corpo(resposta, 204)
     _sem_corpo(_post(cliente, "/trilhas/"), 204)
+    _sem_corpo(_post(cliente, "/opiniao"), 204)
     relogio[0] += timedelta(seconds=10)
     _sem_corpo(_post(cliente, "/", headers={"Cookie": "sessao_conta=exemplo"}), 204)
     assert _visitas(banco) == [
         ("2026-11-22", "/", 2),
+        ("2026-11-22", "/opiniao", 1),
         ("2026-11-22", "/trilhas", 1),
         ("2026-11-23", "/", 1),
     ]
@@ -298,6 +300,7 @@ def test_catalogo_de_visitas_e_leituras_acompanha_o_conteudo_do_site():
         "/newsletter/sair",
         "/painel",
         "/painel/numeros",
+        "/painel/opinioes",
         "/perfil",
     }
     assert excluidas <= rotas_estaticas
