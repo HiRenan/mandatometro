@@ -18,7 +18,7 @@
 import logging
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Literal
+from typing import Literal, get_args
 from uuid import UUID
 
 from sqlalchemy import (
@@ -760,6 +760,53 @@ class LimiteVisita(Base):
     """Janela da cota global, independente das visitas por página."""
 
     __tablename__ = "limite_visita"
+    __table_args__ = (
+        CheckConstraint("janela = date_trunc('minute', janela)", name="janela_minuto"),
+        CheckConstraint("quantidade > 0", name="quantidade_positiva"),
+    )
+
+    janela: Mapped[datetime] = mapped_column(primary_key=True)
+    quantidade: Mapped[int] = mapped_column(server_default="1")
+
+
+ParteOpiniao = Literal["trilhas", "parlamentares", "jogos", "edicoes"]
+PARTES_DA_OPINIAO: tuple[ParteOpiniao, ...] = get_args(ParteOpiniao)
+TAMANHO_TEXTO_OPINIAO = 2000
+
+
+class Opiniao(Base):
+    """Opinião sobre o site, sem vínculo com quem enviou."""
+
+    __tablename__ = "opiniao"
+    __table_args__ = (
+        CheckConstraint("nota BETWEEN 1 AND 5", name="nota"),
+        # Cada parte conhecida soma uma vez. Duplicatas, nulos e partes desconhecidas
+        # fazem o comprimento do vetor exceder essa soma.
+        CheckConstraint(
+            "coalesce(array_ndims(partes), 1) = 1 AND cardinality(partes) = ("
+            + " + ".join(
+                f"CASE WHEN '{parte}' = ANY(partes) THEN 1 ELSE 0 END"
+                for parte in PARTES_DA_OPINIAO
+            )
+            + ")",
+            name="partes",
+        ),
+        CheckConstraint(f"char_length(texto) BETWEEN 1 AND {TAMANHO_TEXTO_OPINIAO}", name="texto"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    criada_em: Mapped[datetime] = mapped_column(server_default=func.now())
+    nota: Mapped[int | None] = mapped_column(SmallInteger)
+    partes: Mapped[list[ParteOpiniao]] = mapped_column(
+        ARRAY(Text), server_default=text("'{}'::text[]")
+    )
+    texto: Mapped[str] = mapped_column(Text)
+
+
+class LimiteOpiniao(Base):
+    """Contagem global por minuto dos envios de opiniões."""
+
+    __tablename__ = "limite_opiniao"
     __table_args__ = (
         CheckConstraint("janela = date_trunc('minute', janela)", name="janela_minuto"),
         CheckConstraint("quantidade > 0", name="quantidade_positiva"),

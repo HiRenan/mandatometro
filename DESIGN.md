@@ -1051,6 +1051,12 @@ Tudo é reto: raio zero (`--radius: 0`).
   - **Sem JavaScript:** o formulário, a espera do login e a linha das mensagens saem pelo `@media (scripting: none)` do `estilos/conta.css`, com o display no CSS da peça (veja `docs/codigo-do-site.md`), e o `<noscript>` diz "A conta precisa do JavaScript do navegador ligado.". Os links entre as telas continuam.
 - **Título da aba:** "‹título› · Mandatômetro", como "Entrar · Mandatômetro". O perfil também usa o "·"; o painel continua com o "|".
 
+### Opiniões sobre o site
+
+- **A página `/opiniao`** usa a folha de leitura, com o título "Dê sua opinião" e o aviso de privacidade. A nota usa cinco rádios nativos com rótulos em bloco e 44 px de altura mínima. As partes do site usam as caixas de marcar (`.marcar`). A nota e as partes têm legendas próprias e são opcionais.
+- **O texto** usa a peça Campo, com contagem em Label e o erro ligado ao campo. O botão de envio mantém o foco enquanto espera. A região de aviso anuncia o envio e a confirmação, e a conclusão leva o foco ao link de voltar ao início.
+- **O rodapé** oferece "Dê sua opinião" quando há API. No painel e no perfil da administradora, o link fica junto de "Números". A folha do painel traz os totais e a lista, com um fio entre as opiniões.
+
 ### Painel de revisão
 - **Endereço e acesso:** `/painel`, só para a conta administradora (a #207). A entrada é o link "Revisar a edição da semana", uma ação em texto no `/perfil` que só ela vê. Sem sessão, o site leva ao `/login`. A conta comum, e a que perdeu o papel, veem "Página não encontrada". Na primeira visita e depois de um `401` ou `404` da API do painel, o conteúdo principal mostra só "Verificando sua sessão…" enquanto a guarda responde. O rascunho e a folha do painel saem da tela durante a conferência. O HTML do servidor também traz só a frase de conferência no conteúdo principal. A página não entra no sitemap, na busca nem no cabeçalho, e leva `noindex` e `no-store`.
 - **A folha:** a da página da edição, sem o azulejo do canto, porque é uma tela de trabalho. A cor fica nos números das fitas, e o resto é tinta e papel. No alto vêm:

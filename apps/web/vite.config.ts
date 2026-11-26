@@ -32,7 +32,7 @@ export default defineConfig({
 		// build, com o arquivo e o problema.
 		conferirConteudo(),
 		tailwindcss(),
-		tanstackStart(),
+		tanstackStart({ server: { entry: "servidor.server.ts" } }),
 		// Sem preset fixo: na Vercel, o Nitro monta a saída no formato dela
 		// (.vercel/output); fora dela, a do node-server (.output/server), que o
 		// Dockerfile também fixa pelo NITRO_PRESET.

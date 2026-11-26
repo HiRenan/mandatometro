@@ -1,20 +1,18 @@
 """Contador público de páginas vistas, com cota global e sem credenciais."""
 
 import logging
-import re
-from datetime import UTC, datetime, timedelta
-from math import ceil
+from datetime import UTC
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Request, Response
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
-from sqlalchemy import Connection, delete, func, select
+from fastapi import APIRouter, HTTPException, Request, Response
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import Connection, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.concurrency import run_in_threadpool
-from starlette.requests import ClientDisconnect
 
 from mandatometro import db
+from mandatometro.api.pedidos_publicos import agente_e_robo, consumir_cota, ler_json_limitado
 from mandatometro.db.modelos import (
     TAMANHO_CAMINHO_VISITA,
     Edicao,
@@ -30,11 +28,6 @@ router = APIRouter(tags=["visitas"])
 LIMITE_POR_MINUTO = 600
 LIMITE_DO_CORPO = 2048
 _FUSO = ZoneInfo("America/Sao_Paulo")
-_ROBOS = re.compile(
-    r"bot\b|crawler|spider|slurp|headlesschrome|facebookexternalhit|bingpreview|"
-    r"curl/|wget/|python-(?:requests|httpx)|go-http-client",
-    re.IGNORECASE,
-)
 _ITENS = {"edicoes": Edicao, "parlamentares": Parlamentar, "votacoes": Votacao}
 
 
@@ -42,22 +35,6 @@ class PedidoVisita(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     caminho: str = Field(max_length=TAMANHO_CAMINHO_VISITA)
-
-
-async def _ler_caminho(request: Request) -> str | None:
-    tipo = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
-    if tipo != "application/json":
-        return None
-
-    corpo = bytearray()
-    try:
-        async for bloco in request.stream():
-            if len(corpo) + len(bloco) > LIMITE_DO_CORPO:
-                return None
-            corpo.extend(bloco)
-        return normalizar_caminho(PedidoVisita.model_validate_json(corpo).caminho)
-    except (ValidationError, ClientDisconnect):
-        return None
 
 
 def _existe(conexao: Connection, caminho: str) -> bool:
@@ -72,29 +49,13 @@ def _existe(conexao: Connection, caminho: str) -> bool:
     return conexao.scalar(consulta) is not None
 
 
-def _consumir_cota(conexao: Connection, instante: datetime) -> int | None:
-    minuto = instante.replace(second=0, microsecond=0)
-    conexao.execute(delete(LimiteVisita).where(LimiteVisita.janela < minuto - timedelta(minutes=1)))
-    gravar = insert(LimiteVisita).values(janela=minuto)
-    quantidade = conexao.scalar(
-        gravar.on_conflict_do_update(
-            index_elements=[LimiteVisita.janela],
-            set_={"quantidade": LimiteVisita.quantidade + 1},
-            where=LimiteVisita.quantidade < LIMITE_POR_MINUTO,
-        ).returning(LimiteVisita.quantidade)
-    )
-    if quantidade is None:
-        return ceil((minuto + timedelta(minutes=1) - instante).total_seconds())
-    return None
-
-
 def _contar(caminho: str) -> int | None:
     with db.engine().begin() as conexao:
         if not _existe(conexao, caminho):
             return None
 
         instante = conexao.execute(select(func.clock_timestamp())).scalar_one().astimezone(UTC)
-        tentar_em = _consumir_cota(conexao, instante)
+        tentar_em = consumir_cota(conexao, LimiteVisita.__table__, instante, LIMITE_POR_MINUTO)
         if tentar_em is not None:
             return tentar_em
         visita = insert(Visita).values(dia=instante.astimezone(_FUSO).date(), caminho=caminho)
@@ -144,9 +105,13 @@ def _resposta(codigo: int, *, tentar_em: int | None = None) -> Response:
     },
 )
 async def registrar_visita(request: Request) -> Response:
-    if _ROBOS.search(request.headers.get("user-agent", "")):
+    if agente_e_robo(request):
         return _resposta(204)
-    caminho = await _ler_caminho(request)
+    try:
+        pedido = await ler_json_limitado(request, PedidoVisita, LIMITE_DO_CORPO)
+    except HTTPException:
+        return _resposta(204)
+    caminho = normalizar_caminho(pedido.caminho)
     if caminho is None:
         return _resposta(204)
 

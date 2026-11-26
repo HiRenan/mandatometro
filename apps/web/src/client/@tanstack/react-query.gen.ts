@@ -3,8 +3,8 @@
 import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { abrirSaida, alterarProgressoConta, cadastrarConta, confirmarConta, consultarNumerosPainel, consultarPerfil, consultarProgressoConta, entrarConta, excluirConta, health, inscreverNewsletter, lerRascunho, listarEdicoes, listarParlamentares, listarTemas, listarVotosParlamentar, obterEdicao, obterParlamentar, obterPatrimonioParlamentar, obterVotacao, type Options, publicarEdicao, recuperarConta, redefinirSenha, reenviarConfirmacao, registrarTentativaPiloto, registrarVisita, sairConta, sairDaNewsletter, salvarRevisao, termoConta } from '../sdk.gen';
-import type { AbrirSaidaData, AbrirSaidaError, AlterarProgressoContaData, AlterarProgressoContaError, AlterarProgressoContaResponse, CadastrarContaData, CadastrarContaError, CadastrarContaResponse, ConfirmarContaData, ConfirmarContaError, ConfirmarContaResponse, ConsultarNumerosPainelData, ConsultarNumerosPainelError, ConsultarNumerosPainelResponse, ConsultarPerfilData, ConsultarPerfilError, ConsultarPerfilResponse, ConsultarProgressoContaData, ConsultarProgressoContaError, ConsultarProgressoContaResponse, EntrarContaData, EntrarContaError, EntrarContaResponse, ExcluirContaData, ExcluirContaError, ExcluirContaResponse, HealthData, HealthResponse, InscreverNewsletterData, InscreverNewsletterError, InscreverNewsletterResponse, LerRascunhoData, LerRascunhoError, LerRascunhoResponse, ListarEdicoesData, ListarEdicoesError, ListarEdicoesResponse, ListarParlamentaresData, ListarParlamentaresError, ListarParlamentaresResponse, ListarTemasData, ListarTemasResponse, ListarVotosParlamentarData, ListarVotosParlamentarError, ListarVotosParlamentarResponse, ObterEdicaoData, ObterEdicaoError, ObterEdicaoResponse, ObterParlamentarData, ObterParlamentarError, ObterParlamentarResponse, ObterPatrimonioParlamentarData, ObterPatrimonioParlamentarError, ObterPatrimonioParlamentarResponse, ObterVotacaoData, ObterVotacaoError, ObterVotacaoResponse, PublicarEdicaoData, PublicarEdicaoError, PublicarEdicaoResponse, RecuperarContaData, RecuperarContaError, RecuperarContaResponse, RedefinirSenhaData, RedefinirSenhaError, RedefinirSenhaResponse, ReenviarConfirmacaoData, ReenviarConfirmacaoError, ReenviarConfirmacaoResponse, RegistrarTentativaPilotoData, RegistrarTentativaPilotoError, RegistrarTentativaPilotoResponse, RegistrarVisitaData, RegistrarVisitaResponse, SairContaData, SairContaError, SairContaResponse, SairDaNewsletterData, SairDaNewsletterError, SalvarRevisaoData, SalvarRevisaoError, SalvarRevisaoResponse, TermoContaData, TermoContaError, TermoContaResponse } from '../types.gen';
+import { abrirSaida, alterarProgressoConta, cadastrarConta, confirmarConta, consultarNumerosPainel, consultarOpinioesPainel, consultarPerfil, consultarProgressoConta, entrarConta, excluirConta, health, inscreverNewsletter, lerRascunho, listarEdicoes, listarParlamentares, listarTemas, listarVotosParlamentar, obterEdicao, obterParlamentar, obterPatrimonioParlamentar, obterVotacao, type Options, publicarEdicao, recuperarConta, redefinirSenha, reenviarConfirmacao, registrarOpiniao, registrarTentativaPiloto, registrarVisita, sairConta, sairDaNewsletter, salvarRevisao, termoConta } from '../sdk.gen';
+import type { AbrirSaidaData, AbrirSaidaError, AlterarProgressoContaData, AlterarProgressoContaError, AlterarProgressoContaResponse, CadastrarContaData, CadastrarContaError, CadastrarContaResponse, ConfirmarContaData, ConfirmarContaError, ConfirmarContaResponse, ConsultarNumerosPainelData, ConsultarNumerosPainelError, ConsultarNumerosPainelResponse, ConsultarOpinioesPainelData, ConsultarOpinioesPainelError, ConsultarOpinioesPainelResponse, ConsultarPerfilData, ConsultarPerfilError, ConsultarPerfilResponse, ConsultarProgressoContaData, ConsultarProgressoContaError, ConsultarProgressoContaResponse, EntrarContaData, EntrarContaError, EntrarContaResponse, ExcluirContaData, ExcluirContaError, ExcluirContaResponse, HealthData, HealthResponse, InscreverNewsletterData, InscreverNewsletterError, InscreverNewsletterResponse, LerRascunhoData, LerRascunhoError, LerRascunhoResponse, ListarEdicoesData, ListarEdicoesError, ListarEdicoesResponse, ListarParlamentaresData, ListarParlamentaresError, ListarParlamentaresResponse, ListarTemasData, ListarTemasResponse, ListarVotosParlamentarData, ListarVotosParlamentarError, ListarVotosParlamentarResponse, ObterEdicaoData, ObterEdicaoError, ObterEdicaoResponse, ObterParlamentarData, ObterParlamentarError, ObterParlamentarResponse, ObterPatrimonioParlamentarData, ObterPatrimonioParlamentarError, ObterPatrimonioParlamentarResponse, ObterVotacaoData, ObterVotacaoError, ObterVotacaoResponse, PublicarEdicaoData, PublicarEdicaoError, PublicarEdicaoResponse, RecuperarContaData, RecuperarContaError, RecuperarContaResponse, RedefinirSenhaData, RedefinirSenhaError, RedefinirSenhaResponse, ReenviarConfirmacaoData, ReenviarConfirmacaoError, ReenviarConfirmacaoResponse, RegistrarOpiniaoData, RegistrarOpiniaoError, RegistrarOpiniaoResponse, RegistrarTentativaPilotoData, RegistrarTentativaPilotoError, RegistrarTentativaPilotoResponse, RegistrarVisitaData, RegistrarVisitaResponse, SairContaData, SairContaError, SairContaResponse, SairDaNewsletterData, SairDaNewsletterError, SalvarRevisaoData, SalvarRevisaoError, SalvarRevisaoResponse, TermoContaData, TermoContaError, TermoContaResponse } from '../types.gen';
 
 /**
  * Receber a inscrição e enviar a última edição publicada
@@ -338,6 +338,25 @@ export const obterEdicaoOptions = (options: Options<ObterEdicaoData>) => queryOp
     queryKey: obterEdicaoQueryKey(options)
 });
 
+/**
+ * Receber uma opinião sobre o site
+ *
+ * Recebe JSON de até 24 KiB. Robôs conhecidos e envios com o campo isca preenchido recebem a mesma resposta de um envio gravado.
+ */
+export const registrarOpiniaoMutation = (options?: Partial<Options<RegistrarOpiniaoData>>): UseMutationOptions<RegistrarOpiniaoResponse, RegistrarOpiniaoError, Options<RegistrarOpiniaoData>> => {
+    const mutationOptions: UseMutationOptions<RegistrarOpiniaoResponse, RegistrarOpiniaoError, Options<RegistrarOpiniaoData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await registrarOpiniao({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
 export const lerRascunhoQueryKey = (options?: Options<LerRascunhoData>) => createQueryKey('lerRascunho', options);
 
 /**
@@ -412,6 +431,26 @@ export const consultarNumerosPainelOptions = (options?: Options<ConsultarNumeros
         return data;
     },
     queryKey: consultarNumerosPainelQueryKey(options)
+});
+
+export const consultarOpinioesPainelQueryKey = (options?: Options<ConsultarOpinioesPainelData>) => createQueryKey('consultarOpinioesPainel', options);
+
+/**
+ * Ler as opiniões sobre o site
+ *
+ * Agregados de todas as opiniões e lista das 500 mais recentes, só para a administradora.
+ */
+export const consultarOpinioesPainelOptions = (options?: Options<ConsultarOpinioesPainelData>) => queryOptions<ConsultarOpinioesPainelResponse, ConsultarOpinioesPainelError, ConsultarOpinioesPainelResponse, ReturnType<typeof consultarOpinioesPainelQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await consultarOpinioesPainel({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: consultarOpinioesPainelQueryKey(options)
 });
 
 export const listarParlamentaresQueryKey = (options?: Options<ListarParlamentaresData>) => createQueryKey('listarParlamentares', options);
