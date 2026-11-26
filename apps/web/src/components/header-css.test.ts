@@ -3,9 +3,10 @@ import { describe, expect, it } from "vitest";
 
 // O cabeçalho tem dois links — Trilhas e Jogos — e quatro onde o site tem a
 // API, com Parlamentares e Edições, mais a busca e a conta. No computador, uma
-// linha: o nome, os links no meio e a busca e a conta à direita; no celular, os
-// links descem para baixo (header.tsx). Este teste lê o CSS do site, porque o
-// jsdom não desenha. As medidas citadas vêm do Edge, com o build.
+// linha: o nome, os links no meio e a busca e a conta à direita; no tablet, os
+// links descem para baixo; no celular, o nome e o botão "Menu" (header.tsx).
+// Este teste lê o CSS do site, porque o jsdom não desenha. As medidas citadas
+// vêm do Edge.
 
 const css = readFileSync(new URL("../index.css", import.meta.url), "utf8");
 const cssDaBusca = readFileSync(
@@ -28,6 +29,9 @@ function blocosDe(texto: string, inicio: string, operador: "<" | ">=") {
 const ate = blocosDe(css, "@media", "<");
 const desde = blocosDe(css, "@media", ">=");
 
+/** O bloco do celular, abaixo de 48rem, onde o menu aparece. */
+const celular = ate.find(({ corpo }) => corpo.includes(".menu-do-celular {"));
+
 /** O corpo da regra de um seletor fora de @media, no começo da linha. */
 function regra(texto: string, seletor: string) {
 	const escapado = seletor.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -49,19 +53,26 @@ describe("o CSS do cabeçalho", () => {
 		expect(grade?.largura).toBe(62);
 	});
 
-	it("cada largura mostra uma das duas listas dos links", () => {
+	it("cada largura mostra uma das três listas dos links", () => {
 		const grade = desde.find(({ largura }) => largura === 62)?.corpo;
 
-		// Fora do computador, só a lista de baixo; nele, só a do meio.
+		// No computador, só a lista do meio; no tablet, só a de baixo; no
+		// celular, só o menu, sem a busca e a conta do lado do nome.
 		expect(regra(css, ".topo-nav-meio")).toMatch(/^\s*display: none;\s*$/);
 		expect(grade).toMatch(/\.topo-nav-meio \{\s*display: block;\s*\}/);
 		expect(grade).toMatch(/\.topo-nav-baixo \{\s*display: none;\s*\}/);
+		expect(regra(css, ".menu-do-celular")).toMatch(/^\s*display: none;\s*$/);
+		expect(celular?.largura).toBe(48);
+		expect(celular?.corpo).toMatch(
+			/\.topo-ferramentas,\s*\.topo-nav-baixo \{\s*display: none;\s*\}/,
+		);
+		expect(celular?.corpo).toMatch(
+			/\.menu-do-celular \{\s*display: block;\s*\}/,
+		);
 	});
 
-	it("a lista de baixo toma a linha inteira e é o contêiner da coluna", () => {
-		expect(regra(css, ".topo-nav-baixo")).toMatch(
-			/^\s*flex: 1 1 100%;\s*container: links-de-baixo \/ inline-size;\s*$/,
-		);
+	it("a lista de baixo toma a linha inteira, com os links no meio", () => {
+		expect(regra(css, ".topo-nav-baixo")).toMatch(/^\s*flex: 1 1 100%;\s*$/);
 		expect(regra(css, ".topo-nav-baixo .topo-links")).toMatch(
 			/justify-content: center;/,
 		);
@@ -78,21 +89,6 @@ describe("o CSS do cabeçalho", () => {
 	it("no celular, nenhuma regra esconde o primeiro link: o Início saiu, e o Trilhas fica", () => {
 		expect(css).not.toMatch(TIRA_O_INICIO);
 		expect(css).not.toMatch(/\.topo-links > li:first-child/);
-	});
-
-	it("no celular estreito, os links e a conta se apertam", () => {
-		const aperta =
-			/\.topo-links a,\s*\.entrada-da-conta a \{\s*padding-inline: (\d+)px;\s*\}/;
-		// O respiro cai duas vezes: no celular (o 48rem) e, mais, no celular
-		// estreito. Aqui vale a faixa mais estreita das duas.
-		const [midia] = ate
-			.filter(({ corpo }) => aperta.test(corpo))
-			.sort((uma, outra) => uma.largura - outra.largura);
-
-		expect(midia, "a regra que aperta os links").toBeDefined();
-		expect(midia?.largura).toBeGreaterThanOrEqual(24);
-		expect(midia?.largura).toBeLessThan(30);
-		expect(Number(aperta.exec(midia?.corpo ?? "")?.[1])).toBeLessThan(10);
 	});
 
 	it("o M é a letra da fonte, com a dobra e o fio das fitas, e a palavra segue inteira a 320 px", () => {
@@ -125,75 +121,18 @@ describe("o CSS do cabeçalho", () => {
 		expect(fio).toContain("background: var(--tira);");
 	});
 
-	it("no celular, os quatro links ficam em duas linhas de dois, com os vãos no meio da lista", () => {
-		const consultas = blocosDe(css, "@container links-de-baixo", "<");
-		const duasLinhas = consultas.find(({ corpo }) =>
-			/\.topo-links\[data-com-api\] \{\s*display: grid;\s*grid-template-columns: repeat\(2, minmax\(max-content, 1fr\)\);\s*row-gap: 0;\s*\}/.test(
-				corpo,
-			),
-		);
-
-		// Os quatro numa linha pedem até 27,05rem com a letra a 100%, de 480 a
-		// 767 px: abaixo disso, em todo celular, as duas linhas. A partir de 768 px,
-		// eles pedem 29,25rem, e a lista tem mais de 42rem.
-		expect(duasLinhas?.largura).toBeGreaterThanOrEqual(27.05);
-		expect(duasLinhas?.largura).toBeLessThanOrEqual(30);
-		// O Trilhas e o Jogos se encostam no meio pela direita; o Parlamentares e
-		// o Edições, pela esquerda.
-		expect(duasLinhas?.corpo).toMatch(
-			/\.topo-links\[data-com-api\] > li:nth-child\(odd\) \{\s*justify-self: end;\s*\}/,
-		);
-		expect(duasLinhas?.corpo).toMatch(
-			/\.topo-links\[data-com-api\] > li:nth-child\(even\) \{\s*justify-self: start;\s*\}/,
-		);
-		// Cada link tem pelo menos 44 px nas duas linhas.
-		expect(duasLinhas?.corpo).toMatch(
-			/\.topo-links\[data-com-api\] a \{\s*min-height: 44px;\s*\}/,
-		);
-	});
-
-	it("com a letra grande, os links ficam em coluna onde nem dois cabem lado a lado", () => {
-		const consultas = blocosDe(css, "@container links-de-baixo", "<");
-		const comApi = consultas.find(({ corpo }) =>
-			/\.topo-links\[data-com-api\] \{\s*display: flex;\s*flex-direction: column;\s*align-items: center;\s*\}/.test(
-				corpo,
-			),
-		);
-		const semApi = consultas.find(({ corpo }) =>
-			/\.topo-links:not\(\[data-com-api\]\) \{\s*flex-direction: column;/.test(
-				corpo,
-			),
-		);
-		const duasLinhas = consultas.find(({ corpo }) =>
-			corpo.includes("repeat(2, minmax(max-content, 1fr))"),
-		);
-
-		// Trilhas e Parlamentares pedem 13,89rem com a letra a 125%, 13,69rem a
-		// 150% e 13,44rem a 200%: a 360 px, com a letra a 150%, a lista tem
-		// 13,33rem, e o Parlamentares passaria da linha. Com a letra a 100%, a
-		// lista do celular tem pelo menos 17,5rem.
-		expect(comApi?.largura).toBeGreaterThanOrEqual(13.89);
-		expect(comApi?.largura).toBeLessThanOrEqual(17.5);
-		// A coluna vale dentro da faixa das duas linhas, e os 44 px vêm de lá.
-		expect(comApi?.largura).toBeLessThan(duasLinhas?.largura ?? 0);
-		// Trilhas e Jogos pedem 8,35rem a 200%, e a lista de 320 px tem 8,75rem.
-		expect(semApi?.largura).toBeGreaterThanOrEqual(8.35);
-		expect(semApi?.largura).toBeLessThanOrEqual(8.75);
-		expect(semApi?.corpo).toMatch(/ a \{\s*min-height: 44px;\s*\}/);
-	});
-
 	it("com a letra grande, os links quebram a linha em vez de passar da página", () => {
 		// A reserva da coluna: onde a lista ainda não cabe, ela quebra, em vez de
 		// passar da página (no computador, a barra de rolagem toma 15 px).
 		expect(regra(css, ".topo-links")).toMatch(/\bflex-wrap: wrap;/);
 	});
 
-	it("a 360 px com a letra a 200%, as regras da lista e dos links permitem quebra", () => {
+	it("com a letra grande, as regras das listas e do menu permitem quebra", () => {
 		// Na #226, o cabeçalho alargava os quizzes e o artigo. Uma regra mais
-		// específica pode impedir a quebra mesmo com a coluna e o wrap no CSS.
+		// específica pode impedir a quebra mesmo com o wrap no CSS.
 		const semComentarios = css.replace(/\/\*[\s\S]*?\*\//g, "");
 		const regras = semComentarios.matchAll(
-			/([^{};]*\.(?:topo-links|topo-nav-baixo)(?![\w-])[^{};]*)\{([^{}]*)\}/g,
+			/([^{};]*\.(?:topo-links|topo-nav-baixo|menu-do-celular[\w-]*)(?![\w-])[^{};]*)\{([^{}]*)\}/g,
 		);
 		const semQuebra =
 			/(?:^|;)\s*(?:flex-wrap|flex-flow|white-space)\s*:[^;]*\bnowrap\b/i;
