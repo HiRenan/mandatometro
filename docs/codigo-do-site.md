@@ -112,6 +112,16 @@ A função do servidor envia o POST à API com um prazo e sem credenciais. O age
 
 O painel de opiniões usa o layout `_autenticado`. Depois da guarda, as opiniões são pedidas pelo navegador, com a sessão da API, e ficam na memória da página. Um `401` ou `403` faz a guarda conferir a sessão outra vez. [Dados pessoais das opiniões](dados-pessoais.md#opiniões-sobre-o-site)
 
+Na API, a guarda de `/painel/opinioes` usa o mesmo `404` das outras rotas do painel para sessão ausente, sessão inválida e conta comum. A tela também reconfere a sessão com `404`. O tratamento de `401` e `403` na tela cobre a troca entre versões.
+
+### Entrada das server functions
+
+O [`servidor.server.ts`](../apps/web/src/servidor.server.ts) limita cada POST de `/_serverFn/` a **24 KiB** antes de chamar o TanStack Start. O `Content-Length` acima do teto basta para recusar o pedido. Durante a leitura, a guarda soma os bytes e para no primeiro bloco que ultrapassa o teto, inclusive sem `Content-Length`. JSON que falha na decodificação UTF-8 ou na leitura da sintaxe recebe `400` com `corpo_invalido`. Corpo grande recebe `413` com `corpo_grande`. As duas respostas têm `Cache-Control: no-store` e cada recusa gera uma linha fixa no log.
+
+O formulário de opinião é o único POST de server function. O teto mede o envelope inteiro que o TanStack Start recebe, com o texto de até 2.000 caracteres, a nota, as quatro partes e o campo isca. Uma amostra de 2.000 caracteres com separadores de linha Unicode, que o serializador escapa, e todas as escolhas marcou cerca de 14 KiB. O teto de 24 KiB deixa espaço para os escapes e o envelope. As funções de conteúdo, busca, edições, jogos e parlamentares usam GET. O navegador manda a inscrição da newsletter direto à API.
+
+Quando o GET de uma server function traz JSON no parâmetro `payload`, a mesma entrada também recusa sintaxe malformada com `400` e log fixo. O teto de 24 KiB é do corpo dos POST. Para a consulta do GET, o Start continua dono do limite dele.
+
 ## Contagem das visitas
 
 - **O aviso:** o `ContadorDeVisitas`, no `__root.tsx`, só existe com o `API_URL`. Ele avisa a página da primeira carga e depois cada `onResolved` do router com o `pathChanged` (`lib/visitas.ts`): a troca que muda só a busca ou o trecho não conta de novo. O painel e as telas da conta não contam (`caminhoQueConta`), e a API também os ignora.
