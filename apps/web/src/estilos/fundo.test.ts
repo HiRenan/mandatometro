@@ -58,6 +58,12 @@ describe("os azulejos da margem", () => {
 
 	it("ficam nas duas margens a partir de 768 px, a 12 px do conteúdo; no celular, fica o grão", () => {
 		expect(css).toContain('--coluna-da-margem: url("./margem.svg");');
+		const base = css.split("@media", 1)[0];
+		const corpoBase = / body \{([^}]*)\}/.exec(base)?.[1];
+		expect(corpoBase?.match(/\bbackground(?:-image)?:[^;]+;/g)).toEqual([
+			"background-image: var(--grao);",
+		]);
+
 		const [, largura, corpo = ""] =
 			/@media \(width >= ([\d.]+)rem\) \{ body \{([^}]*)\}/.exec(css) ?? [];
 
