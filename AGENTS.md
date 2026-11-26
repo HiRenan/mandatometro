@@ -42,7 +42,7 @@ Mandatômetro teaches how Brazilian politics works through what Congress is voti
 
 ## Conventions
 
-- **Branches.** Target `develop`, the default GitHub branch, for PRs. Merge only stable `develop` into `main`, such as before the demo and submission. Each merge to `main` publishes the site on its domain.
+- **Branches.** Target `develop`, the default GitHub branch, for PRs. Merge only stable `develop` into `main`, such as before the demo and submission. Each merge to `main` publishes the site on its domain. Both `main` and `develop` accept changes only through PRs with green CI.
 - **One issue per PR.** Start a `tipo/NN-descricao` branch from `develop` (e.g. `feat/10-conector-camara`). Write Conventional Commits in Portuguese (e.g. `feat(camara): conector de proposições`).
 - **PR description.** In Portuguese, describe what changed and how to test it, and include `Closes #NN`. Devin can take issues labeled `devin` and open PRs in this repository. Apply the `devin` label to those PRs.
 - **Attribution.** Commits and PRs contain the work itself, without AI attribution such as “Generated with Claude Code” or an agent’s `Co-Authored-By` line. [`.claude/settings.json`](.claude/settings.json) disables that attribution in Claude Code.
