@@ -21,6 +21,7 @@ from mandatometro.api.contas import exigir_administradora, validar_origem
 from mandatometro.api.esquemas import ErroPainel, ResultadoPublicacao, ResultadoRevisao
 from mandatometro.api.esquemas_numeros import NumerosPainel
 from mandatometro.api.numeros import numeros_do_painel
+from mandatometro.api.opinioes import OpinioesPainel, opinioes_do_painel
 from mandatometro.db.modelos import Edicao
 from mandatometro.ia import servico
 from mandatometro.ia.servico import ArquivoRevisao
@@ -145,10 +146,10 @@ router = APIRouter(
         500: {"model": ErroPainel, "description": "Falha inesperada na operação."},
     },
 )
-router_numeros = APIRouter(prefix=PREFIXO, tags=["painel"], route_class=RotaPainel)
+router_leitura = APIRouter(prefix=PREFIXO, tags=["painel"], route_class=RotaPainel)
 
 
-@router_numeros.get(
+@router_leitura.get(
     "/numeros",
     summary="Consultar os números do painel",
     description="Agregados do site e das coletas. O acesso é exclusivo da administradora.",
@@ -159,6 +160,21 @@ router_numeros = APIRouter(prefix=PREFIXO, tags=["painel"], route_class=RotaPain
 )
 def consultar_numeros_painel() -> NumerosPainel:
     return numeros_do_painel(db.engine())
+
+
+@router_leitura.get(
+    "/opinioes",
+    summary="Ler as opiniões sobre o site",
+    description=(
+        "Agregados de todas as opiniões e lista das 500 mais recentes, só para a administradora."
+    ),
+    responses={
+        404: {"model": ErroPainel, "description": "Rota não encontrada."},
+        500: {"model": ErroPainel, "description": "Falha inesperada na consulta."},
+    },
+)
+def consultar_opinioes_painel() -> OpinioesPainel:
+    return opinioes_do_painel()
 
 
 @router.get(

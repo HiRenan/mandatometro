@@ -49,6 +49,7 @@ import { Route as RotaRaiz } from "@/routes/__root";
 import { Route as RotaAutenticada } from "@/routes/_autenticado";
 import { Route as RotaDoPainel } from "@/routes/_autenticado/painel";
 import { Route as RotaDosNumeros } from "@/routes/_autenticado/painel_.numeros";
+import { Route as RotaDasOpinioes } from "@/routes/_autenticado/painel_.opinioes";
 import { Route as ContaConfirmar } from "@/routes/cadastro/confirmar";
 import { Route as ContaExcluir } from "@/routes/cadastro/excluir";
 import { Route as ContaIndex } from "@/routes/cadastro/index";
@@ -62,6 +63,7 @@ import { Route as RotaDoJogo } from "@/routes/jogos/$jogo";
 import { Route as RotaDosJogos } from "@/routes/jogos/index";
 import { Route as Login } from "@/routes/login";
 import { Route as RotaDeSair } from "@/routes/newsletter/sair";
+import { Route as RotaDeOpiniao } from "@/routes/opiniao";
 import { Route as RotaDoParlamentar } from "@/routes/parlamentares/$id";
 import { Route as RotaDosParlamentares } from "@/routes/parlamentares/index";
 import { Route as Perfil } from "@/routes/perfil";
@@ -362,6 +364,7 @@ function criarRouter() {
 			ContaRecuperar.update(naRaiz("/cadastro/recuperar")),
 			ContaRedefinir.update(naRaiz("/cadastro/redefinir")),
 			RotaDeSair.update(naRaiz("/newsletter/sair")),
+			RotaDeOpiniao.update(naRaiz("/opiniao")),
 			RotaDoTermo.update(naRaiz("/termo")),
 			// O layout do painel roda só no navegador, com a guarda: aqui, ele roda no
 			// servidor, sem a guarda, e cada página mostra o título e o carregando.
@@ -383,6 +386,11 @@ function criarRouter() {
 							slug,
 							titulo,
 						})),
+				} as never),
+				RotaDasOpinioes.update({
+					id: "/painel_/opinioes",
+					path: "/painel/opinioes",
+					getParentRoute: () => RotaAutenticada,
 				} as never),
 			]),
 			RotaDasEdicoes.update(
@@ -484,11 +492,13 @@ const QUE_ABREM = [
 	"/jogos",
 	`/jogos/${JOGO_DAS_COMISSOES}`,
 	"/newsletter/sair",
+	"/opiniao",
 	"/termo",
 	"/edicoes",
 	"/edicoes/7",
 	"/painel",
 	"/painel/numeros",
+	"/painel/opinioes",
 	"/parlamentares",
 	"/parlamentares/81-agata-cedrolume",
 	"/votacoes/139",

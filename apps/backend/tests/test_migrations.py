@@ -39,6 +39,8 @@ TABELAS_DO_MVP = {
     "limite_piloto",
     "visita",
     "limite_visita",
+    "opiniao",
+    "limite_opiniao",
 }
 
 

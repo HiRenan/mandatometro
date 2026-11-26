@@ -56,6 +56,14 @@
 	}
 }
 
+/* O que o menu do celular mostra desce um pouco do botão e aparece. */
+@keyframes desce {
+	from {
+		opacity: 0;
+		transform: translateY(-0.5rem);
+	}
+}
+
 /* O texto do passo entra de lado: da direita ao avançar, da esquerda ao voltar. */
 @keyframes passo-entra {
 	from {

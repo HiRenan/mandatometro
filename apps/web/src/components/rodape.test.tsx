@@ -53,6 +53,15 @@ describe("rodapé", () => {
 		expect(termo.firstElementChild?.tagName).toBe("SPAN");
 	});
 
+	it("oferece o link de opinião só quando há API", () => {
+		const { rerender } = render(<Rodape comApi={false} />);
+		expect(screen.queryByRole("link", { name: "Dê sua opinião" })).toBeNull();
+		rerender(<Rodape comApi />);
+		expect(
+			screen.getByRole("link", { name: "Dê sua opinião" }).getAttribute("href"),
+		).toBe("/opiniao");
+	});
+
 	it("tem o nome e o lema, e a fileira de azulejos fica fora do leitor de tela", () => {
 		render(<Rodape />);
 		const rodape = screen.getByRole("contentinfo");

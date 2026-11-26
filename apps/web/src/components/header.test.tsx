@@ -8,7 +8,20 @@ import {
 	Outlet,
 	RouterProvider,
 } from "@tanstack/react-router";
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import {
+	createRequestHandler,
+	defaultRenderHandler,
+} from "@tanstack/react-router/ssr/server";
+import {
+	act,
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
+import type { ReactNode } from "react";
 import {
 	afterEach,
 	beforeEach,
@@ -107,21 +120,68 @@ function temAsClasses(elemento: Element, classes: string) {
 }
 
 /**
- * As duas listas dos links: a do meio (computador) e a de baixo (celular). O
- * jsdom não aplica o CSS e vê as duas; o navegador mostra uma de cada vez.
+ * As três listas dos links: a do meio (computador), a de baixo (tablet) e a do
+ * menu (celular). O jsdom não aplica o CSS e vê as três; o navegador mostra uma
+ * de cada vez.
  */
 function asListas(cabecalho: HTMLElement) {
 	return within(cabecalho).getAllByRole("navigation", { name: "Principal" });
 }
 
+/** Os links de uma lista: no menu, sem a busca e a conta, que vêm depois. */
 function linksDe(lista: HTMLElement) {
-	return within(lista)
+	return within(within(lista).getByRole("list"))
 		.getAllByRole("link")
 		.map((link) => [link.textContent, link.getAttribute("href")]);
 }
 
+/** O <details> do menu do celular e o botão dele, o <summary>. */
+function oMenu(cabecalho: HTMLElement) {
+	const detalhes = cabecalho.querySelector<HTMLDetailsElement>(
+		"nav.menu-do-celular > details",
+	);
+	const botao = detalhes?.querySelector<HTMLElement>(":scope > summary");
+	if (!detalhes || !botao) throw new Error("O cabeçalho ficou sem o menu.");
+	return { detalhes, botao };
+}
+
+/** O cabeçalho no HTML que o servidor manda, antes de qualquer JavaScript. */
+async function cabecalhoDoServidor() {
+	const criarRouter = () => {
+		const raiz = createRootRoute({
+			shellComponent: ({ children }: { children: ReactNode }) => (
+				<html lang="pt-BR">
+					<head />
+					<body>
+						<Header comApi />
+						{children}
+					</body>
+				</html>
+			),
+		});
+		return createRouter({
+			routeTree: raiz.addChildren([
+				createRoute({
+					getParentRoute: () => raiz,
+					path: "/",
+					component: () => null,
+				}),
+			]),
+			// O jsdom põe o document, e o roteador se acharia no navegador.
+			isServer: true,
+		});
+	};
+	const resposta = await createRequestHandler({
+		createRouter: criarRouter,
+		request: new Request("http://localhost/"),
+	})(defaultRenderHandler);
+	return new DOMParser()
+		.parseFromString(await resposta.text(), "text/html")
+		.querySelector("header");
+}
+
 describe("cabeçalho", () => {
-	it("tem o pulo para o conteúdo, o nome, o lema e os dois links nas duas listas", async () => {
+	it("tem o pulo para o conteúdo, o nome, o lema e os dois links nas três listas", async () => {
 		const cabecalho = await mostrar();
 		const listas = asListas(cabecalho);
 
@@ -141,17 +201,13 @@ describe("cabeçalho", () => {
 		expect(cabecalho.querySelector(".marca-lema")?.textContent).toBe(
 			"A política brasileira de perto.",
 		);
-		// A conta fica fora das listas, ao lado da busca.
-		expect(listas.map(linksDe)).toEqual([
-			[
+		// A conta fica fora das listas: ao lado da busca e, no menu, embaixo.
+		expect(listas.map(linksDe)).toEqual(
+			Array(3).fill([
 				["Trilhas", "/trilhas"],
 				["Jogos", "/jogos"],
-			],
-			[
-				["Trilhas", "/trilhas"],
-				["Jogos", "/jogos"],
-			],
-		]);
+			]),
+		);
 	});
 
 	it("mostra o M inteiro enquanto a Archivo carrega e só então acrescenta os enfeites", async () => {
@@ -179,11 +235,11 @@ describe("cabeçalho", () => {
 		expect(inicial?.hasAttribute("data-archivo-carregada")).toBe(true);
 	});
 
-	it("onde o site tem a API, os parlamentares e as edições entram nas duas listas, e elas dizem isso ao CSS", async () => {
+	it("onde o site tem a API, os parlamentares e as edições entram nas três listas", async () => {
 		const cabecalho = await mostrar({ comApi: true });
 		const listas = asListas(cabecalho);
 
-		expect(listas).toHaveLength(2);
+		expect(listas).toHaveLength(3);
 		for (const lista of listas) {
 			expect(linksDe(lista)).toEqual([
 				["Trilhas", "/trilhas"],
@@ -191,19 +247,12 @@ describe("cabeçalho", () => {
 				["Jogos", "/jogos"],
 				["Edições", "/edicoes"],
 			]);
-			// As duas linhas de dois e a coluna dependem de quantos links a lista tem.
-			expect(lista.querySelector("ul")?.hasAttribute("data-com-api")).toBe(
-				true,
-			);
 		}
 	});
 
-	it("sem a API, ficam os dois links, sem a marca da API", async () => {
+	it("sem a API, os parlamentares e as edições ficam fora", async () => {
 		const cabecalho = await mostrar();
 
-		for (const lista of cabecalho.querySelectorAll(".topo-links")) {
-			expect(lista.hasAttribute("data-com-api")).toBe(false);
-		}
 		for (const nome of ["Parlamentares", "Edições"]) {
 			expect(within(cabecalho).queryByRole("link", { name: nome })).toBe(null);
 		}
@@ -230,7 +279,7 @@ describe("cabeçalho", () => {
 		const edicoes = within(cabecalho).getAllByRole("link", { name: "Edições" });
 		const trilhas = within(cabecalho).getAllByRole("link", { name: "Trilhas" });
 
-		expect(edicoes).toHaveLength(2);
+		expect(edicoes).toHaveLength(3);
 		for (const link of edicoes) {
 			expect(link.hasAttribute("data-na-secao")).toBe(true);
 			expect(link.hasAttribute("aria-current")).toBe(false);
@@ -252,10 +301,7 @@ describe("cabeçalho", () => {
 			.getAllByRole("link")
 			.filter((link) => link.hasAttribute("data-na-secao"))
 			.map((link) => [link.textContent, link.getAttribute("aria-current")]);
-		expect(marcados).toEqual([
-			["Parlamentares", atual],
-			["Parlamentares", atual],
-		]);
+		expect(marcados).toEqual(Array(3).fill(["Parlamentares", atual]));
 	});
 
 	it("o nome tem a mesma letra no rodapé, com o teto da letra grande", async () => {
@@ -296,7 +342,7 @@ describe("cabeçalho", () => {
 		const cabecalho = await mostrar({ endereco: "/trilhas" });
 
 		for (const lista of asListas(cabecalho)) {
-			const [trilhas, jogos] = lista.querySelectorAll("a");
+			const [trilhas, jogos] = lista.querySelectorAll("ul a");
 			expect(trilhas.hasAttribute("data-na-secao")).toBe(true);
 			expect(trilhas.getAttribute("aria-current")).toBe("page");
 			expect(jogos.hasAttribute("data-na-secao")).toBe(false);
@@ -304,18 +350,34 @@ describe("cabeçalho", () => {
 		}
 	});
 
-	it("segue a ordem da tela: o nome, a lista do meio, a busca, a conta e a lista de baixo", async () => {
+	it("segue a ordem da tela: o nome, a lista do meio, a busca, a conta, a lista de baixo e o menu", async () => {
 		// No computador, o CSS mostra a lista do meio: o Tab vai do nome aos links e
-		// depois à busca e à conta, como na tela. No celular, mostra a de baixo: o
-		// Tab vai do nome à busca e à conta, e depois aos links (header.tsx).
+		// depois à busca e à conta, como na tela. No tablet, mostra a de baixo: o
+		// Tab vai do nome à busca e à conta, e depois aos links. No celular, mostra
+		// o menu: o Tab vai do nome ao botão e, com o menu aberto, aos destinos, à
+		// busca e à conta (header.tsx).
 		const cabecalho = await mostrar();
 		const nome = within(cabecalho).getByRole("link", { name: "Mandatômetro" });
-		const [meio, baixo] = asListas(cabecalho);
-		const entrada = within(cabecalho).getByRole("button", {
+		const [meio, baixo, menu] = asListas(cabecalho);
+		const [entrada, entradaDoMenu] = within(cabecalho).getAllByRole("button", {
 			name: "Buscar no site",
 		});
-		const conta = within(cabecalho).getByRole("link", { name: "Entrar" });
-		const emOrdem = [nome, meio, entrada, conta, baixo];
+		const [conta, contaDoMenu] = within(cabecalho).getAllByRole("link", {
+			name: "Entrar",
+		});
+		const { botao } = oMenu(cabecalho);
+		const emOrdem = [
+			nome,
+			meio,
+			entrada,
+			conta,
+			baixo,
+			menu,
+			botao,
+			within(menu).getByRole("list"),
+			entradaDoMenu,
+			contaDoMenu,
+		];
 
 		for (let i = 1; i < emOrdem.length; i++) {
 			expect(
@@ -325,16 +387,132 @@ describe("cabeçalho", () => {
 		}
 		expect(meio.classList.contains("topo-nav-meio")).toBe(true);
 		expect(baixo.classList.contains("topo-nav-baixo")).toBe(true);
-		expect(entrada.getAttribute("aria-haspopup")).toBe("dialog");
-		expect(entrada.getAttribute("aria-keyshortcuts")).toBe("Control+K Meta+K");
-		expect(entrada.querySelector("kbd")?.getAttribute("aria-hidden")).toBe(
-			"true",
+		expect(menu.classList.contains("menu-do-celular")).toBe(true);
+		for (const busca of [entrada, entradaDoMenu]) {
+			expect(busca.getAttribute("aria-haspopup")).toBe("dialog");
+			expect(busca.getAttribute("aria-keyshortcuts")).toBe("Control+K Meta+K");
+			expect(busca.querySelector("kbd")?.getAttribute("aria-hidden")).toBe(
+				"true",
+			);
+		}
+	});
+});
+
+describe("o menu do celular", () => {
+	it("é um <details> fechado, com o botão Menu e, dentro, os destinos, a busca e a conta", async () => {
+		const cabecalho = await mostrar({ comApi: true });
+		const [, , menu] = asListas(cabecalho);
+		const { detalhes, botao } = oMenu(cabecalho);
+
+		expect(detalhes.parentElement).toBe(menu);
+		expect(detalhes.open).toBe(false);
+		// O nome do botão é a palavra: as três linhas e o X são desenhos.
+		expect(botao.textContent).toBe("Menu");
+		const icones = [...botao.querySelectorAll("svg")];
+		expect(
+			icones.map((icone) => [
+				icone.classList.contains("menu-do-celular-abrir"),
+				icone.classList.contains("menu-do-celular-fechar"),
+				icone.getAttribute("aria-hidden"),
+			]),
+		).toEqual([
+			[true, false, "true"],
+			[false, true, "true"],
+		]);
+		// Cada destino tem o azulejinho da fita da posição, que dá um quarto de
+		// volta a cada um (o --i, no index.css), e a seta, que também é desenho.
+		const destinos = [
+			...menu.querySelectorAll<HTMLElement>(".menu-do-celular-lista > li"),
+		];
+		expect(
+			destinos.map((destino) => [
+				destino.textContent,
+				destino.className,
+				destino.style.getPropertyValue("--i"),
+				destino.querySelector("svg")?.getAttribute("aria-hidden"),
+			]),
+		).toEqual([
+			["Trilhas", "fita-verde", "0", "true"],
+			["Parlamentares", "fita-amarela", "1", "true"],
+			["Jogos", "fita-azul", "2", "true"],
+			["Edições", "fita-rosa", "3", "true"],
+		]);
+		// Embaixo dos destinos, a busca e a conta.
+		const util = menu.querySelector<HTMLElement>(".menu-do-celular-util");
+		if (!util) throw new Error("O menu ficou sem a busca e a conta.");
+		expect(
+			within(util)
+				.getByRole("button", { name: "Buscar no site" })
+				.getAttribute("aria-haspopup"),
+		).toBe("dialog");
+		expect(
+			within(util)
+				.getAllByRole("link")
+				.map((link) => link.textContent),
+		).toEqual(["Entrar", "Conta"]);
+	});
+
+	it("sem JavaScript e antes da hidratação, os destinos e a conta já vêm no HTML do servidor", async () => {
+		// O navegador abre e fecha o <details> sozinho, sem esperar o React.
+		const cabecalho = await cabecalhoDoServidor();
+		const detalhes = cabecalho?.querySelector("nav.menu-do-celular > details");
+
+		expect(detalhes?.hasAttribute("open")).toBe(false);
+		expect(detalhes?.querySelector(":scope > summary")?.textContent).toBe(
+			"Menu",
 		);
+		expect(
+			[...(detalhes?.querySelectorAll(".menu-do-celular-lista a") ?? [])].map(
+				(link) => [link.textContent, link.getAttribute("href")],
+			),
+		).toEqual([
+			["Trilhas", "/trilhas"],
+			["Parlamentares", "/parlamentares"],
+			["Jogos", "/jogos"],
+			["Edições", "/edicoes"],
+		]);
+		expect(
+			detalhes?.querySelector('.menu-do-celular-util a[href="/login"]')
+				?.textContent,
+		).toBe("Entrar");
+	});
+
+	it("o Esc fecha o menu aberto e devolve o foco ao botão", async () => {
+		const cabecalho = await mostrar({ comApi: true });
+		const { detalhes, botao } = oMenu(cabecalho);
+		detalhes.open = true;
+		const jogos = within(detalhes).getByRole("link", { name: "Jogos" });
+		jogos.focus();
+
+		fireEvent.keyDown(jogos, { key: "Tab" });
+		expect(detalhes.open).toBe(true);
+
+		fireEvent.keyDown(jogos, { key: "Escape" });
+		expect(detalhes.open).toBe(false);
+		expect(document.activeElement).toBe(botao);
+	});
+
+	it.each([
+		["num destino", "/"],
+		["no destino da página aberta", "/jogos"],
+	])("a troca de página fecha o menu: %s", async (_, endereco) => {
+		// O menu fecha antes de a troca de página fotografar a tela.
+		const cabecalho = await mostrar({ endereco });
+		const { detalhes } = oMenu(cabecalho);
+		detalhes.open = true;
+
+		fireEvent.click(within(detalhes).getByRole("link", { name: "Jogos" }));
+
+		await waitFor(() => expect(detalhes.open).toBe(false));
 	});
 });
 
 describe("a entrada da conta", () => {
-	/** Os dois links da conta: "Entrar" e "Conta", com a marca de cada um. */
+	/**
+	 * Os dois links da conta, "Entrar" e "Conta", com a marca de cada um. A
+	 * entrada está duas vezes no cabeçalho, ao lado da busca e no menu do
+	 * celular, e as duas são iguais: o CSS mostra uma de cada vez.
+	 */
 	async function conta(endereco: string) {
 		const cabecalho = await mostrar({ endereco });
 		const estado = (link: HTMLElement) => ({
@@ -342,31 +520,47 @@ describe("a entrada da conta", () => {
 			atual: link.getAttribute("aria-current"),
 			traco: link.hasAttribute("data-na-secao"),
 		});
-		return {
-			cabecalho,
-			entrar: estado(within(cabecalho).getByRole("link", { name: "Entrar" })),
-			conta: estado(within(cabecalho).getByRole("link", { name: "Conta" })),
-		};
+		const [aoLadoDaBusca, noMenu] = [
+			...cabecalho.querySelectorAll<HTMLElement>(".entrada-da-conta"),
+		].map((entrada) => ({
+			entrar: estado(within(entrada).getByRole("link", { name: "Entrar" })),
+			conta: estado(within(entrada).getByRole("link", { name: "Conta" })),
+		}));
+		expect(noMenu).toEqual(aoLadoDaBusca);
+		return { cabecalho, ...aoLadoDaBusca };
 	}
 
-	it("tem Entrar, que leva ao login, e Conta, que leva ao perfil, fora das listas e na mesma célula", async () => {
+	it("tem Entrar, que leva ao login, e Conta, que leva ao perfil, na mesma célula, ao lado da busca e no fim do menu", async () => {
 		const { cabecalho, entrar, conta: aberta } = await conta("/trilhas");
-		const links = within(cabecalho).getAllByRole("link", {
-			name: /^(Entrar|Conta)$/,
-		});
+		const entradas = [
+			...cabecalho.querySelectorAll<HTMLElement>(".entrada-da-conta"),
+		];
 
 		expect(entrar).toEqual({ href: "/login", atual: null, traco: false });
 		expect(aberta).toEqual({ href: "/perfil", atual: null, traco: false });
-		// O CSS esconde um deles pela marca do <html> (index.css).
-		expect(links.map((link) => link.getAttribute("data-para"))).toEqual([
-			"quem-nao-entrou",
-			"quem-entrou",
-		]);
-		expect(links[0].parentElement).toBe(links[1].parentElement);
-		expect(links[0].parentElement?.classList.contains("entrada-da-conta")).toBe(
-			true,
-		);
-		expect(links[0].closest("nav")).toBe(null);
+		expect(entradas).toHaveLength(2);
+		for (const entrada of entradas) {
+			const links = within(entrada).getAllByRole("link");
+			// O CSS esconde um deles pela marca do <html> (index.css).
+			expect(links.map((link) => link.getAttribute("data-para"))).toEqual([
+				"quem-nao-entrou",
+				"quem-entrou",
+			]);
+			expect(links.map((link) => link.parentElement)).toEqual([
+				entrada,
+				entrada,
+			]);
+		}
+		// No computador e no tablet, a conta fica fora das listas, ao lado da
+		// busca; no celular, no fim do menu, depois dos destinos.
+		const [aoLadoDaBusca, noMenu] = entradas;
+		expect(aoLadoDaBusca.closest("nav")).toBe(null);
+		expect(
+			aoLadoDaBusca.parentElement?.classList.contains("topo-ferramentas"),
+		).toBe(true);
+		expect(
+			noMenu.parentElement?.classList.contains("menu-do-celular-util"),
+		).toBe(true);
 	});
 
 	it.each([

@@ -11,6 +11,7 @@
 @import "./estilos/busca.css";
 @import "./estilos/jogo.css";
 @import "./estilos/painel.css";
+@import "./estilos/opiniao.css";
 @import "./estilos/parlamentares.css";
 
 @theme {
@@ -585,9 +586,10 @@
 	 * links no meio e a busca e a conta à direita. As colunas dos lados têm a
 	 * mesma largura, e por isso os links ficam no meio exato da tela.
 	 *
-	 * Abaixo de 62rem, duas linhas: o nome, a busca e a conta em cima, e os links
-	 * embaixo, no meio. Os links estão duas vezes no HTML (header.tsx), e cada
-	 * largura mostra a sua lista: assim, o Tab segue a ordem da tela nas duas.
+	 * De 48 a 62rem, duas linhas: o nome, a busca e a conta em cima, e os links
+	 * embaixo, no meio. Abaixo de 48rem, o menu do celular (a #362, mais abaixo).
+	 * Os links estão três vezes no HTML (header.tsx), e cada largura mostra a sua
+	 * lista: assim, o Tab segue a ordem da tela em todas.
 	 */
 	.topo-dentro {
 		display: flex;
@@ -603,12 +605,11 @@
 	}
 
 	/*
-	 * A lista de baixo toma a linha inteira e é um contêiner: a coluna da letra
-	 * grande depende da largura dela, e não da tela.
+	 * A lista de baixo toma a linha inteira. Ela só aparece de 48 a 62rem, onde
+	 * tem mais de 42rem, e os quatro links pedem 29,25rem numa linha.
 	 */
 	.topo-nav-baixo {
 		flex: 1 1 100%;
-		container: links-de-baixo / inline-size;
 	}
 
 	@media (width >= 62rem) {
@@ -828,35 +829,9 @@
 		}
 	}
 
-	/*
-	 * No celular, os links e a conta se apertam. O respiro fica em px, como as
-	 * margens: com a letra grande, ele não cresce, e as palavras ganham o espaço.
-	 */
-	@media (width < 48rem) {
-		.entrada-da-conta {
-			margin-right: -10px;
-		}
-
-		.topo-links a,
-		.entrada-da-conta a {
-			padding-inline: 10px;
-		}
-
-		.topo-links a::after,
-		.entrada-da-conta a::after {
-			right: 10px;
-			left: 10px;
-		}
-	}
-
 	@media (width < 30rem) {
 		.moldura .nome-do-site {
 			--letra: 1.3125rem;
-		}
-
-		.topo-links a,
-		.entrada-da-conta a {
-			letter-spacing: 0.05em;
 		}
 	}
 
@@ -867,102 +842,311 @@
 	}
 
 	/*
-	 * No celular estreito, o respiro de cada link e o da conta caem para 6 px,
-	 * sem o vão entre os links, e o vão mínimo entre o nome e a busca fica em
-	 * 12 px.
+	 * O menu do celular (o Renan escolheu a "A · Menu" na #362, em 26/11/2026:
+	 * "para celular ficou mt esquisito o menu"). Abaixo de 48rem, o cabeçalho é
+	 * uma linha só, de 72 px com a tira: o nome à esquerda e o botão "Menu" à
+	 * direita, no lugar da busca, da conta e dos links. O botão abre o painel
+	 * dentro do bloco de tinta, embaixo da linha: ele empurra a página, não cobre
+	 * nada e não prende o foco. O menu é um <details> (header.tsx). Fora do
+	 * celular, ele fica escondido, fora do Tab e do leitor de tela.
 	 */
-	@media (width < 26rem) {
-		.topo-dentro {
-			column-gap: 12px;
-		}
-
-		.entrada-da-conta {
-			margin-right: -6px;
-		}
-
-		.topo-links {
-			gap: 0;
-		}
-
-		.topo-links a,
-		.entrada-da-conta a {
-			padding-inline: 6px;
-		}
-
-		.topo-links a::after,
-		.entrada-da-conta a::after {
-			right: 6px;
-			left: 6px;
-		}
-	}
-
-	/* A busca e a conta cabem ao lado do nome mesmo com a barra de rolagem. */
-	@media (width < 23rem) {
-		.moldura .topo-dentro {
-			column-gap: 8px;
-		}
+	.menu-do-celular {
+		display: none;
 	}
 
 	/*
-	 * Com a API, são quatro links: Trilhas, Parlamentares, Jogos e Edições. Na
-	 * lista de baixo, eles ficam numa linha onde cabem, no tablet, e em duas
-	 * linhas de dois abaixo disso, em todo celular (o Renan, na #305, em
-	 * 23/11/2026). Nas duas linhas, os vãos se encontram no meio da lista: o
-	 * Trilhas e o Jogos se encostam nele pela direita, e o Parlamentares e o
-	 * Edições, pela esquerda. A coluna mais larga cresce até caber, e o meio
-	 * corre um pouco para o lado. Cada link tem pelo menos 44 px. A linha só
-	 * cresce se a letra com o respiro precisar de mais altura. Pela largura da
-	 * lista, os quatro pedem até 27,05rem numa linha, com a letra a 100%, de 480
-	 * a 767 px (medido no Edge).
-	 * A partir de 768 px, com mais respiro, pedem 29,25rem, e a lista tem mais de
-	 * 42rem.
+	 * O nome e o menu dividem a mesma célula da grade. O menu toma a largura toda,
+	 * para o painel abrir de margem a margem, e o botão fica na ponta direita. O
+	 * nome fica por cima do menu, que é transparente, e o toque nele chega ao
+	 * link. A margem de cima e de baixo dos dois enche a altura do cabeçalho
+	 * fechado (o --topo, menos a tira de 6 px e os 8 px de respiro em cima e
+	 * embaixo): o botão não sobe quando o painel abre.
+	 *
+	 * O botão tem largura fixa, e o teto do nome desconta ele e o vão de 12 px.
+	 * Com a Archivo ou com a fonte de reserva, os dois cabem na linha, e a altura
+	 * não muda quando a fonte chega (eram 206 px antes da Archivo e 158 px depois,
+	 * numa janela de 360 px com a barra de rolagem).
 	 */
-	@container links-de-baixo (width < 28rem) {
-		.topo-links[data-com-api] {
+	@media (width < 48rem) {
+		.topo-ferramentas,
+		.topo-nav-baixo {
+			display: none;
+		}
+
+		.topo-dentro {
 			display: grid;
-			grid-template-columns: repeat(2, minmax(max-content, 1fr));
-			row-gap: 0;
+			grid-template-columns: minmax(0, 1fr);
 		}
 
-		.topo-links[data-com-api] > li:nth-child(odd) {
-			justify-self: end;
+		.topo-dentro > .marca,
+		.menu-do-celular {
+			grid-area: 1 / 1;
+			align-self: start;
 		}
 
-		.topo-links[data-com-api] > li:nth-child(even) {
+		.topo-dentro > .marca {
+			position: relative;
+			z-index: 1;
 			justify-self: start;
 		}
 
-		.topo-links[data-com-api] a {
-			min-height: 44px;
+		.menu-do-celular {
+			display: block;
+		}
+
+		.topo-dentro > .marca,
+		.menu-do-celular-botao {
+			margin-block: calc((var(--topo) - 6px - 16px - 2.75rem) / 2);
+		}
+
+		.moldura .nome-do-site {
+			--recuo: calc(6.25rem + 12px);
+		}
+
+		/*
+		 * A conta, no painel: o respiro e a margem negativa ficam em px, como as
+		 * margens da página. Em rem, com a letra a 200%, a palavra passava 9 px da
+		 * página, e a página rolava de lado.
+		 */
+		.entrada-da-conta {
+			margin-right: -10px;
+		}
+
+		.entrada-da-conta a {
+			padding-inline: 10px;
+		}
+
+		.entrada-da-conta a::after {
+			right: 10px;
+			left: 10px;
 		}
 	}
 
 	/*
-	 * Com a letra grande no celular, nem dois links cabem lado a lado: eles ficam
-	 * um embaixo do outro, no meio (o Renan, na #261: "Um embaixo do outro"). O
-	 * Trilhas e o Parlamentares, a linha mais larga das duas, pedem 12,69rem de
-	 * letra e 24 px de respiro: 13,89rem com a letra a 125%, 13,69rem a 150% e
-	 * 13,44rem a 200% (medido no Edge). Abaixo de 13,9rem, a coluna; a 100%, a
-	 * lista do celular tem pelo menos 17,5rem. Sem a API, Trilhas e Jogos pedem
-	 * 7,6rem e 24 px (8,35rem a 200%) e cabem lado a lado até a 320 px. Onde eles
-	 * cabem, a lista fica numa linha, e nenhum link fica sozinho.
+	 * Com a letra grande, o nome ficaria menor que o texto ao lado do botão:
+	 * numa página com menos de 18rem, o botão desce para a linha de baixo, à
+	 * direita, e o nome volta ao teto pela página inteira. Com a letra a 100%,
+	 * isso não acontece em nenhum celular; a 125%, só abaixo de 360 px; a 200%,
+	 * em todos.
 	 */
-	@container links-de-baixo (width < 13.9rem) {
-		.topo-links[data-com-api] {
-			display: flex;
-			flex-direction: column;
-			align-items: center;
+	@container (width < 18rem) {
+		.menu-do-celular {
+			grid-area: 2 / 1;
+		}
+
+		.topo-dentro > .marca,
+		.menu-do-celular-botao {
+			margin-block: 0;
+		}
+
+		.moldura .nome-do-site {
+			--recuo: 0px;
 		}
 	}
 
-	@container links-de-baixo (width < 8.5rem) {
-		.topo-links:not([data-com-api]) {
-			flex-direction: column;
-			align-items: center;
+	/*
+	 * O botão "Menu": a palavra e as três linhas, num fio de 2 px em Papel 3, como
+	 * a entrada da busca. Aberto, ele fica em papel, com a letra em tinta, e as
+	 * três linhas viram o X.
+	 */
+	.menu-do-celular-botao {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		width: 6.25rem;
+		min-height: 2.75rem;
+		margin-left: auto;
+		padding: 0 0.5rem;
+		border: 2px solid var(--papel-3);
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		font-weight: 700;
+		line-height: 1;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		list-style: none;
+		cursor: pointer;
+		user-select: none;
+		transition:
+			border-color 0.2s,
+			background-color 0.2s,
+			color 0.2s;
+	}
+
+	.menu-do-celular-botao::-webkit-details-marker {
+		display: none;
+	}
+
+	.menu-do-celular-botao:hover {
+		border-color: var(--papel);
+	}
+
+	.menu-do-celular > details[open] > .menu-do-celular-botao {
+		border-color: var(--papel);
+		background: var(--papel);
+		color: var(--tinta);
+	}
+
+	.menu-do-celular-botao > svg {
+		flex: none;
+		width: 1.125rem;
+		height: 1.125rem;
+	}
+
+	.menu-do-celular-fechar,
+	.menu-do-celular > details[open] .menu-do-celular-abrir {
+		display: none;
+	}
+
+	.menu-do-celular > details[open] .menu-do-celular-fechar {
+		display: block;
+	}
+
+	/*
+	 * O painel: os destinos, um por linha, entre fios de 2 px em Tinta suave, e,
+	 * embaixo, a busca e a conta. O respiro fica em px, como o do cabeçalho: com
+	 * a letra grande, ele não cresce. O painel é um contêiner, e a letra dos
+	 * destinos depende da largura dele.
+	 */
+	.menu-do-celular-painel {
+		container: menu-do-celular / inline-size;
+		padding: 8px 0 12px;
+	}
+
+	.menu-do-celular-lista {
+		border-top: 2px solid var(--tinta-suave);
+	}
+
+	.menu-do-celular-lista > li {
+		border-bottom: 2px solid var(--tinta-suave);
+	}
+
+	.menu-do-celular-lista a {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		min-height: 3.5rem;
+		padding-block: 6px;
+		text-decoration: none;
+	}
+
+	/*
+	 * O azulejinho do marcador das listas do texto: um quarto de círculo na fita
+	 * da posição (o classeDaFita, no header.tsx), que dá um quarto de volta a cada
+	 * destino (o --i).
+	 */
+	.menu-do-celular-lista a::before {
+		content: "" / "";
+		flex: none;
+		width: 1rem;
+		height: 1rem;
+		background: radial-gradient(
+			circle at 0 0,
+			var(--fita, var(--papel)) 70.2%,
+			transparent 70.8%
+		);
+		rotate: calc(var(--i, 0) * 90deg);
+	}
+
+	/*
+	 * O nome do destino, na letra do cartaz. O teto vale também para a fonte de
+	 * reserva: PARLAMENTARES pede 9,2 em nela, e a palavra nunca passa da linha.
+	 * O teto desconta o azulejinho, a seta e os dois vãos.
+	 */
+	.menu-do-celular-texto {
+		flex: 1 1 auto;
+		min-width: 0;
+		font-family: var(--font-sans);
+		font-size: min(1.5rem, calc((100cqi - 2.25rem - 28px) / 9.2));
+		font-stretch: 68%;
+		font-weight: 900;
+		line-height: 1.1;
+		letter-spacing: 0.01em;
+		text-transform: uppercase;
+	}
+
+	/* A seção aberta fica sublinhada com o traço de 4 px do cabeçalho. */
+	.menu-do-celular-lista a[data-na-secao] .menu-do-celular-texto {
+		text-decoration-line: underline;
+		text-decoration-thickness: 4px;
+		text-decoration-color: var(--papel);
+		text-underline-offset: 0.2em;
+	}
+
+	.menu-do-celular-seta {
+		flex: none;
+		width: 1.25rem;
+		height: 1.25rem;
+		transition: translate 0.2s var(--ease-mola);
+	}
+
+	.menu-do-celular-lista a:hover .menu-do-celular-seta {
+		translate: 4px 0;
+	}
+
+	/*
+	 * Com a letra grande, o azulejinho e a seta saem, e a palavra ganha a linha:
+	 * com a letra a 100%, o painel tem pelo menos 17,5rem; a 200%, menos de 12rem
+	 * em todo celular.
+	 */
+	@container menu-do-celular (width < 14rem) {
+		.menu-do-celular-lista a::before,
+		.menu-do-celular-seta {
+			display: none;
 		}
 
-		.topo-links:not([data-com-api]) a {
-			min-height: 44px;
+		.menu-do-celular-texto {
+			font-size: min(1.5rem, calc(100cqi / 9.2));
+		}
+	}
+
+	/*
+	 * A busca e a conta, na linha de baixo do painel: a barra da busca à esquerda,
+	 * até 15rem, e a conta na margem direita. A busca entra na linha pela base 0,
+	 * como no .topo-ferramentas: com a base de 15rem, a conta descia a 360 px.
+	 * Com a letra grande, a busca encolhe até a lupa. Sem JavaScript, ela sai
+	 * (estilos/busca.css), e a conta fica sozinha à direita.
+	 */
+	.menu-do-celular-util {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 12px 16px;
+		margin-top: 20px;
+	}
+
+	.menu-do-celular-util .lugar-da-busca {
+		flex: 1 1 0;
+		max-width: 15rem;
+	}
+
+	.menu-do-celular-util .entrada-da-conta {
+		margin-left: auto;
+	}
+
+	/*
+	 * Ao abrir, os destinos descem do botão um a um, e a busca e a conta vêm
+	 * depois. Com o movimento reduzido, tudo aparece no lugar (estilos/movimento.css).
+	 * O :where tira o peso do menu aberto: o seletor fica com o das outras listas.
+	 */
+	:where(.menu-do-celular > details[open]) .menu-do-celular-lista > li {
+		animation: desce 0.36s var(--ease-suave) backwards;
+		animation-delay: calc(var(--i, 0) * 45ms);
+	}
+
+	:where(.menu-do-celular > details[open]) .menu-do-celular-util {
+		animation: desce 0.36s 0.18s var(--ease-suave) backwards;
+	}
+
+	/* Nas cores forçadas, o azulejinho sai, e o traço da seção fica na cor do texto. */
+	@media (forced-colors: active) {
+		.menu-do-celular-lista a::before {
+			display: none;
+		}
+
+		.menu-do-celular-lista a[data-na-secao] .menu-do-celular-texto {
+			text-decoration-color: CanvasText;
 		}
 	}
 

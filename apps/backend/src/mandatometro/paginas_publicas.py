@@ -52,6 +52,7 @@ CAMINHOS_PUBLICOS = frozenset(
         "/jogos",
         "/jogos/6x1",
         "/jogos/comissoes",
+        "/opiniao",
         "/parlamentares",
         "/piloto",
         "/termo",

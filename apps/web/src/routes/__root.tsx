@@ -136,7 +136,7 @@ function Documento({ children }: { children: ReactNode }) {
 						<main id="conteudo" tabIndex={-1} className="focus:outline-none">
 							{children}
 						</main>
-						<Rodape />
+						<Rodape comApi={Boolean(ENV.API_URL)} />
 					</div>
 				</ProvedorDaBusca>
 				<FocoNaPaginaNova />
