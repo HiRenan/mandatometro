@@ -1,119 +1,98 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-// O mapa da trilha é o fundo de todas as páginas (fundo.css): um ladrilho de
-// curvas de nível que se repete. Este teste lê o mapa.svg que o
-// imagens/mapa.mjs gravou e confere o que o olho cobraria: as curvas continuam
-// de um ladrilho para o vizinho, e o arquivo pesa pouco.
+// O fundo de todas as páginas (fundo.css): o papel, com o grão e, a partir de
+// 768 px, uma coluna de azulejos tom sobre tom em cada margem. Este teste lê o
+// margem.svg que o imagens/margem.mjs gravou e o CSS, e confere o que o olho
+// cobraria: a coluna emenda com ela mesma, fica no tom do papel, mora nas
+// margens e pesa pouco, e nada mais anda atrás da página.
 
 const arquivo = (nome: string) =>
 	readFileSync(new URL(`./${nome}`, import.meta.url), "utf8");
+/** O texto com os espaços juntos, para ler as regras sem depender das quebras. */
+const junto = (texto: string) => texto.replace(/\s+/g, " ");
 
-const svg = arquivo("mapa.svg");
-const lado = Number(/ width="(\d+)"/.exec(svg)?.[1]);
-
-type Ponto = { x: number; y: number };
-type Linha = { comeco: Ponto; fim: Ponto; fechada: boolean };
-
-/**
- * As linhas de um `d` do mapa.mjs: um `M` com a posição, as curvas em `q` e a
- * reta do fim em `l`, com números relativos, e o `z` da linha fechada.
- */
-function linhasDoCaminho(d: string): Linha[] {
-	const linhas: Linha[] = [];
-	let comeco: Ponto | undefined;
-	let onde: Ponto = { x: 0, y: 0 };
-	let fechada = false;
-	const guardar = () => {
-		if (comeco) linhas.push({ comeco, fim: onde, fechada });
-	};
-	for (const [, comando, resto] of d.matchAll(/([Mqlz])([^Mqlz]*)/g)) {
-		const numeros = (resto?.match(/-?\d+/g) ?? []).map(Number);
-		if (comando === "M") {
-			guardar();
-			const [x = 0, y = 0] = numeros;
-			comeco = { x, y };
-			onde = comeco;
-			fechada = false;
-		} else if (comando === "z") {
-			fechada = true;
-		} else {
-			// Cada curva leva o controle e o fim; a reta, só o fim.
-			const tamanho = comando === "q" ? 4 : 2;
-			for (let i = 0; i < numeros.length; i += tamanho) {
-				onde = {
-					x: onde.x + (numeros[i + tamanho - 2] ?? 0),
-					y: onde.y + (numeros[i + tamanho - 1] ?? 0),
-				};
-			}
-		}
-	}
-	guardar();
-	return linhas;
-}
-
-const linhas = [...svg.matchAll(/ d="([^"]+)"/g)].flatMap(([, d]) =>
-	linhasDoCaminho(d ?? ""),
+const svg = arquivo("margem.svg");
+const css = junto(arquivo("fundo.css"));
+const cores = readFileSync(
+	new URL("../../../../packages/ui/src/styles/globals.css", import.meta.url),
+	"utf8",
 );
-const pontas = linhas
-	.filter((linha) => !linha.fechada)
-	.flatMap((linha) => [linha.comeco, linha.fim]);
+const cor = (nome: string) =>
+	new RegExp(`--${nome}: (#[0-9a-f]{6});`).exec(cores)?.[1];
 
-const emOrdem = (numeros: number[]) => [...numeros].sort((a, b) => a - b);
+const altura = Number(/ viewBox="0 0 100 (\d+)"/.exec(svg)?.[1]);
+/** Cada peça é desenhada numa caixa de 100 e encolhe para deixar o rejunte. */
+const pecas = [
+	...svg.matchAll(
+		/<g transform="translate\(([\d.]+) ([\d.]+)\) scale\(([\d.]+)\)/g,
+	),
+].map(([, x, y, escala]) => ({
+	x: Number(x),
+	y: Number(y),
+	lado: 100 * Number(escala),
+}));
 
-describe("o mapa da trilha", () => {
-	it("tem curvas abertas e fechadas, e nenhuma acaba no meio do ladrilho", () => {
-		expect(linhas.some((linha) => linha.fechada)).toBe(true);
-		expect(pontas.length).toBeGreaterThan(0);
-		const soltas = pontas.filter(
-			({ x, y }) => x !== 0 && x !== lado && y !== 0 && y !== lado,
+describe("os azulejos da margem", () => {
+	it("são doze peças iguais, uma embaixo da outra, com o mesmo rejunte também na emenda", () => {
+		expect(pecas).toHaveLength(12);
+		expect(new Set(pecas.map(({ lado }) => lado)).size).toBe(1);
+		// Cada peça fica no meio da faixa de 100 dela, com metade do rejunte de
+		// cada lado; como a coluna mede doze faixas, a emenda com a repetição
+		// seguinte tem o mesmo rejunte de dentro da coluna.
+		expect(altura).toBe(12 * 100);
+		for (const [i, peca] of pecas.entries()) {
+			const rejunte = 100 - peca.lado;
+			expect(rejunte).toBeGreaterThan(0);
+			expect(peca.x).toBeCloseTo(rejunte / 2);
+			expect(peca.y).toBeCloseTo(i * 100 + rejunte / 2);
+		}
+	});
+
+	it("ficam no tom do papel: só o Papel 2 e o Papel 3, sem cor de fita", () => {
+		const usadas = new Set(
+			[...svg.matchAll(/fill="([^"]+)"/g)].map(([, valor]) => valor),
 		);
-		expect(soltas).toEqual([]);
+		expect([...usadas].sort()).toEqual([cor("papel-2"), cor("papel-3")].sort());
 	});
 
-	it("emenda com o ladrilho do lado: a curva que sai pela direita entra pela esquerda", () => {
-		const naEsquerda = pontas.filter(({ x }) => x === 0).map(({ y }) => y);
-		const naDireita = pontas.filter(({ x }) => x === lado).map(({ y }) => y);
-		expect(naEsquerda.length).toBeGreaterThan(0);
-		expect(emOrdem(naDireita)).toEqual(emOrdem(naEsquerda));
-	});
+	it("ficam nas duas margens a partir de 768 px, a 12 px do conteúdo; no celular, fica o grão", () => {
+		expect(css).toContain('--coluna-da-margem: url("./margem.svg");');
+		const [, largura, corpo = ""] =
+			/@media \(width >= ([\d.]+)rem\) \{ body \{([^}]*)\}/.exec(css) ?? [];
 
-	it("emenda com o ladrilho de baixo: a curva que sai por baixo entra por cima", () => {
-		const emCima = pontas.filter(({ y }) => y === 0).map(({ x }) => x);
-		const embaixo = pontas.filter(({ y }) => y === lado).map(({ x }) => x);
-		expect(emCima.length).toBeGreaterThan(0);
-		expect(emOrdem(embaixo)).toEqual(emOrdem(emCima));
-	});
-
-	it("é repetido pelo fundo.css no tamanho do ladrilho", () => {
-		expect(arquivo("fundo.css")).toContain(
-			`mask: url("./mapa.svg") 50% 0 / ${lado}px ${lado}px repeat;`,
+		expect(largura).toBe("48");
+		expect(corpo).toContain("--azulejo-da-margem: calc(var(--margem) - 12px);");
+		expect(corpo).toContain(
+			"background-image: var(--coluna-da-margem), var(--coluna-da-margem), var(--grao);",
+		);
+		expect(corpo).toContain("background-repeat: repeat-y, repeat-y, repeat;");
+		expect(corpo).toContain(
+			"background-size: var(--azulejo-da-margem) auto, var(--azulejo-da-margem) auto, 320px 320px;",
+		);
+		// Uma coluna em cada ponta; a da direita começa cinco peças abaixo.
+		expect(corpo).toContain(
+			"background-position: 0 0, 100% calc(var(--azulejo-da-margem) * 5), 0 0;",
 		);
 	});
 
-	// O mapa sobe com a rolagem (movimento.css). Ele anda por um trecho fixo de
-	// rolagem, e não pelo progresso da página inteira: assim, não salta quando a
-	// página muda de altura com a pessoa parada. E a camada sobra embaixo o tanto
-	// que ela sobe, para o mapa não acabar antes do fim da tela.
-	it("anda por um trecho fixo da rolagem, e a camada sobra embaixo o tanto que sobe", () => {
-		const movimento = arquivo("movimento.css");
-		const sobe =
-			/@keyframes mapa-anda \{\s*to \{\s*transform: translateY\(-(\d+)vh\);/.exec(
-				movimento,
-			)?.[1];
-		const trecho =
-			/animation-timeline: scroll\(root block\);\s*animation-range: 0 (\d+)vh;/.exec(
-				movimento,
-			)?.[1];
-		const sobra = /inset: 0 0 -(\d+)vh;/.exec(arquivo("fundo.css"))?.[1];
-
-		expect(Number(sobe)).toBeGreaterThan(0);
-		expect(sobra).toBe(sobe);
-		// Um décimo do que a página rola.
-		expect(Number(trecho)).toBe(Number(sobe) * 10);
+	it("saem no alto contraste e na impressão, onde o papel fica liso", () => {
+		const liso = css.indexOf(
+			"@media (forced-colors: active), print { body { background-image: none; } }",
+		);
+		// A regra vem depois da do computador, que tem o mesmo peso.
+		expect(liso).toBeGreaterThan(css.indexOf("@media (width >= 48rem)"));
 	});
 
-	it("pesa menos de 20 kB", () => {
-		expect(Buffer.byteLength(svg)).toBeLessThan(20_000);
+	it("pesam menos de 5 kB", () => {
+		expect(Buffer.byteLength(svg)).toBeLessThan(5_000);
+	});
+});
+
+describe("o fundo parado", () => {
+	// Na #357, as curvas de nível que andavam numa camada atrás da página saíram.
+	it("não tem camada atrás da página nem animação de fundo", () => {
+		expect(css).not.toContain("body::before");
+		expect(arquivo("movimento.css")).not.toMatch(/body::before|mapa-anda/);
 	});
 });

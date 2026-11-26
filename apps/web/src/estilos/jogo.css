@@ -6,8 +6,8 @@
  *
  * O cenário é a única imagem do site, e é desenho: ele cobre o papel de
  * propósito, dentro do palco. Fora dele, a página continua no papel com o grão
- * e o mapa. Nenhum texto fica em cima de uma cor de fita: o carimbo tem o
- * texto em tinta, e a cor fica no contorno.
+ * e os azulejos das margens. Nenhum texto fica em cima de uma cor de fita: o
+ * carimbo tem o texto em tinta, e a cor fica no contorno.
  */
 @layer components {
 	.jogo {

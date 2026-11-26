@@ -14,7 +14,7 @@
 		"env:generate": "varlock codegen",
 		"imagens": "node imagens/gerar.mjs",
 		"vozes": "node vozes/gerar.mjs",
-		"mapa": "node imagens/mapa.mjs",
+		"margem": "node imagens/margem.mjs",
 		"tracado": "node imagens/tracado.mjs",
 		"generate:client": "openapi-ts"
 	},

@@ -1,24 +1,28 @@
 /*
- * O fundo do site (DESIGN.md): o papel, com o grão e o mapa da trilha. O Renan,
- * na #89: o fundo liso estava "meio inanimado", "apenas uma cor", e o que
- * entrasse não podia poluir.
+ * O fundo do site (DESIGN.md): o papel, com o grão e, no computador, uma coluna
+ * de azulejos tom sobre tom em cada margem. O Renan, na #89: o fundo liso estava
+ * "meio inanimado", "apenas uma cor", e o que entrasse não podia poluir. Na
+ * #357, as curvas de nível que ficavam atrás da página, e pareciam fios,
+ * saíram, e ele escolheu os azulejos nas margens.
  *
  * O grão (grao.svg) é um ruído miúdo, com pontos claros e escuros na mesma
  * medida: o papel ganha textura sem escurecer. O ladrilho tem 320 px e emenda.
  *
- * O mapa (mapa.svg) são curvas de nível, como num mapa de trilha, um tom acima
- * do papel. Ele fica parado atrás da página, numa camada fixa; onde o navegador
- * deixa, anda mais devagar que a página na rolagem (estilos/movimento.css). O
- * arquivo é a máscara, e a cor vem do Papel 3. Ele sai do imagens/mapa.mjs
- * (pnpm --filter web mapa): para mudar o mapa, mude o roteiro e gere de novo,
- * sem editar o SVG.
+ * A coluna (margem.svg) tem doze azulejos em Papel 2 e Papel 3, com os motivos
+ * de estilos/azulejos.css e sem cor de fita. A partir de 768 px, uma coluna
+ * fica em cada margem, 12 px antes do conteúdo, e rola com a página. A da
+ * direita começa cinco peças abaixo, para os dois lados não se espelharem. Ela
+ * sai do imagens/margem.mjs (pnpm --filter web margem): para mudar a coluna,
+ * mude o roteiro e gere de novo, sem editar o SVG.
  *
  * Os dois são desenho: não dizem nada sobre o assunto, e nenhum texto depende
- * deles. As folhas, os azulejos e as peças com fundo próprio ficam por cima.
+ * deles. O texto fica sobre o grão, e nunca sobre os azulejos. As folhas, os
+ * azulejos do conteúdo e as peças com fundo próprio ficam por cima.
  */
 @layer base {
 	:root {
 		--grao: url("./grao.svg");
+		--coluna-da-margem: url("./margem.svg");
 	}
 
 	body {
@@ -26,22 +30,20 @@
 		background-size: 320px 320px;
 	}
 
-	/* A camada sobra 60vh embaixo: é o quanto ela sobe na rolagem, no máximo. */
-	body::before {
-		content: "";
-		position: fixed;
-		z-index: -1;
-		inset: 0 0 -60vh;
-		pointer-events: none;
-		background: var(--papel-3);
-		opacity: 0.8;
-		mask: url("./mapa.svg") 50% 0 / 1400px 1400px repeat;
-	}
-
-	/* No celular, o texto fica direto no papel: o mapa vai mais fraco. */
-	@media (width < 48rem) {
-		body::before {
-			opacity: 0.6;
+	@media (width >= 48rem) {
+		body {
+			--azulejo-da-margem: calc(var(--margem) - 12px);
+			background-image:
+				var(--coluna-da-margem), var(--coluna-da-margem), var(--grao);
+			background-repeat: repeat-y, repeat-y, repeat;
+			background-size:
+				var(--azulejo-da-margem) auto,
+				var(--azulejo-da-margem) auto,
+				320px 320px;
+			background-position:
+				0 0,
+				100% calc(var(--azulejo-da-margem) * 5),
+				0 0;
 		}
 	}
 
@@ -49,10 +51,6 @@
 	@media (forced-colors: active), print {
 		body {
 			background-image: none;
-		}
-
-		body::before {
-			display: none;
 		}
 	}
 }
