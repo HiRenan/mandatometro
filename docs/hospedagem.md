@@ -72,6 +72,7 @@ Comece depois de conferir a inscrição de teste no ambiente anterior. A publica
 | Preparo manual da edição | Botão Run workflow, com período opcional | Commit do disparo (`github.sha`). `develop` usa `desenvolvimento` e `main` usa `producao` |
 | Envio dominical | 10h37 de Brasília (`37 13 * * 0` UTC), se `ENVIOS_ATIVOS=true` | YAML da `develop`, checkout da `main`, banco `producao` |
 | Envio/ensaio manual | Botão Run workflow, com ID opcional, limite e simulação | `develop` → `desenvolvimento`; `main` → `producao` |
+| Conferir site no ar | Após a publicação da `main`, por agenda (`43 */6 * * *` UTC) ou em Run workflow | Push e agenda conferem a produção. O disparo manual permite escolher o ambiente |
 | Migration automática (`alembic upgrade head`) | Push em `develop` ou `main` que muda `apps/backend/migrations/**` | Commit do push, banco da mesma branch, URL direta |
 | Migration de reserva | Botão Run workflow | Commit e banco da branch escolhida |
 
@@ -96,6 +97,24 @@ Depois de confirmar a migration 0014 no ambiente, abra **Actions → Coletar Con
 O modo usa as mesmas credenciais e a mesma fila da coleta e fica desmarcado por padrão. A agenda roda a coleta normal. O preenchimento grava temas e fontes temáticas à parte, o que preserva as revisões dos rascunhos. [Comando local](../README.md#como-rodar)
 
 Marcar **somente_videos** e **somente_temas** juntos faz a tarefa parar com erro antes de coletar. Rode um modo por vez.
+
+## Conferir o site no ar e proteger as branches
+
+O workflow **Conferir site no ar** chama `.github/scripts/conferir_site.py`. Ele abre a página inicial, as trilhas, o artigo **O Plenário vota o projeto**, os jogos, os parlamentares, uma ficha parlamentar, uma votação, as edições e o piloto. O primeiro link canônico de `/parlamentares?uf=SP` leva à ficha, e o primeiro link de votação da ficha dá o endereço da votação. Na API, `/health` exige `status` igual a `ok` e `/edicoes?limite=1` confere uma leitura que consulta o banco. [Roteiro de conferência](../.github/scripts/conferir_site.py)
+
+Cada pedido usa `GET` e tem até 20 segundos para completar a resposta. O roteiro exige HTTP 200 e o título ou texto da página no HTML, ou os campos esperados no JSON. Após uma falha, repete o pedido uma vez, dois segundos depois. Lê as respostas diretamente, sem executar o JavaScript que registra visitas.
+
+- **Publicação.** No push da `main`, aguarda até 10 minutos por `success` nos status `Vercel – mandatometro` e `Vercel – mandatometro-api` daquele SHA. A rodada fica vermelha na etapa de publicação se a Vercel sinalizar falha ou se faltar confirmação de um dos projetos no prazo. O resumo mostra o SHA e o estado de cada projeto. Nos cinco commits consultados da `main`, os dois status chegaram em até 118 segundos. Acompanhe a publicação seguinte à chegada do workflow à `main` para confirmar esse gatilho.
+- **Agenda.** O cron fica na `develop`, branch padrão, e pede uma leitura da produção nos horários da tabela. Serve como rede de segurança. Em novembro de 2026 houve atrasos de 7 a 12 horas nas agendas deste repositório. O workflow de avisos, com cron de cinco minutos, rodou oito vezes entre 23 e 26/11. O GitHub pode atrasar ou descartar disparos. [Medição na issue #358](https://github.com/HiRenan/mandatometro/issues/358)
+- **Disparo manual.** Depois que o workflow chegar à `develop`, abra **Actions → Conferir site no ar → Run workflow** e escolha `producao` ou `desenvolvimento`. PRs que mudam o workflow, o roteiro ou seu teste conferem o ambiente de desenvolvimento.
+
+Quando a rodada ficar vermelha, abra **Actions → Conferir site no ar → Summary**. O resumo lista os endereços com problema, os status e as consultas que ficaram sem endereço descoberto. Se a publicação falhou, confira os dois projetos na Vercel pelo SHA e reexecute a rodada quando ambos estiverem prontos. Se uma leitura falhou, confira a rota no projeto do site ou da API indicado no resumo e repita a conferência do ambiente após corrigir a causa.
+
+Para receber os avisos, quem administra acompanha o repositório em **Watch** e habilita as notificações de **Actions** pela web ou por e-mail nas preferências do GitHub. A rodada agendada avisa a pessoa que criou ou alterou por último o `cron`, ou que reativou a agenda. Confira o destinatário ao publicar o workflow e o recebimento na primeira falha agendada. [Configurar os avisos](https://docs.github.com/en/subscriptions-and-notifications/how-tos/managing-github-actions-notifications), [destinatários por rodada](https://docs.github.com/en/actions/concepts/workflows-and-actions/notifications-for-workflow-runs)
+
+O ruleset **PR e CI na main e develop** vale para `main` e `develop` quando a coordenação o ativa. Exige PR com os checks `Web` e `Backend` do GitHub Actions verdes, com zero aprovações obrigatórias e sem exigir que a branch do PR esteja em dia com a base. Bloqueia push forçado e remoção das duas branches para todos os autores. Esses dois checks são a condição de CI para o merge. A coordenação pode carregar o arquivo em **Settings → Rules → Rulesets → New ruleset → Import a ruleset**. [Arquivo da regra](../.github/rulesets/proteger-main-e-develop.json), [importação pelo GitHub](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/creating-rulesets-for-a-repository#importing-prebuilt-rulesets)
+
+Confira a regra ativa com `gh api repos/HiRenan/mandatometro/rules/branches/main` e `gh api repos/HiRenan/mandatometro/rules/branches/develop`. Num PR com CI pendente ou vermelho, confira o bloqueio com `gh pr view NUMERO --json mergeStateStatus`. Em emergência, quem administra abre **Settings → Rules → Rulesets → PR e CI na main e develop**, escolhe **Disabled** em **Enforcement status** e salva. Use **Active** para retomar a proteção. [Gerenciar rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/managing-rulesets-for-a-repository)
 
 ## Coletar o TSE
 
