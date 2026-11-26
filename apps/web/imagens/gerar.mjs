@@ -1,4 +1,4 @@
-// O SVG do pitch também fornece o livro do cabeçalho, dos ícones e da prévia.
+// O SVG do pitch também fornece o livro dos ícones.
 // O Edge ou o Chrome sem janela exporta as imagens com os recursos locais.
 //
 // Uso: pnpm --filter web imagens
@@ -41,7 +41,7 @@ const CANDIDATOS = [
 const ORIGEM_DO_ICONE =
 	"Livro em M da marca Páginas (public/marca-paginas.svg), em papel sobre tinta, com as cinco fitas do Bonfim. Gerado por apps/web/imagens/gerar.mjs com icone.html.";
 const ORIGEM_DA_PREVIA =
-	"Marca Páginas no bloco de tinta com o nome e o lema, a tira das cinco fitas do Bonfim, o título da página inicial no papel e uma fileira de azulejos. Gerada por apps/web/imagens/gerar.mjs com previa.html e public/marca-paginas.svg.";
+	"O nome no bloco de tinta, com o M da letra, a dobra do livro e o fio das cinco fitas, e o lema; a tira das cinco fitas do Bonfim, o título da página inicial no papel e uma fileira de azulejos. Gerada por apps/web/imagens/gerar.mjs com previa.html.";
 
 const espera = (ms) => new Promise((pronto) => setTimeout(pronto, ms));
 
