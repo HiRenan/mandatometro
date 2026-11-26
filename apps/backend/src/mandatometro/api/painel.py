@@ -17,11 +17,7 @@ from starlette.exceptions import HTTPException
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from mandatometro import db
-from mandatometro.api.contas import (
-    AcessoAdministrativoRecusado,
-    exigir_administradora,
-    validar_origem,
-)
+from mandatometro.api.contas import exigir_administradora, validar_origem
 from mandatometro.api.esquemas import ErroPainel, ResultadoPublicacao, ResultadoRevisao
 from mandatometro.api.esquemas_numeros import NumerosPainel
 from mandatometro.api.numeros import numeros_do_painel
@@ -51,14 +47,10 @@ class AcessoPainel:
         try:
             await run_in_threadpool(exigir_administradora, request.cookies.get("sessao_conta"))
         except Exception as erro:
-            if caminho == f"{PREFIXO}/opinioes" and isinstance(erro, AcessoAdministrativoRecusado):
-                resposta = await http_exception_handler(request, HTTPException(erro.codigo))
-                resposta.headers["Cache-Control"] = "no-store"
-            else:
-                # Nas outras rotas, a recusa é indistinguível do 404 do roteador.
-                if not isinstance(erro, HTTPException) or erro.status_code != 404:
-                    logger.warning("Falha ao verificar o acesso ao painel de revisão.")
-                resposta = await http_exception_handler(request, HTTPException(404))
+            # Se não foi possível autenticar a sessão, devolva o mesmo 404 do roteador.
+            if not isinstance(erro, HTTPException) or erro.status_code != 404:
+                logger.warning("Falha ao verificar o acesso ao painel de revisão.")
+            resposta = await http_exception_handler(request, HTTPException(404))
             await resposta(scope, receive, send)
             return
 
@@ -177,8 +169,7 @@ def consultar_numeros_painel() -> NumerosPainel:
         "Agregados de todas as opiniões e lista das 500 mais recentes, só para a administradora."
     ),
     responses={
-        401: {"model": ErroPainel, "description": "Sessão ausente ou inválida."},
-        403: {"model": ErroPainel, "description": "A conta não é administradora."},
+        404: {"model": ErroPainel, "description": "Rota não encontrada."},
         500: {"model": ErroPainel, "description": "Falha inesperada na consulta."},
     },
 )

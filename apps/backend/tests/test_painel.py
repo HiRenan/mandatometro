@@ -763,7 +763,7 @@ def test_openapi_declara_as_operacoes_do_painel_e_preserva_os_modelos_editoriais
         (leitura, {"404", "409", "422", "500"}),
         (revisao, {"403", "404", "409", "413", "422", "500", "503"}),
         (publicacao, {"403", "404", "422", "500", "503"}),
-        (opinioes, {"401", "403", "500"}),
+        (opinioes, {"404", "500"}),
     ]:
         respostas = operacao["responses"]
         assert set(respostas) == {"200", *erros}

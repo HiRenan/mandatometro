@@ -2696,13 +2696,9 @@ export type ConsultarOpinioesPainelData = {
 
 export type ConsultarOpinioesPainelErrors = {
     /**
-     * Sessão ausente ou inválida.
+     * Rota não encontrada.
      */
-    401: ErroPainel;
-    /**
-     * A conta não é administradora.
-     */
-    403: ErroPainel;
+    404: ErroPainel;
     /**
      * Falha inesperada na consulta.
      */

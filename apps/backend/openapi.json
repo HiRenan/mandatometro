@@ -1912,18 +1912,8 @@
               }
             }
           },
-          "401": {
-            "description": "Sessão ausente ou inválida.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErroPainel"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "A conta não é administradora.",
+          "404": {
+            "description": "Rota não encontrada.",
             "content": {
               "application/json": {
                 "schema": {

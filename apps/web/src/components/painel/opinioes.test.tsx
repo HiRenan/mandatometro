@@ -124,15 +124,18 @@ it("a administradora vê os totais e a lista na ordem da API", async () => {
 	);
 });
 
-it("conferir a sessão de novo tira o painel quando o papel foi revogado", async () => {
-	perfil
-		.mockResolvedValueOnce(resposta(200, { papel: "administradora" }))
-		.mockResolvedValue(resposta(200, { papel: "comum" }));
-	consultar.mockResolvedValue(resposta(403));
-	abrir();
-	expect(await screen.findByText("Página não encontrada")).toBeTruthy();
-	expect(perfil).toHaveBeenCalledTimes(2);
-	expect(
-		screen.queryByRole("region", { name: "Opiniões recebidas" }),
-	).toBeNull();
-});
+it.each([404, 403])(
+	"conferir a sessão de novo após %i tira o painel quando o papel foi revogado",
+	async (status) => {
+		perfil
+			.mockResolvedValueOnce(resposta(200, { papel: "administradora" }))
+			.mockResolvedValue(resposta(200, { papel: "comum" }));
+		consultar.mockResolvedValue(resposta(status));
+		abrir();
+		expect(await screen.findByText("Página não encontrada")).toBeTruthy();
+		expect(perfil).toHaveBeenCalledTimes(2);
+		expect(
+			screen.queryByRole("region", { name: "Opiniões recebidas" }),
+		).toBeNull();
+	},
+);

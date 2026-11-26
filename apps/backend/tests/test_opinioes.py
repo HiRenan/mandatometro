@@ -203,14 +203,12 @@ def test_falha_ao_gravar_desfaz_o_consumo_da_cota(ambiente, caplog):
 def test_painel_exige_sessao_de_administradora(ambiente):
     cliente, _, _ = ambiente
     comum = _cookie("comum")
-    for cabecalhos, codigo in (
-        ({}, 401),
-        ({"Cookie": "sessao_conta=token-invalido"}, 401),
-        (comum, 403),
-    ):
+    for cabecalhos in ({}, {"Cookie": "sessao_conta=token-invalido"}, comum):
         negada = cliente.get(PAINEL, headers=cabecalhos)
-        assert negada.status_code == codigo
-        assert negada.headers["Cache-Control"] == "no-store"
+        inexistente = cliente.get("/painel/inexistente", headers=cabecalhos)
+        assert negada.status_code == inexistente.status_code == 404
+        assert negada.content == inexistente.content
+        assert negada.headers == inexistente.headers
         assert cliente.get("/painel/numeros", headers=cabecalhos).status_code == 404
     assert cliente.get(PAINEL, headers=_cookie("administradora")).json() == {
         "total": 0,

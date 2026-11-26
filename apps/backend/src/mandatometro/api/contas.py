@@ -313,26 +313,20 @@ def conta_da_sessao(db: Session, sessao_conta: str | None) -> Conta:
     return identificar(db, sessao_conta, "sessao")
 
 
-class AcessoAdministrativoRecusado(StarletteHTTPException):
-    def __init__(self, codigo: Literal[401, 403]) -> None:
-        # A resposta padrão do painel é a mesma de uma rota inexistente.
-        super().__init__(404)
-        self.codigo = codigo
-
-
 def exigir_administradora(sessao_conta: Annotated[str | None, Cookie()] = None) -> Conta:
     if not sessao_conta:
-        raise AcessoAdministrativoRecusado(401)
+        raise StarletteHTTPException(404)
     with sessao() as db:
         try:
             conta = conta_da_sessao(db, sessao_conta)
         except HTTPException as erro:
             if erro.status_code != 401:
                 raise
-            raise AcessoAdministrativoRecusado(401) from None
-        if conta.papel != "administradora":
-            raise AcessoAdministrativoRecusado(403)
-        return conta
+        else:
+            if conta.papel == "administradora":
+                return conta
+    # Usa o tratamento padrão do roteador também em uma RotaConta.
+    raise StarletteHTTPException(404)
 
 
 @router.post("/confirmacao", status_code=204)
