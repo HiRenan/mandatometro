@@ -1,5 +1,18 @@
-import { Link, ScriptOnce, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import {
+	Link,
+	ScriptOnce,
+	useRouter,
+	useRouterState,
+} from "@tanstack/react-router";
+import { ArrowRight, MenuIcon, XIcon } from "lucide-react";
+import {
+	type CSSProperties,
+	type KeyboardEvent,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
+import { classeDaFita } from "@/lib/formatar";
 import { LEMA_DO_SITE } from "@/lib/meta";
 import {
 	CHAVE_SESSAO,
@@ -50,30 +63,37 @@ function estaNaSecao(caminho: string, secao: string): boolean {
 	return caminho === secao || caminho.startsWith(`${secao}/`);
 }
 
+/** A marca do traço: o link fica marcado em todas as páginas da seção dele. */
+function marcaDaSecao(
+	caminho: string,
+	secoes: ReadonlyArray<string>,
+): "" | undefined {
+	return secoes.some((secao) => estaNaSecao(caminho, secao)) ? "" : undefined;
+}
+
 /**
- * Os links das seções. O cabeçalho tem duas listas iguais, com o mesmo nome, e
- * o CSS mostra uma de cada vez: a do meio no computador e a de baixo no celular.
- * Assim, o Tab e o leitor de tela seguem a ordem da tela nas duas larguras: no
- * computador, o nome, os links, a busca e a conta; no celular, o nome, a busca,
- * a conta e os links. Com uma lista só, uma das ordens ficaria trocada.
+ * Os links das seções. O cabeçalho tem três listas iguais, com o mesmo nome, e
+ * o CSS mostra uma de cada vez: a do meio no computador, a de baixo no tablet e
+ * a do menu no celular. Assim, o Tab e o leitor de tela seguem a ordem da tela
+ * em cada largura: no computador, o nome, os links, a busca e a conta; no
+ * tablet, o nome, a busca, a conta e os links; no celular, o nome e o menu.
+ * Com uma lista só, a ordem ficaria trocada em alguma largura.
  */
 function LinksDoTopo({
 	lugar,
 	links,
 	caminho,
-	comApi,
 }: {
 	lugar: "meio" | "baixo";
 	links: Links;
 	caminho: string;
-	comApi: boolean;
 }) {
 	return (
 		<nav
 			aria-label="Principal"
 			className={lugar === "meio" ? "topo-nav-meio" : "topo-nav-baixo"}
 		>
-			<ul className="topo-links" data-com-api={comApi ? "" : undefined}>
+			<ul className="topo-links">
 				{links.map(({ to, label, secoes }) => (
 					<li key={to}>
 						{/* O traço marca a seção inteira (data-na-secao), mas o link só
@@ -82,11 +102,7 @@ function LinksDoTopo({
 						<Link
 							to={to}
 							activeOptions={{ exact: true }}
-							data-na-secao={
-								secoes.some((secao) => estaNaSecao(caminho, secao))
-									? ""
-									: undefined
-							}
+							data-na-secao={marcaDaSecao(caminho, secoes)}
 						>
 							{label}
 						</Link>
@@ -130,6 +146,78 @@ function EntradaDaConta({ caminho }: { caminho: string }) {
 }
 
 /**
+ * O menu do celular (o Renan escolheu a "A · Menu" na #362, em 26/11/2026). Abaixo
+ * de 48rem, o cabeçalho é uma linha só, com o nome e o botão "Menu", que abre um
+ * painel dentro do bloco de tinta. O painel empurra a página e não cobre nada.
+ * Ele mostra os destinos em letra de cartaz, cada um com o azulejinho da fita da
+ * posição, e, embaixo, a busca e a conta. É um <details> do próprio navegador:
+ * ele abre e fecha sem JavaScript e antes da hidratação, e o leitor de tela diz
+ * se está aberto. O React só acrescenta o que o <details> não faz: o Esc fecha
+ * e devolve o foco ao botão, e qualquer troca de página fecha o menu.
+ */
+function MenuDoCelular({ links, caminho }: { links: Links; caminho: string }) {
+	const router = useRouter();
+	const menu = useRef<HTMLDetailsElement>(null);
+
+	// O menu fecha antes de a troca de página fotografar a tela: num destino do
+	// menu, também o da página aberta, num resultado da busca e no voltar do
+	// navegador. O menu aberto antes da hidratação continua aberto.
+	useEffect(
+		() =>
+			router.subscribe("onBeforeNavigate", () => {
+				if (menu.current) menu.current.open = false;
+			}),
+		[router],
+	);
+
+	function aoTeclar(evento: KeyboardEvent<HTMLDetailsElement>) {
+		const detalhes = menu.current;
+		if (evento.key !== "Escape" || !detalhes?.open) return;
+		detalhes.open = false;
+		detalhes.querySelector("summary")?.focus();
+	}
+
+	return (
+		<nav aria-label="Principal" className="menu-do-celular">
+			<details ref={menu} onKeyDown={aoTeclar}>
+				<summary className="menu-do-celular-botao">
+					Menu
+					<MenuIcon aria-hidden="true" className="menu-do-celular-abrir" />
+					<XIcon aria-hidden="true" className="menu-do-celular-fechar" />
+				</summary>
+				<div className="menu-do-celular-painel">
+					<ul className="menu-do-celular-lista">
+						{links.map(({ to, label, secoes }, vez) => (
+							<li
+								key={to}
+								className={classeDaFita(vez + 1)}
+								style={{ "--i": vez } as CSSProperties}
+							>
+								<Link
+									to={to}
+									activeOptions={{ exact: true }}
+									data-na-secao={marcaDaSecao(caminho, secoes)}
+								>
+									<span className="menu-do-celular-texto">{label}</span>
+									<ArrowRight
+										aria-hidden="true"
+										className="menu-do-celular-seta"
+									/>
+								</Link>
+							</li>
+						))}
+					</ul>
+					<div className="menu-do-celular-util">
+						<EntradaDaBusca />
+						<EntradaDaConta caminho={caminho} />
+					</div>
+				</div>
+			</details>
+		</nav>
+	);
+}
+
+/**
  * O cabeçalho: o bloco de tinta com o nome, os links, a busca e a conta, e a
  * tira das cinco fitas embaixo, que o separa da página clara (o Renan, na #89:
  * "um header bem feito").
@@ -139,13 +227,13 @@ function EntradaDaConta({ caminho }: { caminho: string }) {
  * nome à esquerda, os links no centro da grade e a busca e a conta à direita.
  * O centro da grade é o da área da página sem a barra de rolagem vertical.
  * A partir de 84rem (1344 px com a letra a 100%), o lema fica embaixo do nome.
- * Abaixo de 62rem, os links ficam centrados numa parte própria embaixo.
+ * De 48 a 62rem, os links ficam centrados numa parte própria embaixo. Abaixo de
+ * 48rem, no celular, ficam o nome e o botão "Menu" (o MenuDoCelular, da #362).
  * A busca mostra o que cabe no lugar dela (components/busca.tsx).
  *
  * Onde o site tem a API (o API_URL), os parlamentares e as edições entram nos
  * links. O Início saiu na #305, em 23/11/2026: o nome leva ao início (o Renan,
- * na #39). No celular, os quatro links ficam em duas linhas de dois (o Renan, na
- * #305) e, com a letra grande, um embaixo do outro (o CSS).
+ * na #39).
  *
  * A palavra da conta vem da marca do <html>. O roteiro do <head> (MarcaDaConta)
  * a põe antes da primeira pintura. Nas páginas que continuam abertas, o
@@ -216,22 +304,13 @@ export default function Header({
 					</Link>
 					<p className="marca-lema">{LEMA_DO_SITE}</p>
 				</div>
-				<LinksDoTopo
-					lugar="meio"
-					links={links}
-					caminho={caminho}
-					comApi={comApi}
-				/>
+				<LinksDoTopo lugar="meio" links={links} caminho={caminho} />
 				<div className="topo-ferramentas">
 					<EntradaDaBusca />
 					<EntradaDaConta caminho={caminho} />
 				</div>
-				<LinksDoTopo
-					lugar="baixo"
-					links={links}
-					caminho={caminho}
-					comApi={comApi}
-				/>
+				<LinksDoTopo lugar="baixo" links={links} caminho={caminho} />
+				<MenuDoCelular links={links} caminho={caminho} />
 			</div>
 			<div aria-hidden="true" className="tira-de-fitas h-[6px]" />
 		</header>
