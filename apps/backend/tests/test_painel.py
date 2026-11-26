@@ -738,10 +738,12 @@ def test_openapi_declara_as_operacoes_do_painel_e_preserva_os_modelos_editoriais
         _revisao("{id}"): {"post"},
         _publicacao("{id}"): {"post"},
         "/painel/numeros": {"get"},
+        "/painel/opinioes": {"get"},
     }
     leitura = painel[RASCUNHO]["get"]
     revisao = painel[_revisao("{id}")]["post"]
     publicacao = painel[_publicacao("{id}")]["post"]
+    opinioes = painel["/painel/opinioes"]["get"]
     assert publicacao.get("requestBody") is None
     schema = revisao["requestBody"]["content"]["application/json"]["schema"]
     modelo_arquivo = contrato["components"]["schemas"]["ArquivoRevisao"]
@@ -749,7 +751,11 @@ def test_openapi_declara_as_operacoes_do_painel_e_preserva_os_modelos_editoriais
     assert schema["required"] == modelo_arquivo["required"]
     respostas = leitura["responses"]["200"]["content"]["application/json"]["schema"]["anyOf"]
     assert respostas == [{"$ref": "#/components/schemas/ArquivoRevisao"}, {"type": "null"}]
-    for operacao, modelo in [(revisao, "ResultadoRevisao"), (publicacao, "ResultadoPublicacao")]:
+    for operacao, modelo in [
+        (revisao, "ResultadoRevisao"),
+        (publicacao, "ResultadoPublicacao"),
+        (opinioes, "OpinioesPainel"),
+    ]:
         assert operacao["responses"]["200"]["content"]["application/json"]["schema"] == {
             "$ref": f"#/components/schemas/{modelo}"
         }
@@ -757,6 +763,7 @@ def test_openapi_declara_as_operacoes_do_painel_e_preserva_os_modelos_editoriais
         (leitura, {"404", "409", "422", "500"}),
         (revisao, {"403", "404", "409", "413", "422", "500", "503"}),
         (publicacao, {"403", "404", "422", "500", "503"}),
+        (opinioes, {"401", "403", "500"}),
     ]:
         respostas = operacao["responses"]
         assert set(respostas) == {"200", *erros}
