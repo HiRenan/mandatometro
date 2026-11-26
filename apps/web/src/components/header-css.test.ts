@@ -95,16 +95,31 @@ describe("o CSS do cabeçalho", () => {
 		expect(Number(aperta.exec(midia?.corpo ?? "")?.[1])).toBeLessThan(10);
 	});
 
-	it("o livro é uma inicial da altura das maiúsculas e a palavra segue inteira a 320 px", () => {
+	it("o M é a letra da fonte, com a dobra e o fio das fitas, e a palavra segue inteira a 320 px", () => {
 		const midia = ate.find(({ corpo }) =>
 			/\.moldura \.nome-do-site \{\s*--letra: 1\.1875rem;\s*\}/.test(corpo),
 		);
 
 		expect(midia?.largura).toBe(22.5);
 		expect(regra(css, ".marca-palavra")).toContain("white-space: nowrap;");
-		const livro = regra(css, ".marca-palavra svg");
-		expect(livro).toContain("height: 1cap;");
-		expect(livro).toContain("vertical-align: baseline;");
+		// Na #357, o livro deixou de ser a inicial: com ele, lia-se "ANDATÔMETRO".
+		// O M tem o tamanho das outras letras, e nenhum desenho fica no lugar dele.
+		expect(regra(css, ".marca-inicial")).not.toMatch(
+			/font-size|letter-spacing/,
+		);
+		expect(css).not.toContain(".marca-palavra svg");
+		// A dobra desce do vão de cima até a base do M, a 0,834 em do alto da
+		// caixa de linha 1, e o fio das fitas fica logo abaixo da base.
+		const dobra = regra(css, ".marca-inicial::before") ?? "";
+		const fio = regra(css, ".marca-inicial::after") ?? "";
+		const medida = (corpo: string, nome: string) =>
+			Number(new RegExp(`\\b${nome}: ([\\d.]+)em;`).exec(corpo)?.[1]);
+		expect(medida(dobra, "top") + medida(dobra, "height")).toBeCloseTo(
+			0.834,
+			2,
+		);
+		expect(medida(fio, "top")).toBeGreaterThan(0.834);
+		expect(fio).toContain("background: var(--tira);");
 	});
 
 	it("no celular, os quatro links ficam em duas linhas de dois, com os vãos no meio da lista", () => {

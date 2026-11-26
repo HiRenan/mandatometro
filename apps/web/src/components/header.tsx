@@ -188,19 +188,11 @@ export default function Header({
 			<div className="topo-dentro px-margem-celular md:px-margem-larga gap-y-[4px] py-[8px]">
 				<div className="marca">
 					<Link to="/" aria-label="Mandatômetro" className={NOME_DO_SITE}>
+						{/* O M é a letra da fonte. A dobra e as fitas do livro vêm do
+						    CSS (.marca-inicial): o livro como inicial fazia ler
+						    "ANDATÔMETRO" (a #357). */}
 						<span className="marca-palavra">
-							<span className="marca-inicial">M</span>
-							<svg
-								aria-hidden="true"
-								focusable="false"
-								width="0"
-								height="0.69em"
-								viewBox="0 0 700 610"
-								fill="currentColor"
-							>
-								<use href="/marca-paginas.svg#paginas" />
-							</svg>
-							andatômetro
+							<span className="marca-inicial">M</span>andatômetro
 						</span>
 					</Link>
 					<p className="marca-lema">{LEMA_DO_SITE}</p>

@@ -646,18 +646,38 @@
 		white-space: nowrap;
 	}
 
-	/* O M de texto continua na seleção e aparece quando o CSS não carrega. */
+	/*
+	 * O M é a letra da fonte, como as outras (o Renan, na #357: o livro como
+	 * inicial fazia ler "ANDATÔMETRO"). O livro fica nos detalhes: a dobra abre o
+	 * vértice, e as cinco fitas fazem um fio embaixo da letra. As medidas são as
+	 * do M da Archivo (900, largura 68%): ele avança 0,747 em, com 0,045 em de
+	 * respiro de cada lado, e, na caixa de linha 1, a base fica a 0,834 em do alto.
+	 */
 	.marca-inicial {
-		font-size: 0;
-		letter-spacing: 0;
+		position: relative;
+		display: inline-block;
 	}
 
-	.marca-palavra svg {
-		display: inline-block;
-		width: auto;
-		height: 1cap;
-		margin-right: 0.04em;
-		vertical-align: baseline;
+	/* A dobra: do fundo do vão de cima até a base, na cor do bloco de tinta. */
+	.marca-inicial::before {
+		content: "" / "";
+		position: absolute;
+		top: 0.525em;
+		left: calc(0.3737em - 0.031em);
+		width: 0.062em;
+		height: 0.3095em;
+		background: var(--tinta);
+	}
+
+	/* As cinco fitas, num fio embaixo do M, abaixo da linha de base. */
+	.marca-inicial::after {
+		content: "" / "";
+		position: absolute;
+		top: 0.894em;
+		left: 0.045em;
+		width: 0.6575em;
+		height: max(2px, 0.075em);
+		background: var(--tira);
 	}
 
 	/*

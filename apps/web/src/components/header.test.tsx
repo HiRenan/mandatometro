@@ -126,13 +126,9 @@ describe("cabeçalho", () => {
 			name: /^Mandatômetro$/,
 		});
 		expect(inicio.getAttribute("href")).toBe("/");
-		const livro = inicio.querySelector("svg");
-		expect(livro?.getAttribute("aria-hidden")).toBe("true");
-		expect(livro?.getAttribute("focusable")).toBe("false");
-		expect(livro?.querySelector("use")?.getAttribute("href")).toBe(
-			"/marca-paginas.svg#paginas",
-		);
-		expect(livro?.nextSibling?.textContent).toBe("andatômetro");
+		// O M é a letra da fonte, e não mais o livro (a #357).
+		expect(inicio.querySelector("svg")).toBeNull();
+		expect(inicio.querySelector(".marca-inicial")?.textContent).toBe("M");
 		expect(inicio.textContent).toBe("Mandatômetro");
 		expect(cabecalho.querySelector(".marca-lema")?.textContent).toBe(
 			"A política brasileira de perto.",
