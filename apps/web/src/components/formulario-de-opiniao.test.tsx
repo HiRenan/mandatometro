@@ -102,6 +102,29 @@ it("conta até 2.000 caracteres, inclusive quando um caractere ocupa dois códig
 	expect(screen.getByText("2.000 de 2.000 caracteres")).toBeTruthy();
 });
 
+it("tira a nota, anuncia a mudança e devolve o foco aos rádios", async () => {
+	enviar.mockResolvedValue("enviada");
+	const { campo, botao } = abrir();
+	const primeiraNota = screen.getByRole<HTMLInputElement>("radio", {
+		name: "1",
+	});
+	fireEvent.click(primeiraNota);
+	escrever(campo, "Gostei das trilhas.");
+	const tirar = screen.getByRole("button", { name: "Tirar a nota" });
+	tirar.focus();
+	fireEvent.click(tirar);
+
+	expect(primeiraNota.checked).toBe(false);
+	expect(document.activeElement).toBe(primeiraNota);
+	expect(screen.getByRole("status").textContent).toBe("Nota retirada.");
+	expect(enviar).not.toHaveBeenCalled();
+	await act(async () => fireEvent.click(botao));
+	expect(enviar.mock.calls[0][0].data).toMatchObject({
+		nota: null,
+		texto: "Gostei das trilhas.",
+	});
+});
+
 it("recusa só espaços e liga a mensagem ao campo antes de devolver o foco", () => {
 	const { campo, botao } = abrir();
 	escrever(campo, "  ");

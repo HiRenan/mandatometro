@@ -64,6 +64,14 @@
 		}
 	}
 
+	.tirar-nota {
+		min-height: 44px;
+	}
+
+	.acao-de-texto.tirar-nota::before {
+		content: none;
+	}
+
 	.partes-da-opiniao {
 		grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
 		column-gap: 0.5rem;

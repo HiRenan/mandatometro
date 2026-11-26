@@ -1,5 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { comMilhares } from "@/lib/formatar";
 import {
 	ENVIANDO_OPINIAO,
@@ -36,6 +37,7 @@ export function FormularioDeOpiniao() {
 	const [esperando, setEsperando] = useState(false);
 	const { aviso, avisar } = useAviso();
 	const enviando = useRef(false);
+	const primeiraNota = useRef<HTMLInputElement>(null);
 	const campo = useRef<HTMLTextAreaElement>(null);
 	const volta = useRef<HTMLAnchorElement>(null);
 	const id = useId();
@@ -50,6 +52,12 @@ export function FormularioDeOpiniao() {
 	function mostrar(tipo: keyof typeof MENSAGENS) {
 		setMensagem({ tipo });
 		avisar(MENSAGENS[tipo]);
+	}
+
+	function tirarNota() {
+		flushSync(() => setNota(null));
+		primeiraNota.current?.focus();
+		avisar("Nota retirada.");
 	}
 
 	// Como na newsletter, a ação devolve o controle ao React antes da resposta.
@@ -133,6 +141,7 @@ export function FormularioDeOpiniao() {
 							{NOTAS.map((valor) => (
 								<label key={valor} className="nota-da-opiniao">
 									<input
+										ref={valor === NOTAS[0] ? primeiraNota : undefined}
 										className="sr-only"
 										type="radio"
 										name="nota"
@@ -147,6 +156,15 @@ export function FormularioDeOpiniao() {
 						<p className="dica-da-opiniao" id={`${id}-escala`}>
 							1 é muito ruim e 5 é muito bom.
 						</p>
+						{nota !== null && (
+							<button
+								type="button"
+								className="acao-de-texto tirar-nota"
+								onClick={tirarNota}
+							>
+								Tirar a nota
+							</button>
+						)}
 					</fieldset>
 					<fieldset disabled={esperando}>
 						<legend className="rotulo">O que você usou? (opcional)</legend>
