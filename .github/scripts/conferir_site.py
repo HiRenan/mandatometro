@@ -25,8 +25,6 @@ PAGINAS = (
         "O Plenário vota o projeto",
     ),
     ("Jogos", "/jogos", "Jogos"),
-    ("Parlamentares", "/parlamentares", "Parlamentares"),
-    ("Piloto", "/piloto", "Antes da trilha"),
 )
 LISTA_PARLAMENTARES = "/parlamentares?uf=SP"
 LINK_FICHA = re.compile(r"/parlamentares/[1-9][0-9]*(?:-[a-z0-9-]+)?")
@@ -66,13 +64,15 @@ class Pagina(HTMLParser):
         return None
 
 
-def html_esperado(titulo, tag="h1", *, link=None, trecho=""):
+def html_esperado(titulo, tag="h1", *, link=None, trecho="", aviso_indisponivel=None):
     def validar(corpo):
         try:
             pagina = Pagina(corpo, tag)
         except (AssertionError, ValueError):
             return None
         if titulo not in pagina.titulos or trecho not in corpo:
+            return None
+        if aviso_indisponivel is not None and aviso_indisponivel in corpo:
             return None
         if link is not None:
             return pagina.primeiro_link(link)
@@ -160,17 +160,31 @@ def conferir(site, api):
     falhas = []
     aprovadas = 0
 
-    def consultar(nome, endereco, validar):
+    def consultar(nome, endereco, validar, *, endereco_no_resumo=None):
         nonlocal aprovadas
         estado, dado = verificar(endereco, validar)
         if dado is None:
-            falhas.append(f"- {nome} — `{endereco}` — {estado}")
+            exibido = endereco_no_resumo or endereco
+            falhas.append(f"- {nome} — `{exibido}` — {estado}")
         else:
             aprovadas += 1
         return dado
 
     for nome, caminho, titulo in PAGINAS:
         consultar(nome, site + caminho, html_esperado(titulo))
+    consultar(
+        "Parlamentares",
+        site + "/parlamentares",
+        html_esperado("Parlamentares", trecho="Escolha o estado"),
+    )
+    consultar(
+        "Piloto",
+        site + "/piloto",
+        html_esperado(
+            "Antes da trilha",
+            aviso_indisponivel="O piloto ainda não funciona neste endereço do site.",
+        ),
+    )
     consultar(
         "Edições", site + "/edicoes", html_esperado("Edições", trecho="Fonte oficial em cada item")
     )
@@ -184,11 +198,16 @@ def conferir(site, api):
         falhas.append(f"- Votação — `{lista}` — sem consulta (lista indisponível)")
     else:
         endereco = site + ficha
+        # O link canônico inclui o nome. O resumo identifica a ficha pelo ID.
+        endereco_no_resumo = site + ficha.split("-", 1)[0]
         votacao = consultar(
-            "Ficha parlamentar", endereco, html_esperado("Ficha", "h2", link=LINK_VOTACAO)
+            "Ficha parlamentar",
+            endereco,
+            html_esperado("Ficha", "h2", link=LINK_VOTACAO),
+            endereco_no_resumo=endereco_no_resumo,
         )
         if votacao is None:
-            falhas.append(f"- Votação — `{endereco}` — sem consulta (ficha indisponível)")
+            falhas.append(f"- Votação — `{endereco_no_resumo}` — sem consulta (ficha indisponível)")
         else:
             consultar("Votação", site + votacao, html_esperado("Placar", "h2"))
 

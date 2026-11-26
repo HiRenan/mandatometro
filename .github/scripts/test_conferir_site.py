@@ -13,8 +13,11 @@ import conferir_site as roteiro
 SITE = "https://site.example.com"
 API = "https://api.example.com"
 INICIO = SITE + "/"
-LISTA = SITE + "/parlamentares?uf=SP"
+PARLAMENTARES = SITE + "/parlamentares"
+PILOTO = SITE + "/piloto"
+LISTA = PARLAMENTARES + "?uf=SP"
 FICHA = SITE + "/parlamentares/891-agata-cedrolume"
+FICHA_NO_RESUMO = SITE + "/parlamentares/891"
 VOTACAO = SITE + "/votacoes/306"
 TITULO_INICIAL = "Entenda a política brasileira, um passo de cada vez."
 CORPO_INICIAL = f"<h1><span>{TITULO_INICIAL}</span></h1>"
@@ -26,8 +29,8 @@ PAGINAS = {
         "<h1>O Plenário vota o projeto</h1>"
     ),
     SITE + "/jogos": "<h1>Jogos</h1>",
-    SITE + "/parlamentares": "<h1>Parlamentares</h1>",
-    SITE + "/piloto": "<h1>Antes da trilha</h1>",
+    PARLAMENTARES: "<h1>Parlamentares</h1><select><option>Escolha o estado</option></select>",
+    PILOTO: "<h1>Antes da trilha</h1>",
     SITE + "/edicoes": "<h1>Edições</h1><span>Fonte oficial em cada item</span>",
     LISTA: (
         '<h1>São Paulo</h1><a href="https://outro.example.com/parlamentares/1-externo">Fora</a>'
@@ -108,6 +111,38 @@ class ConferenciaTest(unittest.TestCase):
         self.assertIn("12 de 12 verificações passaram.", resumo)
         self.assertEqual(enderecos.count(INICIO), 2)
 
+    def test_redirecionamento_falha_mesmo_com_o_titulo_correto(self):
+        saida, resumo, enderecos = self.rodar(iter([(307, CORPO_INICIAL, 0)] * 2))
+        self.assertEqual(saida, 1)
+        self.assertEqual(enderecos.count(INICIO), 2)
+        self.assertIn("11 de 12 verificações passaram.", resumo)
+        self.assertIn(f"- Página inicial — `{INICIO}` — HTTP 307\n", resumo)
+
+    def test_paginas_sem_api_falham_mesmo_com_o_titulo_correto(self):
+        casos = (
+            (
+                "Parlamentares",
+                PARLAMENTARES,
+                "<h1>Parlamentares</h1>"
+                "<p>Os parlamentares ainda não aparecem neste endereço do site.</p>",
+            ),
+            (
+                "Piloto",
+                PILOTO,
+                "<h1>Antes da trilha</h1>"
+                "<p>O piloto ainda não funciona neste endereço do site.</p>",
+            ),
+        )
+        for nome, endereco, corpo in casos:
+            with self.subTest(endereco=endereco):
+                saida, resumo, enderecos = self.rodar(iter([(200, corpo, 0)] * 2), endereco)
+                self.assertEqual(saida, 1)
+                self.assertEqual(enderecos.count(endereco), 2)
+                self.assertIn("11 de 12 verificações passaram.", resumo)
+                self.assertIn(
+                    f"- {nome} — `{endereco}` — HTTP 200 (texto esperado ausente)\n", resumo
+                )
+
     def test_lista_fora_do_ar_impede_descoberta_e_mantem_as_outras_leituras(self):
         saida, resumo, enderecos = self.rodar(iter([(404, CORPO_RESERVADO, 0)] * 2), LISTA)
         self.assertEqual(saida, 1)
@@ -120,6 +155,37 @@ class ConferenciaTest(unittest.TestCase):
         self.assertNotIn(FICHA, enderecos)
         self.assertNotIn(VOTACAO, enderecos)
         self.assertIn(API + "/edicoes?limite=1", enderecos)
+
+    def test_lista_200_sem_link_de_ficha_falha(self):
+        saida, resumo, enderecos = self.rodar(iter([(200, "<h1>São Paulo</h1>", 0)] * 2), LISTA)
+        self.assertEqual(saida, 1)
+        self.assertEqual(enderecos.count(LISTA), 2)
+        self.assertIn("9 de 12 verificações passaram.", resumo)
+        self.assertIn(f"- Lista de parlamentares de SP — `{LISTA}` — HTTP 200", resumo)
+        self.assertNotIn(FICHA, enderecos)
+        self.assertNotIn(VOTACAO, enderecos)
+
+    def test_ficha_200_sem_link_de_votacao_falha(self):
+        saida, resumo, enderecos = self.rodar(iter([(200, "<h2>Ficha</h2>", 0)] * 2), FICHA)
+        self.assertEqual(saida, 1)
+        self.assertEqual(enderecos.count(FICHA), 2)
+        self.assertIn("10 de 12 verificações passaram.", resumo)
+        self.assertIn(f"- Ficha parlamentar — `{FICHA_NO_RESUMO}` — HTTP 200", resumo)
+        self.assertIn(
+            f"- Votação — `{FICHA_NO_RESUMO}` — sem consulta (ficha indisponível)\n", resumo
+        )
+        self.assertNotIn(VOTACAO, enderecos)
+
+    def test_falha_da_ficha_usa_o_id_no_resumo_e_a_url_canonica_no_get(self):
+        saida, resumo, enderecos = self.rodar(iter([(500, CORPO_RESERVADO, 0)] * 2), FICHA)
+        self.assertEqual(saida, 1)
+        self.assertEqual(enderecos.count(FICHA), 2)
+        self.assertNotIn(FICHA_NO_RESUMO, enderecos)
+        self.assertNotIn("agata-cedrolume", resumo)
+        self.assertIn(f"- Ficha parlamentar — `{FICHA_NO_RESUMO}` — HTTP 500\n", resumo)
+        self.assertIn(
+            f"- Votação — `{FICHA_NO_RESUMO}` — sem consulta (ficha indisponível)\n", resumo
+        )
 
 
 class PublicacaoTest(unittest.TestCase):
