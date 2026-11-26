@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { type RefObject, useLayoutEffect, useRef, useState } from "react";
 import { BOTAO_CONTINUAR } from "@/components/botao-continuar";
 import { useHidratado } from "@/components/quiz";
 import { classes } from "@/lib/classes";
@@ -7,6 +7,7 @@ import type { JogoNaPagina, Passo } from "@/lib/jogo";
 import {
 	avancar,
 	caminho,
+	cenarioDaVez,
 	comecar,
 	escolhaDa,
 	escolher,
@@ -19,6 +20,7 @@ import { movimentoReduzido } from "@/lib/painel-vivo";
 import { BotaoDeSom } from "./botao-de-som";
 import { CaixaDeDialogo } from "./caixa-de-dialogo";
 import { CaminhoDoProjeto } from "./caminho-do-projeto";
+import { CaminhosEmDebate } from "./caminhos-em-debate";
 import { Carimbo } from "./carimbos";
 import { CartaoDoQueAconteceu } from "./cartao-do-que-aconteceu";
 import { Decisao } from "./decisao";
@@ -42,6 +44,23 @@ function falasSeguidas(passos: Passo[], indice: number): string[] {
 	return [...falas];
 }
 
+const RESPIRO_DA_ROLAGEM = 12;
+
+function rolar(deslocamento: number) {
+	if (Math.abs(deslocamento) >= 1) {
+		window.scrollTo({
+			top: window.scrollY + deslocamento,
+			behavior: movimentoReduzido() ? "auto" : "smooth",
+		});
+	}
+}
+
+function rolarParaOTitulo(titulo: HTMLHeadingElement) {
+	const topo = titulo.getBoundingClientRect().top;
+	const alto = window.visualViewport?.offsetTop ?? 0;
+	rolar(Math.min(0, topo - alto - RESPIRO_DA_ROLAGEM));
+}
+
 function rolarParaOPasso(bloco: Element, falaSeguida: boolean) {
 	const inicio = bloco.querySelector("[data-inicio-do-passo]") ?? bloco;
 	const topo = inicio.getBoundingClientRect().top;
@@ -55,23 +74,17 @@ function rolarParaOPasso(bloco: Element, falaSeguida: boolean) {
 	const altura = janela?.height ?? window.innerHeight;
 	const baixo = alto + altura;
 	const sobra = altura - (fim - topo);
-	const respiro = 12;
-	const margem = Math.min(respiro, Math.max(0, sobra / 2));
+	const margem = Math.min(RESPIRO_DA_ROLAGEM, Math.max(0, sobra / 2));
 
 	let deslocamento = 0;
 	if (sobra < 0) {
-		deslocamento = topo - alto - respiro;
+		deslocamento = topo - alto - RESPIRO_DA_ROLAGEM;
 	} else if (topo < alto) {
 		deslocamento = topo - alto - margem;
 	} else if (fim > baixo) {
 		deslocamento = fim - baixo + margem;
 	}
-	if (Math.abs(deslocamento) >= 1) {
-		window.scrollTo({
-			top: window.scrollY + deslocamento,
-			behavior: movimentoReduzido() ? "auto" : "smooth",
-		});
-	}
+	rolar(deslocamento);
 }
 
 /**
@@ -87,8 +100,10 @@ function rolarParaOPasso(bloco: Element, falaSeguida: boolean) {
 export function Jogo({
 	jogo,
 	comApi,
+	tituloRef,
 }: {
 	jogo: JogoNaPagina;
+	tituloRef: RefObject<HTMLHeadingElement | null>;
 	/** Se o site tem o endereço da API (o API_URL do build). */
 	comApi: boolean;
 }) {
@@ -109,7 +124,8 @@ export function Jogo({
 	// conserva a posição enquanto o começo da caixa continuar à vista.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: duas falas têm o mesmo tipo, mas cada uma precisa receber o foco quando a cena ou o passo muda.
 	useLayoutEffect(() => {
-		const mudouOTipo = tipoAnterior.current !== tipo;
+		const anterior = tipoAnterior.current;
+		const mudouOTipo = anterior !== tipo;
 		tipoAnterior.current = tipo;
 		const bloco = frente.current?.firstElementChild;
 		if (!bloco || (tipo === "abertura" && !mudouOTipo)) {
@@ -119,13 +135,22 @@ export function Jogo({
 		bloco
 			.querySelector<HTMLElement>("[data-foco]")
 			?.focus({ preventScroll: true });
-		if (mudouOTipo || tipo === "fala") {
+		const voltarAoTitulo =
+			anterior === "resposta" ||
+			tipo === "revelacao" ||
+			(anterior === "revelacao" && tipo !== "fim");
+		const titulo = voltarAoTitulo ? tituloRef.current : null;
+		if (titulo) {
+			rolarParaOTitulo(titulo);
+		} else if (mudouOTipo || tipo === "fala") {
 			rolarParaOPasso(bloco, !mudouOTipo);
 		}
-	}, [tipo, partida.cena, partida.passo]);
+	}, [tipo, partida.cena, partida.passo, tituloRef]);
 
 	const cenario =
-		naCena || partida.fase === "revelacao" ? cena.cenario : jogo.cenario;
+		naCena || partida.fase === "revelacao"
+			? (cenarioDaVez(jogo, partida) ?? cena.cenario)
+			: jogo.cenario;
 	const fala = passo?.tipo === "fala" ? passo : undefined;
 	// Quem falou por último fica na cena durante a decisão, o painel e o carimbo.
 	const retrato = retratoDaVez(jogo, partida);
@@ -216,12 +241,15 @@ export function Jogo({
 				{naCena && fala ? (
 					<CaixaDeDialogo
 						key={fala.id}
+						jogo={jogo.slug}
 						id={fala.id}
 						quem={fala.quem}
+						// O leitor do roteiro não deixa uma cena dar a fala a quem o
+						// jogo não apresenta, então o nome está sempre aqui.
 						nome={
 							fala.quem === "narracao"
 								? undefined
-								: jogo.personagens[fala.quem].nome
+								: jogo.personagens[fala.quem]?.nome
 						}
 						texto={fala.texto}
 						falasSeguidas={falasSeguidas(cena.passos, partida.passo)}
@@ -251,6 +279,14 @@ export function Jogo({
 					<RelogioDoPrazo
 						key={`${partida.cena}-${partida.passo}`}
 						relogio={passo}
+						aoAvancar={seguir}
+					/>
+				) : null}
+
+				{naCena && passo?.tipo === "versoes" ? (
+					<CaminhosEmDebate
+						key={`${partida.cena}-${partida.passo}`}
+						versoes={passo}
 						aoAvancar={seguir}
 					/>
 				) : null}

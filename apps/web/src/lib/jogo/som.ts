@@ -110,13 +110,13 @@ const VOLUME_DA_VOZ = 1;
  * Toca a narração de uma fala, se ela foi gravada e o som está ligado. A lista
  * do que tem voz vem de vozes.ts, que o `pnpm --filter web vozes` refaz.
  */
-export function tocarVoz(id: string): void {
+export function tocarVoz(jogo: string, id: string): void {
 	pararVoz();
-	if (!lerSom() || !temVoz(id) || typeof Audio !== "function") {
+	if (!lerSom() || !temVoz(jogo, id) || typeof Audio !== "function") {
 		return;
 	}
 	try {
-		narrando = new Audio(enderecoDaVoz(id));
+		narrando = new Audio(enderecoDaVoz(jogo, id));
 		narrando.volume = VOLUME_DA_VOZ;
 		void narrando.play()?.catch(() => undefined);
 	} catch {

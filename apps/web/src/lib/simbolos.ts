@@ -169,7 +169,11 @@ const SIMBOLO_DA_TRILHA = new Map<string, NomeDoSimbolo>([
 ]);
 
 /** O símbolo de cada jogo, pelo nome da pasta do roteiro dele. */
-const SIMBOLO_DO_JOGO = new Map<string, NomeDoSimbolo>([["comissoes", "mesa"]]);
+const SIMBOLO_DO_JOGO = new Map<string, NomeDoSimbolo>([
+	["comissoes", "mesa"],
+	// O jogo da emenda leva o livro da Constituição, que é o que ele muda.
+	["6x1", "livro"],
+]);
 
 /** O símbolo de cada passo do caminho, pelo endereço do passo (idDoPasso). */
 const SIMBOLO_DO_PASSO = new Map<string, NomeDoSimbolo>([
@@ -178,6 +182,14 @@ const SIMBOLO_DO_PASSO = new Map<string, NomeDoSimbolo>([
 	["passo-plenario", "hemiciclo"],
 	["passo-a-outra-casa", "duas-casas"],
 	["passo-sancao-ou-veto", "caneta"],
+	// As casas do caminho de uma emenda, no Jogo da 6x1. A promulgação leva o
+	// livro da Constituição, e não a caneta: emenda não vai à sanção.
+	["passo-iniciativa", "folha"],
+	["passo-ccj", "balanca"],
+	["passo-comissao-especial", "mesa"],
+	["passo-plenario-da-camara", "hemiciclo"],
+	["passo-senado", "duas-casas"],
+	["passo-promulgacao", "livro"],
 ]);
 
 /**

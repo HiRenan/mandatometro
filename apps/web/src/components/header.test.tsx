@@ -9,7 +9,15 @@ import {
 	RouterProvider,
 } from "@tanstack/react-router";
 import { act, cleanup, render, screen, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	onTestFinished,
+	vi,
+} from "vitest";
 import {
 	anotarEntradaNaConta,
 	CHAVE_SESSAO,
@@ -126,13 +134,9 @@ describe("cabeçalho", () => {
 			name: /^Mandatômetro$/,
 		});
 		expect(inicio.getAttribute("href")).toBe("/");
-		const livro = inicio.querySelector("svg");
-		expect(livro?.getAttribute("aria-hidden")).toBe("true");
-		expect(livro?.getAttribute("focusable")).toBe("false");
-		expect(livro?.querySelector("use")?.getAttribute("href")).toBe(
-			"/marca-paginas.svg#paginas",
-		);
-		expect(livro?.nextSibling?.textContent).toBe("andatômetro");
+		// O M é a letra da fonte, e não mais o livro (a #357).
+		expect(inicio.querySelector("svg")).toBeNull();
+		expect(inicio.querySelector(".marca-inicial")?.textContent).toBe("M");
 		expect(inicio.textContent).toBe("Mandatômetro");
 		expect(cabecalho.querySelector(".marca-lema")?.textContent).toBe(
 			"A política brasileira de perto.",
@@ -148,6 +152,31 @@ describe("cabeçalho", () => {
 				["Jogos", "/jogos"],
 			],
 		]);
+	});
+
+	it("mostra o M inteiro enquanto a Archivo carrega e só então acrescenta os enfeites", async () => {
+		let terminarCarga!: (fontes: object[]) => void;
+		const carga = new Promise<object[]>((resolver) => {
+			terminarCarga = resolver;
+		});
+		Object.defineProperty(document, "fonts", {
+			configurable: true,
+			value: { load: () => carga },
+		});
+		onTestFinished(() => {
+			Reflect.deleteProperty(document, "fonts");
+		});
+
+		const cabecalho = await mostrar();
+		const inicio = within(cabecalho).getByRole("link", {
+			name: /^Mandatômetro$/,
+		});
+		const inicial = inicio.querySelector(".marca-inicial");
+		expect(inicial?.textContent).toBe("M");
+		expect(inicial?.hasAttribute("data-archivo-carregada")).toBe(false);
+
+		await act(async () => terminarCarga([{ status: "loaded" }]));
+		expect(inicial?.hasAttribute("data-archivo-carregada")).toBe(true);
 	});
 
 	it("onde o site tem a API, os parlamentares e as edições entram nas duas listas, e elas dizem isso ao CSS", async () => {

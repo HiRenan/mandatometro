@@ -6,6 +6,7 @@ const pasta = "/conteudo/jogo/comissoes";
 const jogoMd = `---
 titulo: Jogo das Comissões
 resumo: Cinco cenas no caminho de um projeto de lei.
+ordem: 1
 cenario: bg-titulo
 aviso: Os personagens são fictícios, e as datas são reais.
 personagens:
@@ -141,7 +142,7 @@ describe("lerJogos", () => {
 			emocao: "neutro",
 			texto: "Por onde a gente começa?",
 		});
-		expect(jogo.personagens.lia.nome).toBe("Lia Moraes");
+		expect(jogo.personagens.lia?.nome).toBe("Lia Moraes");
 		expect(jogo.pendencias).toEqual([]);
 	});
 
@@ -336,6 +337,163 @@ describe("lerJogos", () => {
 				}),
 			}),
 		).toThrow(/falta a cena 1/);
+	});
+
+	it("aceita o jogo que apresenta outros personagens, sem exigir os do primeiro", () => {
+		const jogo = lerUm({
+			[`${pasta}/jogo.md`]: jogoMd.replace(
+				`personagens:
+  lia:
+    nome: Lia Moraes
+    quem: deputada federal no primeiro mandato
+  arnaldo:
+    nome: Arnaldo
+    quem: consultor legislativo veterano
+  caio:
+    nome: Caio
+    quem: assessor de um deputado`,
+				`personagens:
+  joana:
+    nome: Joana
+    quem: atendente de padaria
+  raimundo:
+    nome: Seu Raimundo
+    quem: dono da padaria`,
+			),
+			[`${pasta}/1-cena.md`]: cenaMd({
+				passos: `  - tipo: fala
+    id: c1-01
+    quem: joana
+    expressao: cansada
+    emocao: preocupado
+    texto: Eu trabalho seis dias e folgo um.
+`,
+			}),
+		});
+
+		expect(Object.keys(jogo.personagens)).toEqual(["joana", "raimundo"]);
+	});
+
+	it("recusa a fala de quem o jogo.md não apresenta", () => {
+		expect(() =>
+			lerUm({
+				[`${pasta}/jogo.md`]: jogoMd,
+				[`${pasta}/1-cena.md`]: cenaMd({
+					passos: `  - tipo: fala
+    id: c1-01
+    quem: joana
+    expressao: cansada
+    emocao: preocupado
+    texto: Isso vai mudar?
+`,
+				}),
+			}),
+		).toThrow(/joana não está nos personagens do jogo.md/);
+	});
+
+	it("lê o quórum do painel e a dispensa do prazo", () => {
+		const jogo = lerUm({
+			[`${pasta}/jogo.md`]: jogoMd,
+			[`${pasta}/1-cena.md`]: cenaMd({
+				passos: `  - tipo: painel
+    modo: nominal
+    sim: 472
+    nao: 22
+    quorum: 308
+    data: 2026-05-27
+    legenda: O primeiro turno na Câmara.
+  - tipo: relogio
+    sessoes: 5
+    fundamento: art. 202 do Regimento da Câmara
+    legenda: O interstício entre os dois turnos.
+    dispensa: O Plenário aprovou o requerimento, e o intervalo caiu.
+`,
+			}),
+		});
+
+		const [painel, relogio] = jogo.cenas[0].passos;
+		expect(painel).toMatchObject({ tipo: "painel", quorum: 308 });
+		expect(relogio).toMatchObject({
+			tipo: "relogio",
+			dispensa: "O Plenário aprovou o requerimento, e o intervalo caiu.",
+		});
+	});
+
+	it("lê o painel dos caminhos em debate", () => {
+		const jogo = lerUm({
+			[`${pasta}/jogo.md`]: jogoMd,
+			[`${pasta}/1-cena.md`]: cenaMd({
+				passos: `  - tipo: versoes
+    titulo: Três caminhos em debate
+    caminhos:
+      - nome: 4x3
+        propoe: 4 dias de trabalho, 3 de folga, até 36 horas
+        aFavor: Mais tempo livre e mais saúde
+        contra: Custo alto para quem funciona todo dia
+      - nome: 5x2 com transição
+        propoe: 2 folgas por semana, 42 horas e depois 40
+        aFavor: Muda a rotina sem um salto brusco
+        contra: Ainda pesa para o pequeno negócio
+        etiqueta: Foi o caminho do acordo na comissão.
+`,
+			}),
+		});
+
+		expect(jogo.cenas[0].passos[0]).toMatchObject({
+			tipo: "versoes",
+			caminhos: [{ nome: "4x3" }, { nome: "5x2 com transição" }],
+		});
+	});
+
+	it("recusa dois caminhos com o mesmo nome no painel do debate", () => {
+		expect(() =>
+			lerUm({
+				[`${pasta}/jogo.md`]: jogoMd,
+				[`${pasta}/1-cena.md`]: cenaMd({
+					passos: `  - tipo: versoes
+    titulo: Os caminhos
+    caminhos:
+      - nome: 4x3
+        propoe: Quatro dias de trabalho
+        aFavor: Mais tempo livre
+        contra: Custo alto
+      - nome: 4x3
+        propoe: Outra coisa
+        aFavor: Um argumento
+        contra: Outro argumento
+`,
+				}),
+			}),
+		).toThrow(/o caminho "4x3" já está neste painel/);
+	});
+
+	it("lê a caixa datada do epílogo e as lições da trilha", () => {
+		const jogo = lerUm({
+			[`${pasta}/jogo.md`]: jogoMd.replace(
+				"epilogo:\n  titulo: O que a lei mudou",
+				`licoes: true
+epilogo:
+  titulo: O que a lei mudou
+  situacao:
+    data: 2026-11-25
+    paragrafos:
+      - O mérito das ações seguia pendente na data da revisão.`,
+			),
+			[`${pasta}/1-cena.md`]: cenaMd(),
+		});
+
+		expect(jogo.licoes).toBe(true);
+		expect(jogo.epilogo.situacao).toMatchObject({ data: "2026-11-25" });
+	});
+
+	it("deixa o jogo sem lições e sem caixa datada", () => {
+		const jogo = lerUm({
+			[`${pasta}/jogo.md`]: jogoMd,
+			[`${pasta}/1-cena.md`]: cenaMd(),
+		});
+
+		expect(jogo.licoes).toBeUndefined();
+		expect(jogo.epilogo.situacao).toBeUndefined();
 	});
 
 	it("junta os problemas num ErroDeRoteiro, com o arquivo de cada um", () => {

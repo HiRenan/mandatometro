@@ -5,11 +5,12 @@
 		<title>Prévia do link do Mandatômetro</title>
 		<!--
 			A prévia do link no WhatsApp e nas redes (og:image), com 1200 x 630 px:
-			o bloco de tinta do cabeçalho, com o livro como inicial do nome e o lema,
-			a tira das cinco fitas do Bonfim, o título da página inicial no papel e uma fileira de
-			azulejos embaixo. As cores, as letras e os azulejos são os do site
-			(globals.css, index.css e estilos/azulejos.css). As redes cortam as
-			bordas em alguns formatos, por isso o texto fica longe delas.
+			o bloco de tinta do cabeçalho, com o nome e o lema, a tira das cinco
+			fitas do Bonfim, o título da página inicial no papel e uma fileira de
+			azulejos embaixo. O M do nome é o do cabeçalho: a letra da fonte, com a
+			dobra do livro e o fio das fitas. As cores, as letras e os azulejos são
+			os do site (globals.css, index.css e estilos/azulejos.css). As redes
+			cortam as bordas em alguns formatos, por isso o texto fica longe delas.
 
 			Os azulejos são só desenho, feitos de gradientes do CSS: cada um leva
 			uma fita só, e as cinco aparecem pela ordem, duas vezes.
@@ -65,17 +66,31 @@
 				color: var(--papel);
 			}
 
-			.nome > svg {
-				width: auto;
-				height: 1cap;
-				margin-right: 0.04em;
-				vertical-align: baseline;
-				fill: currentColor;
+			/* O M do cabeçalho (.marca-inicial, no index.css): a dobra abre o
+			   vértice, e as cinco fitas fazem um fio embaixo da letra. */
+			.inicial {
+				position: relative;
+				display: inline-block;
 			}
 
-			.inicial {
-				font-size: 0;
-				letter-spacing: 0;
+			.inicial::before {
+				content: "";
+				position: absolute;
+				top: 0.525em;
+				left: calc(0.3737em - 0.031em);
+				width: 0.062em;
+				height: 0.3095em;
+				background: var(--tinta);
+			}
+
+			.inicial::after {
+				content: "";
+				position: absolute;
+				top: 0.894em;
+				left: 0.045em;
+				width: 0.6575em;
+				height: max(2px, 0.075em);
+				background: var(--tira);
 			}
 
 			.nome {
@@ -194,12 +209,7 @@
 	</head>
 	<body>
 		<div class="topo">
-			<p class="nome">
-				<span class="inicial">M</span><svg width="0" height="0.69em" viewBox="0 0 700 610" aria-hidden="true">
-					<defs><!-- MARCA --></defs>
-					<use href="#paginas"></use>
-				</svg>andatômetro
-			</p>
+			<p class="nome"><span class="inicial">M</span>andatômetro</p>
 			<p class="lema">A política brasileira de perto.</p>
 		</div>
 		<div class="tira"></div>

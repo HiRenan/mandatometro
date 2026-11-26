@@ -147,6 +147,29 @@ export function retratoDaVez(
 	return undefined;
 }
 
+/**
+ * O cenário da vez: o da cena, ou o da última fala que o trocou até aqui. Uma
+ * cena pode mudar de lugar no meio — o Plenário, a mesa da promulgação e a
+ * volta à padaria são a mesma cena.
+ */
+export function cenarioDaVez(
+	jogo: JogoNaPagina,
+	partida: Partida,
+): string | undefined {
+	const cena = cenaDa(jogo, partida);
+	if (!cena) {
+		return undefined;
+	}
+	const passos = cena.passos;
+	for (let indice = partida.passo; indice >= 0; indice -= 1) {
+		const passo = passos[indice];
+		if (passo?.tipo === "fala" && passo.cenario !== undefined) {
+			return passo.cenario;
+		}
+	}
+	return cena.cenario;
+}
+
 /** Todas as decisões do roteiro, na ordem das cenas. */
 export function decisoesDoJogo(jogo: JogoNaPagina): Decisao[] {
 	return jogo.cenas.flatMap((cena) =>

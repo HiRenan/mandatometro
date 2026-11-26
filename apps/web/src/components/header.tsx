@@ -1,5 +1,5 @@
 import { Link, ScriptOnce, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { LEMA_DO_SITE } from "@/lib/meta";
 import {
 	CHAVE_SESSAO,
@@ -167,6 +167,19 @@ export default function Header({
 	});
 	const links: Links = comApi ? LINKS : LINKS.filter((link) => !link.soComApi);
 	const { sessao } = useContextoDoProgresso();
+	const [archivoCarregada, setArchivoCarregada] = useState(false);
+	useEffect(() => {
+		// O M usa a Archivo latina já pedida no <head>. Os enfeites só cabem nela.
+		void document.fonts?.load('900 1em "Archivo Variable"', "M").then(
+			(fontes) => {
+				if (fontes.length > 0) setArchivoCarregada(true);
+			},
+			() => {
+				// Se a carga falhar, fica o M inteiro da fonte de reserva.
+			},
+		);
+	}, []);
+
 	useEffect(() => {
 		// Na hidratação, o hook ainda dá o retrato de visitante: aí a leitura vai
 		// direto à chave, e a marca que o roteiro do <head> pôs não pisca.
@@ -188,18 +201,16 @@ export default function Header({
 			<div className="topo-dentro px-margem-celular md:px-margem-larga gap-y-[4px] py-[8px]">
 				<div className="marca">
 					<Link to="/" aria-label="Mandatômetro" className={NOME_DO_SITE}>
+						{/* O M é a letra da fonte. A dobra e as fitas do livro vêm do
+						    CSS (.marca-inicial): o livro como inicial fazia ler
+						    "ANDATÔMETRO" (a #357). */}
 						<span className="marca-palavra">
-							<span className="marca-inicial">M</span>
-							<svg
-								aria-hidden="true"
-								focusable="false"
-								width="0"
-								height="0.69em"
-								viewBox="0 0 700 610"
-								fill="currentColor"
+							<span
+								className="marca-inicial"
+								data-archivo-carregada={archivoCarregada ? "" : undefined}
 							>
-								<use href="/marca-paginas.svg#paginas" />
-							</svg>
+								M
+							</span>
 							andatômetro
 						</span>
 					</Link>

@@ -13,6 +13,7 @@ import {
 	screen,
 	within,
 } from "@testing-library/react";
+import { useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { JOGO_DAS_COMISSOES } from "@/lib/jogo/comissoes";
 import { acharJogo, type JogoNaPagina, jogos } from "@/lib/jogo/paginas.server";
@@ -96,7 +97,17 @@ function medirCaixas(caixas: Record<string, [number, number]>) {
 /** O jogo num site de mentira, para os `Link` da tela final funcionarem. */
 function mostrar({ comApi = true } = {}) {
 	const raiz = createRootRoute({
-		component: () => <Jogo jogo={jogo} comApi={comApi} />,
+		component: function PaginaDoJogo() {
+			const tituloRef = useRef<HTMLHeadingElement>(null);
+			return (
+				<article>
+					<h1 className="titulo-condensado" ref={tituloRef}>
+						{jogo.titulo}
+					</h1>
+					<Jogo jogo={jogo} comApi={comApi} tituloRef={tituloRef} />
+				</article>
+			);
+		},
 	});
 	const router = createRouter({
 		routeTree: raiz,
@@ -252,7 +263,7 @@ describe("a tela do jogo", () => {
 		expect(tocados()).toEqual([
 			"/jogo/audio/musica-tema.ogg",
 			"/jogo/audio/sfx-campainha.ogg",
-			"/jogo/vo/c1-01.mp3",
+			"/jogo/vo/comissoes/c1-01.mp3",
 		]);
 
 		fireEvent.click(screen.getByRole("button", { name: "Desligar o som" }));
@@ -262,14 +273,21 @@ describe("a tela do jogo", () => {
 		);
 
 		vi.mocked(HTMLMediaElement.prototype.pause).mockClear();
+		vi.mocked(HTMLMediaElement.prototype.play).mockClear();
 		fireEvent.click(screen.getByRole("button", { name: "Ligar o som" }));
+		expect(tocados()).toEqual(
+			expect.arrayContaining([
+				"/jogo/audio/musica-tema.ogg",
+				"/jogo/vo/comissoes/c1-01.mp3",
+			]),
+		);
 		fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
-		expect(tocados()).toContain("/jogo/vo/c1-02.mp3");
+		expect(tocados()).toContain("/jogo/vo/comissoes/c1-02.mp3");
 		unmount();
 		expect(pausados()).toEqual(
 			expect.arrayContaining([
 				"/jogo/audio/musica-tema.ogg",
-				"/jogo/vo/c1-02.mp3",
+				"/jogo/vo/comissoes/c1-02.mp3",
 			]),
 		);
 	});
@@ -340,24 +358,92 @@ describe("a tela do jogo", () => {
 		});
 	});
 
-	it("encaixa a revelação, alinha o começo do fim e traz o foco de volta ao recomeçar", async () => {
+	it.each([
+		{ caixa: [-200, 0] as [number, number] },
+		{ caixa: [40, 260] as [number, number] },
+	])(
+		"volta ao título depois de continuar na resposta ($caixa)",
+		async ({ caixa }) => {
+			vi.stubGlobal("matchMedia", () => ({ matches: true }));
+			mostrar();
+			fireEvent.click(await iniciarPartida());
+			jogarAte(".jogo-pergunta");
+			fireEvent.click(
+				screen.getByRole("button", { name: "O autor pede o desarquivamento" }),
+			);
+
+			// A pessoa rolou até o botão ao pé das explicações da resposta.
+			vi.stubGlobal("scrollY", 800);
+			medirCaixas({
+				"titulo-condensado": [-620, -560],
+				"jogo-palco": [-510, 550],
+				"jogo-caixa": caixa,
+			});
+			vi.mocked(window.scrollTo).mockClear();
+			fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+
+			expect(document.activeElement).toBe(
+				document.querySelector(".jogo-caixa [data-foco]"),
+			);
+			expect(window.scrollTo).toHaveBeenCalledExactlyOnceWith({
+				top: 168,
+				behavior: "auto",
+			});
+		},
+	);
+
+	it("volta ao título ao abrir a revelação e ao começar a próxima cena", async () => {
+		vi.stubGlobal("matchMedia", () => ({ matches: true }));
+		mostrar();
+		fireEvent.click(await iniciarPartida());
+		jogarAte(".jogo-pergunta");
+		fireEvent.click(
+			screen.getByRole("button", { name: "O autor pede o desarquivamento" }),
+		);
+		const continuar = { name: "Continuar" };
+		fireEvent.click(screen.getByRole("button", continuar));
+
+		vi.stubGlobal("scrollY", 800);
+		medirCaixas({
+			"titulo-condensado": [-490, -430],
+			"jogo-palco": [-380, 420],
+			"jogo-cartao": [0, 310],
+		});
+		vi.mocked(window.scrollTo).mockClear();
+		fireEvent.click(screen.getByRole("button", continuar));
+		expect(document.activeElement?.textContent).toBe(
+			"O que aconteceu de verdade",
+		);
+		expect(window.scrollTo).toHaveBeenCalledExactlyOnceWith({
+			top: 298,
+			behavior: "auto",
+		});
+
+		vi.stubGlobal("scrollY", 1100);
+		medirCaixas({
+			"titulo-condensado": [-790, -730],
+			"jogo-palco": [-760, 80],
+			"jogo-caixa": [-560, -365],
+		});
+		vi.mocked(window.scrollTo).mockClear();
+		fireEvent.click(screen.getByRole("button", { name: "Próxima cena" }));
+		expect(document.activeElement).toBe(
+			document.querySelector(".jogo-caixa [data-foco]"),
+		);
+		expect(window.scrollTo).toHaveBeenCalledExactlyOnceWith({
+			top: 298,
+			behavior: "auto",
+		});
+	});
+
+	it("enquadra a tela final e traz o foco de volta ao recomeçar", async () => {
 		vi.stubGlobal("matchMedia", () => ({ matches: true }));
 		medirCaixas({
-			"jogo-cartao": [680, 1060],
 			"jogo-fim": [680, 1480],
 			"jogo-abertura": [680, 910],
 		});
 		mostrar();
 		fireEvent.click(await iniciarPartida());
-		jogarAte(".jogo-cartao");
-		expect(window.scrollTo).toHaveBeenLastCalledWith({
-			top: 472,
-			behavior: "auto",
-		});
-		expect(document.activeElement?.textContent).toBe(
-			"O que aconteceu de verdade",
-		);
-
 		jogarAte(".jogo-fim");
 		expect(window.scrollTo).toHaveBeenLastCalledWith({
 			top: 668,

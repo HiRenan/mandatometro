@@ -3,7 +3,7 @@ import type { Selo } from "@/lib/jogo/ler";
 import { tocar } from "@/lib/jogo/som";
 
 /**
- * Os seis carimbos do jogo, um componente por carimbo, com o texto escrito no
+ * Os carimbos dos jogos, um componente por carimbo, com o texto escrito no
  * código: dá para traduzir, ajustar e ler com leitor de tela. O texto fica em
  * tinta, e a cor da fita só contorna o selo (DESIGN.md: nenhum texto em cima de
  * uma cor de fita).
@@ -48,6 +48,28 @@ function Sancionado() {
 	return <Carimbado texto="Sancionado" cor="verde" />;
 }
 
+function SoComEmenda() {
+	return <Carimbado texto="Só com emenda!" cor="amarela" />;
+}
+
+// A admissibilidade não é aprovação da ideia: o carimbo fica em tinta, como o
+// "Segue para o Senado", e não na fita verde do "Aprovado".
+function Admissivel() {
+	return <Carimbado texto="Admissível" cor="neutra" />;
+}
+
+function TresQuintos() {
+	return <Carimbado texto="3/5!" cor="amarela" />;
+}
+
+function IntersticioDispensado() {
+	return <Carimbado texto="Interstício dispensado" cor="neutra" />;
+}
+
+function Promulgada() {
+	return <Carimbado texto="Promulgada" cor="verde" />;
+}
+
 const CARIMBOS: Record<Selo, () => React.ReactElement> = {
 	"pedido-de-vista": PedidoDeVista,
 	"recurso-ao-plenario": RecursoAoPlenario,
@@ -55,6 +77,11 @@ const CARIMBOS: Record<Selo, () => React.ReactElement> = {
 	urgencia: Urgencia,
 	aprovado: Aprovado,
 	sancionado: Sancionado,
+	"so-com-emenda": SoComEmenda,
+	admissivel: Admissivel,
+	"tres-quintos": TresQuintos,
+	"intersticio-dispensado": IntersticioDispensado,
+	promulgada: Promulgada,
 };
 
 /** O carimbo que o roteiro pediu, pelo nome do selo. */

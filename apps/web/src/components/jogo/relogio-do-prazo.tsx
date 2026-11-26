@@ -45,8 +45,13 @@ export function RelogioDoPrazo({
 		return () => clearInterval(conta);
 	}, [total]);
 
+	const dispensado = relogio.dispensa !== undefined && corridas >= total;
+
 	return (
-		<div className="jogo-relogio">
+		<div
+			className="jogo-relogio"
+			data-dispensado={dispensado ? "true" : undefined}
+		>
 			<p className="jogo-sessoes">
 				{Array.from({ length: total }, (_, indice) => (
 					<span
@@ -64,6 +69,9 @@ export function RelogioDoPrazo({
 			<p className="jogo-legenda" tabIndex={-1} data-foco="true">
 				{relogio.legenda}
 			</p>
+			{/* O prazo que o Plenário dispensou: as sessões se apagam, e a frase
+			    diz por quê. O sentido está nela, não no apagar. */}
+			{dispensado ? <p className="jogo-dispensa">{relogio.dispensa}</p> : null}
 			<p className="jogo-fundamento">{relogio.fundamento}</p>
 			<div className="jogo-acoes">
 				<button
