@@ -8,7 +8,20 @@ import {
 	Outlet,
 	RouterProvider,
 } from "@tanstack/react-router";
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import {
+	createRequestHandler,
+	defaultRenderHandler,
+} from "@tanstack/react-router/ssr/server";
+import {
+	act,
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
+import type { ReactNode } from "react";
 import {
 	afterEach,
 	beforeEach,
@@ -130,6 +143,41 @@ function oMenu(cabecalho: HTMLElement) {
 	const botao = detalhes?.querySelector<HTMLElement>(":scope > summary");
 	if (!detalhes || !botao) throw new Error("O cabeçalho ficou sem o menu.");
 	return { detalhes, botao };
+}
+
+/** O cabeçalho no HTML que o servidor manda, antes de qualquer JavaScript. */
+async function cabecalhoDoServidor() {
+	const criarRouter = () => {
+		const raiz = createRootRoute({
+			shellComponent: ({ children }: { children: ReactNode }) => (
+				<html lang="pt-BR">
+					<head />
+					<body>
+						<Header comApi />
+						{children}
+					</body>
+				</html>
+			),
+		});
+		return createRouter({
+			routeTree: raiz.addChildren([
+				createRoute({
+					getParentRoute: () => raiz,
+					path: "/",
+					component: () => null,
+				}),
+			]),
+			// O jsdom põe o document, e o roteador se acharia no navegador.
+			isServer: true,
+		});
+	};
+	const resposta = await createRequestHandler({
+		createRouter: criarRouter,
+		request: new Request("http://localhost/"),
+	})(defaultRenderHandler);
+	return new DOMParser()
+		.parseFromString(await resposta.text(), "text/html")
+		.querySelector("header");
 }
 
 describe("cabeçalho", () => {
@@ -347,6 +395,115 @@ describe("cabeçalho", () => {
 				"true",
 			);
 		}
+	});
+});
+
+describe("o menu do celular", () => {
+	it("é um <details> fechado, com o botão Menu e, dentro, os destinos, a busca e a conta", async () => {
+		const cabecalho = await mostrar({ comApi: true });
+		const [, , menu] = asListas(cabecalho);
+		const { detalhes, botao } = oMenu(cabecalho);
+
+		expect(detalhes.parentElement).toBe(menu);
+		expect(detalhes.open).toBe(false);
+		// O nome do botão é a palavra: as três linhas e o X são desenhos.
+		expect(botao.textContent).toBe("Menu");
+		const icones = [...botao.querySelectorAll("svg")];
+		expect(
+			icones.map((icone) => [
+				icone.classList.contains("menu-do-celular-abrir"),
+				icone.classList.contains("menu-do-celular-fechar"),
+				icone.getAttribute("aria-hidden"),
+			]),
+		).toEqual([
+			[true, false, "true"],
+			[false, true, "true"],
+		]);
+		// Cada destino tem o azulejinho da fita da posição, que dá um quarto de
+		// volta a cada um (o --i, no index.css), e a seta, que também é desenho.
+		const destinos = [
+			...menu.querySelectorAll<HTMLElement>(".menu-do-celular-lista > li"),
+		];
+		expect(
+			destinos.map((destino) => [
+				destino.textContent,
+				destino.className,
+				destino.style.getPropertyValue("--i"),
+				destino.querySelector("svg")?.getAttribute("aria-hidden"),
+			]),
+		).toEqual([
+			["Trilhas", "fita-verde", "0", "true"],
+			["Parlamentares", "fita-amarela", "1", "true"],
+			["Jogos", "fita-azul", "2", "true"],
+			["Edições", "fita-rosa", "3", "true"],
+		]);
+		// Embaixo dos destinos, a busca e a conta.
+		const util = menu.querySelector<HTMLElement>(".menu-do-celular-util");
+		if (!util) throw new Error("O menu ficou sem a busca e a conta.");
+		expect(
+			within(util)
+				.getByRole("button", { name: "Buscar no site" })
+				.getAttribute("aria-haspopup"),
+		).toBe("dialog");
+		expect(
+			within(util)
+				.getAllByRole("link")
+				.map((link) => link.textContent),
+		).toEqual(["Entrar", "Conta"]);
+	});
+
+	it("sem JavaScript e antes da hidratação, os destinos e a conta já vêm no HTML do servidor", async () => {
+		// O navegador abre e fecha o <details> sozinho, sem esperar o React.
+		const cabecalho = await cabecalhoDoServidor();
+		const detalhes = cabecalho?.querySelector("nav.menu-do-celular > details");
+
+		expect(detalhes?.hasAttribute("open")).toBe(false);
+		expect(detalhes?.querySelector(":scope > summary")?.textContent).toBe(
+			"Menu",
+		);
+		expect(
+			[...(detalhes?.querySelectorAll(".menu-do-celular-lista a") ?? [])].map(
+				(link) => [link.textContent, link.getAttribute("href")],
+			),
+		).toEqual([
+			["Trilhas", "/trilhas"],
+			["Parlamentares", "/parlamentares"],
+			["Jogos", "/jogos"],
+			["Edições", "/edicoes"],
+		]);
+		expect(
+			detalhes?.querySelector('.menu-do-celular-util a[href="/login"]')
+				?.textContent,
+		).toBe("Entrar");
+	});
+
+	it("o Esc fecha o menu aberto e devolve o foco ao botão", async () => {
+		const cabecalho = await mostrar({ comApi: true });
+		const { detalhes, botao } = oMenu(cabecalho);
+		detalhes.open = true;
+		const jogos = within(detalhes).getByRole("link", { name: "Jogos" });
+		jogos.focus();
+
+		fireEvent.keyDown(jogos, { key: "Tab" });
+		expect(detalhes.open).toBe(true);
+
+		fireEvent.keyDown(jogos, { key: "Escape" });
+		expect(detalhes.open).toBe(false);
+		expect(document.activeElement).toBe(botao);
+	});
+
+	it.each([
+		["num destino", "/"],
+		["no destino da página aberta", "/jogos"],
+	])("a troca de página fecha o menu: %s", async (_, endereco) => {
+		// O menu fecha antes de a troca de página fotografar a tela.
+		const cabecalho = await mostrar({ endereco });
+		const { detalhes } = oMenu(cabecalho);
+		detalhes.open = true;
+
+		fireEvent.click(within(detalhes).getByRole("link", { name: "Jogos" }));
+
+		await waitFor(() => expect(detalhes.open).toBe(false));
 	});
 });
 

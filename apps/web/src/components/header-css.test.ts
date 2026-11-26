@@ -13,6 +13,10 @@ const cssDaBusca = readFileSync(
 	new URL("../estilos/busca.css", import.meta.url),
 	"utf8",
 );
+const cssDoMovimento = readFileSync(
+	new URL("../estilos/movimento.css", import.meta.url),
+	"utf8",
+);
 
 /** O corpo de cada @media ou @container com a condição dada: largura e corpo. */
 function blocosDe(texto: string, inicio: string, operador: "<" | ">=") {
@@ -173,6 +177,206 @@ describe("o CSS do cabeçalho", () => {
 		// O traço é um fundo. CanvasText o mantém visível nas cores forçadas.
 		expect(css).toMatch(
 			/@media \(forced-colors: active\) \{\s*\.topo-links a::after,\s*\.entrada-da-conta a::after \{\s*background: CanvasText;\s*\}\s*\}/,
+		);
+	});
+});
+
+describe("o CSS do menu do celular", () => {
+	/** Uma medida em rem do corpo de uma regra. */
+	function emRem(corpo: string | undefined, propriedade: string) {
+		return Number(
+			new RegExp(`(?:^|[;\\s])${propriedade}: ([\\d.]+)rem;`).exec(
+				corpo ?? "",
+			)?.[1],
+		);
+	}
+
+	it("no celular, o nome e o botão dividem uma linha, com o nome por cima do menu", () => {
+		expect(celular?.corpo).toMatch(
+			/\.topo-dentro \{\s*display: grid;\s*grid-template-columns: minmax\(0, 1fr\);\s*\}/,
+		);
+		expect(celular?.corpo).toMatch(
+			/\.topo-dentro > \.marca,\s*\.menu-do-celular \{\s*grid-area: 1 \/ 1;\s*align-self: start;\s*\}/,
+		);
+		// O menu toma a linha toda, para o painel abrir de margem a margem, e é
+		// transparente: o toque no nome chega ao link, que fica por cima.
+		expect(celular?.corpo).toMatch(
+			/\.topo-dentro > \.marca \{\s*position: relative;\s*z-index: 1;\s*justify-self: start;\s*\}/,
+		);
+		expect(regra(css, ".menu-do-celular-botao")).toMatch(
+			/\bmargin-left: auto;/,
+		);
+	});
+
+	it("fechado, o cabeçalho tem o --topo, e o botão fica no lugar quando o menu abre", () => {
+		// A margem do nome e do botão enche o --topo, menos a tira de 6 px, os
+		// 8 px de respiro em cima e embaixo (header.tsx) e a linha de 2,75rem.
+		expect(css).toMatch(/--topo: 4\.5rem;/);
+		expect(celular?.corpo).toMatch(
+			/\.topo-dentro > \.marca,\s*\.menu-do-celular-botao \{\s*margin-block: calc\(\(var\(--topo\) - 6px - 16px - 2\.75rem\) \/ 2\);\s*\}/,
+		);
+		expect(emRem(regra(css, ".marca a"), "min-height")).toBe(2.75);
+		expect(emRem(regra(css, ".menu-do-celular-botao"), "min-height")).toBe(
+			2.75,
+		);
+	});
+
+	it("o botão tem largura fixa, e o teto do nome desconta ele e o vão, com a Archivo e com a fonte de reserva", () => {
+		// Com a largura do botão fixa, o nome tem o mesmo tamanho nas duas fontes,
+		// e o cabeçalho não pula quando a Archivo chega.
+		const largura = emRem(regra(css, ".menu-do-celular-botao"), "width");
+
+		expect(largura).toBe(6.25);
+		expect(celular?.corpo).toMatch(
+			/\.moldura \.nome-do-site \{\s*--recuo: calc\(6\.25rem \+ 12px\);\s*\}/,
+		);
+		// O teto do nome conta as letras mais largas da fonte de reserva.
+		expect(regra(css, ".marca .nome-do-site")).toMatch(/--palavra: 9\.1;/);
+	});
+
+	it("com a letra grande, o botão desce para a linha de baixo, e o nome volta ao teto da página", () => {
+		const [quebra] = blocosDe(css, "@container", "<").filter(({ corpo }) =>
+			corpo.includes(".menu-do-celular {"),
+		);
+
+		// Com a letra a 100%, a página de 320 px tem 20rem, e o botão fica na
+		// linha do nome em todo celular; a 200%, a de 480 px tem 15rem, e ele desce.
+		expect(quebra?.largura).toBeLessThanOrEqual(20);
+		expect(quebra?.largura).toBeGreaterThan(15);
+		expect(quebra?.corpo).toMatch(
+			/\.menu-do-celular \{\s*grid-area: 2 \/ 1;\s*\}/,
+		);
+		expect(quebra?.corpo).toMatch(
+			/\.topo-dentro > \.marca,\s*\.menu-do-celular-botao \{\s*margin-block: 0;\s*\}/,
+		);
+		expect(quebra?.corpo).toMatch(
+			/\.moldura \.nome-do-site \{\s*--recuo: 0px;\s*\}/,
+		);
+	});
+
+	it("o botão é a palavra e as três linhas, sem o triângulo do <details>, e aberto troca as linhas pelo X", () => {
+		expect(regra(css, ".menu-do-celular-botao")).toMatch(/\blist-style: none;/);
+		expect(
+			regra(css, ".menu-do-celular-botao::-webkit-details-marker"),
+		).toMatch(/display: none;/);
+		expect(
+			regra(css, ".menu-do-celular > details[open] > .menu-do-celular-botao"),
+		).toMatch(/background: var\(--papel\);\s*color: var\(--tinta\);/);
+		expect(css).toMatch(
+			/\.menu-do-celular-fechar,\s*\.menu-do-celular > details\[open\] \.menu-do-celular-abrir \{\s*display: none;\s*\}/,
+		);
+		expect(
+			regra(css, ".menu-do-celular > details[open] .menu-do-celular-fechar"),
+		).toMatch(/display: block;/);
+	});
+
+	it("a letra dos destinos tem o teto da largura do painel, também com a fonte de reserva", () => {
+		const link = regra(css, ".menu-do-celular-lista a");
+		const teto =
+			/font-size: min\(1\.5rem, calc\(\(100cqi - ([\d.]+)rem - (\d+)px\) \/ 9\.2\)\);/.exec(
+				regra(css, ".menu-do-celular-texto") ?? "",
+			);
+
+		expect(regra(css, ".menu-do-celular-painel")).toMatch(
+			/container: menu-do-celular \/ inline-size;/,
+		);
+		// PARLAMENTARES pede 9,2 em na fonte de reserva. O teto desconta o
+		// azulejinho, a seta e os dois vãos da linha.
+		expect(Number(teto?.[1])).toBe(
+			emRem(regra(css, ".menu-do-celular-lista a::before"), "width") +
+				emRem(regra(css, ".menu-do-celular-seta"), "width"),
+		);
+		expect(Number(teto?.[2])).toBe(
+			2 * Number(/\bgap: (\d+)px;/.exec(link ?? "")?.[1]),
+		);
+		// Cada destino tem 3,5rem de altura, acima dos 44 px do toque.
+		expect(emRem(link, "min-height")).toBe(3.5);
+	});
+
+	it("com a letra grande, o azulejinho e a seta saem, e a palavra ganha a linha", () => {
+		const [estreito] = blocosDe(css, "@container menu-do-celular", "<");
+
+		// Com a letra a 100%, o painel tem pelo menos 17,5rem (320 px menos as
+		// margens de 20 px); a 200%, menos de 13,75rem em todo celular.
+		expect(estreito?.largura).toBeLessThanOrEqual(17.5);
+		expect(estreito?.largura).toBeGreaterThan(13.75);
+		expect(estreito?.corpo).toMatch(
+			/\.menu-do-celular-lista a::before,\s*\.menu-do-celular-seta \{\s*display: none;\s*\}/,
+		);
+		expect(estreito?.corpo).toMatch(
+			/\.menu-do-celular-texto \{\s*font-size: min\(1\.5rem, calc\(100cqi \/ 9\.2\)\);\s*\}/,
+		);
+	});
+
+	it("a seção aberta fica sublinhada com o traço de 4 px", () => {
+		expect(
+			regra(
+				css,
+				".menu-do-celular-lista a[data-na-secao] .menu-do-celular-texto",
+			),
+		).toMatch(
+			/text-decoration-line: underline;\s*text-decoration-thickness: 4px;/,
+		);
+	});
+
+	it("a busca entra na linha da conta pela base 0, e a conta fica na margem direita", () => {
+		// Com a base de 15rem, a conta descia para a linha de baixo a 360 px.
+		expect(regra(css, ".menu-do-celular-util")).toMatch(/flex-wrap: wrap;/);
+		expect(regra(css, ".menu-do-celular-util .lugar-da-busca")).toMatch(
+			/^\s*flex: 1 1 0;\s*max-width: 15rem;\s*$/,
+		);
+		expect(regra(css, ".menu-do-celular-util .entrada-da-conta")).toMatch(
+			/margin-left: auto;/,
+		);
+	});
+
+	it("no celular, o respiro e a margem da conta ficam em px, e a letra grande não empurra a página de lado", () => {
+		// Em rem, com a letra a 200%, a palavra passava 9 px da página.
+		const corpo = celular?.corpo ?? "";
+		const margem = /\.entrada-da-conta \{\s*margin-right: -(\d+)px;\s*\}/.exec(
+			corpo,
+		)?.[1];
+		const respiro =
+			/\.entrada-da-conta a \{\s*padding-inline: (\d+)px;\s*\}/.exec(
+				corpo,
+			)?.[1];
+
+		expect(margem).toBeDefined();
+		expect(margem).toBe(respiro);
+		expect(corpo).toMatch(
+			new RegExp(
+				`\\.entrada-da-conta a::after \\{\\s*right: ${respiro}px;\\s*left: ${respiro}px;\\s*\\}`,
+			),
+		);
+	});
+
+	it("ao abrir, os destinos descem um a um, e o movimento reduzido tira a animação", () => {
+		expect(cssDoMovimento).toMatch(
+			/@keyframes desce \{\s*from \{\s*opacity: 0;\s*transform: translateY\(-0\.5rem\);\s*\}\s*\}/,
+		);
+		expect(
+			regra(
+				css,
+				":where(.menu-do-celular > details[open]) .menu-do-celular-lista > li",
+			),
+		).toMatch(
+			/animation: desce [^;]*;\s*animation-delay: calc\(var\(--i, 0\) \* 45ms\);/,
+		);
+		expect(
+			regra(
+				css,
+				":where(.menu-do-celular > details[open]) .menu-do-celular-util",
+			),
+		).toMatch(/animation: desce /);
+		// O pedido de menos movimento tira as animações do site inteiro.
+		expect(cssDoMovimento).toMatch(
+			/@media \(prefers-reduced-motion: reduce\) \{\s*\*,\s*\*::before,\s*\*::after \{[^}]*animation: none !important;/,
+		);
+	});
+
+	it("nas cores forçadas, o azulejinho sai, e o traço da seção usa a cor de texto do sistema", () => {
+		expect(css).toMatch(
+			/@media \(forced-colors: active\) \{\s*\.menu-do-celular-lista a::before \{\s*display: none;\s*\}\s*\.menu-do-celular-lista a\[data-na-secao\] \.menu-do-celular-texto \{\s*text-decoration-color: CanvasText;\s*\}\s*\}/,
 		);
 	});
 });
