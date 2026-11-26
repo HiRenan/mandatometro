@@ -89,6 +89,7 @@ O banco guarda os dados da Câmara, do Senado e do TSE, os atos do Diário Ofici
 - **Quem assina** deixa o e-mail, a data e o código do link de sair; a última edição aceita permite retomar um envio. Sair apaga a linha e esse marcador.
 - **Medição do piloto:** cada conclusão guarda apenas código aleatório, versão do quiz, etapa e total de acertos. Não tem ligação com conta ou newsletter; não guarda turma, data nem hora da tentativa.
 - **Visitas** guardam a contagem por página pública e dia de Brasília. A cota do contador tem só o minuto e a quantidade, sem vínculo com quem visita.
+- **Opiniões** guardam a data, a nota opcional, as partes usadas e o texto, sem vínculo com uma conta. A cota separada tem só o minuto e a quantidade.
 
 ```mermaid
 erDiagram
@@ -343,6 +344,17 @@ erDiagram
     limite_visita {
         timestamptz janela PK "o minuto da cota global de visitas"
         int quantidade "visitas admitidas"
+    }
+    opiniao {
+        int id PK
+        timestamptz criada_em
+        smallint nota "opcional, de 1 a 5"
+        text[] partes "partes distintas do site, pode ficar vazia"
+        text texto "de 1 a 2.000 caracteres"
+    }
+    limite_opiniao {
+        timestamptz janela PK "o minuto da cota global de opiniões"
+        int quantidade "opiniões admitidas"
     }
 ```
 
