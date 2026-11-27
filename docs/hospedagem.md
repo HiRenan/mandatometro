@@ -2,6 +2,8 @@
 
 A API e o site usam projetos separados na Vercel. Cada ambiente usa um projeto Neon Free próprio. Os passos abaixo cobrem a configuração inicial e a primeira publicação.
 
+Em cada publicação, confira no ambiente se o passo **Aplicar as migrations**, do workflow **Migrar banco**, terminou com “Migration concluída até head”.
+
 | Ambiente | Site | API | Banco e ambiente no GitHub |
 | --- | --- | --- | --- |
 | Desenvolvimento (`develop`) | `https://dev.mandatometro.com.br` | `https://api-dev.mandatometro.com.br` | `desenvolvimento`, só dados de teste e da coleta pública |
